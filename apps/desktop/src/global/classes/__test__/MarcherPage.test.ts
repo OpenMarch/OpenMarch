@@ -1,84 +1,66 @@
-import { mockMarcherPages } from "@/__mocks__/globalMocks";
-import MarcherPage, { ModifiedMarcherPageArgs } from "../MarcherPage";
-import { ElectronApi } from "electron/preload";
-import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
+import MarcherPage from "../MarcherPage";
+import { initTestDatabase } from "../../../../electron/database/tables/__test__/testUtils";
+import { NewMarcherArgs } from "../Marcher";
+import * as MarcherTable from "../../../../electron/database/tables/MarcherTable";
+import * as PageTable from "../../../../electron/database/tables/PageTable";
+import { NewPages } from "../../../../electron/database/__test__/DatabaseMocks";
+import Database from "better-sqlite3";
 
 describe("MarcherPage", () => {
-    beforeEach(() => {
-        window.electron = {
-            getMarcherPages: vi.fn().mockResolvedValue(mockMarcherPages),
-            createPages: vi.fn().mockResolvedValue({ success: true }),
-            updateMarcherPages: vi.fn().mockResolvedValue({ success: true }),
-            deletePage: vi.fn().mockResolvedValue({ success: true }),
-        } as Partial<ElectronApi> as ElectronApi;
+    let db: Database.Database;
 
-        MarcherPage.fetchMarcherPages = vi.fn();
-        MarcherPage.checkForFetchMarcherPages = vi.fn();
+    beforeEach(async () => {
+        db = await initTestDatabase();
     });
 
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
+    it("inserts marchers and their marcherPages when there are pages in the database", async () => {
+        const pages: PageTable.NewPageArgs[] = [NewPages[0]];
 
-    describe("constructor", () => {
-        it("should create a valid MarcherPage object", () => {
-            const marcherPageData = {
-                id: 1,
-                id_for_html: "marcherPage_1",
-                marcher_id: 2,
-                page_id: 3,
-                x: 10,
-                y: 20,
-                notes: "Some notes",
-            };
-
-            const marcherPage = new MarcherPage(marcherPageData);
-
-            expect(marcherPage).toBeInstanceOf(MarcherPage);
-            expect(marcherPage.id).toBe(1);
-            expect(marcherPage.id_for_html).toBe("marcherPage_1");
-            expect(marcherPage.marcher_id).toBe(2);
-            expect(marcherPage.page_id).toBe(3);
-            expect(marcherPage.x).toBe(10);
-            expect(marcherPage.y).toBe(20);
-            expect(marcherPage.notes).toBe("Some notes");
+        const createPagesResponse = PageTable.createPages({
+            newPages: pages,
+            db,
         });
-    });
-    it("should fetch all MarcherPages from the database", async () => {
-        const mockResponse = mockMarcherPages;
-        const getMarcherPagesSpy = vi.spyOn(MarcherPage, "getMarcherPages");
+        expect(createPagesResponse.success).toBe(true);
 
-        getMarcherPagesSpy.mockResolvedValue(mockResponse as MarcherPage[]);
+        let allMarcherPages = await MarcherPage.getMarcherPages();
+        expect(allMarcherPages.length).toBe(0);
 
-        const pages = await MarcherPage.getMarcherPages();
-
-        expect(pages).toEqual(mockResponse);
-        expect(getMarcherPagesSpy).toHaveBeenCalled();
-    });
-
-    it("should update one or many MarcherPages in the database", async () => {
-        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [
-            { marcher_id: 1, page_id: 2, x: 8, y: 10 },
-            { marcher_id: 2, page_id: 2, x: 54.6, y: -456 },
-            { marcher_id: 1, page_id: 3, x: 0, y: 10.123021 },
-            { marcher_id: 2, page_id: 3, x: -239.09, y: 10 },
+        const newMarchers: NewMarcherArgs[] = [
+            {
+                name: "John Doe",
+                section: "Brass",
+                notes: null,
+                drill_prefix: "B",
+                drill_order: 1,
+            },
+            {
+                section: "Woodwind",
+                drill_prefix: "W",
+                drill_order: 2,
+            },
         ];
 
-        const mockResponse = { success: true };
+        const createMarchersResponse = MarcherTable.createMarchers({
+            newMarchers,
+            db,
+        });
+        expect(createMarchersResponse.success).toBe(true);
+        expect(createMarchersResponse.data.length).toBe(2);
 
-        const checkForFetchMarcherPagesSpy = vi.spyOn(
-            MarcherPage,
-            "checkForFetchMarcherPages",
-        );
-        const fetchMarcherPagesSpy = vi.spyOn(MarcherPage, "fetchMarcherPages");
+        allMarcherPages = await MarcherPage.getMarcherPages();
+        expect(allMarcherPages.length).toBe(4); // 2 marchers * 2 pages
 
-        const updatePagesSpy = vi.spyOn(MarcherPage, "updateMarcherPages");
-        const response =
-            await MarcherPage.updateMarcherPages(modifiedMarcherPages);
-
-        expect(response).toEqual(mockResponse);
-        expect(updatePagesSpy).toHaveBeenCalledWith(modifiedMarcherPages);
-        expect(checkForFetchMarcherPagesSpy).toHaveBeenCalled();
-        expect(fetchMarcherPagesSpy).toHaveBeenCalled();
+        // Check that there is a marcherPage for every marcher and page combination
+        for (const marcher of createMarchersResponse.data) {
+            for (const page of createPagesResponse.data) {
+                const marcherPage = allMarcherPages.find(
+                    (marcherPage) =>
+                        marcherPage.page_id === page.id &&
+                        marcherPage.marcher_id === marcher.id,
+                );
+                expect(marcherPage).toBeDefined();
+            }
+        }
     });
 });

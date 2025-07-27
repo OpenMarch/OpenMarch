@@ -1,5 +1,44 @@
-import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import { and, eq, inArray } from "drizzle-orm";
+import { db, DBTransaction, schema } from "../database/db";
+import { incrementUndoGroup } from "./History";
+
+const { marcher_pages, shape_page_marchers, shape_pages } = schema;
+
+// Define types from the existing schema
+type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
+
+function createDatabaseMarcherPage(
+    args: NewMarcherPageArgs,
+): typeof marcher_pages.$inferInsert {
+    return {
+        ...args,
+        notes: args.notes ?? null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+}
+
+/**
+ * Arguments for creating a new marcher page
+ */
+export interface NewMarcherPageArgs {
+    marcher_id: number;
+    page_id: number;
+    x: number;
+    y: number;
+    notes?: string;
+}
+
+/**
+ * Arguments for modifying an existing marcher page
+ */
+export interface ModifiedMarcherPageArgs {
+    id: number;
+    x?: number;
+    y?: number;
+    notes?: string;
+}
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
@@ -20,33 +59,23 @@ export default class MarcherPage {
     /** Y coordinate of the MarcherPage */
     readonly y: number;
     /** The SVG path of the MarcherPage */
-    readonly svg_path?: string;
+    readonly svg_path?: string | null;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
-    readonly notes?: string;
-    /**
-     * Fetches all of the MarcherPages from the database.
-     * This is attached to the MarcherPage store and needs to be updated in a useEffect hook so that the UI is updated.
-     */
-    static fetchMarcherPages: () => Promise<void>;
+    readonly notes?: string | null;
 
-    constructor(marcherPage: MarcherPage) {
+    constructor(marcherPage: DatabaseMarcherPage) {
         this.id = marcherPage.id;
-        this.id_for_html = marcherPage.id_for_html;
+        this.id_for_html = `marcherPage_${marcherPage.id}`;
         this.marcher_id = marcherPage.marcher_id;
         this.page_id = marcherPage.page_id;
-        this.x = marcherPage.x;
-        this.y = marcherPage.y;
+        this.x = marcherPage.x ?? 0;
+        this.y = marcherPage.y ?? 0;
         this.svg_path = marcherPage.svg_path;
         this.notes = marcherPage.notes;
     }
 
     /**
      * Gets all the MarcherPages that are associated with a given Marcher and/or Page.
-     * This is a DB query and should not be called other than from the store.
-     *
-     * NO ARGS - get all MarcherPages.
-     * ONE ARG - get all MarcherPages for that Marcher or Page.
-     * BOTH ARGS - a single MarcherPage for that specific Marcher and Page.
      *
      * @param marcher_id - The id of the marcher. Optional
      * @param page_id - The id of the page. Optional
@@ -56,39 +85,134 @@ export default class MarcherPage {
         marcher_id,
         page_id,
     }: { marcher_id?: number; page_id?: number } = {}): Promise<MarcherPage[]> {
-        const response = await window.electron.getMarcherPages({
-            marcher_id,
-            page_id,
+        let queryBuilder = db.select().from(marcher_pages).$dynamic();
+
+        if (marcher_id !== undefined && page_id !== undefined) {
+            queryBuilder = queryBuilder.where(
+                and(
+                    eq(marcher_pages.marcher_id, marcher_id),
+                    eq(marcher_pages.page_id, page_id),
+                ),
+            );
+        } else if (marcher_id !== undefined) {
+            queryBuilder = queryBuilder.where(
+                eq(marcher_pages.marcher_id, marcher_id),
+            );
+        } else if (page_id !== undefined) {
+            queryBuilder = queryBuilder.where(
+                eq(marcher_pages.page_id, page_id),
+            );
+        }
+
+        const results = await queryBuilder.all();
+        return results.map((row) => new MarcherPage(row));
+    }
+
+    /**
+     * Create new marcher pages
+     * @param newMarcherPages Array of new marcher page data
+     * @returns Promise with array of created MarcherPage objects
+     */
+    static async createMarcherPages(
+        newMarcherPages: NewMarcherPageArgs[],
+    ): Promise<MarcherPage[]> {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results = await tx
+                .insert(marcher_pages)
+                .values(newMarcherPages.map(createDatabaseMarcherPage))
+                .returning()
+                .all();
+
+            return results.map((row) => new MarcherPage(row));
         });
-        return response.data;
     }
 
     /**
      * Update one or many MarcherPages with the provided arguments.
      *
      * @param modifiedMarcherPages - The objects to update the MarcherPages with.
-     * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
      */
     static async updateMarcherPages(
         modifiedMarcherPages: ModifiedMarcherPageArgs[],
-    ): Promise<DatabaseResponse<MarcherPage>> {
-        const response =
-            await window.electron.updateMarcherPages(modifiedMarcherPages);
+    ): Promise<MarcherPage[]> {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
 
-        // Fetch the MarcherPages to update the store
-        this.checkForFetchMarcherPages();
-        this.fetchMarcherPages();
-        return response;
+            const results: DatabaseMarcherPage[] = [];
+
+            for (const modifiedMarcherPage of modifiedMarcherPages) {
+                const marcherPageToUpdate =
+                    await tx.query.marcher_pages.findFirst({
+                        where: eq(marcher_pages.id, modifiedMarcherPage.id),
+                    });
+
+                if (!marcherPageToUpdate) continue;
+
+                const locked = await this.isLocked(
+                    tx,
+                    marcherPageToUpdate.marcher_id,
+                    marcherPageToUpdate.page_id,
+                );
+                if (locked) continue;
+
+                const result = await tx
+                    .update(marcher_pages)
+                    .set(modifiedMarcherPage)
+                    .where(eq(marcher_pages.id, modifiedMarcherPage.id))
+                    .returning()
+                    .get();
+                results.push(result);
+            }
+
+            return results.map((row) => new MarcherPage(row));
+        });
     }
 
     /**
-     * Checks if fetchMarcherPages is defined. If not, it logs an error to the console.
+     * Delete marcher pages
+     * @param marcherPageIds Array of marcher page IDs to delete
+     * @returns Promise with array of deleted MarcherPage objects
      */
-    static checkForFetchMarcherPages() {
-        if (!this.fetchMarcherPages)
-            console.error(
-                "fetchMarcherPages is not defined. The UI will not update properly.",
-            );
+    static async deleteMarcherPages(
+        marcherPageIds: number[],
+    ): Promise<MarcherPage[]> {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results = await tx
+                .delete(marcher_pages)
+                .where(inArray(marcher_pages.id, marcherPageIds))
+                .returning()
+                .all();
+
+            return results.map((row) => new MarcherPage(row));
+        });
+    }
+
+    private static async isLocked(
+        tx: DBTransaction,
+        marcher_id: number,
+        page_id: number,
+    ): Promise<boolean> {
+        const result = await tx
+            .select({ id: shape_page_marchers.id })
+            .from(shape_page_marchers)
+            .innerJoin(
+                shape_pages,
+                eq(shape_page_marchers.shape_page_id, shape_pages.id),
+            )
+            .where(
+                and(
+                    eq(shape_page_marchers.marcher_id, marcher_id),
+                    eq(shape_pages.page_id, page_id),
+                ),
+            )
+            .limit(1)
+            .get();
+
+        return !!result;
     }
 
     /**
@@ -139,18 +263,4 @@ export default class MarcherPage {
             marcherPages.marcherPagesByPage[page_id]?.[marcher_id]
         );
     }
-}
-
-/**
- * Defines the editable fields of a MarcherPage.
- * `marcher_id` and `page_id` are used to identify the marcherPage and cannot be changed.
- */
-export interface ModifiedMarcherPageArgs {
-    marcher_id: number;
-    page_id: number;
-    /** The new X coordinate of the MarcherPage */
-    x: number;
-    /** The new Y coordinate of the MarcherPage */
-    y: number;
-    notes?: string;
 }

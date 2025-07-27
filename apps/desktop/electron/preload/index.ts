@@ -342,20 +342,6 @@ const APP_API = {
             DatabaseResponse<DatabaseMarcher[]>
         >,
 
-    // MarcherPage
-    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
-        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
-        >,
-    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<MarcherPage>
-        >,
-    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<MarcherPage>
-        >,
-
     // **** Timing Objects ****
 
     // Page

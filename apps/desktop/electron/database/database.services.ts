@@ -285,19 +285,6 @@ export function initHandlers() {
         }),
     );
 
-    // MarcherPage
-    ipcMain.handle("marcher_page:getAll", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPages, args),
-    );
-    ipcMain.handle("marcher_page:get", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPage, args),
-    );
-    ipcMain.handle("marcher_page:update", async (_, args) =>
-        connectWrapper(MarcherPageTable.updateMarcherPages, {
-            marcherPageUpdates: args,
-        }),
-    );
-
     // **** Timing Objects ****
 
     // Page
