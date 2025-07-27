@@ -1,12 +1,22 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import {
+    DatabaseMarcherPage,
+    databaseMarcherPagesToMarcherPages,
+} from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core/field";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { Shape } from "electron/database/tables/ShapeTable";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
+import {
+    CubicCurve,
+    Line,
+    Path,
+    QuadraticCurve,
+    Spline,
+} from "@openmarch/path-utility";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -98,7 +108,7 @@ export const mockPages: Page[] = [
     } satisfies Page,
 ] as const;
 
-export const mockMarcherPages: MarcherPage[] = [
+export const mockMarcherPages: DatabaseMarcherPage[] = [
     {
         id: 1,
         id_for_html: "marcherPage_1",
@@ -107,6 +117,14 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
+        path_data: new Path([
+            new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
+        ]).toJson(),
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 2,
@@ -116,6 +134,18 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
+        path_data: new Path([
+            new QuadraticCurve(
+                { x: 0, y: 0 },
+                { x: 100, y: 100 },
+                { x: 200, y: 200 },
+            ),
+        ]).toJson(),
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 3,
@@ -124,7 +154,20 @@ export const mockMarcherPages: MarcherPage[] = [
         page_id: 1,
         x: -200,
         y: -500,
-        notes: undefined,
+        notes: null,
+        path_data: new Path([
+            new CubicCurve(
+                { x: 0, y: 0 },
+                { x: 100, y: 100 },
+                { x: 200, y: 200 },
+                { x: 300, y: 300 },
+            ),
+        ]).toJson(),
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 4,
@@ -134,6 +177,18 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the first marcherPage",
+        path_data: new Path([
+            new Spline([
+                { x: 0, y: 0 },
+                { x: 100, y: 100 },
+                { x: 200, y: 200 },
+            ]),
+        ]).toJson(),
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 5,
@@ -143,6 +198,12 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 284,
         y: 963.1,
         notes: "This is the second marcherPage",
+        path_data: null,
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 6,
@@ -151,7 +212,13 @@ export const mockMarcherPages: MarcherPage[] = [
         page_id: 2,
         x: -200,
         y: 105.015,
-        notes: undefined,
+        notes: null,
+        path_data: null,
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 1,
@@ -161,6 +228,12 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
+        path_data: null,
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 2,
@@ -170,6 +243,12 @@ export const mockMarcherPages: MarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
+        path_data: null,
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
     {
         id: 3,
@@ -178,11 +257,19 @@ export const mockMarcherPages: MarcherPage[] = [
         page_id: 3,
         x: -200,
         y: -500,
-        notes: undefined,
+        notes: null,
+        path_data: null,
+        pathway_notes: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+        path_data_id: null,
+        path_position: null,
     },
 ] as const;
 
-export const mockMarcherPageMap = marcherPageMapFromArray(mockMarcherPages);
+export const mockMarcherPageMap = marcherPageMapFromArray(
+    databaseMarcherPagesToMarcherPages(mockMarcherPages),
+);
 
 export const mockMarcherLines: MarcherLine[] = [
     new MarcherLine({

@@ -3,6 +3,7 @@ import {
     getMarcherPages,
     updateMarcherPages,
     ModifiedMarcherPageArgs,
+    databaseMarcherPagesToMarcherPages,
 } from "../MarcherPage";
 import { ElectronApi } from "electron/preload";
 import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
@@ -25,11 +26,13 @@ describe("MarcherPage Functions", () => {
 
     it("should fetch all MarcherPages from the database", async () => {
         const pages = await getMarcherPages();
-        expect(pages).toEqual(mockMarcherPages);
+        expect(pages).toEqual(
+            databaseMarcherPagesToMarcherPages(mockMarcherPages),
+        );
         expect(window.electron.getMarcherPages).toHaveBeenCalled();
     });
 
-    it("should update o`ne or many MarcherPages in the database", async () => {
+    it("should update one or many MarcherPages in the database", async () => {
         const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [
             { marcher_id: 1, page_id: 2, x: 8, y: 10 },
             { marcher_id: 2, page_id: 2, x: 54.6, y: -456 },

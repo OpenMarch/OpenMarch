@@ -1,11 +1,15 @@
 import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
+import { Path } from "@openmarch/path-utility";
 
 const { marcher_pages } = schema;
 
 // Define types from the existing schema
-export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
+export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect & {
+    path_data: string | null;
+    pathway_notes: string | null;
+};
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
@@ -26,9 +30,11 @@ export default interface MarcherPage {
     /** Y coordinate of the MarcherPage */
     readonly y: number;
     /** The SVG path of the MarcherPage */
-    readonly svg_path?: string;
+    readonly path_data: Path | null;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
-    readonly notes?: string | null;
+    readonly notes: string | null;
+    /** The pathway notes from the joined pathways table */
+    readonly pathway_notes: string | null;
 }
 
 /**
@@ -46,14 +52,12 @@ export default interface MarcherPage {
 export async function getMarcherPages({
     marcher_id,
     page_id,
-}: { marcher_id?: number; page_id?: number } = {}): Promise<
-    DatabaseMarcherPage[]
-> {
+}: { marcher_id?: number; page_id?: number } = {}): Promise<MarcherPage[]> {
     const response = await window.electron.getMarcherPages({
         marcher_id,
         page_id,
     });
-    return response.data;
+    return databaseMarcherPagesToMarcherPages(response.data);
 }
 
 /**
@@ -128,6 +132,9 @@ export function databaseMarcherPagesToMarcherPages(
     return databaseMarcherPages.map((dbMarcherPage) => {
         return {
             ...dbMarcherPage,
+            path_data: dbMarcherPage.path_data
+                ? Path.fromJson(dbMarcherPage.path_data)
+                : null,
             x: dbMarcherPage.x || 0,
             y: dbMarcherPage.y || 0,
         };
@@ -145,5 +152,5 @@ export interface ModifiedMarcherPageArgs {
     x: number;
     /** The new Y coordinate of the MarcherPage */
     y: number;
-    notes?: string;
+    notes?: string | null;
 }

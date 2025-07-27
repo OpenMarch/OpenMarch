@@ -10,6 +10,7 @@ import { Line } from "./segments/Line";
 import { Arc } from "./segments/Arc";
 import { CubicCurve } from "./segments/CubicCurve";
 import { Spline } from "./segments/Spline";
+import { QuadraticCurve } from "./segments/QuadraticCurve";
 
 /**
  * A path implementation that can contain multiple types of segments,
@@ -108,7 +109,7 @@ export class Path implements IPath {
             segments: this._segments.map((segment) => segment.toJson()),
         };
 
-        return JSON.stringify(pathData, null, 2);
+        return JSON.stringify(pathData, null);
     }
 
     /**
@@ -150,6 +151,8 @@ export class Path implements IPath {
                 return Arc.fromJson(data);
             case "cubic-curve":
                 return CubicCurve.fromJson(data);
+            case "quadratic-curve":
+                return QuadraticCurve.fromJson(data);
             case "spline":
                 return Spline.fromJson(data);
             default:
