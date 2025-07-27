@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "1672ec6b-0615-4510-8917-db98939acb2e",
+    "id": "4bd79ff9-80f3-4fcd-ab4e-4f211da5757f",
     "prevId": "4809643e-a769-4f18-82d6-6399ff0f8fde",
     "tables": {
         "audio_files": {
@@ -315,14 +315,14 @@
                     "name": "x",
                     "type": "real",
                     "primaryKey": false,
-                    "notNull": false,
+                    "notNull": true,
                     "autoincrement": false
                 },
                 "y": {
                     "name": "y",
                     "type": "real",
                     "primaryKey": false,
-                    "notNull": false,
+                    "notNull": true,
                     "autoincrement": false
                 },
                 "created_at": {
@@ -971,8 +971,8 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "path_data": {
-                    "name": "path_data",
+                "svg_path": {
+                    "name": "svg_path",
                     "type": "text",
                     "primaryKey": false,
                     "notNull": true,
@@ -1124,8 +1124,7 @@
             "\"marcher_pages\".\"svg_position\"": "\"marcher_pages\".\"path_position\"",
             "\"midsets\".\"svg_path\"": "\"midsets\".\"path_data_id\"",
             "\"midsets\".\"svg_position\"": "\"midsets\".\"path_position\"",
-            "\"pathways\".\"svg_path\"": "\"pathways\".\"path_data\"",
-            "\"shape_pages\".\"svg_path\"": "\"shape_pages\".\"path_data\""
+            "\"pathways\".\"svg_path\"": "\"pathways\".\"path_data\""
         }
     },
     "internal": {
