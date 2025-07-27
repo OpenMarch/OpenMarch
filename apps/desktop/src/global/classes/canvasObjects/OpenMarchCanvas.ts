@@ -1230,6 +1230,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             id: -1,
             page_id: -1,
             id_for_html: "fake",
+            path_data_id: null,
+            path_position: null,
+            path_data: null,
+            notes: null,
+            pathway_notes: null,
         };
 
         const response = CoordinateActions.getRoundCoordinates({

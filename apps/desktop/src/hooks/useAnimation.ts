@@ -58,8 +58,8 @@ export const useAnimation = ({
                     coordinateMap.set((page.timestamp + page.duration) * 1000, {
                         x: marcherPage.x,
                         y: marcherPage.y,
-                        path: marcherPage.svg_path
-                            ? Path.fromSvgString(marcherPage.svg_path)
+                        path: marcherPage.path_data
+                            ? Path.fromSvgString(marcherPage.path_data)
                             : undefined,
                     });
                 }
