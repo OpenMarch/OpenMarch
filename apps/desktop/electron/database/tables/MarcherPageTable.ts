@@ -77,7 +77,6 @@ export function getMarcherPages(args: {
             path_data_id: row.path_data_id,
             path_position: row.path_position,
             notes: row.notes,
-            // Include pathway data if available
             path_data: row.path_data,
             pathway_notes: row.pathway_notes,
         })) as MarcherPage[];
