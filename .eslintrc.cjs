@@ -31,9 +31,9 @@ module.exports = {
         ],
         "react/prop-types": "warn",
         "react/no-unescaped-entities": "warn",
-        "react/jsx-key": "warn",
+        "react/jsx-key": "error",
         "react-hooks/rules-of-hooks": "error",
-        "react-hooks/exhaustive-deps": "warn",
+        "react-hooks/exhaustive-deps": "error",
         "max-lines-per-function": [
             "off",
             {
