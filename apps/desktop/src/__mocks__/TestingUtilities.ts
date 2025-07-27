@@ -28,6 +28,11 @@ export function createMarcherPages(
                 page_id: page.id,
                 x: defaultX,
                 y: defaultY,
+                path_data_id: null,
+                path_position: null,
+                path_data: null,
+                notes: null,
+                pathway_notes: null,
             });
             currentId++;
         });

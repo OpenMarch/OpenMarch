@@ -170,6 +170,11 @@ export default function MarcherCoordinateSheet({
                     id_for_html: "example-marcher-page-1",
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 2,
@@ -182,6 +187,11 @@ export default function MarcherCoordinateSheet({
                     y:
                         fieldProperties.centerFrontPoint.yPixels +
                         2 * pixelsPerStep,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 3,
@@ -196,6 +206,11 @@ export default function MarcherCoordinateSheet({
                         (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
                             pixelsPerStep -
                             2.32 * pixelsPerStep),
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
             ]);
         } else {
