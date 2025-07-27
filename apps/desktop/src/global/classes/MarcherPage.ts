@@ -29,8 +29,12 @@ export default interface MarcherPage {
     readonly x: number;
     /** Y coordinate of the MarcherPage */
     readonly y: number;
-    /** The SVG path of the MarcherPage */
-    readonly path_data: Path | null;
+    /** The ID of the pathway data */
+    readonly path_data_id: number | null;
+    /** The position along the pathway (0-1) */
+    readonly path_position: number | null;
+    /** The SVG path data from the pathways table */
+    readonly path_data: string | null;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
     readonly notes: string | null;
     /** The pathway notes from the joined pathways table */
@@ -132,9 +136,6 @@ export function databaseMarcherPagesToMarcherPages(
     return databaseMarcherPages.map((dbMarcherPage) => {
         return {
             ...dbMarcherPage,
-            path_data: dbMarcherPage.path_data
-                ? Path.fromJson(dbMarcherPage.path_data)
-                : null,
             x: dbMarcherPage.x || 0,
             y: dbMarcherPage.y || 0,
         };
@@ -153,4 +154,8 @@ export interface ModifiedMarcherPageArgs {
     /** The new Y coordinate of the MarcherPage */
     y: number;
     notes?: string | null;
+    /** The ID of the pathway data */
+    path_data_id?: number | null;
+    /** The position along the pathway (0-1) */
+    path_position?: number | null;
 }
