@@ -62,7 +62,7 @@ function CoordinateSheetExport() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const [quarterPages, setQuarterPages] = useState(false);
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { marchers } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
