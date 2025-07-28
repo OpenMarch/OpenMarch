@@ -16,6 +16,7 @@ import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { BEAT_STYLE_IDS, BeatStyleId } from "metronome";
 import { T } from "@tolgee/react";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 
 export default function MetronomeModal({
     label = <MetronomeIcon size={24} />,
@@ -48,6 +49,7 @@ function MetronomeModalContents() {
         beatStyle,
         setBeatStyle,
     } = useMetronomeStore();
+    const { isPlaying } = useIsPlaying()!;
 
     const BEAT_STYLE_LABELS: Record<BeatStyleId, string> = {
         default: "music.standard",
@@ -92,6 +94,7 @@ function MetronomeModalContents() {
                         <Switch
                             checked={accentFirstBeat}
                             onCheckedChange={setAccentFirstBeat}
+                            disabled={isPlaying}
                         />
                     </div>
                     <div className="text-body text-text/80 flex w-full items-center justify-between">
@@ -101,6 +104,7 @@ function MetronomeModalContents() {
                         <Switch
                             checked={firstBeatOnly}
                             onCheckedChange={setFirstBeatOnly}
+                            disabled={isPlaying}
                         />
                     </div>
                 </div>
@@ -133,7 +137,11 @@ function MetronomeModalContents() {
                         <span className="text-body">
                             <T keyName="music.beatStyle" />
                         </span>
-                        <Select value={beatStyle} onValueChange={setBeatStyle}>
+                        <Select
+                            value={beatStyle}
+                            onValueChange={setBeatStyle}
+                            disabled={isPlaying}
+                        >
                             <SelectTriggerButton
                                 label={
                                     (

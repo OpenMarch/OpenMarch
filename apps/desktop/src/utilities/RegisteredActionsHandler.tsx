@@ -21,6 +21,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
+import { useMetronomeStore } from "@/stores/MetronomeStore";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -41,6 +42,7 @@ export enum RegisteredActionsEnum {
     previousPage = "previousPage",
     firstPage = "firstPage",
     playPause = "playPause",
+    toggleMetronome = "toggleMetronome",
 
     // Batch editing
     setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
@@ -298,6 +300,11 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: " " }),
         enumString: "playPause",
     }),
+    toggleMetronome: new RegisteredAction({
+        descKey: "actions.playback.toggleMetronome",
+        keyboardShortcut: new KeyboardShortcut({ key: "m", control: true }),
+        enumString: "toggleMetronome",
+    }),
 
     // Batch editing
     setAllMarchersToPreviousPage: new RegisteredAction({
@@ -473,9 +480,9 @@ export const RegisteredActionsObjects: {
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const { toggleMetronome } = useMetronomeStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
@@ -600,6 +607,10 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.playPause: {
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage) setIsPlaying(!isPlaying);
+                    break;
+                }
+                case RegisteredActionsEnum.toggleMetronome: {
+                    toggleMetronome();
                     break;
                 }
 

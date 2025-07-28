@@ -146,12 +146,9 @@ export default function AudioPlayer() {
 
     // Sync audio and store playback position with the selected page
     useEffect(() => {
-        if (!selectedPage) return;
-        if (!isPlaying) {
-            setPlaybackTimestamp(
-                selectedPage.timestamp + selectedPage.duration,
-            );
-        }
+        if (!selectedPage || isPlaying) return;
+
+        setPlaybackTimestamp(selectedPage.timestamp + selectedPage.duration);
     }, [selectedPage, isPlaying, setPlaybackTimestamp]);
 
     // Play/pause audio when isPlaying changes
@@ -210,8 +207,8 @@ export default function AudioPlayer() {
 
             audioNode.current = audioSource;
             metroNode.current = metroSource;
-            // If not playing, stop any existing playback
         } else {
+            // If not playing, stop any existing playback
             stopPlayback();
         }
 
@@ -315,6 +312,14 @@ export default function AudioPlayer() {
             timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
         }
     }, [beats, measures, audioDuration]);
+
+    // Update WaveSurfer progress bar as playback
+    useEffect(() => {
+        if (!waveSurfer || !audioBuffer) return;
+
+        const progress = playbackTimestamp / audioDuration;
+        waveSurfer.seekTo(progress);
+    }, [playbackTimestamp, audioDuration, waveSurfer, audioBuffer]);
 
     // Update WaveSurfer options if duration/pixels per second changes
     useEffect(() => {

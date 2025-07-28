@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useAudioStore } from "@/stores/AudioStore";
 import Page, {
     createLastPage,
     ModifyPagesRequest,
@@ -69,6 +70,19 @@ export const getAvailableOffsets = ({
     // Remove -0 if it exists
     return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
 };
+
+function PageProgressBar({ page }: { page: Page }) {
+    const playbackTimestamp = useAudioStore((state) => state.playbackTimestamp);
+    const pageProgress = (playbackTimestamp - page.timestamp) / page.duration;
+    return (
+        <div
+            className="bg-accent/25 absolute top-0 left-0 h-full"
+            style={{
+                width: `${Math.max(0, Math.min(1, pageProgress)) * 100}%`,
+            }}
+        />
+    );
+}
 
 export default function PageTimeline() {
     const { uiSettings } = useUiSettingsStore();
@@ -346,17 +360,7 @@ export default function PageTimeline() {
                                         (selectedIndex === 0 &&
                                             index === pages.length)) &&
                                         isPlaying && (
-                                            <div
-                                                className={clsx(
-                                                    "absolute top-0 left-0 z-0 h-full w-full",
-                                                    !isFullscreen
-                                                        ? "bg-accent/25"
-                                                        : "bg-accent/25",
-                                                )}
-                                                style={{
-                                                    animation: `progress ${page.duration}s linear forwards`,
-                                                }}
-                                            />
+                                            <PageProgressBar page={page} />
                                         )}
                                 </div>
                                 {/* ------ page resize dragging ------ */}
