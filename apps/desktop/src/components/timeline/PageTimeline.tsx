@@ -71,19 +71,6 @@ export const getAvailableOffsets = ({
     return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
 };
 
-function PageProgressBar({ page }: { page: Page }) {
-    const playbackTimestamp = useAudioStore((state) => state.playbackTimestamp);
-    const pageProgress = (playbackTimestamp - page.timestamp) / page.duration;
-    return (
-        <div
-            className="bg-accent/25 absolute top-0 left-0 h-full"
-            style={{
-                width: `${Math.max(0, Math.min(1, pageProgress)) * 100}%`,
-            }}
-        />
-    );
-}
-
 export default function PageTimeline() {
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
@@ -360,7 +347,17 @@ export default function PageTimeline() {
                                         (selectedIndex === 0 &&
                                             index === pages.length)) &&
                                         isPlaying && (
-                                            <PageProgressBar page={page} />
+                                            <div
+                                                className={clsx(
+                                                    "absolute top-0 left-0 z-0 h-full w-full",
+                                                    !isFullscreen
+                                                        ? "bg-accent/25"
+                                                        : "bg-accent/25",
+                                                )}
+                                                style={{
+                                                    animation: `progress ${page.duration}s linear forwards`,
+                                                }}
+                                            />
                                         )}
                                 </div>
                                 {/* ------ page resize dragging ------ */}

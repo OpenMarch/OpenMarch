@@ -1,7 +1,7 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -207,40 +207,51 @@ export default function AudioPlayer() {
 
             audioNode.current = audioSource;
             metroNode.current = metroSource;
+
+            // Store playback tracking info for live position
+            playbackStartInfoRef.current = {
+                playStartTime: startAt,
+                startTimestamp: selectedPage ? selectedPage.timestamp : 0,
+                pageDuration: selectedPage ? selectedPage.duration : 0,
+            };
         } else {
             // If not playing, stop any existing playback
             stopPlayback();
+
+            // Clear playback tracking info
+            playbackStartInfoRef.current = null;
         }
 
         return () => {
             stopPlayback();
+            playbackStartInfoRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isPlaying, audioBuffer, audioContext]);
 
-    // Update the current playback timestamp in the store when playing
-    useEffect(() => {
-        if (!isPlaying || !audioContext || !selectedPage) return;
+    // Track info for live playback position calculation
+    const playbackStartInfoRef = useRef<{
+        playStartTime: number;
+        startTimestamp: number;
+        pageDuration: number;
+    } | null>(null);
 
-        let rafId: number;
-        const startTimestamp = selectedPage.timestamp;
-        const playStartTime = audioContext.currentTime;
-
-        // Helper to update playback timestamp
-        const update = () => {
-            const currentPlayback =
-                startTimestamp + (audioContext.currentTime - playStartTime);
-            setPlaybackTimestamp(currentPlayback + selectedPage.duration);
-            rafId = requestAnimationFrame(update);
-        };
-
-        update();
-
-        return () => {
-            cancelAnimationFrame(rafId);
-            setPlaybackTimestamp(selectedPage.timestamp);
-        };
-    }, [isPlaying, audioContext, selectedPage, setPlaybackTimestamp]);
+    // Live getter for current playback position
+    const getLivePlaybackPosition = useCallback(() => {
+        if (!isPlaying || !audioContext || !playbackStartInfoRef.current) {
+            // If not playing, return last snapped timestamp
+            return selectedPage
+                ? selectedPage.timestamp + selectedPage.duration
+                : 0;
+        }
+        const { playStartTime, startTimestamp, pageDuration } =
+            playbackStartInfoRef.current;
+        return (
+            startTimestamp +
+            (audioContext.currentTime - playStartTime) +
+            pageDuration
+        );
+    }, [isPlaying, audioContext, selectedPage]);
 
     // WaveSurfer initialization
     useEffect(() => {
@@ -313,13 +324,43 @@ export default function AudioPlayer() {
         }
     }, [beats, measures, audioDuration]);
 
-    // Update WaveSurfer progress bar as playback
+    // Update WaveSurfer progress bar as playback position changes
     useEffect(() => {
         if (!waveSurfer || !audioBuffer) return;
+        let rafId: number;
 
-        const progress = playbackTimestamp / audioDuration;
-        waveSurfer.seekTo(progress);
-    }, [playbackTimestamp, audioDuration, waveSurfer, audioBuffer]);
+        const update = () => {
+            const livePlayback = getLivePlaybackPosition();
+            const progress = Math.max(
+                0,
+                Math.min(1, livePlayback / audioDuration),
+            );
+            waveSurfer.seekTo(progress);
+            rafId = requestAnimationFrame(update);
+        };
+
+        if (isPlaying) {
+            update();
+        } else {
+            // On pause, snap to current page position
+            const livePlayback = getLivePlaybackPosition();
+            const progress = Math.max(
+                0,
+                Math.min(1, livePlayback / audioDuration),
+            );
+            waveSurfer.seekTo(progress);
+        }
+
+        return () => {
+            cancelAnimationFrame(rafId);
+        };
+    }, [
+        isPlaying,
+        waveSurfer,
+        audioBuffer,
+        audioDuration,
+        getLivePlaybackPosition,
+    ]);
 
     // Update WaveSurfer options if duration/pixels per second changes
     useEffect(() => {

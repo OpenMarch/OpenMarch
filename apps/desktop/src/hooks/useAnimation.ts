@@ -29,10 +29,11 @@ export const useAnimation = ({
     selectedPage,
     setSelectedPage,
 }: UseAnimationProps) => {
-    const playbackTimestamp = useAudioStore((state) => state.playbackTimestamp);
+    const { audioContext, playbackTimestamp } = useAudioStore();
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const animationFrameRef = useRef<number | null>(null);
-    const currentPlayback = useRef(playbackTimestamp);
+    const playStartTimeRef = useRef<number | null>(null);
+    const playStartTimestampRef = useRef<number | null>(null);
 
     const marcherTimelines = useMemo(() => {
         const pagesMap = pages.reduce(
@@ -136,17 +137,39 @@ export const useAnimation = ({
         [pages, canvas, setSelectedPage, setIsPlaying],
     );
 
-    // Update the playback timestamp reference
+    // Store play start time and timestamp only when playback starts
     useEffect(() => {
-        currentPlayback.current = playbackTimestamp;
-    }, [playbackTimestamp]);
+        if (isPlaying && audioContext && selectedPage) {
+            playStartTimeRef.current = audioContext.currentTime;
+            playStartTimestampRef.current =
+                selectedPage.timestamp + selectedPage.duration;
+        }
+        if (!isPlaying) {
+            playStartTimeRef.current = null;
+            playStartTimestampRef.current = null;
+        }
+    }, [isPlaying, audioContext, selectedPage]);
 
     // Animate the canvas based on playback timestamp
     useEffect(() => {
         const animate = () => {
-            if (!isPlaying || !canvas) return;
+            if (!canvas) return;
 
-            const currentTime = currentPlayback.current * 1000; // s to ms
+            let playbackSeconds: number;
+            if (
+                isPlaying &&
+                audioContext &&
+                playStartTimeRef.current !== null &&
+                playStartTimestampRef.current !== null
+            ) {
+                playbackSeconds =
+                    playStartTimestampRef.current +
+                    (audioContext.currentTime - playStartTimeRef.current);
+            } else {
+                playbackSeconds = playbackTimestamp;
+            }
+            const currentTime = playbackSeconds * 1000; // s to ms
+
             setMarcherPositionsAtTime(currentTime);
             updateSelectedPage(currentTime);
             animationFrameRef.current = requestAnimationFrame(animate);
@@ -175,6 +198,8 @@ export const useAnimation = ({
         setMarcherPositionsAtTime,
         updateSelectedPage,
         setIsPlaying,
+        audioContext,
+        playbackTimestamp,
     ]);
 
     return { setMarcherPositionsAtTime };
