@@ -3,26 +3,10 @@ import {
     generateOscillator,
     mixSamples,
     padSamples,
-} from "./tone_creator.ts";
+} from "./tone_creator";
+import { memoize } from "./utils";
 
 export const FADE_DURATION = 0.05; // seconds
-
-/**
- * Memoize a tone generation function.
- * Sounds are cached at the end of this file
- * @param fn Tone generation function to memoize
- */
-function memoize<T extends (...args: any[]) => Float32Array>(fn: T): T {
-    const cache = new Map<string, Float32Array>();
-    return ((...args: any[]) => {
-        // Use JSON.stringify for cache key
-        const key = JSON.stringify(args);
-        if (!cache.has(key)) {
-            cache.set(key, fn(...args));
-        }
-        return cache.get(key)!;
-    }) as T;
-}
 
 /**
  * Generates a default beat and measure click sound.
@@ -101,3 +85,17 @@ export const sharpBeatClick = memoize(_sharpBeatClick);
 export const sharpMeasureClick = memoize(_sharpMeasureClick);
 export const smoothBeatClick = memoize(_smoothBeatClick);
 export const smoothMeasureClick = memoize(_smoothMeasureClick);
+
+/**
+ * Exposed mapping of beat styles to click sounds.
+ */
+export type BeatStyleId = "default" | "sharp" | "smooth";
+export const BEAT_STYLE_IDS: BeatStyleId[] = ["default", "sharp", "smooth"];
+export const BEAT_STYLE_FUNCTIONS: Record<
+    BeatStyleId,
+    { beat: () => Float32Array; measure: () => Float32Array }
+> = {
+    default: { beat: beatClickDefault, measure: measureClickDefault },
+    sharp: { beat: sharpBeatClick, measure: sharpMeasureClick },
+    smooth: { beat: smoothBeatClick, measure: smoothMeasureClick },
+};

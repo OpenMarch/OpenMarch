@@ -1,13 +1,15 @@
-import { type Measure, type Beat } from "./utils.ts";
-import { SAMPLE_RATE } from "./tone_creator.ts";
+import { type Measure, type Beat } from "./utils";
+import { SAMPLE_RATE } from "./tone_creator";
 import {
+    BEAT_STYLE_FUNCTIONS,
     beatClickDefault,
+    type BeatStyleId,
     measureClickDefault,
     sharpBeatClick,
     sharpMeasureClick,
     smoothBeatClick,
     smoothMeasureClick,
-} from "./tones.ts";
+} from "./tones";
 
 /**
  * Generate a metronome .wav file for a given list of Measure objects.
@@ -15,12 +17,14 @@ import {
  * @param measures Array of Measure objects
  * @param accentMeasure Whether to use an accented click for the first beat of each measure
  * @param onlyMeasuresClicks Whether to play clicks only for the first beat of each measure
+ * @param beatStyle The style of the beat click sound to use
  * @returns
  */
 export function createMetronomeWav(
     measures: Measure[],
     accentMeasure: boolean = true,
     onlyMeasuresClicks: boolean = false,
+    beatStyle: BeatStyleId = "default",
 ): Float32Array<ArrayBuffer> {
     const beats: Beat[] = measures.flatMap((m) => m.beats);
     if (beats.length === 0) throw new Error("No beats provided.");
@@ -34,8 +38,10 @@ export function createMetronomeWav(
     );
 
     // Get click sounds
-    const click = beatClickDefault();
-    const accentClick = accentMeasure ? measureClickDefault() : click;
+    const click = BEAT_STYLE_FUNCTIONS[beatStyle].beat();
+    const accentClick = accentMeasure
+        ? BEAT_STYLE_FUNCTIONS[beatStyle].measure()
+        : click;
 
     // Create the output array
     const lastBeat = beats[beats.length - 1];

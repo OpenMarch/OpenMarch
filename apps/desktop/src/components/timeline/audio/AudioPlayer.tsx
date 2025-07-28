@@ -12,12 +12,18 @@ import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useAudioStore } from "@/stores/AudioStore";
+import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "metronome";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
+
+// Helper function to adjust volume based on percentage
+function volumeAdjustment(volume: number): number {
+    return (volume * 2.0) / 100.0;
+}
 
 /**
  * The audio player handles playback via Web Audio API.
@@ -45,10 +51,13 @@ export default function AudioPlayer() {
     const [audioDuration, setAudioDuration] = useState<number>(0);
 
     // Metronome state management
+    const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
+        useMetronomeStore();
     const [metronomeBuffer, setMetronomeBuffer] = useState<AudioBuffer | null>(
         null,
     );
     const metroNode = useRef<AudioBufferSourceNode | null>(null);
+    const metroGainNode = useRef<GainNode | null>(null);
 
     // Refs for WaveSurfer and timing markers
     const waveformRef = useRef<HTMLDivElement>(null);
@@ -76,7 +85,12 @@ export default function AudioPlayer() {
         if (!audioContext || !beats.length || !measures.length) return;
 
         // Generate metronome .wav data
-        const float32Array = createMetronomeWav(measures, true, false);
+        const float32Array = createMetronomeWav(
+            measures,
+            accentFirstBeat,
+            firstBeatOnly,
+            beatStyle,
+        );
 
         // Convert to AudioBuffer
         const newBuffer = audioContext.createBuffer(
@@ -88,7 +102,15 @@ export default function AudioPlayer() {
 
         // Set the metronome buffer in state
         setMetronomeBuffer(newBuffer);
-    }, [audioContext, beats, measures]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [
+        audioContext,
+        beats,
+        measures,
+        firstBeatOnly,
+        beatStyle,
+        accentFirstBeat,
+    ]);
 
     // Populate audio data when selectedAudioFile changes
     useEffect(() => {
@@ -169,8 +191,12 @@ export default function AudioPlayer() {
             audioSource.connect(audioContext.destination);
 
             const metroSource = audioContext.createBufferSource();
+            metroGainNode.current = audioContext.createGain();
+            metroGainNode.current.gain.value = volumeAdjustment(volume);
             metroSource.buffer = metronomeBuffer;
-            metroSource.connect(audioContext.destination);
+            metroSource
+                .connect(metroGainNode.current)
+                .connect(audioContext.destination);
 
             audioSource.onended = () => {
                 audioNode.current = null;
@@ -271,6 +297,17 @@ export default function AudioPlayer() {
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [waveformRef, waveformBuffer, theme]);
+
+    // Update metronome on/off state and volume
+    useEffect(() => {
+        if (metroGainNode.current) {
+            if (isMetronomeOn) {
+                metroGainNode.current.gain.value = volumeAdjustment(volume);
+            } else {
+                metroGainNode.current.gain.value = 0;
+            }
+        }
+    }, [isMetronomeOn, volume]);
 
     // Update markers if beats/measures change
     useEffect(() => {

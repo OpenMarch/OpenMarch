@@ -99,3 +99,20 @@ export function getCurrentTime(): string {
         String(now.getSeconds()).padStart(2, "0")
     );
 }
+
+/**
+ * Memoize a tone generation function.
+ * Sounds are cached at the end of this file
+ * @param fn Tone generation function to memoize
+ */
+export function memoize<T extends (...args: any[]) => Float32Array>(fn: T): T {
+    const cache = new Map<string, Float32Array>();
+    return ((...args: any[]) => {
+        // Use JSON.stringify for cache key
+        const key = JSON.stringify(args);
+        if (!cache.has(key)) {
+            cache.set(key, fn(...args));
+        }
+        return cache.get(key)!;
+    }) as T;
+}

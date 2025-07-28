@@ -14,7 +14,7 @@ import {
 } from "@openmarch/ui";
 import { Slider } from "@openmarch/ui";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
-import { BEAT_STYLES } from "@/hooks/useMetronome";
+import { BEAT_STYLE_IDS, BeatStyleId } from "metronome";
 import { T } from "@tolgee/react";
 
 export default function MetronomeModal({
@@ -48,7 +48,12 @@ function MetronomeModalContents() {
         beatStyle,
         setBeatStyle,
     } = useMetronomeStore();
-    const styleKeys = Object.keys(BEAT_STYLES);
+
+    const BEAT_STYLE_LABELS: Record<BeatStyleId, string> = {
+        default: "music.standard",
+        sharp: "music.sharp",
+        smooth: "music.smooth",
+    };
 
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
@@ -134,9 +139,9 @@ function MetronomeModalContents() {
                                     (
                                         <T
                                             keyName={
-                                                BEAT_STYLES[beatStyle]
-                                                    ?.labelKey ||
-                                                "music.beatStyle.select"
+                                                BEAT_STYLE_LABELS[
+                                                    beatStyle as BeatStyleId
+                                                ] || "music.beatStyle.select"
                                             }
                                         />
                                     ) as any
@@ -144,17 +149,16 @@ function MetronomeModalContents() {
                             >
                                 <T
                                     keyName={
-                                        BEAT_STYLES[beatStyle]?.labelKey ||
-                                        "music.beatStyle.select"
+                                        BEAT_STYLE_LABELS[
+                                            beatStyle as BeatStyleId
+                                        ] || "music.beatStyle.select"
                                     }
                                 />
                             </SelectTriggerButton>
                             <SelectContent>
-                                {styleKeys.map((key) => (
+                                {BEAT_STYLE_IDS.map((key) => (
                                     <SelectItem key={key} value={key}>
-                                        <T
-                                            keyName={BEAT_STYLES[key].labelKey}
-                                        />
+                                        <T keyName={BEAT_STYLE_LABELS[key]} />
                                     </SelectItem>
                                 ))}
                             </SelectContent>

@@ -22,7 +22,6 @@ import clsx from "clsx";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
-import { useMetronome } from "@/hooks/useMetronome";
 
 /**
  * The field/stage UI of OpenMarch
@@ -75,11 +74,6 @@ export default function Canvas({
         selectedPage,
         setSelectedPage,
     });
-
-    // useMetronome({
-    //     beats: beats,
-    //     measures: measures,
-    // });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {

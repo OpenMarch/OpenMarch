@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { BeatStyleId } from "metronome";
 
 interface MetronomeStore {
     isMetronomeOn: boolean;
@@ -13,8 +14,8 @@ interface MetronomeStore {
     volume: number;
     setVolume: (volume: number) => void;
 
-    beatStyle: string;
-    setBeatStyle: (style: string) => void;
+    beatStyle: BeatStyleId;
+    setBeatStyle: (style: BeatStyleId) => void;
 
     toggleMetronome: () => void;
 }
