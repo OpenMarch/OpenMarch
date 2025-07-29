@@ -1,4 +1,5 @@
 import MarcherPage, {
+    DatabaseMarcherPage,
     ModifiedMarcherPageArgs,
 } from "../../../src/global/classes/MarcherPage";
 import Constants from "../../../src/global/Constants";
@@ -19,7 +20,7 @@ export function getMarcherPages(args: {
     db: Database.Database;
     marcher_id?: number;
     page_id?: number;
-}): DatabaseResponse<MarcherPage[]> {
+}): DatabaseResponse<DatabaseMarcherPage[]> {
     const orm = getOrm(args.db);
 
     try {
@@ -79,7 +80,7 @@ export function getMarcherPages(args: {
             notes: row.notes,
             path_data: row.path_data,
             pathway_notes: row.pathway_notes,
-        })) as MarcherPage[];
+        })) as DatabaseMarcherPage[];
 
         return { success: true, data: result };
     } catch (error) {
@@ -102,7 +103,7 @@ export function getMarcherPage(args: {
     db: Database.Database;
     marcher_id: number;
     page_id: number;
-}): DatabaseResponse<MarcherPage | null> {
+}): DatabaseResponse<DatabaseMarcherPage | null> {
     const response = getMarcherPages(args);
     return {
         success: response.success,
