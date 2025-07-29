@@ -79,18 +79,18 @@ const _smoothMeasureClick = (volume = 1): Float32Array => {
 /**
  * Memoized functions for generating click sounds.
  */
-export const beatClickDefault = memoize(_beatClickDefault);
-export const measureClickDefault = memoize(_measureClickDefault);
-export const sharpBeatClick = memoize(_sharpBeatClick);
-export const sharpMeasureClick = memoize(_sharpMeasureClick);
-export const smoothBeatClick = memoize(_smoothBeatClick);
-export const smoothMeasureClick = memoize(_smoothMeasureClick);
+const beatClickDefault = memoize(_beatClickDefault);
+const measureClickDefault = memoize(_measureClickDefault);
+const sharpBeatClick = memoize(_sharpBeatClick);
+const sharpMeasureClick = memoize(_sharpMeasureClick);
+const smoothBeatClick = memoize(_smoothBeatClick);
+const smoothMeasureClick = memoize(_smoothMeasureClick);
 
 /**
  * Exposed mapping of beat styles to click sounds.
  */
-export type BeatStyleId = "default" | "sharp" | "smooth";
-export const BEAT_STYLE_IDS: BeatStyleId[] = ["default", "sharp", "smooth"];
+export const BEAT_STYLE_IDS = ["default", "sharp", "smooth"] as const;
+export type BeatStyleId = (typeof BEAT_STYLE_IDS)[number];
 export const BEAT_STYLE_FUNCTIONS: Record<
     BeatStyleId,
     { beat: () => Float32Array; measure: () => Float32Array }

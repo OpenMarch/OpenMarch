@@ -1,15 +1,6 @@
 import { type Measure, type Beat } from "./utils";
 import { SAMPLE_RATE } from "./tone_creator";
-import {
-    BEAT_STYLE_FUNCTIONS,
-    beatClickDefault,
-    type BeatStyleId,
-    measureClickDefault,
-    sharpBeatClick,
-    sharpMeasureClick,
-    smoothBeatClick,
-    smoothMeasureClick,
-} from "./tones";
+import { BEAT_STYLE_FUNCTIONS, type BeatStyleId } from "./tones";
 
 /**
  * Generate a metronome .wav file for a given list of Measure objects.
@@ -25,7 +16,7 @@ export function createMetronomeWav(
     accentMeasure: boolean = true,
     onlyMeasuresClicks: boolean = false,
     beatStyle: BeatStyleId = "default",
-): Float32Array<ArrayBuffer> {
+): Float32Array {
     const beats: Beat[] = measures.flatMap((m) => m.beats);
     if (beats.length === 0) throw new Error("No beats provided.");
 
