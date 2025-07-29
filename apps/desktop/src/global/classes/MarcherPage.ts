@@ -34,7 +34,7 @@ export default interface MarcherPage {
     /** The position along the pathway (0-1) */
     readonly path_position: number | null;
     /** The SVG path data from the pathways table */
-    readonly path_data: string | null;
+    readonly path_data: Path | null;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
     readonly notes: string | null;
     /** The pathway notes from the joined pathways table */
@@ -136,6 +136,9 @@ export function databaseMarcherPagesToMarcherPages(
     return databaseMarcherPages.map((dbMarcherPage) => {
         return {
             ...dbMarcherPage,
+            path_data: dbMarcherPage.path_data
+                ? Path.fromJson(dbMarcherPage.path_data)
+                : null,
             x: dbMarcherPage.x || 0,
             y: dbMarcherPage.y || 0,
         };
