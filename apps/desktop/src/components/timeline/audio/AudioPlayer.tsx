@@ -19,18 +19,50 @@ import { createMetronomeWav, SAMPLE_RATE } from "metronome";
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
+const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
 
 // Helper function to adjust volume based on percentage
 function volumeAdjustment(volume: number): number {
     return (volume * 2.0) / 100.0;
 }
 
+// Playback start info interface
+interface PlaybackStartInfo {
+    playStartTime: number;
+    startTimestamp: number;
+    pageDuration: number;
+}
+
+// Global reference to store playback start info, used for calculating live playback position
+export const playbackStartInfoRef = {
+    current: null as PlaybackStartInfo | null,
+};
+
+// Global reference to store the AudioContext, used for getting timestamp
+export let audioContextRef: AudioContext | null = null;
+
+// Function to get the current live playback position in seconds
+export const getLivePlaybackPosition = (): number => {
+    if (!audioContextRef || !playbackStartInfoRef.current) {
+        return 0;
+    }
+
+    const { playStartTime, startTimestamp, pageDuration } =
+        playbackStartInfoRef.current;
+    return (
+        startTimestamp +
+        pageDuration +
+        (audioContextRef.currentTime - playStartTime) +
+        PLAYBACK_DELAY +
+        0.01
+    );
+};
+
 /**
  * The audio player handles playback via Web Audio API.
- * Controls are managed by isPlaying and selectedPage stores/contexts.
+ * Metronome controls are managed by MetronomeModal.
  */
 export default function AudioPlayer() {
-    // Contexts and stores
     const { t } = useTolgee();
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
@@ -39,20 +71,22 @@ export default function AudioPlayer() {
     const { beats, measures } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
 
-    // Audio state management
+    // Audio and metronome state management
     const {
         audioContext,
         setAudioContext,
         playbackTimestamp,
         setPlaybackTimestamp,
     } = useAudioStore();
+    const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
+        useMetronomeStore();
+
+    // Audio playback state management
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
     const audioNode = useRef<AudioBufferSourceNode | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
 
-    // Metronome state management
-    const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
-        useMetronomeStore();
+    // Metronome playback state management
     const [metronomeBuffer, setMetronomeBuffer] = useState<AudioBuffer | null>(
         null,
     );
@@ -67,16 +101,20 @@ export default function AudioPlayer() {
         null,
     );
 
-    // Set up AudioContext on first mount
+    // Set up AudioContext on the first mount
     useEffect(() => {
         if (!audioContext) {
             try {
-                setAudioContext(
-                    new window.AudioContext({ sampleRate: SAMPLE_RATE }),
-                );
+                const ctx = new window.AudioContext({
+                    sampleRate: SAMPLE_RATE,
+                });
+                setAudioContext(ctx);
+                audioContextRef = ctx;
             } catch (e) {
                 toast.error(t("audio.context.error"));
             }
+        } else {
+            audioContextRef = audioContext;
         }
     }, [audioContext, setAudioContext, t]);
 
@@ -84,7 +122,6 @@ export default function AudioPlayer() {
     useEffect(() => {
         if (!audioContext || !beats.length || !measures.length) return;
 
-        // Generate metronome .wav data
         const float32Array = createMetronomeWav(
             measures,
             accentFirstBeat,
@@ -92,7 +129,6 @@ export default function AudioPlayer() {
             beatStyle,
         );
 
-        // Convert to AudioBuffer
         const newBuffer = audioContext.createBuffer(
             1,
             float32Array.length,
@@ -181,7 +217,7 @@ export default function AudioPlayer() {
         if (isPlaying) {
             stopPlayback();
 
-            const startAt = audioContext.currentTime + 0.1;
+            const startAt = audioContext.currentTime + PLAYBACK_DELAY;
 
             const audioSource = audioContext.createBufferSource();
             audioSource.buffer = audioBuffer;
@@ -195,6 +231,9 @@ export default function AudioPlayer() {
                 .connect(metroGainNode.current)
                 .connect(audioContext.destination);
 
+            audioSource.start(startAt, playbackTimestamp);
+            metroSource.start(startAt, playbackTimestamp);
+
             audioSource.onended = () => {
                 audioNode.current = null;
             };
@@ -202,17 +241,14 @@ export default function AudioPlayer() {
                 metroNode.current = null;
             };
 
-            audioSource.start(startAt, playbackTimestamp);
-            metroSource.start(startAt, playbackTimestamp);
-
             audioNode.current = audioSource;
             metroNode.current = metroSource;
 
             // Store playback tracking info for live position
             playbackStartInfoRef.current = {
                 playStartTime: startAt,
-                startTimestamp: selectedPage ? selectedPage.timestamp : 0,
-                pageDuration: selectedPage ? selectedPage.duration : 0,
+                startTimestamp: selectedPage?.timestamp ?? 0,
+                pageDuration: selectedPage?.duration ?? 0,
             };
         } else {
             // If not playing, stop any existing playback
@@ -229,31 +265,6 @@ export default function AudioPlayer() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isPlaying, audioBuffer, audioContext]);
 
-    // Track info for live playback position calculation
-    const playbackStartInfoRef = useRef<{
-        playStartTime: number;
-        startTimestamp: number;
-        pageDuration: number;
-    } | null>(null);
-
-    // Live getter for current playback position
-    const getLivePlaybackPosition = useCallback(() => {
-        if (!isPlaying || !audioContext || !playbackStartInfoRef.current) {
-            // If not playing, return last snapped timestamp
-            return selectedPage
-                ? selectedPage.timestamp + selectedPage.duration
-                : 0;
-        }
-        const { playStartTime, startTimestamp, pageDuration } =
-            playbackStartInfoRef.current;
-        return (
-            startTimestamp +
-            (audioContext.currentTime - playStartTime) +
-            pageDuration
-        );
-    }, [isPlaying, audioContext, selectedPage]);
-
-    // WaveSurfer initialization
     useEffect(() => {
         if (!waveformRef.current || !waveformBuffer) return;
 
@@ -309,11 +320,9 @@ export default function AudioPlayer() {
     // Update metronome on/off state and volume
     useEffect(() => {
         if (metroGainNode.current) {
-            if (isMetronomeOn) {
-                metroGainNode.current.gain.value = volumeAdjustment(volume);
-            } else {
-                metroGainNode.current.gain.value = 0;
-            }
+            metroGainNode.current.gain.value = isMetronomeOn
+                ? volumeAdjustment(volume)
+                : 0;
         }
     }, [isMetronomeOn, volume]);
 
@@ -343,7 +352,8 @@ export default function AudioPlayer() {
             update();
         } else {
             // On pause, snap to current page position
-            const livePlayback = getLivePlaybackPosition();
+            const livePlayback =
+                (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
             const progress = Math.max(
                 0,
                 Math.min(1, livePlayback / audioDuration),
@@ -354,13 +364,8 @@ export default function AudioPlayer() {
         return () => {
             cancelAnimationFrame(rafId);
         };
-    }, [
-        isPlaying,
-        waveSurfer,
-        audioBuffer,
-        audioDuration,
-        getLivePlaybackPosition,
-    ]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPlaying, waveSurfer, selectedPage, audioBuffer, audioDuration]);
 
     // Update WaveSurfer options if duration/pixels per second changes
     useEffect(() => {

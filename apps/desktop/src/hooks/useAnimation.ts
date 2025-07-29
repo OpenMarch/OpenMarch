@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Page from "@/global/classes/Page";
@@ -11,6 +10,7 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -29,11 +29,8 @@ export const useAnimation = ({
     selectedPage,
     setSelectedPage,
 }: UseAnimationProps) => {
-    const { audioContext, playbackTimestamp } = useAudioStore();
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const animationFrameRef = useRef<number | null>(null);
-    const playStartTimeRef = useRef<number | null>(null);
-    const playStartTimestampRef = useRef<number | null>(null);
 
     const marcherTimelines = useMemo(() => {
         const pagesMap = pages.reduce(
@@ -137,44 +134,20 @@ export const useAnimation = ({
         [pages, canvas, setSelectedPage, setIsPlaying],
     );
 
-    // Store play start time and timestamp only when playback starts
-    useEffect(() => {
-        if (isPlaying && audioContext && selectedPage) {
-            playStartTimeRef.current = audioContext.currentTime;
-            playStartTimestampRef.current =
-                selectedPage.timestamp + selectedPage.duration;
-        }
-        if (!isPlaying) {
-            playStartTimeRef.current = null;
-            playStartTimestampRef.current = null;
-        }
-    }, [isPlaying, audioContext, selectedPage]);
-
     // Animate the canvas based on playback timestamp
     useEffect(() => {
+        // Helper to sync the animation with the live playback position
         const animate = () => {
             if (!canvas) return;
 
-            let playbackSeconds: number;
-            if (
-                isPlaying &&
-                audioContext &&
-                playStartTimeRef.current !== null &&
-                playStartTimestampRef.current !== null
-            ) {
-                playbackSeconds =
-                    playStartTimestampRef.current +
-                    (audioContext.currentTime - playStartTimeRef.current);
-            } else {
-                playbackSeconds = playbackTimestamp;
-            }
-            const currentTime = playbackSeconds * 1000; // s to ms
-
+            const currentTime = getLivePlaybackPosition() * 1000; // s to ms
             setMarcherPositionsAtTime(currentTime);
             updateSelectedPage(currentTime);
+
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
+        // Start the animation loop
         if (isPlaying) {
             animationFrameRef.current = requestAnimationFrame(animate);
         } else {
@@ -183,24 +156,13 @@ export const useAnimation = ({
             }
         }
 
+        // Cleanup
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [
-        isPlaying,
-        canvas,
-        pages,
-        selectedPage,
-        setSelectedPage,
-        marcherTimelines,
-        setMarcherPositionsAtTime,
-        updateSelectedPage,
-        setIsPlaying,
-        audioContext,
-        playbackTimestamp,
-    ]);
+    }, [isPlaying, canvas, setMarcherPositionsAtTime, updateSelectedPage]);
 
     return { setMarcherPositionsAtTime };
 };
