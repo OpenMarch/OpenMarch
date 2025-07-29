@@ -18,14 +18,14 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
-import {
-    getFieldPropertiesJson,
-    updateFieldProperties,
-    updateFieldPropertiesImage,
-} from "../database/tables/FieldPropertiesTable";
 import { FIRST_PAGE_ID } from "../database/constants";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
+import {
+    getFieldPropertiesJSON,
+    updateFieldProperties,
+    updateFieldsPropertiesJSON,
+} from "../../src/global/classes/FieldProperties";
 
 // The built directory structure
 //
@@ -225,9 +225,6 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle("field_properties:import", async () =>
         importFieldPropertiesFile(),
-    );
-    ipcMain.handle("field_properties:import_image", async () =>
-        importFieldPropertiesImage(),
     );
     ipcMain.handle(
         "selectedPageId:get",
@@ -679,9 +676,7 @@ export async function exportFieldPropertiesFile() {
 
     if (!win) return -1;
 
-    const jsonStr = getFieldPropertiesJson({
-        db: DatabaseServices.connect(),
-    }).data;
+    const jsonStr = await getFieldPropertiesJSON();
 
     // Save
     dialog
@@ -724,80 +719,15 @@ export async function importFieldPropertiesFile() {
                 { name: "OpenMarch Field File", extensions: ["fieldots"] },
             ],
         })
-        .then((path) => {
+        .then(async (path) => {
             const fileContents = fs.readFileSync(path.filePaths[0]);
             const jsonStr = fileContents.toString();
-            updateFieldProperties({
-                db: DatabaseServices.connect(),
-                fieldProperties: jsonStr,
-            });
+            await updateFieldsPropertiesJSON(jsonStr);
 
             // If the user cancels the dialog, and there is no previous path, return -1
             if (path.canceled || !path.filePaths[0]) return -1;
 
             win?.webContents.send("field_properties:onImport");
-
-            return 200;
-        })
-        .catch((err) => {
-            console.log(err);
-            return -1;
-        });
-}
-
-export async function importFieldPropertiesImage() {
-    console.log("importFieldPropertiesFile");
-
-    if (!win) return -1;
-
-    // If there is no previous path, open a dialog
-    dialog
-        .showOpenDialog(win, {
-            filters: [
-                {
-                    name: "All Images",
-                    extensions: ["jpg", "jpeg", "png", "bmp", "gif", "webp"],
-                },
-                {
-                    name: "JPEG Image",
-                    extensions: ["jpg", "jpeg"],
-                },
-                {
-                    name: "PNG Image",
-                    extensions: ["png"],
-                },
-                {
-                    name: "GIF Image",
-                    extensions: ["gif"],
-                },
-                {
-                    name: "WEBP Image",
-                    extensions: ["webp"],
-                },
-                {
-                    name: "GIF Image",
-                    extensions: ["gif"],
-                },
-                {
-                    name: "BMP Image",
-                    extensions: ["bmp"],
-                },
-                {
-                    name: "All Files",
-                    extensions: ["*"],
-                },
-            ],
-        })
-        .then((path) => {
-            updateFieldPropertiesImage({
-                db: DatabaseServices.connect(),
-                imagePath: path.filePaths[0],
-            });
-
-            // If the user cancels the dialog, and there is no previous path, return -1
-            if (path.canceled || !path.filePaths[0]) return -1;
-
-            win?.webContents.send("field_properties:onImageImport");
 
             return 200;
         })

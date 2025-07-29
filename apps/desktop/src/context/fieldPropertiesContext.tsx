@@ -8,6 +8,10 @@ import {
 } from "react";
 import { FieldProperties } from "@openmarch/core/field";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import {
+    getFieldProperties,
+    updateFieldProperties,
+} from "@/global/classes/FieldProperties";
 
 // Define the type for the context value
 type FieldPropertiesContextProps = {
@@ -25,10 +29,10 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
         useState<FieldProperties>();
 
     const setFieldProperties = useCallback(
-        (fieldProperties: FieldProperties, updateDatabase = true) => {
+        async (fieldProperties: FieldProperties, updateDatabase = true) => {
             const newFieldProperties = new FieldProperties(fieldProperties);
             if (updateDatabase) {
-                window.electron.updateFieldProperties(newFieldProperties);
+                await updateFieldProperties(newFieldProperties);
             }
             setFieldPropertiesState(newFieldProperties);
             // Set the field properties for the ReadableCoords class
@@ -38,18 +42,8 @@ export function FieldPropertiesProvider({ children }: { children: ReactNode }) {
     );
 
     const fetchFieldProperties = useCallback(async () => {
-        window.electron.getFieldProperties().then((fieldPropertiesResult) => {
-            if (!fieldPropertiesResult.success) {
-                throw new Error(
-                    "Could not get field properties " +
-                        fieldPropertiesResult.error,
-                );
-            }
-            const newFieldProperties = new FieldProperties(
-                fieldPropertiesResult.data,
-            );
-            setFieldProperties(newFieldProperties, false);
-        });
+        const fieldProperties = await getFieldProperties();
+        setFieldProperties(fieldProperties, false);
     }, [setFieldProperties]);
 
     // Fetch the field properties from the main process and set the state
