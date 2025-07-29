@@ -222,7 +222,9 @@ export default function AudioPlayer() {
 
             const metroSource = audioContext.createBufferSource();
             metroGainNode.current = audioContext.createGain();
-            metroGainNode.current.gain.value = volumeAdjustment(volume);
+            metroGainNode.current.gain.value = isMetronomeOn
+                ? volumeAdjustment(volume)
+                : 0;
             metroSource.buffer = metronomeBuffer;
             metroSource
                 .connect(metroGainNode.current)

@@ -21,7 +21,7 @@ interface MetronomeStore {
 }
 
 export const useMetronomeStore = create<MetronomeStore>((set) => ({
-    isMetronomeOn: true,
+    isMetronomeOn: false,
     setMetronomeOn: (on) => set({ isMetronomeOn: on }),
 
     accentFirstBeat: true,
