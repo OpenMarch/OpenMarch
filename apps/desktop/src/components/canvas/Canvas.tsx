@@ -360,9 +360,13 @@ export default function Canvas({
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
                 marcherPages: marcherPages,
-                prevPageId: selectedPage.previousPageId,
+                prevPageId: uiSettings.previousPaths
+                    ? selectedPage.previousPageId
+                    : null,
                 currPageId: selectedPage.id,
-                nextPageId: selectedPage.nextPageId,
+                nextPageId: uiSettings.nextPaths
+                    ? selectedPage.nextPageId
+                    : null,
                 marcherIds: selectedMarchers.map((m) => m.id),
                 fromCanvasMarchers: true,
             });

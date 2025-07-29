@@ -1,8 +1,12 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import FieldProperties, {
+import {
+    FieldProperties,
     Checkpoint,
     MeasurementSystem,
-} from "@/global/classes/FieldProperties";
+    DEFAULT_FIELD_THEME,
+    FieldTheme,
+} from "@openmarch/core/field";
+import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -28,7 +32,6 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { RgbaColor } from "@uiw/react-color";
-import { DEFAULT_FIELD_THEME, FieldTheme } from "@/global/classes/FieldTheme";
 import ColorPicker from "../ui/ColorPicker";
 import FormField from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
@@ -1515,30 +1518,51 @@ export default function FieldPropertiesCustomizer() {
                         </FormField>
 
                         <div className="flex h-fit min-h-0 items-center gap-8">
-                            <Button
-                                className="w-full"
-                                tooltipText={t(
-                                    "fieldProperties.tooltips.importImage",
-                                )}
-                                tooltipSide="right"
-                                variant="primary"
-                                type="button"
-                                size="compact"
-                                onClick={async () => {
-                                    await window.electron
-                                        .importFieldPropertiesImage()
-                                        .then(() =>
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    showFieldImage: true,
-                                                }),
-                                            ),
-                                        );
+                            <label htmlFor="field-properties-image-input">
+                                <Button
+                                    className="w-full"
+                                    tooltipText={t(
+                                        "fieldProperties.tooltips.importImage",
+                                    )}
+                                    tooltipSide="right"
+                                    variant="primary"
+                                    type="button"
+                                    size="compact"
+                                    onClick={() => {
+                                        // one would hope the label "for" would be good enough, but it's not
+                                        // so we need to manually click the file input
+                                        document
+                                            .getElementById(
+                                                "field-properties-image-input",
+                                            )
+                                            ?.click();
+                                    }}
+                                >
+                                    <T keyName="fieldProperties.buttons.importImage" />
+                                </Button>
+                            </label>
+                            <input
+                                type="file"
+                                id="field-properties-image-input"
+                                className="hidden"
+                                accept="image/*"
+                                onChange={async (
+                                    e: React.ChangeEvent<HTMLInputElement>,
+                                ) => {
+                                    const file = e.target.files?.[0];
+                                    if (!file) return;
+                                    const arrayBuffer =
+                                        await file.arrayBuffer();
+                                    const raw = new Uint8Array(arrayBuffer);
+                                    await updateFieldPropertiesImage(raw);
+                                    setFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            showFieldImage: true,
+                                        }),
+                                    );
                                 }}
-                            >
-                                <T keyName="fieldProperties.buttons.importImage" />
-                            </Button>
+                            />
                             <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
                                 <T keyName="fieldProperties.messages.refreshAfterImporting" />
                             </div>

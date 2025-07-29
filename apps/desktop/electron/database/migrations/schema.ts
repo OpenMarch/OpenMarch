@@ -7,8 +7,20 @@ import {
     blob,
     check,
     unique,
+    customType,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+
+// Drizzle defaults to using Buffer for "blob", which does not exist in the browser
+// Uint8Array is available on both Node and the browser
+const browserSafeBinaryBlob = customType<{
+    data: Uint8Array;
+    driverData: Uint8Array;
+}>({
+    dataType: () => "blob",
+    fromDriver: (value) => new Uint8Array(value),
+    toDriver: (value) => value,
+});
 
 export const history_undo = sqliteTable("history_undo", {
     sequence: integer().primaryKey(),
@@ -163,7 +175,7 @@ export const field_properties = sqliteTable(
     {
         id: integer().primaryKey(),
         json_data: text().notNull(),
-        image: blob(),
+        image: browserSafeBinaryBlob(),
     },
     (_table) => [check("field_properties_id_check", sql`id = 1`)],
 );

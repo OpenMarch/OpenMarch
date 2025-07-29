@@ -3,7 +3,7 @@ import CanvasMarcher from "./CanvasMarcher";
 import Endpoint from "./Endpoint";
 import Pathway from "./Pathway";
 import Midpoint from "./Midpoint";
-import FieldProperties from "@/global/classes/FieldProperties";
+import { FieldProperties } from "@openmarch/core/field";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -15,11 +15,12 @@ import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
-import { rgbaToString } from "../FieldTheme";
+import { rgbaToString } from "@openmarch/core/field";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
+import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -1980,22 +1981,21 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     /**
-     * Refreshes the background image of the canvas by fetching the field properties image from the Electron API.
+     * Refreshes the background image of the canvas by fetching the field properties image from the database
      * If the image data is successfully retrieved, it is converted to a Fabric.js Image object and set as the background image.
      * If the image data is null, the background image is set to null.
      * Finally, the field grid is re-rendered to reflect the updated background image.
      */
     async refreshBackgroundImage(renderFieldGrid: boolean = true) {
-        // if (this._backgroundImage) this.remove(this._backgroundImage);
-        const backgroundImageResponse =
-            await window.electron.getFieldPropertiesImage();
-
         if (this._backgroundImage) {
             this.remove(this._backgroundImage);
             this._backgroundImage = null;
         }
-        if (backgroundImageResponse.success) {
-            if (backgroundImageResponse.data === null) {
+
+        try {
+            const backgroundImage = await getFieldPropertiesImage();
+
+            if (backgroundImage === null) {
                 this._backgroundImage = null;
                 return;
             }
@@ -2006,8 +2006,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     img.onload = () => resolve(img);
                     img.onerror = reject;
 
-                    const buffer = backgroundImageResponse.data as Buffer;
-                    const blob = new Blob([buffer]);
+                    const blob = new Blob([backgroundImage]);
                     img.src = URL.createObjectURL(blob);
 
                     return img;
@@ -2034,11 +2033,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const imgAspectRatio = img.width / img.height;
             this.refreshBackgroundImageValues(imgAspectRatio);
             renderFieldGrid && this.renderFieldGrid();
-        } else {
+        } catch (error) {
             FieldProperties.imageDimensions = undefined;
             this._backgroundImage = null;
-            console.error("Error fetching field properties image");
-            console.error(backgroundImageResponse.error);
+            console.error("Error fetching field properties image", error);
         }
     }
 

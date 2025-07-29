@@ -1,7 +1,8 @@
-import FieldProperties, {
+import {
+    FieldProperties,
     Checkpoint,
     YardNumberCoordinates,
-} from "../FieldProperties";
+} from "@openmarch/core/field";
 
 const FootballTemplates = {
     HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES: new FieldProperties({

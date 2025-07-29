@@ -4,7 +4,6 @@ import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history";
 import * as Utilities from "./utilities";
-import FieldProperties from "../../src/global/classes/FieldProperties";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
@@ -16,7 +15,6 @@ import { DatabaseMarcher } from "../../src/global/classes/Marcher";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
-import * as FieldPropertiesTable from "./tables/FieldPropertiesTable";
 import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
@@ -243,26 +241,6 @@ export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
     ipcMain.handle("sql:proxy", handleSqlProxy);
-
-    // Field properties
-    ipcMain.handle("field_properties:get", async () =>
-        connectWrapper<FieldProperties>(
-            FieldPropertiesTable.getFieldProperties,
-            {},
-        ),
-    );
-    ipcMain.handle("field_properties:update", async (_, fieldProperties) =>
-        connectWrapper<FieldProperties | null>(
-            FieldPropertiesTable.updateFieldProperties,
-            { fieldProperties },
-        ),
-    );
-    ipcMain.handle("field_properties:get_image", async () =>
-        connectWrapper<Buffer | null>(
-            FieldPropertiesTable.getFieldPropertiesImage,
-            {},
-        ),
-    );
 
     // File IO handlers located in electron/main/index.ts
     // Marcher

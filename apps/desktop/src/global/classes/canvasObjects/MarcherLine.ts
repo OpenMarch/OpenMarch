@@ -1,10 +1,12 @@
 import { fabric } from "fabric";
 import * as CanvasConstants from "@/components/canvas/CanvasConstants";
-import FieldProperties from "../FieldProperties";
-import MarcherPage from "../MarcherPage";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { DEFAULT_FIELD_THEME, rgbaToString } from "../FieldTheme";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
+import {
+    DEFAULT_FIELD_THEME,
+    FieldProperties,
+    rgbaToString,
+} from "@openmarch/core/field";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.

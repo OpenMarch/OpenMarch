@@ -1,5 +1,4 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import FieldProperties from "@/global/classes/FieldProperties";
 import {
     DatabaseMarcher,
     ModifiedMarcherArgs,
@@ -293,28 +292,11 @@ const APP_API = {
     getRedoStackLength: () => ipcRenderer.invoke("history:getRedoStackLength"),
 
     // FieldProperties
-    /** Get the FieldProperties associated with this file */
-    getFieldProperties: () =>
-        ipcRenderer.invoke("field_properties:get") as Promise<
-            DatabaseResponse<FieldProperties>
-        >,
     /** Update the FieldProperties associated with this file */
-    updateFieldProperties: (newFieldProperties: FieldProperties) =>
-        ipcRenderer.invoke(
-            "field_properties:update",
-            newFieldProperties,
-        ) as Promise<DatabaseResponse<FieldProperties | null>>,
     exportFieldPropertiesFile: () =>
         ipcRenderer.invoke("field_properties:export"),
     importFieldPropertiesFile: () =>
         ipcRenderer.invoke("field_properties:import"),
-    importFieldPropertiesImage: () =>
-        ipcRenderer.invoke("field_properties:import_image"),
-    getFieldPropertiesImage: () =>
-        ipcRenderer.invoke("field_properties:get_image") as Promise<
-            DatabaseResponse<Buffer | null>
-        >,
-
     onImportFieldPropertiesFile: (callback: () => void) =>
         ipcRenderer.on("field_properties:onImport", (event) => callback()),
     removeImportFieldPropertiesFileListener: () =>

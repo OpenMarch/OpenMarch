@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { SectionAppearance } from "../SectionAppearance";
-import { TestSqlProxy } from "@/__mocks__/TestSqlProxy";
+import { setupTestSqlProxy } from "@/__mocks__/TestSqlProxy";
 
 // Mock database responses
 const mockDatabaseSectionAppearance = {
@@ -136,12 +136,7 @@ describe("SectionAppearance", () => {
 
     describe("db", () => {
         beforeEach(async () => {
-            const testSqlProxy = new TestSqlProxy();
-            await testSqlProxy.initializeSchema();
-            window.electron = {
-                ...window.electron,
-                sqlProxy: testSqlProxy.handleSqlProxy.bind(testSqlProxy),
-            };
+            await setupTestSqlProxy();
         });
 
         it("should create and read section appearances", async () => {
