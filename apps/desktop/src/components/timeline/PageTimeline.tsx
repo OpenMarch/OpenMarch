@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useAudioStore } from "@/stores/AudioStore";
 import Page, {
     createLastPage,
     ModifyPagesRequest,

@@ -1,7 +1,7 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -11,7 +11,6 @@ import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
-import { useAudioStore } from "@/stores/AudioStore";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "metronome";
@@ -71,13 +70,7 @@ export default function AudioPlayer() {
     const { beats, measures } = useTimingObjectsStore();
     const { selectedAudioFile } = useSelectedAudioFile()!;
 
-    // Audio and metronome state management
-    const {
-        audioContext,
-        setAudioContext,
-        playbackTimestamp,
-        setPlaybackTimestamp,
-    } = useAudioStore();
+    // Metronome state management
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
         useMetronomeStore();
 
@@ -100,6 +93,10 @@ export default function AudioPlayer() {
     const [waveformBuffer, setWaveformBuffer] = useState<ArrayBuffer | null>(
         null,
     );
+
+    // AudioContext state management
+    const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
+    const [playbackTimestamp, setPlaybackTimestamp] = useState<number>(0);
 
     // Set up AudioContext on the first mount
     useEffect(() => {
@@ -333,41 +330,43 @@ export default function AudioPlayer() {
         }
     }, [beats, measures, audioDuration]);
 
-    // Update WaveSurfer progress bar as playback position changes
-    useEffect(() => {
-        if (!waveSurfer || !audioBuffer) return;
-        let rafId: number;
+    // // Snap WaveSurfer to correct position when paused
+    // useEffect(() => {
+    //     if (!waveSurfer || !audioBuffer || isPlaying) return;
+    //
+    //     const livePlayback =
+    //         (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
+    //     const progress = Math.max(0, Math.min(1, livePlayback / audioDuration));
+    //     waveSurfer.seekTo(progress);
+    // }, [waveSurfer, audioBuffer, audioDuration, selectedPage, isPlaying]);
+    //
+    // // Animate WaveSurfer progress bar when playing
+    // useEffect(() => {
+    //     if (!waveSurfer || !audioBuffer || !isPlaying) return;
+    //
+    //     let isActive = true;
+    //     let rafId: number;
+    //
+    //     const update = () => {
+    //         if (!isActive) return;
+    //         const livePlayback = getLivePlaybackPosition();
+    //         const progress = Math.max(
+    //             0,
+    //             Math.min(1, livePlayback / audioDuration),
+    //         );
+    //         //waveSurfer.seekTo(progress);
+    //         rafId = requestAnimationFrame(update);
+    //     };
+    //
+    //     update();
+    //
+    //     return () => {
+    //         isActive = false;
+    //         cancelAnimationFrame(rafId);
+    //     };
+    // }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
 
-        const update = () => {
-            const livePlayback = getLivePlaybackPosition();
-            const progress = Math.max(
-                0,
-                Math.min(1, livePlayback / audioDuration),
-            );
-            waveSurfer.seekTo(progress);
-            rafId = requestAnimationFrame(update);
-        };
-
-        if (isPlaying) {
-            update();
-        } else {
-            // On pause, snap to current page position
-            const livePlayback =
-                (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
-            const progress = Math.max(
-                0,
-                Math.min(1, livePlayback / audioDuration),
-            );
-            waveSurfer.seekTo(progress);
-        }
-
-        return () => {
-            cancelAnimationFrame(rafId);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isPlaying, waveSurfer, selectedPage, audioBuffer, audioDuration]);
-
-    // Update WaveSurfer options if duration/pixels per second changes
+    // Update WaveSurfer style if duration or zoom changes
     useEffect(() => {
         if (waveSurfer) {
             waveSurfer.setOptions({
