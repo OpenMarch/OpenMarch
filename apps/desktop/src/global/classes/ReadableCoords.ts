@@ -1,4 +1,4 @@
-import { FieldProperties, Checkpoint } from "@openmarch/core/field";
+import { FieldProperties, Checkpoint } from "@openmarch/core";
 import MarcherPage from "./MarcherPage";
 
 export enum X_DESCRIPTION {

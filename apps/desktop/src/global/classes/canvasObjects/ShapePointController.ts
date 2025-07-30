@@ -2,7 +2,7 @@ import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
 import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 
 /**
  * Represents a control point for a StaticMarcherShape object, which is part of a path in a canvas.

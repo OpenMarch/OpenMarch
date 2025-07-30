@@ -2,24 +2,31 @@
     "name": "@openmarch/core",
     "type": "module",
     "license": "GPL-3.0",
-    "module": "./src/index.js",
-    "types": "./src/index.d.ts",
+    "main": "./dist/index.js",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "version": "1.1.0",
     "publishConfig": {
         "@openmarch:registry": "https://npm.pkg.github.com"
     },
     "scripts": {
-        "build": "tsc",
+        "build": "tsup",
         "test": "vitest",
         "test:run": "vitest run"
     },
     "exports": {
-        "./field": {
-            "types": "./src/field/index.d.ts",
-            "import": "./src/field/index.js"
+        ".": {
+            "import": "./src/index.ts",
+            "require": "./src/index.ts"
         }
     },
+    "files": [
+        "dist/**/*",
+        "README.md",
+        "LICENSE"
+    ],
     "devDependencies": {
+        "tsup": "^8.5.0",
         "typescript": "latest",
         "vitest": "^2.1.9"
     }
