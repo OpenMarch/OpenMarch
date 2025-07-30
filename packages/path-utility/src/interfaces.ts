@@ -27,6 +27,12 @@ export interface IPathSegment {
     /** The type of the segment (e.g., 'line', 'arc', 'cubic-curve', 'spline') */
     readonly type: string;
 
+    /** Optional override for the start point of this segment */
+    startPointOverride?: Point;
+
+    /** Optional override for the end point of this segment */
+    endPointOverride?: Point;
+
     /** Returns the length of this segment. */
     getLength(): number;
 

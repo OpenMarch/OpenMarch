@@ -23,6 +23,10 @@ export class Arc implements IControllableSegment {
     public readonly sweepFlag: 0 | 1;
     public readonly endPoint: Point;
 
+    // New properties for override points
+    public startPointOverride?: Point;
+    public endPointOverride?: Point;
+
     constructor(
         startPoint: Point,
         rx: number,
@@ -116,7 +120,10 @@ export class Arc implements IControllableSegment {
     }
 
     toSvgString(): string {
-        return `M ${this.startPoint.x} ${this.startPoint.y} A ${this.rx} ${this.ry} ${this.xAxisRotation} ${this.largeArcFlag} ${this.sweepFlag} ${this.endPoint.x} ${this.endPoint.y}`;
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
+        return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} A ${this.rx} ${this.ry} ${this.xAxisRotation} ${this.largeArcFlag} ${this.sweepFlag} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 
     toJson(): SegmentJsonData {
@@ -157,26 +164,29 @@ export class Arc implements IControllableSegment {
 
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
         const controlPoints: ControlPoint[] = [
             {
                 id: `cp-${segmentIndex}-start`,
-                point: { ...this.startPoint },
+                point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
                 id: `cp-${segmentIndex}-end`,
-                point: { ...this.endPoint },
+                point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,
             },
         ];
 
         // Add center point
-        const midPoint = getMidpoint(this.startPoint, this.endPoint);
+        const midPoint = getMidpoint(effectiveStartPoint, effectiveEndPoint);
         const angle = Math.atan2(
-            this.endPoint.y - this.startPoint.y,
-            this.endPoint.x - this.startPoint.x,
+            effectiveEndPoint.y - effectiveStartPoint.y,
+            effectiveEndPoint.x - effectiveStartPoint.x,
         );
         const centerPoint = {
             x: midPoint.x - this.ry * Math.sin(angle),
