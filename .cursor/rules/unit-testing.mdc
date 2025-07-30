@@ -1,5 +1,5 @@
 ---
-description: Guidelines for writing unit tests
+description: Guidelines for writing and running unit tests
 alwaysApply: true
 ---
 
@@ -19,5 +19,5 @@ The only exception to this is mocking React context providers when trying to ren
 ## Running tests
 
 Since the is a monorepo, be sure to change directory to the package or app where you want to run tests.
-E.g. `cd apps/desktop && pnpm run test {file_name}"`.
+E.g. `cd apps/desktop && pnpm run test {relative_file_name}"`.
 You only need to change directory on the first test.

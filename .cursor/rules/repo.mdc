@@ -3,6 +3,8 @@ description:
 alwaysApply: true
 ---
 
+# Repository guidelines
+
 OpenMarch is a monorepo organized with Turbo. It uses pnpm as its package manager
 
 The stack is Electron and React for the desktop app, zustand for state management, Radix and Tailwind for styling, and Vitest and Playwright for testing.
