@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { parseSvg } from "../src/SvgParser";
 import { Path } from "../src/Path";
 import { CubicCurve } from "../src/segments/CubicCurve";
 import { QuadraticCurve } from "../src/segments/QuadraticCurve";

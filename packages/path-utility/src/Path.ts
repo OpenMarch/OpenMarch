@@ -117,7 +117,7 @@ export class Path implements IPath {
      * Creates a path from JSON data, reconstructing the original segment types
      * and their specific data (splines with control points, arcs with radii, etc.).
      */
-    fromJson(json: string): IPath {
+    fromJson(json: string, startPoint?: Point, endPoint?: Point): IPath {
         try {
             const pathData: PathJsonData = JSON.parse(json);
 
@@ -132,6 +132,9 @@ export class Path implements IPath {
                     return this.createSegmentFromJson(segmentData);
                 },
             );
+
+            segments[0].startPointOverride = startPoint;
+            segments[segments.length - 1].endPointOverride = endPoint;
 
             return new Path(segments);
         } catch (error) {
@@ -164,9 +167,9 @@ export class Path implements IPath {
     /**
      * Creates a new Path instance from JSON string.
      */
-    static fromJson(json: string): Path {
+    static fromJson(json: string, startPoint?: Point, endPoint?: Point): Path {
         const path = new Path();
-        return path.fromJson(json) as Path;
+        return path.fromJson(json, startPoint, endPoint) as Path;
     }
 
     /**

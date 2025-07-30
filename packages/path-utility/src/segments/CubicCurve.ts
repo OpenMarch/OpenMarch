@@ -14,6 +14,10 @@ import {
 export class CubicCurve implements IControllableSegment {
     readonly type = "cubic-curve";
 
+    // Override properties for start and end points
+    public startPointOverride?: Point;
+    public endPointOverride?: Point;
+
     constructor(
         public readonly startPoint: Point,
         public readonly controlPoint1: Point,
@@ -35,7 +39,10 @@ export class CubicCurve implements IControllableSegment {
     }
 
     toSvgString(): string {
-        return `M ${this.startPoint.x} ${this.startPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${this.endPoint.x} ${this.endPoint.y}`;
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
+        return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 
     toJson(): SegmentJsonData {
@@ -76,10 +83,13 @@ export class CubicCurve implements IControllableSegment {
 
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
         return [
             {
                 id: `cp-${segmentIndex}-start`,
-                point: { ...this.startPoint },
+                point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
@@ -97,7 +107,7 @@ export class CubicCurve implements IControllableSegment {
             },
             {
                 id: `cp-${segmentIndex}-end`,
-                point: { ...this.endPoint },
+                point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,
             },

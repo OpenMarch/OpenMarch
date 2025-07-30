@@ -15,6 +15,10 @@ import { v4 as uuidv4 } from "uuid";
 export class Line implements IControllableSegment {
     readonly type = "line";
 
+    // Override properties for start and end points
+    public startPointOverride?: Point;
+    public endPointOverride?: Point;
+
     constructor(
         public readonly startPoint: Point,
         public readonly endPoint: Point,
@@ -34,10 +38,13 @@ export class Line implements IControllableSegment {
     }
 
     toSvgString(includeMoveTo = false): string {
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
         const moveTo = includeMoveTo
-            ? `M ${this.startPoint.x} ${this.startPoint.y} `
+            ? `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} `
             : "";
-        return `${moveTo}L ${this.endPoint.x} ${this.endPoint.y}`;
+        return `${moveTo}L ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 
     toJson(): SegmentJsonData {
@@ -70,16 +77,19 @@ export class Line implements IControllableSegment {
 
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
         return [
             {
                 id: uuidv4(),
-                point: { ...this.startPoint },
+                point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
                 id: uuidv4(),
-                point: { ...this.endPoint },
+                point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,
             },

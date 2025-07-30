@@ -7,6 +7,10 @@ export class QuadraticCurve implements IPathSegment {
     readonly controlPoint: Point;
     readonly endPoint: Point;
 
+    // Override properties for start and end points
+    public startPointOverride?: Point;
+    public endPointOverride?: Point;
+
     constructor(startPoint: Point, controlPoint: Point, endPoint: Point) {
         this.startPoint = startPoint;
         this.controlPoint = controlPoint;
@@ -27,7 +31,10 @@ export class QuadraticCurve implements IPathSegment {
     }
 
     toSvgString(): string {
-        return `M ${this.startPoint.x} ${this.startPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
+        return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 
     toJson(): SegmentJsonData {
@@ -64,6 +71,8 @@ export class QuadraticCurve implements IPathSegment {
     }
 
     toSvgCommand(): string {
-        return `Q ${this.controlPoint.x} ${this.controlPoint.y} ${this.endPoint.x} ${this.endPoint.y}`;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
+        return `Q ${this.controlPoint.x} ${this.controlPoint.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 }

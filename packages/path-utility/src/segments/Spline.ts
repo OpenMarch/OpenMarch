@@ -18,6 +18,10 @@ export class Spline implements IControllableSegment {
     private _svgApproximation: string | null = null;
     private _length: number | null = null;
 
+    // Override properties for start and end points
+    public startPointOverride?: Point;
+    public endPointOverride?: Point;
+
     constructor(
         public readonly controlPoints: Point[],
         public readonly degree: number = 3,
@@ -267,13 +271,25 @@ export class Spline implements IControllableSegment {
 
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
-        return this.controlPoints.map((point, index) => ({
+        const controlPoints = this.controlPoints.map((point, index) => ({
             id: `cp-${segmentIndex}-spline-point-${index}`,
             point: { ...point },
             segmentIndex,
             type: "spline-point" as ControlPointType,
             pointIndex: index,
         }));
+
+        // Apply overrides if provided
+        if (this.startPointOverride && controlPoints.length > 0) {
+            controlPoints[0].point = { ...this.startPointOverride };
+        }
+        if (this.endPointOverride && controlPoints.length > 0) {
+            controlPoints[controlPoints.length - 1].point = {
+                ...this.endPointOverride,
+            };
+        }
+
+        return controlPoints;
     }
 
     updateControlPoint(
