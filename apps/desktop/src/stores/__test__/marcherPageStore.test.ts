@@ -4,6 +4,7 @@ import { mockMarcherPages } from "@/__mocks__/globalMocks";
 import * as MarcherPage from "@/global/classes/MarcherPage";
 import { describe, expect, it, vi, afterEach } from "vitest";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex"; // <-- use your utility
+import { databaseMarcherPagesToMarcherPages } from "@/global/classes/MarcherPage";
 
 describe("marcherPageStore", () => {
     afterEach(async () => {
@@ -27,8 +28,10 @@ describe("marcherPageStore", () => {
 
     it("marcherPagesStore - fetch all", async () => {
         const mockToUse = mockMarcherPages;
+        // Convert the mock data to MarcherPage[] before mocking
+        const convertedMockData = databaseMarcherPagesToMarcherPages(mockToUse);
         vi.spyOn(MarcherPage, "getMarcherPages").mockResolvedValue(
-            mockToUse as any,
+            convertedMockData,
         );
 
         const { result } = renderHook(() => useMarcherPageStore());
@@ -41,14 +44,16 @@ describe("marcherPageStore", () => {
         });
 
         // Use the utility to create the expected map
-        const expectedMarcherPages = marcherPageMapFromArray(mockToUse);
+        const expectedMarcherPages = marcherPageMapFromArray(convertedMockData);
         expect(result.current.marcherPages).toEqual(expectedMarcherPages);
     });
 
     it("marcherPagesStore - fetches single marcherPage", async () => {
         const mockToUse = [mockMarcherPages[0]];
+        // Convert the mock data to MarcherPage[] before mocking
+        const convertedMockData = databaseMarcherPagesToMarcherPages(mockToUse);
         vi.spyOn(MarcherPage, "getMarcherPages").mockResolvedValue(
-            mockToUse as any,
+            convertedMockData,
         );
 
         const { result } = renderHook(() => useMarcherPageStore());
@@ -60,7 +65,8 @@ describe("marcherPageStore", () => {
             result.current.fetchMarcherPages();
         });
 
-        const expectedMarcherPages = marcherPageMapFromArray(mockToUse);
+        // Use the utility to create the expected map
+        const expectedMarcherPages = marcherPageMapFromArray(convertedMockData);
         expect(result.current.marcherPages).toEqual(expectedMarcherPages);
     });
 

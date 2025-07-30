@@ -2,6 +2,7 @@ import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
 import { Path } from "@openmarch/path-utility";
+import type Page from "./Page";
 
 const { marcher_pages } = schema;
 
@@ -56,12 +57,15 @@ export default interface MarcherPage {
 export async function getMarcherPages({
     marcher_id,
     page_id,
-}: { marcher_id?: number; page_id?: number } = {}): Promise<MarcherPage[]> {
+    pages,
+}: { marcher_id?: number; page_id?: number; pages?: Page[] } = {}): Promise<
+    MarcherPage[]
+> {
     const response = await window.electron.getMarcherPages({
         marcher_id,
         page_id,
     });
-    return databaseMarcherPagesToMarcherPages(response.data);
+    return databaseMarcherPagesToMarcherPages(response.data, pages);
 }
 
 /**
@@ -132,17 +136,69 @@ export function getByMarcherAndPageId(
 
 export function databaseMarcherPagesToMarcherPages(
     databaseMarcherPages: DatabaseMarcherPage[],
+    pages?: Page[],
 ): MarcherPage[] {
-    return databaseMarcherPages.map((dbMarcherPage) => {
-        return {
-            ...dbMarcherPage,
-            path_data: dbMarcherPage.path_data
-                ? Path.fromJson(dbMarcherPage.path_data)
-                : null,
-            x: dbMarcherPage.x || 0,
-            y: dbMarcherPage.y || 0,
-        };
+    // If no pages data provided, use array index as order
+    const pageOrderMap = pages?.length
+        ? new Map(pages.map((page) => [page.id, page.order]))
+        : null;
+
+    // Group marcher pages by marcher_id
+    const marcherPagesByMarcher = new Map<number, DatabaseMarcherPage[]>();
+    databaseMarcherPages.forEach((marcherPage) => {
+        const marcherId = marcherPage.marcher_id;
+        if (!marcherPagesByMarcher.has(marcherId)) {
+            marcherPagesByMarcher.set(marcherId, []);
+        }
+        marcherPagesByMarcher.get(marcherId)!.push(marcherPage);
     });
+
+    // Convert each marcher's pages
+    const result: MarcherPage[] = [];
+
+    marcherPagesByMarcher.forEach((marcherPages, marcherId) => {
+        // Sort by page order if available, otherwise by array index
+        const sortedMarcherPages = pageOrderMap
+            ? marcherPages.sort((a, b) => {
+                  const aOrder = pageOrderMap.get(a.page_id) ?? 0;
+                  const bOrder = pageOrderMap.get(b.page_id) ?? 0;
+                  return aOrder - bOrder;
+              })
+            : marcherPages;
+
+        // Convert each marcher page with path data
+        sortedMarcherPages.forEach((dbMarcherPage, index) => {
+            const previousMarcherPage =
+                index > 0 ? sortedMarcherPages[index - 1] : null;
+
+            result.push({
+                ...dbMarcherPage,
+                path_data: createPathData(dbMarcherPage, previousMarcherPage),
+                x: dbMarcherPage.x || 0,
+                y: dbMarcherPage.y || 0,
+            });
+        });
+    });
+
+    return result;
+}
+
+/**
+ * Creates path data from a marcher page, using the previous marcher page as the start point
+ */
+function createPathData(
+    currentMarcherPage: DatabaseMarcherPage,
+    previousMarcherPage: DatabaseMarcherPage | null,
+): Path | null {
+    if (!currentMarcherPage.path_data || !previousMarcherPage) {
+        return null;
+    }
+
+    return Path.fromJson(
+        currentMarcherPage.path_data,
+        { x: previousMarcherPage.x, y: previousMarcherPage.y },
+        { x: currentMarcherPage.x, y: currentMarcherPage.y },
+    );
 }
 
 /**
