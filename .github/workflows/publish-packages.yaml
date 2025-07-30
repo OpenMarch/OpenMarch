@@ -1,4 +1,7 @@
 name: Publish node.js Packages
+permissions:
+    contents: write
+    pull-requests: write
 
 on:
     push:
