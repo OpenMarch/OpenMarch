@@ -28,7 +28,6 @@ interface Measure {
     /** The timestamp of the first beat in the measure */
     readonly timestamp: number;
 }
-
 export default Measure;
 
 /** A type that stores a beat with the index that it occurs in a list with all beats */

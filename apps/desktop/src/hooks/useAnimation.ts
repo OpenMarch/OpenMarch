@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useAudioStore } from "@/stores/AudioStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Page from "@/global/classes/Page";
@@ -11,6 +10,7 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -29,7 +29,6 @@ export const useAnimation = ({
     selectedPage,
     setSelectedPage,
 }: UseAnimationProps) => {
-    const { audio } = useAudioStore();
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const animationFrameRef = useRef<number | null>(null);
 
@@ -77,11 +76,13 @@ export const useAnimation = ({
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
+
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
                 const timeline = marcherTimelines.get(
                     canvasMarcher.marcherObj.id,
                 );
+
                 if (timeline) {
                     try {
                         const coords = getCoordinatesAtTime(
@@ -94,17 +95,16 @@ export const useAnimation = ({
                     }
                 }
             }
+
             canvas.requestRenderAll();
         },
         [canvas, marcherTimelines],
     );
 
-    useEffect(() => {
-        const animate = () => {
-            if (!isPlaying || !canvas) return;
-
-            const currentTime = audio.currentTime * 1000;
-            setMarcherPositionsAtTime(currentTime);
+    // Update the selected page based on playback timestamp
+    const updateSelectedPage = useCallback(
+        (currentTime: number) => {
+            if (!pages.length || !canvas) return;
 
             const currentPage = pages.find(
                 (p) =>
@@ -130,10 +130,24 @@ export const useAnimation = ({
 
                 setSelectedPage(previousPage);
             }
+        },
+        [pages, canvas, setSelectedPage, setIsPlaying],
+    );
+
+    // Animate the canvas based on playback timestamp
+    useEffect(() => {
+        // Helper to sync the animation with the live playback position
+        const animate = () => {
+            if (!canvas) return;
+
+            const currentTime = getLivePlaybackPosition() * 1000; // s to ms
+            setMarcherPositionsAtTime(currentTime);
+            updateSelectedPage(currentTime);
 
             animationFrameRef.current = requestAnimationFrame(animate);
         };
 
+        // Start the animation loop
         if (isPlaying) {
             animationFrameRef.current = requestAnimationFrame(animate);
         } else {
@@ -142,22 +156,13 @@ export const useAnimation = ({
             }
         }
 
+        // Cleanup
         return () => {
             if (animationFrameRef.current) {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [
-        isPlaying,
-        canvas,
-        audio,
-        pages,
-        selectedPage,
-        setSelectedPage,
-        marcherTimelines,
-        setMarcherPositionsAtTime,
-        setIsPlaying,
-    ]);
+    }, [isPlaying, canvas, setMarcherPositionsAtTime, updateSelectedPage]);
 
     return { setMarcherPositionsAtTime };
 };

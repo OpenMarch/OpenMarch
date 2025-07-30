@@ -19,6 +19,8 @@ export class TimingMarkersPlugin {
      * Markers are non-draggable and non-resizable point regions
      */
     createTimingMarkers = () => {
+        this.clearTimingMarkers();
+
         // Counts
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({

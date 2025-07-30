@@ -43,7 +43,7 @@ export default function Canvas({
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
-    const { pages } = useTimingObjectsStore()!;
+    const { pages, beats, measures } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;

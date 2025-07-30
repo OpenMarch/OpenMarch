@@ -10,6 +10,7 @@ import {
     MagnifyingGlassMinusIcon,
     CornersOutIcon,
     CornersInIcon,
+    MetronomeIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -19,6 +20,7 @@ import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { clsx } from "clsx";
 import { AudioClock } from "./Clock";
 import { T, useTolgee } from "@tolgee/react";
+import { useMetronomeStore } from "@/stores/MetronomeStore";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -49,6 +51,13 @@ export default function TimelineControls() {
                     })}
                 >
                     <ZoomControls />
+
+                    {!isFullscreen && <div className="flex-1" />}
+                    {!isFullscreen && <div className="flex-1" />}
+                    {!isFullscreen && <div className="flex-1" />}
+
+                    <TimelineMetronomeButton />
+
                     <button
                         className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={toggleFullscreen}
@@ -62,6 +71,28 @@ export default function TimelineControls() {
                     </button>
                 </div>
             </div>
+        </div>
+    );
+}
+
+function TimelineMetronomeButton() {
+    const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
+    const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
+
+    return (
+        <div className="flex gap-10" id="zoomIcons">
+            <button
+                className={clsx(
+                    "outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50",
+                    {
+                        "text-accent": isMetronomeOn,
+                        "text-text enabled:hover:text-accent": !isMetronomeOn,
+                    },
+                )}
+                onClick={toggleMetronome}
+            >
+                <MetronomeIcon size={24} />
+            </button>
         </div>
     );
 }
