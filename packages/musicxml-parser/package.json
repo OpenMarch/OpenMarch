@@ -1,7 +1,11 @@
 {
-    "name": "musicxml-parser",
+    "name": "@openmarch/musicxml-parser",
     "module": "index.ts",
     "type": "module",
+    "version": "1.0.0",
+    "publishConfig": {
+        "@openmarch:registry": "https://npm.pkg.github.com"
+    },
     "scripts": {
         "test": "vitest",
         "test:run": "vitest run"

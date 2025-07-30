@@ -2,7 +2,7 @@ name: Publish node.js Packages
 
 on:
     push:
-        branches: ["main", "internal-packages"]
+        branches: ["main"]
         tags: [v*]
 
 jobs:
@@ -10,16 +10,23 @@ jobs:
     build:
         runs-on: ubuntu-latest
         steps:
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4.1.0
-
             - uses: actions/checkout@v4
 
             - uses: actions/setup-node@v4
               with:
                   node-version: 22
+                  registry-url: "https://npm.pkg.github.com"
+                  scope: "@openmarch"
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
+            - name: Verify GitHub Package Registry authentication
+              run: pnpm whoami --registry=https://npm.pkg.github.com
+              env:
+                  NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
             - run: pnpm install
-            - run: pnpm test
+            - run: pnpm build
 
             - name: Create Release Pull Request or Publish to npm
               id: changesets
