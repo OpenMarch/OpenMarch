@@ -264,6 +264,7 @@ export default function AudioPlayer() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isPlaying, audioBuffer, audioContext]);
 
+    // Initialize WaveSurfer and load waveform data
     useEffect(() => {
         if (!waveformRef.current || !waveformBuffer) return;
 
@@ -309,6 +310,10 @@ export default function AudioPlayer() {
         setWaveSurfer(ws);
 
         return () => {
+            if (timingMarkersPlugin.current) {
+                timingMarkersPlugin.current.clearTimingMarkers();
+                timingMarkersPlugin.current = null;
+            }
             ws.destroy();
             setWaveSurfer(null);
             timingMarkersPlugin.current = null;
@@ -332,41 +337,41 @@ export default function AudioPlayer() {
         }
     }, [beats, measures, audioDuration]);
 
-    // // Snap WaveSurfer to correct position when paused
-    // useEffect(() => {
-    //     if (!waveSurfer || !audioBuffer || isPlaying) return;
-    //
-    //     const livePlayback =
-    //         (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
-    //     const progress = Math.max(0, Math.min(1, livePlayback / audioDuration));
-    //     waveSurfer.seekTo(progress);
-    // }, [waveSurfer, audioBuffer, audioDuration, selectedPage, isPlaying]);
-    //
-    // // Animate WaveSurfer progress bar when playing
-    // useEffect(() => {
-    //     if (!waveSurfer || !audioBuffer || !isPlaying) return;
-    //
-    //     let isActive = true;
-    //     let rafId: number;
-    //
-    //     const update = () => {
-    //         if (!isActive) return;
-    //         const livePlayback = getLivePlaybackPosition();
-    //         const progress = Math.max(
-    //             0,
-    //             Math.min(1, livePlayback / audioDuration),
-    //         );
-    //         //waveSurfer.seekTo(progress);
-    //         rafId = requestAnimationFrame(update);
-    //     };
-    //
-    //     update();
-    //
-    //     return () => {
-    //         isActive = false;
-    //         cancelAnimationFrame(rafId);
-    //     };
-    // }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
+    // Snap WaveSurfer to correct position when paused
+    useEffect(() => {
+        if (!waveSurfer || !audioBuffer || isPlaying) return;
+
+        const livePlayback =
+            (selectedPage?.timestamp ?? 0) + (selectedPage?.duration ?? 0);
+        const progress = Math.max(0, Math.min(1, livePlayback / audioDuration));
+        waveSurfer.seekTo(progress);
+    }, [waveSurfer, audioBuffer, audioDuration, selectedPage, isPlaying]);
+
+    // Animate WaveSurfer progress bar when playing
+    useEffect(() => {
+        if (!waveSurfer || !audioBuffer || !isPlaying) return;
+
+        let isActive = true;
+        let rafId: number;
+
+        const update = () => {
+            if (!isActive) return;
+            const livePlayback = getLivePlaybackPosition();
+            const progress = Math.max(
+                0,
+                Math.min(1, livePlayback / audioDuration),
+            );
+            waveSurfer.seekTo(progress);
+            rafId = requestAnimationFrame(update);
+        };
+
+        update();
+
+        return () => {
+            isActive = false;
+            cancelAnimationFrame(rafId);
+        };
+    }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
 
     // Update WaveSurfer style if duration or zoom changes
     useEffect(() => {
