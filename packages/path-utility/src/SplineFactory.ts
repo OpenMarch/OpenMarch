@@ -44,4 +44,34 @@ export class SplineFactory {
 
         return new Path(segments);
     }
+
+    /**
+     * Creates a Catmull-Rom spline from a series of points defined by their
+     * relative distance from the previous point.
+     * @param relativePoints An array of points representing the delta from the previous point.
+     * @param origin The starting point of the spline. Defaults to { x: 0, y: 0 }.
+     * @returns A Path object representing the spline.
+     */
+    public static createCatmullRomSplineFromRelativePoints(
+        relativePoints: Point[],
+        origin: Point = { x: 0, y: 0 },
+    ): Path {
+        if (relativePoints.length === 0) {
+            return new Path([]);
+        }
+
+        const absolutePoints: Point[] = [origin];
+        let lastPoint = origin;
+
+        for (const relativePoint of relativePoints) {
+            const nextPoint = {
+                x: lastPoint.x + relativePoint.x,
+                y: lastPoint.y + relativePoint.y,
+            };
+            absolutePoints.push(nextPoint);
+            lastPoint = nextPoint;
+        }
+
+        return SplineFactory.createCatmullRomSpline(absolutePoints);
+    }
 }

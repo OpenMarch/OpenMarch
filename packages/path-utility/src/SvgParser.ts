@@ -15,9 +15,11 @@ export function parseSvg(d: string): IPathSegment[] {
 
     let currentPoint: Point = { x: 0, y: 0 };
     let subpathStart: Point = { x: 0, y: 0 };
+    let lastControlPoint: Point | null = null;
 
     for (const token of commandTokens) {
         let command = token[0];
+        const prevCommand = command;
         const args = (
             token
                 .substring(1)
@@ -58,6 +60,7 @@ export function parseSvg(d: string): IPathSegment[] {
                         : { x, y };
                     currentPoint = nextPoint;
                     subpathStart = nextPoint;
+                    lastControlPoint = null;
                     break;
                 }
                 case "L": {
@@ -69,6 +72,7 @@ export function parseSvg(d: string): IPathSegment[] {
                         : { x, y };
                     segments.push(new Line(currentPoint, nextPoint));
                     currentPoint = nextPoint;
+                    lastControlPoint = null;
                     break;
                 }
                 case "H": {
@@ -79,6 +83,7 @@ export function parseSvg(d: string): IPathSegment[] {
                         : { x, y: currentPoint.y };
                     segments.push(new Line(currentPoint, nextPoint));
                     currentPoint = nextPoint;
+                    lastControlPoint = null;
                     break;
                 }
                 case "V": {
@@ -89,6 +94,7 @@ export function parseSvg(d: string): IPathSegment[] {
                         : { x: currentPoint.x, y };
                     segments.push(new Line(currentPoint, nextPoint));
                     currentPoint = nextPoint;
+                    lastControlPoint = null;
                     break;
                 }
                 case "Q": {
@@ -109,6 +115,7 @@ export function parseSvg(d: string): IPathSegment[] {
                         new QuadraticCurve(currentPoint, c1, nextPoint),
                     );
                     currentPoint = nextPoint;
+                    lastControlPoint = c1;
                     break;
                 }
                 case "C": {
@@ -134,6 +141,71 @@ export function parseSvg(d: string): IPathSegment[] {
                         new CubicCurve(currentPoint, c1, c2, nextPoint),
                     );
                     currentPoint = nextPoint;
+                    lastControlPoint = c2;
+                    break;
+                }
+                case "S": {
+                    // shorthand/smooth cubic curveto
+                    const cx2 = args[i++];
+                    const cy2 = args[i++];
+                    const x = args[i++];
+                    const y = args[i++];
+
+                    const c2 = isRelative
+                        ? { x: currentPoint.x + cx2, y: currentPoint.y + cy2 }
+                        : { x: cx2, y: cy2 };
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
+
+                    let c1: Point;
+                    const isPrevCubic =
+                        prevCommand.toUpperCase() === "C" ||
+                        prevCommand.toUpperCase() === "S";
+
+                    if (lastControlPoint && isPrevCubic) {
+                        c1 = {
+                            x: 2 * currentPoint.x - lastControlPoint.x,
+                            y: 2 * currentPoint.y - lastControlPoint.y,
+                        };
+                    } else {
+                        c1 = currentPoint;
+                    }
+
+                    segments.push(
+                        new CubicCurve(currentPoint, c1, c2, nextPoint),
+                    );
+                    currentPoint = nextPoint;
+                    lastControlPoint = c2;
+                    break;
+                }
+                case "T": {
+                    // shorthand/smooth quadratic curveto
+                    const x = args[i++];
+                    const y = args[i++];
+                    nextPoint = isRelative
+                        ? { x: currentPoint.x + x, y: currentPoint.y + y }
+                        : { x, y };
+
+                    let c1: Point;
+                    const isPrevQuadratic =
+                        prevCommand.toUpperCase() === "Q" ||
+                        prevCommand.toUpperCase() === "T";
+
+                    if (lastControlPoint && isPrevQuadratic) {
+                        c1 = {
+                            x: 2 * currentPoint.x - lastControlPoint.x,
+                            y: 2 * currentPoint.y - lastControlPoint.y,
+                        };
+                    } else {
+                        c1 = currentPoint;
+                    }
+
+                    segments.push(
+                        new QuadraticCurve(currentPoint, c1, nextPoint),
+                    );
+                    currentPoint = nextPoint;
+                    lastControlPoint = c1;
                     break;
                 }
                 case "A": {
@@ -169,6 +241,7 @@ export function parseSvg(d: string): IPathSegment[] {
                     }
 
                     currentPoint = nextPoint;
+                    lastControlPoint = null;
                     break;
                 }
                 default:
