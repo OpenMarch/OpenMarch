@@ -1,0 +1,14 @@
+{
+    "name": "@openmarch/config",
+    "version": "0.0.0",
+    "private": true,
+    "exports": {
+        "./tsup": "./tsup.config.js"
+    },
+    "files": [
+        "tsup.config.js"
+    ],
+    "devDependencies": {
+        "tsup": "^8.5.0"
+    }
+}

@@ -3,7 +3,7 @@
  * I.e. "Snap to grid", "Evenly distribute horizontally", "Align vertically", etc.
  */
 
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";

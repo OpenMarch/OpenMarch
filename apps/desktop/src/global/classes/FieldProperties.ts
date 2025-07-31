@@ -1,4 +1,4 @@
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import { db, schema } from "../database/db";
 import { eq } from "drizzle-orm";
 import { incrementUndoGroup } from "./History";

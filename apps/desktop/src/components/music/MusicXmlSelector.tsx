@@ -5,7 +5,7 @@ import {
     Measure as ParserMeasure,
     extractXmlFromMxlFile,
     parseMusicXml,
-} from "musicxml-parser";
+} from "@openmarch/musicxml-parser";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { deleteMeasures, createMeasures } from "@/global/classes/Measure";
 import { createBeats } from "@/global/classes/Beat";
@@ -33,7 +33,7 @@ export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [importing, setImporting] = useState(false);
     const { t } = useTolgee();
-    const { fetchTimingObjects, measures, beats } = useTimingObjectsStore();
+    const { fetchTimingObjects, measures } = useTimingObjectsStore();
 
     // Reassign existing pages to start of new measures
     async function reassignAllPagesToNewMeasureStarts(

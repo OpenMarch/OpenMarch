@@ -6,7 +6,7 @@ import {
     DEFAULT_FIELD_THEME,
     FieldProperties,
     rgbaToString,
-} from "@openmarch/core/field";
+} from "@openmarch/core";
 
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.

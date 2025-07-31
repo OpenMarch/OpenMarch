@@ -1,5 +1,5 @@
 import { RgbaColor } from "@uiw/react-color";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 import { db, schema } from "../database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "./History";

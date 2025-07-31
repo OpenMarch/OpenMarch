@@ -10,10 +10,9 @@ import { clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { CaretUpIcon, CaretDownIcon, CheckIcon } from "@phosphor-icons/react";
 import { forwardRef } from "react";
-
-export type SelectProps = RadixSelectProps & {
+export interface SelectProps extends RadixSelectProps {
     children: React.ReactNode;
-};
+}
 export const Select = forwardRef<HTMLButtonElement, SelectProps>(
     ({ children, ...props }, ref) => {
         return (

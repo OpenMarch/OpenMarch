@@ -2,9 +2,9 @@ import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
-import { FieldProperties } from "@openmarch/core/field";
-import { Button } from "@openmarch/ui";
+import { FieldProperties } from "@openmarch/core";
 import { T } from "@tolgee/react";
+import { Button } from "@openmarch/ui";
 
 export default function FieldPropertiesSettings() {
     const { fieldProperties, setFieldProperties } = useFieldProperties()!;

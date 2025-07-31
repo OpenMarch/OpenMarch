@@ -1,0 +1,17 @@
+{
+    "extends": ["//"],
+    "tasks": {
+        "dev": {
+            "with": [
+                "@openmarch/core#dev",
+                "@openmarch/musicxml-parser#dev",
+                "@openmarch/ui#dev"
+            ],
+            "persistent": true,
+            "cache": false
+        },
+        "build": {
+            "dependsOn": ["^build"]
+        }
+    }
+}

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import {
     getFieldProperties,
     getFieldPropertiesImage,

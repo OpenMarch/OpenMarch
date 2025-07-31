@@ -1,7 +1,7 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { Shape } from "electron/database/tables/ShapeTable";

@@ -1,4 +1,4 @@
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import { describe, expect, it, beforeEach } from "vitest";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
 
