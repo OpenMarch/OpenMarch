@@ -1,7 +1,7 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -15,10 +15,11 @@ import Page, {
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Button, Switch } from "@openmarch/ui";
+import { Button, Switch, TooltipClassName } from "@openmarch/ui";
 import { toast } from "sonner";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
+import * as ToolTip from "@radix-ui/react-tooltip";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -313,13 +314,13 @@ export default function PageTimeline() {
                             disabled={isPlaying || isFullscreen}
                         >
                             <div
-                                className="relative h-full overflow-clip"
+                                className="relative h-full overflow-y-visible"
                                 timeline-page-id={page.id}
                                 style={{ width: `${width}px` }}
                             >
                                 <div
                                     className={clsx(
-                                        "rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
+                                        "rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end border px-8 py-4 font-mono",
                                         !isPlaying && "cursor-pointer",
                                         page.id === selectedPage?.id
                                             ? [
@@ -361,23 +362,40 @@ export default function PageTimeline() {
                                 </div>
                                 {/* ------ page resize dragging ------ */}
                                 {!isFullscreen && (
-                                    <div
-                                        className={clsx(
-                                            "rounded-r-6 absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
-                                            resizingPage.current?.id === page.id
-                                                ? "bg-accent/50"
-                                                : "hover:bg-accent/30 bg-transparent",
-                                        )}
-                                        hidden={isPlaying}
-                                        onMouseDown={(e) =>
-                                            handlePageResizeStart(
-                                                e.nativeEvent,
-                                                page,
-                                            )
-                                        }
+                                    <ToolTip.Root
+                                        delayDuration={100}
+                                        open={true}
                                     >
-                                        &nbsp;
-                                    </div>
+                                        <ToolTip.Trigger asChild>
+                                            <div
+                                                className={clsx(
+                                                    "rounded-r-6 absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
+                                                    resizingPage.current?.id ===
+                                                        page.id
+                                                        ? "bg-accent/50"
+                                                        : "hover:bg-accent/30 bg-transparent",
+                                                )}
+                                                hidden={isPlaying}
+                                                onMouseDown={(e) =>
+                                                    handlePageResizeStart(
+                                                        e.nativeEvent,
+                                                        page,
+                                                    )
+                                                }
+                                            >
+                                                &nbsp;
+                                            </div>
+                                        </ToolTip.Trigger>
+                                        <ToolTip.Portal>
+                                            <ToolTip.Content
+                                                className={`${TooltipClassName} cursor-ew-resize hover:cursor-ew-resize`}
+                                            >
+                                                {page.counts}{" "}
+                                                {page.nextPageId &&
+                                                    `| ${pages[page.nextPageId].counts}`}
+                                            </ToolTip.Content>
+                                        </ToolTip.Portal>
+                                    </ToolTip.Root>
                                 )}
                             </div>
                         </ContextMenu.Trigger>
