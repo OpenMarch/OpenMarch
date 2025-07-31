@@ -1,7 +1,7 @@
 {
     "name": "@openmarch/core",
     "type": "module",
-    "license": "GPL-3.0",
+    "license": "AGPL-3.0",
     "main": "./dist/index.js",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -10,14 +10,16 @@
         "@openmarch:registry": "https://npm.pkg.github.com"
     },
     "scripts": {
+        "dev": "tsup --watch",
         "build": "tsup",
         "test": "vitest",
         "test:run": "vitest run"
     },
     "exports": {
         ".": {
-            "import": "./src/index.ts",
-            "require": "./src/index.ts"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
         }
     },
     "files": [
@@ -26,6 +28,7 @@
         "LICENSE"
     ],
     "devDependencies": {
+        "@openmarch/config": "workspace:*",
         "tsup": "^8.5.0",
         "typescript": "latest",
         "vitest": "^2.1.9"

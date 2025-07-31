@@ -17,7 +17,7 @@
     },
     "scripts": {
         "desktop": "turbo run --filter=@openmarch/desktop",
-        "build": "turbo run build --filter=@openmarch/core --filter=@openmarch/ui",
+        "build": "turbo run build",
         "release": "pnpm run build && changeset version && changeset publish",
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
