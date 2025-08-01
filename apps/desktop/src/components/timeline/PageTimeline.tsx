@@ -80,6 +80,10 @@ export default function PageTimeline() {
     const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
     // Page clicking and dragging
     const resizingPage = useRef<Page | null>(null);
+    const [isResizing, setIsResizing] = useState(false);
+    const [currentDragCounts, setCurrentDragCounts] = useState<{
+        [pageId: number]: number;
+    }>({});
     const startX = useRef(0);
     const startWidth = useRef(0);
     const availableOffsets = useRef<number[]>([]);
@@ -105,6 +109,7 @@ export default function PageTimeline() {
         e.stopPropagation(); // Prevent triggering page selection
 
         resizingPage.current = page;
+        setIsResizing(true);
         startX.current = e.clientX;
         startWidth.current = getWidth(page);
         availableOffsets.current = getAvailableOffsets({
@@ -141,6 +146,20 @@ export default function PageTimeline() {
             // Subtract the buffer we added in getWidth to get the actual duration
 
             const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
+
+            // Calculate new counts for the tooltip display
+            const newBeats = durationToBeats({
+                newDuration,
+                allBeats: beats,
+                startBeat: resizingPage.current.beats[0],
+            });
+            const newCounts = newBeats.length;
+
+            // Update the current drag counts for tooltip display
+            setCurrentDragCounts((prev) => ({
+                ...prev,
+                [resizingPage.current!.id]: newCounts,
+            }));
 
             // We can use the deltaX to adjust the next page's width directly
 
@@ -233,6 +252,8 @@ export default function PageTimeline() {
         }
 
         resizingPage.current = null;
+        setIsResizing(false);
+        setCurrentDragCounts({});
         startX.current = 0;
         startWidth.current = 0;
 
@@ -263,6 +284,14 @@ export default function PageTimeline() {
         } else {
             toast.error(t("timeline.page.deleteFailed"));
         }
+    }
+
+    function nextPageBeatDiff(nextPageId: number, currId: number): number {
+        const currPageDrag = currentDragCounts[currId];
+        const currPage = pages[currId];
+        const nextPage = pages[nextPageId] || null;
+        if (!nextPage) return 0;
+        return nextPage.counts + (currPage.counts - currPageDrag || 0);
     }
 
     return (
@@ -363,8 +392,14 @@ export default function PageTimeline() {
                                 {/* ------ page resize dragging ------ */}
                                 {!isFullscreen && (
                                     <ToolTip.Root
+                                        key={`tooltip-${page.id}-${isResizing && resizingPage.current?.id === page.id ? "resizing" : "normal"}`}
+                                        open={
+                                            isResizing &&
+                                            resizingPage.current?.id === page.id
+                                                ? true
+                                                : undefined
+                                        }
                                         delayDuration={100}
-                                        open={true}
                                     >
                                         <ToolTip.Trigger asChild>
                                             <div
@@ -388,11 +423,20 @@ export default function PageTimeline() {
                                         </ToolTip.Trigger>
                                         <ToolTip.Portal>
                                             <ToolTip.Content
-                                                className={`${TooltipClassName} cursor-ew-resize hover:cursor-ew-resize`}
+                                                className={TooltipClassName}
                                             >
-                                                {page.counts}{" "}
+                                                {(resizingPage.current?.id ===
+                                                    page.id &&
+                                                    currentDragCounts[
+                                                        page.id
+                                                    ]) ||
+                                                    page.counts}{" "}
+                                                {/* calculates the next page count based on the difference */}
                                                 {page.nextPageId &&
-                                                    `| ${pages[page.nextPageId].counts}`}
+                                                    `| ${nextPageBeatDiff(
+                                                        page.nextPageId,
+                                                        page.id,
+                                                    )}`}
                                             </ToolTip.Content>
                                         </ToolTip.Portal>
                                     </ToolTip.Root>

@@ -53,6 +53,7 @@
         }
     },
     "dependencies": {
-        "@changesets/cli": "^2.29.5"
+        "@changesets/cli": "^2.29.5",
+        "pnpm": "^10.14.0"
     }
 }
