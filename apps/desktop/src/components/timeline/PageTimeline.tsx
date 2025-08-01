@@ -343,13 +343,13 @@ export default function PageTimeline() {
                             disabled={isPlaying || isFullscreen}
                         >
                             <div
-                                className="relative h-full overflow-y-visible"
+                                className="relative h-full overflow-clip"
                                 timeline-page-id={page.id}
                                 style={{ width: `${width}px` }}
                             >
                                 <div
                                     className={clsx(
-                                        "rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end border px-8 py-4 font-mono",
+                                        "rounded-6 bg-fg-2 text-body text-text relative ml-6 flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
                                         !isPlaying && "cursor-pointer",
                                         page.id === selectedPage?.id
                                             ? [
