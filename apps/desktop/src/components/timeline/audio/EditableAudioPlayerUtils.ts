@@ -343,7 +343,7 @@ export const performDatabaseOperations = async (
     );
     const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
 
-    return GroupFunction({
+    const result = await GroupFunction({
         functionsToExecute: [
             () => updatePages(pagesToUpdate, async () => {}),
             () => createMeasures(measuresToCreate, async () => {}),
@@ -351,8 +351,13 @@ export const performDatabaseOperations = async (
             () => deleteBeats(beatIdsToDelete, async () => {}),
         ],
         useNextUndoGroup: false,
-        refreshFunction,
     });
+
+    if (result.success) {
+        refreshFunction();
+    }
+
+    return result;
 };
 
 /**
@@ -481,7 +486,6 @@ export const replaceAllBeatObjects = async ({
 
     // Step 2: Create beats in the database
     const createBeatsResponse = await GroupFunction({
-        refreshFunction: () => {},
         functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
         useNextUndoGroup: true,
     });

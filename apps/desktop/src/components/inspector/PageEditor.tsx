@@ -87,12 +87,15 @@ function PageEditor() {
                         ),
                     );
                 }
-                await GroupFunction({
+                const result = await GroupFunction({
                     functionsToExecute,
-                    refreshFunction: fetchTimingObjects,
                     useNextUndoGroup: true,
                 });
-                toast.success(t("inspector.page.split.success"));
+
+                if (result.success) {
+                    fetchTimingObjects();
+                    toast.success(t("inspector.page.split.success"));
+                }
             }
         }
     };

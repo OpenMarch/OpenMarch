@@ -161,13 +161,18 @@ export const cascadeDeleteMeasures = async (
     );
 
     const fakeFetch = async () => {};
-    return GroupFunction({
+    const result = await GroupFunction({
         functionsToExecute: [
             () => deleteMeasures(new Set(measures.map((m) => m.id)), fakeFetch),
             () => deletePages(pageIdsToDelete, fakeFetch),
             () => deleteBeats(beatIdsToDelete, fakeFetch),
         ],
-        refreshFunction: fetchMeasuresFunction,
         useNextUndoGroup: true,
     });
+
+    if (result.success) {
+        fetchMeasuresFunction();
+    }
+
+    return result;
 };

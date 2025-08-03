@@ -408,7 +408,6 @@ export const createFromTempoGroup = async (
     });
 
     const createBeatsResponse = await GroupFunction({
-        refreshFunction: () => {},
         functionsToExecute: [
             () => createBeats(beatsToCreate, async () => {}, startingPosition),
         ],
@@ -439,7 +438,6 @@ export const createFromTempoGroup = async (
         });
 
         const createMeasuresResponse = await GroupFunction({
-            refreshFunction,
             functionsToExecute: [
                 () => createMeasures(newMeasures, async () => {}),
             ],
@@ -448,6 +446,8 @@ export const createFromTempoGroup = async (
         if (!createMeasuresResponse.success) {
             throw new Error("Error creating measures");
         }
+
+        refreshFunction();
 
         return { success: true };
     } catch (error) {
@@ -525,11 +525,16 @@ export const updateTempoGroup = async ({
         );
     }
 
-    return GroupFunction({
-        refreshFunction,
+    const result = await GroupFunction({
         functionsToExecute,
         useNextUndoGroup: true,
     });
+
+    if (result.success) {
+        refreshFunction();
+    }
+
+    return result;
 };
 
 export const updateManualTempos = async ({
@@ -561,11 +566,16 @@ export const updateManualTempos = async ({
         });
     }
 
-    return GroupFunction({
-        refreshFunction,
+    const result = await GroupFunction({
         functionsToExecute: [() => updateBeats(updatedBeats, async () => {})],
         useNextUndoGroup: true,
     });
+
+    if (result.success) {
+        refreshFunction();
+    }
+
+    return result;
 };
 
 export const handleCascadeDelete = async (

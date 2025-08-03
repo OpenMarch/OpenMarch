@@ -1,16 +1,13 @@
 /**
  * Executes a group of database functions with undo capability
- * @param refreshFunction A callback to refresh the UI after successful operations
  * @param functionsToExecute An array of database functions to execute sequentially. These should all increment the history group
  * @returns An array of database responses from each executed function
  * @description Runs multiple database functions, rolling back all changes if any function fails
  */
 export const GroupFunction = async ({
-    refreshFunction,
     functionsToExecute,
     useNextUndoGroup,
 }: {
-    refreshFunction: () => any;
     functionsToExecute: (() => Promise<{ success: boolean }>)[];
     useNextUndoGroup: boolean;
 }): Promise<{
@@ -53,7 +50,6 @@ export const GroupFunction = async ({
         // Ensure all functions are part of the same undo group
         await window.electron.flattenUndoGroupsAbove(firstFuncUndoGroup);
 
-    refreshFunction();
     return {
         responses,
         success: true,
