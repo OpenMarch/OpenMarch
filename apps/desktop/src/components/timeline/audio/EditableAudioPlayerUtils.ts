@@ -485,22 +485,17 @@ export const replaceAllBeatObjects = async ({
     const beatsToCreate = prepareBeatsForCreation(newBeats);
 
     // Step 2: Create beats in the database
-    const createBeatsResponse = await GroupFunction({
-        functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
-        useNextUndoGroup: true,
-    });
+    const createBeatsResponse = await createBeats(
+        beatsToCreate,
+        async () => {},
+    );
     if (!createBeatsResponse.success) {
         conToastError(t("audio.beats.create.error"), createBeatsResponse);
         return { success: false };
     }
     try {
         // Step 3: Convert database beats to Beat objects
-        const databaseBeats = (
-            createBeatsResponse.responses[0] as {
-                success: boolean;
-                data: DatabaseBeat[];
-            }
-        ).data;
+        const databaseBeats = createBeatsResponse.data;
         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats);
 
         // Step 4: Prepare page updates

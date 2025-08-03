@@ -407,12 +407,11 @@ export const createFromTempoGroup = async (
         strongBeatIndexes: tempoGroup.strongBeatIndexes,
     });
 
-    const createBeatsResponse = await GroupFunction({
-        functionsToExecute: [
-            () => createBeats(beatsToCreate, async () => {}, startingPosition),
-        ],
-        useNextUndoGroup: true,
-    });
+    const createBeatsResponse = await createBeats(
+        beatsToCreate,
+        async () => {},
+        startingPosition,
+    );
     if (!createBeatsResponse.success) {
         toast.error(tolgee.t("tempoGroup.createBeatsError"));
         console.error("Error creating beats", createBeatsResponse);
@@ -420,12 +419,7 @@ export const createFromTempoGroup = async (
     }
     try {
         // Step 3: Convert database beats to Beat objects
-        const databaseBeats = (
-            createBeatsResponse.responses[0] as {
-                success: boolean;
-                data: DatabaseBeat[];
-            }
-        ).data;
+        const databaseBeats = createBeatsResponse.data;
         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
             (a, b) => a.position - b.position,
         );
@@ -437,12 +431,10 @@ export const createFromTempoGroup = async (
             rehearsalMark: tempoGroup.name,
         });
 
-        const createMeasuresResponse = await GroupFunction({
-            functionsToExecute: [
-                () => createMeasures(newMeasures, async () => {}),
-            ],
-            useNextUndoGroup: false,
-        });
+        const createMeasuresResponse = await createMeasures(
+            newMeasures,
+            async () => {},
+        );
         if (!createMeasuresResponse.success) {
             throw new Error("Error creating measures");
         }
@@ -566,10 +558,7 @@ export const updateManualTempos = async ({
         });
     }
 
-    const result = await GroupFunction({
-        functionsToExecute: [() => updateBeats(updatedBeats, async () => {})],
-        useNextUndoGroup: true,
-    });
+    const result = await updateBeats(updatedBeats, async () => {});
 
     if (result.success) {
         refreshFunction();
