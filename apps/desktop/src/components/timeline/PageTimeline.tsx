@@ -288,9 +288,9 @@ export default function PageTimeline() {
 
     function nextPageBeatDiff(nextPageId: number, currId: number): number {
         const currPageDrag = currentDragCounts[currId];
-        const currPage = pages[currId];
-        const nextPage = pages[nextPageId] || null;
-        if (!nextPage) return 0;
+        const currPage = pages.find(p => p.id === currId);
+        const nextPage = pages.find(p => p.id === nextPageId);
+        if (!nextPage || !currPage) return 0;
         return nextPage.counts + (currPage.counts - currPageDrag || 0);
     }
 
