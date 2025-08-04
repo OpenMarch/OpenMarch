@@ -1,7 +1,7 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -15,10 +15,11 @@ import Page, {
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Button, Switch } from "@openmarch/ui";
+import { Button, Switch, TooltipClassName } from "@openmarch/ui";
 import { toast } from "sonner";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
+import * as ToolTip from "@radix-ui/react-tooltip";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -79,6 +80,10 @@ export default function PageTimeline() {
     const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
     // Page clicking and dragging
     const resizingPage = useRef<Page | null>(null);
+    const [isResizing, setIsResizing] = useState(false);
+    const [currentDragCounts, setCurrentDragCounts] = useState<{
+        [pageId: number]: number;
+    }>({});
     const startX = useRef(0);
     const startWidth = useRef(0);
     const availableOffsets = useRef<number[]>([]);
@@ -104,6 +109,7 @@ export default function PageTimeline() {
         e.stopPropagation(); // Prevent triggering page selection
 
         resizingPage.current = page;
+        setIsResizing(true);
         startX.current = e.clientX;
         startWidth.current = getWidth(page);
         availableOffsets.current = getAvailableOffsets({
@@ -140,6 +146,20 @@ export default function PageTimeline() {
             // Subtract the buffer we added in getWidth to get the actual duration
 
             const newDuration = newWidth / uiSettings.timelinePixelsPerSecond;
+
+            // Calculate new counts for the tooltip display
+            const newBeats = durationToBeats({
+                newDuration,
+                allBeats: beats,
+                startBeat: resizingPage.current.beats[0],
+            });
+            const newCounts = newBeats.length;
+
+            // Update the current drag counts for tooltip display
+            setCurrentDragCounts((prev) => ({
+                ...prev,
+                [resizingPage.current!.id]: newCounts,
+            }));
 
             // We can use the deltaX to adjust the next page's width directly
 
@@ -232,6 +252,8 @@ export default function PageTimeline() {
         }
 
         resizingPage.current = null;
+        setIsResizing(false);
+        setCurrentDragCounts({});
         startX.current = 0;
         startWidth.current = 0;
 
@@ -262,6 +284,14 @@ export default function PageTimeline() {
         } else {
             toast.error(t("timeline.page.deleteFailed"));
         }
+    }
+
+    function nextPageBeatDiff(nextPageId: number, currId: number): number {
+        const currPageDrag = currentDragCounts[currId];
+        const currPage = pages.find(p => p.id === currId);
+        const nextPage = pages.find(p => p.id === nextPageId);
+        if (!nextPage || !currPage) return 0;
+        return nextPage.counts + (currPage.counts - currPageDrag || 0);
     }
 
     return (
@@ -361,23 +391,55 @@ export default function PageTimeline() {
                                 </div>
                                 {/* ------ page resize dragging ------ */}
                                 {!isFullscreen && (
-                                    <div
-                                        className={clsx(
-                                            "rounded-r-6 absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
+                                    <ToolTip.Root
+                                        key={`tooltip-${page.id}-${isResizing && resizingPage.current?.id === page.id ? "resizing" : "normal"}`}
+                                        open={
+                                            isResizing &&
                                             resizingPage.current?.id === page.id
-                                                ? "bg-accent/50"
-                                                : "hover:bg-accent/30 bg-transparent",
-                                        )}
-                                        hidden={isPlaying}
-                                        onMouseDown={(e) =>
-                                            handlePageResizeStart(
-                                                e.nativeEvent,
-                                                page,
-                                            )
+                                                ? true
+                                                : undefined
                                         }
+                                        delayDuration={100}
                                     >
-                                        &nbsp;
-                                    </div>
+                                        <ToolTip.Trigger asChild>
+                                            <div
+                                                className={clsx(
+                                                    "rounded-r-6 absolute top-0 right-0 z-20 h-full w-3 cursor-ew-resize transition-colors",
+                                                    resizingPage.current?.id ===
+                                                        page.id
+                                                        ? "bg-accent/50"
+                                                        : "hover:bg-accent/30 bg-transparent",
+                                                )}
+                                                hidden={isPlaying}
+                                                onMouseDown={(e) =>
+                                                    handlePageResizeStart(
+                                                        e.nativeEvent,
+                                                        page,
+                                                    )
+                                                }
+                                            >
+                                                &nbsp;
+                                            </div>
+                                        </ToolTip.Trigger>
+                                        <ToolTip.Portal>
+                                            <ToolTip.Content
+                                                className={TooltipClassName}
+                                            >
+                                                {(resizingPage.current?.id ===
+                                                    page.id &&
+                                                    currentDragCounts[
+                                                        page.id
+                                                    ]) ||
+                                                    page.counts}{" "}
+                                                {/* calculates the next page count based on the difference */}
+                                                {page.nextPageId &&
+                                                    `| ${nextPageBeatDiff(
+                                                        page.nextPageId,
+                                                        page.id,
+                                                    )}`}
+                                            </ToolTip.Content>
+                                        </ToolTip.Portal>
+                                    </ToolTip.Root>
                                 )}
                             </div>
                         </ContextMenu.Trigger>
