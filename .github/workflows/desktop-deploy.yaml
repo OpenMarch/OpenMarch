@@ -78,7 +78,6 @@ jobs:
 
             - name: Build for production
               run: pnpm run build
-              working-directory: apps/desktop
 
             - name: Replace package name in package.json - ubuntu
               working-directory: apps/desktop

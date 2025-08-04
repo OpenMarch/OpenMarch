@@ -6,7 +6,7 @@ import {
     useEffect,
     useState,
 } from "react";
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import {
     getFieldProperties,

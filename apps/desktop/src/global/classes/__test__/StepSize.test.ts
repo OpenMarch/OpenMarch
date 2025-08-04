@@ -1,5 +1,5 @@
 import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
-import { FieldProperties } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import Page from "../Page";
