@@ -1,4 +1,4 @@
-import { type Measure, type Beat, secondsPerQuarterNote } from "./utils.ts";
+import { type Measure, type Beat, secondsPerQuarterNote } from "./utils";
 
 /**
  * Parses a MusicXML string and converts it into an array of musical measures.

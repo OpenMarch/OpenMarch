@@ -35,6 +35,8 @@ export interface Measure {
  * @param tempo
  */
 export function secondsPerQuarterNote(tempo: number): number {
+    if (tempo <= 0) throw new Error("Invalid tempo: " + tempo);
+
     return 60 / tempo;
 }
 
