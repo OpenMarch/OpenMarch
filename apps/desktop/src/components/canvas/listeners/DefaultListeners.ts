@@ -7,8 +7,8 @@ import {
     ModifiedMarcherPageArgs,
     updateMarcherPages,
 } from "@/global/classes/MarcherPage";
+import { rgbaToString } from "@openmarch/core";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
-import { rgbaToString } from "@openmarch/core/field";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;

@@ -6,7 +6,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 import MarcherPage from "@/global/classes/MarcherPage";
 
 /**

@@ -5,7 +5,7 @@ import {
     MeasurementSystem,
     DEFAULT_FIELD_THEME,
     FieldTheme,
-} from "@openmarch/core/field";
+} from "@openmarch/core";
 import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";

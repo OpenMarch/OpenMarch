@@ -1,11 +1,11 @@
 import { describe, expect, test } from "vitest";
+import { parseMusicXml } from "../../parser";
 import {
-    parseMusicXml,
     extractXmlFromMxlFile,
     type Measure,
     type Beat,
     secondsPerQuarterNote,
-} from "../../parser";
+} from "../../utils";
 import {
     measuresEqual,
     beatsEqual,

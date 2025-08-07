@@ -1,10 +1,9 @@
 # Build outputs
-dist/
-dist-electron/
-release/
-build/
-.astro/
-node_modules/
+**/dist/
+**/dist-electron/
+**/release/
+**/build/
+**/node_modules/
 
 # Generated files
 *.d.ts

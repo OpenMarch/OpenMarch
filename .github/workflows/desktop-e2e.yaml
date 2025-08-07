@@ -29,6 +29,8 @@ jobs:
               run: pnpm install
             - name: Install Playwright Browsers
               run: pnpm exec playwright install --with-deps
+            - name: Build monorepo
+              run: pnpm run build
             - name: Build desktop app
               working-directory: apps/desktop
               run: pnpm run build:electron --dir

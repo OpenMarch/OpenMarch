@@ -43,6 +43,7 @@
         "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@openmarch/core": "workspace:*",
+        "@openmarch/musicxml-parser": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-alert-dialog": "^1.1.14",
         "@radix-ui/react-checkbox": "^1.3.2",
