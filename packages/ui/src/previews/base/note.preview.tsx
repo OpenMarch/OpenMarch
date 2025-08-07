@@ -10,7 +10,7 @@ export const PreviewProps = {
     title: "Note",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <div>
             <InfoNote>Hello world</InfoNote>

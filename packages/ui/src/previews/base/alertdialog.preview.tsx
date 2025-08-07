@@ -13,7 +13,7 @@ export const PreviewProps = {
     title: "Alert Dialog",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return (
         <AlertDialog>
             <AlertDialogTrigger>
