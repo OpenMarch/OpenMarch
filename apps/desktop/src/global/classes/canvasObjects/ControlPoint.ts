@@ -7,7 +7,7 @@ import {
 } from "@openmarch/path-utility";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { MarcherPath } from "./MarcherPath";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 
 export class ControlPoint extends fabric.Circle {
     private _canvas: OpenMarchCanvas;

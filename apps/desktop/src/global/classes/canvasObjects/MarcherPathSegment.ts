@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { IPathSegment } from "@openmarch/path-utility";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 
 export class MarcherPathSegment {
     private _segment: IPathSegment;
