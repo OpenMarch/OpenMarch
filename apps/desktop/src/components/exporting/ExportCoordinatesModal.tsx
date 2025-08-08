@@ -123,16 +123,22 @@ function CoordinateSheetExport() {
             setProgress(15);
 
             const processedMarchers = marchers
-                .map((marcher, index) => ({
+                .map((marcher) => ({
                     ...marcher,
-                    name: marcher.name || `${marcher.section} ${index + 1}`,
+                    name:
+                        marcher.name ||
+                        `${marcher.section} ${marcher.drill_order}`,
                 }))
                 .sort((a, b) => {
                     const sectionCompare = (a.section || "").localeCompare(
                         b.section || "",
                     );
                     if (sectionCompare !== 0) return sectionCompare;
-                    return a.drill_number.localeCompare(b.drill_number);
+                    return a.drill_number.localeCompare(
+                        b.drill_number,
+                        undefined,
+                        { numeric: true },
+                    );
                 });
 
             await new Promise((resolve) => setTimeout(resolve, 300));
@@ -141,7 +147,6 @@ function CoordinateSheetExport() {
             setProgress(25);
 
             // More detailed progress for sheet generation
-            const totalMarchers = processedMarchers.length;
             let groupedSheets: any[];
 
             // Check for cancellation

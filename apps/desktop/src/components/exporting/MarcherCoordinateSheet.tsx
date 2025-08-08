@@ -320,12 +320,6 @@ export function StaticMarcherCoordinateSheet({
         useXY,
     ]);
 
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
-        const pageA = pagesState.find((page) => page.id === a.page_id);
-        const pageB = pagesState.find((page) => page.id === b.page_id);
-        return pageA && pageB ? pageA.order - pageB.order : 0;
-    };
-
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())
         ReadableCoords.setFieldProperties(fieldPropertiesState!);
@@ -654,13 +648,6 @@ export function StaticCompactMarcherSheet({
     if (!ReadableCoords.getFieldProperties())
         ReadableCoords.setFieldProperties(fieldPropertiesState!);
 
-    // Sort function for marcher pages
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
-        const pageA = pagesState.find((page) => page.id === a.page_id);
-        const pageB = pagesState.find((page) => page.id === b.page_id);
-        return pageA && pageB ? pageA.order - pageB.order : 0;
-    };
-
     return (
         <div
             title="Marcher Coordinate Sheet Container"
@@ -833,70 +820,19 @@ export function StaticCompactMarcherSheet({
                     </tr>
                 </thead>
                 <tbody>
-                    {marcherPagesState
-                        .sort(sortMarcherPages)
-                        .map((marcherPage: MarcherPage, index) => {
+                    {marcherPagesState.map(
+                        (marcherPage: MarcherPage, index) => {
                             if (!fieldPropertiesState) return null;
                             const page = pagesState.find(
                                 (p) => p.id === marcherPage.page_id,
                             );
-
-                            // If page is not found, render a placeholder row to avoid losing data
-                            if (!page) {
-                                return (
-                                    <tr key={`missing-${marcherPage.id}`}>
-                                        <td
-                                            colSpan={5}
-                                            style={{
-                                                border: "1px solid #888",
-                                                padding: "1px 3px",
-                                                textAlign: "center",
-                                                fontFamily:
-                                                    "ui-sans-serif, system-ui, sans-serif",
-                                                fontSize: 10,
-                                                lineHeight: 1.1,
-                                                color: "red",
-                                            }}
-                                        >
-                                            {t(
-                                                "exportCoordinates.pageNotFound",
-                                                { id: marcherPage.id },
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            }
-
                             const rCoords = new ReadableCoords({
                                 x: marcherPage.x,
                                 y: marcherPage.y,
                                 roundingDenominator,
                             });
 
-                            if (!rCoords) {
-                                return (
-                                    <tr key={`error-${marcherPage.id}`}>
-                                        <td
-                                            colSpan={5}
-                                            style={{
-                                                border: "1px solid #888",
-                                                padding: "1px 3px",
-                                                textAlign: "center",
-                                                fontFamily:
-                                                    "ui-sans-serif, system-ui, sans-serif",
-                                                fontSize: 10,
-                                                lineHeight: 1.1,
-                                                color: "red",
-                                            }}
-                                        >
-                                            {t(
-                                                "exportCoordinates.coordinatesError",
-                                                { id: marcherPage.id },
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            }
+                            if (!page || !rCoords) return null;
 
                             // S to S and F to B
                             const sToS = terse
@@ -991,7 +927,8 @@ export function StaticCompactMarcherSheet({
                                     </td>
                                 </tr>
                             );
-                        })}
+                        },
+                    )}
                 </tbody>
             </table>
         </div>
