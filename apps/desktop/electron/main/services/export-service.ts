@@ -170,6 +170,33 @@ function chunkArray<T>(array: T[], size: number): T[][] {
     return result;
 }
 
+// Modified from Page.ts for export purposes
+const measureRangeString = (page: Page): string => {
+    if (!page.measures || page.measures.length === 0) {
+        return "START";
+    }
+    try {
+        const firstMeasure = page.measures[0];
+        const lastMeasure = page.measures[page.measures.length - 1];
+
+        // If the page starts on the first measure, just return the measure number. Otherwise, return the measure number and the beat.
+        const firstMeasureString =
+            page.measureBeatToStartOn === 1
+                ? firstMeasure.number.toString()
+                : `${firstMeasure.number}(${page.measureBeatToStartOn})`;
+        const beatToEndOn = page.measureBeatToEndOn;
+        const lastMeasureString =
+            beatToEndOn === 0
+                ? lastMeasure.number.toString()
+                : `${lastMeasure.number}(${beatToEndOn})`;
+
+        if (firstMeasureString === lastMeasureString) return firstMeasureString;
+        return `${firstMeasureString} -> ${lastMeasureString}`;
+    } catch (err) {
+        return "N/A";
+    }
+};
+
 interface ExportSheet {
     name: string;
     drillNumber: string;
@@ -795,14 +822,7 @@ export class PDFExportService {
             const page = pages?.[i];
             const setNumber = page?.name ?? "END";
             const counts = page?.counts != null ? String(page.counts) : "END";
-            const measureNumbers =
-                page?.measures && page.measures.length > 0
-                    ? page.measures.length === 1
-                        ? String(page.measures[0].number)
-                        : `${page.measures[0].number}-${page.measures[page.measures.length - 1].number}`
-                    : i === 0
-                      ? "START"
-                      : "END";
+            const measureNumbers = measureRangeString(page);
             const prevCoord = marcherCoordinates[i - 1] ?? "N/A";
             const currCoord = marcherCoordinates[i] ?? "N/A";
             const nextCoord = marcherCoordinates[i + 1] ?? "N/A";
