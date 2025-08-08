@@ -42,6 +42,8 @@ import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T, useTolgee } from "@tolgee/react";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -650,6 +652,8 @@ function DrillChartExport() {
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { shapePages } = useShapePageStore()!;
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -708,6 +712,16 @@ function DrillChartExport() {
                     marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
                     pageId: pages[p].id,
+                });
+
+                // Render previous, current, and next shapes
+                exportCanvas.renderMarcherShapes({
+                    shapePages: shapePages.filter(
+                        (sp) =>
+                            sp.page_id === pages[p].id ||
+                            sp.page_id === pages[p].previousPageId ||
+                            sp.page_id === pages[p].nextPageId,
+                    ),
                 });
 
                 // Render pathways for individual marchers
@@ -914,49 +928,13 @@ function DrillChartExport() {
         setIsLoading(true);
         setProgress(0);
 
-        // Fun marching band phrases that rotate during export
-        const funPhrases = [
-            t("exportCoordinates.funPhrase.0"),
-            t("exportCoordinates.funPhrase.1"),
-            t("exportCoordinates.funPhrase.2"),
-            t("exportCoordinates.funPhrase.3"),
-            t("exportCoordinates.funPhrase.4"),
-            t("exportCoordinates.funPhrase.5"),
-            t("exportCoordinates.funPhrase.6"),
-            t("exportCoordinates.funPhrase.7"),
-            t("exportCoordinates.funPhrase.8"),
-            t("exportCoordinates.funPhrase.9"),
-            t("exportCoordinates.funPhrase.10"),
-            t("exportCoordinates.funPhrase.11"),
-        ];
-
-        let currentPhraseIndex = 0;
-        let phraseInterval: NodeJS.Timeout;
-
-        // Start rotating phrases every 2 seconds
-        const startPhraseRotation = () => {
-            setCurrentStep(funPhrases[currentPhraseIndex]);
-            phraseInterval = setInterval(() => {
-                currentPhraseIndex =
-                    (currentPhraseIndex + 1) % funPhrases.length;
-                setCurrentStep(funPhrases[currentPhraseIndex]);
-            }, 2000);
-        };
-
-        const stopPhraseRotation = () => {
-            if (phraseInterval) {
-                clearInterval(phraseInterval);
-            }
-        };
-
-        startPhraseRotation();
-
         // Store original state of canvas for restoration
         const exportCanvas: OpenMarchCanvas = window.canvas;
         const originalWidth = exportCanvas.getWidth();
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
             exportCanvas.viewportTransform!.slice();
+        exportCanvas.hideAllPathVisuals({ marcherVisuals });
 
         // Generate SVGs from the canvas
         let SVGs: string[][] = [];
@@ -980,12 +958,13 @@ function DrillChartExport() {
         exportCanvas.setWidth(originalWidth);
         exportCanvas.setHeight(originalHeight);
         exportCanvas.viewportTransform = originalViewportTransform;
+        setSelectedPage(pages[pages.length - 1]);
         exportCanvas.requestRenderAll();
 
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 
-        // SVG creation done, start exporting - continue with fun phrases
+        // SVG creation done, start exporting
         try {
             // Create export directory
             const { exportName, exportDir } =
@@ -1051,14 +1030,13 @@ function DrillChartExport() {
             );
             setCurrentStep(t("exportCoordinates.exportFailed"));
         } finally {
-            stopPhraseRotation();
             // Keep the completed state visible for a moment before hiding
             setTimeout(() => {
                 isCancelled.current = false;
                 setIsLoading(false);
                 setProgress(0);
                 setCurrentStep("");
-            }, 1500);
+            }, 1000);
         }
     }, [generateExportSVGs, exportMarcherSVGs, t]);
 
