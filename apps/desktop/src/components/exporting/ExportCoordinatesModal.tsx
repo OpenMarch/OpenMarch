@@ -40,7 +40,8 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -69,7 +70,7 @@ function CoordinateSheetExport() {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
     const isCancelled = useRef(false);
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
@@ -661,7 +662,7 @@ function DrillChartExport() {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);

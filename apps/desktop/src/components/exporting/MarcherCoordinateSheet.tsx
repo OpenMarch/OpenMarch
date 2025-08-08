@@ -9,7 +9,8 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import Beat from "@/global/classes/Beat";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 
 const FullPageSheetColumnWidths = {
     pageNumber: "10%",
@@ -53,7 +54,7 @@ export default function MarcherCoordinateSheet({
         [],
     );
 
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     useEffect(() => {
         if (!fieldProperties) {
@@ -297,7 +298,7 @@ export function StaticMarcherCoordinateSheet({
     const [terseState, setTerse] = useState<boolean>(terse);
     const [useXYState, setUseXY] = useState<boolean>(useXY);
 
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     useEffect(() => {
         setMarcherState(marcher);
@@ -640,6 +641,7 @@ export function StaticCompactMarcherSheet({
     const [marcherPagesState, setMarcherPagesState] =
         useState<MarcherPage[]>(marcherPages);
     const [pagesState, setPagesState] = useState<Page[]>(pages);
+    const t = tolgee.t;
 
     useEffect(() => {
         setMarcherState(marcher);
@@ -800,7 +802,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            <T keyName="exportCoordinates.measuresHeader" />
+                            {t("exportCoordinates.measuresHeader")}
                         </th>
                         <th
                             aria-label="side to side header"
@@ -813,7 +815,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            <T keyName="exportCoordinates.sideToSideHeader" />
+                            {t("exportCoordinates.sideToSideHeader")}
                         </th>
                         <th
                             aria-label="front to back header"
@@ -826,7 +828,7 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            <T keyName="exportCoordinates.frontToBackHeader" />
+                            {t("exportCoordinates.frontToBackHeader")}
                         </th>
                     </tr>
                 </thead>
@@ -856,10 +858,10 @@ export function StaticCompactMarcherSheet({
                                                 color: "red",
                                             }}
                                         >
-                                            <T
-                                                keyName="exportCoordinates.pageNotFound"
-                                                params={{ id: marcherPage.id }}
-                                            />
+                                            {t(
+                                                "exportCoordinates.pageNotFound",
+                                                { id: marcherPage.id },
+                                            )}
                                         </td>
                                     </tr>
                                 );
@@ -887,10 +889,10 @@ export function StaticCompactMarcherSheet({
                                                 color: "red",
                                             }}
                                         >
-                                            <T
-                                                keyName="exportCoordinates.coordinatesError"
-                                                params={{ id: marcherPage.id }}
-                                            />
+                                            {t(
+                                                "exportCoordinates.coordinatesError",
+                                                { id: marcherPage.id },
+                                            )}
                                         </td>
                                     </tr>
                                 );
