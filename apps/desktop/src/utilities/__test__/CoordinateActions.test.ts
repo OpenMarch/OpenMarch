@@ -181,7 +181,14 @@ describe("CoordinateActions", () => {
                     yAxis: false,
                 });
 
-                expect(result).toEqual(marcherPages);
+                expect(result).toEqual(
+                    marcherPages.map((mp) => ({
+                        marcher_id: mp.marcher_id,
+                        page_id: mp.page_id,
+                        x: mp.x,
+                        y: mp.y,
+                    })),
+                );
             });
         });
 

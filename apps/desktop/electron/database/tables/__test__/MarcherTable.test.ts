@@ -228,7 +228,10 @@ describe("MarcherTable", () => {
                     db,
                 });
                 expect(marcherPages.success).toBe(true);
-                const marcherPagesMap = new Map<number, MarcherPage>(
+                const marcherPagesMap = new Map<
+                    number,
+                    (typeof marcherPages.data)[0]
+                >(
                     marcherPages.data.map((marcherPage) => [
                         marcherPage.id,
                         marcherPage,
@@ -774,7 +777,10 @@ describe("MarcherTable", () => {
                 expect(allMarcherPages.success).toBe(true);
                 expect(allMarcherPages.data.length).toBe(6); // 3 remaining marchers * 2 pages
 
-                const marcherPagesMap = new Map<number, MarcherPage>(
+                const marcherPagesMap = new Map<
+                    number,
+                    (typeof allMarcherPages.data)[0]
+                >(
                     allMarcherPages.data.map((marcherPage) => [
                         marcherPage.id,
                         marcherPage,

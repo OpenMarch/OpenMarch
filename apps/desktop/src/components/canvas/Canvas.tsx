@@ -373,7 +373,15 @@ export default function Canvas({
 
             frameRef.current = null;
         });
-    }, [canvas, marcherPages, marcherVisuals, selectedMarchers, selectedPage]);
+    }, [
+        canvas,
+        marcherPages,
+        marcherVisuals,
+        selectedMarchers,
+        selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
+    ]);
 
     useEffect(() => {
         if (!canvas) return;

@@ -1,8 +1,9 @@
 ---
 description:
-globs:
 alwaysApply: true
 ---
+
+# Repository guidelines
 
 OpenMarch is a monorepo organized with Turbo. It uses pnpm as its package manager
 
