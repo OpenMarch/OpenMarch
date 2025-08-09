@@ -15,7 +15,7 @@ import {
     ModifiedBeatArgs,
     NewBeatArgs,
 } from "electron/database/tables/BeatTable";
-import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
+import type { NewMeasureArgs } from "@/global/classes/Measure";
 import type { ModifiedPageArgs } from "electron/database/tables/PageTable";
 
 /**

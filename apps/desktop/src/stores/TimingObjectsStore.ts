@@ -3,6 +3,7 @@ import Beat, {
     calculateTimestamps,
 } from "@/global/classes/Beat";
 import Measure, { fromDatabaseMeasures } from "@/global/classes/Measure";
+import { getMeasures } from "@/global/classes/Measure";
 import Page, { fromDatabasePages } from "@/global/classes/Page";
 import { create } from "zustand";
 
@@ -47,7 +48,7 @@ export const useTimingObjectsStore = create<TimingObjectStoreInterface>(
                     beatsResponse.error?.message ?? "Could not fetch beats",
                 );
             }
-            const measuresResponse = await window.electron.getMeasures();
+            const measuresResponse = await getMeasures();
             if (!measuresResponse.success) {
                 console.error(measuresResponse.error);
                 throw new Error(

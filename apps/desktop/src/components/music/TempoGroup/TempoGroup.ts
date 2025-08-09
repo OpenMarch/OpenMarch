@@ -15,7 +15,7 @@ import Beat, {
     updateBeats,
 } from "../../../global/classes/Beat";
 import { GroupFunction } from "../../../utilities/ApiFunctions";
-import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
+import type { NewMeasureArgs } from "@/global/classes/Measure";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 

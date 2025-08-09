@@ -1,12 +1,13 @@
-import type {
-    DatabaseMeasure,
-    ModifiedMeasureArgs,
-    NewMeasureArgs,
-} from "electron/database/tables/MeasureTable";
 import Beat, { beatsDuration, compareBeats, deleteBeats } from "./Beat";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
 import { GroupFunction } from "@/utilities/ApiFunctions";
 import { deletePages } from "./Page";
+import { db, schema } from "../database/db";
+import { eq, inArray } from "drizzle-orm";
+import { incrementUndoGroup } from "./History";
+import { promiseToDatabaseResponse } from "../database/adapters";
+
+const { measures } = schema;
 
 interface Measure {
     /** ID of the measure in the database */
@@ -29,6 +30,135 @@ interface Measure {
     readonly timestamp: number;
 }
 export default Measure;
+
+// Database types and interfaces
+export type DatabaseMeasure = typeof measures.$inferSelect;
+
+export type NewMeasureArgs = Omit<
+    typeof measures.$inferInsert,
+    "id" | "created_at" | "updated_at"
+>;
+
+export type ModifiedMeasureArgs = Partial<typeof measures.$inferInsert> & {
+    id: number;
+};
+
+// Database functions
+export async function getMeasures(): Promise<
+    DatabaseResponse<DatabaseMeasure[]>
+> {
+    return promiseToDatabaseResponse(async () => {
+        return await db.select().from(measures).all();
+    });
+}
+
+export async function getMeasuresDb(): Promise<DatabaseMeasure[]> {
+    return await db.select().from(measures).all();
+}
+
+export async function getMeasureById(
+    id: number,
+): Promise<DatabaseResponse<DatabaseMeasure | undefined>> {
+    return promiseToDatabaseResponse(async () => {
+        return await getMeasureByIdDb(id);
+    });
+}
+
+export async function getMeasureByIdDb(
+    id: number,
+): Promise<DatabaseMeasure | undefined> {
+    const result = await db
+        .select()
+        .from(measures)
+        .where(eq(measures.id, id))
+        .get();
+
+    // Drizzle .get() may return an object with undefined properties when no row is found
+    return result?.id !== undefined ? result : undefined;
+}
+
+export async function createMeasuresDb(
+    newMeasures: NewMeasureArgs[],
+): Promise<DatabaseMeasure[]> {
+    return await db.transaction(async (tx) => {
+        await incrementUndoGroup(tx);
+
+        const createdMeasures: DatabaseMeasure[] = [];
+        for (const measure of newMeasures) {
+            const result = await tx
+                .insert(measures)
+                .values({
+                    start_beat: measure.start_beat,
+                    rehearsal_mark: measure.rehearsal_mark ?? null,
+                    notes: measure.notes ?? null,
+                })
+                .returning()
+                .get();
+            createdMeasures.push(result);
+        }
+        return createdMeasures;
+    });
+}
+
+export async function updateMeasuresDb(
+    modifiedMeasures: ModifiedMeasureArgs[],
+): Promise<DatabaseMeasure[]> {
+    return await db.transaction(async (tx) => {
+        await incrementUndoGroup(tx);
+
+        const updatedMeasures: DatabaseMeasure[] = [];
+        for (const measure of modifiedMeasures) {
+            const updateData: Partial<typeof measures.$inferInsert> = {};
+            if (measure.start_beat !== undefined)
+                updateData.start_beat = measure.start_beat;
+            if (measure.rehearsal_mark !== undefined)
+                updateData.rehearsal_mark = measure.rehearsal_mark;
+            if (measure.notes !== undefined) updateData.notes = measure.notes;
+
+            const result = await tx
+                .update(measures)
+                .set(updateData)
+                .where(eq(measures.id, measure.id))
+                .returning()
+                .get();
+            updatedMeasures.push(result);
+        }
+        return updatedMeasures;
+    });
+}
+
+export async function deleteMeasuresDb(
+    measureIds: Set<number>,
+): Promise<DatabaseMeasure[]> {
+    return await db.transaction(async (tx) => {
+        await incrementUndoGroup(tx);
+
+        const measureIdArray = Array.from(measureIds);
+        return await tx
+            .delete(measures)
+            .where(inArray(measures.id, measureIdArray))
+            .returning()
+            .all();
+    });
+}
+
+export async function getMeasuresByBeatId(
+    beatId: number,
+): Promise<DatabaseResponse<DatabaseMeasure[]>> {
+    return promiseToDatabaseResponse(async () => {
+        return await getMeasuresByBeatIdDb(beatId);
+    });
+}
+
+export async function getMeasuresByBeatIdDb(
+    beatId: number,
+): Promise<DatabaseMeasure[]> {
+    return await db
+        .select()
+        .from(measures)
+        .where(eq(measures.start_beat, beatId))
+        .all();
+}
 
 /** A type that stores a beat with the index that it occurs in a list with all beats */
 type BeatWithIndex = Beat & { index: number };
@@ -104,7 +234,9 @@ export const createMeasures = async (
     measures: NewMeasureArgs[],
     fetchMeasuresFunction: () => Promise<void>,
 ): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await window.electron.createMeasures(measures);
+    const response = await promiseToDatabaseResponse(() =>
+        createMeasuresDb(measures),
+    );
     if (response.success) fetchMeasuresFunction();
     else console.error("Failed to create measures", response.error);
     return response;
@@ -120,7 +252,9 @@ export const updateMeasures = async (
     measures: ModifiedMeasureArgs[],
     fetchMeasuresFunction: () => Promise<void>,
 ): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await window.electron.updateMeasures(measures);
+    const response = await promiseToDatabaseResponse(() =>
+        updateMeasuresDb(measures),
+    );
     if (response.success) fetchMeasuresFunction();
     else console.error("Failed to update measures", response.error);
     return response;
@@ -136,7 +270,9 @@ export const deleteMeasures = async (
     measureIds: Set<number>,
     fetchMeasuresFunction: () => Promise<void>,
 ): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await window.electron.deleteMeasures(measureIds);
+    const response = await promiseToDatabaseResponse(() =>
+        deleteMeasuresDb(measureIds),
+    );
     if (response.success) fetchMeasuresFunction();
     else console.error("Failed to delete measures", response.error);
     return response;

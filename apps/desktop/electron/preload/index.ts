@@ -18,11 +18,6 @@ import {
     ModifiedBeatArgs,
 } from "electron/database/tables/BeatTable";
 import {
-    DatabaseMeasure,
-    NewMeasureArgs,
-    ModifiedMeasureArgs,
-} from "electron/database/tables/MeasureTable";
-import {
     DatabasePage,
     ModifiedPageArgs,
     NewPageArgs,
@@ -383,24 +378,6 @@ const APP_API = {
     deleteBeats: (beatIds: Set<number>) =>
         ipcRenderer.invoke("beat:delete", beatIds) as Promise<
             DatabaseResponse<DatabaseBeat[]>
-        >,
-
-    // Measure
-    getMeasures: () =>
-        ipcRenderer.invoke("measure:getAll") as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    createMeasures: (newMeasures: NewMeasureArgs[]) =>
-        ipcRenderer.invoke("measure:insert", newMeasures) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    updateMeasures: (modifiedMeasures: ModifiedMeasureArgs[]) =>
-        ipcRenderer.invoke("measure:update", modifiedMeasures) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    deleteMeasures: (measureIds: Set<number>) =>
-        ipcRenderer.invoke("measure:delete", measureIds) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
         >,
 
     // Audio File

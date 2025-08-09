@@ -1,7 +1,22 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import Beat from "../Beat";
-import { DatabaseMeasure } from "electron/database/tables/MeasureTable";
-import { fromDatabaseMeasures } from "../Measure";
+import { setupTestSqlProxy } from "@/__mocks__/TestSqlProxy";
+import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
+import { db, schema } from "@/global/database/db";
+import {
+    DatabaseMeasure,
+    fromDatabaseMeasures,
+    getMeasures,
+    getMeasureById,
+    createMeasuresDb,
+    updateMeasuresDb,
+    deleteMeasuresDb,
+    getMeasuresByBeatId,
+    type NewMeasureArgs,
+    type ModifiedMeasureArgs,
+} from "../Measure";
+
+const { beats } = schema;
 
 describe("Measure", () => {
     describe("fromDatabaseMeasures", () => {
@@ -310,6 +325,162 @@ describe("Measure", () => {
             expect(result[1].beats).toHaveLength(2);
             expect(result[1].beats[0].id).toBe(3);
             expect(result[1].beats[1].id).toBe(4);
+        });
+    });
+
+    // Database operation tests
+    describe("Database Operations", () => {
+        beforeEach(async () => {
+            await setupTestSqlProxy();
+
+            // Create some beats for measures to reference using direct database calls
+            // Beat with ID 0 already exists, so create additional beats with IDs 1 and 2
+            await db
+                .insert(beats)
+                .values([
+                    {
+                        id: 1,
+                        duration: 1.0,
+                        position: 1,
+                        include_in_measure: 1,
+                    },
+                    {
+                        id: 2,
+                        duration: 1.0,
+                        position: 2,
+                        include_in_measure: 1,
+                    },
+                ])
+                .run();
+        });
+
+        describe("getMeasures", () => {
+            it("should return all measures", async () => {
+                const result = await getMeasures();
+                expect(result.success).toBe(true);
+                expect(Array.isArray(result.data)).toBe(true);
+            });
+        });
+
+        describe("createMeasures", () => {
+            it("should create new measures", async () => {
+                const newMeasures: NewMeasureArgs[] = [
+                    {
+                        start_beat: FIRST_BEAT_ID,
+                        rehearsal_mark: "A",
+                        notes: "Test measure",
+                    },
+                ];
+
+                const result = await createMeasuresDb(newMeasures);
+                expect(Array.isArray(result)).toBe(true);
+                expect(result).toHaveLength(1);
+                expect(result[0]).toMatchObject({
+                    start_beat: FIRST_BEAT_ID,
+                    rehearsal_mark: "A",
+                    notes: "Test measure",
+                });
+            });
+        });
+
+        describe("updateMeasures", () => {
+            it("should update existing measures", async () => {
+                // First create a measure
+                const newMeasures: NewMeasureArgs[] = [
+                    {
+                        start_beat: FIRST_BEAT_ID,
+                        rehearsal_mark: "A",
+                        notes: "Original",
+                    },
+                ];
+                const createResult = await createMeasuresDb(newMeasures);
+                expect(Array.isArray(createResult)).toBe(true);
+                const createdMeasure = createResult[0];
+
+                // Now update it
+                const modifiedMeasures: ModifiedMeasureArgs[] = [
+                    {
+                        id: createdMeasure.id,
+                        rehearsal_mark: "B",
+                        notes: "Updated",
+                    },
+                ];
+
+                const result = await updateMeasuresDb(modifiedMeasures);
+                expect(Array.isArray(result)).toBe(true);
+                expect(result[0]).toMatchObject({
+                    id: createdMeasure.id,
+                    rehearsal_mark: "B",
+                    notes: "Updated",
+                });
+            });
+        });
+
+        describe("deleteMeasures", () => {
+            it("should delete measures", async () => {
+                // First create a measure
+                const newMeasures: NewMeasureArgs[] = [
+                    {
+                        start_beat: FIRST_BEAT_ID,
+                        rehearsal_mark: "A",
+                    },
+                ];
+                const createResult = await createMeasuresDb(newMeasures);
+                expect(Array.isArray(createResult)).toBe(true);
+                const createdMeasure = createResult[0];
+
+                // Now delete it
+                const result = await deleteMeasuresDb(
+                    new Set([createdMeasure.id]),
+                );
+                expect(Array.isArray(result)).toBe(true);
+                expect(result[0].id).toBe(createdMeasure.id);
+            });
+        });
+
+        describe("getMeasureById", () => {
+            it("should return a specific measure", async () => {
+                // First create a measure
+                const newMeasures: NewMeasureArgs[] = [
+                    {
+                        start_beat: FIRST_BEAT_ID,
+                        rehearsal_mark: "A",
+                    },
+                ];
+                const createResult = await createMeasuresDb(newMeasures);
+                expect(Array.isArray(createResult)).toBe(true);
+                const createdMeasure = createResult[0];
+
+                // Get it by ID
+                const result = await getMeasureById(createdMeasure.id);
+                expect(result.success).toBe(true);
+                expect(result.data?.id).toBe(createdMeasure.id);
+            });
+
+            it("should return undefined for non-existent measure", async () => {
+                const result = await getMeasureById(999);
+                expect(result.success).toBe(true);
+                expect(result.data).toBeUndefined();
+            });
+        });
+
+        describe("getMeasuresByBeatId", () => {
+            it("should return measures for a specific beat", async () => {
+                // First create a measure
+                const newMeasures: NewMeasureArgs[] = [
+                    {
+                        start_beat: FIRST_BEAT_ID,
+                        rehearsal_mark: "A",
+                    },
+                ];
+                const createResult = await createMeasuresDb(newMeasures);
+                expect(Array.isArray(createResult)).toBe(true);
+
+                // Get measures by beat ID
+                const result = await getMeasuresByBeatId(FIRST_BEAT_ID);
+                expect(result.success).toBe(true);
+                expect(Array.isArray(result.data)).toBe(true);
+            });
         });
     });
 });
