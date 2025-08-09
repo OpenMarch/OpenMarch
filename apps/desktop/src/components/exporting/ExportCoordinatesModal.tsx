@@ -850,6 +850,10 @@ function DrillChartExport() {
 
                 // Update progress smoothly
                 setProgress(50 * ((p + 1) / pages.length));
+
+                // Update UI state
+                await new Promise((r) => setTimeout(r, 0));
+
                 if (isCancelled.current) {
                     throw new Error(t("exportCoordinates.cancelledByUser"));
                 }
