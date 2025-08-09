@@ -960,11 +960,16 @@ function DrillChartExport() {
             isCancelled.current = true;
         }
 
-        // Restore canvas to original state
+        // Restore canvas to original state at last page
         exportCanvas.setWidth(originalWidth);
         exportCanvas.setHeight(originalHeight);
         exportCanvas.viewportTransform = originalViewportTransform;
         setSelectedPage(pages[pages.length - 1]);
+        exportCanvas.renderMarcherShapes({
+            shapePages: shapePages.filter(
+                (sp) => sp.page_id === pages[pages.length - 1].id,
+            ),
+        });
         exportCanvas.requestRenderAll();
 
         // Error occurred during SVG generation
