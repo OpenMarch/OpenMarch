@@ -63,6 +63,12 @@ export default function MarcherCoordinateSheet({
             );
             return;
         }
+        if (!marcherPagesLoaded) {
+            console.error(
+                "Marcher pages not loaded in MarcherCoordinateSheet.tsx",
+            );
+            return;
+        }
         const pixelsPerStep = fieldProperties
             ? fieldProperties.pixelsPerStep
             : 0;
