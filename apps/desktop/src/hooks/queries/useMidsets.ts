@@ -3,21 +3,20 @@ import { db, schema } from "@/global/database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { Path } from "@openmarch/path-utility";
+import { useMemo } from "react";
+import { pathwayKeys } from "./usePathways";
 
 const { midsets, pathways } = schema;
 
-// Define types from the existing schema
-export type DatabaseMidset = typeof midsets.$inferSelect & {
-    path_data: string | null;
-    pathway_notes: string | null;
-};
+// Define types from the existing schema - remove pathway fields from base type
+export type DatabaseMidset = typeof midsets.$inferSelect;
 
 export interface Midset {
     readonly id: number;
-    readonly page_id: number;
+    readonly mp_id: number;
     readonly x: number;
     readonly y: number;
-    readonly placement: number;
+    readonly progress_placement: number;
     readonly created_at: string;
     readonly updated_at: string;
     readonly path_data_id: number | null;
@@ -31,10 +30,10 @@ export interface Midset {
  * Arguments for creating a new midset
  */
 export interface NewMidsetArgs {
-    page_id: number;
+    mp_id: number;
     x: number;
     y: number;
-    placement: number;
+    progress_placement: number;
     path_data_id?: number | null;
     path_position?: number | null;
     notes?: string | null;
@@ -47,7 +46,7 @@ export interface ModifiedMidsetArgs {
     id: number;
     x?: number;
     y?: number;
-    placement?: number;
+    progress_placement?: number;
     path_data_id?: number | null;
     path_position?: number | null;
     notes?: string | null;
@@ -60,114 +59,197 @@ export type MidsetMutationResult = typeof midsets.$inferSelect;
 export const midsetKeys = {
     all: ["midsets"] as const,
     lists: () => [...midsetKeys.all, "list"] as const,
-    list: (filters: { page_id?: number } = {}) =>
+    list: (filters: { mp_id?: number } = {}) =>
         [...midsetKeys.lists(), filters] as const,
     details: () => [...midsetKeys.all, "detail"] as const,
     detail: (id: number) => [...midsetKeys.details(), id] as const,
-    byPage: (pageId: number) => [...midsetKeys.all, "page", pageId] as const,
+    byMarcherPage: (mpId: number) =>
+        [...midsetKeys.all, "marcherPage", mpId] as const,
 };
 
-// Helper function to create path data
-function createPathData(currentMidset: DatabaseMidset): Path | null {
-    if (!currentMidset.path_data) {
+// Helper function to create path data with error handling
+function createPathData(
+    currentMidset: DatabaseMidset,
+    pathwayData: string | null,
+): Path | null {
+    try {
+        if (!pathwayData) {
+            return null;
+        }
+
+        return Path.fromJson(pathwayData);
+    } catch (error) {
+        console.error("Failed to create path data:", error);
         return null;
     }
-
-    return Path.fromJson(currentMidset.path_data);
 }
 
 // Helper function to convert database midsets to Midset objects
-function databaseMidsetsToMidsets(databaseMidsets: DatabaseMidset[]): Midset[] {
-    return databaseMidsets.map((dbMidset) => ({
-        ...dbMidset,
-        path_data: createPathData(dbMidset),
-    }));
+function databaseMidsetsToMidsets(
+    databaseMidsets: DatabaseMidset[],
+    pathways: Map<number, { path_data: string; notes: string | null }>,
+): Midset[] {
+    return databaseMidsets.map((dbMidset) => {
+        // Get pathway data if this midset has a pathway
+        const pathway = dbMidset.path_data_id
+            ? pathways.get(dbMidset.path_data_id)
+            : null;
+
+        return {
+            ...dbMidset,
+            path_data: createPathData(dbMidset, pathway?.path_data || null),
+            pathway_notes: pathway?.notes || null,
+        };
+    });
 }
 
-// Query functions
-const midsetQueries = {
-    getAll: async (filters?: { page_id?: number }): Promise<Midset[]> => {
-        const conditions = [];
-        if (filters?.page_id !== undefined) {
-            conditions.push(eq(midsets.page_id, filters.page_id));
+// Custom hook for fetching pathways by IDs
+const usePathwaysByIds = (ids: number[]) => {
+    return useQuery({
+        queryKey: pathwayKeys.list({ ids }),
+        queryFn: async () => {
+            if (ids.length === 0) return [];
+
+            const results = await db
+                .select({
+                    id: pathways.id,
+                    path_data: pathways.path_data,
+                    notes: pathways.notes,
+                })
+                .from(pathways)
+                .where(inArray(pathways.id, ids))
+                .all();
+
+            return results;
+        },
+        enabled: ids.length > 0,
+    });
+};
+
+// Custom hook for combining midsets with pathway data
+const useMidsetsWithPathways = (midsets: DatabaseMidset[] | undefined) => {
+    // Extract unique pathway IDs from midsets
+    const pathwayIds = useMemo(() => {
+        if (!midsets) return [];
+        const ids = midsets
+            .map((midset) => midset.path_data_id)
+            .filter((id): id is number => id !== null);
+        return [...new Set(ids)];
+    }, [midsets]);
+
+    // Fetch only the needed pathways
+    const pathwaysQuery = usePathwaysByIds(pathwayIds);
+
+    // Combine the data when both queries are successful
+    const combinedData = useMemo(() => {
+        if (!midsets || !pathwaysQuery.data) {
+            return undefined;
         }
 
-        const query = db
-            .select({
-                id: midsets.id,
-                page_id: midsets.page_id,
-                x: midsets.x,
-                y: midsets.y,
-                placement: midsets.placement,
-                created_at: midsets.created_at,
-                updated_at: midsets.updated_at,
-                path_data_id: midsets.path_data_id,
-                path_position: midsets.path_position,
-                notes: midsets.notes,
-                path_data: pathways.path_data,
-                pathway_notes: pathways.notes,
-            })
-            .from(midsets)
-            .leftJoin(pathways, eq(midsets.path_data_id, pathways.id));
+        // Create a map of pathway data for efficient lookup
+        const pathwaysMap = new Map(
+            pathwaysQuery.data.map((pathway) => [
+                pathway.id,
+                { path_data: pathway.path_data, notes: pathway.notes },
+            ]),
+        );
+
+        return databaseMidsetsToMidsets(midsets, pathwaysMap);
+    }, [midsets, pathwaysQuery.data]);
+
+    return {
+        data: combinedData,
+        isLoading: pathwaysQuery.isLoading,
+        error: pathwaysQuery.error,
+    };
+};
+
+// Query functions - remove pathway join
+const midsetQueries = {
+    getAll: async (filters?: { mp_id?: number }): Promise<DatabaseMidset[]> => {
+        const conditions = [];
+        if (filters?.mp_id !== undefined) {
+            conditions.push(eq(midsets.mp_id, filters.mp_id));
+        }
+
+        const query = db.select().from(midsets);
 
         // Apply conditions if any exist
         if (conditions.length > 0) {
             query.where(conditions[0]);
         }
 
-        const rawResult = await query.all();
-
-        // Transform the result to match the Midset interface
-        const result = rawResult.map((row) => ({
-            id: row.id,
-            page_id: row.page_id,
-            x: row.x,
-            y: row.y,
-            placement: row.placement,
-            created_at: row.created_at,
-            updated_at: row.updated_at,
-            path_data_id: row.path_data_id,
-            path_position: row.path_position,
-            notes: row.notes,
-            path_data: row.path_data,
-            pathway_notes: row.pathway_notes,
-        })) as DatabaseMidset[];
-
-        return databaseMidsetsToMidsets(result);
+        return await query.all();
     },
 
-    getByPage: async (pageId: number): Promise<Midset[]> => {
-        return midsetQueries.getAll({ page_id: pageId });
+    getById: async (id: number): Promise<DatabaseMidset | undefined> => {
+        const result = await db
+            .select()
+            .from(midsets)
+            .where(eq(midsets.id, id))
+            .all();
+        return result[0];
     },
 
-    getById: async (id: number): Promise<Midset | undefined> => {
-        const result = await midsetQueries.getAll();
-        return result.find((midset) => midset.id === id);
+    getByMarcherPage: async (mpId: number): Promise<DatabaseMidset[]> => {
+        const result = await midsetQueries.getAll({ mp_id: mpId });
+        return result.sort(
+            (a, b) => a.progress_placement - b.progress_placement,
+        );
     },
 };
 
-// Query hooks
-export const useMidsets = (filters?: { page_id?: number }) => {
-    return useQuery({
+// Helper function to combine query results
+const combineQueryResults = (baseQuery: any, pathwaysResult: any) => {
+    return {
+        ...baseQuery,
+        data: pathwaysResult.data,
+        isLoading: baseQuery.isLoading || pathwaysResult.isLoading,
+        error: baseQuery.error || pathwaysResult.error,
+    };
+};
+
+// Query hooks with pathway data integration
+export const useMidsets = (filters?: { mp_id?: number }) => {
+    // Fetch midsets without pathway data
+    const midsetsQuery = useQuery({
         queryKey: midsetKeys.list(filters || {}),
         queryFn: () => midsetQueries.getAll(filters),
     });
+
+    // Combine with pathway data
+    const pathwaysResult = useMidsetsWithPathways(midsetsQuery.data);
+
+    return combineQueryResults(midsetsQuery, pathwaysResult);
 };
 
-export const useMidsetsByPage = (pageId: number) => {
-    return useQuery({
-        queryKey: midsetKeys.byPage(pageId),
-        queryFn: () => midsetQueries.getByPage(pageId),
-        enabled: !!pageId,
+export const useMidsetsByMarcherPage = (mpId: number) => {
+    const midsetsQuery = useQuery({
+        queryKey: midsetKeys.byMarcherPage(mpId),
+        queryFn: () => midsetQueries.getByMarcherPage(mpId),
+        enabled: mpId != null,
     });
+
+    const pathwaysResult = useMidsetsWithPathways(midsetsQuery.data);
+
+    return combineQueryResults(midsetsQuery, pathwaysResult);
 };
 
 export const useMidset = (id: number) => {
-    return useQuery({
+    const midsetsQuery = useQuery({
         queryKey: midsetKeys.detail(id),
         queryFn: () => midsetQueries.getById(id),
         enabled: !!id,
     });
+
+    const pathwaysResult = useMidsetsWithPathways(
+        midsetsQuery.data ? [midsetsQuery.data] : undefined,
+    );
+
+    return {
+        ...combineQueryResults(midsetsQuery, pathwaysResult),
+        data: pathwaysResult.data?.[0],
+    };
 };
 
 // Mutation hooks
@@ -187,26 +269,35 @@ export const useCreateMidsets = () => {
                     .returning()
                     .all();
 
-                return results.map((r) => ({
-                    ...r,
-                    path_data: null,
-                    pathway_notes: null,
-                }));
+                return results;
             });
         },
         onSuccess: (data, variables) => {
-            // Invalidate queries for affected pages
-            const pagesAffected = new Set(variables.map((v) => v.page_id));
-            pagesAffected.forEach((pageId) => {
-                queryClient.invalidateQueries({
-                    queryKey: midsetKeys.byPage(pageId),
-                });
+            // More targeted invalidation - only invalidate affected queries
+            const affectedQueries = new Set<string>();
+
+            variables.forEach(({ mp_id }) => {
+                // Add marcher page-specific query
+                affectedQueries.add(
+                    JSON.stringify(midsetKeys.byMarcherPage(mp_id)),
+                );
             });
 
-            // Invalidate list queries
-            queryClient.invalidateQueries({
-                queryKey: midsetKeys.lists(),
+            // Invalidate only the affected queries
+            affectedQueries.forEach((queryKeyStr) => {
+                const queryKey = JSON.parse(queryKeyStr);
+                queryClient.invalidateQueries({ queryKey });
             });
+
+            // Invalidate pathway queries if path_data_id was set
+            const hasPathwayChanges = variables.some(
+                (v) => v.path_data_id !== undefined,
+            );
+            if (hasPathwayChanges) {
+                queryClient.invalidateQueries({
+                    queryKey: pathwayKeys.lists(),
+                });
+            }
         },
     });
 };
@@ -238,17 +329,38 @@ export const useUpdateMidsets = () => {
             });
         },
         onSuccess: (data, variables) => {
-            // Invalidate specific midset queries
+            // More targeted invalidation
+            const affectedQueries = new Set<string>();
+
             variables.forEach(({ id }) => {
-                queryClient.invalidateQueries({
-                    queryKey: midsetKeys.detail(id),
-                });
+                // Add specific detail query
+                affectedQueries.add(JSON.stringify(midsetKeys.detail(id)));
             });
 
-            // Invalidate list queries
-            queryClient.invalidateQueries({
-                queryKey: midsetKeys.lists(),
+            // Get the mp_ids from the updated data to invalidate related queries
+            const affectedMpIds = new Set(data.map((midset) => midset.mp_id));
+            affectedMpIds.forEach((mp_id) => {
+                // Add marcher page-specific query
+                affectedQueries.add(
+                    JSON.stringify(midsetKeys.byMarcherPage(mp_id)),
+                );
             });
+
+            // Invalidate only the affected queries
+            affectedQueries.forEach((queryKeyStr) => {
+                const queryKey = JSON.parse(queryKeyStr);
+                queryClient.invalidateQueries({ queryKey });
+            });
+
+            // Invalidate pathway queries if path_data_id was modified
+            const hasPathwayChanges = variables.some(
+                (v) => v.path_data_id !== undefined,
+            );
+            if (hasPathwayChanges) {
+                queryClient.invalidateQueries({
+                    queryKey: pathwayKeys.lists(),
+                });
+            }
         },
     });
 };
@@ -273,16 +385,27 @@ export const useDeleteMidsets = () => {
             });
         },
         onSuccess: (data, variables) => {
-            // Invalidate specific midset queries
+            // More targeted invalidation
+            const affectedQueries = new Set<string>();
+
             variables.forEach((id) => {
-                queryClient.invalidateQueries({
-                    queryKey: midsetKeys.detail(id),
-                });
+                // Add specific detail query
+                affectedQueries.add(JSON.stringify(midsetKeys.detail(id)));
             });
 
-            // Invalidate list queries
-            queryClient.invalidateQueries({
-                queryKey: midsetKeys.lists(),
+            // Get the mp_ids from the deleted data to invalidate related queries
+            const affectedMpIds = new Set(data.map((midset) => midset.mp_id));
+            affectedMpIds.forEach((mp_id) => {
+                // Add marcher page-specific query
+                affectedQueries.add(
+                    JSON.stringify(midsetKeys.byMarcherPage(mp_id)),
+                );
+            });
+
+            // Invalidate only the affected queries
+            affectedQueries.forEach((queryKeyStr) => {
+                const queryKey = JSON.parse(queryKeyStr);
+                queryClient.invalidateQueries({ queryKey });
             });
         },
     });

@@ -6,8 +6,8 @@ import { incrementUndoGroup } from "@/global/classes/History";
 const { pathways } = schema;
 
 // Define types from the existing schema
-type DatabasePathway = typeof pathways.$inferSelect;
-
+export type DatabasePathway = typeof pathways.$inferSelect;
+export type Pathway = DatabasePathway;
 /**
  * Arguments for creating a new pathway
  */
@@ -29,7 +29,7 @@ export interface ModifiedPathwayArgs {
 export const pathwayKeys = {
     all: ["pathways"] as const,
     lists: () => [...pathwayKeys.all, "list"] as const,
-    list: (filters: { id?: number } = {}) =>
+    list: (filters: { id?: number; ids?: number[] } = {}) =>
         [...pathwayKeys.lists(), filters] as const,
     details: () => [...pathwayKeys.all, "detail"] as const,
     detail: (id: number) => [...pathwayKeys.details(), id] as const,
@@ -37,11 +37,20 @@ export const pathwayKeys = {
 
 // Query functions
 const pathwayQueries = {
-    getAll: async (filters?: { id?: number }): Promise<DatabasePathway[]> => {
+    getAll: async (filters?: {
+        id?: number;
+        ids?: number[];
+    }): Promise<DatabasePathway[]> => {
         let queryBuilder = db.select().from(pathways).$dynamic();
 
         if (filters?.id !== undefined) {
             queryBuilder = queryBuilder.where(eq(pathways.id, filters.id));
+        }
+
+        if (filters?.ids !== undefined && filters.ids.length > 0) {
+            queryBuilder = queryBuilder.where(
+                inArray(pathways.id, filters.ids),
+            );
         }
 
         return await queryBuilder.all();
@@ -59,7 +68,7 @@ const pathwayQueries = {
 };
 
 // Query hooks
-export const usePathways = (filters?: { id?: number }) => {
+export const usePathways = (filters?: { id?: number; ids?: number[] }) => {
     return useQuery({
         queryKey: pathwayKeys.list(filters || {}),
         queryFn: () => pathwayQueries.getAll(filters),
@@ -141,6 +150,9 @@ export const useUpdatePathways = () => {
             queryClient.invalidateQueries({
                 queryKey: pathwayKeys.lists(),
             });
+
+            // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
+            // when they detect pathway changes through their own query logic
         },
     });
 };
@@ -176,6 +188,9 @@ export const useDeletePathways = () => {
             queryClient.invalidateQueries({
                 queryKey: pathwayKeys.lists(),
             });
+
+            // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
+            // when they detect pathway changes through their own query logic
         },
     });
 };

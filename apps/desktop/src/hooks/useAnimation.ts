@@ -2,44 +2,56 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Page from "@/global/classes/Page";
-import Marcher from "@/global/classes/Marcher";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import {
     CoordinateDefinition,
     getCoordinatesAtTime,
     MarcherTimeline,
 } from "@/utilities/Keyframes";
-import { Path } from "@openmarch/path-utility";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
+import { Midset, useMidsets } from "./queries";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { useMarcherStore } from "@/stores/MarcherStore";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
-    pages: Page[];
-    marchers: Marcher[];
-    marcherPages: MarcherPageMap;
-    selectedPage: Page | null;
-    setSelectedPage: (page: Page) => void;
 }
 
-export const useAnimation = ({
-    canvas,
-    pages,
-    marchers,
-    marcherPages,
-    selectedPage,
-    setSelectedPage,
-}: UseAnimationProps) => {
+export const useAnimation = ({ canvas }: UseAnimationProps) => {
+    const { pages } = useTimingObjectsStore()!;
+    const { marchers } = useMarcherStore()!;
+    const { setSelectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const { marcherPages } = useMarcherPageStore()!;
+
+    const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
+
     const animationFrameRef = useRef<number | null>(null);
 
     const marcherTimelines = useMemo(() => {
+        if (!midsetsLoaded || !midsets)
+            return new Map<number, MarcherTimeline>();
+
         const pagesMap = pages.reduce(
             (acc, page) => {
                 acc[page.id] = page;
                 return acc;
             },
             {} as Record<number, Page>,
+        );
+
+        // Organize midsets by marcher page ID for efficient lookup
+        const midsetsByMarcherPage = midsets.reduce(
+            (acc: Record<number, Midset[]>, midset: Midset) => {
+                if (!acc[midset.mp_id]) {
+                    acc[midset.mp_id] = [];
+                }
+                acc[midset.mp_id].push(midset);
+                return acc;
+            },
+            {} as Record<number, Midset[]>,
         );
 
         const timelines = new Map<number, MarcherTimeline>();
@@ -55,11 +67,28 @@ export const useAnimation = ({
             for (const marcherPage of marcherPagesForMarcher) {
                 const page = pagesMap[marcherPage.page_id];
                 if (page) {
+                    // Get midsets for this marcher page
+                    const midsetsForMarcherPage =
+                        midsetsByMarcherPage[marcherPage.id] || [];
+
+                    // Add the marcher page position as the base coordinate
                     coordinateMap.set((page.timestamp + page.duration) * 1000, {
                         x: marcherPage.x,
                         y: marcherPage.y,
                         path: marcherPage.path_data || undefined,
                     });
+
+                    // Add midset positions at their progress placements
+                    for (const midset of midsetsForMarcherPage) {
+                        const progressTime =
+                            page.timestamp +
+                            page.duration * midset.progress_placement;
+                        coordinateMap.set(progressTime, {
+                            x: midset.x,
+                            y: midset.y,
+                            path: midset.path_data || undefined,
+                        });
+                    }
                 }
             }
 
@@ -72,7 +101,7 @@ export const useAnimation = ({
             });
         }
         return timelines;
-    }, [marchers, pages, marcherPages]);
+    }, [midsetsLoaded, midsets, pages, marchers, marcherPages]);
 
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {

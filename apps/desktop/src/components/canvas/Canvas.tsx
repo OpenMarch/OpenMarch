@@ -43,11 +43,11 @@ export default function Canvas({
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
-    const { pages, beats, measures } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { fieldProperties } = useFieldProperties()!;
     const { uiSettings } = useUiSettingsStore()!;
@@ -59,7 +59,6 @@ export default function Canvas({
     } = useAlignmentEventStore()!;
     const { sectionAppearances, fetchSectionAppearances } =
         useSectionAppearanceStore();
-
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -68,11 +67,6 @@ export default function Canvas({
 
     useAnimation({
         canvas,
-        pages,
-        marchers,
-        marcherPages,
-        selectedPage,
-        setSelectedPage,
     });
 
     // Function to center and fit the canvas to the container
