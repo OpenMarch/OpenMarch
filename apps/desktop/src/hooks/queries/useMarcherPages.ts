@@ -217,7 +217,6 @@ export const useMarcherPages = ({
         queryFn: async () => {
             const mpResponse = await marcherPageQueries.getAll(filters);
             const pathwaysResponse = pathwaysQuery.data;
-            console.log("pathwaysResponse", pathwaysResponse);
             return marcherPageMapFromArray(
                 databaseMarcherPagesToMarcherPages({
                     databaseMarcherPages: mpResponse,

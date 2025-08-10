@@ -44,7 +44,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             // console.debug("marcherPages", marcherPages);
             return new Map<number, MarcherTimeline>();
         }
-        console.log("marcherPages");
 
         const pagesMap = pages.reduce(
             (acc, page) => {
