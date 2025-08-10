@@ -6,12 +6,12 @@ import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
 import * as Sentry from "@sentry/electron/renderer";
-import posthog from "posthog-js";
+import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
-const options = {
+const options: Partial<PostHogConfig> = {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
     capture_exceptions: true,
     debug: import.meta.env.MODE === "development",
@@ -19,7 +19,12 @@ const options = {
 };
 
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
-    posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
+    posthog.init(
+        import.meta.env.VITE_PUBLIC_PLAYWRIGHT_SESSION
+            ? "fake-key-for-e2e"
+            : import.meta.env.VITE_PUBLIC_POSTHOG_KEY,
+        options,
+    );
 }
 
 // Load saved language from electron store on app start

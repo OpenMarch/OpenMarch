@@ -33,7 +33,7 @@
         "test:watch": "vitest",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",
-        "e2e": "playwright test",
+        "e2e": "VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
         "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate"
     },

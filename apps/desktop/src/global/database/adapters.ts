@@ -1,4 +1,4 @@
-import { DatabaseResponse } from "../../../electron/database/DatabaseActions";
+import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 
 /**
  * Generic adapter to convert Promise<T> to DatabaseResponse<T>
