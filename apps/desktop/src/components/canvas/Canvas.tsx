@@ -4,7 +4,6 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
@@ -22,6 +21,7 @@ import clsx from "clsx";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
+import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
 
 /**
  * The field/stage UI of OpenMarch
@@ -44,7 +44,9 @@ export default function Canvas({
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
-    const { marcherPages } = useMarcherPageStore()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
+        useMarcherPages({ pages });
+    const updateMarcherPages = useUpdateMarcherPages();
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
     const { selectedPage } = useSelectedPage()!;
@@ -441,7 +443,6 @@ export default function Canvas({
         activeObjectsAreGloballySelected,
     ]);
 
-    /* -------------------------- useEffects -------------------------- */
     /* Initialize the canvas */
     useEffect(() => {
         if (canvas || !selectedPage || !fieldProperties) {
@@ -515,6 +516,13 @@ export default function Canvas({
     useEffect(() => {
         fetchSectionAppearances();
     }, [fetchSectionAppearances]);
+
+    // Update section appearances
+    useEffect(() => {
+        if (canvas) {
+            canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
+        }
+    }, [canvas, updateMarcherPages]);
 
     // Sync marcher visuals with marchers and section appearances
     useEffect(() => {
@@ -610,7 +618,8 @@ export default function Canvas({
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (!canvas || !selectedPage || !fieldProperties) return;
+        if (!canvas || !selectedPage || !fieldProperties || !marcherPagesLoaded)
+            return;
 
         if (uiSettings.nextPaths || uiSettings.previousPaths) {
             canvas.renderPathVisuals({
@@ -640,6 +649,7 @@ export default function Canvas({
         uiSettings.nextPaths,
         uiSettings.previousPaths,
         marcherVisuals,
+        marcherPagesLoaded,
     ]);
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change
@@ -743,7 +753,7 @@ export default function Canvas({
     // This effect ensures that when the animation is paused, the marchers are
     // rendered at their final positions for the selected page.
     useEffect(() => {
-        if (canvas && !isPlaying && selectedPage) {
+        if (canvas && !isPlaying && selectedPage && marcherPagesLoaded) {
             canvas.renderMarchers({
                 marcherPages: marcherPages,
                 pageId: selectedPage.id,
@@ -757,6 +767,7 @@ export default function Canvas({
         marcherPages,
         marchers,
         marcherVisuals,
+        marcherPagesLoaded,
     ]);
 
     return (

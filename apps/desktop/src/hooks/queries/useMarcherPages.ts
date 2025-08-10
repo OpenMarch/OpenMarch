@@ -1,13 +1,16 @@
 import { db, schema } from "@/global/database/db";
-import { eq, and, inArray } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { Path } from "@openmarch/path-utility";
 import type Page from "@/global/classes/Page";
 import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
-import { useMemo } from "react";
-import { pathwayKeys } from "./usePathways";
+import { PathwayMap, usePathways } from "./usePathways";
+import MarcherPageMap, {
+    marcherPageMapFromArray,
+} from "@/global/classes/MarcherPageIndex";
+import { queryClient } from "@/App";
 
-const { marcher_pages, pathways } = schema;
+const { marcher_pages } = schema;
 
 // Define types from the existing schema - remove pathway fields from base type
 export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
@@ -17,8 +20,8 @@ export interface MarcherPage {
     readonly id_for_html: string | null;
     readonly marcher_id: number;
     readonly page_id: number;
-    readonly x: number | null;
-    readonly y: number | null;
+    readonly x: number;
+    readonly y: number;
     readonly path_data_id: number | null;
     readonly path_position: number | null;
     readonly path_data: Path | null;
@@ -77,11 +80,15 @@ function createPathData(
 }
 
 // Helper function to convert database marcher pages to MarcherPage objects
-function databaseMarcherPagesToMarcherPages(
-    databaseMarcherPages: DatabaseMarcherPage[],
-    pathways: Map<number, { path_data: string; notes: string | null }>,
-    pages?: Page[],
-): MarcherPage[] {
+function databaseMarcherPagesToMarcherPages({
+    databaseMarcherPages,
+    pathways,
+    pages,
+}: {
+    databaseMarcherPages: DatabaseMarcherPage[];
+    pathways?: PathwayMap;
+    pages: Page[];
+}): MarcherPage[] {
     // If no pages data provided, use array index as order
     const pageOrderMap = pages?.length
         ? new Map(pages.map((page) => [page.id, page.order]))
@@ -116,8 +123,10 @@ function databaseMarcherPagesToMarcherPages(
                 index > 0 ? sortedMarcherPages[index - 1] : null;
 
             // Get pathway data if this marcher page has a pathway
-            const pathway = dbMarcherPage.path_data_id
-                ? pathways.get(dbMarcherPage.path_data_id)
+            const pathway = pathways
+                ? dbMarcherPage.path_data_id
+                    ? pathways[dbMarcherPage.path_data_id]
+                    : null
                 : null;
 
             result.push({
@@ -135,75 +144,6 @@ function databaseMarcherPagesToMarcherPages(
     return result;
 }
 
-// Custom hook for fetching pathways by IDs
-const usePathwaysByIds = (ids: number[]) => {
-    return useQuery({
-        queryKey: pathwayKeys.list({ ids }),
-        queryFn: async () => {
-            if (ids.length === 0) return [];
-
-            const results = await db
-                .select({
-                    id: pathways.id,
-                    path_data: pathways.path_data,
-                    notes: pathways.notes,
-                })
-                .from(pathways)
-                .where(inArray(pathways.id, ids))
-                .all();
-
-            return results;
-        },
-        enabled: ids.length > 0,
-    });
-};
-
-// Custom hook for combining marcher pages with pathway data
-const useMarcherPagesWithPathways = (
-    marcherPages: DatabaseMarcherPage[] | undefined,
-    pages?: Page[],
-) => {
-    // Extract unique pathway IDs from marcher pages
-    const pathwayIds = useMemo(() => {
-        if (!marcherPages) return [];
-        const ids = marcherPages
-            .map((mp) => mp.path_data_id)
-            .filter((id): id is number => id !== null);
-        return [...new Set(ids)];
-    }, [marcherPages]);
-
-    // Fetch only the needed pathways
-    const pathwaysQuery = usePathwaysByIds(pathwayIds);
-
-    // Combine the data when both queries are successful
-    const combinedData = useMemo(() => {
-        if (!marcherPages || !pathwaysQuery.data) {
-            return undefined;
-        }
-
-        // Create a map of pathway data for efficient lookup
-        const pathwaysMap = new Map(
-            pathwaysQuery.data.map((pathway) => [
-                pathway.id,
-                { path_data: pathway.path_data, notes: pathway.notes },
-            ]),
-        );
-
-        return databaseMarcherPagesToMarcherPages(
-            marcherPages,
-            pathwaysMap,
-            pages,
-        );
-    }, [marcherPages, pathwaysQuery.data, pages]);
-
-    return {
-        data: combinedData,
-        isLoading: pathwaysQuery.isLoading,
-        error: pathwaysQuery.error,
-    };
-};
-
-// Query functions - remove pathway join
 const marcherPageQueries = {
     getAll: async (filters?: {
         marcher_id?: number;
@@ -258,88 +198,40 @@ const marcherPageQueries = {
     },
 };
 
-// Helper function to combine query results
-const combineQueryResults = (baseQuery: any, pathwaysResult: any) => {
-    return {
-        ...baseQuery,
-        data: pathwaysResult.data,
-        isLoading: baseQuery.isLoading || pathwaysResult.isLoading,
-        error: baseQuery.error || pathwaysResult.error,
-    };
-};
-
 // Query hooks with pathway data integration
-export const useMarcherPages = (filters?: {
-    marcher_id?: number;
-    page_id?: number;
-    pages?: Page[];
-}) => {
-    // Fetch marcher pages without pathway data
-    const marcherPagesQuery = useQuery({
-        queryKey: marcherPageKeys.list(filters || {}),
-        queryFn: () => marcherPageQueries.getAll(filters),
-    });
-
-    // Combine with pathway data
-    const pathwaysResult = useMarcherPagesWithPathways(
-        marcherPagesQuery.data,
-        filters?.pages,
-    );
-
-    return combineQueryResults(marcherPagesQuery, pathwaysResult);
-};
-
-export const useMarcherPagesByPage = (pageId: number, pages?: Page[]) => {
-    const marcherPagesQuery = useQuery({
-        queryKey: marcherPageKeys.byPage(pageId),
-        queryFn: () => marcherPageQueries.getByPage(pageId, pages),
-        enabled: pageId != null,
-    });
-
-    const pathwaysResult = useMarcherPagesWithPathways(
-        marcherPagesQuery.data,
-        pages,
-    );
-
-    return combineQueryResults(marcherPagesQuery, pathwaysResult);
-};
-
-export const useMarcherPagesByMarcher = (marcherId: number, pages?: Page[]) => {
-    const marcherPagesQuery = useQuery({
-        queryKey: marcherPageKeys.byMarcher(marcherId),
-        queryFn: () => marcherPageQueries.getByMarcher(marcherId, pages),
-        enabled: !!marcherId,
-    });
-
-    const pathwaysResult = useMarcherPagesWithPathways(
-        marcherPagesQuery.data,
-        pages,
-    );
-
-    return combineQueryResults(marcherPagesQuery, pathwaysResult);
-};
-
-export const useMarcherPage = (
-    marcherId: number,
-    pageId: number,
-    pages?: Page[],
-) => {
-    const marcherPagesQuery = useQuery({
-        queryKey: marcherPageKeys.detail(marcherId, pageId),
-        queryFn: () =>
-            marcherPageQueries.getByMarcherAndPage(marcherId, pageId, pages),
-        enabled: !!marcherId && pageId != null,
-    });
-
-    const pathwaysResult = useMarcherPagesWithPathways(
-        marcherPagesQuery.data ? [marcherPagesQuery.data] : undefined,
-        pages,
-    );
-
-    return {
-        ...combineQueryResults(marcherPagesQuery, pathwaysResult),
-        data: pathwaysResult.data?.[0],
+export const useMarcherPages = ({
+    pages,
+    filters,
+}: {
+    pages: Page[];
+    filters?: {
+        marcher_id?: number;
+        page_id?: number;
     };
+}) => {
+    const pathwaysQuery = usePathways();
+
+    // Fetch marcher pages without pathway data
+    return useQuery<MarcherPageMap>({
+        queryKey: marcherPageKeys.list(filters || {}),
+        queryFn: async () => {
+            const mpResponse = await marcherPageQueries.getAll(filters);
+            const pathwaysResponse = pathwaysQuery.data;
+            console.log("pathwaysResponse", pathwaysResponse);
+            return marcherPageMapFromArray(
+                databaseMarcherPagesToMarcherPages({
+                    databaseMarcherPages: mpResponse,
+                    pathways: pathwaysResponse,
+                    pages,
+                }),
+            );
+        },
+        enabled: pathwaysQuery.isSuccess,
+    });
+};
+
+export const fetchMarcherPages = () => {
+    queryClient.invalidateQueries({ queryKey: marcherPageKeys.list() });
 };
 
 // Mutation hooks
@@ -390,39 +282,46 @@ export const useUpdateMarcherPages = () => {
             });
         },
         onSuccess: (data, variables) => {
-            // More targeted invalidation - only invalidate affected queries
-            const affectedQueries = new Set<string>();
-
-            variables.forEach(({ marcher_id, page_id }) => {
-                // Add specific detail query
-                affectedQueries.add(
-                    JSON.stringify(marcherPageKeys.detail(marcher_id, page_id)),
-                );
-                // Add page-specific query
-                affectedQueries.add(
-                    JSON.stringify(marcherPageKeys.byPage(page_id)),
-                );
-                // Add marcher-specific query
-                affectedQueries.add(
-                    JSON.stringify(marcherPageKeys.byMarcher(marcher_id)),
-                );
+            // Invalidate all marcher pages queries
+            // TODO - Provide more targeted invalidation
+            // Currently, this invalidates all marcher pages queries, which is not efficient.
+            queryClient.invalidateQueries({
+                queryKey: marcherPageKeys.list(),
             });
 
-            // Invalidate only the affected queries
-            affectedQueries.forEach((queryKeyStr) => {
-                const queryKey = JSON.parse(queryKeyStr);
-                queryClient.invalidateQueries({ queryKey });
-            });
+            // // More targeted invalidation - only invalidate affected queries
+            // const affectedQueries = new Set<string>();
 
-            // Invalidate pathway queries if path_data_id was modified
-            const hasPathwayChanges = variables.some(
-                (v) => v.path_data_id !== undefined,
-            );
-            if (hasPathwayChanges) {
-                queryClient.invalidateQueries({
-                    queryKey: pathwayKeys.lists(),
-                });
-            }
+            // variables.forEach(({ marcher_id, page_id }) => {
+            //     // Add specific detail query
+            //     affectedQueries.add(
+            //         JSON.stringify(marcherPageKeys.detail(marcher_id, page_id)),
+            //     );
+            //     // Add page-specific query
+            //     affectedQueries.add(
+            //         JSON.stringify(marcherPageKeys.byPage(page_id)),
+            //     );
+            //     // Add marcher-specific query
+            //     affectedQueries.add(
+            //         JSON.stringify(marcherPageKeys.byMarcher(marcher_id)),
+            //     );
+            // });
+
+            // // Invalidate only the affected queries
+            // affectedQueries.forEach((queryKeyStr) => {
+            //     const queryKey = JSON.parse(queryKeyStr);
+            //     queryClient.invalidateQueries({ queryKey });
+            // });
+
+            // // Invalidate pathway queries if path_data_id was modified
+            // const hasPathwayChanges = variables.some(
+            //     (v) => v.path_data_id !== undefined,
+            // );
+            // if (hasPathwayChanges) {
+            //     queryClient.invalidateQueries({
+            //         queryKey: pathwayKeys.lists(),
+            //     });
+            // }
         },
     });
 };

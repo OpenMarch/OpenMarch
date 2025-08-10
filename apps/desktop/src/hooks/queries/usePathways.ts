@@ -8,6 +8,12 @@ const { pathways } = schema;
 // Define types from the existing schema
 export type DatabasePathway = typeof pathways.$inferSelect;
 export type Pathway = DatabasePathway;
+
+/**
+ * Record structure for pathways indexed by ID
+ */
+export type PathwayMap = Record<number, Pathway>;
+
 /**
  * Arguments for creating a new pathway
  */
@@ -34,6 +40,19 @@ export const pathwayKeys = {
     details: () => [...pathwayKeys.all, "detail"] as const,
     detail: (id: number) => [...pathwayKeys.details(), id] as const,
 };
+
+/**
+ * Converts an array of pathways to a Record indexed by ID
+ */
+export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwayMap {
+    const pathwayMap: PathwayMap = {};
+
+    pathways.forEach((pathway) => {
+        pathwayMap[pathway.id] = pathway;
+    });
+
+    return pathwayMap;
+}
 
 // Query functions
 const pathwayQueries = {
@@ -72,6 +91,7 @@ export const usePathways = (filters?: { id?: number; ids?: number[] }) => {
     return useQuery({
         queryKey: pathwayKeys.list(filters || {}),
         queryFn: () => pathwayQueries.getAll(filters),
+        select: (data: DatabasePathway[]) => pathwayMapFromArray(data),
     });
 };
 

@@ -21,6 +21,7 @@ import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
+import { ModifiedMarcherPageArgs } from "@/hooks/queries";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -70,6 +71,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      */
     staticGridRef: fabric.Group = new fabric.Group([]);
     private _listeners?: CanvasListeners;
+
+    /**
+     * A function to update the marcher pages in the database.
+     * This is used to update the marcher pages in the database when the user moves a marcher page and re-fetch the marcher pages.
+     */
+    updateMarcherPagesFunction?: (
+        marcherPages: ModifiedMarcherPageArgs[],
+    ) => void;
 
     // ---- AlignmentEvent changes ----
     /**

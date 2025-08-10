@@ -3,12 +3,8 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
-import {
-    ModifiedMarcherPageArgs,
-    updateMarcherPages,
-} from "@/global/classes/MarcherPage";
+import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 import { rgbaToString } from "@openmarch/core";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -100,11 +96,7 @@ export default class DefaultListeners implements CanvasListeners {
                     y: newCoords.y,
                 });
             });
-
-        updateMarcherPages(
-            modifiedMarcherPages,
-            useMarcherPageStore.getState().fetchMarcherPages,
-        );
+        this.canvas.updateMarcherPagesFunction?.(modifiedMarcherPages);
     }
 
     /**

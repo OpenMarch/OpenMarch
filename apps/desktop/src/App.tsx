@@ -26,8 +26,15 @@ import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            networkMode: "offlineFirst",
+        },
+    },
+});
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -128,6 +135,7 @@ function App() {
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
+                <ReactQueryDevtools initialIsOpen={false} />
                 <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal

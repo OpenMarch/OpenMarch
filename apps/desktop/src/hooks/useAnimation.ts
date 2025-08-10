@@ -9,10 +9,9 @@ import {
 } from "@/utilities/Keyframes";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
-import { Midset, useMidsets } from "./queries";
+import { useMarcherPages } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useMarcherStore } from "@/stores/MarcherStore";
 
 interface UseAnimationProps {
@@ -24,15 +23,28 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { marchers } = useMarcherStore()!;
     const { setSelectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { marcherPages } = useMarcherPageStore()!;
 
-    const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
+    // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
+        useMarcherPages({ pages });
 
     const animationFrameRef = useRef<number | null>(null);
 
     const marcherTimelines = useMemo(() => {
-        if (!midsetsLoaded || !midsets)
+        if (
+            // !midsetsLoaded ||
+            !marcherPagesLoaded ||
+            // midsets == null ||
+            marcherPages == null
+        ) {
+            // console.debug("not loading timeline");
+            // console.debug("midsetsLoaded", midsetsLoaded);
+            // console.debug("midsets", midsets);
+            // console.debug("marcherPagesLoaded", marcherPagesLoaded);
+            // console.debug("marcherPages", marcherPages);
             return new Map<number, MarcherTimeline>();
+        }
+        console.log("marcherPages");
 
         const pagesMap = pages.reduce(
             (acc, page) => {
@@ -43,16 +55,16 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         );
 
         // Organize midsets by marcher page ID for efficient lookup
-        const midsetsByMarcherPage = midsets.reduce(
-            (acc: Record<number, Midset[]>, midset: Midset) => {
-                if (!acc[midset.mp_id]) {
-                    acc[midset.mp_id] = [];
-                }
-                acc[midset.mp_id].push(midset);
-                return acc;
-            },
-            {} as Record<number, Midset[]>,
-        );
+        // const midsetsByMarcherPage = midsets.reduce(
+        //     (acc: Record<number, Midset[]>, midset: Midset) => {
+        //         if (!acc[midset.mp_id]) {
+        //             acc[midset.mp_id] = [];
+        //         }
+        //         acc[midset.mp_id].push(midset);
+        //         return acc;
+        //     },
+        //     {} as Record<number, Midset[]>,
+        // );
 
         const timelines = new Map<number, MarcherTimeline>();
         if (!marchers.length || !pages.length) return timelines;
@@ -67,9 +79,9 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             for (const marcherPage of marcherPagesForMarcher) {
                 const page = pagesMap[marcherPage.page_id];
                 if (page) {
-                    // Get midsets for this marcher page
-                    const midsetsForMarcherPage =
-                        midsetsByMarcherPage[marcherPage.id] || [];
+                    // // Get midsets for this marcher page
+                    // const midsetsForMarcherPage =
+                    //     midsetsByMarcherPage[marcherPage.id] || [];
 
                     // Add the marcher page position as the base coordinate
                     coordinateMap.set((page.timestamp + page.duration) * 1000, {
@@ -78,17 +90,17 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                         path: marcherPage.path_data || undefined,
                     });
 
-                    // Add midset positions at their progress placements
-                    for (const midset of midsetsForMarcherPage) {
-                        const progressTime =
-                            page.timestamp +
-                            page.duration * midset.progress_placement;
-                        coordinateMap.set(progressTime, {
-                            x: midset.x,
-                            y: midset.y,
-                            path: midset.path_data || undefined,
-                        });
-                    }
+                    // // Add midset positions at their progress placements
+                    // for (const midset of midsetsForMarcherPage) {
+                    //     const progressTime =
+                    //         page.timestamp +
+                    //         page.duration * midset.progress_placement;
+                    //     coordinateMap.set(progressTime, {
+                    //         x: midset.x,
+                    //         y: midset.y,
+                    //         path: midset.path_data || undefined,
+                    //     });
+                    // }
                 }
             }
 
@@ -101,7 +113,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             });
         }
         return timelines;
-    }, [midsetsLoaded, midsets, pages, marchers, marcherPages]);
+    }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
