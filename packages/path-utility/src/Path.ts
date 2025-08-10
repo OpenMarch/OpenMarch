@@ -133,8 +133,10 @@ export class Path implements IPath {
                 },
             );
 
-            segments[0].startPointOverride = startPoint;
-            segments[segments.length - 1].endPointOverride = endPoint;
+            if (segments.length > 0) {
+                segments[0].startPointOverride = startPoint;
+                segments[segments.length - 1].endPointOverride = endPoint;
+            }
 
             return new Path(segments);
         } catch (error) {

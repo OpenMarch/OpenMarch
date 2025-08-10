@@ -12,8 +12,8 @@
     "scripts": {
         "dev": "tsup --watch",
         "build": "tsup",
-        "test": "vitest",
-        "test:run": "vitest run"
+        "test": "vitest run --silent",
+        "test:watch": "vitest"
     },
     "exports": {
         ".": {

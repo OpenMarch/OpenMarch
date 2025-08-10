@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { Path } from "../src/Path";
 import { Line } from "../src/segments/Line";
 import { CubicCurve } from "../src/segments/CubicCurve";
-import { Point } from "../src/interfaces";
+import { type Point } from "../src/interfaces";
 
 describe("Path with start and end point overrides", () => {
     it("should override start and end points when provided", () => {

@@ -7,7 +7,7 @@
     "types": "src/index.ts",
     "scripts": {
         "build": "tsc",
-        "test": "vitest run",
+        "test": "vitest run --silent",
         "test:watch": "vitest",
         "dev": "tsc --watch"
     },
