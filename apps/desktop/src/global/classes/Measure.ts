@@ -48,7 +48,7 @@ export async function getMeasures(): Promise<
     DatabaseResponse<DatabaseMeasure[]>
 > {
     return promiseToDatabaseResponse(async () => {
-        return await db.select().from(measures).all();
+        return await getMeasuresDb();
     });
 }
 
@@ -108,16 +108,9 @@ export async function updateMeasuresDb(
 
         const updatedMeasures: DatabaseMeasure[] = [];
         for (const measure of modifiedMeasures) {
-            const updateData: Partial<typeof measures.$inferInsert> = {};
-            if (measure.start_beat !== undefined)
-                updateData.start_beat = measure.start_beat;
-            if (measure.rehearsal_mark !== undefined)
-                updateData.rehearsal_mark = measure.rehearsal_mark;
-            if (measure.notes !== undefined) updateData.notes = measure.notes;
-
             const result = await tx
                 .update(measures)
-                .set(updateData)
+                .set(measure)
                 .where(eq(measures.id, measure.id))
                 .returning()
                 .get();
