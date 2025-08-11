@@ -1,0 +1,42 @@
+name: Publish node.js Packages
+permissions:
+    contents: write
+    pull-requests: write
+    packages: write
+
+on:
+    push:
+        branches: ["main"]
+        tags: [v*]
+
+jobs:
+    # Switch to the changeset action once we normalize this
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  registry-url: "https://npm.pkg.github.com"
+                  scope: "@openmarch"
+
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
+
+            - name: Verify GitHub Package Registry authentication
+              run: pnpm whoami --registry=https://npm.pkg.github.com
+
+            - run: pnpm install
+            - run: pnpm build
+
+            - name: Create Release Pull Request or Publish to npm
+              id: changesets
+              uses: changesets/action@v1
+              with:
+                  # This expects you to have a script called release which does a build for your packages and calls changeset publish
+                  publish: pnpm release
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,4 +1,5 @@
 import MarcherPage, {
+    DatabaseMarcherPage,
     ModifiedMarcherPageArgs,
 } from "../../../src/global/classes/MarcherPage";
 import Constants from "../../../src/global/Constants";
@@ -6,6 +7,8 @@ import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
 import { DatabaseResponse } from "../DatabaseActions";
 import { getSpmByMarcherPage } from "./ShapePageMarcherTable";
+import { getOrm, schema } from "../db";
+import { eq, and } from "drizzle-orm";
 
 /**
  * Gets all of the marcherPages, or the marcherPages with the given marcher_id and/or page_id.
@@ -17,26 +20,76 @@ export function getMarcherPages(args: {
     db: Database.Database;
     marcher_id?: number;
     page_id?: number;
-}): DatabaseResponse<MarcherPage[]> {
-    let stmt = args.db.prepare(
-        `SELECT * FROM ${Constants.MarcherPageTableName}`,
-    );
-    if (args) {
-        if (args.marcher_id && args.page_id)
-            stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id} AND page_id = ${args.page_id}`,
+}): DatabaseResponse<DatabaseMarcherPage[]> {
+    const orm = getOrm(args.db);
+
+    try {
+        const conditions = [];
+        if (args.marcher_id !== undefined) {
+            conditions.push(
+                eq(schema.marcher_pages.marcher_id, args.marcher_id),
             );
-        else if (args.marcher_id)
-            stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE marcher_id = ${args.marcher_id}`,
+        }
+        if (args.page_id !== undefined) {
+            conditions.push(eq(schema.marcher_pages.page_id, args.page_id));
+        }
+
+        const query = orm
+            .select({
+                id: schema.marcher_pages.id,
+                id_for_html: schema.marcher_pages.id_for_html,
+                marcher_id: schema.marcher_pages.marcher_id,
+                page_id: schema.marcher_pages.page_id,
+                x: schema.marcher_pages.x,
+                y: schema.marcher_pages.y,
+                created_at: schema.marcher_pages.created_at,
+                updated_at: schema.marcher_pages.updated_at,
+                path_data_id: schema.marcher_pages.path_data_id,
+                path_position: schema.marcher_pages.path_position,
+                notes: schema.marcher_pages.notes,
+                path_data: schema.pathways.path_data,
+                pathway_notes: schema.pathways.notes,
+            })
+            .from(schema.marcher_pages)
+            .leftJoin(
+                schema.pathways,
+                eq(schema.marcher_pages.path_data_id, schema.pathways.id),
             );
-        else if (args.page_id)
-            stmt = args.db.prepare(
-                `SELECT * FROM ${Constants.MarcherPageTableName} WHERE page_id = ${args.page_id}`,
+
+        // Apply conditions if any exist
+        if (conditions.length > 0) {
+            query.where(
+                conditions.length > 1 ? and(...conditions) : conditions[0],
             );
+        }
+
+        const rawResult = query.all();
+
+        // Transform the result to match the MarcherPage interface
+        const result = rawResult.map((row) => ({
+            id: row.id,
+            id_for_html: row.id_for_html,
+            marcher_id: row.marcher_id,
+            page_id: row.page_id,
+            x: row.x,
+            y: row.y,
+            created_at: row.created_at,
+            updated_at: row.updated_at,
+            path_data_id: row.path_data_id,
+            path_position: row.path_position,
+            notes: row.notes,
+            path_data: row.path_data,
+            pathway_notes: row.pathway_notes,
+        })) as DatabaseMarcherPage[];
+
+        return { success: true, data: result };
+    } catch (error) {
+        return {
+            success: false,
+            data: [],
+            error: { message: `Failed to get marcher pages: ${error}` },
+        };
     }
-    const result = stmt.all() as MarcherPage[];
-    return { success: true, data: result };
 }
 
 /**
@@ -50,7 +103,7 @@ export function getMarcherPage(args: {
     db: Database.Database;
     marcher_id: number;
     page_id: number;
-}): DatabaseResponse<MarcherPage | null> {
+}): DatabaseResponse<DatabaseMarcherPage | null> {
     const response = getMarcherPages(args);
     return {
         success: response.success,

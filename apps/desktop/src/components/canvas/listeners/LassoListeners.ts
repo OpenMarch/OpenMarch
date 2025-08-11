@@ -3,7 +3,7 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 
 export default class LassoListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;

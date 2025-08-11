@@ -289,8 +289,13 @@ export function createPages({
                     }
                     for (const marcherPage of previousPageMarcherPages.data)
                         newMarcherPages.push({
-                            ...marcherPage,
+                            marcher_id: marcherPage.marcher_id,
                             page_id: page.id,
+                            x: marcherPage.x,
+                            y: marcherPage.y,
+                            notes: marcherPage.notes,
+                            path_data_id: marcherPage.path_data_id,
+                            path_position: marcherPage.path_position,
                         });
                 } else {
                     for (const marcher of marchersResponse.data) {
@@ -329,6 +334,8 @@ export function createPages({
         History.incrementUndoGroup(db);
     } catch (error: any) {
         console.error("Error creating page. Rolling back changes.", error);
+        console.error("Error message:", error.message);
+        console.error("Error stack:", error.stack);
         if (actionWasPerformed) {
             History.performUndo(db);
             History.clearMostRecentRedo(db);
@@ -336,7 +343,7 @@ export function createPages({
         output = {
             success: false,
             error: {
-                message: error,
+                message: error.message || error,
                 stack: error.stack || "could not get stack",
             },
             data: [],

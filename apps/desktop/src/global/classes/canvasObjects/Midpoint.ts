@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
-import { FieldProperties } from "@openmarch/core/field";
-import { rgbaToString } from "@openmarch/core/field";
+import { FieldProperties } from "@openmarch/core";
+import { rgbaToString } from "@openmarch/core";
 import { RgbaColor } from "@uiw/react-color";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 

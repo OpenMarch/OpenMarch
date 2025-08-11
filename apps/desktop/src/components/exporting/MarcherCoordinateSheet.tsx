@@ -3,8 +3,8 @@ import React, { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
-import { FieldProperties } from "@openmarch/core/field";
+import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
+import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -170,6 +170,11 @@ export default function MarcherCoordinateSheet({
                     id_for_html: "example-marcher-page-1",
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 2,
@@ -182,6 +187,11 @@ export default function MarcherCoordinateSheet({
                     y:
                         fieldProperties.centerFrontPoint.yPixels +
                         2 * pixelsPerStep,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 3,
@@ -196,13 +206,18 @@ export default function MarcherCoordinateSheet({
                         (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
                             pixelsPerStep -
                             2.32 * pixelsPerStep),
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
             ]);
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
             setMarcherPagesToUse(
-                MarcherPage.getByMarcherId(marcherPages, marcher?.id || -1),
+                getByMarcherId(marcherPages, marcher?.id || -1),
             );
         }
     }, [marcher, marcherPages, pages, example, fieldProperties, t]);
@@ -318,12 +333,6 @@ export function StaticMarcherCoordinateSheet({
         terse,
         useXY,
     ]);
-
-    const sortMarcherPages = (a: MarcherPage, b: MarcherPage) => {
-        const pageA = pagesState.find((page) => page.id === a.page_id);
-        const pageB = pagesState.find((page) => page.id === b.page_id);
-        return pageA && pageB ? pageA.order - pageB.order : 0;
-    };
 
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())

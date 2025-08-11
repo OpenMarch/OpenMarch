@@ -129,6 +129,9 @@ module.exports = {
         "endzone",
         "Dhruva",
         "Chakravarthi",
+        "Catmull",
+        "NURBS",
+        "uuidv",
     ],
     ignorePaths: [
         "node_modules/**",

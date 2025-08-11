@@ -5,11 +5,14 @@ import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    getByMarcherAndPageId,
+    getByPageId,
+    updateMarcherPages,
+} from "@/global/classes/MarcherPage";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -18,7 +21,6 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
@@ -483,7 +485,7 @@ function RegisteredActionsHandler() {
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { toggleMetronome } = useMetronomeStore()!;
-    const { marcherPages } = useMarcherPageStore()!;
+    const { marcherPages, fetchMarcherPages } = useMarcherPageStore()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
@@ -622,17 +624,20 @@ function RegisteredActionsHandler() {
                         return;
                     }
 
-                    const previousPageMarcherPages = MarcherPage.getByPageId(
+                    const previousPageMarcherPages = getByPageId(
                         marcherPages,
                         previousPage.id,
                     );
                     const changes = previousPageMarcherPages.map(
                         (marcherPage) => ({
-                            ...marcherPage,
+                            marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
+                            x: marcherPage.x as number,
+                            y: marcherPage.y as number,
+                            notes: marcherPage.notes || undefined,
                         }),
                     );
-                    MarcherPage.updateMarcherPages(changes);
+                    updateMarcherPages(changes, fetchMarcherPages);
 
                     toast.success(
                         t("actions.batchEdit.setAllToPreviousSuccess", {
@@ -652,7 +657,7 @@ function RegisteredActionsHandler() {
 
                     const previousMarcherPages = selectedMarchers
                         .map((marcher) =>
-                            MarcherPage.getByMarcherAndPageId(
+                            getByMarcherAndPageId(
                                 marcherPages,
                                 marcher.id,
                                 previousPage.id,
@@ -667,12 +672,14 @@ function RegisteredActionsHandler() {
                     if (previousMarcherPages.length > 0) {
                         const changes = previousMarcherPages.map(
                             (marcherPage) => ({
-                                ...marcherPage,
-                                page_id: selectedPage.id,
                                 marcher_id: marcherPage.marcher_id,
+                                page_id: selectedPage.id,
+                                x: marcherPage.x as number,
+                                y: marcherPage.y as number,
+                                notes: marcherPage.notes || undefined,
                             }),
                         );
-                        MarcherPage.updateMarcherPages(changes);
+                        updateMarcherPages(changes, fetchMarcherPages);
 
                         toast.success(
                             t(
@@ -694,15 +701,18 @@ function RegisteredActionsHandler() {
                         return;
                     }
 
-                    const nextPageMarcherPages = MarcherPage.getByPageId(
+                    const nextPageMarcherPages = getByPageId(
                         marcherPages,
                         nextPage.id,
                     );
                     const changes = nextPageMarcherPages.map((marcherPage) => ({
-                        ...marcherPage,
+                        marcher_id: marcherPage.marcher_id,
                         page_id: selectedPage.id,
+                        x: marcherPage.x as number,
+                        y: marcherPage.y as number,
+                        notes: marcherPage.notes || undefined,
                     }));
-                    MarcherPage.updateMarcherPages(changes);
+                    updateMarcherPages(changes, fetchMarcherPages);
 
                     toast.success(
                         t("actions.batchEdit.setAllToNextSuccess", {
@@ -721,7 +731,7 @@ function RegisteredActionsHandler() {
                     }
                     const nextMarcherPages = selectedMarchers
                         .map((marcher) =>
-                            MarcherPage.getByMarcherAndPageId(
+                            getByMarcherAndPageId(
                                 marcherPages,
                                 marcher.id,
                                 nextPage.id,
@@ -735,11 +745,13 @@ function RegisteredActionsHandler() {
 
                     if (nextMarcherPages.length > 0) {
                         const changes = nextMarcherPages.map((marcherPage) => ({
-                            ...marcherPage,
-                            page_id: selectedPage.id,
                             marcher_id: marcherPage.marcher_id,
+                            page_id: selectedPage.id,
+                            x: marcherPage.x as number,
+                            y: marcherPage.y as number,
+                            notes: marcherPage.notes || undefined,
                         }));
-                        MarcherPage.updateMarcherPages(changes);
+                        updateMarcherPages(changes, fetchMarcherPages);
 
                         toast.success(
                             t("actions.batchEdit.setSelectedToNextSuccess", {
@@ -762,7 +774,7 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    updateMarcherPages(updatedPagesArray, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersDown: {
@@ -774,7 +786,7 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    updateMarcherPages(updatedPagesArray, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersLeft: {
@@ -786,7 +798,7 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    updateMarcherPages(updatedPagesArray, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersRight: {
@@ -798,7 +810,7 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    MarcherPage.updateMarcherPages(updatedPagesArray);
+                    updateMarcherPages(updatedPagesArray, fetchMarcherPages);
                     break;
                 }
 
@@ -813,7 +825,7 @@ function RegisteredActionsHandler() {
                             yAxis: !uiSettings.lockY,
                         },
                     );
-                    MarcherPage.updateMarcherPages(roundedCoords);
+                    updateMarcherPages(roundedCoords, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.lockX:
@@ -832,14 +844,14 @@ function RegisteredActionsHandler() {
                     const alignedCoords = CoordinateActions.alignVertically({
                         marcherPages: getSelectedMarcherPages(),
                     });
-                    MarcherPage.updateMarcherPages(alignedCoords);
+                    updateMarcherPages(alignedCoords, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.alignHorizontally: {
                     const alignedCoords = CoordinateActions.alignHorizontally({
                         marcherPages: getSelectedMarcherPages(),
                     });
-                    MarcherPage.updateMarcherPages(alignedCoords);
+                    updateMarcherPages(alignedCoords, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.evenlyDistributeVertically: {
@@ -848,7 +860,7 @@ function RegisteredActionsHandler() {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties,
                         });
-                    MarcherPage.updateMarcherPages(distributedCoords);
+                    updateMarcherPages(distributedCoords, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.evenlyDistributeHorizontally: {
@@ -857,7 +869,7 @@ function RegisteredActionsHandler() {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties,
                         });
-                    MarcherPage.updateMarcherPages(distributedCoords);
+                    updateMarcherPages(distributedCoords, fetchMarcherPages);
                     break;
                 }
                 case RegisteredActionsEnum.swapMarchers: {
@@ -887,7 +899,7 @@ function RegisteredActionsHandler() {
                                             selectedMarchers[1].drill_number,
                                     }),
                                 );
-                                MarcherPage.fetchMarcherPages();
+                                fetchMarcherPages();
                                 // This causes an infinite loop
                                 // It's not a huge deal to leave it like this as marchers are updated on a refresh
                                 MarcherShape.fetchShapePages();
@@ -947,8 +959,15 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.applyQuickShape: {
-                    MarcherPage.updateMarcherPages(
-                        alignmentEventNewMarcherPages,
+                    updateMarcherPages(
+                        alignmentEventNewMarcherPages.map((marcherPage) => ({
+                            marcher_id: marcherPage.marcher_id,
+                            page_id: marcherPage.page_id,
+                            x: marcherPage.x as number,
+                            y: marcherPage.y as number,
+                            notes: marcherPage.notes || undefined,
+                        })),
+                        fetchMarcherPages,
                     );
                     resetAlignmentEvent();
                     break;
@@ -1025,6 +1044,7 @@ function RegisteredActionsHandler() {
             setUiSettings,
             t,
             uiSettings,
+            fetchMarcherPages,
         ],
     );
 

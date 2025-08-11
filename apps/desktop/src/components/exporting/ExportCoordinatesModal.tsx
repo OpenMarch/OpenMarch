@@ -7,7 +7,10 @@ import MarcherCoordinateSheet, {
     StaticCompactMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import MarcherPage from "@/global/classes/MarcherPage";
+import {
+    getByMarcherAndPageId,
+    getByMarcherId,
+} from "@/global/classes/MarcherPage";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import {
     Dialog,
@@ -31,7 +34,7 @@ import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { rgbaToString } from "@openmarch/core/field";
+import { rgbaToString } from "@openmarch/core";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
@@ -59,7 +62,7 @@ function CoordinateSheetExport() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const [quarterPages, setQuarterPages] = useState(false);
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { marchers } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { fieldProperties } = useFieldProperties()!;
@@ -138,7 +141,6 @@ function CoordinateSheetExport() {
             setProgress(25);
 
             // More detailed progress for sheet generation
-            const totalMarchers = processedMarchers.length;
             let groupedSheets: any[];
 
             // Check for cancellation
@@ -157,11 +159,10 @@ function CoordinateSheetExport() {
                 // Create quarter sheets for each marcher, organized by performer number
                 const marcherQuarterSheets = processedMarchers.flatMap(
                     (marcher, mIdx) => {
-                        const marcherPagesForMarcher =
-                            MarcherPage.getByMarcherId(
-                                marcherPages,
-                                marcher.id,
-                            );
+                        const marcherPagesForMarcher = getByMarcherId(
+                            marcherPages,
+                            marcher.id,
+                        );
 
                         // Sort by page order
                         marcherPagesForMarcher.sort((a, b) => {
@@ -247,7 +248,7 @@ function CoordinateSheetExport() {
             } else {
                 // regular format
                 groupedSheets = processedMarchers.map((marcher) => {
-                    const marcherPagesForMarcher = MarcherPage.getByMarcherId(
+                    const marcherPagesForMarcher = getByMarcherId(
                         marcherPages,
                         marcher.id,
                     ).sort((a, b) => {
@@ -713,14 +714,14 @@ function DrillChartExport() {
                 // Render pathways for individual marchers
                 if (individualCharts) {
                     for (let m = 0; m < marchers.length; m++) {
-                        const marcher = MarcherPage.getByMarcherAndPageId(
+                        const marcher = getByMarcherAndPageId(
                             marcherPages,
                             marchers[m].id,
                             pages[p].id,
                         )!;
                         const prevMarcher =
                             p > 0
-                                ? MarcherPage.getByMarcherAndPageId(
+                                ? getByMarcherAndPageId(
                                       marcherPages,
                                       marchers[m].id,
                                       pages[p - 1].id,
@@ -728,7 +729,7 @@ function DrillChartExport() {
                                 : null;
                         const nextMarcher =
                             p < pages.length - 1
-                                ? MarcherPage.getByMarcherAndPageId(
+                                ? getByMarcherAndPageId(
                                       marcherPages,
                                       marchers[m].id,
                                       pages[p + 1].id,
@@ -838,7 +839,15 @@ function DrillChartExport() {
             // Success
             return { SVGs: svgPages, coords: readableCoords };
         },
-        [fieldProperties, marchers, marcherPages, pages, individualCharts, t],
+        [
+            fieldProperties,
+            marchers,
+            pages,
+            t,
+            marcherVisuals,
+            marcherPages,
+            individualCharts,
+        ],
     );
 
     /**

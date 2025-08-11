@@ -17,8 +17,11 @@
     },
     "scripts": {
         "desktop": "turbo run --filter=@openmarch/desktop",
+        "build": "turbo run build",
+        "release": "pnpm run build && changeset version && changeset publish",
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
+        "path-utility": "turbo run --filter=@openmarch/path-utility",
         "test": "turbo run test:run",
         "lint": "turbo run lint",
         "format": "turbo run format",
@@ -49,5 +52,8 @@
             "react": "19.0.0",
             "react-dom": "19.0.0"
         }
+    },
+    "dependencies": {
+        "@changesets/cli": "^2.29.5"
     }
 }
