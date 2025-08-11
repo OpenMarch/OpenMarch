@@ -2,9 +2,9 @@ import { useCallback, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
-import MarcherCoordinateSheet, {
+import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
-    StaticCompactMarcherSheet,
+    StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import MarcherPage from "@/global/classes/MarcherPage";
@@ -163,95 +163,67 @@ function CoordinateSheetExport() {
             // split to quarter sheets
             if (quarterPages) {
                 // Create quarter sheets for each marcher, organized by performer number
-                const marcherQuarterSheets = processedMarchers.flatMap(
-                    (marcher, mIdx) => {
-                        const marcherPagesForMarcher =
-                            MarcherPage.getByMarcherId(
-                                marcherPages,
-                                marcher.id,
+                groupedSheets = processedMarchers.flatMap((marcher) => {
+                    const marcherPagesForMarcher = MarcherPage.getByMarcherId(
+                        marcherPages,
+                        marcher.id,
+                    ).sort((a, b) => {
+                        const pageA = pages.find((p) => p.id === a.page_id);
+                        const pageB = pages.find((p) => p.id === b.page_id);
+                        return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                    });
+
+                    const rowChunks = chunkArray(
+                        marcherPagesForMarcher,
+                        QUARTER_ROWS,
+                    );
+
+                    return rowChunks.map((rowChunk, chunkIdx) => {
+                        try {
+                            const renderedHtml = ReactDOMServer.renderToString(
+                                <StaticQuarterMarcherSheet
+                                    marcher={marcher}
+                                    pages={pages}
+                                    marcherPages={rowChunk}
+                                    fieldProperties={fieldProperties}
+                                    roundingDenominator={roundingDenominator}
+                                    terse={isTerse}
+                                    quarterPageNumber={chunkIdx + 1}
+                                    useXY={useXY}
+                                    includeMeasures={includeMeasures}
+                                />,
                             );
 
-                        // Sort by page order
-                        marcherPagesForMarcher.sort((a, b) => {
-                            const pageA = pages.find((p) => p.id === a.page_id);
-                            const pageB = pages.find((p) => p.id === b.page_id);
-                            return (pageA?.order ?? 0) - (pageB?.order ?? 0);
-                        });
+                            // Clean up the HTML to prevent URL encoding issues
+                            const cleanedHtml = renderedHtml
+                                .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Remove control characters
+                                .replace(/\s+/g, " ") // Normalize whitespace
+                                .trim();
 
-                        const rowChunks = chunkArray(
-                            marcherPagesForMarcher,
-                            QUARTER_ROWS,
-                        );
-
-                        return rowChunks.map((rowChunk, chunkIdx) => {
-                            try {
-                                const renderedHtml =
-                                    ReactDOMServer.renderToString(
-                                        <StaticCompactMarcherSheet
-                                            marcher={marcher}
-                                            pages={pages}
-                                            marcherPages={rowChunk}
-                                            fieldProperties={fieldProperties}
-                                            roundingDenominator={
-                                                roundingDenominator
-                                            }
-                                            terse={isTerse}
-                                            quarterPageNumber={chunkIdx + 1}
-                                        />,
-                                    );
-
-                                // Clean up the HTML to prevent URL encoding issues
-                                const cleanedHtml = renderedHtml
-                                    .replace(
-                                        /[\u0000-\u001F\u007F-\u009F]/g,
-                                        "",
-                                    ) // Remove control characters
-                                    .replace(/\s+/g, " ") // Normalize whitespace
-                                    .trim();
-
-                                return {
-                                    name: marcher.name,
-                                    drillNumber: marcher.drill_number,
-                                    section:
-                                        marcher.section ||
-                                        t("exportCoordinates.unsortedSection"),
-                                    renderedPage: cleanedHtml,
-                                };
-                            } catch (error) {
-                                console.error(
-                                    `Error rendering quarter page for ${marcher.drill_number}:`,
-                                    error,
-                                );
-                                return {
-                                    name: marcher.name,
-                                    drillNumber: marcher.drill_number,
-                                    section:
-                                        marcher.section ||
-                                        t("exportCoordinates.unsortedSection"),
-                                    renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
-                                };
-                            }
-                        });
-                    },
-                );
-
-                // Sort by drill number to organize by performer number
-                marcherQuarterSheets.sort((a, b) => {
-                    // First, sort by section
-                    const sectionCompare = a.section.localeCompare(b.section);
-                    if (sectionCompare !== 0) return sectionCompare;
-
-                    // Then sort by drill number
-                    const drillCompare = a.drillNumber.localeCompare(
-                        b.drillNumber,
-                    );
-                    if (drillCompare !== 0) return drillCompare;
-
-                    // Then by name if drill numbers are the same
-                    return a.name.localeCompare(b.name);
+                            return {
+                                name: marcher.name,
+                                drillNumber: marcher.drill_number,
+                                section:
+                                    marcher.section ||
+                                    t("exportCoordinates.unsortedSection"),
+                                renderedPage: cleanedHtml,
+                            };
+                        } catch (error) {
+                            console.error(
+                                `Error rendering quarter page for ${marcher.drill_number}:`,
+                                error,
+                            );
+                            return {
+                                name: marcher.name,
+                                drillNumber: marcher.drill_number,
+                                section:
+                                    marcher.section ||
+                                    t("exportCoordinates.unsortedSection"),
+                                renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
+                            };
+                        }
+                    });
                 });
-
-                groupedSheets = marcherQuarterSheets;
             } else {
                 // regular format
                 groupedSheets = processedMarchers.map((marcher) => {
@@ -559,7 +531,7 @@ function CoordinateSheetExport() {
                 </div>
                 <div>
                     <div className="mx-2 bg-white text-black">
-                        <MarcherCoordinateSheet
+                        <MarcherCoordinateSheetPreview
                             example={true}
                             terse={isTerse}
                             includeMeasures={includeMeasures}

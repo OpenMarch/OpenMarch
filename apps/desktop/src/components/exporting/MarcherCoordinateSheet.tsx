@@ -37,7 +37,7 @@ interface MarcherCoordinateSheetProps {
     useXY?: boolean;
 }
 
-export default function MarcherCoordinateSheet({
+export default function MarcherCoordinateSheetPreview({
     marcher,
     includeMeasures = true,
     roundingDenominator = 4,
@@ -587,10 +587,10 @@ export function StaticMarcherCoordinateSheet({
 }
 
 /**
- * Compact version of marcher coordinate sheet.
+ * Compact quarter version of marcher coordinate sheet.
  * Format: Pg. | S to S | F to B | Ct. | Ms.
  */
-interface StaticCompactMarcherSheetProps {
+interface StaticQuarterMarcherSheetProps {
     marcher: Marcher;
     pages: Page[];
     marcherPages: MarcherPage[];
@@ -598,6 +598,8 @@ interface StaticCompactMarcherSheetProps {
     roundingDenominator?: number;
     terse?: boolean;
     quarterPageNumber: number;
+    useXY: boolean;
+    includeMeasures: boolean;
 }
 
 /**
@@ -620,7 +622,7 @@ function compactMeasureFormat(measureStr: string): string {
     return measureStr;
 }
 
-export function StaticCompactMarcherSheet({
+export function StaticQuarterMarcherSheet({
     marcher,
     fieldProperties,
     marcherPages,
@@ -628,13 +630,18 @@ export function StaticCompactMarcherSheet({
     roundingDenominator = 4,
     terse = false,
     quarterPageNumber,
-}: StaticCompactMarcherSheetProps) {
+    useXY,
+    includeMeasures,
+}: StaticQuarterMarcherSheetProps) {
     const [marcherState, setMarcherState] = useState<Marcher>(marcher);
     const [fieldPropertiesState, setFieldPropertiesState] =
         useState<FieldProperties>(fieldProperties);
     const [marcherPagesState, setMarcherPagesState] =
         useState<MarcherPage[]>(marcherPages);
     const [pagesState, setPagesState] = useState<Page[]>(pages);
+    const [useXYState, setUseXY] = useState<boolean>(useXY);
+    const [includeMeasuresState, setIncludeMeasures] =
+        useState<boolean>(includeMeasures);
     const t = tolgee.t;
 
     useEffect(() => {
@@ -642,7 +649,9 @@ export function StaticCompactMarcherSheet({
         setFieldPropertiesState(fieldProperties);
         setMarcherPagesState(marcherPages);
         setPagesState(pages);
-    }, [marcher, fieldProperties, marcherPages, pages]);
+        setUseXY(useXY);
+        setIncludeMeasures(includeMeasures);
+    }, [marcher, fieldProperties, marcherPages, pages, useXY, includeMeasures]);
 
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())
@@ -743,7 +752,11 @@ export function StaticCompactMarcherSheet({
                         style={{ width: QuarterSheetColumnWidths.pageNumber }}
                     />
                     <col style={{ width: QuarterSheetColumnWidths.counts }} />
-                    <col style={{ width: QuarterSheetColumnWidths.measures }} />
+                    {includeMeasuresState && (
+                        <col
+                            style={{ width: QuarterSheetColumnWidths.measures }}
+                        />
+                    )}
                     <col style={{ width: QuarterSheetColumnWidths.x }} />
                     <col style={{ width: QuarterSheetColumnWidths.y }} />
                 </colgroup>
@@ -777,20 +790,22 @@ export function StaticCompactMarcherSheet({
                         >
                             Ct
                         </th>
-                        <th
-                            aria-label="measure header"
-                            style={{
-                                border: "1px solid #888",
-                                padding: "2px 4px",
-                                textAlign: "center",
-                                width: "15%",
-                                fontWeight: "bold",
-                                fontSize: 10,
-                                lineHeight: 1.1,
-                            }}
-                        >
-                            {t("exportCoordinates.measuresHeader")}
-                        </th>
+                        {includeMeasuresState && (
+                            <th
+                                aria-label="measure header"
+                                style={{
+                                    border: "1px solid #888",
+                                    padding: "2px 4px",
+                                    textAlign: "center",
+                                    width: "15%",
+                                    fontWeight: "bold",
+                                    fontSize: 10,
+                                    lineHeight: 1.1,
+                                }}
+                            >
+                                {t("exportCoordinates.measuresHeader")}
+                            </th>
+                        )}
                         <th
                             aria-label="side to side header"
                             style={{
@@ -802,7 +817,9 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            {t("exportCoordinates.sideToSideHeader")}
+                            {useXYState
+                                ? "X"
+                                : t("exportCoordinates.sideToSideHeader")}
                         </th>
                         <th
                             aria-label="front to back header"
@@ -815,7 +832,9 @@ export function StaticCompactMarcherSheet({
                                 lineHeight: 1.1,
                             }}
                         >
-                            {t("exportCoordinates.frontToBackHeader")}
+                            {useXYState
+                                ? "Y"
+                                : t("exportCoordinates.frontToBackHeader")}
                         </th>
                     </tr>
                 </thead>
@@ -886,19 +905,21 @@ export function StaticCompactMarcherSheet({
                                     >
                                         {counts}
                                     </td>
-                                    <td
-                                        style={{
-                                            border: "1px solid #888",
-                                            padding: "1px 3px",
-                                            textAlign: "center",
-                                            fontFamily:
-                                                "ui-sans-serif, system-ui, sans-serif",
-                                            fontSize: 10,
-                                            lineHeight: 1.1,
-                                        }}
-                                    >
-                                        {msValue}
-                                    </td>
+                                    {includeMeasuresState && (
+                                        <td
+                                            style={{
+                                                border: "1px solid #888",
+                                                padding: "1px 3px",
+                                                textAlign: "center",
+                                                fontFamily:
+                                                    "ui-sans-serif, system-ui, sans-serif",
+                                                fontSize: 10,
+                                                lineHeight: 1.1,
+                                            }}
+                                        >
+                                            {msValue}
+                                        </td>
+                                    )}
                                     <td
                                         style={{
                                             border: "1px solid #888",

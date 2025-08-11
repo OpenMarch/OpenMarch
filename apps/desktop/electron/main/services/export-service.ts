@@ -463,9 +463,11 @@ export class PDFExportService {
     private static async generateSeparatePDFs(
         sheets: ExportSheet[],
         outputPath: string,
+        quarterPages: boolean,
     ) {
         const sectionMap = new Map<string, ExportSheet[]>();
 
+        // Group sheets by section
         sheets.forEach((sheet) => {
             const section = sheet.section || "Other";
             if (!sectionMap.has(section)) {
@@ -474,11 +476,84 @@ export class PDFExportService {
             sectionMap.get(section)!.push(sheet);
         });
 
-        for (const [section, sectionSheets] of sectionMap) {
-            const sectionDir = path.join(outputPath, sanitize(section));
-            await fs.promises.mkdir(sectionDir, { recursive: true });
+        if (quarterPages) {
+            // Output directory for all PDFs (no section subfolders)
+            await fs.promises.mkdir(outputPath, { recursive: true });
 
-            for (const sheet of sectionSheets) {
+            for (const [section, sectionSheets] of sectionMap) {
+                // Chunk the sheets for this section into groups of 4
+                const renderedPages = sectionSheets.map((s) => s.renderedPage);
+                const pageChunks: string[][] = [];
+                for (let i = 0; i < renderedPages.length; i += 4) {
+                    pageChunks.push(renderedPages.slice(i, i + 4));
+                }
+                // Each chunk is a "page" of 2x2 quarter-pages
+                const combinedHtml = pageChunks
+                    .map(
+                        (page) =>
+                            `<div class="grid-container">
+                    ${page.map((sheet) => `<div class="grid-item">${sheet}</div>`).join("")}
+                </div>`,
+                    )
+                    .join("");
+
+                // Style matches generateSinglePDF's quarter-page mode
+                const htmlContent = `
+                <html>
+                  <head>
+                    <title>PDF Export</title>
+                    <style>
+                      @media print {
+                        .grid-container {
+                          display: grid;
+                          grid-template-columns: 50% 50%;
+                          grid-template-rows: 50% 50%;
+                          height: 10in;
+                          width: 7.5in;
+                          page-break-after: always;
+                        }
+                        .grid-item {
+                            box-sizing: border-box;
+                            padding: 0.1in;
+                            border: 1px solid #333;
+                        }
+                        .marcher-sheet {
+                            page-break-before: auto;
+                            page-break-after: auto;
+                            min-height: auto;
+                            padding: 0.5rem;
+                        }
+                        table {
+                          page-break-inside: auto;
+                        }
+                        thead {
+                          display: table-header-group;
+                        }
+                        .sheetHeader {
+                          display: table-header-group;
+                          page-break-inside: avoid;
+                          page-break-after: avoid;
+                        }
+                        tbody tr {
+                          page-break-inside: avoid;
+                        }
+                      }
+                      @page {
+                        margin: 0.5in;
+                      }
+                      body {
+                        margin: 0;
+                        padding: 0;
+                        font-family: Arial, sans-serif;
+                      }
+                    </style>
+                  </head>
+                  <body>
+                    ${combinedHtml}
+                  </body>
+                </html>
+            `;
+
                 await new Promise<void>((resolve, reject) => {
                     const win = new BrowserWindow({
                         width: 1200,
@@ -490,13 +565,10 @@ export class PDFExportService {
                         },
                     });
 
-                    // Add timeout for individual sheet generation
                     const timeout = setTimeout(() => {
                         win.close();
-                        reject(
-                            new Error("Individual PDF generation timed out"),
-                        );
-                    }, 15000);
+                        reject(new Error("Section PDF generation timed out"));
+                    }, 30000);
 
                     win.webContents.on(
                         "did-fail-load",
@@ -505,7 +577,7 @@ export class PDFExportService {
                             win.close();
                             reject(
                                 new Error(
-                                    `Failed to load sheet content: ${errorDescription} (${errorCode})`,
+                                    `Failed to load section content: ${errorDescription} (${errorCode})`,
                                 ),
                             );
                         },
@@ -515,62 +587,51 @@ export class PDFExportService {
                         clearTimeout(timeout);
                     });
 
-                    // Write HTML content to a temporary file to avoid URI length limitations
+                    // Write HTML to temp file
                     const tempDir = os.tmpdir();
                     const tempFile = path.join(
                         tempDir,
-                        `export-sheet-${Date.now()}-${Math.random()}.html`,
+                        `export-section-${Date.now()}-${Math.random()}.html`,
                     );
-
                     fs.promises
-                        .writeFile(tempFile, sheet.renderedPage)
-                        .then(() => {
-                            return win.loadFile(tempFile);
-                        })
+                        .writeFile(tempFile, htmlContent)
+                        .then(() => win.loadFile(tempFile))
                         .catch((error) => {
-                            console.error(
-                                "Failed to write or load temp file:",
-                                error,
-                            );
                             clearTimeout(timeout);
                             win.close();
-                            // Clean up temp file on error
-                            fs.promises.unlink(tempFile).catch(console.error);
+                            fs.promises.unlink(tempFile).catch(() => {});
                             reject(error);
                         });
 
-                    // Clean up temp file after PDF generation
+                    // Cleanup logic
                     const originalResolve = resolve;
                     const originalReject = reject;
                     resolve = () => {
-                        fs.promises.unlink(tempFile).catch(console.error);
+                        fs.promises.unlink(tempFile).catch(() => {});
                         originalResolve();
                     };
                     reject = (error) => {
-                        fs.promises.unlink(tempFile).catch(console.error);
+                        fs.promises.unlink(tempFile).catch(() => {});
                         originalReject(error);
                     };
 
                     win.webContents.on("did-finish-load", () => {
-                        // Get current filename and date for better file naming
                         const currentFileName =
                             PDFExportService.getCurrentFileName();
                         const date = new Date().toISOString().split("T")[0];
-                        const fileName = `${currentFileName}-${date}-${sheet.drillNumber}${sheet.name ? " - " + sheet.name : ""}`;
-
+                        const fileName = `${currentFileName}-${date}-${section}.pdf`;
                         const filePath = path.join(
-                            sectionDir,
-                            `${sanitize(fileName)}.pdf`,
+                            outputPath,
+                            sanitize(fileName),
                         );
 
                         win.webContents
                             .printToPDF({
                                 margins: {
-                                    marginType: "custom",
-                                    top: 0.25,
-                                    bottom: 0.25,
-                                    left: 0.25,
-                                    right: 0.25,
+                                    top: 0.75,
+                                    bottom: 0.5,
+                                    left: 0,
+                                    right: 0,
                                 },
                                 pageSize: "Letter",
                                 printBackground: true,
@@ -602,9 +663,134 @@ export class PDFExportService {
                     });
                 });
             }
+        } else {
+            for (const [section, sectionSheets] of sectionMap) {
+                const sectionDir = path.join(outputPath, sanitize(section));
+                await fs.promises.mkdir(sectionDir, { recursive: true });
+
+                for (const sheet of sectionSheets) {
+                    await new Promise<void>((resolve, reject) => {
+                        const win = new BrowserWindow({
+                            width: 1200,
+                            height: 800,
+                            show: false,
+                            webPreferences: {
+                                nodeIntegration: true,
+                                contextIsolation: false,
+                            },
+                        });
+
+                        // Add timeout for individual sheet generation
+                        const timeout = setTimeout(() => {
+                            win.close();
+                            reject(
+                                new Error(
+                                    "Individual PDF generation timed out",
+                                ),
+                            );
+                        }, 15000);
+
+                        win.webContents.on(
+                            "did-fail-load",
+                            (event, errorCode, errorDescription) => {
+                                clearTimeout(timeout);
+                                win.close();
+                                reject(
+                                    new Error(
+                                        `Failed to load sheet content: ${errorDescription} (${errorCode})`,
+                                    ),
+                                );
+                            },
+                        );
+
+                        win.on("closed", () => {
+                            clearTimeout(timeout);
+                        });
+
+                        // Write HTML content to a temporary file to avoid URI length limitations
+                        const tempDir = os.tmpdir();
+                        const tempFile = path.join(
+                            tempDir,
+                            `export-sheet-${Date.now()}-${Math.random()}.html`,
+                        );
+
+                        fs.promises
+                            .writeFile(tempFile, sheet.renderedPage)
+                            .then(() => {
+                                return win.loadFile(tempFile);
+                            })
+                            .catch((error) => {
+                                clearTimeout(timeout);
+                                win.close();
+                                // Clean up temp file on error
+                                fs.promises.unlink(tempFile).catch(() => {});
+                                reject(error);
+                            });
+
+                        // Clean up temp file after PDF generation
+                        const originalResolve = resolve;
+                        const originalReject = reject;
+                        resolve = () => {
+                            fs.promises.unlink(tempFile).catch(() => {});
+                            originalResolve();
+                        };
+                        reject = (error) => {
+                            fs.promises.unlink(tempFile).catch(() => {});
+                            originalReject(error);
+                        };
+
+                        win.webContents.on("did-finish-load", () => {
+                            const currentFileName =
+                                PDFExportService.getCurrentFileName();
+                            const date = new Date().toISOString().split("T")[0];
+                            const fileName = `${currentFileName}-${date}-${sheet.drillNumber}${sheet.name ? " - " + sheet.name : ""}`;
+                            const filePath = path.join(
+                                sectionDir,
+                                `${sanitize(fileName)}.pdf`,
+                            );
+                            win.webContents
+                                .printToPDF({
+                                    margins: {
+                                        marginType: "custom",
+                                        top: 0.25,
+                                        bottom: 0.25,
+                                        left: 0.25,
+                                        right: 0.25,
+                                    },
+                                    pageSize: "Letter",
+                                    printBackground: true,
+                                    headerTemplate: headerHtml({
+                                        showName:
+                                            PDFExportService.getCurrentFileName(),
+                                    }),
+                                    footerTemplate: footerHtml,
+                                    displayHeaderFooter: true,
+                                })
+                                .then(async (data) => {
+                                    const blob = new Blob([data], {
+                                        type: "application/pdf",
+                                    });
+                                    const arrayBuffer =
+                                        await blob.arrayBuffer();
+                                    await fs.promises.writeFile(
+                                        filePath,
+                                        new Uint8Array(arrayBuffer),
+                                    );
+                                    clearTimeout(timeout);
+                                    win.close();
+                                    resolve();
+                                })
+                                .catch((error) => {
+                                    clearTimeout(timeout);
+                                    win.close();
+                                    reject(error);
+                                });
+                        });
+                    });
+                }
+            }
         }
     }
-
     public static async export(
         sheets: ExportSheet[],
         organizeBySection: boolean,
@@ -629,6 +815,7 @@ export class PDFExportService {
                 await PDFExportService.generateSeparatePDFs(
                     sheets,
                     result.filePath,
+                    quarterPages,
                 );
             } else {
                 result = await dialog.showSaveDialog({
