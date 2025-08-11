@@ -6,16 +6,23 @@ import "@fontsource/dm-mono";
 import "@fontsource/dm-sans";
 import { ThemeProvider } from "./context/ThemeContext";
 import * as Sentry from "@sentry/electron/renderer";
-import posthog from "posthog-js";
+import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
-const options = {
+const isPlaywrightSession = import.meta.env.VITE_PUBLIC_PLAYWRIGHT_SESSION;
+
+const options: Partial<PostHogConfig> = {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,
     capture_exceptions: true,
     debug: import.meta.env.MODE === "development",
     opt_out_capturing_by_default: true,
+    disable_session_recording: isPlaywrightSession,
+    disable_persistence: isPlaywrightSession,
+    disable_surveys: isPlaywrightSession,
+    disable_surveys_automatic_display: isPlaywrightSession,
+    disable_web_experiments: isPlaywrightSession,
 };
 
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {

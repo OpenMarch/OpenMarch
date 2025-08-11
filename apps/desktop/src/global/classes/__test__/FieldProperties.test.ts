@@ -27,7 +27,7 @@ describe("FieldProperties", () => {
 
     describe("crud operations for field properties image", () => {
         it("should update and delete field properties image successfully", async () => {
-            const mockBuffer = Buffer.from("mock image data");
+            const mockBuffer = Uint8Array.from(Buffer.from("mock image data"));
 
             await updateFieldPropertiesImage(mockBuffer);
 

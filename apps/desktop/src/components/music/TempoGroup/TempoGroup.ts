@@ -15,7 +15,7 @@ import Beat, {
     updateBeats,
 } from "../../../global/classes/Beat";
 import { GroupFunction } from "../../../utilities/ApiFunctions";
-import type { NewMeasureArgs } from "electron/database/tables/MeasureTable";
+import type { NewMeasureArgs } from "@/global/classes/Measure";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 
@@ -407,13 +407,11 @@ export const createFromTempoGroup = async (
         strongBeatIndexes: tempoGroup.strongBeatIndexes,
     });
 
-    const createBeatsResponse = await GroupFunction({
-        refreshFunction: () => {},
-        functionsToExecute: [
-            () => createBeats(beatsToCreate, async () => {}, startingPosition),
-        ],
-        useNextUndoGroup: true,
-    });
+    const createBeatsResponse = await createBeats(
+        beatsToCreate,
+        async () => {},
+        startingPosition,
+    );
     if (!createBeatsResponse.success) {
         toast.error(tolgee.t("tempoGroup.createBeatsError"));
         console.error("Error creating beats", createBeatsResponse);
@@ -421,12 +419,7 @@ export const createFromTempoGroup = async (
     }
     try {
         // Step 3: Convert database beats to Beat objects
-        const databaseBeats = (
-            createBeatsResponse.responses[0] as {
-                success: boolean;
-                data: DatabaseBeat[];
-            }
-        ).data;
+        const databaseBeats = createBeatsResponse.data;
         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
             (a, b) => a.position - b.position,
         );
@@ -438,16 +431,15 @@ export const createFromTempoGroup = async (
             rehearsalMark: tempoGroup.name,
         });
 
-        const createMeasuresResponse = await GroupFunction({
-            refreshFunction,
-            functionsToExecute: [
-                () => createMeasures(newMeasures, async () => {}),
-            ],
-            useNextUndoGroup: false,
-        });
+        const createMeasuresResponse = await createMeasures(
+            newMeasures,
+            async () => {},
+        );
         if (!createMeasuresResponse.success) {
             throw new Error("Error creating measures");
         }
+
+        refreshFunction();
 
         return { success: true };
     } catch (error) {
@@ -525,11 +517,16 @@ export const updateTempoGroup = async ({
         );
     }
 
-    return GroupFunction({
-        refreshFunction,
+    const result = await GroupFunction({
         functionsToExecute,
         useNextUndoGroup: true,
     });
+
+    if (result.success) {
+        refreshFunction();
+    }
+
+    return result;
 };
 
 export const updateManualTempos = async ({
@@ -561,11 +558,13 @@ export const updateManualTempos = async ({
         });
     }
 
-    return GroupFunction({
-        refreshFunction,
-        functionsToExecute: [() => updateBeats(updatedBeats, async () => {})],
-        useNextUndoGroup: true,
-    });
+    const result = await updateBeats(updatedBeats, async () => {});
+
+    if (result.success) {
+        refreshFunction();
+    }
+
+    return result;
 };
 
 export const handleCascadeDelete = async (

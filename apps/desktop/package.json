@@ -33,7 +33,7 @@
         "test:prepare": "pnpm rebuild better-sqlite3",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",
-        "e2e": "playwright test",
+        "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
         "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate"
     },
@@ -113,6 +113,7 @@
         "@vitejs/plugin-react": "^4.6.0",
         "@vitest/coverage-v8": "^2.1.9",
         "@vitest/ui": "^3.2.4",
+        "cross-env": "^10.0.0",
         "dotenv": "^16.6.1",
         "drizzle-kit": "^0.31.4",
         "electron": "^29.4.6",
