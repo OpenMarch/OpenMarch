@@ -1,3 +1,2 @@
-export type { Beat, Measure } from "./src/parser";
-
-export { parseMusicXml, extractXmlFromMxlFile } from "./src/parser";
+export { type Beat, type Measure, extractXmlFromMxlFile } from "./src/utils";
+export { parseMusicXml } from "./src/parser";

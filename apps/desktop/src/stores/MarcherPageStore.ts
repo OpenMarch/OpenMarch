@@ -1,8 +1,9 @@
 import MarcherPageMap, {
     marcherPageMapFromArray,
 } from "@/global/classes/MarcherPageIndex";
-import MarcherPage from "@/global/classes/MarcherPage";
+import { getMarcherPages } from "@/global/classes/MarcherPage";
 import { create } from "zustand";
+import { useTimingObjectsStore } from "./TimingObjectsStore";
 
 interface MarcherPageStoreInterface {
     marcherPages: MarcherPageMap;
@@ -15,12 +16,15 @@ export const useMarcherPageStore = create<MarcherPageStoreInterface>((set) => ({
     marcherPagesAreLoading: true,
 
     fetchMarcherPages: async () => {
+        // Get pages from the timing objects store
+        const { pages } = useTimingObjectsStore.getState();
+
         // Fetch all marcherPages from the DB
-        const rawMarcherPages = await MarcherPage.getMarcherPages();
+        const marcherPages = await getMarcherPages({ pages });
 
         // Update the store with the new maps
         set({
-            marcherPages: marcherPageMapFromArray(rawMarcherPages),
+            marcherPages: marcherPageMapFromArray(marcherPages),
             marcherPagesAreLoading: false,
         });
     },

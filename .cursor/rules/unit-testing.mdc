@@ -1,8 +1,11 @@
 ---
-description: Guidelines for writing unit tests
-globs:
+description: Guidelines for writing and running unit tests
 alwaysApply: true
 ---
+
+# Testing
+
+## Writing tests
 
 Use Vitest to write all unit tests.
 
@@ -12,3 +15,9 @@ Never use mocks for packages or database operations.
 Everything should be able to be tested with the real functionality.
 If you run into trouble getting a module to import correctly, please ask for assistance.
 The only exception to this is mocking React context providers when trying to render components that rely on the hooks.
+
+## Running tests
+
+Since the is a monorepo, be sure to change directory to the package or app where you want to run tests.
+E.g. `cd apps/desktop && pnpm run test {relative_file_name}"`.
+You only need to change directory on the first test.

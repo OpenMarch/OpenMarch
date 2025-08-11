@@ -802,13 +802,10 @@ vi.mock("@/global/classes/Beat", async () => {
 });
 
 vi.mock("@/utilities/ApiFunctions", () => ({
-    GroupFunction: vi
-        .fn()
-        .mockImplementation(({ functionsToExecute, refreshFunction }) => {
-            functionsToExecute.forEach((fn: () => void) => fn());
-            if (refreshFunction) refreshFunction();
-            return { success: true };
-        }),
+    GroupFunction: vi.fn().mockImplementation(({ functionsToExecute }) => {
+        functionsToExecute.forEach((fn: () => void) => fn());
+        return { success: true };
+    }),
 }));
 
 // Helper function to create mock pages
@@ -1031,7 +1028,6 @@ describe("performDatabaseOperations", () => {
         expect(GroupFunction).toHaveBeenCalledWith({
             functionsToExecute: expect.any(Array),
             useNextUndoGroup: false,
-            refreshFunction,
         });
     });
 });

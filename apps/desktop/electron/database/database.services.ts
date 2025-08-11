@@ -15,7 +15,6 @@ import { DatabaseMarcher } from "../../src/global/classes/Marcher";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
-import * as MeasureTable from "./tables/MeasureTable";
 import * as BeatTable from "./tables/BeatTable";
 import * as UtilityTable from "./tables/UtilityTable";
 import { getOrm } from "./db";
@@ -318,26 +317,6 @@ export function initHandlers() {
     ipcMain.handle("beat:delete", async (_, beatIds) =>
         connectWrapper(BeatTable.deleteBeats, {
             beatIds,
-        }),
-    );
-
-    // Measures
-    ipcMain.handle("measure:getAll", async () =>
-        connectWrapper(MeasureTable.getMeasures),
-    );
-    ipcMain.handle("measure:insert", async (_, newMeasures) =>
-        connectWrapper(MeasureTable.createMeasures, {
-            newMeasures,
-        }),
-    );
-    ipcMain.handle("measure:update", async (_, modifiedMeasures) =>
-        connectWrapper(MeasureTable.updateMeasures, {
-            modifiedMeasures,
-        }),
-    );
-    ipcMain.handle("measure:delete", async (_, measureIds) =>
-        connectWrapper(MeasureTable.deleteMeasures, {
-            measureIds,
         }),
     );
 

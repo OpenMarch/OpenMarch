@@ -23,7 +23,6 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import {
     getFieldPropertiesJSON,
-    updateFieldProperties,
     updateFieldsPropertiesJSON,
 } from "../../src/global/classes/FieldProperties";
 
@@ -43,9 +42,6 @@ const store = new Store();
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
-console.log("isCodegen:", isCodegen);
-export const isPlaywrightSession = !!process.env.PLAYWRIGHT_SESSION;
-console.log("isPlaywrightSession:", isPlaywrightSession);
 
 const enableSentry =
     process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
@@ -67,7 +63,7 @@ ipcMain.handle("settings:get", (_, key) => {
 
 ipcMain.handle("env:get", () => {
     return {
-        isPlaywright: !!process.env.PLAYWRIGHT_SESSION,
+        isCodegen: isCodegen,
         isCI: !!process.env.CI,
     };
 });

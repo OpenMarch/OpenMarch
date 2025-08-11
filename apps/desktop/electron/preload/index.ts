@@ -5,6 +5,7 @@ import {
     NewMarcherArgs,
 } from "@/global/classes/Marcher";
 import MarcherPage, {
+    DatabaseMarcherPage,
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
@@ -17,11 +18,6 @@ import {
     NewBeatArgs,
     ModifiedBeatArgs,
 } from "electron/database/tables/BeatTable";
-import {
-    DatabaseMeasure,
-    NewMeasureArgs,
-    ModifiedMeasureArgs,
-} from "electron/database/tables/MeasureTable";
 import {
     DatabasePage,
     ModifiedPageArgs,
@@ -327,15 +323,15 @@ const APP_API = {
     // MarcherPage
     getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
         ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
+            DatabaseResponse<DatabaseMarcherPage[]>
         >,
     getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
         ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<MarcherPage>
+            DatabaseResponse<DatabaseMarcherPage>
         >,
     updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
         ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<MarcherPage>
+            DatabaseResponse<DatabaseMarcherPage>
         >,
 
     // **** Timing Objects ****
@@ -383,24 +379,6 @@ const APP_API = {
     deleteBeats: (beatIds: Set<number>) =>
         ipcRenderer.invoke("beat:delete", beatIds) as Promise<
             DatabaseResponse<DatabaseBeat[]>
-        >,
-
-    // Measure
-    getMeasures: () =>
-        ipcRenderer.invoke("measure:getAll") as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    createMeasures: (newMeasures: NewMeasureArgs[]) =>
-        ipcRenderer.invoke("measure:insert", newMeasures) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    updateMeasures: (modifiedMeasures: ModifiedMeasureArgs[]) =>
-        ipcRenderer.invoke("measure:update", modifiedMeasures) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
-        >,
-    deleteMeasures: (measureIds: Set<number>) =>
-        ipcRenderer.invoke("measure:delete", measureIds) as Promise<
-            DatabaseResponse<DatabaseMeasure[]>
         >,
 
     // Audio File

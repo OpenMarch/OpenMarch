@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import { Marcher } from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
@@ -171,6 +171,11 @@ export default function MarcherCoordinateSheetPreview({
                     id_for_html: "example-marcher-page-1",
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 2,
@@ -183,6 +188,11 @@ export default function MarcherCoordinateSheetPreview({
                     y:
                         fieldProperties.centerFrontPoint.yPixels +
                         2 * pixelsPerStep,
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
                 {
                     id: 3,
@@ -197,13 +207,18 @@ export default function MarcherCoordinateSheetPreview({
                         (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
                             pixelsPerStep -
                             2.32 * pixelsPerStep),
+                    path_data_id: null,
+                    path_position: null,
+                    path_data: null,
+                    notes: null,
+                    pathway_notes: null,
                 },
             ]);
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
             setMarcherPagesToUse(
-                MarcherPage.getByMarcherId(marcherPages, marcher?.id || -1),
+                getByMarcherId(marcherPages, marcher?.id || -1),
             );
         }
     }, [marcher, marcherPages, pages, example, fieldProperties, t]);
