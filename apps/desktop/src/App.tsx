@@ -135,7 +135,9 @@ function App() {
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
-                <ReactQueryDevtools initialIsOpen={false} />
+                {process.env.NODE_ENV !== "production" && (
+                    <ReactQueryDevtools initialIsOpen={false} />
+                )}
                 <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal
