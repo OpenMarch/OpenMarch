@@ -32,7 +32,7 @@ describe("FieldProperties", () => {
             await updateFieldPropertiesImage(mockBuffer);
 
             const imageBuffer = await getFieldPropertiesImage();
-            expect(Buffer.from(imageBuffer)).toEqual(mockBuffer);
+            expect(imageBuffer).toEqual(mockBuffer);
 
             await deleteFieldPropertiesImage();
             const image = await getFieldPropertiesImage();

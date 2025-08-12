@@ -5,15 +5,15 @@
             "outputs": ["dist/**"]
         },
         "test": {
+            "dependsOn": ["^build"],
             "outputs": []
         },
         "test:prepare": {
-            "outputs": []
-        },
-        "test:run": {
+            "dependsOn": ["^build"],
             "outputs": []
         },
         "test:coverage": {
+            "dependsOn": ["^build"],
             "outputs": []
         },
         "test:clearCache": {
