@@ -1,27 +1,37 @@
 {
     "name": "@openmarch/musicxml-parser",
     "license": "AGPL-3.0",
-    "module": "index.ts",
     "type": "module",
     "version": "1.0.0",
+    "types": "dist/index.d.ts",
+    "main": "dist/index.cjs",
     "publishConfig": {
         "@openmarch:registry": "https://npm.pkg.github.com"
     },
     "scripts": {
-        "dev": "tsc --watch",
+        "build": "tsup --format esm,cjs",
+        "dev": "tsup --watch",
         "test": "vitest run --silent",
         "test:watch": "vitest"
     },
     "exports": {
         ".": {
-            "types": "./index.ts",
-            "default": "./index.ts"
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.js"
         }
     },
+    "files": [
+        "dist/**/*",
+        "README.md",
+        "LICENSE"
+    ],
     "peerDependencies": {
         "typescript": "^5"
     },
-    "dependencies": {
-        "vitest": "^2.1.9"
+    "devDependencies": {
+        "vitest": "^2.1.9",
+        "tsup": "^8.5.0"
     }
 }

@@ -158,16 +158,19 @@ const marcherPageQueries = {
             conditions.push(eq(marcher_pages.page_id, filters.page_id));
         }
 
-        const query = db.select().from(marcher_pages);
-
-        // Apply conditions if any exist
+        // Build the query with conditions
         if (conditions.length > 0) {
-            query.where(
-                conditions.length > 1 ? and(...conditions) : conditions[0],
-            );
+            return await db
+                .select()
+                .from(marcher_pages)
+                .where(
+                    conditions.length > 1 ? and(...conditions) : conditions[0],
+                )
+                .all();
         }
 
-        return await query.all();
+        // No conditions, return all rows
+        return await db.select().from(marcher_pages).all();
     },
 
     getByPage: async (

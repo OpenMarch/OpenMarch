@@ -47,11 +47,20 @@ export interface ModifiedTableNameArgs {
 export const tableNameKeys = {
     all: ["tableName"] as const,
     lists: () => [...tableNameKeys.all, "list"] as const,
-    list: (
-        filters: {
-            /* define filters */
-        } = {},
-    ) => [...tableNameKeys.lists(), filters] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+        [
+            ...tableNameKeys.lists(),
+            Object.keys(filters)
+                .sort()
+                .reduce(
+                    (acc, k) => {
+                        // @ts-expect-error index
+                        acc[k] = filters[k];
+                        return acc;
+                    },
+                    {} as Record<string, unknown>,
+                ),
+        ] as const,
     details: () => [...tableNameKeys.all, "detail"] as const,
     detail: (id: number) => [...tableNameKeys.details(), id] as const,
 };
@@ -61,26 +70,31 @@ const tableNameQueries = {
     getAll: async (filters?: {
         /* define filters */
     }): Promise<DatabaseTableName[]> => {
-        let queryBuilder = db.select().from(table_name).$dynamic();
+        // Build filter conditions
+        const conditions: SQL[] = [];
 
-        // Add filter conditions
         if (filters?.someField !== undefined) {
-            queryBuilder = queryBuilder.where(
-                eq(table_name.someField, filters.someField),
-            );
+            conditions.push(eq(table_name.someField, filters.someField));
         }
 
-        return await queryBuilder.all();
+        if (filters?.anotherField !== undefined) {
+            conditions.push(eq(table_name.anotherField, filters.anotherField));
+        }
+
+        // Combine all conditions with AND
+        const whereClause =
+            conditions.length > 0 ? and(...conditions) : undefined;
+
+        // Execute query with composed filters
+        return await db.select().from(table_name).where(whereClause).all();
     },
 
     getById: async (id: number): Promise<DatabaseTableName | undefined> => {
-        const results = await db
+        return await db
             .select()
             .from(table_name)
             .where(eq(table_name.id, id))
-            .all();
-
-        return results[0];
+            .get();
     },
 };
 

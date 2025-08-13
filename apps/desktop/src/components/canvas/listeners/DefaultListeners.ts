@@ -3,7 +3,7 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { ModifiedMarcherPageArgs } from "@/hooks/queries";
 import { rgbaToString } from "@openmarch/core";
 
 export default class DefaultListeners implements CanvasListeners {

@@ -122,7 +122,7 @@ function MarcherEditor() {
 
         const selectedMarcherPage =
             selectedPage?.id !== undefined
-                ? selectedMarcherPages[selectedPage?.id]
+                ? selectedMarcherPages?.[selectedPage?.id]
                 : undefined;
 
         if (selectedMarcherPage) {
@@ -133,7 +133,7 @@ function MarcherEditor() {
             if (selectedPage) {
                 const previousMarcherPage =
                     selectedPage?.previousPageId !== null
-                        ? selectedMarcherPages[selectedPage?.previousPageId]
+                        ? selectedMarcherPages?.[selectedPage?.previousPageId]
                         : undefined;
 
                 setStepSize(

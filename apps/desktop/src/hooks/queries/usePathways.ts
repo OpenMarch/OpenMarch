@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { db, schema } from "@/global/database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
+import { conToastError } from "@/utilities/utils";
 
 const { pathways } = schema;
 
@@ -129,6 +130,21 @@ export const useCreatePathways = () => {
                 queryKey: pathwayKeys.lists(),
             });
         },
+        onError: (error: Error, variables: NewPathwayArgs[]) => {
+            // Log the error for debugging/telemetry
+            conToastError(
+                `Failed to create ${variables.length} pathway${
+                    variables.length === 1 ? "" : "s"
+                }`,
+                { error, variables },
+            );
+
+            // Re-invalidate pathway queries to ensure UI state is consistent
+            // This helps recover from any optimistic updates that might have been applied
+            queryClient.invalidateQueries({
+                queryKey: pathwayKeys.lists(),
+            });
+        },
     });
 };
 
@@ -174,6 +190,20 @@ export const useUpdatePathways = () => {
             // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
             // when they detect pathway changes through their own query logic
         },
+        onError: (error: Error, variables: ModifiedPathwayArgs[]) => {
+            // Log the error for debugging/telemetry
+            conToastError(
+                `Failed to update ${variables.length} pathway${
+                    variables.length === 1 ? "" : "s"
+                }`,
+                { error, variables },
+            );
+
+            // Re-invalidate pathway queries to ensure UI state is consistent
+            queryClient.invalidateQueries({
+                queryKey: pathwayKeys.lists(),
+            });
+        },
     });
 };
 
@@ -211,6 +241,20 @@ export const useDeletePathways = () => {
 
             // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
             // when they detect pathway changes through their own query logic
+        },
+        onError: (error: Error, variables: number[]) => {
+            // Log the error for debugging/telemetry
+            conToastError(
+                `Failed to delete ${variables.length} pathway${
+                    variables.length === 1 ? "" : "s"
+                }`,
+                { error, variables },
+            );
+
+            // Re-invalidate pathway queries to ensure UI state is consistent
+            queryClient.invalidateQueries({
+                queryKey: pathwayKeys.lists(),
+            });
         },
     });
 };

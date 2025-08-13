@@ -134,7 +134,7 @@ const useMidsetsWithPathways = (midsets: DatabaseMidset[] | undefined) => {
         const ids = midsets
             .map((midset) => midset.path_data_id)
             .filter((id): id is number => id !== null);
-        return [...new Set(ids)];
+        return [...new Set(ids)].sort((a, b) => a - b);
     }, [midsets]);
 
     // Fetch only the needed pathways
@@ -142,7 +142,17 @@ const useMidsetsWithPathways = (midsets: DatabaseMidset[] | undefined) => {
 
     // Combine the data when both queries are successful
     const combinedData = useMemo(() => {
-        if (!midsets || !pathwaysQuery.data) {
+        if (!midsets) {
+            return undefined;
+        }
+
+        // If there are no pathways, return midsets without pathway data
+        if (pathwayIds.length === 0) {
+            return databaseMidsetsToMidsets(midsets, new Map());
+        }
+
+        // If pathways query is still loading or failed, return undefined
+        if (!pathwaysQuery.data) {
             return undefined;
         }
 
@@ -155,7 +165,7 @@ const useMidsetsWithPathways = (midsets: DatabaseMidset[] | undefined) => {
         );
 
         return databaseMidsetsToMidsets(midsets, pathwaysMap);
-    }, [midsets, pathwaysQuery.data]);
+    }, [midsets, pathwaysQuery.data, pathwayIds.length]);
 
     return {
         data: combinedData,
@@ -172,14 +182,13 @@ const midsetQueries = {
             conditions.push(eq(midsets.mp_id, filters.mp_id));
         }
 
-        const query = db.select().from(midsets);
-
-        // Apply conditions if any exist
+        // Build the query with conditions
         if (conditions.length > 0) {
-            query.where(conditions[0]);
+            return await db.select().from(midsets).where(conditions[0]).all();
         }
 
-        return await query.all();
+        // No conditions, return all rows
+        return await db.select().from(midsets).all();
     },
 
     getById: async (id: number): Promise<DatabaseMidset | undefined> => {
@@ -329,27 +338,30 @@ export const useUpdateMidsets = () => {
             });
         },
         onSuccess: (data, variables) => {
-            // More targeted invalidation
-            const affectedQueries = new Set<string>();
-
+            // Invalidate specific detail queries for updated midsets
             variables.forEach(({ id }) => {
-                // Add specific detail query
-                affectedQueries.add(JSON.stringify(midsetKeys.detail(id)));
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.detail(id),
+                });
             });
 
             // Get the mp_ids from the updated data to invalidate related queries
             const affectedMpIds = new Set(data.map((midset) => midset.mp_id));
             affectedMpIds.forEach((mp_id) => {
-                // Add marcher page-specific query
-                affectedQueries.add(
-                    JSON.stringify(midsetKeys.byMarcherPage(mp_id)),
-                );
+                // Invalidate marcher page-specific query
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.byMarcherPage(mp_id),
+                });
+
+                // Invalidate list queries that might include this marcher page
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.list({ mp_id }),
+                });
             });
 
-            // Invalidate only the affected queries
-            affectedQueries.forEach((queryKeyStr) => {
-                const queryKey = JSON.parse(queryKeyStr);
-                queryClient.invalidateQueries({ queryKey });
+            // Invalidate general list queries to ensure consistency
+            queryClient.invalidateQueries({
+                queryKey: midsetKeys.lists(),
             });
 
             // Invalidate pathway queries if path_data_id was modified
@@ -385,27 +397,30 @@ export const useDeleteMidsets = () => {
             });
         },
         onSuccess: (data, variables) => {
-            // More targeted invalidation
-            const affectedQueries = new Set<string>();
-
+            // Invalidate specific detail queries for deleted midsets
             variables.forEach((id) => {
-                // Add specific detail query
-                affectedQueries.add(JSON.stringify(midsetKeys.detail(id)));
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.detail(id),
+                });
             });
 
             // Get the mp_ids from the deleted data to invalidate related queries
             const affectedMpIds = new Set(data.map((midset) => midset.mp_id));
             affectedMpIds.forEach((mp_id) => {
-                // Add marcher page-specific query
-                affectedQueries.add(
-                    JSON.stringify(midsetKeys.byMarcherPage(mp_id)),
-                );
+                // Invalidate marcher page-specific query
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.byMarcherPage(mp_id),
+                });
+
+                // Invalidate list queries that might include this marcher page
+                queryClient.invalidateQueries({
+                    queryKey: midsetKeys.list({ mp_id }),
+                });
             });
 
-            // Invalidate only the affected queries
-            affectedQueries.forEach((queryKeyStr) => {
-                const queryKey = JSON.parse(queryKeyStr);
-                queryClient.invalidateQueries({ queryKey });
+            // Invalidate general list queries to ensure consistency
+            queryClient.invalidateQueries({
+                queryKey: midsetKeys.lists(),
             });
         },
     });

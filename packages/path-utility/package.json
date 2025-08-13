@@ -3,15 +3,14 @@
     "version": "1.0.0",
     "description": "A TypeScript library for working with complex paths that preserves spline segment data in JSON serialization",
     "type": "module",
-    "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "scripts": {
-        "build": "tsc",
+        "build": "tsup --format esm,cjs",
         "clean": "rm -rf dist",
         "prebuild": "npm run clean",
         "test": "vitest run --silent",
         "test:watch": "vitest",
-        "dev": "tsc --watch"
+        "dev": "tsup --watch"
     },
     "keywords": [
         "path",
@@ -25,7 +24,8 @@
         "@types/node": "^20.0.0",
         "@types/uuid": "^10.0.0",
         "typescript": "^5.0.0",
-        "vitest": "^3.0.0"
+        "vitest": "^3.0.0",
+        "tsup": "^8.5.0"
     },
     "files": [
         "dist/",
@@ -36,7 +36,7 @@
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
-            "require": "./dist/index.js"
+            "require": "./dist/index.cjs"
         }
     },
     "dependencies": {

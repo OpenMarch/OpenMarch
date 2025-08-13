@@ -25,7 +25,7 @@
     },
     "scripts": {
         "dev": "tsup --watch",
-        "build": "tsup",
+        "build": "tsup --format esm,cjs",
         "playground": "astro dev",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
