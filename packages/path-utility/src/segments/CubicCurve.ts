@@ -3,8 +3,8 @@ import {
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 
 /**
@@ -91,25 +91,21 @@ export class CubicCurve implements IControllableSegment {
 
         return [
             {
-                id: `cp-${segmentIndex}-start`,
                 point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-control1`,
                 point: { ...this.controlPoint1 },
                 segmentIndex,
                 type: "control1" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-control2`,
                 point: { ...this.controlPoint2 },
                 segmentIndex,
                 type: "control2" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-end`,
                 point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,

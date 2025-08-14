@@ -30,7 +30,7 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                 { x: 500, y: 100 },
             ),
             new QuadraticCurve(
-                { x: 300, y: 400 },
+                { x: 500, y: 100 },
                 { x: 400, y: 450 },
                 { x: 450, y: 400 },
             ),
