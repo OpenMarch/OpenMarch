@@ -3,7 +3,6 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import Marcher from "../../global/classes/Marcher";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
@@ -14,6 +13,7 @@ import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
+import { fetchMarcherPages } from "@/hooks/queries";
 
 /**
  * A component that initializes the state of the application.
@@ -21,7 +21,6 @@ import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
  */
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
-    const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
@@ -49,7 +48,8 @@ function StateInitializer() {
 
     useEffect(() => {
         fetchMarcherPages();
-    }, [fetchMarcherPages, pages, marchers]);
+        // refetch marcherPages when the pages or marchers change
+    }, [pages, marchers]);
 
     useEffect(() => {
         fetchTimingObjects();
@@ -185,7 +185,6 @@ function StateInitializer() {
         getMarcher,
         getPage,
         fetchMarchers,
-        fetchMarcherPages,
         setSelectedPage,
         setSelectedMarchers,
         marchers,
@@ -218,7 +217,7 @@ function StateInitializer() {
         return () => {
             window.electron.removeFetchListener(); // Remove the event listener
         };
-    }, [fetchMarchers, fetchMarcherPages, fetchTimingObjects]);
+    }, [fetchMarchers, fetchTimingObjects]);
 
     return <></>; // Empty fragment
 }

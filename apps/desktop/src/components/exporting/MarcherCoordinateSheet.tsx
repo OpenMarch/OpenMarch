@@ -1,6 +1,6 @@
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import React, { useEffect, useState } from "react";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { Marcher } from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
 import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
@@ -45,8 +45,9 @@ export default function MarcherCoordinateSheetPreview({
     terse = false,
     useXY = false,
 }: MarcherCoordinateSheetProps) {
-    const { marcherPages } = useMarcherPageStore()!;
     const { pages } = useTimingObjectsStore()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
+        useMarcherPages({ pages });
     const { fieldProperties } = useFieldProperties()!;
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
@@ -60,6 +61,12 @@ export default function MarcherCoordinateSheetPreview({
         if (!fieldProperties) {
             console.error(
                 "Field properties not found in context - MarcherCoordinateSheet.tsx",
+            );
+            return;
+        }
+        if (!marcherPagesLoaded) {
+            console.error(
+                "Marcher pages not loaded in MarcherCoordinateSheet.tsx",
             );
             return;
         }

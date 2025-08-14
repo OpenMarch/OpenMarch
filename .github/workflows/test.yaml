@@ -28,6 +28,9 @@ jobs:
             - name: Install project dependencies
               run: pnpm install
 
+            - name: Build project
+              run: pnpm run build
+
             - name: Test Prepare (for desktop)
               run: pnpm desktop test:prepare
 

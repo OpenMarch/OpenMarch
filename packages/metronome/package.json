@@ -1,20 +1,36 @@
 {
     "name": "metronome",
-    "module": "index.ts",
     "type": "module",
+    "types": "dist/index.d.ts",
+    "main": "dist/index.cjs",
     "scripts": {
-        "test": "vitest",
-        "test:run": "vitest run"
+        "build": "tsup --format esm,cjs",
+        "dev": "tsup --watch",
+        "test": "vitest run --silent",
+        "test:watch": "vitest"
     },
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "require": "./dist/index.cjs"
+        }
+    },
+    "files": [
+        "dist/**/*",
+        "README.md",
+        "LICENSE"
+    ],
     "peerDependencies": {
         "typescript": "^5"
     },
     "dependencies": {
-        "node-wav": "^0.0.2",
-        "vitest": "^2.1.9"
+        "node-wav": "^0.0.2"
     },
     "devDependencies": {
         "@types/node": "^20.19.9",
-        "@types/node-wav": "^0.0.4"
+        "@types/node-wav": "^0.0.4",
+        "vitest": "^2.1.9",
+        "tsup": "^8.5.0"
     }
 }

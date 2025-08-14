@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
@@ -14,10 +14,11 @@ const SvgPreviewHandler: React.FC = () => {
 
     // Get current values
     const { fieldProperties } = useFieldProperties() ?? {};
-    const { marcherPages = {} } = useMarcherPageStore() ?? {};
+    const { pages = [] } = useTimingObjectsStore() ?? {};
+    const { data: marcherPages = {}, isSuccess: marcherPagesLoaded } =
+        useMarcherPages({ pages });
     const { marchers = [], marcherVisuals = {} } =
         useMarchersWithVisuals() ?? {};
-    const { pages = [] } = useTimingObjectsStore() ?? {};
 
     // Refs to store current values for use in the IPC handler
     const fieldPropertiesRef = useRef(fieldProperties);

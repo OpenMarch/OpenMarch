@@ -1,15 +1,12 @@
 import { MetronomeIcon, XIcon } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import React from "react";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import {
-    Button,
     Switch,
     Select,
     SelectContent,
     SelectItem,
-    SelectTriggerCompact,
-    SelectGroup,
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { Slider } from "@openmarch/ui";

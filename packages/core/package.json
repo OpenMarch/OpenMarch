@@ -2,8 +2,6 @@
     "name": "@openmarch/core",
     "type": "module",
     "license": "AGPL-3.0",
-    "main": "./dist/index.js",
-    "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
     "version": "1.1.0",
     "publishConfig": {
@@ -11,15 +9,17 @@
     },
     "scripts": {
         "dev": "tsup --watch",
-        "build": "tsup",
-        "test": "vitest",
-        "test:run": "vitest run"
+        "build": "tsup --format esm,cjs",
+        "pretest": "pnpm build",
+        "test": "vitest run --silent",
+        "test:watch": "vitest"
     },
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
             "import": "./dist/index.js",
-            "require": "./dist/index.cjs"
+            "require": "./dist/index.cjs",
+            "default": "./dist/index.js"
         }
     },
     "files": [

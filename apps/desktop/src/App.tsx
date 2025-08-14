@@ -25,8 +25,16 @@ import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-// The app
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            networkMode: "offlineFirst",
+        },
+    },
+});
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -126,73 +134,82 @@ function App() {
 
     return (
         <ErrorBoundary>
-            <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
-                {analyticsConsent === null && !isCodegen && (
-                    <AnalyticsOptInModal
-                        onChoice={(choice) => setAnalyticsConsent(choice)}
-                    />
+            <QueryClientProvider client={queryClient}>
+                {process.env.NODE_ENV !== "production" && (
+                    <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                {/* Codegen mode indicator */}
-                {isCodegen && (
-                    <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
-                        🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
-                    </div>
-                )}
-                {/* Always show LaunchPage when no file is selected, regardless of database state */}
-                {!databaseIsReady ? (
-                    <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-                ) : (
-                    <TooltipProvider
-                        delayDuration={500}
-                        skipDelayDuration={500}
-                    >
-                        <IsPlayingProvider>
-                            <SelectedPageProvider>
-                                <SelectedMarchersProvider>
-                                    <SelectedAudioFileProvider>
-                                        <FieldPropertiesProvider>
-                                            <StateInitializer />
-                                            <RegisteredActionsHandler />
-                                            <SvgPreviewHandler />
-                                            <TitleBar showControls />
-                                            <div
-                                                id="app"
-                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
-                                            >
+                <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                    {analyticsConsent === null && !isCodegen && (
+                        <AnalyticsOptInModal
+                            onChoice={(choice) => setAnalyticsConsent(choice)}
+                        />
+                    )}
+                    {/* Codegen mode indicator */}
+                    {isCodegen && (
+                        <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
+                            🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
+                        </div>
+                    )}
+                    {/* Always show LaunchPage when no file is selected, regardless of database state */}
+                    {!databaseIsReady ? (
+                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                    ) : (
+                        <TooltipProvider
+                            delayDuration={500}
+                            skipDelayDuration={500}
+                        >
+                            <IsPlayingProvider>
+                                <SelectedPageProvider>
+                                    <SelectedMarchersProvider>
+                                        <SelectedAudioFileProvider>
+                                            <FieldPropertiesProvider>
+                                                <StateInitializer />
+                                                <RegisteredActionsHandler />
+                                                <SvgPreviewHandler />
+                                                <TitleBar showControls />
                                                 <div
-                                                    id="workspace"
-                                                    className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                                    id="app"
+                                                    className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
                                                 >
-                                                    <Toolbar />
-                                                    <div className="relative flex h-full min-h-0 min-w-0 gap-8">
-                                                        {!isFullscreen && (
-                                                            <>
-                                                                <Sidebar />
-                                                                <SidebarModal />
-                                                            </>
-                                                        )}
-                                                        <Canvas
-                                                            onCanvasReady={
-                                                                setAppCanvas
-                                                            }
-                                                        />
-                                                        <CanvasZoomControls
-                                                            canvas={appCanvas}
-                                                        />
+                                                    <div
+                                                        id="workspace"
+                                                        className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                                    >
+                                                        <Toolbar />
+                                                        <div className="relative flex h-full min-h-0 min-w-0 gap-8">
+                                                            {!isFullscreen && (
+                                                                <>
+                                                                    <Sidebar />
+                                                                    <SidebarModal />
+                                                                </>
+                                                            )}
+                                                            <Canvas
+                                                                onCanvasReady={
+                                                                    setAppCanvas
+                                                                }
+                                                            />
+                                                            <CanvasZoomControls
+                                                                canvas={
+                                                                    appCanvas
+                                                                }
+                                                            />
+                                                        </div>
+                                                        <TimelineContainer />
                                                     </div>
-                                                    <TimelineContainer />
+                                                    {!isFullscreen && (
+                                                        <Inspector />
+                                                    )}
                                                 </div>
-                                                {!isFullscreen && <Inspector />}
-                                            </div>
-                                            <Toaster />
-                                        </FieldPropertiesProvider>
-                                    </SelectedAudioFileProvider>
-                                </SelectedMarchersProvider>
-                            </SelectedPageProvider>
-                        </IsPlayingProvider>
-                    </TooltipProvider>
-                )}
-            </main>
+                                                <Toaster />
+                                            </FieldPropertiesProvider>
+                                        </SelectedAudioFileProvider>
+                                    </SelectedMarchersProvider>
+                                </SelectedPageProvider>
+                            </IsPlayingProvider>
+                        </TooltipProvider>
+                    )}
+                </main>
+            </QueryClientProvider>
         </ErrorBoundary>
     );
 }

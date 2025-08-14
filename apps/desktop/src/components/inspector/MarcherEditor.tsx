@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
+import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
@@ -19,6 +19,7 @@ import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 
@@ -27,7 +28,9 @@ function MarcherEditor() {
     const [rCoords, setRCoords] = useState<ReadableCoords>();
     const [stepSize, setStepSize] = useState<StepSize>();
     const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
-    const { marcherPages } = useMarcherPageStore()!;
+    const { pages } = useTimingObjectsStore()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
+        useMarcherPages({ pages });
     const { selectedPage } = useSelectedPage()!;
     const { fieldProperties } = useFieldProperties()!;
     const { shapePages } = useShapePageStore()!;
@@ -91,7 +94,12 @@ function MarcherEditor() {
         setRCoords(undefined);
         setStepSize(undefined);
         setMinMaxStepSize(undefined);
-        if (!selectedMarchers || !selectedMarchers.length || !fieldProperties)
+        if (
+            !selectedMarchers ||
+            !selectedMarchers.length ||
+            !fieldProperties ||
+            !marcherPagesLoaded
+        )
             return;
 
         if (selectedMarchers.length > 1) {
@@ -114,7 +122,7 @@ function MarcherEditor() {
 
         const selectedMarcherPage =
             selectedPage?.id !== undefined
-                ? selectedMarcherPages[selectedPage?.id]
+                ? selectedMarcherPages?.[selectedPage?.id]
                 : undefined;
 
         if (selectedMarcherPage) {
@@ -125,7 +133,7 @@ function MarcherEditor() {
             if (selectedPage) {
                 const previousMarcherPage =
                     selectedPage?.previousPageId !== null
-                        ? selectedMarcherPages[selectedPage?.previousPageId]
+                        ? selectedMarcherPages?.[selectedPage?.previousPageId]
                         : undefined;
 
                 setStepSize(
@@ -138,7 +146,13 @@ function MarcherEditor() {
                 );
             }
         }
-    }, [selectedMarchers, marcherPages, selectedPage, fieldProperties]);
+    }, [
+        selectedMarchers,
+        marcherPages,
+        selectedPage,
+        fieldProperties,
+        marcherPagesLoaded,
+    ]);
 
     const resetForm = useCallback(() => {
         coordsFormRef.current?.reset();
@@ -177,6 +191,14 @@ function MarcherEditor() {
                 <T keyName="inspector.marcher.noPageSelected" />
             </>
         );
+
+    if (!marcherPagesLoaded) {
+        return (
+            <>
+                <T keyName="inspector.marcher.loading" />
+            </>
+        );
+    }
 
     return (
         <>
