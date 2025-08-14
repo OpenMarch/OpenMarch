@@ -71,6 +71,10 @@ export class Arc implements IControllableSegment {
         };
     }
 
+    getEndPoint(): Point {
+        return this.endPointOverride || this.endPoint;
+    }
+
     private convertToCenterBased(): {
         center: Point;
         startAngle: number;

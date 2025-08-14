@@ -39,6 +39,9 @@ export interface IPathSegment {
     /** Returns a point at a given distance along this segment (0 to getLength()). */
     getPointAtLength(dist: number): Point;
 
+    /** Returns the end point of this segment. */
+    getEndPoint(): Point;
+
     /** Returns the SVG path string for this segment. */
     toSvgString(includeMoveTo?: boolean): string;
 
