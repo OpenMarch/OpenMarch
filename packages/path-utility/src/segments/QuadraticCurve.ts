@@ -1,7 +1,13 @@
 import PathCommander from "svg-path-commander";
-import { IPathSegment, Point, SegmentJsonData } from "../interfaces";
+import {
+    ControlPoint,
+    ControlPointType,
+    IControllableSegment,
+    Point,
+    SegmentJsonData,
+} from "../interfaces";
 
-export class QuadraticCurve implements IPathSegment {
+export class QuadraticCurve implements IControllableSegment {
     readonly type = "quadratic-curve";
     readonly startPoint: Point;
     readonly controlPoint: Point;
@@ -52,7 +58,7 @@ export class QuadraticCurve implements IPathSegment {
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "quadratic-curve") {
             throw new Error(
                 `Cannot create QuadraticCurve from data of type ${data.type}`,
@@ -78,5 +84,24 @@ export class QuadraticCurve implements IPathSegment {
         const effectiveEndPoint = this.endPointOverride || this.endPoint;
 
         return `Q ${this.controlPoint.x} ${this.controlPoint.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
+    }
+
+    getControlPoints(segmentIndex: number): ControlPoint[] {
+        return [
+            {
+                id: `${this.type}-${segmentIndex}-control1`,
+                point: this.controlPoint,
+                segmentIndex,
+                type: "control1",
+            },
+        ];
+    }
+
+    updateControlPoint(
+        controlPointType: ControlPointType,
+        pointIndex: number | undefined,
+        newPoint: Point,
+    ): IControllableSegment {
+        return this;
     }
 }
