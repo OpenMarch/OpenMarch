@@ -87,6 +87,15 @@ export class Path implements IPath {
         return lastSegment.getPointAtLength(lastSegment.getLength());
     }
 
+    getLastPoint(): Point | null {
+        if (this._segments.length === 0) {
+            return null;
+        }
+
+        const lastSegment = this._segments[this._segments.length - 1];
+        return lastSegment.getEndPoint();
+    }
+
     toSvgString(): string {
         if (this._segments.length === 0) {
             return "";
