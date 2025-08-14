@@ -1,7 +1,11 @@
 import { useEffect, useRef } from "react";
 import { fabric } from "fabric";
 
-const FabricCanvas: React.FC = () => {
+interface FabricCanvasProps {
+    onCanvasReady: (canvas: fabric.Canvas) => void;
+}
+
+const FabricCanvas: React.FC<FabricCanvasProps> = ({ onCanvasReady }) => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     const fabricCanvasRef = useRef<fabric.Canvas | null>(null);
@@ -22,18 +26,9 @@ const FabricCanvas: React.FC = () => {
                     });
 
                     fabricCanvasRef.current = canvas;
-                    // Draw a simple rectangle
-                    const rect = new fabric.Rect({
-                        left: 100,
-                        top: 100,
-                        width: 200,
-                        height: 100,
-                        fill: "#ff0000",
-                        stroke: "#000000",
-                        strokeWidth: 2,
-                    });
-                    canvas.add(rect);
-                    canvas.renderAll();
+
+                    // Notify parent component that canvas is ready
+                    onCanvasReady(canvas);
 
                     // Initial canvas update
                 } catch (error) {
@@ -46,7 +41,7 @@ const FabricCanvas: React.FC = () => {
                 console.error("Failed to set up canvas element:", error);
             }
         }
-    }, []);
+    }, [onCanvasReady]);
 
     return (
         <canvas ref={canvasRef} className="border-stroke rounded-6 border" />

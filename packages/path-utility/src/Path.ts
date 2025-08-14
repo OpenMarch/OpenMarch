@@ -1,10 +1,9 @@
 import {
     IPath,
-    IPathSegment,
+    IControllableSegment,
     Point,
     PathJsonData,
     SegmentJsonData,
-    ControlPointConfig,
 } from "./interfaces";
 import { parseSvg } from "./SvgParser";
 import { Line } from "./segments/Line";
@@ -19,20 +18,20 @@ import { QuadraticCurve } from "./segments/QuadraticCurve";
  * that preserves the original segment data.
  */
 export class Path implements IPath {
-    private _segments: IPathSegment[];
+    private _segments: IControllableSegment[];
 
-    constructor(segments: IPathSegment[] = []) {
+    constructor(segments: IControllableSegment[] = []) {
         this._segments = [...segments];
     }
 
-    get segments(): IPathSegment[] {
+    get segments(): IControllableSegment[] {
         return [...this._segments];
     }
 
     /**
      * Adds a segment to the path.
      */
-    addSegment(segment: IPathSegment): void {
+    addSegment(segment: IControllableSegment): void {
         this._segments.push(segment);
     }
 
@@ -136,7 +135,7 @@ export class Path implements IPath {
                 );
             }
 
-            const segments: IPathSegment[] = pathData.segments.map(
+            const segments: IControllableSegment[] = pathData.segments.map(
                 (segmentData) => {
                     return this.createSegmentFromJson(segmentData);
                 },
@@ -158,7 +157,7 @@ export class Path implements IPath {
     /**
      * Factory method to create a segment from JSON data based on its type.
      */
-    private createSegmentFromJson(data: SegmentJsonData): IPathSegment {
+    private createSegmentFromJson(data: SegmentJsonData): IControllableSegment {
         switch (data.type) {
             case "line":
                 return Line.fromJson(data);
@@ -181,17 +180,6 @@ export class Path implements IPath {
     static fromJson(json: string, startPoint?: Point, endPoint?: Point): Path {
         const path = new Path();
         return path.fromJson(json, startPoint, endPoint) as Path;
-    }
-
-    /**
-     * Creates a ControlPointManager for this path to enable interactive editing.
-     * Note: This method is defined separately to avoid circular dependencies.
-     */
-    createControlPointManager(config?: Partial<ControlPointConfig>) {
-        // This will be imported at runtime when needed
-        throw new Error(
-            "ControlPointManager not available. Import and use ControlPointManager class directly.",
-        );
     }
 
     /**
@@ -218,7 +206,7 @@ export class Path implements IPath {
             return new Path();
         }
 
-        const segments: IPathSegment[] = [];
+        const segments: IControllableSegment[] = [];
         for (let i = 0; i < points.length - 1; i++) {
             segments.push(new Line(points[i], points[i + 1]));
         }

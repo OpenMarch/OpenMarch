@@ -1,5 +1,5 @@
 import { Path } from "./Path";
-import type { IPathSegment, Point } from "./interfaces";
+import type { IControllableSegment, Point } from "./interfaces";
 import { CubicCurve } from "./segments/CubicCurve";
 
 /**
@@ -16,7 +16,7 @@ export class SplineFactory {
             return new Path([]);
         }
 
-        const segments: IPathSegment[] = [];
+        const segments: IControllableSegment[] = [];
         const tension = 1 / 6;
 
         for (let i = 0; i < points.length - 1; i++) {

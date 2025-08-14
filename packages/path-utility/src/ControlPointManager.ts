@@ -1,5 +1,4 @@
 import {
-    IPathSegment,
     IControllableSegment,
     Point,
     ControlPoint,
@@ -83,6 +82,7 @@ export class ControlPointManager {
      */
     moveControlPoint(controlPointId: string, newPoint: Point): boolean {
         const controlPoint = this._controlPoints.get(controlPointId);
+        console.log("controlPoint", controlPoint);
         if (!controlPoint) {
             return false;
         }
@@ -241,7 +241,7 @@ export class ControlPointManager {
     /**
      * Adds a new segment and rebuilds control points.
      */
-    addSegment(segment: IPathSegment): void {
+    addSegment(segment: IControllableSegment): void {
         this._path.addSegment(segment);
         this.rebuildControlPoints();
     }
@@ -308,12 +308,15 @@ export class ControlPointManager {
     }
 
     private isControllableSegment(
-        segment: IPathSegment,
+        segment: IControllableSegment,
     ): segment is IControllableSegment {
         return "getControlPoints" in segment && "updateControlPoint" in segment;
     }
 
-    private replaceSegment(index: number, newSegment: IPathSegment): void {
+    private replaceSegment(
+        index: number,
+        newSegment: IControllableSegment,
+    ): void {
         // Create a new segments array with the updated segment
         const segments = [...this._path.segments];
         segments[index] = newSegment;
