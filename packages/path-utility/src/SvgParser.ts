@@ -1,4 +1,4 @@
-import { IPathSegment, Point } from "./interfaces";
+import { IControllableSegment, Point } from "./interfaces";
 import { Arc } from "./segments/Arc";
 import { CubicCurve } from "./segments/CubicCurve";
 import { Line } from "./segments/Line";
@@ -9,9 +9,9 @@ import { QuadraticCurve } from "./segments/QuadraticCurve";
  * Converts all commands to absolute coordinates.
  * @param d The SVG path data string.
  */
-export function parseSvg(d: string): IPathSegment[] {
+export function parseSvg(d: string): IControllableSegment[] {
     const commandTokens = d.match(/[a-df-z][^a-df-z]*/gi) || [];
-    const segments: IPathSegment[] = [];
+    const segments: IControllableSegment[] = [];
 
     let currentPoint: Point = { x: 0, y: 0 };
     let subpathStart: Point = { x: 0, y: 0 };

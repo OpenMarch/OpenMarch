@@ -1,7 +1,6 @@
 // Interfaces
 export type {
     IPath,
-    IPathSegment,
     IControllableSegment,
     Point,
     SegmentJsonData,

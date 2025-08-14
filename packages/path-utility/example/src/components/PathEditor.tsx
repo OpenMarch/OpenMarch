@@ -1,0 +1,111 @@
+import { useState } from "react";
+import { fabric } from "fabric";
+import { Line, Path } from "@openmarch/path-utility";
+import OmPath from "../fabric/omPath";
+import { Button } from "@openmarch/ui";
+
+interface PathEditorProps {
+    canvas: fabric.Canvas | null;
+}
+
+const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
+    const [paths, setPaths] = useState<OmPath<fabric.Canvas>[]>([]);
+    const [currentPath, setCurrentPath] = useState<Path | null>(null);
+
+    const createNewPath = () => {
+        if (!canvas) return;
+
+        const newPath = new Path([
+            new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
+            new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
+        ]);
+        const omPath = new OmPath(newPath, canvas, {
+            stroke: "red",
+            strokeWidth: 2,
+            fill: "transparent",
+        });
+
+        setPaths((prev) => [...prev, omPath]);
+        setCurrentPath(newPath);
+    };
+
+    const addLineToPath = () => {
+        if (!currentPath || !canvas) return;
+
+        // Create a simple line from (100, 100) to (200, 200)
+        const startPoint = { x: 100, y: 100 };
+        const endPoint = { x: 200, y: 200 };
+
+        // Import Line from path-utility
+
+        currentPath.addSegment(newLine);
+
+        // Update the omPath
+        const omPath = paths.find((p) => p.pathObj === currentPath);
+        if (omPath) {
+            omPath.pathObj = currentPath;
+        }
+
+        setCurrentPath(new Path([...currentPath.segments]));
+    };
+
+    const clearAllPaths = () => {
+        paths.forEach((omPath) => omPath.hide());
+        setPaths([]);
+        setCurrentPath(null);
+    };
+
+    return (
+        <div className="path-editor bg-fg-2 rounded-6 border-stroke border p-4">
+            <h3 className="text-text mb-4 text-lg font-semibold">
+                Path Editor
+            </h3>
+
+            <div className="controls mb-4 flex gap-2">
+                <Button
+                    onClick={createNewPath}
+                    variant="primary"
+                    disabled={!canvas}
+                >
+                    Create New Path
+                </Button>
+                <Button
+                    onClick={addLineToPath}
+                    variant="secondary"
+                    disabled={!currentPath || !canvas}
+                >
+                    Add Line to Path
+                </Button>
+                <Button
+                    onClick={clearAllPaths}
+                    variant="red"
+                    disabled={paths.length === 0}
+                >
+                    Clear All Paths
+                </Button>
+            </div>
+
+            <div className="path-info">
+                <p className="text-text-subtitle mb-2">
+                    Active Paths: {paths.length}
+                </p>
+                {currentPath && (
+                    <div className="current-path-info">
+                        <p className="text-text-subtitle">
+                            Current Path Segments: {currentPath.segments.length}
+                        </p>
+                        <p className="text-text-subtitle">
+                            Current Path Length:{" "}
+                            {currentPath.getTotalLength().toFixed(2)}px
+                        </p>
+                        <p className="text-text-subtitle">
+                            SVG: {currentPath.toSvgString()}
+                        </p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+export default PathEditor;

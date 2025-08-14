@@ -1,5 +1,4 @@
 import {
-    IPathSegment,
     Point,
     SegmentJsonData,
     IControllableSegment,
@@ -145,7 +144,7 @@ export class Arc implements IControllableSegment {
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "arc") {
             throw new Error(`Cannot create Arc from data of type ${data.type}`);
         }

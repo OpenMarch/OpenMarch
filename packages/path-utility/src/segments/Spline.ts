@@ -1,8 +1,7 @@
 import {
-    IPathSegment,
+    IControllableSegment,
     Point,
     SegmentJsonData,
-    IControllableSegment,
     ControlPoint,
     ControlPointType,
 } from "../interfaces";
@@ -229,7 +228,7 @@ export class Spline implements IControllableSegment {
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "spline") {
             throw new Error(
                 `Cannot create Spline from data of type ${data.type}`,
