@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Line, Path } from "@openmarch/path-utility";
+import { Line, Path, QuadraticCurve } from "@openmarch/path-utility";
 import OmPath from "../fabric/omPath";
 import { Button } from "@openmarch/ui";
 
@@ -18,6 +18,11 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         const newPath = new Path([
             new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
             new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
+            new QuadraticCurve(
+                { x: 300, y: 100 },
+                { x: 400, y: 200 },
+                { x: 500, y: 100 },
+            ),
         ]);
         const omPath = new OmPath(newPath, canvas, {
             stroke: "red",
@@ -27,26 +32,6 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
 
         setPaths((prev) => [...prev, omPath]);
         setCurrentPath(newPath);
-    };
-
-    const addLineToPath = () => {
-        if (!currentPath || !canvas) return;
-
-        // Create a simple line from (100, 100) to (200, 200)
-        const startPoint = { x: 100, y: 100 };
-        const endPoint = { x: 200, y: 200 };
-
-        // Import Line from path-utility
-
-        currentPath.addSegment(newLine);
-
-        // Update the omPath
-        const omPath = paths.find((p) => p.pathObj === currentPath);
-        if (omPath) {
-            omPath.pathObj = currentPath;
-        }
-
-        setCurrentPath(new Path([...currentPath.segments]));
     };
 
     const clearAllPaths = () => {
@@ -68,13 +53,6 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                     disabled={!canvas}
                 >
                     Create New Path
-                </Button>
-                <Button
-                    onClick={addLineToPath}
-                    variant="secondary"
-                    disabled={!currentPath || !canvas}
-                >
-                    Add Line to Path
                 </Button>
                 <Button
                     onClick={clearAllPaths}
