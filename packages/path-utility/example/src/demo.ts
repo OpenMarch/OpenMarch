@@ -60,6 +60,23 @@ for (let i = 0; i <= 10; i++) {
 console.log("\n💾 JSON representation:");
 console.log(path.toJson());
 
+// Demonstrate bounds calculation
+console.log("\n📐 Bounds calculation:");
+const bounds = path.getBoundsByControlPoints();
+if (bounds) {
+    console.log(`   Min X: ${bounds.minX}`);
+    console.log(`   Min Y: ${bounds.minY}`);
+    console.log(`   Max X: ${bounds.maxX}`);
+    console.log(`   Max Y: ${bounds.maxY}`);
+    console.log(`   Width: ${bounds.width}`);
+    console.log(`   Height: ${bounds.height}`);
+    console.log(
+        "   Note: Bounds are calculated from all control points (start/end points of each segment)",
+    );
+} else {
+    console.log("   No bounds available (empty path)");
+}
+
 console.log(
     "\n✅ Demo complete! The path utility successfully manages line segments and provides mathematical operations.",
 );

@@ -317,12 +317,8 @@ export class ControlPointManager {
         index: number,
         newSegment: IControllableSegment,
     ): void {
-        // Create a new segments array with the updated segment
-        const segments = [...this._path.segments];
-        segments[index] = newSegment;
-
-        // Create a new path with the updated segments
-        this._path = new Path(segments);
+        // Mutate the existing path object instead of creating a new one.
+        this._path.replaceSegment(index, newSegment);
     }
 
     private getDistance(p1: Point, p2: Point): number {
