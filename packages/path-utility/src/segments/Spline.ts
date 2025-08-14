@@ -2,8 +2,8 @@ import {
     IControllableSegment,
     Point,
     SegmentJsonData,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 
 /**
