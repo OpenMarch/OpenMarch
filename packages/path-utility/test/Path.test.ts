@@ -265,4 +265,141 @@ describe("Path JSON Serialization", () => {
             ).toThrow();
         });
     });
+
+    describe("getBoundsByControlPoints", () => {
+        test("should return null for empty path", () => {
+            const path = new Path();
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toBeNull();
+        });
+
+        test("should get bounds from a single line segment", () => {
+            const startPoint: Point = { x: 0, y: 0 };
+            const endPoint: Point = { x: 100, y: 50 };
+            const line = new Line(startPoint, endPoint);
+            const path = new Path([line]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: 0,
+                minY: 0,
+                maxX: 100,
+                maxY: 50,
+                width: 100,
+                height: 50,
+            });
+        });
+
+        test("should get bounds from multiple line segments", () => {
+            const line1 = new Line({ x: 0, y: 0 }, { x: 100, y: 0 });
+            const line2 = new Line({ x: 100, y: 0 }, { x: 100, y: 100 });
+            const line3 = new Line({ x: 100, y: 100 }, { x: 0, y: 100 });
+            const line4 = new Line({ x: 0, y: 100 }, { x: 0, y: 0 });
+
+            const path = new Path([line1, line2, line3, line4]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: 0,
+                minY: 0,
+                maxX: 100,
+                maxY: 100,
+                width: 100,
+                height: 100,
+            });
+        });
+
+        test("should get bounds from cubic curve segments", () => {
+            const cubic1 = new CubicCurve(
+                { x: 0, y: 0 },
+                { x: 50, y: -50 },
+                { x: 100, y: -50 },
+                { x: 150, y: 0 },
+            );
+            const cubic2 = new CubicCurve(
+                { x: 150, y: 0 },
+                { x: 200, y: 50 },
+                { x: 250, y: 50 },
+                { x: 300, y: 0 },
+            );
+
+            const path = new Path([cubic1, cubic2]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: 0,
+                minY: -50,
+                maxX: 300,
+                maxY: 50,
+                width: 300,
+                height: 100,
+            });
+        });
+
+        test("should get bounds from mixed segment types", () => {
+            const line = new Line({ x: 0, y: 0 }, { x: 100, y: 0 });
+            const cubic = new CubicCurve(
+                { x: 100, y: 0 },
+                { x: 150, y: 50 },
+                { x: 200, y: 50 },
+                { x: 250, y: 0 },
+            );
+            const arc = new Arc(
+                { x: 250, y: 0 }, // startPoint
+                5, // rx
+                5, // ry
+                0, // xAxisRotation
+                0, // largeArcFlag
+                1, // sweepFlag
+                { x: 300, y: 0 }, // endPoint
+            );
+
+            const path = new Path([line, cubic, arc]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: 0,
+                minY: -5, // Arc center point is at y = -5 due to radius calculation
+                maxX: 300,
+                maxY: 50,
+                width: 300,
+                height: 55, // Height is 50 - (-5) = 55
+            });
+        });
+
+        test("should handle negative coordinates", () => {
+            const line1 = new Line({ x: -100, y: -50 }, { x: 0, y: 0 });
+            const line2 = new Line({ x: 0, y: 0 }, { x: 100, y: 50 });
+
+            const path = new Path([line1, line2]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: -100,
+                minY: -50,
+                maxX: 100,
+                maxY: 50,
+                width: 200,
+                height: 100,
+            });
+        });
+
+        test("should handle segments with point overrides", () => {
+            const line = new Line({ x: 0, y: 0 }, { x: 100, y: 100 });
+            line.startPointOverride = { x: -50, y: -50 };
+            line.endPointOverride = { x: 150, y: 150 };
+
+            const path = new Path([line]);
+
+            const bounds = path.getBoundsByControlPoints();
+            expect(bounds).toEqual({
+                minX: -50,
+                minY: -50,
+                maxX: 150,
+                maxY: 150,
+                width: 200,
+                height: 200,
+            });
+        });
+    });
 });

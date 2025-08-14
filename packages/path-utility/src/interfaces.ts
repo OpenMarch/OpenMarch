@@ -18,6 +18,22 @@ export interface IPath {
 
     /** Returns the path from a JSON representation. */
     fromJson(json: string): IPath;
+
+    /**
+     * Gets the bounding box based on all control points from all segments.
+     * This includes start points, end points, and any intermediate control points
+     * like bezier curve control points, arc centers, etc.
+     *
+     * @returns An object with minX, minY, maxX, maxY, width, and height properties, or null if no segments exist
+     */
+    getBoundsByControlPoints(): {
+        minX: number;
+        minY: number;
+        maxX: number;
+        maxY: number;
+        width: number;
+        height: number;
+    } | null;
 }
 
 /**
