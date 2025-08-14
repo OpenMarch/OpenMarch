@@ -1,6 +1,11 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Line, Path, QuadraticCurve } from "@openmarch/path-utility";
+import {
+    CubicCurve,
+    Line,
+    Path,
+    QuadraticCurve,
+} from "@openmarch/path-utility";
 import OmPath from "../fabric/omPath";
 import { Button } from "@openmarch/ui";
 
@@ -18,10 +23,16 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         const newPath = new Path([
             new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
             new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
-            new QuadraticCurve(
+            new CubicCurve(
                 { x: 300, y: 100 },
                 { x: 400, y: 200 },
+                { x: 450, y: 200 },
                 { x: 500, y: 100 },
+            ),
+            new QuadraticCurve(
+                { x: 300, y: 400 },
+                { x: 400, y: 450 },
+                { x: 450, y: 400 },
             ),
         ]);
         const omPath = new OmPath(newPath, canvas, {

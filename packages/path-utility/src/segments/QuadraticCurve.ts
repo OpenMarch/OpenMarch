@@ -87,12 +87,27 @@ export class QuadraticCurve implements IControllableSegment {
     }
 
     getControlPoints(segmentIndex: number): ControlPoint[] {
+        const effectiveStartPoint = this.startPointOverride || this.startPoint;
+        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+
         return [
             {
-                id: `${this.type}-${segmentIndex}-control1`,
-                point: this.controlPoint,
+                id: `${this.type}-${segmentIndex}-start`,
+                point: { ...effectiveStartPoint },
                 segmentIndex,
-                type: "control1",
+                type: "start" as ControlPointType,
+            },
+            {
+                id: `${this.type}-${segmentIndex}-control1`,
+                point: { ...this.controlPoint },
+                segmentIndex,
+                type: "control1" as ControlPointType,
+            },
+            {
+                id: `${this.type}-${segmentIndex}-end`,
+                point: { ...effectiveEndPoint },
+                segmentIndex,
+                type: "end" as ControlPointType,
             },
         ];
     }
@@ -102,6 +117,29 @@ export class QuadraticCurve implements IControllableSegment {
         pointIndex: number | undefined,
         newPoint: Point,
     ): IControllableSegment {
-        return this;
+        switch (controlPointType) {
+            case "start":
+                return new QuadraticCurve(
+                    newPoint,
+                    this.controlPoint,
+                    this.endPoint,
+                );
+            case "control1":
+                return new QuadraticCurve(
+                    this.startPoint,
+                    newPoint,
+                    this.endPoint,
+                );
+            case "end":
+                return new QuadraticCurve(
+                    this.startPoint,
+                    this.controlPoint,
+                    newPoint,
+                );
+            default:
+                throw new Error(
+                    `QuadraticCurve segments do not support control point type: ${controlPointType}`,
+                );
+        }
     }
 }

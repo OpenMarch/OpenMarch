@@ -60,4 +60,97 @@ describe("SvgParser with QuadraticCurve commands", () => {
         expect(curve2.controlPoint).toEqual({ x: 150, y: -100 });
         expect(curve2.endPoint).toEqual({ x: 200, y: 0 });
     });
+
+    it("should update control points correctly", () => {
+        const curve = new QuadraticCurve(
+            { x: 0, y: 0 },
+            { x: 50, y: 50 },
+            { x: 100, y: 0 },
+        );
+
+        // Update start point
+        const updatedStart = curve.updateControlPoint("start", undefined, {
+            x: 10,
+            y: 10,
+        });
+        expect(updatedStart).toBeInstanceOf(QuadraticCurve);
+        expect(updatedStart).not.toBe(curve); // Should be a new instance
+        expect(updatedStart.startPoint).toEqual({ x: 10, y: 10 });
+        expect(updatedStart.controlPoint).toEqual({ x: 50, y: 50 });
+        expect(updatedStart.endPoint).toEqual({ x: 100, y: 0 });
+
+        // Update control point
+        const updatedControl = curve.updateControlPoint("control1", undefined, {
+            x: 60,
+            y: 60,
+        });
+        expect(updatedControl).toBeInstanceOf(QuadraticCurve);
+        expect(updatedControl).not.toBe(curve); // Should be a new instance
+        expect(updatedControl.startPoint).toEqual({ x: 0, y: 0 });
+        expect(updatedControl.controlPoint).toEqual({ x: 60, y: 60 });
+        expect(updatedControl.endPoint).toEqual({ x: 100, y: 0 });
+
+        // Update end point
+        const updatedEnd = curve.updateControlPoint("end", undefined, {
+            x: 110,
+            y: 10,
+        });
+        expect(updatedEnd).toBeInstanceOf(QuadraticCurve);
+        expect(updatedEnd).not.toBe(curve); // Should be a new instance
+        expect(updatedEnd.startPoint).toEqual({ x: 0, y: 0 });
+        expect(updatedEnd.controlPoint).toEqual({ x: 50, y: 50 });
+        expect(updatedEnd.endPoint).toEqual({ x: 110, y: 10 });
+    });
+
+    it("should throw error for unsupported control point types", () => {
+        const curve = new QuadraticCurve(
+            { x: 0, y: 0 },
+            { x: 50, y: 50 },
+            { x: 100, y: 0 },
+        );
+
+        expect(() => {
+            curve.updateControlPoint("center" as any, undefined, {
+                x: 0,
+                y: 0,
+            });
+        }).toThrow(
+            "QuadraticCurve segments do not support control point type: center",
+        );
+    });
+
+    it("should return all control points including start and end", () => {
+        const curve = new QuadraticCurve(
+            { x: 0, y: 0 },
+            { x: 50, y: 50 },
+            { x: 100, y: 0 },
+        );
+
+        const controlPoints = curve.getControlPoints(0);
+        expect(controlPoints).toHaveLength(3);
+
+        // Check start point
+        expect(controlPoints[0]).toEqual({
+            id: "quadratic-curve-0-start",
+            point: { x: 0, y: 0 },
+            segmentIndex: 0,
+            type: "start",
+        });
+
+        // Check control point
+        expect(controlPoints[1]).toEqual({
+            id: "quadratic-curve-0-control1",
+            point: { x: 50, y: 50 },
+            segmentIndex: 0,
+            type: "control1",
+        });
+
+        // Check end point
+        expect(controlPoints[2]).toEqual({
+            id: "quadratic-curve-0-end",
+            point: { x: 100, y: 0 },
+            segmentIndex: 0,
+            type: "end",
+        });
+    });
 });
