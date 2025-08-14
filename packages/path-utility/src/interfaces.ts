@@ -2,7 +2,7 @@
  * A continuous path composed of one or more segments.
  */
 export interface IPath {
-    readonly segments: IPathSegment[];
+    readonly segments: IControllableSegment[];
 
     /** Returns the total length of the path by summing segment lengths. */
     getTotalLength(): number;
@@ -23,7 +23,7 @@ export interface IPath {
 /**
  * Base interface for all path segments.
  */
-export interface IPathSegment {
+export interface IControllableSegment {
     /** The type of the segment (e.g., 'line', 'arc', 'cubic-curve', 'spline') */
     readonly type: string;
 
@@ -49,7 +49,22 @@ export interface IPathSegment {
     toJson(): SegmentJsonData;
 
     /** Creates a segment from JSON data. */
-    fromJson(data: SegmentJsonData): IPathSegment;
+    fromJson(data: SegmentJsonData): IControllableSegment;
+
+    /**
+     * Returns all control points for this segment
+     *
+     * @param segmentIndex - The index of the segment this control point belongs to
+     * @returns An array of control points for the segment
+     */
+    getControlPoints(segmentIndex: number): ControlPoint[];
+
+    /** Updates a control point and returns a new segment instance */
+    updateControlPoint(
+        controlPointType: ControlPointType,
+        pointIndex: number | undefined,
+        newPoint: Point,
+    ): IControllableSegment;
 }
 
 /**
@@ -109,21 +124,6 @@ export type ControlPointMoveCallback = (
     controlPointId: string,
     newPoint: Point,
 ) => void;
-
-/**
- * Interface for segments that support control point interaction.
- */
-export interface IControllableSegment extends IPathSegment {
-    /** Returns all control points for this segment */
-    getControlPoints(segmentIndex: number): ControlPoint[];
-
-    /** Updates a control point and returns a new segment instance */
-    updateControlPoint(
-        controlPointType: ControlPointType,
-        pointIndex: number | undefined,
-        newPoint: Point,
-    ): IControllableSegment;
-}
 
 /**
  * Configuration for control point visualization and interaction.
