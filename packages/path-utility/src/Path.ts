@@ -53,6 +53,15 @@ export class Path implements IPath {
         this._segments = [];
     }
 
+    /**
+     * Replaces a segment at a specific index.
+     */
+    replaceSegment(index: number, segment: IControllableSegment): void {
+        if (index >= 0 && index < this._segments.length) {
+            this._segments[index] = segment;
+        }
+    }
+
     getTotalLength(): number {
         return this._segments.reduce(
             (total, segment) => total + segment.getLength(),
@@ -212,5 +221,65 @@ export class Path implements IPath {
         }
 
         return new Path(segments);
+    }
+
+    /**
+     * Gets the bounding box based on all control points from all segments.
+     * This includes start points, end points, and any intermediate control points
+     * like bezier curve control points, arc centers, etc.
+     *
+     * @returns An object with minX, minY, maxX, maxY, width, and height properties
+     */
+    getBoundsByControlPoints(): {
+        minX: number;
+        minY: number;
+        maxX: number;
+        maxY: number;
+        width: number;
+        height: number;
+    } | null {
+        if (this._segments.length === 0) {
+            return null;
+        }
+
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+
+        // Collect all control points from all segments
+        for (let i = 0; i < this._segments.length; i++) {
+            const segment = this._segments[i];
+            const controlPoints = segment.getControlPoints(i);
+
+            // Process each control point
+            for (const controlPoint of controlPoints) {
+                const { x, y } = controlPoint.point;
+
+                minX = Math.min(minX, x);
+                minY = Math.min(minY, y);
+                maxX = Math.max(maxX, x);
+                maxY = Math.max(maxY, y);
+            }
+        }
+
+        // If no valid points were found, return null
+        if (
+            minX === Infinity ||
+            minY === Infinity ||
+            maxX === -Infinity ||
+            maxY === -Infinity
+        ) {
+            return null;
+        }
+
+        return {
+            minX,
+            minY,
+            maxX,
+            maxY,
+            width: maxX - minX,
+            height: maxY - minY,
+        };
     }
 }
