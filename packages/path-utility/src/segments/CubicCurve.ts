@@ -38,6 +38,10 @@ export class CubicCurve implements IControllableSegment {
         return { x: point.x, y: point.y };
     }
 
+    getEndPoint(): Point {
+        return this.endPointOverride || this.endPoint;
+    }
+
     toSvgString(): string {
         const effectiveStartPoint = this.startPointOverride || this.startPoint;
         const effectiveEndPoint = this.endPointOverride || this.endPoint;

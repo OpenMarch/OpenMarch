@@ -1,4 +1,3 @@
-import { FieldProperties } from "@openmarch/core";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { rgbaToString } from "@openmarch/core";

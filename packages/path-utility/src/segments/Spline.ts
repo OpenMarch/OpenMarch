@@ -68,6 +68,13 @@ export class Spline implements IControllableSegment {
         return this.getPointAtT(t);
     }
 
+    getEndPoint(): Point {
+        if (this.endPointOverride) {
+            return this.endPointOverride;
+        }
+        return this.controlPoints[this.controlPoints.length - 1];
+    }
+
     private getPointAtT(t: number): Point {
         // Implement B-spline evaluation or fall back to Catmull-Rom for simplicity
         if (this.degree === 3 && !this.knots) {
