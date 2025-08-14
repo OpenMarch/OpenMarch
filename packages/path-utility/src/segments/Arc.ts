@@ -2,8 +2,8 @@ import {
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 import PathCommander from "svg-path-commander";
 
@@ -172,13 +172,11 @@ export class Arc implements IControllableSegment {
 
         const controlPoints: ControlPoint[] = [
             {
-                id: `cp-${segmentIndex}-start`,
                 point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-end`,
                 point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,
@@ -197,7 +195,6 @@ export class Arc implements IControllableSegment {
         };
 
         controlPoints.push({
-            id: `cp-${segmentIndex}-center`,
             point: centerPoint,
             segmentIndex,
             type: "center" as ControlPointType,

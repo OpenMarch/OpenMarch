@@ -107,19 +107,38 @@ export interface PathJsonData {
 }
 
 /**
- * Represents a control point that can be interactively moved.
+ * A hook to identify a point on a segment.
+ */
+export interface SegmentHook {
+    type: ControlPointType;
+    pointIndex: number;
+    segmentIndex: number;
+}
+
+/**
+ * A base control point that can be used to find a control point in a segment.
  */
 export interface ControlPoint {
-    /** Unique identifier for this control point */
-    id: string;
     /** Current position of the control point */
     point: Point;
     /** Index of the segment this control point belongs to */
     segmentIndex: number;
-    /** Type of control point within the segment */
+    /** An type to find the control point in a segment. Can either be a type or an index. */
     type: ControlPointType;
-    /** Index within the segment's control points (for segments with multiple control points) */
+    /** Index of the control point in the segment */
     pointIndex?: number;
+}
+
+/**
+ * Represents a control point that can be interactively moved.
+ */
+export interface GlobalControlPoint {
+    /** Unique type for this control point */
+    id: string;
+    /** Point of the control point */
+    point: Point;
+    /** Segment control points that this control point is connected to */
+    segmentHooks: SegmentHook[];
 }
 
 /**

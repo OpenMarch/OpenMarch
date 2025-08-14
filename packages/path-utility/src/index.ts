@@ -5,6 +5,7 @@ export type {
     Point,
     SegmentJsonData,
     PathJsonData,
+    GlobalControlPoint,
     ControlPoint,
     ControlPointType,
     ControlPointMoveCallback,
