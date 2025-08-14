@@ -1,6 +1,5 @@
 import PathCommander from "svg-path-commander";
 import {
-    IPathSegment,
     Point,
     SegmentJsonData,
     IControllableSegment,
@@ -61,7 +60,7 @@ export class Line implements IControllableSegment {
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "line") {
             throw new Error(
                 `Cannot create Line from data of type ${data.type}`,
