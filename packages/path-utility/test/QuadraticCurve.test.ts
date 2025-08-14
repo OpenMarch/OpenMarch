@@ -131,7 +131,6 @@ describe("SvgParser with QuadraticCurve commands", () => {
 
         // Check start point
         expect(controlPoints[0]).toEqual({
-            id: "quadratic-curve-0-start",
             point: { x: 0, y: 0 },
             segmentIndex: 0,
             type: "start",
@@ -139,7 +138,6 @@ describe("SvgParser with QuadraticCurve commands", () => {
 
         // Check control point
         expect(controlPoints[1]).toEqual({
-            id: "quadratic-curve-0-control1",
             point: { x: 50, y: 50 },
             segmentIndex: 0,
             type: "control1",
@@ -147,7 +145,6 @@ describe("SvgParser with QuadraticCurve commands", () => {
 
         // Check end point
         expect(controlPoints[2]).toEqual({
-            id: "quadratic-curve-0-end",
             point: { x: 100, y: 0 },
             segmentIndex: 0,
             type: "end",

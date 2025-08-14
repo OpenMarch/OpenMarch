@@ -3,8 +3,8 @@ import {
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 import { v4 as uuidv4 } from "uuid";
 
@@ -85,13 +85,11 @@ export class Line implements IControllableSegment {
 
         return [
             {
-                id: uuidv4(),
                 point: { ...effectiveStartPoint },
                 segmentIndex,
                 type: "start" as ControlPointType,
             },
             {
-                id: uuidv4(),
                 point: { ...effectiveEndPoint },
                 segmentIndex,
                 type: "end" as ControlPointType,
