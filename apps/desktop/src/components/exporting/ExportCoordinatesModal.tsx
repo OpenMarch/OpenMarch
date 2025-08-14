@@ -2,9 +2,9 @@ import { useCallback, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
-import MarcherCoordinateSheet, {
+import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
-    StaticCompactMarcherSheet,
+    StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import {
@@ -43,8 +43,11 @@ import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import { coordinateRoundingOptions } from "../../config/exportOptions";
 import clsx from "clsx";
 import "../../styles/shimmer.css";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import { useShapePageStore } from "@/stores/ShapePageStore";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -70,7 +73,7 @@ function CoordinateSheetExport() {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
     const isCancelled = useRef(false);
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     const handleExport = useCallback(async () => {
         setIsLoading(true);
@@ -123,16 +126,22 @@ function CoordinateSheetExport() {
             setProgress(15);
 
             const processedMarchers = marchers
-                .map((marcher, index) => ({
+                .map((marcher) => ({
                     ...marcher,
-                    name: marcher.name || `${marcher.section} ${index + 1}`,
+                    name:
+                        marcher.name ||
+                        `${marcher.section} ${marcher.drill_order}`,
                 }))
                 .sort((a, b) => {
                     const sectionCompare = (a.section || "").localeCompare(
                         b.section || "",
                     );
                     if (sectionCompare !== 0) return sectionCompare;
-                    return a.drill_number.localeCompare(b.drill_number);
+                    return a.drill_number.localeCompare(
+                        b.drill_number,
+                        undefined,
+                        { numeric: true },
+                    );
                 });
 
             await new Promise((resolve) => setTimeout(resolve, 300));
@@ -157,94 +166,67 @@ function CoordinateSheetExport() {
             // split to quarter sheets
             if (quarterPages) {
                 // Create quarter sheets for each marcher, organized by performer number
-                const marcherQuarterSheets = processedMarchers.flatMap(
-                    (marcher, mIdx) => {
-                        const marcherPagesForMarcher = getByMarcherId(
-                            marcherPages,
-                            marcher.id,
-                        );
+                groupedSheets = processedMarchers.flatMap((marcher) => {
+                    const marcherPagesForMarcher = getByMarcherId(
+                        marcherPages,
+                        marcher.id,
+                    ).sort((a, b) => {
+                        const pageA = pages.find((p) => p.id === a.page_id);
+                        const pageB = pages.find((p) => p.id === b.page_id);
+                        return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                    });
 
-                        // Sort by page order
-                        marcherPagesForMarcher.sort((a, b) => {
-                            const pageA = pages.find((p) => p.id === a.page_id);
-                            const pageB = pages.find((p) => p.id === b.page_id);
-                            return (pageA?.order ?? 0) - (pageB?.order ?? 0);
-                        });
-
-                        const rowChunks = chunkArray(
-                            marcherPagesForMarcher,
-                            QUARTER_ROWS,
-                        );
-
-                        return rowChunks.map((rowChunk, chunkIdx) => {
-                            try {
-                                const renderedHtml =
-                                    ReactDOMServer.renderToString(
-                                        <StaticCompactMarcherSheet
-                                            marcher={marcher}
-                                            pages={pages}
-                                            marcherPages={rowChunk}
-                                            fieldProperties={fieldProperties}
-                                            roundingDenominator={
-                                                roundingDenominator
-                                            }
-                                            terse={isTerse}
-                                            quarterPageNumber={chunkIdx + 1}
-                                        />,
-                                    );
-
-                                // Clean up the HTML to prevent URL encoding issues
-                                const cleanedHtml = renderedHtml
-                                    .replace(
-                                        /[\u0000-\u001F\u007F-\u009F]/g,
-                                        "",
-                                    ) // Remove control characters
-                                    .replace(/\s+/g, " ") // Normalize whitespace
-                                    .trim();
-
-                                return {
-                                    name: marcher.name,
-                                    drillNumber: marcher.drill_number,
-                                    section:
-                                        marcher.section ||
-                                        t("exportCoordinates.unsortedSection"),
-                                    renderedPage: cleanedHtml,
-                                };
-                            } catch (error) {
-                                console.error(
-                                    `Error rendering quarter page for ${marcher.drill_number}:`,
-                                    error,
-                                );
-                                return {
-                                    name: marcher.name,
-                                    drillNumber: marcher.drill_number,
-                                    section:
-                                        marcher.section ||
-                                        t("exportCoordinates.unsortedSection"),
-                                    renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
-                                };
-                            }
-                        });
-                    },
-                );
-
-                // Sort by drill number to organize by performer number
-                marcherQuarterSheets.sort((a, b) => {
-                    // First, sort by section
-                    const sectionCompare = a.section.localeCompare(b.section);
-                    if (sectionCompare !== 0) return sectionCompare;
-
-                    // Then sort by drill number
-                    const drillCompare = a.drillNumber.localeCompare(
-                        b.drillNumber,
+                    const rowChunks = chunkArray(
+                        marcherPagesForMarcher,
+                        QUARTER_ROWS,
                     );
-                    if (drillCompare !== 0) return drillCompare;
 
-                    // Then by name if drill numbers are the same
-                    return a.name.localeCompare(b.name);
+                    return rowChunks.map((rowChunk, chunkIdx) => {
+                        try {
+                            const renderedHtml = ReactDOMServer.renderToString(
+                                <StaticQuarterMarcherSheet
+                                    marcher={marcher}
+                                    pages={pages}
+                                    marcherPages={rowChunk}
+                                    fieldProperties={fieldProperties}
+                                    roundingDenominator={roundingDenominator}
+                                    terse={isTerse}
+                                    quarterPageNumber={chunkIdx + 1}
+                                    useXY={useXY}
+                                    includeMeasures={includeMeasures}
+                                />,
+                            );
+
+                            // Clean up the HTML to prevent URL encoding issues
+                            const cleanedHtml = renderedHtml
+                                .replace(/[\u0000-\u001F\u007F-\u009F]/g, "") // Remove control characters
+                                .replace(/\s+/g, " ") // Normalize whitespace
+                                .trim();
+
+                            return {
+                                name: marcher.name,
+                                drillNumber: marcher.drill_number,
+                                section:
+                                    marcher.section ||
+                                    t("exportCoordinates.unsortedSection"),
+                                renderedPage: cleanedHtml,
+                            };
+                        } catch (error) {
+                            console.error(
+                                `Error rendering quarter page for ${marcher.drill_number}:`,
+                                error,
+                            );
+                            return {
+                                name: marcher.name,
+                                drillNumber: marcher.drill_number,
+                                section:
+                                    marcher.section ||
+                                    t("exportCoordinates.unsortedSection"),
+                                renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
+                            };
+                        }
+                    });
                 });
-
-                groupedSheets = marcherQuarterSheets;
             } else {
                 // regular format
                 groupedSheets = processedMarchers.map((marcher) => {
@@ -552,7 +534,7 @@ function CoordinateSheetExport() {
                 </div>
                 <div>
                     <div className="mx-2 bg-white text-black">
-                        <MarcherCoordinateSheet
+                        <MarcherCoordinateSheetPreview
                             example={true}
                             terse={isTerse}
                             includeMeasures={includeMeasures}
@@ -651,6 +633,8 @@ function DrillChartExport() {
     const { fieldProperties } = useFieldProperties()!;
     const { marcherPages } = useMarcherPageStore()!;
     const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { shapePages } = useShapePageStore()!;
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -658,7 +642,7 @@ function DrillChartExport() {
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
 
-    const { t } = useTolgee();
+    const t = tolgee.t;
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
@@ -709,6 +693,16 @@ function DrillChartExport() {
                     marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
                     pageId: pages[p].id,
+                });
+
+                // Render previous, current, and next shapes
+                exportCanvas.renderMarcherShapes({
+                    shapePages: shapePages.filter(
+                        (sp) =>
+                            sp.page_id === pages[p].id ||
+                            sp.page_id === pages[p].previousPageId ||
+                            sp.page_id === pages[p].nextPageId,
+                    ),
                 });
 
                 // Render pathways for individual marchers
@@ -831,6 +825,10 @@ function DrillChartExport() {
 
                 // Update progress smoothly
                 setProgress(50 * ((p + 1) / pages.length));
+
+                // Update UI state
+                await new Promise((r) => setTimeout(r, 0));
+
                 if (isCancelled.current) {
                     throw new Error(t("exportCoordinates.cancelledByUser"));
                 }
@@ -923,49 +921,13 @@ function DrillChartExport() {
         setIsLoading(true);
         setProgress(0);
 
-        // Fun marching band phrases that rotate during export
-        const funPhrases = [
-            t("exportCoordinates.funPhrase.0"),
-            t("exportCoordinates.funPhrase.1"),
-            t("exportCoordinates.funPhrase.2"),
-            t("exportCoordinates.funPhrase.3"),
-            t("exportCoordinates.funPhrase.4"),
-            t("exportCoordinates.funPhrase.5"),
-            t("exportCoordinates.funPhrase.6"),
-            t("exportCoordinates.funPhrase.7"),
-            t("exportCoordinates.funPhrase.8"),
-            t("exportCoordinates.funPhrase.9"),
-            t("exportCoordinates.funPhrase.10"),
-            t("exportCoordinates.funPhrase.11"),
-        ];
-
-        let currentPhraseIndex = 0;
-        let phraseInterval: NodeJS.Timeout;
-
-        // Start rotating phrases every 2 seconds
-        const startPhraseRotation = () => {
-            setCurrentStep(funPhrases[currentPhraseIndex]);
-            phraseInterval = setInterval(() => {
-                currentPhraseIndex =
-                    (currentPhraseIndex + 1) % funPhrases.length;
-                setCurrentStep(funPhrases[currentPhraseIndex]);
-            }, 2000);
-        };
-
-        const stopPhraseRotation = () => {
-            if (phraseInterval) {
-                clearInterval(phraseInterval);
-            }
-        };
-
-        startPhraseRotation();
-
         // Store original state of canvas for restoration
         const exportCanvas: OpenMarchCanvas = window.canvas;
         const originalWidth = exportCanvas.getWidth();
         const originalHeight = exportCanvas.getHeight();
         const originalViewportTransform =
             exportCanvas.viewportTransform!.slice();
+        exportCanvas.hideAllPathVisuals({ marcherVisuals });
 
         // Generate SVGs from the canvas
         let SVGs: string[][] = [];
@@ -985,16 +947,22 @@ function DrillChartExport() {
             isCancelled.current = true;
         }
 
-        // Restore canvas to original state
+        // Restore canvas to original state at last page
         exportCanvas.setWidth(originalWidth);
         exportCanvas.setHeight(originalHeight);
         exportCanvas.viewportTransform = originalViewportTransform;
+        setSelectedPage(pages[pages.length - 1]);
+        exportCanvas.renderMarcherShapes({
+            shapePages: shapePages.filter(
+                (sp) => sp.page_id === pages[pages.length - 1].id,
+            ),
+        });
         exportCanvas.requestRenderAll();
 
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 
-        // SVG creation done, start exporting - continue with fun phrases
+        // SVG creation done, start exporting
         try {
             // Create export directory
             const { exportName, exportDir } =
@@ -1060,14 +1028,13 @@ function DrillChartExport() {
             );
             setCurrentStep(t("exportCoordinates.exportFailed"));
         } finally {
-            stopPhraseRotation();
             // Keep the completed state visible for a moment before hiding
             setTimeout(() => {
                 isCancelled.current = false;
                 setIsLoading(false);
                 setProgress(0);
                 setCurrentStep("");
-            }, 1500);
+            }, 1000);
         }
     }, [generateExportSVGs, exportMarcherSVGs, t]);
 

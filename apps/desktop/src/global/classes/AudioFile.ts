@@ -17,7 +17,19 @@ export default class AudioFile {
     /** 1 if selected, 0 if not (boolean from sql) */
     readonly selected: boolean;
 
-    constructor({ id, data, path, nickname, selected }: AudioFile) {
+    constructor({
+        id,
+        data,
+        path,
+        nickname,
+        selected,
+    }: {
+        id: number;
+        data?: ArrayBuffer | Uint8Array;
+        path: string;
+        nickname?: string;
+        selected: boolean;
+    }) {
         this.id = id;
 
         if (data instanceof Uint8Array) {
@@ -27,6 +39,12 @@ export default class AudioFile {
             ) as ArrayBuffer;
         } else if (data instanceof ArrayBuffer) {
             this.data = data;
+        } else {
+            throw new Error(
+                "Unable to create AudioFile: data must be an " +
+                    "ArrayBuffer or Uint8Array, but instead got: " +
+                    typeof data,
+            );
         }
 
         this.path = path;
