@@ -1,12 +1,13 @@
 import {
     IControllableSegment,
     Point,
-    ControlPoint,
     ControlPointType,
     ControlPointMoveCallback,
     ControlPointConfig,
+    GlobalControlPoint,
 } from "./interfaces";
 import { Path } from "./Path";
+import { v4 as uuidv4 } from "uuid";
 
 /**
  * Manages control points for interactive path editing with efficient updates.
@@ -14,7 +15,7 @@ import { Path } from "./Path";
  */
 export class ControlPointManager {
     private _path: Path;
-    private _controlPoints: Map<string, ControlPoint> = new Map();
+    private _controlPoints: Map<string, GlobalControlPoint> = new Map();
     private _callbacks: ControlPointMoveCallback[] = [];
     private _config: ControlPointConfig;
 
@@ -56,23 +57,23 @@ export class ControlPointManager {
     /**
      * Gets all control points.
      */
-    getAllControlPoints(): ControlPoint[] {
+    getAllControlPoints(): GlobalControlPoint[] {
         return Array.from(this._controlPoints.values());
     }
 
     /**
      * Gets control points for a specific segment.
      */
-    getControlPointsForSegment(segmentIndex: number): ControlPoint[] {
-        return this.getAllControlPoints().filter(
-            (cp) => cp.segmentIndex === segmentIndex,
+    getControlPointsForSegment(segmentIndex: number): GlobalControlPoint[] {
+        return this.getAllControlPoints().filter((cp) =>
+            cp.segmentHooks.some((hook) => hook.segmentIndex === segmentIndex),
         );
     }
 
     /**
      * Gets a control point by its ID.
      */
-    getControlPoint(id: string): ControlPoint | undefined {
+    getControlPoint(id: string): GlobalControlPoint | undefined {
         return this._controlPoints.get(id);
     }
 
@@ -82,26 +83,26 @@ export class ControlPointManager {
      */
     moveControlPoint(controlPointId: string, newPoint: Point): boolean {
         const controlPoint = this._controlPoints.get(controlPointId);
-        console.log("controlPoint", controlPoint);
         if (!controlPoint) {
             return false;
         }
 
-        const segment = this._path.segments[controlPoint.segmentIndex];
-        if (!segment || !this.isControllableSegment(segment)) {
-            return false;
-        }
-
         try {
-            // Update the segment with the new control point position
-            const updatedSegment = segment.updateControlPoint(
-                controlPoint.type,
-                controlPoint.pointIndex,
-                newPoint,
-            );
+            for (const segmentHook of controlPoint.segmentHooks) {
+                const segment = this._path.segments[segmentHook.segmentIndex];
+                if (!segment || !this.isControllableSegment(segment)) {
+                    continue;
+                }
+                // Update the segment with the new control point position
+                const updatedSegment = segment.updateControlPoint(
+                    segmentHook.type,
+                    segmentHook.pointIndex,
+                    newPoint,
+                );
 
-            // Replace the segment in the path
-            this.replaceSegment(controlPoint.segmentIndex, updatedSegment);
+                // Replace the segment in the path
+                this.replaceSegment(segmentHook.segmentIndex, updatedSegment);
+            }
 
             // Update the control point in our map
             controlPoint.point = { ...newPoint };
@@ -122,87 +123,87 @@ export class ControlPointManager {
         }
     }
 
-    /**
-     * Moves multiple control points at once for batch operations.
-     */
-    moveControlPoints(updates: Array<{ id: string; point: Point }>): boolean {
-        const segmentsToUpdate = new Map<number, IControllableSegment>();
-        const affectedControlPoints = new Map<string, ControlPoint>();
+    // /**
+    //  * Moves multiple control points at once for batch operations.
+    //  */
+    // moveControlPoints(updates: Array<{ id: string; point: Point }>): boolean {
+    //     const segmentsToUpdate = new Map<number, IControllableSegment>();
+    //     const affectedControlPoints = new Map<string, GlobalControlPoint>();
 
-        // Group updates by segment and validate all updates first
-        for (const update of updates) {
-            const controlPoint = this._controlPoints.get(update.id);
-            if (!controlPoint) {
-                console.warn(`Control point ${update.id} not found`);
-                continue;
-            }
+    //     // Group updates by segment and validate all updates first
+    //     for (const update of updates) {
+    //         const controlPoint = this._controlPoints.get(update.id);
+    //         if (!controlPoint) {
+    //             console.warn(`Control point ${update.id} not found`);
+    //             continue;
+    //         }
 
-            const segment = this._path.segments[controlPoint.segmentIndex];
-            if (!segment || !this.isControllableSegment(segment)) {
-                console.warn(
-                    `Segment ${controlPoint.segmentIndex} is not controllable`,
-                );
-                continue;
-            }
+    //         const segment = this._path.segments[controlPoint.segmentIndex];
+    //         if (!segment || !this.isControllableSegment(segment)) {
+    //             console.warn(
+    //                 `Segment ${controlPoint.segmentIndex} is not controllable`,
+    //             );
+    //             continue;
+    //         }
 
-            affectedControlPoints.set(update.id, controlPoint);
-            if (!segmentsToUpdate.has(controlPoint.segmentIndex)) {
-                segmentsToUpdate.set(controlPoint.segmentIndex, segment);
-            }
-        }
+    //         affectedControlPoints.set(update.id, controlPoint);
+    //         if (!segmentsToUpdate.has(controlPoint.segmentIndex)) {
+    //             segmentsToUpdate.set(controlPoint.segmentIndex, segment);
+    //         }
+    //     }
 
-        try {
-            // Update each affected segment
-            for (const [segmentIndex, originalSegment] of segmentsToUpdate) {
-                let updatedSegment = originalSegment;
+    //     try {
+    //         // Update each affected segment
+    //         for (const [segmentIndex, originalSegment] of segmentsToUpdate) {
+    //             let updatedSegment = originalSegment;
 
-                // Apply all updates for this segment
-                for (const update of updates) {
-                    const controlPoint = affectedControlPoints.get(update.id);
-                    if (
-                        controlPoint &&
-                        controlPoint.segmentIndex === segmentIndex
-                    ) {
-                        updatedSegment = updatedSegment.updateControlPoint(
-                            controlPoint.type,
-                            controlPoint.pointIndex,
-                            update.point,
-                        );
-                    }
-                }
+    //             // Apply all updates for this segment
+    //             for (const update of updates) {
+    //                 const controlPoint = affectedControlPoints.get(update.id);
+    //                 if (
+    //                     controlPoint &&
+    //                     controlPoint.segmentIndex === segmentIndex
+    //                 ) {
+    //                     updatedSegment = updatedSegment.updateControlPoint(
+    //                         controlPoint.type,
+    //                         controlPoint.pointIndex,
+    //                         update.point,
+    //                     );
+    //                 }
+    //             }
 
-                // Replace the segment
-                this.replaceSegment(segmentIndex, updatedSegment);
-            }
+    //             // Replace the segment
+    //             this.replaceSegment(segmentIndex, updatedSegment);
+    //         }
 
-            // Update control points in our map
-            for (const update of updates) {
-                const controlPoint = affectedControlPoints.get(update.id);
-                if (controlPoint) {
-                    controlPoint.point = { ...update.point };
-                }
-            }
+    //         // Update control points in our map
+    //         for (const update of updates) {
+    //             const controlPoint = affectedControlPoints.get(update.id);
+    //             if (controlPoint) {
+    //                 controlPoint.point = { ...update.point };
+    //             }
+    //         }
 
-            // Notify callbacks for each update
-            for (const update of updates) {
-                this._callbacks.forEach((callback) => {
-                    try {
-                        callback(update.id, update.point);
-                    } catch (error) {
-                        console.error(
-                            "Error in control point callback:",
-                            error,
-                        );
-                    }
-                });
-            }
+    //         // Notify callbacks for each update
+    //         for (const update of updates) {
+    //             this._callbacks.forEach((callback) => {
+    //                 try {
+    //                     callback(update.id, update.point);
+    //                 } catch (error) {
+    //                     console.error(
+    //                         "Error in control point callback:",
+    //                         error,
+    //                     );
+    //                 }
+    //             });
+    //         }
 
-            return true;
-        } catch (error) {
-            console.error("Error in batch control point update:", error);
-            return false;
-        }
-    }
+    //         return true;
+    //     } catch (error) {
+    //         console.error("Error in batch control point update:", error);
+    //         return false;
+    //     }
+    // }
 
     /**
      * Adds a callback that will be called when control points are moved.
@@ -228,14 +229,44 @@ export class ControlPointManager {
     rebuildControlPoints(): void {
         this._controlPoints.clear();
 
-        this._path.segments.forEach((segment, segmentIndex) => {
+        const controlPointsByCoordinate: Map<string, GlobalControlPoint> =
+            new Map();
+        for (const [segmentIndex, segment] of this._path.segments.entries()) {
             if (this.isControllableSegment(segment)) {
                 const controlPoints = segment.getControlPoints(segmentIndex);
-                controlPoints.forEach((cp) => {
-                    this._controlPoints.set(cp.id, cp);
-                });
+                for (const [index, controlPoint] of controlPoints.entries()) {
+                    const coordinateKey = `${controlPoint.point.x}-${controlPoint.point.y}`;
+                    const existingControlPoint =
+                        controlPointsByCoordinate.get(coordinateKey);
+
+                    // Cache the control point by coordinate
+                    if (existingControlPoint) {
+                        // Add the control point to the existing control point
+                        existingControlPoint.segmentHooks.push({
+                            type: controlPoint.type,
+                            pointIndex: index,
+                            segmentIndex,
+                        });
+                    } else {
+                        // Create a new control point
+                        controlPointsByCoordinate.set(coordinateKey, {
+                            id: uuidv4(),
+                            point: controlPoint.point,
+                            segmentHooks: [
+                                {
+                                    type: controlPoint.type,
+                                    pointIndex: index,
+                                    segmentIndex,
+                                },
+                            ],
+                        });
+                    }
+                }
             }
-        });
+        }
+        this._controlPoints = new Map();
+        for (const controlPoint of controlPointsByCoordinate.values())
+            this._controlPoints.set(controlPoint.id, controlPoint);
     }
 
     /**
@@ -272,8 +303,8 @@ export class ControlPointManager {
     getControlPointAt(
         point: Point,
         tolerance: number = 10,
-    ): ControlPoint | null {
-        let nearest: ControlPoint | null = null;
+    ): GlobalControlPoint | null {
+        let nearest: GlobalControlPoint | null = null;
         let minDistance = tolerance;
 
         for (const controlPoint of this._controlPoints.values()) {
@@ -290,8 +321,11 @@ export class ControlPointManager {
     /**
      * Gets all control points within a certain distance of a point.
      */
-    getControlPointsNear(point: Point, tolerance: number = 10): ControlPoint[] {
-        const nearby: ControlPoint[] = [];
+    getControlPointsNear(
+        point: Point,
+        tolerance: number = 10,
+    ): GlobalControlPoint[] {
+        const nearby: GlobalControlPoint[] = [];
 
         for (const controlPoint of this._controlPoints.values()) {
             const distance = this.getDistance(point, controlPoint.point);
