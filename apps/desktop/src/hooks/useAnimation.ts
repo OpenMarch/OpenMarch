@@ -42,7 +42,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         [],
     );
 
-    // Collision detection radius (in field units)
     const COLLISION_RADIUS = 15;
     const COLLISION_CHECK_INTERVAL = 100; // Check every 100ms for performance
 
@@ -130,15 +129,44 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         return timelines;
     }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
-    // Pre-calculate collisions for each page
-    const pageCollisions = useMemo(() => {
-        if (!marchers.length || !pages.length || marcherTimelines.size === 0) {
-            return new Map<number, CollisionData[]>();
-        }
+    // Cache for collision calculations
+    const collisionCacheRef = useRef<Map<number, CollisionData[]>>(new Map());
+    const pageHashCacheRef = useRef<Map<number, string>>(new Map());
 
-        // Start performance timer
-        const collisionsMap = new Map<number, CollisionData[]>();
-        for (const page of pages) {
+    // Function to create a hash for a page's collision dependencies
+    const getPageHash = useCallback(
+        (page: Page) => {
+            // filter marchers that belong to this page
+            const pageMarchers = marchers.filter((m) => {
+                const marcherPagesForMarcher = getByMarcherId(
+                    marcherPages,
+                    m.id,
+                );
+                return marcherPagesForMarcher.some(
+                    (mp) => mp.page_id === page.id,
+                );
+            });
+
+            // create marcher has
+            const marchersHash = pageMarchers
+                .map((m) => {
+                    const marcherPageData = getByMarcherId(
+                        marcherPages,
+                        m.id,
+                    ).find((mp) => mp.page_id === page.id);
+                    return `${m.id}-${m.drill_number}-${marcherPageData?.x}-${marcherPageData?.y}-${marcherPageData?.path_data}`;
+                })
+                .sort()
+                .join(",");
+
+            return `${page.id}-${page.timestamp}-${page.duration}-${marchersHash}-${COLLISION_RADIUS}`;
+        },
+        [marchers, marcherPages],
+    );
+
+    // Function to calculate collisions for a single page
+    const calculatePageCollisions = useCallback(
+        (page: Page): CollisionData[] => {
             const collisionPairs = new Set<string>();
             const collisions: CollisionData[] = [];
             const pageStartTime = page.timestamp * 1000; //convert to ms for more precision
@@ -211,26 +239,83 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                     }
                 }
             }
+            return collisions;
+        },
+        [marchers, marcherTimelines],
+    );
 
-            collisionsMap.set(page.id, collisions);
+    // Incremental collision calculation with caching
+    const pageCollisions = useMemo(() => {
+        if (!marchers.length || !pages.length || marcherTimelines.size === 0) {
+            collisionCacheRef.current.clear();
+            pageHashCacheRef.current.clear();
+            return new Map<number, CollisionData[]>();
         }
+
+        const startTime = performance.now();
+        let pagesRecalculated = 0;
+        let pagesFromCache = 0;
+
+        const collisionsMap = new Map<number, CollisionData[]>();
+
+        for (const page of pages) {
+            const currentHash = getPageHash(page);
+            const cachedHash = pageHashCacheRef.current.get(page.id);
+
+            // Check if we can use cached collision data
+            if (
+                cachedHash === currentHash &&
+                collisionCacheRef.current.has(page.id)
+            ) {
+                // Use cached collision data
+                const cachedCollisions = collisionCacheRef.current.get(
+                    page.id,
+                )!;
+                collisionsMap.set(page.id, cachedCollisions);
+                pagesFromCache++;
+            } else {
+                // Recalculate collisions for this page
+                const collisions = calculatePageCollisions(page);
+                collisionsMap.set(page.id, collisions);
+
+                // Update cache
+                collisionCacheRef.current.set(page.id, collisions);
+                pageHashCacheRef.current.set(page.id, currentHash);
+                pagesRecalculated++;
+            }
+        }
+
+        // Clean up cache for pages that no longer exist in case user deletes page
+        const existingPageIds = new Set(pages.map((p) => p.id));
+        for (const cachedPageId of collisionCacheRef.current.keys()) {
+            if (!existingPageIds.has(cachedPageId)) {
+                collisionCacheRef.current.delete(cachedPageId);
+                pageHashCacheRef.current.delete(cachedPageId);
+            }
+        }
+
+        const endTime = performance.now();
+        console.log(
+            `Collision calculation: ${pagesRecalculated} pages recalculated, ${pagesFromCache} pages from cache in ${(endTime - startTime).toFixed(2)}ms`,
+        );
+
         return collisionsMap;
-    }, [marchers, pages, marcherPages, marcherTimelines]);
+    }, [
+        marchers,
+        pages,
+        marcherPages,
+        marcherTimelines,
+        getPageHash,
+        calculatePageCollisions,
+    ]);
 
     // Get collisions for the currently selected page
     const getCollisionsForSelectedPage = useCallback(() => {
         if (!selectedPage) {
-            console.log("No selected page, returning empty collisions");
             return [];
         }
 
         const collisions = pageCollisions.get(selectedPage.id + 1) || [];
-        console.log(
-            "Collisions for selected page:",
-            selectedPage.id,
-            ":",
-            collisions.length,
-        );
         return collisions;
     }, [pageCollisions, selectedPage]);
 
