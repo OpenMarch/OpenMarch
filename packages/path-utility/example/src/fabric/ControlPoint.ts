@@ -18,6 +18,7 @@ export default class FabricControlPoint extends fabric.Circle {
             left: controlPointObj.point.x,
             top: controlPointObj.point.y,
             fill: "red",
+            hasControls: false,
             ...config,
         });
         this._controlPointObj = controlPointObj;
