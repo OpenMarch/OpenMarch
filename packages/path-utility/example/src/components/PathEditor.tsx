@@ -1,10 +1,12 @@
 import { useState } from "react";
 import { fabric } from "fabric";
 import {
+    Arc,
     CubicCurve,
     Line,
     Path,
     QuadraticCurve,
+    Spline,
 } from "@openmarch/path-utility";
 import OmPath from "../fabric/omPath";
 import { Button } from "@openmarch/ui";
@@ -21,18 +23,28 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         if (!canvas) return;
 
         const newPath = new Path([
-            new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
-            new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
-            new CubicCurve(
-                { x: 300, y: 100 },
-                { x: 400, y: 200 },
-                { x: 450, y: 200 },
-                { x: 500, y: 100 },
-            ),
-            new QuadraticCurve(
-                { x: 500, y: 100 },
-                { x: 400, y: 450 },
-                { x: 450, y: 400 },
+            new Arc({ x: 150, y: 100 }, 100, 100, 0, 0, 0, { x: 400, y: 500 }),
+            // new Line({ x: 200, y: 200 }, { x: 300, y: 100 }),
+            // new CubicCurve(
+            //     { x: 300, y: 100 },
+            //     { x: 400, y: 200 },
+            //     { x: 450, y: 200 },
+            //     { x: 500, y: 100 },
+            // ),
+            // new QuadraticCurve(
+            //     { x: 500, y: 100 },
+            //     { x: 400, y: 450 },
+            //     { x: 450, y: 400 },
+            // ),
+            Spline.fromPoints(
+                [
+                    { x: 200, y: 50 },
+                    { x: 150, y: 100 },
+                    { x: 200, y: 400 },
+                    { x: 300, y: 400 },
+                ],
+                0.5,
+                false,
             ),
         ]);
         const omPath = new OmPath(newPath, canvas, {
