@@ -105,9 +105,7 @@ export class Path implements IPath {
     }
 
     toSvgString(): string {
-        if (this._segments.length === 0) {
-            return "";
-        }
+        if (this._segments.length === 0) return "";
 
         const svgParts = this._segments.map((segment, index) => {
             const includeMoveTo = index === 0;
