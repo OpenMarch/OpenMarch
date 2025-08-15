@@ -28,7 +28,6 @@ export default class OmPath<T extends fabric.Canvas> {
         });
 
         const controlPoints = this._controlPointManager.getAllControlPoints();
-        console.log("controlPoints", controlPoints);
         for (const controlPoint of controlPoints) {
             new FabricControlPoint(
                 controlPoint,

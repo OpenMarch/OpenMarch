@@ -95,19 +95,43 @@ export class Spline implements IControllableSegment {
             };
         }
 
-        // Scale t to the curve parameter
-        const scaledT = t * (n - 1);
-        const segment = Math.floor(scaledT);
-        const localT = scaledT - segment;
+        // For Catmull-Rom with n points, we create n-1 segments
+        // Each segment goes from point i to point i+1
+        const numSegments = n - 1;
+        const scaledT = t * numSegments;
+        const segmentIndex = Math.floor(scaledT);
+        const localT = scaledT - segmentIndex;
 
-        const i = Math.max(0, Math.min(segment, n - 2));
+        // Ensure we don't go beyond the valid segments
+        if (segmentIndex >= numSegments) {
+            return { ...points[n - 1] };
+        }
 
-        // Get four control points for Catmull-Rom
-        const p0 = points[Math.max(0, i - 1)];
-        const p1 = points[i];
-        const p2 = points[Math.min(n - 1, i + 1)];
-        const p3 = points[Math.min(n - 1, i + 2)];
+        // For each segment, we need 4 control points: p0, p1, p2, p3
+        // where the curve goes from p1 to p2
+        let p0, p1, p2, p3;
 
+        if (segmentIndex === 0) {
+            // First segment: curve from p1 to p2
+            p0 = points[0]; // Use first point twice for smooth start
+            p1 = points[0];
+            p2 = points[1];
+            p3 = points[2];
+        } else if (segmentIndex === numSegments - 1) {
+            // Last segment: curve from p1 to p2
+            p0 = points[segmentIndex - 1];
+            p1 = points[segmentIndex];
+            p2 = points[segmentIndex + 1];
+            p3 = points[segmentIndex + 1]; // Use last point twice for smooth end
+        } else {
+            // Middle segments: normal case
+            p0 = points[segmentIndex - 1];
+            p1 = points[segmentIndex];
+            p2 = points[segmentIndex + 1];
+            p3 = points[segmentIndex + 2];
+        }
+
+        // Catmull-Rom interpolation formula
         const t2 = localT * localT;
         const t3 = t2 * localT;
 
@@ -192,23 +216,50 @@ export class Spline implements IControllableSegment {
     }
 
     private generateSvgApproximation(): string {
-        const samples = Math.max(20, this.controlPoints.length * 5);
-        const points: Point[] = [];
-
-        for (let i = 0; i <= samples; i++) {
-            const t = i / samples;
-            points.push(this.getPointAtT(t));
-        }
-
-        if (points.length === 0) return "";
+        const points = this.controlPoints;
+        const n = points.length;
+        if (n < 2) return "";
 
         let pathData = `M ${points[0].x} ${points[0].y}`;
-        for (let i = 1; i < points.length; i++) {
-            pathData += ` L ${points[i].x} ${points[i].y}`;
+
+        if (n === 2) {
+            pathData += ` L ${points[1].x} ${points[1].y}`;
+            if (this.closed) {
+                pathData += " Z";
+            }
+            return pathData;
         }
 
         if (this.closed) {
+            for (let i = 0; i < n; i++) {
+                const p0 = points[(i - 1 + n) % n];
+                const p1 = points[i];
+                const p2 = points[(i + 1) % n];
+                const p3 = points[(i + 2) % n];
+
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+                pathData += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+            }
             pathData += " Z";
+        } else {
+            // Open spline
+            for (let i = 0; i < n - 1; i++) {
+                const p0 = points[i > 0 ? i - 1 : 0];
+                const p1 = points[i];
+                const p2 = points[i + 1];
+                const p3 = points[i < n - 2 ? i + 2 : n - 1];
+
+                const cp1x = p1.x + (p2.x - p0.x) / 6;
+                const cp1y = p1.y + (p2.y - p0.y) / 6;
+                const cp2x = p2.x - (p3.x - p1.x) / 6;
+                const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+                pathData += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${p2.x},${p2.y}`;
+            }
         }
 
         return pathData;
