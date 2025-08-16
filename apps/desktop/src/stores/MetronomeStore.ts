@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { BeatStyleId } from "metronome";
+import { BeatStyleId } from "@openmarch/metronome";
 
 interface MetronomeStore {
     isMetronomeOn: boolean;

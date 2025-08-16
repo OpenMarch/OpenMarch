@@ -13,7 +13,7 @@ import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
-import { createMetronomeWav, SAMPLE_RATE } from "metronome";
+import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
