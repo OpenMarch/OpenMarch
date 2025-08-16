@@ -3,7 +3,7 @@
     "type": "module",
     "license": "AGPL-3.0",
     "types": "./dist/index.d.ts",
-    "version": "1.1.0",
+    "version": "2.0.0",
     "publishConfig": {
         "@openmarch:registry": "https://npm.pkg.github.com"
     },
