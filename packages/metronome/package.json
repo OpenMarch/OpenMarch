@@ -3,7 +3,7 @@
     "type": "module",
     "types": "dist/index.d.ts",
     "main": "dist/index.cjs",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "scripts": {
         "build": "tsup --format esm,cjs",
         "dev": "tsup --watch",

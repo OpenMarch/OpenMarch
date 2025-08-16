@@ -1,7 +1,7 @@
 # @openmarch/metronome
 
-## 1.0.0
+## 1.1.0
 
-### Major Changes
+### Minor Changes
 
-- Metronome initial commit
+- Tiny version bump
