@@ -67,7 +67,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
 
-    useAnimation({
+    const { currentCollisions } = useAnimation({
         canvas,
     });
 
@@ -769,6 +769,58 @@ export default function Canvas({
         marcherVisuals,
         marcherPagesLoaded,
     ]);
+
+    // Render collision markers when paused
+    useEffect(() => {
+        if (!canvas) return;
+        // Remove existing collision markers
+        const existingMarkers = canvas
+            .getObjects()
+            .filter((obj: any) => obj.isCollisionMarker);
+        existingMarkers.forEach((marker) => canvas.remove(marker));
+        // Add new collision markers only when paused
+        if (!isPlaying && currentCollisions.length > 0) {
+            currentCollisions.forEach((collision) => {
+                // Create a red circle to mark collision location
+                const radius = 10;
+                const collisionMarker = new fabric.Circle({
+                    left: collision.x,
+                    top: collision.y,
+                    originX: "center",
+                    originY: "center",
+                    radius: collision.distance,
+                    fill: "rgba(255, 0, 0, 0.5)",
+                    stroke: "red",
+                    strokeWidth: 2,
+                    selectable: false,
+                    evented: false,
+                });
+                (collisionMarker as any).isCollisionMarker = true; // Custom property to identify collision markers
+                // Add text showing which marchers are colliding
+                const fontSize = 12;
+                const collisionText = new fabric.Text(
+                    `${collision.marcher1Id}-${collision.marcher2Id}`,
+                    {
+                        left: collision.x,
+                        top: collision.y - fontSize - collision.distance / 2,
+                        fontSize,
+                        fill: "red",
+                        textAlign: "center",
+                        originX: "center",
+                        originY: "center",
+                        selectable: false,
+                        evented: false,
+                    },
+                );
+                (collisionText as any).isCollisionMarker = true;
+
+                canvas.add(collisionMarker);
+                canvas.add(collisionText);
+            });
+
+            canvas.requestRenderAll();
+        }
+    }, [canvas, isPlaying, currentCollisions, selectedPage]);
 
     return (
         <div
