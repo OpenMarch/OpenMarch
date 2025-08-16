@@ -1,4 +1,4 @@
-# @openmarch/core
+# @openmarch/musicxml-parser
 
 ## 2.0.0
 
@@ -9,9 +9,3 @@
 ### Minor Changes
 
 - Second push
-
-## 1.1.0
-
-### Minor Changes
-
-- Initial bump

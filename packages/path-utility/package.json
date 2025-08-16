@@ -1,6 +1,6 @@
 {
     "name": "@openmarch/path-utility",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "A TypeScript library for working with complex paths that preserves spline segment data in JSON serialization",
     "type": "module",
     "types": "dist/index.d.ts",
