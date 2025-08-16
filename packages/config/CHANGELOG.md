@@ -1,11 +1,7 @@
 # @openmarch/config
 
-## 1.0.0
-
-### Major Changes
-
-- first release
+## 1.1.0
 
 ### Minor Changes
 
-- Second push
+- Tiny version bump
