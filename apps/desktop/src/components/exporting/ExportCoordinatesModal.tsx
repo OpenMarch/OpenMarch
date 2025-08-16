@@ -7,7 +7,7 @@ import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import {
     getByMarcherAndPageId,
     getByMarcherId,
@@ -70,7 +70,7 @@ function CoordinateSheetExport() {
     const { pages } = useTimingObjectsStore()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
@@ -639,7 +639,7 @@ function CoordinateSheetExport() {
 
 function DrillChartExport() {
     const { pages } = useTimingObjectsStore()!;
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });
     const { marchers, marcherVisuals } = useMarchersWithVisuals();

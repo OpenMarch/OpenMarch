@@ -3,7 +3,7 @@ import { fabric } from "fabric";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
@@ -51,7 +51,7 @@ export default function Canvas({
         useShapePageStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,

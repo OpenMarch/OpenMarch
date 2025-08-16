@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
@@ -32,7 +32,7 @@ function MarcherEditor() {
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });
     const { selectedPage } = useSelectedPage()!;
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const { shapePages } = useShapePageStore()!;
     const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
         [],

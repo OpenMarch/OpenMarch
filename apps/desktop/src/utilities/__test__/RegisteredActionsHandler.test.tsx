@@ -5,7 +5,6 @@
 // import { IsPlayingProvider, useIsPlaying } from '@/context/IsPlayingContext';
 // import { SelectedPageProvider } from '@/context/SelectedPageContext';
 // import { SelectedMarchersProvider } from '@/context/SelectedMarchersContext';
-// import { FieldPropertiesProvider } from '@/context/fieldPropertiesContext';
 // import { ElectronApi } from 'electron/preload';
 // import { mockNCAAFieldProperties } from '@/__mocks__/globalMocks';
 import { expect, it } from "vitest";

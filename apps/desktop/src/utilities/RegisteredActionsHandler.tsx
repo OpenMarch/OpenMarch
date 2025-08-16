@@ -1,4 +1,4 @@
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -494,7 +494,7 @@ function RegisteredActionsHandler() {
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {

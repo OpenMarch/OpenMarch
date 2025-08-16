@@ -1,4 +1,3 @@
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import { FieldProperties } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -13,9 +12,11 @@ import {
 } from "@openmarch/ui";
 import { StaticFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
+import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
 
 export default function FieldPropertiesSelector() {
-    const { fieldProperties, setFieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
+    const { mutate: setFieldProperties } = useUpdateFieldProperties();
     const [currentTemplate, setCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);

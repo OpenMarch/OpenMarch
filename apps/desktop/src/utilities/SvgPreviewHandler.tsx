@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
@@ -13,7 +13,7 @@ const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
 
     // Get current values
-    const { fieldProperties } = useFieldProperties() ?? {};
+    const { data: fieldProperties } = useFieldProperties();
     const { pages = [] } = useTimingObjectsStore() ?? {};
     const { data: marcherPages = {}, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });

@@ -9,7 +9,7 @@ import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldPropertiesWithSetter } from "@/hooks/queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
@@ -27,7 +27,7 @@ function StateInitializer() {
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
-    const { fetchFieldProperties } = useFieldProperties()!;
+    const { fetchFieldProperties } = useFieldPropertiesWithSetter();
     const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
 
     /**
