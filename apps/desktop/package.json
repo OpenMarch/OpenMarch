@@ -42,6 +42,7 @@
         "@fontsource/dm-sans": "^5.2.6",
         "@openmarch/core": "workspace:*",
         "@openmarch/musicxml-parser": "workspace:*",
+        "@openmarch/metronome": "workspace:*",
         "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",

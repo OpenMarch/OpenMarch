@@ -1,4 +1,4 @@
-# @openmarch/core
+# @openmarch/metronome
 
 ## 1.1.0
 

@@ -1,7 +1,12 @@
 # @openmarch/ui
 
-## 1.0.0
+## 1.1.0
 
-### Major Changes
+### Minor Changes
 
-- Initial bump
+- Tiny version bump
+
+### Patch Changes
+
+- Updated dependencies
+  - @openmarch/config@1.1.0
