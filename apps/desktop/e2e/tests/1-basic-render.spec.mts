@@ -125,10 +125,14 @@ test("Field properties customizer tabs are visible", async ({
     await page
         .getByRole("combobox", { name: "High school football field (" })
         .click();
+    for (let i = 0; i < 20; i++) {
+        await page.keyboard.press("ArrowUp");
+    }
+    await page.keyboard.press("Enter");
     await page
         .getByRole("group")
         .getByText("High school football field (no end zones)")
-        .click();
+        .isVisible();
 
     await page.getByRole("button", { name: "Customize" }).click();
     await expect(

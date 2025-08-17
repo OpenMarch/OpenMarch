@@ -9,10 +9,14 @@ import {
     SelectTriggerButton,
     Button,
     DangerNote,
+    SelectLabel,
+    SelectSeparator,
 } from "@openmarch/ui";
 import { StaticFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
+import FootballTemplates from "@/global/classes/fieldTemplates/Football";
+import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
 
 export default function FieldPropertiesSelector() {
     const { data: fieldProperties } = useFieldProperties();
@@ -66,7 +70,8 @@ export default function FieldPropertiesSelector() {
                         />
                         <SelectContent>
                             <SelectGroup>
-                                {Object.entries(FieldPropertiesTemplates).map(
+                                <SelectLabel>Football</SelectLabel>
+                                {Object.entries(FootballTemplates).map(
                                     (template, index) => (
                                         <SelectItem
                                             key={index}
@@ -76,6 +81,20 @@ export default function FieldPropertiesSelector() {
                                         </SelectItem>
                                     ),
                                 )}
+                                <SelectSeparator />
+                                <SelectLabel>Indoor</SelectLabel>
+                                {Object.entries(IndoorTemplates).map(
+                                    (template, index) => (
+                                        <SelectItem
+                                            key={index}
+                                            value={template[1].name}
+                                        >
+                                            {template[1].name}
+                                        </SelectItem>
+                                    ),
+                                )}
+                                <SelectSeparator />
+                                <SelectLabel>Custom</SelectLabel>
                                 {fieldProperties.isCustom && (
                                     <SelectItem key={"custom"} value={"Custom"}>
                                         {t("fieldProperties.customFieldName")}
