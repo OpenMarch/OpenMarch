@@ -32,7 +32,10 @@ export default class AudioFile {
     }) {
         this.id = id;
 
-        if (data instanceof Uint8Array) {
+        // Handle the case where data is undefined (for getAudioFilesDetails)
+        if (data === undefined) {
+            this.data = undefined;
+        } else if (data instanceof Uint8Array) {
             this.data = data.buffer.slice(
                 data.byteOffset,
                 data.byteOffset + data.byteLength,
