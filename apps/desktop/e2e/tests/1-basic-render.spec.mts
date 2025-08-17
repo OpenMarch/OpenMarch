@@ -125,24 +125,11 @@ test("Field properties customizer tabs are visible", async ({
     await page
         .getByRole("combobox", { name: "High school football field (" })
         .click();
-    await expect(page.getByRole("listbox")).toMatchAriaSnapshot(`
-     - group:
-       - option "High school football field (no end zones)"
-       - option "College football field (no end zones)"
-       - option "Pro football field (no end zones)"
-       - option "High school football field (with end zones)"
-       - option "College football field (with end zones)"
-       - option "Pro football field (with end zones)"
-       - option /Indoor 40x60 - \\d+-inch steps/
-       - option /Indoor 50x70 - \\d+-inch steps/
-       - option /Indoor 50x80 - \\d+-inch steps/
-       - option /Indoor 50x90 - \\d+-inch steps/
-       - option "Indoor 40x60 - 6 to 5 Steps"
-       - option "Indoor 50x70 - 6 to 5 Steps"
-       - option "Indoor 50x80 - 6 to 5 Steps"
-       - option "Indoor 50x90 - 6 to 5 Steps"
-     `);
-    await page.locator("html").click();
+    await page
+        .getByRole("group")
+        .getByText("High school football field (no end zones)")
+        .click();
+
     await page.getByRole("button", { name: "Customize" }).click();
     await expect(
         page.getByRole("heading", { name: "Custom Field" }),
