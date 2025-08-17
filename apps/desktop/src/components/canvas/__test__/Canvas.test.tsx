@@ -9,7 +9,6 @@ it.todo("Canvas tests - currently not working", () => {
 // import Canvas from "../Canvas";
 // import * as Mocks from "@/__mocks__/globalMocks";
 // import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
-// import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 // import { IsPlayingProvider } from "@/context/IsPlayingContext";
 // import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 // import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";

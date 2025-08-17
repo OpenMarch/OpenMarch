@@ -8,7 +8,6 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
-import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
@@ -162,46 +161,40 @@ function App() {
                                 <SelectedPageProvider>
                                     <SelectedMarchersProvider>
                                         <SelectedAudioFileProvider>
-                                            <FieldPropertiesProvider>
-                                                <StateInitializer />
-                                                <RegisteredActionsHandler />
-                                                <SvgPreviewHandler />
-                                                <TitleBar showControls />
+                                            <StateInitializer />
+                                            <RegisteredActionsHandler />
+                                            <SvgPreviewHandler />
+                                            <TitleBar showControls />
+                                            <div
+                                                id="app"
+                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                            >
                                                 <div
-                                                    id="app"
-                                                    className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                                    id="workspace"
+                                                    className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                                 >
-                                                    <div
-                                                        id="workspace"
-                                                        className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
-                                                    >
-                                                        <Toolbar />
-                                                        <div className="relative flex h-full min-h-0 min-w-0 gap-8">
-                                                            {!isFullscreen && (
-                                                                <>
-                                                                    <Sidebar />
-                                                                    <SidebarModal />
-                                                                </>
-                                                            )}
-                                                            <Canvas
-                                                                onCanvasReady={
-                                                                    setAppCanvas
-                                                                }
-                                                            />
-                                                            <CanvasZoomControls
-                                                                canvas={
-                                                                    appCanvas
-                                                                }
-                                                            />
-                                                        </div>
-                                                        <TimelineContainer />
+                                                    <Toolbar />
+                                                    <div className="relative flex h-full min-h-0 min-w-0 gap-8">
+                                                        {!isFullscreen && (
+                                                            <>
+                                                                <Sidebar />
+                                                                <SidebarModal />
+                                                            </>
+                                                        )}
+                                                        <Canvas
+                                                            onCanvasReady={
+                                                                setAppCanvas
+                                                            }
+                                                        />
+                                                        <CanvasZoomControls
+                                                            canvas={appCanvas}
+                                                        />
                                                     </div>
-                                                    {!isFullscreen && (
-                                                        <Inspector />
-                                                    )}
+                                                    <TimelineContainer />
                                                 </div>
-                                                <Toaster />
-                                            </FieldPropertiesProvider>
+                                                {!isFullscreen && <Inspector />}
+                                            </div>
+                                            <Toaster />
                                         </SelectedAudioFileProvider>
                                     </SelectedMarchersProvider>
                                 </SelectedPageProvider>

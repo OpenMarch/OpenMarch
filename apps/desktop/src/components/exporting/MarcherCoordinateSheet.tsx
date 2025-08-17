@@ -1,4 +1,4 @@
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldProperties } from "@/hooks/queries";
 import React, { useEffect, useState } from "react";
 import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { Marcher } from "@/global/classes/Marcher";
@@ -48,7 +48,7 @@ export default function MarcherCoordinateSheetPreview({
     const { pages } = useTimingObjectsStore()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });
-    const { fieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>(

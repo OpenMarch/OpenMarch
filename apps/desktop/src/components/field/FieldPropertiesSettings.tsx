@@ -1,13 +1,14 @@
 import FieldPropertiesSelector from "./FieldPropertiesSelector";
 import FieldPropertiesCustomizer from "./FieldPropertiesCustomizer";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
 import FieldIoButtons from "./FieldIoButtons";
 import { FieldProperties } from "@openmarch/core";
 import { T } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
+import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
 
 export default function FieldPropertiesSettings() {
-    const { fieldProperties, setFieldProperties } = useFieldProperties()!;
+    const { data: fieldProperties } = useFieldProperties();
+    const { mutate: setFieldProperties } = useUpdateFieldProperties();
 
     if (!fieldProperties)
         return (
