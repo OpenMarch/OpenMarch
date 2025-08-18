@@ -16,6 +16,8 @@ import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
 import { T, useTolgee } from "@tolgee/react";
+import { Button } from "@openmarch/ui";
+import EditablePath from "@/global/classes/canvasObjects/EditablePath";
 
 export default function AlignmentTab() {
     const { t } = useTolgee();

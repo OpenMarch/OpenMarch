@@ -54,11 +54,63 @@ export class ControlPointManager {
         this._config = { ...this._config, ...config };
     }
 
+    getFirstControlPoint(): GlobalControlPoint | undefined {
+        // Find the control point that represents the start of the first segment
+        for (const controlPoint of this._controlPoints.values()) {
+            if (
+                controlPoint.segmentHooks.some(
+                    (hook) => hook.segmentIndex === 0 && hook.type === "start",
+                )
+            ) {
+                return controlPoint;
+            }
+        }
+        return undefined;
+    }
+
+    getLastControlPoint(): GlobalControlPoint | undefined {
+        // Find the control point that represents the end of the last segment
+        const lastSegmentIndex = this._path.segments.length - 1;
+        if (lastSegmentIndex < 0) return undefined;
+
+        for (const controlPoint of this._controlPoints.values()) {
+            if (
+                controlPoint.segmentHooks.some(
+                    (hook) =>
+                        hook.segmentIndex === lastSegmentIndex &&
+                        hook.type === "end",
+                )
+            ) {
+                return controlPoint;
+            }
+        }
+        return undefined;
+    }
+
     /**
      * Gets all control points.
      */
-    getAllControlPoints(): GlobalControlPoint[] {
-        return Array.from(this._controlPoints.values());
+    getAllControlPoints({
+        excludeFirst = false,
+        excludeLast = false,
+    }: {
+        excludeFirst?: boolean;
+        excludeLast?: boolean;
+    } = {}): GlobalControlPoint[] {
+        let controlPoints = Array.from(this._controlPoints.values());
+
+        let firstPointId: string | undefined;
+        let lastPointId: string | undefined;
+        if (excludeFirst) {
+            firstPointId = this.getFirstControlPoint()?.id;
+        }
+        if (excludeLast) {
+            lastPointId = this.getLastControlPoint()?.id;
+        }
+        const filteredControlPoints = controlPoints.filter(
+            (cp) => cp.id !== firstPointId && cp.id !== lastPointId,
+        );
+        return filteredControlPoints;
     }
 
     /**

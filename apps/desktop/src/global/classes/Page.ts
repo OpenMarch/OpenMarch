@@ -11,7 +11,11 @@ import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
 
 interface Page {
-    /** The id of the page in the database */
+    /** The id of the page in the database
+     *
+     * Note, this ID is not the same as the order of the page in the show.
+     * Do not use ID to sort pages. Use order instead.
+     */
     readonly id: number;
     /** The name of the page. E.g. "2A" */
     readonly name: string;

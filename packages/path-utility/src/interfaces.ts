@@ -126,7 +126,7 @@ export interface ControlPoint {
     /** An type to find the control point in a segment. Can either be a type or an index. */
     type: ControlPointType;
     /** Index of the control point in the segment */
-    pointIndex?: number;
+    pointIndex: number;
 }
 
 /**
