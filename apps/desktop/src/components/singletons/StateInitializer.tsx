@@ -9,11 +9,15 @@ import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useFieldPropertiesWithSetter } from "@/hooks/queries";
+import {
+    useFieldProperties,
+    useFieldPropertiesWithSetter,
+} from "@/hooks/queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
 import { fetchMarcherPages } from "@/hooks/queries";
+import { DEFAULT_FIELD_THEME, FieldTheme } from "@openmarch/core";
 
 /**
  * A component that initializes the state of the application.
@@ -29,6 +33,8 @@ function StateInitializer() {
         useShapePageStore()!;
     const { fetchFieldProperties } = useFieldPropertiesWithSetter();
     const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
+    const { isSuccess: fieldPropertiesSuccess, data: fieldProperties } =
+        useFieldProperties();
 
     /**
      * These functions set the fetch function in each respective class.
@@ -42,9 +48,12 @@ function StateInitializer() {
      */
 
     useEffect(() => {
-        Marcher.fetchMarchers = fetchMarchersAndVisuals;
+        const fieldTheme: FieldTheme = fieldPropertiesSuccess
+            ? fieldProperties.theme
+            : DEFAULT_FIELD_THEME;
+        Marcher.fetchMarchers = () => fetchMarchersAndVisuals(fieldTheme);
         Marcher.fetchMarchers();
-    }, [fetchMarchers]);
+    }, [fetchMarchers, fieldPropertiesSuccess, fieldProperties?.theme]);
 
     useEffect(() => {
         fetchMarcherPages();
