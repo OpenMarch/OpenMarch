@@ -205,6 +205,5 @@ export const marcherPagesToPath = ({
             ]),
         ]);
     }
-
     return endMarcherPage.path_data;
 };
