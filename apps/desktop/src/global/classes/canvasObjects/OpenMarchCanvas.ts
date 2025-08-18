@@ -6,7 +6,10 @@ import Midpoint from "./Midpoint";
 import { FieldProperties } from "@openmarch/core";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import MarcherPage, { getByPageId } from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    getByPageId,
+    marcherPagesToPath,
+} from "@/global/classes/MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";

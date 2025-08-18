@@ -1,5 +1,9 @@
 import EditablePath from "@/global/classes/canvasObjects/EditablePath";
-import { useCreatePathway, useUpdatePathway } from "@/hooks/queries";
+import {
+    useCreatePathway,
+    useUpdateMarcherPages,
+    useUpdatePathway,
+} from "@/hooks/queries";
 import { Path } from "@openmarch/path-utility";
 import { useEffect } from "react";
 
@@ -9,6 +13,7 @@ import { useEffect } from "react";
 export default function useEditablePath() {
     const createPathway = useCreatePathway();
     const updatePathway = useUpdatePathway();
+    const updateMarcherPages = useUpdateMarcherPages();
 
     useEffect(() => {
         EditablePath.createPathway = (
@@ -28,11 +33,10 @@ export default function useEditablePath() {
                 marcherPageIds: [nextMarcherPageId],
             });
         };
-        EditablePath.updatePathway = (pathId: number, pathObj: Path) => {
+        EditablePath.updatePathway = (pathId: number, pathObj: Path) =>
             updatePathway.mutate({
                 id: pathId,
                 path_data: pathObj.toJson(),
             });
-        };
-    }, [createPathway, updatePathway]);
+    }, [createPathway, updateMarcherPages.mutate, updatePathway]);
 }
