@@ -93,21 +93,25 @@ export class CubicCurve implements IControllableSegment {
             {
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
                 point: { ...this.controlPoint1 },
                 segmentIndex,
+                pointIndex: 1,
                 type: "control1" as ControlPointType,
             },
             {
                 point: { ...this.controlPoint2 },
                 segmentIndex,
+                pointIndex: 2,
                 type: "control2" as ControlPointType,
             },
             {
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 3,
                 type: "end" as ControlPointType,
             },
         ];

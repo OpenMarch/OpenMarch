@@ -174,11 +174,13 @@ export class Arc implements IControllableSegment {
             {
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 1,
                 type: "end" as ControlPointType,
             },
         ];
@@ -197,6 +199,7 @@ export class Arc implements IControllableSegment {
         controlPoints.push({
             point: centerPoint,
             segmentIndex,
+            pointIndex: 2,
             type: "center" as ControlPointType,
         });
 

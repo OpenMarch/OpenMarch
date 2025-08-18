@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Page from "@/global/classes/Page";
@@ -8,11 +8,11 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useMarcherPages } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useCollisionStore } from "@/stores/CollisionStore";
 
 interface UseAnimationProps {
