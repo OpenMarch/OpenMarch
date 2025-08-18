@@ -22,6 +22,7 @@ import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
+import useEditablePath from "./hooks/editablePath";
 
 /**
  * The field/stage UI of OpenMarch
@@ -40,6 +41,7 @@ export default function Canvas({
     testCanvas?: OpenMarchCanvas;
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
+    useEditablePath();
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
@@ -526,10 +528,14 @@ export default function Canvas({
 
     // Sync marcher visuals with marchers and section appearances
     useEffect(() => {
-        if (marchers && sectionAppearances) {
-            updateMarcherVisuals(marchers, sectionAppearances);
+        if (marchers && sectionAppearances && fieldProperties) {
+            updateMarcherVisuals(
+                marchers,
+                fieldProperties.theme,
+                sectionAppearances,
+            );
         }
-    }, [marchers, sectionAppearances, updateMarcherVisuals]);
+    }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -559,13 +565,18 @@ export default function Canvas({
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
             canvas.add(visualGroup.getPreviousPathway());
-            canvas.add(visualGroup.getNextPathway());
+            visualGroup
+                .getNextPathway()
+                .getFabricObjects()
+                .forEach((fabricObject) => {
+                    canvas.add(fabricObject);
+                });
             visualGroup
                 .getPreviousPathway()
                 .setColor(fieldProperties.theme.previousPath);
-            visualGroup
-                .getNextPathway()
-                .setColor(fieldProperties.theme.nextPath);
+            // visualGroup
+            //     .getNextPathway()
+            //     .setColor(fieldProperties.theme.nextPath);
 
             canvas.add(visualGroup.getPreviousMidpoint());
             canvas.add(visualGroup.getNextMidpoint());

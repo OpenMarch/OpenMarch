@@ -6,7 +6,10 @@ import Midpoint from "./Midpoint";
 import { FieldProperties } from "@openmarch/core";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
 import Marcher from "@/global/classes/Marcher";
-import MarcherPage, { getByPageId } from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    getByPageId,
+    marcherPagesToPath,
+} from "@/global/classes/MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
@@ -1145,11 +1148,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             const prev =
                 prevPageId !== null ? prevByMarcher[marcherId] : undefined;
-            const curr = fromCanvasMarchers
-                ? visual.getCanvasMarcher().getMarcherCoords()
-                : currPageId !== null
-                  ? currByMarcher[marcherId]
-                  : undefined;
+            const curr =
+                currPageId !== null ? currByMarcher[marcherId] : undefined;
             const next =
                 nextPageId !== null ? nextByMarcher[marcherId] : undefined;
 
@@ -1175,20 +1175,36 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             // next pathway, midpoint, endpoint
             if (nextPageId !== null && next && curr) {
-                visual.getNextPathway().show();
-                visual.getNextPathway().updateStartCoords(curr);
-                visual.getNextPathway().updateEndCoords(next);
+                // delete all of the existing fabric objects
+                for (const fabricObject of visual
+                    .getNextPathway()
+                    .getFabricObjects()) {
+                    this.remove(fabricObject);
+                }
 
-                visual.getNextMidpoint().show();
-                visual.getNextMidpoint().updateCoords({
-                    x: (curr.x + next.x) / 2,
-                    y: (curr.y + next.y) / 2,
-                });
+                const nextPathway = visual.getNextPathway();
+                nextPathway.updateMarcherPages(curr, next);
+                for (const fabricObject of nextPathway.getFabricObjects()) {
+                    this.add(fabricObject);
+                }
 
-                visual.getNextEndpoint().show();
-                visual.getNextEndpoint().updateCoords(next);
+                // visual.getNextPathway().updateStartCoords(curr);
+                // visual.getNextPathway().updateEndCoords(next);
+
+                // visual.getNextMidpoint().show();
+                // visual.getNextMidpoint().updateCoords({
+                //     x: (curr.x + next.x) / 2,
+                //     y: (curr.y + next.y) / 2,
+                // });
+
+                // visual.getNextEndpoint().show();
+                // visual.getNextEndpoint().updateCoords(next);
+                this.requestRenderAll();
             } else {
-                visual.getNextPathway().hide();
+                const nextPathway = visual.getNextPathway();
+                for (const fabricObject of nextPathway.getFabricObjects()) {
+                    this.remove(fabricObject);
+                }
                 visual.getNextMidpoint().hide();
                 visual.getNextEndpoint().hide();
             }
@@ -1209,9 +1225,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             visual.getPreviousPathway().hide();
             visual.getPreviousMidpoint().hide();
             visual.getPreviousEndpoint().hide();
-            visual.getNextPathway().hide();
+            const nextPathway = visual.getNextPathway();
+            for (const fabricObject of nextPathway.getFabricObjects()) {
+                this.remove(fabricObject);
+            }
             visual.getNextMidpoint().hide();
             visual.getNextEndpoint().hide();
+            this.requestRenderAll();
         });
     };
 

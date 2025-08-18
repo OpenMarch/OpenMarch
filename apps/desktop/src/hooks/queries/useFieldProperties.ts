@@ -52,9 +52,6 @@ export const useUpdateFieldProperties = () => {
     return useMutation({
         mutationFn: fieldPropertiesMutations.update,
         onSuccess: (updatedFieldProperties) => {
-            // Update the ReadableCoords class with new field properties
-            ReadableCoords.setFieldProperties(updatedFieldProperties);
-
             // Invalidate and refetch field properties
             queryClient.invalidateQueries({
                 queryKey: fieldPropertiesKeys.detail(),

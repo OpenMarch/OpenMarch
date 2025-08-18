@@ -1,7 +1,7 @@
 import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
-import { Path } from "@openmarch/path-utility";
+import { Path, Spline } from "@openmarch/path-utility";
 import type Page from "./Page";
 
 const { marcher_pages } = schema;
@@ -32,9 +32,17 @@ export default interface MarcherPage {
     readonly y: number;
     /** The ID of the pathway data */
     readonly path_data_id: number | null;
-    /** The position along the pathway (0-1) */
+    /**
+     * The position along the pathway (0-1).
+     * This is the position in the pathway the marcher ends up at for this coordinate.
+     * If this is null, then it is assumed to be 1 (the end of the pathway).
+     */
     readonly path_position: number | null;
-    /** The SVG path data from the pathways table */
+    /**
+     * The SVG path data from the pathways table.
+     * This is the pathway the marcher uses to get to this marcher page.
+     * If this is null, then this is a straight line from the previous marcher page to this one.
+     */
     readonly path_data: Path | null;
     /** Any notes about the MarcherPage. Optional - currently not implemented */
     readonly notes: string | null;
@@ -218,3 +226,25 @@ export interface ModifiedMarcherPageArgs {
     /** The position along the pathway (0-1) */
     path_position?: number | null;
 }
+
+export const marcherPagesToPath = ({
+    startMarcherPage,
+    endMarcherPage,
+}: {
+    startMarcherPage: MarcherPage;
+    endMarcherPage: MarcherPage;
+}): Path => {
+    if (!endMarcherPage.path_data) {
+        return new Path([
+            new Spline([
+                { x: startMarcherPage.x, y: startMarcherPage.y },
+                {
+                    x: (startMarcherPage.x + endMarcherPage.x) / 2,
+                    y: (startMarcherPage.y + endMarcherPage.y) / 2,
+                },
+                { x: endMarcherPage.x, y: endMarcherPage.y },
+            ]),
+        ]);
+    }
+    return endMarcherPage.path_data;
+};

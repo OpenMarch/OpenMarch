@@ -276,4 +276,6 @@ export const mockMarcherPages: MarcherPage[] = [
 ] as const;
 
 export const mockMarcherPageMap = marcherPageMapFromArray(mockMarcherPages);
-export const mockMarcherVisualMap = marcherVisualsFromMarchers(mockMarchers);
+export const mockMarcherVisualMap = marcherVisualsFromMarchers({
+    receivedMarchers: mockMarchers,
+});

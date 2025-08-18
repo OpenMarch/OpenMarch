@@ -200,6 +200,69 @@ describe("Control Points", () => {
             expect(updatedSpline.controlPoints[0]).toEqual({ x: 0, y: 0 });
             expect(updatedSpline.controlPoints[2]).toEqual({ x: 100, y: 0 });
         });
+
+        it("should correctly identify first and last control points", () => {
+            const path = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                new CubicCurve(
+                    { x: 100, y: 0 },
+                    { x: 150, y: -50 },
+                    { x: 200, y: 50 },
+                    { x: 250, y: 0 },
+                ),
+                new Line({ x: 250, y: 0 }, { x: 300, y: 100 }),
+            ]);
+
+            const manager = new ControlPointManager(path);
+
+            // Test getFirstControlPoint
+            const firstControlPoint = manager.getFirstControlPoint();
+            expect(firstControlPoint).toBeDefined();
+            expect(firstControlPoint?.point).toEqual({ x: 0, y: 0 });
+            expect(
+                firstControlPoint?.segmentHooks.some(
+                    (hook) => hook.segmentIndex === 0 && hook.type === "start",
+                ),
+            ).toBe(true);
+
+            // Test getLastControlPoint
+            const lastControlPoint = manager.getLastControlPoint();
+            expect(lastControlPoint).toBeDefined();
+            expect(lastControlPoint?.point).toEqual({ x: 300, y: 100 });
+            expect(
+                lastControlPoint?.segmentHooks.some(
+                    (hook) => hook.segmentIndex === 2 && hook.type === "end",
+                ),
+            ).toBe(true);
+
+            // Test with excludeFirst and excludeLast parameters
+            const allControlPoints = manager.getAllControlPoints();
+            const withoutFirst = manager.getAllControlPoints({
+                excludeFirst: true,
+            });
+            const withoutLast = manager.getAllControlPoints({
+                excludeLast: true,
+            });
+            const withoutBoth = manager.getAllControlPoints({
+                excludeFirst: true,
+                excludeLast: true,
+            });
+
+            expect(withoutFirst.length).toBeLessThan(allControlPoints.length);
+            expect(withoutLast.length).toBeLessThan(allControlPoints.length);
+            expect(withoutBoth.length).toBeLessThan(withoutFirst.length);
+            expect(withoutBoth.length).toBeLessThan(withoutLast.length);
+
+            // Verify that the excluded points are actually excluded
+            expect(
+                withoutFirst.some((cp) => cp.point.x === 0 && cp.point.y === 0),
+            ).toBe(false);
+            expect(
+                withoutLast.some(
+                    (cp) => cp.point.x === 300 && cp.point.y === 100,
+                ),
+            ).toBe(false);
+        });
     });
 
     describe("Segment Control Point Integration", () => {

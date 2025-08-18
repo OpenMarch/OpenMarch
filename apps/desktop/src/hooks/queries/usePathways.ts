@@ -1,10 +1,11 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, schema } from "@/global/database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { conToastError } from "@/utilities/utils";
+import { marcherPageKeys } from "./useMarcherPages";
+import { db, schema } from "@/global/database/db";
 
-const { pathways } = schema;
+const { pathways, marcher_pages } = schema;
 
 // Define types from the existing schema
 export type DatabasePathway = typeof pathways.$inferSelect;
@@ -105,39 +106,60 @@ export const usePathway = (id: number) => {
 };
 
 // Mutation hooks
-export const useCreatePathways = () => {
+export const useCreatePathway = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (
-            newPathways: NewPathwayArgs[],
-        ): Promise<DatabasePathway[]> => {
+        mutationFn: async ({
+            newPathwayArgs,
+            marcherPageIds,
+        }: {
+            newPathwayArgs: NewPathwayArgs;
+            marcherPageIds?: number[];
+        }): Promise<DatabasePathway[]> => {
+            console.log("useCreatePathway", marcherPageIds);
             return await db.transaction(async (tx) => {
                 await incrementUndoGroup(tx);
 
                 const results = await tx
                     .insert(pathways)
-                    .values(newPathways)
+                    .values(newPathwayArgs)
                     .returning()
                     .all();
+
+                if (marcherPageIds) {
+                    await tx
+                        .update(marcher_pages)
+                        .set({
+                            path_data_id: results[0].id,
+                            path_position: 1,
+                        })
+                        .where(inArray(marcher_pages.id, marcherPageIds));
+                }
 
                 return results;
             });
         },
-        onSuccess: () => {
+        onSuccess: (_, { marcherPageIds }) => {
             // Invalidate all pathway queries
             queryClient.invalidateQueries({
                 queryKey: pathwayKeys.lists(),
             });
+            if (marcherPageIds) {
+                queryClient.invalidateQueries({
+                    queryKey: marcherPageKeys.all,
+                });
+            }
         },
-        onError: (error: Error, variables: NewPathwayArgs[]) => {
+        onError: (
+            error: Error,
+            variables: {
+                newPathwayArgs: NewPathwayArgs;
+                marcherPageIds?: number[];
+            },
+        ) => {
             // Log the error for debugging/telemetry
-            conToastError(
-                `Failed to create ${variables.length} pathway${
-                    variables.length === 1 ? "" : "s"
-                }`,
-                { error, variables },
-            );
+            conToastError(`Failed to create pathway`, { error, variables });
 
             // Re-invalidate pathway queries to ensure UI state is consistent
             // This helps recover from any optimistic updates that might have been applied
@@ -148,38 +170,34 @@ export const useCreatePathways = () => {
     });
 };
 
-export const useUpdatePathways = () => {
+export const useUpdatePathway = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
         mutationFn: async (
-            modifiedPathways: ModifiedPathwayArgs[],
+            modifiedPathway: ModifiedPathwayArgs,
         ): Promise<DatabasePathway[]> => {
             return await db.transaction(async (tx) => {
                 await incrementUndoGroup(tx);
 
                 const results: DatabasePathway[] = [];
 
-                for (const modifiedPathway of modifiedPathways) {
-                    const { id, ...updateData } = modifiedPathway;
-                    const result = await tx
-                        .update(pathways)
-                        .set(updateData)
-                        .where(eq(pathways.id, id))
-                        .returning()
-                        .get();
-                    results.push(result);
-                }
+                const { id, ...updateData } = modifiedPathway;
+                const result = await tx
+                    .update(pathways)
+                    .set(updateData)
+                    .where(eq(pathways.id, id))
+                    .returning()
+                    .get();
+                results.push(result);
 
                 return results;
             });
         },
         onSuccess: (data, variables) => {
             // Invalidate specific pathway queries
-            variables.forEach(({ id }) => {
-                queryClient.invalidateQueries({
-                    queryKey: pathwayKeys.detail(id),
-                });
+            queryClient.invalidateQueries({
+                queryKey: pathwayKeys.detail(variables.id),
             });
 
             // Invalidate list queries
@@ -190,14 +208,9 @@ export const useUpdatePathways = () => {
             // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
             // when they detect pathway changes through their own query logic
         },
-        onError: (error: Error, variables: ModifiedPathwayArgs[]) => {
+        onError: (error: Error, variables: ModifiedPathwayArgs) => {
             // Log the error for debugging/telemetry
-            conToastError(
-                `Failed to update ${variables.length} pathway${
-                    variables.length === 1 ? "" : "s"
-                }`,
-                { error, variables },
-            );
+            conToastError(`Failed to update pathway`, { error, variables });
 
             // Re-invalidate pathway queries to ensure UI state is consistent
             queryClient.invalidateQueries({

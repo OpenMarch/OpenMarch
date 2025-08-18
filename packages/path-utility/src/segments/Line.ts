@@ -87,11 +87,13 @@ export class Line implements IControllableSegment {
             {
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 1,
                 type: "end" as ControlPointType,
             },
         ];
