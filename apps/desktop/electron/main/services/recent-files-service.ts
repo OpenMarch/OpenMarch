@@ -68,14 +68,11 @@ export function addRecentFile(filePath: string, svgPreview?: string): void {
 export function getRecentFiles(): RecentFile[] {
     const recentFiles = store.get("recentFiles", []);
 
-    // apply isMissing flag as needed
-    recentFiles.forEach((recentFile) => {
-        if (!recentFile.path || !existsSync(recentFile.path)) {
-            recentFile.isMissing = true;
-        }
-    });
-
-    return recentFiles;
+    // Apply isMissing flag
+    return recentFiles.map((file) => ({
+        ...file,
+        isMissing: !file.path || !existsSync(file.path),
+    }));
 }
 
 /**

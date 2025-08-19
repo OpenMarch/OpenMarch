@@ -45,7 +45,7 @@ import {
 } from "electron/database/tables/UtilityTable";
 
 import Plugin from "../../src/global/classes/Plugin";
-import { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "electron/main/services/recent-files-service";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],

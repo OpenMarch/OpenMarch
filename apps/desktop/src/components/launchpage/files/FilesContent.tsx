@@ -7,7 +7,7 @@ import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
-import { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "electron/main/services/recent-files-service";
 
 export default function FilesTabContent() {
     const { t } = useTolgee();
