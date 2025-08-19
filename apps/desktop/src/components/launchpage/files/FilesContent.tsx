@@ -37,6 +37,8 @@ export default function FilesTabContent() {
             if (result === 200) {
                 // File opened successfully, the app will reload
                 console.log("File opened successfully");
+            } else {
+                toast.error(t("launchpage.files.failedToOpen"));
             }
         } catch (error) {
             console.error("Failed to open file:", error);
