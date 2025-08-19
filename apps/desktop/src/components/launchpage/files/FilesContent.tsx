@@ -6,12 +6,7 @@ import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 
-interface RecentFile {
-    path: string;
-    name: string;
-    lastOpened: number;
-    svgPreview?: string;
-}
+import { RecentFile } from "electron/main/services/recent-files-service";
 
 export default function FilesTabContent() {
     const { t } = useTolgee();

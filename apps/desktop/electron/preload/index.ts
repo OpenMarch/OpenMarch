@@ -45,6 +45,7 @@ import {
 } from "electron/database/tables/UtilityTable";
 
 import Plugin from "../../src/global/classes/Plugin";
+import { RecentFile } from "electron/main/services/recent-files-service";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -199,7 +200,8 @@ const APP_API = {
     },
 
     // Recent files
-    getRecentFiles: () => ipcRenderer.invoke("recent-files:get"),
+    getRecentFiles: () =>
+        ipcRenderer.invoke("recent-files:get") as Promise<RecentFile[]>,
     removeRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:remove", filePath),
     clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
@@ -527,14 +529,6 @@ const PLUGINS_API = {
 };
 
 contextBridge.exposeInMainWorld("plugins", PLUGINS_API);
-
-// Define the RecentFile interface for the type system
-export interface RecentFile {
-    path: string;
-    name: string;
-    lastOpened: number;
-    svgPreview?: string;
-}
 
 export type ElectronApi = typeof APP_API;
 export type PluginsApi = typeof PLUGINS_API;
