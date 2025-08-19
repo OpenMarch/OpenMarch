@@ -5,6 +5,7 @@ import WelcomeContent from "./WelcomeContent";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
 import { RecentFile } from "electron/main/services/recent-files-service";
 
@@ -116,6 +117,14 @@ export default function FilesTabContent() {
                                         <div className="text-h5 truncate">
                                             {file.name}
                                         </div>
+                                        {file.isMissing && (
+                                            <div className="text-red text-body flex items-center gap-4">
+                                                <WarningCircleIcon size={16} />
+                                                {t(
+                                                    "launchpage.files.movedOrMissing",
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="text-text-subtitle text-body">
                                             {new Date(
                                                 file.lastOpened,

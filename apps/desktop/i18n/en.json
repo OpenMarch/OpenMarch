@@ -456,6 +456,7 @@
             "failedToOpen": "Failed to open file",
             "failedToRemoveRecent": "Failed to remove file from recent list",
             "fieldPreview": "Field Preview",
+            "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
             "title": "Recent Files"
