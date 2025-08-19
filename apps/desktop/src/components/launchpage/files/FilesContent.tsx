@@ -95,7 +95,7 @@ export default function FilesTabContent() {
                             <div
                                 key={file.path}
                                 onClick={() => handleOpenFile(file)}
-                                className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center justify-between gap-12 border p-8 transition-colors"
+                                className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center gap-12 border p-8 transition-colors"
                             >
                                 <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
                                     {file.svgPreview ? (
@@ -118,8 +118,8 @@ export default function FilesTabContent() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex w-full items-start justify-between p-4">
-                                    <div className="flex flex-col gap-6">
+                                <div className="flex w-full flex-1 justify-between p-4">
+                                    <div className="flex flex-col justify-between gap-6">
                                         <div className="text-h5 truncate">
                                             {file.name}
                                         </div>
