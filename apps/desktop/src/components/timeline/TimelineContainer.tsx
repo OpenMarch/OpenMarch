@@ -95,8 +95,8 @@ export default function TimelineContainer() {
                         />
                     )}
 
-                    {!isFullscreen && (
-                        <div className={"flex items-center"}>
+                    <div className={"flex items-center"}>
+                        {!isFullscreen && (
                             <div className="flex w-[4rem] gap-6">
                                 <p className="text-sub">
                                     <T keyName="timeline.audio" />
@@ -121,15 +121,20 @@ export default function TimelineContainer() {
                                     </RegisteredActionButton>
                                 )}
                             </div>
-                            {uiSettings.focussedComponent === "timeline" ? (
-                                <EditableAudioPlayer />
-                            ) : (
-                                <div>
-                                    <AudioPlayer />
-                                </div>
-                            )}
-                        </div>
-                    )}
+                        )}
+
+                        {uiSettings.focussedComponent === "timeline" ? (
+                            <EditableAudioPlayer />
+                        ) : (
+                            <div
+                                style={{
+                                    display: isFullscreen ? "none" : "flex",
+                                }}
+                            >
+                                <AudioPlayer />
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

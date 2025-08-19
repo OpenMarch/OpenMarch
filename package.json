@@ -22,7 +22,7 @@
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
         "path-utility": "turbo run --filter=@openmarch/path-utility",
-        "test": "turbo run test:run",
+        "test": "turbo run test",
         "lint": "turbo run lint",
         "format": "turbo run format",
         "fix": "turbo run fix",

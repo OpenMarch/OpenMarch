@@ -1,11 +1,11 @@
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import type { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
 import { ShapePath } from "./ShapePath";
 import { ShapePoint } from "./ShapePoint";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
 import { SvgCommandEnum } from "./SvgCommand";
+import { fetchMarcherPages } from "@/hooks/queries";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -327,7 +327,7 @@ export class MarcherShape extends StaticMarcherShape {
         }
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        useMarcherPageStore.getState().fetchMarcherPages();
+        fetchMarcherPages();
     }
 
     /**
@@ -397,7 +397,7 @@ export class MarcherShape extends StaticMarcherShape {
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        useMarcherPageStore.getState().fetchMarcherPages();
+        fetchMarcherPages();
         return updateResponse;
     }
 
@@ -419,7 +419,7 @@ export class MarcherShape extends StaticMarcherShape {
             );
         this.checkForFetchShapePages();
         this.fetchShapePages();
-        useMarcherPageStore.getState().fetchMarcherPages();
+        fetchMarcherPages();
         return response;
     }
 

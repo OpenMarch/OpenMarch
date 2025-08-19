@@ -3,17 +3,17 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { Constants, TablesWithHistory } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { useMarcherPageStore } from "@/stores/MarcherPageStore";
 import Marcher from "../../global/classes/Marcher";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { useFieldProperties } from "@/context/fieldPropertiesContext";
+import { useFieldPropertiesWithSetter } from "@/hooks/queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
+import { fetchMarcherPages } from "@/hooks/queries";
 
 /**
  * A component that initializes the state of the application.
@@ -21,14 +21,13 @@ import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
  */
 function StateInitializer() {
     const { marchers, fetchMarchers } = useMarcherStore();
-    const { fetchMarcherPages } = useMarcherPageStore()!;
     const { pages, fetchTimingObjects } = useTimingObjectsStore();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
-    const { fetchFieldProperties } = useFieldProperties()!;
+    const { fetchFieldProperties } = useFieldPropertiesWithSetter();
     const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
 
     /**
@@ -49,7 +48,8 @@ function StateInitializer() {
 
     useEffect(() => {
         fetchMarcherPages();
-    }, [fetchMarcherPages, pages, marchers]);
+        // refetch marcherPages when the pages or marchers change
+    }, [pages, marchers]);
 
     useEffect(() => {
         fetchTimingObjects();
@@ -185,7 +185,6 @@ function StateInitializer() {
         getMarcher,
         getPage,
         fetchMarchers,
-        fetchMarcherPages,
         setSelectedPage,
         setSelectedMarchers,
         marchers,
@@ -218,7 +217,7 @@ function StateInitializer() {
         return () => {
             window.electron.removeFetchListener(); // Remove the event listener
         };
-    }, [fetchMarchers, fetchMarcherPages, fetchTimingObjects]);
+    }, [fetchMarchers, fetchTimingObjects]);
 
     return <></>; // Empty fragment
 }

@@ -163,12 +163,14 @@ export const midsets = sqliteTable(
     "midsets",
     {
         id: integer().primaryKey(),
-        page_id: integer()
+        /** The ID of the marcher page this midset is going to */
+        mp_id: integer()
             .notNull()
-            .references(() => pages.id, { onDelete: "cascade" }),
+            .references(() => marcher_pages.id, { onDelete: "cascade" }),
         x: real().notNull(),
         y: real().notNull(),
-        placement: real().notNull(),
+        /** The progress placement of the midset on the marcher page */
+        progress_placement: real().notNull(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
             .default("sql`(CURRENT_TIMESTAMP)`")
@@ -185,8 +187,11 @@ export const midsets = sqliteTable(
             "midsets_path_data_position_check",
             sql`path_position >= 0 AND path_position <= 1`,
         ),
-        check("placement_check", sql`placement > 0 AND placement < 1`),
-        unique().on(table.page_id, table.placement),
+        check(
+            "placement_check",
+            sql`progress_placement > 0 AND progress_placement < 1`,
+        ),
+        unique().on(table.mp_id, table.progress_placement),
     ],
 );
 

@@ -75,6 +75,5 @@ export function createMetronomeWav(
         }
     }
 
-    // Encode to WAV
     return output;
 }

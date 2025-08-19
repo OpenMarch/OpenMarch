@@ -8,7 +8,6 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
-import { FieldPropertiesProvider } from "@/context/fieldPropertiesContext";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
 import TimelineContainer from "@/components/timeline/TimelineContainer";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
@@ -25,8 +24,16 @@ import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 
-// The app
+export const queryClient = new QueryClient({
+    defaultOptions: {
+        queries: {
+            networkMode: "offlineFirst",
+        },
+    },
+});
 
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
@@ -126,31 +133,34 @@ function App() {
 
     return (
         <ErrorBoundary>
-            <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
-                {analyticsConsent === null && !isCodegen && (
-                    <AnalyticsOptInModal
-                        onChoice={(choice) => setAnalyticsConsent(choice)}
-                    />
+            <QueryClientProvider client={queryClient}>
+                {process.env.NODE_ENV !== "production" && (
+                    <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                {/* Codegen mode indicator */}
-                {isCodegen && (
-                    <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
-                        🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
-                    </div>
-                )}
-                {/* Always show LaunchPage when no file is selected, regardless of database state */}
-                {!databaseIsReady ? (
-                    <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
-                ) : (
-                    <TooltipProvider
-                        delayDuration={500}
-                        skipDelayDuration={500}
-                    >
-                        <IsPlayingProvider>
-                            <SelectedPageProvider>
-                                <SelectedMarchersProvider>
-                                    <SelectedAudioFileProvider>
-                                        <FieldPropertiesProvider>
+                <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                    {analyticsConsent === null && !isCodegen && (
+                        <AnalyticsOptInModal
+                            onChoice={(choice) => setAnalyticsConsent(choice)}
+                        />
+                    )}
+                    {/* Codegen mode indicator */}
+                    {isCodegen && (
+                        <div className="bg-yellow px-16 py-8 text-center font-bold text-black">
+                            🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
+                        </div>
+                    )}
+                    {/* Always show LaunchPage when no file is selected, regardless of database state */}
+                    {!databaseIsReady ? (
+                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                    ) : (
+                        <TooltipProvider
+                            delayDuration={500}
+                            skipDelayDuration={500}
+                        >
+                            <IsPlayingProvider>
+                                <SelectedPageProvider>
+                                    <SelectedMarchersProvider>
+                                        <SelectedAudioFileProvider>
                                             <StateInitializer />
                                             <RegisteredActionsHandler />
                                             <SvgPreviewHandler />
@@ -185,14 +195,14 @@ function App() {
                                                 {!isFullscreen && <Inspector />}
                                             </div>
                                             <Toaster />
-                                        </FieldPropertiesProvider>
-                                    </SelectedAudioFileProvider>
-                                </SelectedMarchersProvider>
-                            </SelectedPageProvider>
-                        </IsPlayingProvider>
-                    </TooltipProvider>
-                )}
-            </main>
+                                        </SelectedAudioFileProvider>
+                                    </SelectedMarchersProvider>
+                                </SelectedPageProvider>
+                            </IsPlayingProvider>
+                        </TooltipProvider>
+                    )}
+                </main>
+            </QueryClientProvider>
         </ErrorBoundary>
     );
 }

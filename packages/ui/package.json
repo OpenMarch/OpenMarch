@@ -1,7 +1,7 @@
 {
     "name": "@openmarch/ui",
     "type": "module",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "license": "AGPL-3.0",
     "module": "./dist/index.ts",
     "types": "./dist/index.ts",
@@ -25,7 +25,7 @@
     },
     "scripts": {
         "dev": "tsup --watch",
-        "build": "tsup",
+        "build": "tsup --format esm,cjs",
         "playground": "astro dev",
         "lint": "eslint . --fix",
         "format": "prettier --write .",

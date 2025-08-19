@@ -1,4 +1,4 @@
-import { type Measure, type Beat } from "../parser";
+import type { Measure, Beat } from "../utils";
 
 const EPSILON = 1e-6;
 
