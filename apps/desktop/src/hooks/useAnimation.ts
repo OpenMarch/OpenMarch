@@ -8,7 +8,6 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
-import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useMarcherPages } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -16,6 +15,11 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 import getPageCollisions, {
     CollisionData,
 } from "./collision/collisionDetection";
+
+import getPageCollisions, {
+    CollisionData,
+} from "./collision/collisionDetection";
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
