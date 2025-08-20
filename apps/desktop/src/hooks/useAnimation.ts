@@ -17,8 +17,6 @@ import getPageCollisions, {
     CollisionData,
 } from "./collision/collisionDetection";
 
-// Collision detection types
-
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
 }
