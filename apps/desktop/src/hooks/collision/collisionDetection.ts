@@ -95,7 +95,7 @@ const sweepNPruneCollision = (
             for (let j = i + 1; j < pts.length; j++) {
                 const b = pts[j];
                 const dx = b.x - a.x;
-                const collisionStr = `${a.id},${b.id}`;
+                const collisionStr = [a.id, b.id].sort().join(",");
                 if (dx > 2 * COLLISION_RADIUS) break; // beyond possible overlap in x
                 if (collisionPairs.has(collisionStr)) continue; // we have seen this pair before we only want the first instance
 
@@ -153,7 +153,7 @@ const getPageCollisions = (
             collisionsMap.set(page.id, cachedCollisions);
             pagesFromCache++;
         } else {
-            // Recalculate collisions for this page
+            // Recalculate collisions for this page AND the next page
             const collisions = sweepNPruneCollision(
                 page,
                 marchers,
@@ -165,9 +165,28 @@ const getPageCollisions = (
             collisionCacheRef.set(page.id, collisions);
             pageHashCacheRef.set(page.id, currentHash);
             pagesRecalculated++;
+
+            if (page.nextPageId) {
+                const n = pages.filter((p) => p.id === page.nextPageId);
+                const nextPage = n[0];
+                const nextHash = getPageHash(nextPage, marchers, marcherPages);
+                const nextCollisions = sweepNPruneCollision(
+                    nextPage,
+                    marchers,
+                    marcherTimelines,
+                );
+
+                collisionCacheRef.set(nextPage.id, nextCollisions);
+                pageHashCacheRef.set(nextPage.id, nextHash);
+                pagesRecalculated++;
+            }
         }
     }
 
+    const endTime = performance.now();
+    console.log(
+        `Collision calculation: ${pagesRecalculated} pages recalculated, ${pagesFromCache} pages from cache in ${(endTime - startTime).toFixed(2)}ms`,
+    );
     // Clean up cache for pages that no longer exist in case user deletes page
     const existingPageIds = new Set(pages.map((p) => p.id));
     for (const cachedPageId of collisionCacheRef.keys()) {
@@ -176,11 +195,6 @@ const getPageCollisions = (
             pageHashCacheRef.delete(cachedPageId);
         }
     }
-
-    const endTime = performance.now();
-    console.log(
-        `Collision calculation: ${pagesRecalculated} pages recalculated, ${pagesFromCache} pages from cache in ${(endTime - startTime).toFixed(2)}ms`,
-    );
 
     return collisionsMap;
 };
