@@ -123,9 +123,14 @@ const getPageCollisions = (
     marchers: Marcher[],
     marcherTimelines: Map<number, MarcherTimeline>,
     pages: Page[],
-    marcherPages: MarcherPageMap,
+    marcherPages: MarcherPageMap | undefined,
 ) => {
-    if (!marchers.length || !pages.length || marcherTimelines.size === 0) {
+    if (
+        !marchers.length ||
+        !pages.length ||
+        marcherTimelines.size === 0 ||
+        !marcherPages
+    ) {
         collisionCacheRef.clear();
         pageHashCacheRef.clear();
         return new Map<number, CollisionData[]>();

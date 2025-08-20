@@ -16,7 +16,7 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 import getPageCollisions, {
     CollisionData,
 } from "./collision/collisionDetection";
-
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -25,7 +25,7 @@ interface UseAnimationProps {
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { pages } = useTimingObjectsStore()!;
     const { marchers } = useMarcherStore()!;
-    const { setSelectedPage } = useSelectedPage()!;
+    const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
 
     // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();

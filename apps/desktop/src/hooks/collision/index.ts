@@ -1,2 +1,2 @@
-export * from "./collisionDetection";
-export * from "./spatialHashing";
+export { default } from "./collisionDetection";
+export type { CollisionData } from "./collisionDetection";
