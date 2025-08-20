@@ -16,9 +16,6 @@ import getPageCollisions, {
     CollisionData,
 } from "./collision/collisionDetection";
 
-import getPageCollisions, {
-    CollisionData,
-} from "./collision/collisionDetection";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 
 interface UseAnimationProps {
