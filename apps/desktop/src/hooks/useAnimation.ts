@@ -93,6 +93,9 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                         x: marcherPage.x,
                         y: marcherPage.y,
                         path: marcherPage.path_data || undefined,
+                        previousPathPosition:
+                            marcherPage.start_path_position || 0,
+                        nextPathPosition: marcherPage.end_path_position || 1,
                     });
 
                     // // Add midset positions at their progress placements
