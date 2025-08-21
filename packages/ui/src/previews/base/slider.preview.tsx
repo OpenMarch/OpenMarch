@@ -4,6 +4,6 @@ export const PreviewProps = {
     title: "Slider",
 };
 
-export default function Preview({ ...props }) {
+export default function Preview({ ..._props }) {
     return <Slider max={100} defaultValue={[50]} />;
 }
