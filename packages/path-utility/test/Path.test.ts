@@ -138,9 +138,9 @@ describe("Path JSON Serialization", () => {
             expect(splineData.segments[0].data.degree).toBe(3);
             expect(splineData.segments[0].data.tension).toBe(0.7);
 
-            // The SVG JSON should have multiple line segments (approximation)
-            expect(svgData.segments[0].type).toBe("line"); // First segment after M command
-            expect(svgData.segments.length).toBeGreaterThan(1); // Multiple line segments
+            // The SVG JSON should have cubic curve segments (approximation)
+            expect(svgData.segments[0].type).toBe("cubic-curve"); // First segment after M command
+            expect(svgData.segments.length).toBeGreaterThan(1); // Multiple segments
 
             // Reconstruct both paths
             const reconstructedSplinePath = Path.fromJson(splineJson);
@@ -155,10 +155,12 @@ describe("Path JSON Serialization", () => {
                 originalSplinePoints,
             );
 
-            // The SVG path should have multiple line segments
+            // The SVG path should have multiple cubic curve segments
             expect(reconstructedSvgPath.segments.length).toBeGreaterThan(1);
             expect(
-                reconstructedSvgPath.segments.every((s) => s.type === "line"),
+                reconstructedSvgPath.segments.every(
+                    (s) => s.type === "cubic-curve",
+                ),
             ).toBe(true);
         });
 
