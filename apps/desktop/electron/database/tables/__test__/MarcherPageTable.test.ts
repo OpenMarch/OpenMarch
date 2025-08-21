@@ -98,7 +98,8 @@ describe("MarcherPageTable", () => {
                 marcher_id: 1,
                 page_id: 1,
                 path_data_id: pathwayResult.id,
-                path_position: 0.5,
+                path_start_position: 0.5,
+                path_end_position: 0.8,
                 x: 50,
                 y: 50,
             };
@@ -155,7 +156,8 @@ describe("MarcherPageTable", () => {
             expect(marcherPage).toHaveProperty("created_at");
             expect(marcherPage).toHaveProperty("updated_at");
             expect(marcherPage).toHaveProperty("path_data_id");
-            expect(marcherPage).toHaveProperty("path_position");
+            expect(marcherPage).toHaveProperty("path_start_position");
+            expect(marcherPage).toHaveProperty("path_end_position");
             expect(marcherPage).toHaveProperty("notes");
             expect(marcherPage).toHaveProperty("path_data");
             expect(marcherPage).toHaveProperty("pathway_notes");
@@ -430,7 +432,8 @@ describe("MarcherPageTable", () => {
                     marcher_id: 1,
                     page_id: 1,
                     path_data_id: pathwayResults[0].id,
-                    path_position: 0.3,
+                    path_start_position: 0.3,
+                    path_end_position: 0.6,
                     x: 30,
                     y: 30,
                 },
@@ -438,7 +441,8 @@ describe("MarcherPageTable", () => {
                     marcher_id: 2,
                     page_id: 1,
                     path_data_id: pathwayResults[1].id,
-                    path_position: 0.7,
+                    path_start_position: 0.7,
+                    path_end_position: 0.9,
                     x: 70,
                     y: 70,
                 },
@@ -489,7 +493,8 @@ describe("MarcherPageTable", () => {
                 marcher_id: 1,
                 page_id: 1,
                 path_data_id: pathwayResult.id,
-                path_position: 0.5,
+                path_start_position: 0.5,
+                path_end_position: 0.8,
                 x: 50,
                 y: 50,
             };

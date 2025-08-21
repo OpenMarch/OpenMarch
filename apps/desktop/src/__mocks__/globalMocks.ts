@@ -124,7 +124,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 2,
@@ -145,7 +146,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 3,
@@ -167,7 +169,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 4,
@@ -188,7 +191,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 5,
@@ -203,7 +207,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 6,
@@ -218,7 +223,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 1,
@@ -233,7 +239,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 2,
@@ -248,7 +255,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 3,
@@ -263,7 +271,8 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
 ] as const;
 

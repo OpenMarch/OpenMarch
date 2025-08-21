@@ -40,7 +40,8 @@ export interface ModifiedMarcherPageArgs {
     y: number;
     notes?: string | null;
     path_data_id?: number | null;
-    path_position?: number | null;
+    path_start_position?: number | null;
+    path_end_position?: number | null;
 }
 
 // Query key factory
