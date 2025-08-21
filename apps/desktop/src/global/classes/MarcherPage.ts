@@ -230,7 +230,8 @@ export interface ModifiedMarcherPageArgs {
     /** The ID of the pathway data */
     path_data_id?: number | null;
     /** The position along the pathway (0-1) */
-    path_position?: number | null;
+    path_start_position?: number | null;
+    path_end_position?: number | null;
 }
 
 export const marcherPagesToPath = ({

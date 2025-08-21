@@ -295,7 +295,9 @@ export function createPages({
                             y: marcherPage.y,
                             notes: marcherPage.notes,
                             path_data_id: marcherPage.path_data_id,
-                            path_position: marcherPage.path_position,
+                            path_start_position:
+                                marcherPage.path_start_position,
+                            path_end_position: marcherPage.path_end_position,
                         });
                 } else {
                     for (const marcher of marchersResponse.data) {

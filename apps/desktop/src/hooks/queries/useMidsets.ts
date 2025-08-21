@@ -20,7 +20,8 @@ export interface Midset {
     readonly created_at: string;
     readonly updated_at: string;
     readonly path_data_id: number | null;
-    readonly path_position: number | null;
+    readonly path_start_position: number | null;
+    readonly path_end_position: number | null;
     readonly path_data: Path | null;
     readonly notes: string | null;
     readonly pathway_notes: string | null;
@@ -35,7 +36,8 @@ export interface NewMidsetArgs {
     y: number;
     progress_placement: number;
     path_data_id?: number | null;
-    path_position?: number | null;
+    path_start_position?: number | null;
+    path_end_position?: number | null;
     notes?: string | null;
 }
 
@@ -48,7 +50,8 @@ export interface ModifiedMidsetArgs {
     y?: number;
     progress_placement?: number;
     path_data_id?: number | null;
-    path_position?: number | null;
+    path_start_position?: number | null;
+    path_end_position?: number | null;
     notes?: string | null;
 }
 
