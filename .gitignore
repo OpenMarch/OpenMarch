@@ -45,6 +45,9 @@ coverage/
 /blob-report/
 /playwright/.cache/
 
+# metronome test output
+packages/metronome/
+
 # misc OS generated files
 .DS_Store
 
