@@ -37,13 +37,13 @@ export default interface MarcherPage {
      * This is the position in the pathway the marcher starts at for this coordinate.
      * If this is null, then it is assumed to be 0 (the start of the pathway).
      */
-    readonly start_path_position: number | null;
+    readonly path_start_position: number | null;
     /**
      * The position along the pathway (0-1).
      * This is the position in the pathway the marcher ends up at for this coordinate.
      * If this is null, then it is assumed to be 1 (the end of the pathway).
      */
-    readonly end_path_position: number | null;
+    readonly path_end_position: number | null;
     /**
      * The SVG path data from the pathways table.
      * This is the pathway the marcher uses to get to this marcher page.

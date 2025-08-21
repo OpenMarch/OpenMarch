@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "b995adca-2362-451b-b12a-654a07febef7",
+    "id": "d010a530-24db-4e4b-9abc-90c7e87e16db",
     "prevId": "d23e40e5-994a-4b07-aa7b-3ae1133f78a5",
     "tables": {
         "audio_files": {
@@ -346,15 +346,15 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "start_path_position": {
-                    "name": "start_path_position",
+                "path_start_position": {
+                    "name": "path_start_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
                 },
-                "end_path_position": {
-                    "name": "end_path_position",
+                "path_end_position": {
+                    "name": "path_end_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
@@ -419,7 +419,7 @@
             "checkConstraints": {
                 "marcher_pages_path_data_position_check": {
                     "name": "marcher_pages_path_data_position_check",
-                    "value": "start_path_position >= 0 AND start_path_position <= 1 AND end_path_position >= 0 AND end_path_position <= 1"
+                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
                 }
             }
         },
@@ -627,15 +627,15 @@
                     "notNull": false,
                     "autoincrement": false
                 },
-                "start_path_position": {
-                    "name": "start_path_position",
+                "path_start_position": {
+                    "name": "path_start_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
                     "autoincrement": false
                 },
-                "end_path_position": {
-                    "name": "end_path_position",
+                "path_end_position": {
+                    "name": "path_end_position",
                     "type": "real",
                     "primaryKey": false,
                     "notNull": false,
@@ -681,7 +681,7 @@
             "checkConstraints": {
                 "midsets_path_data_position_check": {
                     "name": "midsets_path_data_position_check",
-                    "value": "start_path_position >= 0 AND start_path_position <= 1 AND end_path_position >= 0 AND end_path_position <= 1"
+                    "value": "path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1"
                 },
                 "placement_check": {
                     "name": "placement_check",
@@ -1134,8 +1134,8 @@
         "schemas": {},
         "tables": {},
         "columns": {
-            "\"marcher_pages\".\"path_position\"": "\"marcher_pages\".\"end_path_position\"",
-            "\"midsets\".\"path_position\"": "\"midsets\".\"end_path_position\""
+            "\"marcher_pages\".\"path_position\"": "\"marcher_pages\".\"path_end_position\"",
+            "\"midsets\".\"path_position\"": "\"midsets\".\"path_end_position\""
         }
     },
     "internal": {
