@@ -23,7 +23,8 @@ export interface MarcherPage {
     readonly x: number;
     readonly y: number;
     readonly path_data_id: number | null;
-    readonly path_position: number | null;
+    readonly start_path_position: number | null;
+    readonly end_path_position: number | null;
     readonly path_data: Path | null;
     readonly notes: string | null;
     readonly pathway_notes: string | null;
@@ -272,7 +273,9 @@ export const useUpdateMarcherPages = () => {
                             created_at: marcher_pages.created_at,
                             updated_at: marcher_pages.updated_at,
                             path_data_id: marcher_pages.path_data_id,
-                            path_position: marcher_pages.path_position,
+                            start_path_position:
+                                marcher_pages.start_path_position,
+                            end_path_position: marcher_pages.end_path_position,
                             notes: marcher_pages.notes,
                         })
                         .get();
