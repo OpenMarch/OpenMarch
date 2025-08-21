@@ -1,14 +1,20 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { getCoordinatesAtTime } from "../Keyframes";
-
-type CoordinateDefinition = { x: number; y: number; svg?: string };
-type MarcherTimeline = {
-    pathMap: Map<number, CoordinateDefinition>;
-    sortedTimestamps: number[];
-};
+import {
+    CoordinateDefinition,
+    getCoordinatesAtTime,
+    MarcherTimeline,
+} from "../Keyframes";
+import {
+    Path,
+    Line,
+    Arc,
+    CubicCurve,
+    Spline,
+    Point,
+} from "@openmarch/path-utility";
 
 describe("getCoordinatesAtTime", () => {
-    describe("with coordinate definitions (no SVG paths)", () => {
+    describe("with coordinate definitions (no paths)", () => {
         let marcherTimeline: MarcherTimeline;
 
         beforeEach(() => {
@@ -346,14 +352,33 @@ describe("getCoordinatesAtTime", () => {
         });
     });
 
-    describe("with SVG paths", () => {
+    describe("with Path objects", () => {
         let marcherTimeline: MarcherTimeline;
 
         beforeEach(() => {
-            // Create a simple timeline with two keyframes using SVG paths
+            // Create a simple timeline with two keyframes using Path objects
             const pathMap = new Map<number, CoordinateDefinition>();
-            pathMap.set(0, { x: 0, y: 0, svg: "M 0 0 L 100 100" });
-            pathMap.set(1000, { x: 100, y: 100, svg: "M 100 100 L 200 0" });
+            const linePath1 = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
+            ]);
+            const linePath2 = new Path([
+                new Line({ x: 100, y: 100 }, { x: 200, y: 0 }),
+            ]);
+
+            pathMap.set(0, {
+                x: 0,
+                y: 0,
+                path: linePath1,
+                previousPathPosition: 0,
+                nextPathPosition: 1,
+            });
+            pathMap.set(1000, {
+                x: 100,
+                y: 100,
+                path: linePath2,
+                previousPathPosition: 0,
+                nextPathPosition: 1,
+            });
 
             marcherTimeline = {
                 pathMap,
@@ -361,22 +386,36 @@ describe("getCoordinatesAtTime", () => {
             };
         });
 
-        describe("SVG path structure validation", () => {
-            it("should have SVG path property in coordinate definitions", () => {
+        describe("Path object structure validation", () => {
+            it("should have Path object property in coordinate definitions", () => {
                 const coordinate = marcherTimeline.pathMap.get(0);
                 expect(coordinate).toBeDefined();
-                expect(coordinate?.svg).toBeDefined();
-                expect(coordinate?.svg).toBe("M 0 0 L 100 100");
+                expect(coordinate?.path).toBeDefined();
+                expect(coordinate?.path).toBeInstanceOf(Path);
             });
 
-            it("should handle coordinates with and without SVG paths", () => {
+            it("should handle coordinates with and without Path objects", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "M 0 0 L 50 50" });
-                pathMap.set(500, { x: 50, y: 50 }); // No SVG path
+                const linePath = new Path([
+                    new Line({ x: 0, y: 0 }, { x: 50, y: 50 }),
+                ]);
+
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: linePath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(500, { x: 50, y: 50 }); // No Path object
                 pathMap.set(1000, {
                     x: 100,
                     y: 100,
-                    svg: "M 100 100 L 150 150",
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 150, y: 150 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -385,40 +424,33 @@ describe("getCoordinatesAtTime", () => {
                 };
 
                 // Verify structure
-                expect(timeline.pathMap.get(0)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(500)?.svg).toBeUndefined();
-                expect(timeline.pathMap.get(1000)?.svg).toBeDefined();
+                expect(timeline.pathMap.get(0)?.path).toBeDefined();
+                expect(timeline.pathMap.get(500)?.path).toBeUndefined();
+                expect(timeline.pathMap.get(1000)?.path).toBeDefined();
             });
 
-            it("should handle complex SVG path strings", () => {
-                const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "M 0 0 Q 50 0 100 100" });
-                pathMap.set(1000, {
-                    x: 100,
-                    y: 100,
-                    svg: "M 100 100 Q 150 100 200 0",
-                });
+            it("should handle complex Path objects with multiple segments", () => {
+                const complexPath = new Path([
+                    new Line({ x: 0, y: 0 }, { x: 50, y: 0 }),
+                    new Arc({ x: 50, y: 0 }, 25, 25, 0, 0, 1, { x: 100, y: 0 }),
+                ]);
 
-                const timeline: MarcherTimeline = {
-                    pathMap,
-                    sortedTimestamps: [0, 1000],
-                };
-
-                expect(timeline.pathMap.get(0)?.svg).toContain("Q");
-                expect(timeline.pathMap.get(1000)?.svg).toContain("Q");
-            });
-
-            it("should handle SVG paths with arcs", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
                 pathMap.set(0, {
                     x: 0,
                     y: 0,
-                    svg: "M 0 0 A 50 50 0 0 1 100 0",
+                    path: complexPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
                 pathMap.set(1000, {
                     x: 100,
                     y: 0,
-                    svg: "M 100 0 A 50 50 0 0 1 200 0",
+                    path: new Path([
+                        new Line({ x: 100, y: 0 }, { x: 150, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -426,21 +458,37 @@ describe("getCoordinatesAtTime", () => {
                     sortedTimestamps: [0, 1000],
                 };
 
-                expect(timeline.pathMap.get(0)?.svg).toContain("A");
-                expect(timeline.pathMap.get(1000)?.svg).toContain("A");
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(0)?.path?.segments).toHaveLength(2);
+                expect(timeline.pathMap.get(1000)?.path).toBeInstanceOf(Path);
             });
 
-            it("should handle SVG paths with curves", () => {
+            it("should handle Path objects with curves", () => {
+                const curvePath = new Path([
+                    new CubicCurve(
+                        { x: 0, y: 0 },
+                        { x: 25, y: 0 },
+                        { x: 75, y: 0 },
+                        { x: 100, y: 100 },
+                    ),
+                ]);
+
                 const pathMap = new Map<number, CoordinateDefinition>();
                 pathMap.set(0, {
                     x: 0,
                     y: 0,
-                    svg: "M 0 0 C 25 0 75 0 100 100",
+                    path: curvePath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
                 pathMap.set(1000, {
                     x: 100,
                     y: 100,
-                    svg: "M 100 100 C 125 100 175 100 200 0",
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 200, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -448,28 +496,90 @@ describe("getCoordinatesAtTime", () => {
                     sortedTimestamps: [0, 1000],
                 };
 
-                expect(timeline.pathMap.get(0)?.svg).toContain("C");
-                expect(timeline.pathMap.get(1000)?.svg).toContain("C");
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[0],
+                ).toBeInstanceOf(CubicCurve);
+                expect(
+                    timeline.pathMap.get(1000)?.path?.segments[0],
+                ).toBeInstanceOf(Line);
+            });
+
+            it("should handle Path objects with splines", () => {
+                const splinePath = new Path([
+                    new Spline([
+                        { x: 0, y: 0 },
+                        { x: 50, y: 50 },
+                        { x: 100, y: 100 },
+                    ]),
+                ]);
+
+                const pathMap = new Map<number, CoordinateDefinition>();
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: splinePath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 100,
+                    y: 100,
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 200, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+
+                const timeline: MarcherTimeline = {
+                    pathMap,
+                    sortedTimestamps: [0, 1000],
+                };
+
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[0],
+                ).toBeInstanceOf(Spline);
+                expect(
+                    timeline.pathMap.get(1000)?.path?.segments[0],
+                ).toBeInstanceOf(Line);
             });
         });
 
-        describe("SVG path coordinate validation", () => {
-            it("should maintain coordinate values alongside SVG paths", () => {
+        describe("Path coordinate validation", () => {
+            it("should maintain coordinate values alongside Path objects", () => {
                 const coordinate = marcherTimeline.pathMap.get(0);
                 expect(coordinate?.x).toBe(0);
                 expect(coordinate?.y).toBe(0);
-                expect(coordinate?.svg).toBe("M 0 0 L 100 100");
+                expect(coordinate?.path).toBeInstanceOf(Path);
 
                 const coordinate2 = marcherTimeline.pathMap.get(1000);
                 expect(coordinate2?.x).toBe(100);
                 expect(coordinate2?.y).toBe(100);
-                expect(coordinate2?.svg).toBe("M 100 100 L 200 0");
+                expect(coordinate2?.path).toBeInstanceOf(Path);
             });
 
-            it("should handle negative coordinates with SVG paths", () => {
+            it("should handle negative coordinates with Path objects", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: -50, y: -50, svg: "M -50 -50 L 50 50" });
-                pathMap.set(1000, { x: 50, y: 50, svg: "M 50 50 L 150 150" });
+                const negativePath = new Path([
+                    new Line({ x: -50, y: -50 }, { x: 50, y: 50 }),
+                ]);
+
+                pathMap.set(0, {
+                    x: -50,
+                    y: -50,
+                    path: negativePath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 50,
+                    y: 50,
+                    path: new Path([
+                        new Line({ x: 50, y: 50 }, { x: 150, y: 150 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
 
                 const timeline: MarcherTimeline = {
                     pathMap,
@@ -482,17 +592,27 @@ describe("getCoordinatesAtTime", () => {
                 expect(timeline.pathMap.get(1000)?.y).toBe(50);
             });
 
-            it("should handle decimal coordinates with SVG paths", () => {
+            it("should handle decimal coordinates with Path objects", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
+                const decimalPath = new Path([
+                    new Line({ x: 0.5, y: 1.25 }, { x: 10.75, y: 20.5 }),
+                ]);
+
                 pathMap.set(0, {
                     x: 0.5,
                     y: 1.25,
-                    svg: "M 0.5 1.25 L 10.75 20.5",
+                    path: decimalPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
                 pathMap.set(1000, {
                     x: 10.75,
                     y: 20.5,
-                    svg: "M 10.75 20.5 L 21 39.75",
+                    path: new Path([
+                        new Line({ x: 10.75, y: 20.5 }, { x: 21, y: 39.75 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -507,26 +627,66 @@ describe("getCoordinatesAtTime", () => {
             });
         });
 
-        describe("SVG path timeline structure", () => {
-            it("should handle multiple SVG keyframes", () => {
+        describe("Path timeline structure", () => {
+            it("should handle multiple Path keyframes", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "M 0 0 L 100 0" });
-                pathMap.set(250, { x: 100, y: 0, svg: "M 100 0 L 100 100" });
-                pathMap.set(500, { x: 100, y: 100, svg: "M 100 100 L 0 100" });
-                pathMap.set(750, { x: 0, y: 100, svg: "M 0 100 L 0 0" });
-                pathMap.set(1000, { x: 0, y: 0, svg: "M 0 0 L 100 0" });
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: new Path([
+                        new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(250, {
+                    x: 100,
+                    y: 0,
+                    path: new Path([
+                        new Line({ x: 100, y: 0 }, { x: 100, y: 100 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(500, {
+                    x: 100,
+                    y: 100,
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 0, y: 100 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(750, {
+                    x: 0,
+                    y: 100,
+                    path: new Path([
+                        new Line({ x: 0, y: 100 }, { x: 0, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 0,
+                    y: 0,
+                    path: new Path([
+                        new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
 
                 const timeline: MarcherTimeline = {
                     pathMap,
                     sortedTimestamps: [0, 250, 500, 750, 1000],
                 };
 
-                // Verify all keyframes have SVG paths
-                expect(timeline.pathMap.get(0)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(250)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(500)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(750)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(1000)?.svg).toBeDefined();
+                // Verify all keyframes have Path objects
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(250)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(500)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(750)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(1000)?.path).toBeInstanceOf(Path);
 
                 // Verify timestamps are sorted
                 expect(timeline.sortedTimestamps).toEqual([
@@ -536,12 +696,24 @@ describe("getCoordinatesAtTime", () => {
 
             it("should handle mixed coordinate types in timeline", () => {
                 const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "M 0 0 L 50 50" });
-                pathMap.set(500, { x: 50, y: 50 }); // No SVG path
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: new Path([
+                        new Line({ x: 0, y: 0 }, { x: 50, y: 50 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(500, { x: 50, y: 50 }); // No Path object
                 pathMap.set(1000, {
                     x: 100,
                     y: 100,
-                    svg: "M 100 100 L 150 150",
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 150, y: 150 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -550,86 +722,29 @@ describe("getCoordinatesAtTime", () => {
                 };
 
                 // Verify mixed structure
-                expect(timeline.pathMap.get(0)?.svg).toBeDefined();
-                expect(timeline.pathMap.get(500)?.svg).toBeUndefined();
-                expect(timeline.pathMap.get(1000)?.svg).toBeDefined();
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(500)?.path).toBeUndefined();
+                expect(timeline.pathMap.get(1000)?.path).toBeInstanceOf(Path);
             });
 
-            it("should handle empty SVG paths", () => {
-                const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "" });
-                pathMap.set(1000, {
-                    x: 100,
-                    y: 100,
-                    svg: "M 100 100 L 200 200",
-                });
-
-                const timeline: MarcherTimeline = {
-                    pathMap,
-                    sortedTimestamps: [0, 1000],
-                };
-
-                expect(timeline.pathMap.get(0)?.svg).toBe("");
-                expect(timeline.pathMap.get(1000)?.svg).toBe(
-                    "M 100 100 L 200 200",
-                );
-            });
-        });
-
-        describe("SVG path error scenarios", () => {
-            it("should handle invalid SVG path strings", () => {
-                const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: "invalid svg path" });
-                pathMap.set(1000, {
-                    x: 100,
-                    y: 100,
-                    svg: "M 100 100 L 200 200",
-                });
-
-                const timeline: MarcherTimeline = {
-                    pathMap,
-                    sortedTimestamps: [0, 1000],
-                };
-
-                // Verify the structure is maintained even with invalid paths
-                expect(timeline.pathMap.get(0)?.svg).toBe("invalid svg path");
-                expect(timeline.pathMap.get(1000)?.svg).toBe(
-                    "M 100 100 L 200 200",
-                );
-            });
-
-            it("should handle very long SVG path strings", () => {
-                const longPath = "M 0 0 " + "L 10 10 ".repeat(200);
-                const pathMap = new Map<number, CoordinateDefinition>();
-                pathMap.set(0, { x: 0, y: 0, svg: longPath });
-                pathMap.set(1000, {
-                    x: 100,
-                    y: 100,
-                    svg: "M 100 100 L 200 200",
-                });
-
-                const timeline: MarcherTimeline = {
-                    pathMap,
-                    sortedTimestamps: [0, 1000],
-                };
-
-                expect(timeline.pathMap.get(0)?.svg).toBe(longPath);
-                expect(timeline.pathMap.get(0)?.svg?.length).toBeGreaterThan(
-                    1000,
-                );
-            });
-
-            it("should handle SVG paths with special characters", () => {
+            it("should handle empty Path objects", () => {
+                const emptyPath = new Path([]);
                 const pathMap = new Map<number, CoordinateDefinition>();
                 pathMap.set(0, {
                     x: 0,
                     y: 0,
-                    svg: "M 0 0 L 100 100 # comment",
+                    path: emptyPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
                 pathMap.set(1000, {
                     x: 100,
                     y: 100,
-                    svg: "M 100 100 L 200 200 /* another comment */",
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
                 });
 
                 const timeline: MarcherTimeline = {
@@ -637,8 +752,141 @@ describe("getCoordinatesAtTime", () => {
                     sortedTimestamps: [0, 1000],
                 };
 
-                expect(timeline.pathMap.get(0)?.svg).toContain("#");
-                expect(timeline.pathMap.get(1000)?.svg).toContain("/*");
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(0)?.path?.segments).toHaveLength(0);
+                expect(timeline.pathMap.get(1000)?.path).toBeInstanceOf(Path);
+            });
+        });
+
+        describe("Path error scenarios", () => {
+            it("should handle Path objects with invalid segments", () => {
+                const pathMap = new Map<number, CoordinateDefinition>();
+                // Create a Path with potentially problematic segments
+                const invalidPath = new Path([
+                    new Line({ x: 0, y: 0 }, { x: 0, y: 0 }), // Zero-length line
+                ]);
+
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: invalidPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 100,
+                    y: 100,
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+
+                const timeline: MarcherTimeline = {
+                    pathMap,
+                    sortedTimestamps: [0, 1000],
+                };
+
+                // Verify the structure is maintained even with potentially problematic paths
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(1000)?.path).toBeInstanceOf(Path);
+            });
+
+            it("should handle Path objects with many segments", () => {
+                const segments = [];
+                for (let i = 0; i < 100; i++) {
+                    segments.push(
+                        new Line(
+                            { x: i * 10, y: i * 10 },
+                            { x: (i + 1) * 10, y: (i + 1) * 10 },
+                        ),
+                    );
+                }
+                const longPath = new Path(segments);
+
+                const pathMap = new Map<number, CoordinateDefinition>();
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: longPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 100,
+                    y: 100,
+                    path: new Path([
+                        new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+
+                const timeline: MarcherTimeline = {
+                    pathMap,
+                    sortedTimestamps: [0, 1000],
+                };
+
+                expect(timeline.pathMap.get(0)?.path).toBeInstanceOf(Path);
+                expect(timeline.pathMap.get(0)?.path?.segments).toHaveLength(
+                    100,
+                );
+            });
+
+            it("should handle Path objects with complex segment types", () => {
+                const complexPath = new Path([
+                    new Line({ x: 0, y: 0 }, { x: 50, y: 0 }),
+                    new Arc({ x: 50, y: 0 }, 25, 25, 0, 0, 1, { x: 100, y: 0 }),
+                    new CubicCurve(
+                        { x: 100, y: 0 },
+                        { x: 125, y: 0 },
+                        { x: 175, y: 0 },
+                        { x: 200, y: 100 },
+                    ),
+                    new Spline([
+                        { x: 200, y: 100 },
+                        { x: 250, y: 50 },
+                        { x: 300, y: 150 },
+                    ]),
+                ]);
+
+                const pathMap = new Map<number, CoordinateDefinition>();
+                pathMap.set(0, {
+                    x: 0,
+                    y: 0,
+                    path: complexPath,
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+                pathMap.set(1000, {
+                    x: 300,
+                    y: 150,
+                    path: new Path([
+                        new Line({ x: 300, y: 150 }, { x: 400, y: 0 }),
+                    ]),
+                    previousPathPosition: 0,
+                    nextPathPosition: 1,
+                });
+
+                const timeline: MarcherTimeline = {
+                    pathMap,
+                    sortedTimestamps: [0, 1000],
+                };
+
+                expect(timeline.pathMap.get(0)?.path?.segments).toHaveLength(4);
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[0],
+                ).toBeInstanceOf(Line);
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[1],
+                ).toBeInstanceOf(Arc);
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[2],
+                ).toBeInstanceOf(CubicCurve);
+                expect(
+                    timeline.pathMap.get(0)?.path?.segments[3],
+                ).toBeInstanceOf(Spline);
             });
         });
     });

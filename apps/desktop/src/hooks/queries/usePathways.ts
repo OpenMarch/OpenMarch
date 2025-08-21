@@ -132,7 +132,8 @@ export const useCreatePathway = () => {
                         .update(marcher_pages)
                         .set({
                             path_data_id: results[0].id,
-                            path_position: 1,
+                            path_start_position: 0,
+                            path_end_position: 0,
                         })
                         .where(inArray(marcher_pages.id, marcherPageIds));
                 }

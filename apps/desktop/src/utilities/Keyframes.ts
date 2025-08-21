@@ -5,8 +5,8 @@ export type CoordinateDefinition = {
     x: number;
     y: number;
     path?: IPath;
-    previousPathPosition: number;
-    nextPathPosition: number;
+    previousPathPosition?: number;
+    nextPathPosition?: number;
 };
 
 /**
@@ -75,10 +75,13 @@ export const getCoordinatesAtTime = (
             pathLength = nextPath.getTotalLength();
             PathLengthCache.set(nextPath, pathLength);
         }
+
+        const previousPathPositionToUse = previousPathPosition ?? 0;
+        const destinationPathPositionToUse = destinationPathPosition ?? 1;
         const currentPathPosition =
-            (destinationPathPosition - previousPathPosition) *
+            (destinationPathPositionToUse - previousPathPositionToUse) *
                 keyframeProgress +
-            previousPathPosition;
+            previousPathPositionToUse;
 
         if (pathLength === undefined) {
             throw new Error("Could not calculate path length");
