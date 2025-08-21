@@ -11,11 +11,6 @@ import { FieldTheme, rgbaToString } from "@openmarch/core";
 import { MarcherPage } from "@/hooks/queries/useMarcherPages";
 import { marcherPagesToPath } from "../MarcherPage";
 import { db } from "@/global/database/db";
-import { incrementUndoGroup } from "../History";
-import {
-    NewSectionAppearanceArgs,
-    SectionAppearance,
-} from "../SectionAppearance";
 
 export default class EditablePath {
     private _marcherPage?: MarcherPage;
@@ -56,86 +51,62 @@ export default class EditablePath {
 
         this._fabricControlPoints = this._getFabricControlPoints();
     }
-    static createPathway = (pathObj: Path, marcherPageId: number): unknown => {
-        db.transaction(async (tx) => {
+
+    private async _triggerPathUpdate() {
+        if (!this._nextMarcherPage) {
+            return;
+        }
+        this.updatePath();
+        // This MUST be remembered before creating the promise, otherwise, the path will be the old object
+        const newPathObj = this.pathObj;
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        if (
+            this._nextMarcherPage.path_data &&
+            this._nextMarcherPage.path_data_id
+        ) {
+            EditablePath.updatePathway(
+                this._nextMarcherPage.path_data_id,
+                newPathObj,
+            );
+        } else {
+            EditablePath.createPathway(newPathObj, this._nextMarcherPage.id);
+        }
+    }
+
+    static createPathway = (
+        _pathObj: Path,
+        _marcherPageId: number,
+    ): unknown => {
+        db.transaction(async (_tx) => {
             console.log("asdf");
         });
         console.warn("createPathway unimplemented");
         return undefined;
     };
-    static updatePathway = (pathId: number, pathObj: Path): unknown => {
+
+    static updatePathway = (_pathId: number, _pathObj: Path): unknown => {
         console.warn("updatePathway unimplemented");
         return undefined;
     };
-
-    static async createSectionAppearances(
-        newAppearances: NewSectionAppearanceArgs[],
-    ): Promise<SectionAppearance[]> {
-        console.log("asdfCreateSectionAppearances");
-        await new Promise((resolve) => setTimeout(resolve, 10));
-        return await db.transaction(async (tx) => {
-            console.log("createSectionAppearances");
-            await incrementUndoGroup(tx);
-
-            // const results = await tx
-            //     .insert(section_appearances)
-            //     .values(newAppearances.map(createDatabaseSectionAppearance))
-            //     .returning()
-            //     .all();
-
-            // return results.map((row) => new SectionAppearance(row));
-            return [];
-        });
-    }
 
     private _getFabricControlPoints() {
         return this.controlPoints.map(
             (cp) =>
                 new FabricControlPoint(
                     cp,
-                    (e, newPoint: Point) => {
+                    (_e, newPoint: Point) => {
                         this._controlPointManager.moveControlPoint(
                             cp.id,
                             newPoint,
                         );
                     },
-                    (e, newPoint: Point) => {
-                        // Add a small delay to ensure any previous transactions are complete
-                        // This is needed to trigger database transactions from fabric callbacks
-                        new Promise((resolve) => setTimeout(resolve, 10)).then(
-                            () => {
-                                if (!this._nextMarcherPage) {
-                                    return;
-                                }
-                                if (
-                                    this._nextMarcherPage.path_data &&
-                                    this._nextMarcherPage.path_data_id
-                                ) {
-                                    EditablePath.updatePathway(
-                                        this._nextMarcherPage.path_data_id,
-                                        this._pathObj,
-                                    );
-                                } else {
-                                    EditablePath.createPathway(
-                                        this._pathObj,
-                                        this._nextMarcherPage.id,
-                                    );
-                                }
-                            },
-                        );
+                    (_e, _newPoint: Point) => {
+                        this._triggerPathUpdate();
                     },
                     this._fieldTheme,
                 ),
         );
     }
-
-    // updateMouseUpCallback(
-    //     onMouseUp: (e: fabric.IEvent<MouseEvent>, point: Point) => void,
-    // ) {
-    //     this._fabricControlPoints.forEach((cp) =>
-    //         cp.updateMouseUpCallback(onMouseUp),
-    //     );
-    // }
 
     private _resetControlPointManager() {
         this._controlPointManager = new ControlPointManager(this.pathObj);
@@ -169,7 +140,7 @@ export default class EditablePath {
      * Set the path object and update the fabric object.
      */
     set pathObj(pathObj: Path) {
-        this.pathObj = pathObj;
+        this._pathObj = pathObj;
 
         this._resetControlPointManager();
         this.updatePath();
