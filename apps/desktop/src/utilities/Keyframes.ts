@@ -5,6 +5,8 @@ export type CoordinateDefinition = {
     x: number;
     y: number;
     path?: IPath;
+    previousPathPosition: number;
+    nextPathPosition: number;
 };
 
 /**
@@ -63,21 +65,27 @@ export const getCoordinatesAtTime = (
         );
 
     let interpolatedCoordinate: Coordinate;
-    if (previousCoordinate.path) {
-        const previousPath = previousCoordinate.path;
+    if (nextCoordinate.path) {
+        const nextPath = nextCoordinate.path;
+        const destinationPathPosition = nextCoordinate.nextPathPosition;
+        const previousPathPosition = previousCoordinate.previousPathPosition;
 
-        let pathLength = PathLengthCache.get(previousPath);
+        let pathLength = PathLengthCache.get(nextPath);
         if (pathLength === undefined) {
-            pathLength = previousPath.getTotalLength();
-            PathLengthCache.set(previousPath, pathLength);
+            pathLength = nextPath.getTotalLength();
+            PathLengthCache.set(nextPath, pathLength);
         }
+        const currentPathPosition =
+            (destinationPathPosition - previousPathPosition) *
+                keyframeProgress +
+            previousPathPosition;
 
         if (pathLength === undefined) {
             throw new Error("Could not calculate path length");
         }
 
-        const interpolatedSvgLength = pathLength * keyframeProgress;
-        const point = previousPath.getPointAtLength(interpolatedSvgLength);
+        const interpolatedSvgLength = pathLength * currentPathPosition;
+        const point = nextPath.getPointAtLength(interpolatedSvgLength);
         interpolatedCoordinate = { x: point.x, y: point.y };
     } else {
         interpolatedCoordinate = {

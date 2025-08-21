@@ -145,13 +145,14 @@ export const marcher_pages = sqliteTable(
         path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
-        path_position: real(),
+        start_path_position: real(),
+        end_path_position: real(),
         notes: text(),
     },
     (table) => [
         check(
             "marcher_pages_path_data_position_check",
-            sql`path_position >= 0 AND path_position <= 1`,
+            sql`start_path_position >= 0 AND start_path_position <= 1 AND end_path_position >= 0 AND end_path_position <= 1`,
         ),
         index("index_marcher_pages_on_page_id").on(table.page_id),
         index("index_marcher_pages_on_marcher_id").on(table.marcher_id),
@@ -179,13 +180,14 @@ export const midsets = sqliteTable(
         path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
-        path_position: real(),
+        start_path_position: real(),
+        end_path_position: real(),
         notes: text(),
     },
     (table) => [
         check(
             "midsets_path_data_position_check",
-            sql`path_position >= 0 AND path_position <= 1`,
+            sql`start_path_position >= 0 AND start_path_position <= 1 AND end_path_position >= 0 AND end_path_position <= 1`,
         ),
         check(
             "placement_check",
