@@ -35,7 +35,11 @@ const fieldPropertiesMutations = {
 export const useFieldProperties = () => {
     return useQuery({
         queryKey: fieldPropertiesKeys.detail(),
-        queryFn: fieldPropertiesQueries.get,
+        queryFn: async () => {
+            const fieldProperties = await fieldPropertiesQueries.get();
+            ReadableCoords.setFieldProperties(fieldProperties);
+            return fieldProperties;
+        },
     });
 };
 
