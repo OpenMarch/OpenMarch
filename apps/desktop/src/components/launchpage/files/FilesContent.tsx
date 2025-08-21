@@ -5,13 +5,9 @@ import WelcomeContent from "./WelcomeContent";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
+import { WarningCircleIcon } from "@phosphor-icons/react";
 
-interface RecentFile {
-    path: string;
-    name: string;
-    lastOpened: number;
-    svgPreview?: string;
-}
+import type { RecentFile } from "electron/main/services/recent-files-service";
 
 export default function FilesTabContent() {
     const { t } = useTolgee();
@@ -36,12 +32,20 @@ export default function FilesTabContent() {
         }
     };
 
-    const handleOpenFile = async (filePath: string) => {
+    const handleOpenFile = async (file: RecentFile) => {
         try {
-            const result = await window.electron.openRecentFile(filePath);
+            const result = await window.electron.openRecentFile(file.path);
             if (result === 200) {
                 // File opened successfully, the app will reload
                 console.log("File opened successfully");
+            } else {
+                toast.error(t("launchpage.files.failedToOpen"));
+
+                // Edge case that file moved/deleted after recent file fetch
+                if (!file.isMissing) {
+                    // refresh the recent files list, which should confirm file is missing
+                    await loadRecentFiles();
+                }
             }
         } catch (error) {
             console.error("Failed to open file:", error);
@@ -90,8 +94,8 @@ export default function FilesTabContent() {
                         {recentFiles.map((file) => (
                             <div
                                 key={file.path}
-                                onClick={() => handleOpenFile(file.path)}
-                                className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center justify-between gap-12 border p-8 transition-colors"
+                                onClick={() => handleOpenFile(file)}
+                                className="bg-fg-1 border-stroke rounded-16 hover:border-accent flex cursor-pointer flex-col items-center gap-12 border p-8 transition-colors"
                             >
                                 <div className="bg-fg-2 border-stroke rounded-6 flex aspect-video h-auto w-full items-center justify-center border">
                                     {file.svgPreview ? (
@@ -114,11 +118,19 @@ export default function FilesTabContent() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex w-full items-start justify-between p-4">
-                                    <div className="flex flex-col gap-6">
+                                <div className="flex w-full flex-1 justify-between p-4">
+                                    <div className="flex flex-col justify-between gap-6">
                                         <div className="text-h5 truncate">
                                             {file.name}
                                         </div>
+                                        {file.isMissing && (
+                                            <div className="text-red text-body flex items-center gap-4">
+                                                <WarningCircleIcon size={16} />
+                                                {t(
+                                                    "launchpage.files.movedOrMissing",
+                                                )}
+                                            </div>
+                                        )}
                                         <div className="text-text-subtitle text-body">
                                             {new Date(
                                                 file.lastOpened,

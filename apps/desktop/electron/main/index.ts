@@ -228,11 +228,11 @@ app.whenReady().then(async () => {
     );
 
     // Recent files handlers
-    ipcMain.handle("recent-files:get", async () => getRecentFiles());
-    ipcMain.handle("recent-files:remove", async (_, filePath) =>
+    ipcMain.handle("recent-files:get", getRecentFiles);
+    ipcMain.handle("recent-files:remove", (_, filePath) =>
         removeRecentFile(filePath),
     );
-    ipcMain.handle("recent-files:clear", async () => clearRecentFiles());
+    ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
         if (!filePath || !fs.existsSync(filePath)) return -1;
 

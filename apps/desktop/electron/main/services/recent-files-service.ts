@@ -1,5 +1,6 @@
 import Store from "electron-store";
 import * as path from "path";
+import { existsSync } from "fs";
 
 // Define types
 export interface RecentFile {
@@ -7,6 +8,7 @@ export interface RecentFile {
     name: string;
     lastOpened: number; // timestamp
     svgPreview?: string; // SVG preview of the first page
+    isMissing?: boolean; // Whether the file is missing
 }
 
 // Create a typed store
@@ -64,7 +66,13 @@ export function addRecentFile(filePath: string, svgPreview?: string): void {
  * @returns Array of recent files sorted by most recently opened
  */
 export function getRecentFiles(): RecentFile[] {
-    return store.get("recentFiles", []);
+    const recentFiles = store.get("recentFiles", []);
+
+    // Apply isMissing flag
+    return recentFiles.map((file) => ({
+        ...file,
+        isMissing: !file.path || !existsSync(file.path),
+    }));
 }
 
 /**
