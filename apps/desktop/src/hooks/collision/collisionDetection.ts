@@ -7,7 +7,7 @@ import { getCoordinatesAtTime, MarcherTimeline } from "@/utilities/Keyframes";
 const COLLISION_RADIUS = 10; // can probably be changed on the marcher level later on
 const COLLISION_CHECK_INTERVAL = 100; //check every 100ms
 const collisionCacheRef = new Map<number, CollisionData[]>();
-const pageHashCacheRef = new Map<number, string>();
+const pageHashCacheRef = new Map<number, number>();
 
 export interface CollisionData {
     marcher1Id: number;
@@ -28,23 +28,30 @@ const getPageHash = (
         return marcherPagesForMarcher.some((mp) => mp.page_id === page.id);
     });
 
-    // create marcher has
-    const marchersHash = pageMarchers
-        .map((m) => {
-            const marcherPageData = getByMarcherId(marcherPages, m.id).find(
-                (mp) => mp.page_id === page.id,
-            );
-            return `${m.id}-${m.drill_number}-${marcherPageData?.x}-${marcherPageData?.y}-${marcherPageData?.path_data}`;
-        })
-        .sort()
-        .join(",");
+    // Sum all x values for marchers on this page
+    const xSum = pageMarchers.reduce((sum, m) => {
+        const marcherPageData = getByMarcherId(marcherPages, m.id).find(
+            (mp) => mp.page_id === page.id,
+        );
+        return sum + (marcherPageData?.x || 0);
+    }, 0);
 
-    return `${page.id}-${page.timestamp}-${page.duration}-${marchersHash}-${COLLISION_RADIUS}`;
+    // Fit the x sum into 16 bits using modulo to ensure it fits
+    const xSumBits = Math.abs(Math.floor(xSum)) & 0xffff; // 16 bits
+
+    // 32-bit hash structure: [8 bits pageId][8 bits timestamp][16 bits xSum]
+    const pageIdBits = (page.id & 0xff) << 24;
+    const timestampBits = (Math.floor(page.timestamp) & 0xff) << 16;
+    const xSumFits = xSumBits & 0xffff; // Ensure it fits in 16 bits
+
+    const finalHash = pageIdBits | timestampBits | xSumFits;
+
+    // Convert to unsigned 32-bit integer
+    return finalHash >>> 0;
 };
 
 const sweepNPruneCollision = (
     page: Page,
-    marchers: Marcher[],
     marcherTimelines: Map<number, MarcherTimeline>,
 ) => {
     const collisionPairs = new Set<string>();
@@ -64,19 +71,19 @@ const sweepNPruneCollision = (
             y: number;
         }> = [];
 
-        for (const marcher of marchers) {
-            const timeline = marcherTimelines.get(marcher.id);
+        for (const [marcherId, timeline] of marcherTimelines.entries()) {
             if (!timeline) continue;
 
             try {
                 const position = getCoordinatesAtTime(time, timeline);
                 marcherPositionsAtTime.push({
-                    id: marcher.id,
+                    id: marcherId,
                     x: position.x,
                     y: position.y,
                 });
             } catch (e) {
                 // Skip if marcher doesn't have position at this time
+                console.warn(`Marcher ${marcherId} has no position at ${time}`);
                 continue;
             }
         }
@@ -136,10 +143,6 @@ const getPageCollisions = (
         return new Map<number, CollisionData[]>();
     }
 
-    const startTime = performance.now();
-    let pagesRecalculated = 0;
-    let pagesFromCache = 0;
-
     const collisionsMap = new Map<number, CollisionData[]>();
 
     for (const page of pages) {
@@ -151,20 +154,14 @@ const getPageCollisions = (
             // Use cached collision data
             const cachedCollisions = collisionCacheRef.get(page.id)!;
             collisionsMap.set(page.id, cachedCollisions);
-            pagesFromCache++;
         } else {
             // Recalculate collisions for this page AND the next page
-            const collisions = sweepNPruneCollision(
-                page,
-                marchers,
-                marcherTimelines,
-            );
+            const collisions = sweepNPruneCollision(page, marcherTimelines);
             collisionsMap.set(page.id, collisions);
 
             // Update cache
             collisionCacheRef.set(page.id, collisions);
             pageHashCacheRef.set(page.id, currentHash);
-            pagesRecalculated++;
 
             if (page.nextPageId) {
                 const n = pages.filter((p) => p.id === page.nextPageId);
@@ -172,7 +169,6 @@ const getPageCollisions = (
                 const nextHash = getPageHash(nextPage, marchers, marcherPages);
                 const nextCollisions = sweepNPruneCollision(
                     nextPage,
-                    marchers,
                     marcherTimelines,
                 );
 
@@ -183,10 +179,6 @@ const getPageCollisions = (
         }
     }
 
-    const endTime = performance.now();
-    console.log(
-        `Collision calculation: ${pagesRecalculated} pages recalculated, ${pagesFromCache} pages from cache in ${(endTime - startTime).toFixed(2)}ms`,
-    );
     // Clean up cache for pages that no longer exist in case user deletes page
     const existingPageIds = new Set(pages.map((p) => p.id));
     for (const cachedPageId of collisionCacheRef.keys()) {

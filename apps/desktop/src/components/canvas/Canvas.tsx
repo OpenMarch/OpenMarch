@@ -22,6 +22,7 @@ import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
+import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 
 /**
  * The field/stage UI of OpenMarch
@@ -770,54 +771,38 @@ export default function Canvas({
         marcherPagesLoaded,
     ]);
 
-    // Render collision markers when paused
+    // Clean up collision markers when page changes or when playing starts
     useEffect(() => {
         if (!canvas) return;
-        // Remove existing collision markers
+
+        // Always remove existing collision markers when page changes or animation starts
         const existingMarkers = canvas
             .getObjects()
             .filter((obj: any) => obj.isCollisionMarker);
         existingMarkers.forEach((marker) => canvas.remove(marker));
-        // Add new collision markers only when paused
-        if (!isPlaying && currentCollisions.length > 0) {
+
+        // Request render to update the canvas
+        canvas.requestRenderAll();
+    }, [canvas, selectedPage, isPlaying]);
+
+    // Render collision markers when paused
+    useEffect(() => {
+        if (!canvas || isPlaying) return;
+
+        // Add new collision markers only when paused and there are collisions
+        if (currentCollisions.length > 0) {
             currentCollisions.forEach((collision) => {
-                // Create a red circle to mark collision location
-                const radius = 10;
-                const collisionMarker = new fabric.Circle({
-                    left: collision.x,
-                    top: collision.y,
-                    originX: "center",
-                    originY: "center",
-                    radius: collision.distance,
-                    fill: "rgba(255, 0, 0, 0.5)",
-                    stroke: "red",
-                    strokeWidth: 2,
-                    selectable: false,
-                    evented: false,
-                });
-                (collisionMarker as any).isCollisionMarker = true; // Custom property to identify collision markers
-                // Add text showing which marchers are colliding
-                const fontSize = 12;
-                const collisionText = new fabric.Text(
-                    `${collision.marcher1Id}-${collision.marcher2Id}`,
-                    {
-                        left: collision.x,
-                        top: collision.y - fontSize - collision.distance / 2,
-                        fontSize,
-                        fill: "red",
-                        textAlign: "center",
-                        originX: "center",
-                        originY: "center",
-                        selectable: false,
-                        evented: false,
-                    },
+                const collisionCircle = new CollisionMarker(
+                    collision.x,
+                    collision.y,
+                    collision.distance,
+                    canvas,
                 );
-                (collisionText as any).isCollisionMarker = true;
-
-                canvas.add(collisionMarker);
-                canvas.add(collisionText);
+                collisionCircle.addText(
+                    `${collision.marcher1Id}-${collision.marcher2Id}`,
+                );
+                collisionCircle.draw();
             });
-
             canvas.requestRenderAll();
         }
     }, [canvas, isPlaying, currentCollisions, selectedPage]);

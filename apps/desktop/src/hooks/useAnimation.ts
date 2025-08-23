@@ -196,7 +196,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 }
             }
         },
-        [pages, selectedPage, setSelectedPage, setIsPlaying],
+        [canvas, pages, selectedPage, setSelectedPage, setIsPlaying],
     );
 
     // Animate the canvas based on playback timestamp
