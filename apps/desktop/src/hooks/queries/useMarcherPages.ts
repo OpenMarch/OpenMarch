@@ -62,19 +62,15 @@ export const marcherPageKeys = {
 // Helper function to create path data with error handling
 function createPathData(
     currentMarcherPage: DatabaseMarcherPage,
-    previousMarcherPage: DatabaseMarcherPage | null,
+    nextMarcherPage: DatabaseMarcherPage | null,
     pathwayData: string | null,
 ): Path | null {
     try {
-        if (!pathwayData || !previousMarcherPage) {
+        if (!pathwayData) {
             return null;
         }
 
-        return Path.fromJson(
-            pathwayData,
-            { x: previousMarcherPage.x || 0, y: previousMarcherPage.y || 0 },
-            { x: currentMarcherPage.x || 0, y: currentMarcherPage.y || 0 },
-        );
+        return Path.fromJson(pathwayData);
     } catch (error) {
         console.error("Failed to create path data:", error);
         return null;
@@ -120,9 +116,9 @@ function databaseMarcherPagesToMarcherPages({
             : marcherPages;
 
         // Convert each marcher page with path data
-        sortedMarcherPages.forEach((dbMarcherPage, index) => {
-            const previousMarcherPage =
-                index > 0 ? sortedMarcherPages[index - 1] : null;
+        for (let index = 0; index < sortedMarcherPages.length - 1; index++) {
+            const dbMarcherPage = sortedMarcherPages[index];
+            const nextMarcherPage = sortedMarcherPages[index + 1] || null;
 
             // Get pathway data if this marcher page has a pathway
             const pathway = pathways
@@ -135,12 +131,12 @@ function databaseMarcherPagesToMarcherPages({
                 ...dbMarcherPage,
                 path_data: createPathData(
                     dbMarcherPage,
-                    previousMarcherPage,
+                    nextMarcherPage,
                     pathway?.path_data || null,
                 ),
                 pathway_notes: pathway?.notes || null,
             });
-        });
+        }
     });
 
     return result;
