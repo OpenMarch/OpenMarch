@@ -135,3 +135,24 @@ describe("SvgParser with Line commands", () => {
         expect(lastSegment.endPoint).toEqual({ x: 10, y: 10 });
     });
 });
+
+describe("Line JSON serialization with overrides", () => {
+    it("should serialize overridden start and end points in JSON", () => {
+        const line = new Line({ x: 0, y: 0 }, { x: 100, y: 100 });
+
+        // Set overrides
+        line.startPointOverride = { x: 50, y: 50 };
+        line.endPointOverride = { x: 150, y: 150 };
+
+        // Serialize to JSON
+        const json = line.toJson();
+
+        // Verify that the JSON contains the overridden points
+        expect(json.data.startPoint).toEqual({ x: 50, y: 50 });
+        expect(json.data.endPoint).toEqual({ x: 150, y: 150 });
+
+        // Verify that the original segment points are not in the JSON
+        expect(json.data.startPoint).not.toEqual({ x: 0, y: 0 });
+        expect(json.data.endPoint).not.toEqual({ x: 100, y: 100 });
+    });
+});

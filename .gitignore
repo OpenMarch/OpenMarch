@@ -55,3 +55,5 @@ packages/metronome/
 .env.sentry-build-plugin
 .aider*
 .env
+
+*.tmp.dots

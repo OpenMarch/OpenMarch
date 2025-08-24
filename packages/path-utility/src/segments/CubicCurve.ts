@@ -56,10 +56,10 @@ export class CubicCurve implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
+                startPoint: { ...this.getStartPoint() },
                 controlPoint1: { ...this.controlPoint1 },
                 controlPoint2: { ...this.controlPoint2 },
-                endPoint: { ...this.endPoint },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }
