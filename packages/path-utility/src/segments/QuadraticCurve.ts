@@ -55,9 +55,9 @@ export class QuadraticCurve implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
+                startPoint: { ...this.getStartPoint() },
                 controlPoint: { ...this.controlPoint },
-                endPoint: { ...this.endPoint },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }

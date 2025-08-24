@@ -5,7 +5,7 @@ describe("Path JSON Serialization", () => {
     describe("toJson and fromJson", () => {
         test("should serialize and deserialize a path with mixed segment types", () => {
             // Create a path with different segment types
-            const originalPath = new Path();
+            const originalPath = new Path([], 1);
 
             // Add a line segment
             originalPath.addSegment(new Line({ x: 0, y: 0 }, { x: 10, y: 10 }));
@@ -45,6 +45,9 @@ describe("Path JSON Serialization", () => {
                 new Spline(splinePoints, 3, undefined, undefined, false, 0.5),
             );
 
+            // Verify the id is set correctly
+            expect(originalPath.id).toBe(1);
+
             // Serialize to JSON
             const json = originalPath.toJson();
 
@@ -57,10 +60,16 @@ describe("Path JSON Serialization", () => {
             expect(parsedJson.segments[3].type).toBe("spline");
 
             // Deserialize from JSON
-            const reconstructedPath = Path.fromJson(json);
+            const reconstructedPath = Path.fromJson(
+                json,
+                undefined,
+                undefined,
+                2,
+            );
 
-            // Verify the path has the same number of segments
+            // Verify the path has the same number of segments and new id
             expect(reconstructedPath.segments).toHaveLength(4);
+            expect(reconstructedPath.id).toBe(2);
 
             // Verify each segment type and data
             const segments = reconstructedPath.segments;
@@ -116,15 +125,21 @@ describe("Path JSON Serialization", () => {
                 0.7, // tension
             );
 
-            const splinePath = new Path([originalSpline]);
+            const splinePath = new Path([originalSpline], 3);
+
+            // Verify the id is set correctly
+            expect(splinePath.id).toBe(3);
 
             // Serialize the spline path
             const splineJson = splinePath.toJson();
 
             // Convert spline to SVG and create a new path from it
             const svgString = originalSpline.toSvgString();
-            const svgPath = Path.fromSvgString(svgString);
+            const svgPath = Path.fromSvgString(svgString, 4);
             const svgJson = svgPath.toJson();
+
+            // Verify the SVG path id is set correctly
+            expect(svgPath.id).toBe(4);
 
             // Parse both JSONs
             const splineData = JSON.parse(splineJson);
@@ -183,13 +198,21 @@ describe("Path JSON Serialization", () => {
                 false,
                 0.5,
             );
-            const path = new Path([originalSpline]);
+            const path = new Path([originalSpline], 5);
+
+            // Verify the id is set correctly
+            expect(path.id).toBe(5);
 
             // Serialize and deserialize
             const json = path.toJson();
-            const reconstructedPath = Path.fromJson(json);
+            const reconstructedPath = Path.fromJson(
+                json,
+                undefined,
+                undefined,
+                6,
+            );
 
-            // Verify spline data is preserved
+            // Verify spline data is preserved and id is updated
             const reconstructedSpline = reconstructedPath.segments[0] as Spline;
             expect(reconstructedSpline.controlPoints).toEqual(controlPoints);
             expect(reconstructedSpline.degree).toBe(3);
@@ -197,11 +220,12 @@ describe("Path JSON Serialization", () => {
             expect(reconstructedSpline.weights).toEqual(weights);
             expect(reconstructedSpline.closed).toBe(false);
             expect(reconstructedSpline.tension).toBe(0.5);
+            expect(reconstructedPath.id).toBe(6);
         });
 
         test("should maintain path functionality after JSON round-trip", () => {
             // Create a path with multiple segments
-            const originalPath = new Path();
+            const originalPath = new Path([], 7);
             originalPath.addSegment(new Line({ x: 0, y: 0 }, { x: 10, y: 0 }));
             originalPath.addSegment(
                 new Arc(
@@ -223,6 +247,9 @@ describe("Path JSON Serialization", () => {
                 ]),
             );
 
+            // Verify the id is set correctly
+            expect(originalPath.id).toBe(7);
+
             // Get original measurements
             const originalLength = originalPath.getTotalLength();
             const originalMidpoint = originalPath.getPointAtLength(
@@ -231,9 +258,15 @@ describe("Path JSON Serialization", () => {
 
             // Round-trip through JSON
             const json = originalPath.toJson();
-            const reconstructedPath = Path.fromJson(json);
+            const reconstructedPath = Path.fromJson(
+                json,
+                undefined,
+                undefined,
+                8,
+            );
 
-            // Verify functionality is preserved
+            // Verify functionality is preserved and id is updated
+            expect(reconstructedPath.id).toBe(8);
             expect(reconstructedPath.getTotalLength()).toBeCloseTo(
                 originalLength,
                 5,
@@ -250,13 +283,21 @@ describe("Path JSON Serialization", () => {
         });
 
         test("should handle empty path", () => {
-            const emptyPath = new Path();
+            const emptyPath = new Path([], 9);
+            expect(emptyPath.id).toBe(9);
+
             const json = emptyPath.toJson();
-            const reconstructedPath = Path.fromJson(json);
+            const reconstructedPath = Path.fromJson(
+                json,
+                undefined,
+                undefined,
+                10,
+            );
 
             expect(reconstructedPath.segments).toHaveLength(0);
             expect(reconstructedPath.getTotalLength()).toBe(0);
             expect(reconstructedPath.toSvgString()).toBe("");
+            expect(reconstructedPath.id).toBe(10);
         });
 
         test("should throw error for invalid JSON", () => {
@@ -268,9 +309,43 @@ describe("Path JSON Serialization", () => {
         });
     });
 
+    test("should serialize overridden start and end points in JSON", () => {
+        // Create a path with a line segment
+        const path = new Path([new Line({ x: 0, y: 0 }, { x: 100, y: 100 })]);
+
+        // Set overridden start and end points
+        path.setStartPoint({ x: 50, y: 50 });
+        path.setEndPoint({ x: 150, y: 150 });
+
+        // Serialize to JSON
+        const json = path.toJson();
+        const parsedJson = JSON.parse(json);
+
+        // Verify that the JSON contains the overridden points, not the original segment points
+        expect(parsedJson.segments[0].data.startPoint).toEqual({
+            x: 50,
+            y: 50,
+        });
+        expect(parsedJson.segments[0].data.endPoint).toEqual({
+            x: 150,
+            y: 150,
+        });
+
+        // Verify that the original segment points are not in the JSON
+        expect(parsedJson.segments[0].data.startPoint).not.toEqual({
+            x: 0,
+            y: 0,
+        });
+        expect(parsedJson.segments[0].data.endPoint).not.toEqual({
+            x: 100,
+            y: 100,
+        });
+    });
+
     describe("getBoundsByControlPoints", () => {
         test("should return null for empty path", () => {
-            const path = new Path();
+            const path = new Path([], 11);
+            expect(path.id).toBe(11);
             const bounds = path.getBoundsByControlPoints();
             expect(bounds).toBeNull();
         });
@@ -279,8 +354,9 @@ describe("Path JSON Serialization", () => {
             const startPoint: Point = { x: 0, y: 0 };
             const endPoint: Point = { x: 100, y: 50 };
             const line = new Line(startPoint, endPoint);
-            const path = new Path([line]);
+            const path = new Path([line], 12);
 
+            expect(path.id).toBe(12);
             const bounds = path.getBoundsByControlPoints();
             expect(bounds).toEqual({
                 minX: 0,
@@ -298,8 +374,9 @@ describe("Path JSON Serialization", () => {
             const line3 = new Line({ x: 100, y: 100 }, { x: 0, y: 100 });
             const line4 = new Line({ x: 0, y: 100 }, { x: 0, y: 0 });
 
-            const path = new Path([line1, line2, line3, line4]);
+            const path = new Path([line1, line2, line3, line4], 13);
 
+            expect(path.id).toBe(13);
             const bounds = path.getBoundsByControlPoints();
             expect(bounds).toEqual({
                 minX: 0,

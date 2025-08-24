@@ -127,8 +127,8 @@ export class Arc implements IControllableSegment {
     }
 
     toSvgString(): string {
-        const effectiveStartPoint = this.startPointOverride || this.startPoint;
-        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+        const effectiveStartPoint = this.getStartPoint();
+        const effectiveEndPoint = this.getEndPoint();
 
         return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} A ${this.rx} ${this.ry} ${this.xAxisRotation} ${this.largeArcFlag} ${this.sweepFlag} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
@@ -137,13 +137,13 @@ export class Arc implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
+                startPoint: { ...this.getStartPoint() },
                 rx: this.rx,
                 ry: this.ry,
                 xAxisRotation: this.xAxisRotation,
                 largeArcFlag: this.largeArcFlag,
                 sweepFlag: this.sweepFlag,
-                endPoint: { ...this.endPoint },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }

@@ -22,14 +22,14 @@ export class Spline implements IControllableSegment {
     public endPointOverride?: Point;
 
     constructor(
-        public readonly controlPoints: Point[],
+        public readonly _controlPoints: Point[],
         public readonly degree: number = 3,
         public readonly knots?: number[],
         public readonly weights?: number[],
         public readonly closed: boolean = false,
         public readonly tension: number = 0.5, // For catmull-rom splines
     ) {
-        if (controlPoints.length < 2) {
+        if (_controlPoints.length < 2) {
             throw new Error("Spline must have at least 2 control points");
         }
     }
@@ -68,16 +68,10 @@ export class Spline implements IControllableSegment {
     }
 
     getStartPoint(): Point {
-        if (this.startPointOverride) {
-            return this.startPointOverride;
-        }
         return this.controlPoints[0];
     }
 
     getEndPoint(): Point {
-        if (this.endPointOverride) {
-            return this.endPointOverride;
-        }
         return this.controlPoints[this.controlPoints.length - 1];
     }
 
@@ -273,6 +267,15 @@ export class Spline implements IControllableSegment {
     }
 
     toJson(): SegmentJsonData {
+        const startPoint = this.startPointOverride || this.getStartPoint();
+        const endPoint = this.endPointOverride || this.getEndPoint();
+        const controlPoints = this.controlPoints.map((p) => ({ ...p }));
+        if (startPoint !== controlPoints[0]) {
+            controlPoints[0] = { ...startPoint };
+        }
+        if (endPoint !== controlPoints[controlPoints.length - 1]) {
+            controlPoints[controlPoints.length - 1] = { ...endPoint };
+        }
         return {
             type: this.type,
             data: {
@@ -333,9 +336,13 @@ export class Spline implements IControllableSegment {
         return new Spline(controlPoints, degree, knots, weights);
     }
 
+    get controlPoints(): Point[] {
+        return this.getControlPoints(0).map((cp) => cp.point);
+    }
+
     // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
-        const controlPoints = this.controlPoints.map((point, index) => ({
+        const controlPoints = this._controlPoints.map((point, index) => ({
             id: `cp-${segmentIndex}-spline-point-${index}`,
             point: { ...point },
             segmentIndex,
