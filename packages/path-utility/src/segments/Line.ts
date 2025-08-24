@@ -57,8 +57,8 @@ export class Line implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
-                endPoint: { ...this.endPoint },
+                startPoint: { ...this.getStartPoint() },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }

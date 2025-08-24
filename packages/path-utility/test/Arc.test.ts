@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { Arc } from "../src/segments/Arc";
-import { Point } from "../src/interfaces";
 import { parseSvg } from "../src/SvgParser";
 import { Path } from "../src/Path";
+import type { Point } from "../src/interfaces";
 
 describe("Arc segment", () => {
     it("should correctly calculate the length of a 90-degree arc", () => {
@@ -66,6 +66,31 @@ describe("SvgParser with Arcs", () => {
     it("should treat zero-radius arc as a line", () => {
         const d = "M 10 0 A 0 0 0 0 1 0 10";
         const path = Path.fromSvgString(d);
-        expect(path.segments[0].constructor.name).toBe("Line");
+        expect(path.segments[0]?.constructor.name).toBe("Line");
+    });
+
+    it("should update the start point of an arc", () => {
+        const d = "M 10 0 A 10 10 0 0 1 -10 10";
+        const path = Path.fromSvgString(d);
+        expect(path.segments[0]?.getStartPoint()).toEqual({ x: 10, y: 0 });
+        expect(path.segments[0]?.getEndPoint()).toEqual({ x: -10, y: 10 });
+
+        path.setStartPoint({ x: 100, y: 100 });
+        expect(path.getStartPoint()).toEqual({ x: 100, y: 100 });
+        expect(path.segments[0]?.getEndPoint()).toEqual({ x: -10, y: 10 });
+        expect(path.toSvgString()).toBe("M 100 100 A 10 10 0 0 1 -10 10");
+    });
+
+    it("should update the end point of an arc", () => {
+        const d = "M 10 0 A 10 10 0 0 1 -10 10";
+        const path = Path.fromSvgString(d);
+        expect(path.segments[0]?.getStartPoint()).toEqual({ x: 10, y: 0 });
+        expect(path.segments[0]?.getEndPoint()).toEqual({ x: -10, y: 10 });
+
+        path.setEndPoint({ x: 100, y: 100 });
+        expect(path.getLastPoint()).toEqual({ x: 100, y: 100 });
+        expect(path.segments[0]?.getStartPoint()).toEqual({ x: 10, y: 0 });
+        expect(path.segments[0]?.getEndPoint()).toEqual({ x: 100, y: 100 });
+        expect(path.toSvgString()).toBe("M 10 0 A 10 10 0 0 1 100 100");
     });
 });

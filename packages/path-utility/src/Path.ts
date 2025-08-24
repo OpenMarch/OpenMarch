@@ -19,9 +19,15 @@ import { QuadraticCurve } from "./segments/QuadraticCurve";
  */
 export class Path implements IPath {
     private _segments: IControllableSegment[];
+    private _id: number;
 
-    constructor(segments: IControllableSegment[] = []) {
+    constructor(segments: IControllableSegment[] = [], id: number = 0) {
         this._segments = [...segments];
+        this._id = id;
+    }
+
+    get id(): number {
+        return this._id;
     }
 
     get segments(): IControllableSegment[] {
@@ -139,7 +145,12 @@ export class Path implements IPath {
      * Creates a path from JSON data, reconstructing the original segment types
      * and their specific data (splines with control points, arcs with radii, etc.).
      */
-    fromJson(json: string, startPoint?: Point, endPoint?: Point): IPath {
+    fromJson(
+        json: string,
+        startPoint?: Point,
+        endPoint?: Point,
+        id: number = 0,
+    ): IPath {
         try {
             const pathData: PathJsonData = JSON.parse(json);
 
@@ -160,7 +171,7 @@ export class Path implements IPath {
                 segments[segments.length - 1].endPointOverride = endPoint;
             }
 
-            return new Path(segments);
+            return new Path(segments, id);
         } catch (error) {
             throw new Error(
                 `Failed to parse path JSON: ${error instanceof Error ? error.message : "Unknown error"}`,
@@ -191,33 +202,45 @@ export class Path implements IPath {
     /**
      * Creates a new Path instance from JSON string.
      */
-    static fromJson(json: string, startPoint?: Point, endPoint?: Point): Path {
+    static fromJson(
+        json: string,
+        startPoint?: Point,
+        endPoint?: Point,
+        id: number = 0,
+    ): Path {
         const path = new Path();
-        return path.fromJson(json, startPoint, endPoint) as Path;
+        return path.fromJson(json, startPoint, endPoint, id) as Path;
+    }
+
+    /**
+     * Creates a new Path instance from a database path_data string.
+     */
+    static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
+        return Path.fromJson(path_data, undefined, undefined, id);
     }
 
     /**
      * Creates a path from an SVG path string by parsing it into segments.
      * Note: This will lose spline information if the SVG was originally from splines.
      */
-    static fromSvgString(svgPath: string): Path {
+    static fromSvgString(svgPath: string, id: number = 0): Path {
         const segments = parseSvg(svgPath);
-        return new Path(segments);
+        return new Path(segments, id);
     }
 
     /**
      * Creates a path containing only a spline segment.
      */
-    static fromSpline(spline: Spline): Path {
-        return new Path([spline]);
+    static fromSpline(spline: Spline, id: number = 0): Path {
+        return new Path([spline], id);
     }
 
     /**
      * Creates a simple path from an array of points connected by lines.
      */
-    static fromPoints(points: Point[]): Path {
+    static fromPoints(points: Point[], id: number = 0): Path {
         if (points.length < 2) {
-            return new Path();
+            return new Path([], id);
         }
 
         const segments: IControllableSegment[] = [];
@@ -225,7 +248,7 @@ export class Path implements IPath {
             segments.push(new Line(points[i], points[i + 1]));
         }
 
-        return new Path(segments);
+        return new Path(segments, id);
     }
 
     /**
