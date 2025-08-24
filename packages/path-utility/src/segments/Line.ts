@@ -6,7 +6,6 @@ import {
     ControlPointType,
     ControlPoint,
 } from "../interfaces";
-import { v4 as uuidv4 } from "uuid";
 
 /**
  * Represents a straight line segment between two points.
@@ -34,6 +33,10 @@ export class Line implements IControllableSegment {
         const path = new PathCommander(pathString);
         const point = path.getPointAtLength(dist);
         return { x: point.x, y: point.y };
+    }
+
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
     }
 
     getEndPoint(): Point {
