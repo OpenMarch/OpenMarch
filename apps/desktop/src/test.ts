@@ -5,16 +5,16 @@ import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
 
+type TestDb = SQLJsDatabase<typeof schema>;
+
 /**
  * Custom test function that extends the base test function with a database fixture.
  *
  * The database fixture is a temporary database file that is created before each test function.
- * The database file is copied from the blank database file in the db-functions/__test__ directory.
- * The database file is then used in the test function.
- * The database file is deleted after the test function is finished.
+ * After each test function, the database file is deleted.
  */
 const it = baseTest.extend<{
-    db: SQLJsDatabase<typeof schema>;
+    db: TestDb;
 }>({
     // eslint-disable-next-line no-empty-pattern
     db: async ({}, use) => {
@@ -26,7 +26,7 @@ const it = baseTest.extend<{
 
         const blankDatabaseFile = path.join(
             __dirname,
-            "../e2e/mock-databases/blank.dots",
+            "../electron/database/migrations/_blank.dots",
         );
         const tempDatabaseFile = `${Date.now()}.tmp.dots`;
 
@@ -62,4 +62,4 @@ const transaction = (
     });
 };
 
-export { it, it as test, transaction, schema };
+export { it, it as test, transaction, schema, type TestDb };
