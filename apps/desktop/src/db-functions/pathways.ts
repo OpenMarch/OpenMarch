@@ -53,7 +53,7 @@ export async function updateEndpoint({
         );
     }
 
-    return tx
+    const response = await tx
         .update(pathways)
         .set({
             path_data: pathwayObj.toJson(),
@@ -61,5 +61,8 @@ export async function updateEndpoint({
         .where(eq(pathways.id, pathwayId))
         .returning({
             id: pathways.id,
+            path_data: pathways.path_data,
         });
+
+    return response;
 }

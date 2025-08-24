@@ -2,6 +2,7 @@
  * A continuous path composed of one or more segments.
  */
 export interface IPath {
+    readonly id: number;
     readonly segments: IControllableSegment[];
 
     /** Returns the total length of the path by summing segment lengths. */
