@@ -10,6 +10,12 @@ export interface IPath {
     /** Returns a point at a given distance along the entire path. */
     getPointAtLength(dist: number): Point;
 
+    /** Returns the start point of the path. */
+    getStartPoint(): Point;
+
+    /** Returns the last point of the path. */
+    getLastPoint(): Point;
+
     /** Returns the full SVG path `d` attribute string for all segments. */
     toSvgString(): string;
 
@@ -54,6 +60,9 @@ export interface IControllableSegment {
 
     /** Returns a point at a given distance along this segment (0 to getLength()). */
     getPointAtLength(dist: number): Point;
+
+    /** Returns the start point of this segment. */
+    getStartPoint(): Point;
 
     /** Returns the end point of this segment. */
     getEndPoint(): Point;

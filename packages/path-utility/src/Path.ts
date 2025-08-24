@@ -95,9 +95,16 @@ export class Path implements IPath {
         return lastSegment.getPointAtLength(lastSegment.getLength());
     }
 
-    getLastPoint(): Point | null {
+    getStartPoint(): Point {
         if (this._segments.length === 0) {
-            return null;
+            throw new Error("Cannot get start point of empty path");
+        }
+        return this._segments[0].getStartPoint();
+    }
+
+    getLastPoint(): Point {
+        if (this._segments.length === 0) {
+            throw new Error("Cannot get last point of empty path");
         }
 
         const lastSegment = this._segments[this._segments.length - 1];
@@ -279,5 +286,29 @@ export class Path implements IPath {
             width: maxX - minX,
             height: maxY - minY,
         };
+    }
+
+    /**
+     * Sets the start point of the path.
+     * @param point The new start point.
+     */
+    setStartPoint(point: Point) {
+        if (this._segments.length > 0) {
+            this._segments[0].startPointOverride = point;
+        } else {
+            throw new Error("Cannot set start point of empty path");
+        }
+    }
+
+    /**
+     * Sets the end point of the path.
+     * @param point The new end point.
+     */
+    setEndPoint(point: Point) {
+        if (this._segments.length > 0) {
+            this._segments[this._segments.length - 1].endPointOverride = point;
+        } else {
+            throw new Error("Cannot set end point of empty path");
+        }
     }
 }
