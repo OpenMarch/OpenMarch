@@ -37,6 +37,10 @@ export class CubicCurve implements IControllableSegment {
         return { x: point.x, y: point.y };
     }
 
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
+    }
+
     getEndPoint(): Point {
         return this.endPointOverride || this.endPoint;
     }

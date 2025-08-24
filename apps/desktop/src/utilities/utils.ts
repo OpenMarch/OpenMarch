@@ -12,3 +12,20 @@ export const conToastError = (message: string, ...additional: any[]) => {
     console.log(message, ...additional);
     toast.error(message);
 };
+
+/**
+ * Asserts that a condition is true. Meant to mimic assertions in other languages.
+ *
+ * @param condition The condition to assert.
+ * @param message The message to display if the condition is false.
+ */
+export const assert = (
+    condition: boolean,
+    message: string,
+    displayToast: boolean = true,
+) => {
+    if (!condition) {
+        console.error(message);
+        if (displayToast) toast.error(message);
+    }
+};

@@ -70,6 +70,10 @@ export class Arc implements IControllableSegment {
         };
     }
 
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
+    }
+
     getEndPoint(): Point {
         return this.endPointOverride || this.endPoint;
     }

@@ -67,6 +67,13 @@ export class Spline implements IControllableSegment {
         return this.getPointAtT(t);
     }
 
+    getStartPoint(): Point {
+        if (this.startPointOverride) {
+            return this.startPointOverride;
+        }
+        return this.controlPoints[0];
+    }
+
     getEndPoint(): Point {
         if (this.endPointOverride) {
             return this.endPointOverride;

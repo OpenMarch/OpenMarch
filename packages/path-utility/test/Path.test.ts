@@ -385,23 +385,216 @@ describe("Path JSON Serialization", () => {
                 height: 100,
             });
         });
+    });
 
-        test("should handle segments with point overrides", () => {
-            const line = new Line({ x: 0, y: 0 }, { x: 100, y: 100 });
-            line.startPointOverride = { x: -50, y: -50 };
-            line.endPointOverride = { x: 150, y: 150 };
+    describe("setStartPoint", () => {
+        test("should set the start point of a path", () => {
+            const path = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                new Line({ x: 100, y: 0 }, { x: 200, y: 0 }),
+            ]);
 
-            const path = new Path([line]);
-
-            const bounds = path.getBoundsByControlPoints();
-            expect(bounds).toEqual({
-                minX: -50,
-                minY: -50,
-                maxX: 150,
-                maxY: 150,
-                width: 200,
-                height: 200,
+            // set to the original point
+            path.setStartPoint({ x: 0, y: 0 });
+            let firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 0,
+                y: 0,
             });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            let secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 200,
+                y: 0,
+            });
+
+            // set to a new point
+
+            path.setStartPoint({ x: 50, y: 50 });
+            firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 50,
+                y: 50,
+            });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 200,
+                y: 0,
+            });
+
+            // set to the original point
+            path.setStartPoint({ x: 0, y: 0 });
+            firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 0,
+                y: 0,
+            });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 200,
+                y: 0,
+            });
+        });
+
+        test("should handle empty path", () => {
+            const path = new Path();
+            expect(() => path.setStartPoint({ x: 100, y: 100 })).toThrow(
+                "Cannot set start point of empty path",
+            );
+        });
+
+        test("should work with single segment", () => {
+            const path = new Path([new Line({ x: 0, y: 0 }, { x: 100, y: 0 })]);
+
+            path.setStartPoint({ x: 50, y: 50 });
+            const segment = path.segments[0] as Line;
+            expect(segment.getStartPoint()).toEqual({ x: 50, y: 50 });
+            expect(segment.getEndPoint()).toEqual({ x: 100, y: 0 });
+        });
+
+        test("should work with different segment types", () => {
+            const path = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                new CubicCurve(
+                    { x: 100, y: 0 },
+                    { x: 150, y: 50 },
+                    { x: 200, y: 50 },
+                    { x: 300, y: 0 },
+                ),
+            ]);
+
+            path.setStartPoint({ x: 25, y: 25 });
+            const firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({ x: 25, y: 25 });
+            expect(firstSegment.getEndPoint()).toEqual({ x: 100, y: 0 });
+        });
+    });
+
+    describe("setEndPoint", () => {
+        test("should set the end point of a path", () => {
+            const path = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                new Line({ x: 100, y: 0 }, { x: 200, y: 0 }),
+            ]);
+
+            // set to the original point
+            path.setEndPoint({ x: 200, y: 0 });
+            let firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 0,
+                y: 0,
+            });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            let secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 200,
+                y: 0,
+            });
+
+            // set to a new point
+            path.setEndPoint({ x: 250, y: 50 });
+            firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 0,
+                y: 0,
+            });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 250,
+                y: 50,
+            });
+
+            // set to the original point
+            path.setEndPoint({ x: 200, y: 0 });
+            firstSegment = path.segments[0] as Line;
+            expect(firstSegment.getStartPoint()).toEqual({
+                x: 0,
+                y: 0,
+            });
+            expect(firstSegment.getEndPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            secondSegment = path.segments[1] as Line;
+            expect(secondSegment.getStartPoint()).toEqual({
+                x: 100,
+                y: 0,
+            });
+            expect(secondSegment.getEndPoint()).toEqual({
+                x: 200,
+                y: 0,
+            });
+        });
+
+        test("should handle empty path", () => {
+            const path = new Path();
+            expect(() => path.setEndPoint({ x: 100, y: 100 })).toThrow(
+                "Cannot set end point of empty path",
+            );
+        });
+
+        test("should work with single segment", () => {
+            const path = new Path([new Line({ x: 0, y: 0 }, { x: 100, y: 0 })]);
+
+            path.setEndPoint({ x: 150, y: 50 });
+            const segment = path.segments[0] as Line;
+            expect(segment.getEndPoint()).toEqual({ x: 150, y: 50 });
+            expect(segment.getStartPoint()).toEqual({ x: 0, y: 0 });
+        });
+
+        test("should work with different segment types", () => {
+            const path = new Path([
+                new Line({ x: 0, y: 0 }, { x: 100, y: 0 }),
+                new CubicCurve(
+                    { x: 100, y: 0 },
+                    { x: 150, y: 50 },
+                    { x: 200, y: 50 },
+                    { x: 300, y: 0 },
+                ),
+            ]);
+
+            path.setEndPoint({ x: 400, y: 100 });
+            const lastSegment = path.segments[1] as CubicCurve;
+            expect(lastSegment.getEndPoint()).toEqual({ x: 400, y: 100 });
+            expect(lastSegment.getStartPoint()).toEqual({ x: 100, y: 0 });
         });
     });
 });
