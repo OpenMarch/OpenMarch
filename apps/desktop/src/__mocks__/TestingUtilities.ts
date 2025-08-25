@@ -23,7 +23,6 @@ export function createMarcherPages(
         pages.forEach((page) => {
             marcherPages.push({
                 id: currentId,
-                id_for_html: "marcher_page_" + currentId,
                 marcher_id: marcher.id,
                 page_id: page.id,
                 x: defaultX,

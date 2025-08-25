@@ -20,7 +20,6 @@ it.todo("CanvasMarcher tests - currently not working", () => {
 
 // const marcherPage1 = new MarcherPage({
 //     id: 1,
-//     id_for_html: "marcher-page-1",
 //     marcher_id: 1,
 //     page_id: 1,
 //     x: 15,
@@ -28,7 +27,6 @@ it.todo("CanvasMarcher tests - currently not working", () => {
 // });
 // const marcherPage1Alt = new MarcherPage({
 //     id: 1,
-//     id_for_html: "marcher-page-1",
 //     marcher_id: 1,
 //     page_id: 1,
 //     x: 23,
@@ -37,7 +35,6 @@ it.todo("CanvasMarcher tests - currently not working", () => {
 
 // const marcherPage2 = new MarcherPage({
 //     id: 2,
-//     id_for_html: "marcher-page-2",
 //     marcher_id: 1,
 //     page_id: 2,
 //     x: 23,
