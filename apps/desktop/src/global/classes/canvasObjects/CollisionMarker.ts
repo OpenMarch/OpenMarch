@@ -7,12 +7,19 @@ class CollisionMarker extends fabric.Circle {
     private _y: number;
     public readonly isCollisionMarker = true; // Add identifier for cleanup
 
+    /**
+     * @param x x coordinate of collision indicator
+     * @param y y coordinate of collision indicator
+     * @param radius size of the indicator
+     * @param canvas canvas reference
+     * @param color rgba color value
+     */
     constructor(
         x: number,
         y: number,
         radius: number,
         public readonly canvas: OpenMarchCanvas,
-        color: string = "rgb(255,0,0,0.5)",
+        color: string = "rgba(255,0,0,0.5)",
     ) {
         super({
             left: x,

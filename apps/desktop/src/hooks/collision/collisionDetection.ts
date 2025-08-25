@@ -174,7 +174,6 @@ const getPageCollisions = (
 
                 collisionCacheRef.set(nextPage.id, nextCollisions);
                 pageHashCacheRef.set(nextPage.id, nextHash);
-                pagesRecalculated++;
             }
         }
     }

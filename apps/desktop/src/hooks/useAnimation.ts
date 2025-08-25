@@ -135,10 +135,11 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         }
 
         // this looks stupid but empty array if nothing is returned
-        const collisions =
-            pageCollisions.get(selectedPage.nextPageId || 0) || [];
+        const collisions = selectedPage.nextPageId
+            ? pageCollisions.get(selectedPage.nextPageId)
+            : [];
 
-        return collisions;
+        return collisions ?? [];
     }, [pageCollisions, selectedPage]);
 
     // Update collisions when selected page changes

@@ -771,7 +771,7 @@ export default function Canvas({
         marcherPagesLoaded,
     ]);
 
-    // Clean up collision markers when page changes or when playing starts
+    // Render collision markers when paused
     useEffect(() => {
         if (!canvas) return;
 
@@ -781,16 +781,8 @@ export default function Canvas({
             .filter((obj: any) => obj.isCollisionMarker);
         existingMarkers.forEach((marker) => canvas.remove(marker));
 
-        // Request render to update the canvas
-        canvas.requestRenderAll();
-    }, [canvas, selectedPage, isPlaying]);
-
-    // Render collision markers when paused
-    useEffect(() => {
-        if (!canvas || isPlaying) return;
-
         // Add new collision markers only when paused and there are collisions
-        if (currentCollisions.length > 0) {
+        if (!isPlaying && currentCollisions.length > 0) {
             currentCollisions.forEach((collision) => {
                 const collisionCircle = new CollisionMarker(
                     collision.x,
@@ -803,8 +795,9 @@ export default function Canvas({
                 );
                 collisionCircle.draw();
             });
-            canvas.requestRenderAll();
         }
+
+        canvas.requestRenderAll();
     }, [canvas, isPlaying, currentCollisions, selectedPage]);
 
     return (
