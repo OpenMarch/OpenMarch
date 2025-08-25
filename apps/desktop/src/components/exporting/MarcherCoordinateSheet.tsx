@@ -175,7 +175,6 @@ export default function MarcherCoordinateSheetPreview({
                     id: 1,
                     marcher_id: 1,
                     page_id: 1,
-                    id_for_html: "example-marcher-page-1",
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
                     path_data_id: null,
@@ -189,7 +188,6 @@ export default function MarcherCoordinateSheetPreview({
                     id: 2,
                     marcher_id: 1,
                     page_id: 2,
-                    id_for_html: "example-marcher-page-2",
                     x:
                         fieldProperties.centerFrontPoint.xPixels +
                         2.1 * pixelsPerStep,
@@ -207,7 +205,6 @@ export default function MarcherCoordinateSheetPreview({
                     id: 3,
                     marcher_id: 1,
                     page_id: 3,
-                    id_for_html: "example-marcher-page-3",
                     x:
                         fieldProperties.centerFrontPoint.xPixels -
                         5.21 * pixelsPerStep,
@@ -547,7 +544,7 @@ export function StaticMarcherCoordinateSheet({
                                     if (!page || !rCoords) return null;
 
                                     return (
-                                        <tr key={marcherPage.id_for_html}>
+                                        <tr key={marcherPage.id}>
                                             <td
                                                 className="text-center"
                                                 aria-label="page name"
@@ -897,7 +894,7 @@ export function StaticQuarterMarcherSheet({
 
                             return (
                                 <tr
-                                    key={marcherPage.id_for_html}
+                                    key={marcherPage.id}
                                     style={{
                                         backgroundColor: isEven
                                             ? "#f0f0f0"
