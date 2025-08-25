@@ -17,7 +17,6 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
 
 export interface MarcherPage {
     readonly id: number;
-    readonly id_for_html: string | null;
     readonly marcher_id: number;
     readonly page_id: number;
     readonly x: number;
@@ -262,7 +261,6 @@ export const useUpdateMarcherPages = () => {
                         )
                         .returning({
                             id: marcher_pages.id,
-                            id_for_html: marcher_pages.id_for_html,
                             marcher_id: marcher_pages.marcher_id,
                             page_id: marcher_pages.page_id,
                             x: marcher_pages.x,

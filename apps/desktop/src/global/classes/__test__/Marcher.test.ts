@@ -23,7 +23,6 @@ describe("Marcher", () => {
 
         expect(marcher).toBeInstanceOf(Marcher);
         expect(marcher.id).toBe(1);
-        expect(marcher.id_for_html).toBe("marcher_1");
         expect(marcher.name).toBe("John Doe");
         expect(marcher.section).toBe("Color Guard");
         expect(marcher.drill_number).toBe("B1");

@@ -238,7 +238,7 @@ export default function MarcherList({
                                 <div
                                     data-testid={`marcher row`}
                                     id={`${marcher.drill_number} marcher row`}
-                                    key={marcher.id_for_html}
+                                    key={marcher.id}
                                     className="flex items-center gap-4"
                                 >
                                     <div
@@ -326,7 +326,7 @@ export default function MarcherList({
                                                     marcher.name ?? ""
                                                 }
                                                 disabled={!isEditing}
-                                                key={marcher.id_for_html}
+                                                key={marcher.id}
                                                 onChange={(event) =>
                                                     handleChange(
                                                         event.target.value,

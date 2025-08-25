@@ -121,7 +121,6 @@ export const mockPages: Page[] = [
 export const mockMarcherPages: MarcherPage[] = [
     {
         id: 1,
-        id_for_html: "marcherPage_1",
         marcher_id: 1,
         page_id: 1,
         x: 50,
@@ -135,7 +134,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 2,
-        id_for_html: "marcherPage_2",
         marcher_id: 2,
         page_id: 1,
         x: 0,
@@ -149,7 +147,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 3,
-        id_for_html: "marcherPage_3",
         marcher_id: 3,
         page_id: 1,
         x: -200,
@@ -163,7 +160,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 4,
-        id_for_html: "marcherPage_4",
         marcher_id: 1,
         page_id: 2,
         x: 0,
@@ -177,7 +173,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 5,
-        id_for_html: "marcherPage_5",
         marcher_id: 2,
         page_id: 2,
         x: 284,
@@ -191,7 +186,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 6,
-        id_for_html: "marcherPage_6",
         marcher_id: 3,
         page_id: 2,
         x: -200,
@@ -205,7 +199,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 7,
-        id_for_html: "marcherPage_7",
         marcher_id: 1,
         page_id: 3,
         x: 50,
@@ -219,7 +212,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 8,
-        id_for_html: "marcherPage_8",
         marcher_id: 2,
         page_id: 3,
         x: 0,
@@ -233,7 +225,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 9,
-        id_for_html: "marcherPage_9",
         marcher_id: 3,
         page_id: 3,
         x: -200,
@@ -247,7 +238,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 10,
-        id_for_html: "marcherPage_10",
         marcher_id: 4,
         page_id: 1,
         x: -200,
@@ -261,7 +251,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 11,
-        id_for_html: "marcherPage_11",
         marcher_id: 4,
         page_id: 2,
         x: -200,
@@ -275,7 +264,6 @@ export const mockMarcherPages: MarcherPage[] = [
     },
     {
         id: 12,
-        id_for_html: "marcherPage_12",
         marcher_id: 4,
         page_id: 3,
         x: -200,

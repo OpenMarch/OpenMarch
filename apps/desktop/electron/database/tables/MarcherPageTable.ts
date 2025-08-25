@@ -37,7 +37,6 @@ export function getMarcherPages(args: {
         const query = orm
             .select({
                 id: schema.marcher_pages.id,
-                id_for_html: schema.marcher_pages.id_for_html,
                 marcher_id: schema.marcher_pages.marcher_id,
                 page_id: schema.marcher_pages.page_id,
                 x: schema.marcher_pages.x,
@@ -69,7 +68,6 @@ export function getMarcherPages(args: {
         // Transform the result to match the MarcherPage interface
         const result = rawResult.map((row) => ({
             id: row.id,
-            id_for_html: row.id_for_html,
             marcher_id: row.marcher_id,
             page_id: row.page_id,
             x: row.x,
