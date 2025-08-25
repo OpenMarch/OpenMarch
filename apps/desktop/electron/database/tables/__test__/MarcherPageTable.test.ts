@@ -148,7 +148,6 @@ describe("MarcherPageTable", () => {
 
             const marcherPage = result.data[0];
             expect(marcherPage).toHaveProperty("id");
-            expect(marcherPage).toHaveProperty("id_for_html");
             expect(marcherPage).toHaveProperty("marcher_id");
             expect(marcherPage).toHaveProperty("page_id");
             expect(marcherPage).toHaveProperty("x");

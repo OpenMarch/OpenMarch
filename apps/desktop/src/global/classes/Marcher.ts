@@ -10,8 +10,6 @@ import { getSectionObjectByName } from "./Sections";
 export class Marcher {
     /** The id of the marcher in the database */
     readonly id: number;
-    /** The id of the marcher for use in the HTML. E.g. "marcher_2" for marcher with ID of 2 */
-    readonly id_for_html: string;
     /** The name of the marcher. Optional */
     readonly name: string | null;
     /** The section the marcher is in. E.g. "Color Guard" */
@@ -51,7 +49,6 @@ export class Marcher {
         year?: string | null;
     }) {
         this.id = id;
-        this.id_for_html = `marcher_${id}`;
         this.name = name;
         this.section = section;
         this.drill_number = drill_prefix + drill_order;
@@ -120,7 +117,7 @@ export class Marcher {
      * Deletes a marcher from the database.
      * This will also delete the marcher pages associated with the marcher.
      *
-     * @param marcher_id - The id of the marcher. Do not use id_for_html.
+     * @param marcher_id - The id of the marche.
      * @returns Response data from the server.
      */
     static async deleteMarchers(

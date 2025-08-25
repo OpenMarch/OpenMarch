@@ -1,4 +1,3 @@
-import type { DatabaseResponse } from "electron/database/DatabaseActions";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
 import { Path, Spline } from "@openmarch/path-utility";
@@ -20,8 +19,6 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect & {
 export default interface MarcherPage {
     /** The id of the MarcherPage in the database */
     readonly id: number;
-    /** The id of the page for use in the HTML. E.g. "marcherPage_2" for MarcherPage with ID of 2 */
-    readonly id_for_html: string | null;
     /** The id of the Marcher the MarcherPage is associated with  */
     readonly marcher_id: number;
     /** The id of the Page the MarcherPage is associated with */
@@ -54,51 +51,6 @@ export default interface MarcherPage {
     readonly notes: string | null;
     /** The pathway notes from the joined pathways table */
     readonly pathway_notes: string | null;
-}
-
-/**
- * Gets all the MarcherPages that are associated with a given Marcher and/or Page.
- * This is a DB query and should not be called other than from the store.
- *
- * NO ARGS - get all MarcherPages.
- * ONE ARG - get all MarcherPages for that Marcher or Page.
- * BOTH ARGS - a single MarcherPage for that specific Marcher and Page.
- *
- * @param marcher_id - The id of the marcher. Optional
- * @param page_id - The id of the page. Optional
- * @returns A list of all the marcherPages or those for either a given marcher or page.
- */
-export async function getMarcherPages({
-    marcher_id,
-    page_id,
-    pages,
-}: { marcher_id?: number; page_id?: number; pages?: Page[] } = {}): Promise<
-    MarcherPage[]
-> {
-    const response = await window.electron.getMarcherPages({
-        marcher_id,
-        page_id,
-    });
-    return databaseMarcherPagesToMarcherPages(response.data, pages);
-}
-
-/**
- * Update one or many MarcherPages with the provided arguments.
- *
- * @param modifiedMarcherPages - The objects to update the MarcherPages with.
- * @param fetchMarcherPagesFunction - The function to call to fetch the pages from the database. This function updates the store.
- * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
- */
-export async function updateMarcherPages(
-    modifiedMarcherPages: ModifiedMarcherPageArgs[],
-    fetchMarcherPagesFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseMarcherPage>> {
-    const response =
-        await window.electron.updateMarcherPages(modifiedMarcherPages);
-
-    // Fetch the MarcherPages to update the store
-    if (response.success) await fetchMarcherPagesFunction();
-    return response;
 }
 
 /**

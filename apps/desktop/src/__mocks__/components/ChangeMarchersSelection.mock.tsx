@@ -17,11 +17,11 @@ export function ChangeMarchersSelection() {
             <p>Changes selected marchers state based on check boxes.</p>
             <ol title="selectedMarchers list">
                 {selectedMarchers.map((marcher) => (
-                    <li key={marcher.id_for_html}>{JSON.stringify(marcher)}</li>
+                    <li key={marcher.id}>{JSON.stringify(marcher)}</li>
                 ))}
             </ol>
             {marchers.map((marcher) => (
-                <div key={marcher.id_for_html}>
+                <div key={marcher.id}>
                     <label>
                         <input
                             type="checkbox"
@@ -53,7 +53,7 @@ export function ChangeMarchersSelection() {
                                 }
                             }}
                         />
-                        {marcher.id_for_html}
+                        {marcher.id}
                     </label>
                 </div>
             ))}

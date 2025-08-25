@@ -127,7 +127,7 @@ export function FullPageCoordinateSheet({
                         });
 
                         return (
-                            <tr key={marcherPage.id_for_html}>
+                            <tr key={marcherPage.id}>
                                 <td style={thTdStyle}>{page.name}</td>
                                 <td style={thTdStyle}>{page.counts}</td>
                                 {includeMeasures && (
@@ -211,6 +211,7 @@ export function QuarterPageCoordinateSheet({
 
     const compactMeasureFormat = (measureStr: string): string => {
         const match = measureStr.match(
+            // eslint-disable-next-line no-useless-escape
             /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
         );
         if (match) {
@@ -300,7 +301,7 @@ export function QuarterPageCoordinateSheet({
                         );
 
                         return (
-                            <tr key={marcherPage.id_for_html}>
+                            <tr key={marcherPage.id}>
                                 <td style={thTdStyle}>{page.name}</td>
                                 <td style={thTdStyle}>{counts}</td>
                                 <td style={thTdStyle}>{msValue}</td>

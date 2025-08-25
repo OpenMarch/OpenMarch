@@ -1,12 +1,5 @@
-import { mockMarcherPages } from "@/__mocks__/globalMocks";
-import {
-    getMarcherPages,
-    updateMarcherPages,
-    ModifiedMarcherPageArgs,
-    databaseMarcherPagesToMarcherPages,
-} from "../MarcherPage";
-import { ElectronApi } from "electron/preload";
-import { describe, expect, it, beforeEach, vi, afterEach } from "vitest";
+import { databaseMarcherPagesToMarcherPages } from "../MarcherPage";
+import { describe, expect, it } from "vitest";
 
 // Mock pages data for testing beat order functionality
 const mockPages = [
@@ -64,37 +57,6 @@ const mockPages = [
 ];
 
 describe("MarcherPage Functions", () => {
-    beforeEach(() => {
-        window.electron = {
-            getMarcherPages: vi
-                .fn()
-                .mockResolvedValue({ data: mockMarcherPages }),
-            createPages: vi.fn().mockResolvedValue({ success: true }),
-            updateMarcherPages: vi.fn().mockResolvedValue({ success: true }),
-            deletePage: vi.fn().mockResolvedValue({ success: true }),
-        } as Partial<ElectronApi> as ElectronApi;
-    });
-
-    afterEach(() => {
-        vi.clearAllMocks();
-    });
-
-    it("should fetch all MarcherPages from the database", async () => {
-        const pages = await getMarcherPages();
-        expect(pages).toEqual(
-            databaseMarcherPagesToMarcherPages(mockMarcherPages),
-        );
-        expect(window.electron.getMarcherPages).toHaveBeenCalled();
-    });
-
-    it("should use beat order when pages data is provided", async () => {
-        const pages = await getMarcherPages({ pages: mockPages });
-        expect(pages).toEqual(
-            databaseMarcherPagesToMarcherPages(mockMarcherPages, mockPages),
-        );
-        expect(window.electron.getMarcherPages).toHaveBeenCalled();
-    });
-
     it("should correctly find previous marcher page based on beat order", () => {
         // Create test data with marcher pages in non-sequential page order
         const testMarcherPages = [
@@ -110,7 +72,6 @@ describe("MarcherPage Functions", () => {
                 path_end_position: null,
                 notes: null,
                 pathway_notes: null,
-                id_for_html: null,
                 created_at: "",
                 updated_at: "",
             },
@@ -126,7 +87,6 @@ describe("MarcherPage Functions", () => {
                 path_end_position: null,
                 notes: null,
                 pathway_notes: null,
-                id_for_html: null,
                 created_at: "",
                 updated_at: "",
             },
@@ -142,7 +102,6 @@ describe("MarcherPage Functions", () => {
                 path_end_position: null,
                 notes: null,
                 pathway_notes: null,
-                id_for_html: null,
                 created_at: "",
                 updated_at: "",
             },
@@ -162,28 +121,5 @@ describe("MarcherPage Functions", () => {
         expect(result[0].path_data).toBeNull();
         expect(result[1].path_data).toBeNull();
         expect(result[2].path_data).toBeNull();
-    });
-
-    it("should update one or many MarcherPages in the database", async () => {
-        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [
-            { marcher_id: 1, page_id: 2, x: 8, y: 10 },
-            { marcher_id: 2, page_id: 2, x: 54.6, y: -456 },
-            { marcher_id: 1, page_id: 3, x: 0, y: 10.123021 },
-            { marcher_id: 2, page_id: 3, x: -239.09, y: 10 },
-        ];
-
-        const mockResponse = { success: true };
-        const fetchMarcherPagesFunction = vi.fn();
-
-        const response = await updateMarcherPages(
-            modifiedMarcherPages,
-            fetchMarcherPagesFunction,
-        );
-
-        expect(response).toEqual(mockResponse);
-        expect(window.electron.updateMarcherPages).toHaveBeenCalledWith(
-            modifiedMarcherPages,
-        );
-        expect(fetchMarcherPagesFunction).toHaveBeenCalled();
     });
 });

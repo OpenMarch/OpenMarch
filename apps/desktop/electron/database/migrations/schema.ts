@@ -129,7 +129,6 @@ export const marcher_pages = sqliteTable(
     "marcher_pages",
     {
         id: integer().primaryKey(),
-        id_for_html: text(),
         marcher_id: integer()
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
