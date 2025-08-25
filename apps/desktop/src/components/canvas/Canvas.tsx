@@ -22,6 +22,7 @@ import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
+import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 
 /**
  * The field/stage UI of OpenMarch
@@ -67,7 +68,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
 
-    useAnimation({
+    const { currentCollisions } = useAnimation({
         canvas,
     });
 
@@ -769,6 +770,35 @@ export default function Canvas({
         marcherVisuals,
         marcherPagesLoaded,
     ]);
+
+    // Render collision markers when paused
+    useEffect(() => {
+        if (!canvas) return;
+
+        // Always remove existing collision markers when page changes or animation starts
+        const existingMarkers = canvas
+            .getObjects()
+            .filter((obj: any) => obj.isCollisionMarker);
+        existingMarkers.forEach((marker) => canvas.remove(marker));
+
+        // Add new collision markers only when paused and there are collisions
+        if (!isPlaying && currentCollisions.length > 0) {
+            currentCollisions.forEach((collision) => {
+                const collisionCircle = new CollisionMarker(
+                    collision.x,
+                    collision.y,
+                    collision.distance,
+                    canvas,
+                );
+                collisionCircle.addText(
+                    `${collision.marcher1Id}-${collision.marcher2Id}`,
+                );
+                collisionCircle.draw();
+            });
+        }
+
+        canvas.requestRenderAll();
+    }, [canvas, isPlaying, currentCollisions, selectedPage]);
 
     return (
         <div
