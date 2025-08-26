@@ -22,30 +22,22 @@ const getPageHash = (
     marchers: Marcher[],
     marcherPages: MarcherPageMap,
 ) => {
-    // filter marchers that belong to this page
-    const pageMarchers = marchers.filter((m) => {
-        const marcherPagesForMarcher = getByMarcherId(marcherPages, m.id);
-        return marcherPagesForMarcher.some((mp) => mp.page_id === page.id);
-    });
-
     // Sum all x values for marchers on this page
-    const xSum = pageMarchers.reduce((sum, m) => {
+    const xSum = marchers.reduce((sum, m) => {
         const marcherPageData = getByMarcherId(marcherPages, m.id).find(
             (mp) => mp.page_id === page.id,
         );
         return sum + (marcherPageData?.x || 0);
     }, 0);
 
-    // Fit the x sum into 16 bits using modulo to ensure it fits
-    const xSumBits = Math.abs(Math.floor(xSum)) & 0xffff; // 16 bits
+    // Fit the x sum into 20 bits using modulo to ensure it fits
+    const xSumBits = Math.abs(Math.floor(xSum)) & 0xfffff; // 20 bits
 
-    // 32-bit hash structure: [8 bits pageId][8 bits timestamp][16 bits xSum]
-    const pageIdBits = (page.id & 0xff) << 24;
-    const timestampBits = (Math.floor(page.timestamp) & 0xff) << 16;
-    const xSumFits = xSumBits & 0xffff; // Ensure it fits in 16 bits
+    // 32-bit hash structure: [12 bits timestamp][20 bits xSum]
+    const timestampBits = (Math.floor(page.timestamp) & 0xfff) << 20; // 12 bits shifted left by 20
+    const xSumFits = xSumBits & 0xfffff; // Ensure it fits in 20 bits
 
-    const finalHash = pageIdBits | timestampBits | xSumFits;
-
+    const finalHash = timestampBits | xSumFits;
     // Convert to unsigned 32-bit integer
     return finalHash >>> 0;
 };
@@ -89,7 +81,7 @@ const sweepNPruneCollision = (
         }
 
         // Precompute x-intervals (or just sort by x)
-        const pts = marcherPositionsAtTime.map((p, idx) => ({
+        const pts = marcherPositionsAtTime.map((p) => ({
             id: p.id,
             x: p.x,
             y: p.y,
