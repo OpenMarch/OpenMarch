@@ -12,11 +12,8 @@ import { useMarcherPages } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import getPageCollisions, {
-    CollisionData,
-} from "./collision/collisionDetection";
-
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
+import { useCollisionStore } from "@/stores/CollisionStore";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -27,15 +24,17 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { marchers } = useMarcherStore()!;
     const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const {
+        collisions: pageCollisions,
+        setCollisions,
+        setCurrentCollision,
+    } = useCollisionStore();
 
     // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
         useMarcherPages({ pages });
 
     const animationFrameRef = useRef<number | null>(null);
-    const [currentCollisions, setCurrentCollisions] = useState<CollisionData[]>(
-        [],
-    );
 
     const marcherTimelines = useMemo(() => {
         if (
@@ -122,11 +121,9 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
     // Incremental collision calculation with caching
-    const pageCollisions = useMemo(
-        () =>
-            getPageCollisions(marchers, marcherTimelines, pages, marcherPages),
-        [marchers, pages, marcherPages, marcherTimelines],
-    );
+    useEffect(() => {
+        setCollisions(marchers, marcherTimelines, pages, marcherPages);
+    }, [marchers, marcherTimelines, pages, marcherPages]);
 
     // Get collisions for the currently selected page
     const getCollisionsForSelectedPage = useCallback(() => {
@@ -144,8 +141,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     // Update collisions when selected page changes
     useEffect(() => {
-        const collisions = getCollisionsForSelectedPage();
-        setCurrentCollisions(collisions);
+        setCurrentCollision(selectedPage);
     }, [selectedPage, getCollisionsForSelectedPage]);
 
     // Set marcher positions at a specific time
@@ -230,5 +226,5 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         };
     }, [isPlaying, canvas, setMarcherPositionsAtTime, updateSelectedPage]);
 
-    return { setMarcherPositionsAtTime, currentCollisions };
+    return { setMarcherPositionsAtTime };
 };

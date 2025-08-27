@@ -23,6 +23,7 @@ import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
+import { useCollisionStore } from "@/stores/CollisionStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -67,8 +68,8 @@ export default function Canvas({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
-
-    const { currentCollisions } = useAnimation({
+    const { currentCollisions } = useCollisionStore();
+    useAnimation({
         canvas,
     });
 
@@ -790,9 +791,7 @@ export default function Canvas({
                     collision.distance,
                     canvas,
                 );
-                collisionCircle.addText(
-                    `${collision.marcher1Id}-${collision.marcher2Id}`,
-                );
+                collisionCircle.addText(collision.label);
                 collisionCircle.draw();
             });
         }
