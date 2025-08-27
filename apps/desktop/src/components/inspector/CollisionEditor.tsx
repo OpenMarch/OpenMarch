@@ -8,7 +8,6 @@ import { useMarcherStore } from "@/stores/MarcherStore";
 const CollisionEditor = () => {
     const { selectedPage } = useSelectedPage()!;
     const { currentCollisions } = useCollisionStore();
-    const { marcherVisuals } = useMarcherVisualStore();
     const { marchers } = useMarcherStore();
 
     const collisionInfo = useMemo(() => {
@@ -20,7 +19,7 @@ const CollisionEditor = () => {
                 marcher2Label: b,
             };
         });
-    }, [currentCollisions, marchers, marcherVisuals]);
+    }, [currentCollisions]);
 
     if (!selectedPage || currentCollisions.length === 0) return null;
 
@@ -40,20 +39,17 @@ const CollisionEditor = () => {
                     page:
                 </div>
                 {collisionInfo.map((collision, index) => (
-                    <div
-                        key={index}
-                        className="hover:bg-accent/25 rounded-md p-4"
-                    >
+                    <div key={index} className="rounded-md p-4">
                         <div className="flex items-center justify-between">
-                            <div className="font-medium text-red-800">
+                            <div className="font-medium">
                                 {collision.marcher1Label} ↔{" "}
                                 {collision.marcher2Label}
                             </div>
-                            <div className="text-sm text-red-600">
+                            <div className="text-sm">
                                 Distance: {collision.distance.toFixed(1)}
                             </div>
                         </div>
-                        <div className="mt-1 text-xs text-red-600">
+                        <div className="mt-1 text-xs">
                             Position: ({collision.x.toFixed(1)},{" "}
                             {collision.y.toFixed(1)})
                         </div>
