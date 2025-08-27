@@ -3,6 +3,7 @@ import PageEditor from "./PageEditor";
 import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";
 import { T } from "@tolgee/react";
+import CollisionEditor from "./CollisionEditor";
 
 function Inspector() {
     return (
@@ -15,6 +16,7 @@ function Inspector() {
                 <MarcherEditor />
                 <ShapeEditor />
                 <AlignmentEditor />
+                <CollisionEditor />
             </div>
         </div>
     );
