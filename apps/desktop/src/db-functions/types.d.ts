@@ -8,4 +8,6 @@ export type DatabaseTransaction = SQLiteTransaction<
     SqliteRemoteResult<unknown>,
     typeof schema,
     ExtractTablesWithRelations<typeof schema>
-> | SQLJsTransaction<typeof schema, any>;
+>;
+
+// export type CustomSqlJsTransaction = SQLJsTransaction<typeof schema, any>;

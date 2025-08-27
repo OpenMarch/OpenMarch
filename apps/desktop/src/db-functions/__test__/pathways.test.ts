@@ -1,4 +1,4 @@
-import { it as baseIt, TestDb, schema, transaction } from "@/test";
+import { TestDb, schema, transaction, describeDbTests } from "@/test/base";
 import {
     Arc,
     CubicCurve,
@@ -8,110 +8,115 @@ import {
     Spline,
 } from "@openmarch/path-utility";
 import { describe, expect } from "vitest";
-import { updateEndpoint } from "../pathways";
+import { updateEndPoint } from "../pathways";
 import { eq } from "drizzle-orm";
 
-const it = baseIt.extend<{
-    pathwaysFixture: {
-        existingPathways: Path[];
-        db: TestDb;
-    };
-}>({
-    pathwaysFixture: async ({ db }, use) => {
-        const existingPathways: Path[] = [
-            new Path([new Line({ x: 0, y: 0 }, { x: 100, y: 100 })]),
-            new Path([
-                new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
-                new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
-            ]),
-            new Path([
-                new Spline([
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 200, y: 200 },
-                    { x: 300, y: 300 },
+describeDbTests("pathways", (baseIt) => {
+    const it = baseIt.extend<{
+        pathwaysFixture: {
+            existingPathways: Path[];
+            db: TestDb;
+        };
+    }>({
+        pathwaysFixture: async ({ db }, use) => {
+            const existingPathways: Path[] = [
+                new Path([new Line({ x: 0, y: 0 }, { x: 100, y: 100 })]),
+                new Path([
+                    new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
+                    new Line({ x: 100, y: 100 }, { x: 200, y: 200 }),
                 ]),
-            ]),
-            new Path([
-                new Spline([
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 200, y: 200 },
-                    { x: 300, y: 300 },
+                new Path([
+                    new Spline([
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 200, y: 200 },
+                        { x: 300, y: 300 },
+                    ]),
                 ]),
-                new Spline([
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 200, y: 200 },
-                    { x: 300, y: 300 },
+                new Path([
+                    new Spline([
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 200, y: 200 },
+                        { x: 300, y: 300 },
+                    ]),
+                    new Spline([
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 200, y: 200 },
+                        { x: 300, y: 300 },
+                    ]),
                 ]),
-            ]),
-            new Path([
-                new QuadraticCurve(
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 200, y: 200 },
-                ),
-            ]),
-            new Path([
-                new QuadraticCurve(
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 200, y: 200 },
-                ),
-                new QuadraticCurve(
-                    { x: 0, y: 1000 },
-                    { x: 100, y: 200 },
-                    { x: 150, y: 250 },
-                ),
-            ]),
-            new Path([
-                new CubicCurve(
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 150, y: 150 },
-                    { x: 200, y: 200 },
-                ),
-            ]),
-            new Path([
-                new CubicCurve(
-                    { x: 0, y: 0 },
-                    { x: 100, y: 100 },
-                    { x: 150, y: 150 },
-                    { x: 200, y: 200 },
-                ),
-                new CubicCurve(
-                    { x: 0, y: 1000 },
-                    { x: 100, y: 1200 },
-                    { x: 150, y: 1250 },
-                    { x: 200, y: 1300 },
-                ),
-            ]),
-            new Path([
-                new Arc({ x: 0, y: 0 }, 100, 100, 0, 0, 0, { x: 200, y: 200 }),
-            ]),
-            new Path([
-                new Arc({ x: 0, y: 0 }, 100, 100, 0, 0, 0, { x: 200, y: 200 }),
-                new Arc({ x: 200, y: 200 }, 100, 100, 0, 0, 0, { x: 0, y: 0 }),
-            ]),
-        ];
-        const insertedPathways = await db
-            .insert(schema.pathways)
-            .values(
+                new Path([
+                    new QuadraticCurve(
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 200, y: 200 },
+                    ),
+                ]),
+                new Path([
+                    new QuadraticCurve(
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 200, y: 200 },
+                    ),
+                    new QuadraticCurve(
+                        { x: 0, y: 1000 },
+                        { x: 100, y: 200 },
+                        { x: 150, y: 250 },
+                    ),
+                ]),
+                new Path([
+                    new CubicCurve(
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 150, y: 150 },
+                        { x: 200, y: 200 },
+                    ),
+                ]),
+                new Path([
+                    new CubicCurve(
+                        { x: 0, y: 0 },
+                        { x: 100, y: 100 },
+                        { x: 150, y: 150 },
+                        { x: 200, y: 200 },
+                    ),
+                    new CubicCurve(
+                        { x: 0, y: 1000 },
+                        { x: 100, y: 1200 },
+                        { x: 150, y: 1250 },
+                        { x: 200, y: 1300 },
+                    ),
+                ]),
+                new Path([
+                    new Arc({ x: 0, y: 0 }, 100, 100, 0, 0, 0, {
+                        x: 200,
+                        y: 200,
+                    }),
+                ]),
+                new Path([
+                    new Arc({ x: 0, y: 0 }, 100, 100, 0, 0, 0, {
+                        x: 200,
+                        y: 200,
+                    }),
+                    new Arc({ x: 200, y: 200 }, 100, 100, 0, 0, 0, {
+                        x: 0,
+                        y: 0,
+                    }),
+                ]),
+            ];
+            await db.insert(schema.pathways).values(
                 existingPathways.map((pathway) => ({
                     path_data: pathway.toJson(),
                 })),
-            )
-            .returning({
-                id: schema.pathways.id,
-                path_data: schema.pathways.path_data,
-            });
-        const dbPathways = insertedPathways.map((p) => Path.fromDb(p));
-        await use({ existingPathways: dbPathways, db });
-    },
-});
+            );
+            const dbPathways = (await db.query.pathways.findMany()).map(
+                (dbPath) => Path.fromDb(dbPath),
+            );
+            await use({ existingPathways: dbPathways, db });
+        },
+    });
 
-describe("pathways", () => {
     it("pathways should exist", async ({
         pathwaysFixture: { existingPathways, db },
     }) => {
@@ -202,7 +207,7 @@ describe("pathways", () => {
                     );
 
                     await transaction(db, async (tx) => {
-                        await updateEndpoint({
+                        await updateEndPoint({
                             tx,
                             pathwayId: existingPathways[singleIndex].id,
                             newPoint,
@@ -246,7 +251,7 @@ describe("pathways", () => {
                     );
 
                     await transaction(db, async (tx) => {
-                        await updateEndpoint({
+                        await updateEndPoint({
                             tx,
                             pathwayId: existingPathways[multiIndex].id,
                             newPoint,
@@ -270,196 +275,6 @@ describe("pathways", () => {
                     ).toEqual(newPoint);
                 });
             });
-
-            // it("should update the start point of a pathway", async ({
-            //     pathwaysFixture: { existingPathways, db },
-            // }) => {
-            //     const originalPath = existingPathways[0];
-            //     const newPoint = { x: 100, y: 100 };
-            //     expect(newPoint).not.toEqual(originalPath.getStartPoint());
-
-            //     // Store original values for comparison
-            //     const originalSegmentCount = originalPath.segments.length;
-            //     const originalEndPoint = originalPath.getLastPoint();
-            //     const originalSegments = originalPath.segments.map(
-            //         (segment) => ({
-            //             type: segment.type,
-            //             data: segment.toJson().data,
-            //         }),
-            //     );
-
-            //     await transaction(db, async (tx) => {
-            //         await updateEndpoint({
-            //             tx,
-            //             pathwayId: originalPath.id,
-            //             newPoint,
-            //             type: "start",
-            //         });
-            //     });
-
-            //     const newPathRow = await db.query.pathways.findFirst({
-            //         where: eq(schema.pathways.id, originalPath.id),
-            //     });
-            //     expect(newPathRow).toBeDefined();
-            //     const newPath = Path.fromDb(newPathRow!);
-
-            //     // Verify the start point was updated
-            //     expect(newPath.getStartPoint()).toEqual(newPoint);
-
-            //     // Verify basic structure remains the same
-            //     expect(newPath.segments).toHaveLength(originalSegmentCount);
-            //     expect(newPath.id).toBe(originalPath.id);
-
-            //     // Verify all segments maintain their types
-            //     expect(newPath.segments.length).toBe(originalSegments.length);
-            //     for (let i = 0; i < newPath.segments.length; i++) {
-            //         const newSegment = newPath.segments[i];
-            //         const originalSegment = originalSegments[i];
-
-            //         expect(newSegment.type).toBe(originalSegment.type);
-            //     }
-
-            //     // Verify the last point remains unchanged (this is the key invariant)
-            //     expect(newPath.getLastPoint()).toEqual(originalEndPoint);
-
-            //     // Note: Path length will change when start point changes, which is expected
-            //     // The first segment's end point will also change to maintain continuity
-            //     // This is the correct behavior for path endpoint updates
-            // });
-
-            // it("should update the end point of a pathway", async ({
-            //     pathwaysFixture: { existingPathways, db },
-            // }) => {
-            //     const originalPath = existingPathways[0];
-            //     const newPoint = { x: 100, y: 100 };
-            //     expect(newPoint).not.toEqual(originalPath.getLastPoint());
-
-            //     // Store original values for comparison
-            //     const originalSegmentCount = originalPath.segments.length;
-            //     const originalStartPoint = originalPath.getStartPoint();
-            //     const originalSegments = originalPath.segments.map(
-            //         (segment) => ({
-            //             type: segment.type,
-            //             data: segment.toJson().data,
-            //         }),
-            //     );
-
-            //     await transaction(db, async (tx) => {
-            //         await updateEndpoint({
-            //             tx,
-            //             pathwayId: originalPath.id,
-            //             newPoint,
-            //             type: "end",
-            //         });
-            //     });
-
-            //     const newPathRow = await db.query.pathways.findFirst({
-            //         where: eq(schema.pathways.id, originalPath.id),
-            //     });
-            //     expect(newPathRow).toBeDefined();
-            //     const newPath = Path.fromDb(newPathRow!);
-
-            //     // Verify the end point was updated
-            //     expect(newPath.getLastPoint()).toEqual(newPoint);
-
-            //     // Verify basic structure remains the same
-            //     expect(newPath.segments).toHaveLength(originalSegmentCount);
-            //     expect(newPath.id).toBe(originalPath.id);
-
-            //     // Verify all segments maintain their types
-            //     expect(newPath.segments.length).toBe(originalSegments.length);
-            //     for (let i = 0; i < newPath.segments.length; i++) {
-            //         const newSegment = newPath.segments[i];
-            //         const originalSegment = originalSegments[i];
-
-            //         expect(newSegment.type).toBe(originalSegment.type);
-            //     }
-
-            //     // Verify the start point remains unchanged (this is the key invariant)
-            //     expect(newPath.getStartPoint()).toEqual(originalStartPoint);
-
-            //     // Note: Path length will change when end point changes, which is expected
-            //     // The last segment's start point will also change to maintain continuity
-            //     // This is the correct behavior for path endpoint updates
-            // });
-
-            // it("should update endpoints on complex pathway without changing other properties", async ({
-            //     pathwaysFixture: { existingPathways, db },
-            // }) => {
-            //     const complexPath = existingPathways[1]; // This has Spline + QuadraticCurve segments
-            //     const newStartPoint = { x: 50, y: 50 };
-            //     const newEndPoint = { x: 250, y: 250 };
-
-            //     // Store original values for comparison
-            //     const originalSegmentCount = complexPath.segments.length;
-            //     const originalSegments = complexPath.segments.map(
-            //         (segment) => ({
-            //             type: segment.type,
-            //             data: segment.toJson().data,
-            //         }),
-            //     );
-
-            //     // Update start point
-            //     await transaction(db, async (tx) => {
-            //         await updateEndpoint({
-            //             tx,
-            //             pathwayId: complexPath.id,
-            //             newPoint: newStartPoint,
-            //             type: "start",
-            //         });
-            //     });
-
-            //     // Update end point
-            //     await transaction(db, async (tx) => {
-            //         await updateEndpoint({
-            //             tx,
-            //             pathwayId: complexPath.id,
-            //             newPoint: newEndPoint,
-            //             type: "end",
-            //         });
-            //     });
-
-            //     const updatedPathRow = await db.query.pathways.findFirst({
-            //         where: eq(schema.pathways.id, complexPath.id),
-            //     });
-            //     expect(updatedPathRow).toBeDefined();
-            //     const updatedPath = Path.fromDb(updatedPathRow!);
-
-            //     // Verify both endpoints were updated
-            //     expect(updatedPath.getStartPoint()).toEqual(newStartPoint);
-            //     expect(updatedPath.getLastPoint()).toEqual(newEndPoint);
-
-            //     // Verify basic structure remains the same
-            //     expect(updatedPath.segments).toHaveLength(originalSegmentCount);
-            //     expect(updatedPath.id).toBe(complexPath.id);
-
-            //     // Verify all segments maintain their types
-            //     expect(updatedPath.segments.length).toBe(
-            //         originalSegments.length,
-            //     );
-            //     for (let i = 0; i < updatedPath.segments.length; i++) {
-            //         const updatedSegment = updatedPath.segments[i];
-            //         const originalSegment = originalSegments[i];
-
-            //         expect(updatedSegment.type).toBe(originalSegment.type);
-
-            //         // Verify segment-specific properties are preserved
-            //         if (updatedSegment.type === "spline") {
-            //             const splineSegment = updatedSegment as any;
-            //             expect(splineSegment.degree).toBe(3); // Default degree from fixture
-            //             expect(splineSegment.closed).toBe(false);
-            //             expect(splineSegment.tension).toBe(0.5);
-            //         } else if (updatedSegment.type === "quadratic-curve") {
-            //             const quadSegment = updatedSegment as any;
-            //             // Control point should remain unchanged
-            //             expect(quadSegment.controlPoint).toBeDefined();
-            //         }
-            //     }
-
-            //     // Note: When updating both start and end points, the path structure changes
-            //     // but the segment types and their intrinsic properties remain the same
-            //     // This is the correct behavior for path endpoint updates
-            // });
         },
     );
 });
