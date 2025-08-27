@@ -9,6 +9,7 @@ import MarcherPageMap, {
     marcherPageMapFromArray,
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
+import { updateEndPoint } from "@/db-functions/pathways";
 
 const { marcher_pages } = schema;
 
@@ -274,6 +275,18 @@ export const useUpdateMarcherPages = () => {
                             notes: marcher_pages.notes,
                         })
                         .get();
+
+                    if (result.path_data_id) {
+                        updateEndPoint({
+                            tx,
+                            pathwayId: result.path_data_id,
+                            newPoint: {
+                                x: result.x,
+                                y: result.y,
+                            },
+                            type: "end",
+                        });
+                    }
 
                     results.push(result);
                 }

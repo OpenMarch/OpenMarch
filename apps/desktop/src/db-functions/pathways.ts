@@ -13,7 +13,7 @@ const { pathways } = schema;
  * @param newPoint - The new point to update the pathway to.
  * @param type - The type of point to update, either "start" or "end".
  */
-export async function updateEndpoint({
+export async function updateEndPoint({
     tx,
     pathwayId,
     newPoint,
