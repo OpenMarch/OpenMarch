@@ -1,8 +1,8 @@
-import { describe, expect } from "vitest";
-import { it, schema } from "@/test";
+import { expect } from "vitest";
+import { describeDbTests, schema } from "@/test/base";
 import { eq } from "drizzle-orm";
 
-describe("Database connection", () => {
+describeDbTests("Database connection", (it) => {
     it("Database should be defined", async ({ db }) => {
         expect(db).toBeDefined();
     });
@@ -29,7 +29,7 @@ describe("Database connection", () => {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             })
-            .returning({ id: schema.marchers.id });
+            .returning();
         expect(result).toBeDefined();
         expect(result.length).toBe(1);
 
@@ -44,7 +44,7 @@ describe("Database connection", () => {
         const deleteResult = await db
             .delete(schema.marchers)
             .where(eq(schema.marchers.id, result[0].id))
-            .returning({ id: schema.marchers.id });
+            .returning();
         expect(deleteResult).toBeDefined();
         expect(deleteResult.length).toBe(1);
         expect(deleteResult[0].id).toBe(result[0].id);
@@ -64,7 +64,7 @@ describe("Database connection", () => {
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             })
-            .returning({ id: schema.marchers.id });
+            .returning();
         expect(result).toBeDefined();
         expect(result.length).toBe(1);
         expect(result[0].id).toBeDefined();
@@ -85,10 +85,7 @@ describe("Database connection", () => {
                 drill_order: 2,
             })
             .where(eq(schema.marchers.id, result[0].id))
-            .returning({
-                id: schema.marchers.id,
-                section: schema.marchers.section,
-            });
+            .returning();
         expect(updateResult).toBeDefined();
         expect(updateResult.length).toBe(1);
         expect(updateResult[0].id).toBe(result[0].id);
