@@ -199,13 +199,11 @@ const describeDbTests = (
         dbType: "sql-js" | "better-sqlite3",
     ) => void,
 ) => {
-    describe(name, () => {
-        describe("sql-js", () => {
-            tests(sqlJsTest, "sql-js");
-        });
-        describe("better-sqlite3", () => {
-            tests(betterSqliteTest, "better-sqlite3");
-        });
+    describe("sql-js", () => {
+        tests(sqlJsTest, "sql-js");
+    });
+    describe("better-sqlite3", () => {
+        tests(betterSqliteTest, "better-sqlite3");
     });
 };
 
