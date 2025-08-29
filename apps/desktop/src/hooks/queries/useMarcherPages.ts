@@ -10,6 +10,7 @@ import MarcherPageMap, {
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
 import { updateEndPoint } from "@/db-functions/pathways";
+import { getNextMarcherPage } from "@/db-functions/marcherPage";
 
 const { marcher_pages } = schema;
 
@@ -234,66 +235,86 @@ export const fetchMarcherPages = () => {
     queryClient.invalidateQueries({ queryKey: marcherPageKeys.list() });
 };
 
+// Mutation functions (pure business logic)
+const marcherPageMutations = {
+    updateMarcherPages: async (
+        modifiedMarcherPages: ModifiedMarcherPageArgs[],
+    ): Promise<DatabaseMarcherPage[]> => {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results: DatabaseMarcherPage[] = [];
+
+            for (const modifiedMarcherPage of modifiedMarcherPages) {
+                const { marcher_id, page_id, ...updateData } =
+                    modifiedMarcherPage;
+
+                const currentMarcherPage = await tx
+                    .update(marcher_pages)
+                    .set(updateData)
+                    .where(
+                        and(
+                            eq(marcher_pages.marcher_id, marcher_id),
+                            eq(marcher_pages.page_id, page_id),
+                        ),
+                    )
+                    .returning({
+                        id: marcher_pages.id,
+                        marcher_id: marcher_pages.marcher_id,
+                        page_id: marcher_pages.page_id,
+                        x: marcher_pages.x,
+                        y: marcher_pages.y,
+                        created_at: marcher_pages.created_at,
+                        updated_at: marcher_pages.updated_at,
+                        path_data_id: marcher_pages.path_data_id,
+                        path_start_position: marcher_pages.path_start_position,
+                        path_end_position: marcher_pages.path_end_position,
+                        notes: marcher_pages.notes,
+                    })
+                    .get();
+
+                if (currentMarcherPage.path_data_id) {
+                    updateEndPoint({
+                        tx,
+                        pathwayId: currentMarcherPage.path_data_id,
+                        newPoint: {
+                            x: currentMarcherPage.x,
+                            y: currentMarcherPage.y,
+                        },
+                        type: "end",
+                    });
+                }
+
+                const nextMarcherPage = await getNextMarcherPage(tx, {
+                    marcherPageId: currentMarcherPage.id,
+                });
+
+                if (nextMarcherPage && nextMarcherPage.path_data_id) {
+                    updateEndPoint({
+                        tx,
+                        pathwayId: nextMarcherPage.path_data_id,
+                        newPoint: {
+                            x: currentMarcherPage.x,
+                            y: currentMarcherPage.y,
+                        },
+                        type: "start",
+                    });
+                }
+
+                results.push(currentMarcherPage);
+            }
+
+            return results;
+        });
+    },
+};
+
 // Mutation hooks
 export const useUpdateMarcherPages = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (
-            modifiedMarcherPages: ModifiedMarcherPageArgs[],
-        ): Promise<DatabaseMarcherPage[]> => {
-            return await db.transaction(async (tx) => {
-                await incrementUndoGroup(tx);
-
-                const results: DatabaseMarcherPage[] = [];
-
-                for (const modifiedMarcherPage of modifiedMarcherPages) {
-                    const { marcher_id, page_id, ...updateData } =
-                        modifiedMarcherPage;
-
-                    const result = await tx
-                        .update(marcher_pages)
-                        .set(updateData)
-                        .where(
-                            and(
-                                eq(marcher_pages.marcher_id, marcher_id),
-                                eq(marcher_pages.page_id, page_id),
-                            ),
-                        )
-                        .returning({
-                            id: marcher_pages.id,
-                            marcher_id: marcher_pages.marcher_id,
-                            page_id: marcher_pages.page_id,
-                            x: marcher_pages.x,
-                            y: marcher_pages.y,
-                            created_at: marcher_pages.created_at,
-                            updated_at: marcher_pages.updated_at,
-                            path_data_id: marcher_pages.path_data_id,
-                            path_start_position:
-                                marcher_pages.path_start_position,
-                            path_end_position: marcher_pages.path_end_position,
-                            notes: marcher_pages.notes,
-                        })
-                        .get();
-
-                    if (result.path_data_id) {
-                        updateEndPoint({
-                            tx,
-                            pathwayId: result.path_data_id,
-                            newPoint: {
-                                x: result.x,
-                                y: result.y,
-                            },
-                            type: "end",
-                        });
-                    }
-
-                    results.push(result);
-                }
-
-                return results;
-            });
-        },
+        mutationFn: marcherPageMutations.updateMarcherPages,
         onSuccess: (data, variables) => {
             // Invalidate all marcher pages queries
             // TODO - Provide more targeted invalidation

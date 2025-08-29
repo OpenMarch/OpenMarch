@@ -300,5 +300,3 @@ export const utility = sqliteTable(
         check("utility_id_check", sql`id = 0`),
     ],
 );
-
-export * from "./relations";
