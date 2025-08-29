@@ -53,9 +53,10 @@ const calculateMaxVelocity = (
     const pageStartTime = page.timestamp * 1000;
     const pageEndTime = (page.timestamp + page.duration) * 1000;
     const pageDurationMs = pageEndTime - pageStartTime;
+    if (pageDurationMs <= 0) return 0;
 
     let maxVelocity = 0;
-    for (const [marcherId, timeline] of marcherTimelines.entries()) {
+    for (const [_, timeline] of marcherTimelines.entries()) {
         if (!timeline) continue;
 
         try {
