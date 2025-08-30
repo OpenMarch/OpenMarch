@@ -15,6 +15,7 @@ describe("uiSettings Store", () => {
         lockY: false,
         previousPaths: true,
         nextPaths: true,
+        showCollisions: true,
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
@@ -54,6 +55,24 @@ describe("uiSettings Store", () => {
 
         // Expect isPlaying to be false
         expectedSettings.isPlaying = false;
+        act(() => result.current.setUiSettings({ ...expectedSettings }));
+        expect(result.current.uiSettings).toEqual(expectedSettings);
+    });
+
+    it("uiSettingsStore - set showCollisions", async () => {
+        const { result } = renderHook(() => useUiSettingsStore());
+
+        const expectedSettings = {
+            ...initialSettings,
+            showCollisions: false,
+        };
+
+        // Expect showCollisions to be false
+        act(() => result.current.setUiSettings({ ...expectedSettings }));
+        expect(result.current.uiSettings).toEqual(expectedSettings);
+
+        // Expect showCollisions to be true
+        expectedSettings.showCollisions = true;
         act(() => result.current.setUiSettings({ ...expectedSettings }));
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });

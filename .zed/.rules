@@ -1,0 +1,354 @@
+# Repo instructions
+
+OpenMarch is a monorepo organized with Turbo. It uses pnpm as its package manager
+
+The stack is Electron and React for the desktop app, zustand for state management, Radix and Tailwind for styling, and Vitest and Playwright for testing.
+
+All styles are stored in [tailwind.css](mdc:packages/ui/src/tailwind.css). Do your best when making frontend components to match existing style patterns and color usage.
+Prefer to use components in the './packages/ui/src/components/base' folder for common items like buttons and inputs.
+
+When you need to use icons, use @phosphor-icons/react
+
+# Unit testing instructions
+
+---
+description: Guidelines for writing unit tests
+globs:
+alwaysApply: true
+---
+
+Use Vitest to write all unit tests.
+
+Tests should be placed in a **test** folder within the same directory of the file being tested.
+
+Never use mocks for packages or database operations.
+Everything should be able to be tested with the real functionality.
+If you run into trouble getting a module to import correctly, please ask for assistance.
+The only exception to this is mocking React context providers when trying to render components that rely on the hooks.
+
+# Database interactions
+
+---
+description: When needing to create new interactions with the database
+alwaysApply: false
+---
+
+# New Table Interactions with React Query
+
+## 🎯 **Rule: Always Use React Query for Database Operations**
+
+When adding new database table interactions in OpenMarch, **always create React Query hooks** instead of traditional table files. This ensures consistency, better performance, and improved developer experience.
+
+## 📋 **Required Steps for New Tables**
+
+### 1. **Create Query Hook File**
+
+Create a new file in `apps/desktop/src/hooks/queries/use[TableName].ts`
+
+**Template:**
+
+```typescript
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { db, schema } from "@/global/database/db";
+import { eq, inArray, and } from "drizzle-orm";
+import { incrementUndoGroup } from "@/global/classes/History";
+
+const { table_name } = schema;
+
+// Define types from the existing schema
+export type DatabaseTableName = typeof table_name.$inferSelect;
+
+/**
+ * Arguments for creating a new item
+ */
+export interface NewTableNameArgs {
+    // Define required fields
+}
+
+/**
+ * Arguments for modifying an existing item
+ */
+export interface ModifiedTableNameArgs {
+    id: number;
+    // Define optional fields
+}
+
+// Query key factory
+export const tableNameKeys = {
+    all: ["tableName"] as const,
+    lists: () => [...tableNameKeys.all, "list"] as const,
+    list: (filters: Record<string, unknown> = {}) =>
+        [
+            ...tableNameKeys.lists(),
+            Object.keys(filters)
+                .sort()
+                .reduce(
+                    (acc, k) => {
+                        // @ts-expect-error index
+                        acc[k] = filters[k];
+                        return acc;
+                    },
+                    {} as Record<string, unknown>,
+                ),
+        ] as const,
+    details: () => [...tableNameKeys.all, "detail"] as const,
+    detail: (id: number) => [...tableNameKeys.details(), id] as const,
+};
+
+// Query functions
+const tableNameQueries = {
+    getAll: async (filters?: {
+        /* define filters */
+    }): Promise<DatabaseTableName[]> => {
+        // Build filter conditions
+        const conditions: SQL[] = [];
+
+        if (filters?.someField !== undefined) {
+            conditions.push(eq(table_name.someField, filters.someField));
+        }
+
+        if (filters?.anotherField !== undefined) {
+            conditions.push(eq(table_name.anotherField, filters.anotherField));
+        }
+
+        // Combine all conditions with AND
+        const whereClause =
+            conditions.length > 0 ? and(...conditions) : undefined;
+
+        // Execute query with composed filters
+        return await db.select().from(table_name).where(whereClause).all();
+    },
+
+    getById: async (id: number): Promise<DatabaseTableName | undefined> => {
+        return await db
+            .select()
+            .from(table_name)
+            .where(eq(table_name.id, id))
+            .get();
+    },
+};
+
+// Query hooks
+export const useTableName = (filters?: {
+    /* define filters */
+}) => {
+    return useQuery({
+        queryKey: tableNameKeys.list(filters || {}),
+        queryFn: () => tableNameQueries.getAll(filters),
+    });
+};
+
+export const useTableNameById = (id: number) => {
+    return useQuery({
+        queryKey: tableNameKeys.detail(id),
+        queryFn: () => tableNameQueries.getById(id),
+        enabled: !!id,
+    });
+};
+
+// Mutation hooks
+export const useCreateTableName = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (
+            newItems: NewTableNameArgs[],
+        ): Promise<DatabaseTableName[]> => {
+            return await db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
+
+                const results = await tx
+                    .insert(table_name)
+                    .values(newItems)
+                    .returning()
+                    .all();
+
+                return results;
+            });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: tableNameKeys.lists(),
+            });
+        },
+    });
+};
+
+export const useUpdateTableName = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (
+            modifiedItems: ModifiedTableNameArgs[],
+        ): Promise<DatabaseTableName[]> => {
+            return await db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
+
+                const results: DatabaseTableName[] = [];
+
+                for (const modifiedItem of modifiedItems) {
+                    const { id, ...updateData } = modifiedItem;
+                    const result = await tx
+                        .update(table_name)
+                        .set(updateData)
+                        .where(eq(table_name.id, id))
+                        .returning()
+                        .get();
+                    results.push(result);
+                }
+
+                return results;
+            });
+        },
+        onSuccess: (data, variables) => {
+            // Invalidate specific queries
+            variables.forEach(({ id }) => {
+                queryClient.invalidateQueries({
+                    queryKey: tableNameKeys.detail(id),
+                });
+            });
+
+            // Invalidate list queries
+            queryClient.invalidateQueries({
+                queryKey: tableNameKeys.lists(),
+            });
+        },
+    });
+};
+
+export const useDeleteTableName = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async (itemIds: number[]): Promise<DatabaseTableName[]> => {
+            return await db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
+
+                const results = await tx
+                    .delete(table_name)
+                    .where(inArray(table_name.id, itemIds))
+                    .returning()
+                    .all();
+
+                return results;
+            });
+        },
+        onSuccess: (data, variables) => {
+            // Invalidate specific queries
+            variables.forEach((id) => {
+                queryClient.invalidateQueries({
+                    queryKey: tableNameKeys.detail(id),
+                });
+            });
+
+            // Invalidate list queries
+            queryClient.invalidateQueries({
+                queryKey: tableNameKeys.lists(),
+            });
+        },
+    });
+};
+```
+
+### 2. **Update Index File**
+
+Add exports to `apps/desktop/src/hooks/queries/index.ts`:
+
+```typescript
+export * from "./useTableName";
+```
+
+### 3. **Follow Naming Conventions**
+
+- **File Name**: `use[TableName].ts` (PascalCase table name)
+- **Hook Names**: `use[TableName]`, `use[TableName]ById`, `useCreate[TableName]`, etc.
+- **Query Keys**: `[tableName]` (camelCase)
+- **Types**: `Database[TableName]`, `New[TableName]Args`, `Modified[TableName]Args`
+
+### 4. **Required Features**
+
+✅ **Query Keys Factory**: Consistent key structure
+✅ **Type Safety**: Full TypeScript support
+✅ **Transaction Support**: All mutations use transactions
+✅ **Undo/Redo Integration**: Include `incrementUndoGroup`
+✅ **Smart Invalidation**: Selective cache invalidation
+✅ **Error Handling**: Built-in error states
+✅ **Loading States**: Automatic loading management
+
+### 5. **Advanced Patterns**
+
+#### **Joins with Other Tables**
+
+```typescript
+const query = db
+    .select({
+        // Select fields from main table
+        id: table_name.id,
+        // Select fields from joined table
+        related_field: related_table.field,
+    })
+    .from(table_name)
+    .leftJoin(related_table, eq(table_name.foreign_key, related_table.id));
+```
+
+#### **Complex Filtering**
+
+```typescript
+const conditions = [];
+if (filters?.field1 !== undefined) {
+    conditions.push(eq(table_name.field1, filters.field1));
+}
+if (filters?.field2 !== undefined) {
+    conditions.push(eq(table_name.field2, filters.field2));
+}
+
+if (conditions.length > 0) {
+    query.where(conditions.length > 1 ? and(...conditions) : conditions[0]);
+}
+```
+
+#### **Custom Query Keys**
+
+```typescript
+export const tableNameKeys = {
+    all: ["tableName"] as const,
+    lists: () => [...tableNameKeys.all, "list"] as const,
+    list: (filters: FilterType = {}) =>
+        [...tableNameKeys.lists(), filters] as const,
+    details: () => [...tableNameKeys.all, "detail"] as const,
+    detail: (id: number) => [...tableNameKeys.details(), id] as const,
+    byField: (fieldValue: string) =>
+        [...tableNameKeys.all, "field", fieldValue] as const,
+};
+```
+
+## 🚫 **What NOT to Do**
+
+- ❌ Don't create traditional `*.Table.ts` files
+- ❌ Don't use manual `useState` for loading/error states
+- ❌ Don't manually manage cache invalidation
+- ❌ Don't forget to include undo/redo integration
+- ❌ Don't skip TypeScript types
+
+## ✅ **What to Always Do**
+
+- ✅ Use React Query hooks for all database operations
+- ✅ Include proper TypeScript types
+- ✅ Add transaction support for mutations
+- ✅ Implement smart cache invalidation
+- ✅ Follow the established naming conventions
+- ✅ Include undo/redo integration
+- ✅ Add comprehensive error handling
+
+## 🔄 **Migration Checklist**
+
+When migrating existing table files:
+
+1. ✅ Create React Query hook file
+2. ✅ Update all components to use new hooks
+3. ✅ Remove old table file
+4. ✅ Update imports throughout codebase
+5. ✅ Test all functionality
+6. ✅ Update documentation
+
+This rule ensures OpenMarch maintains a modern, efficient, and consistent approach to data management.

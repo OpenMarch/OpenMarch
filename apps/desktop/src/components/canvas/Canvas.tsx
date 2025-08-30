@@ -24,6 +24,7 @@ import { useAnimation } from "@/hooks/useAnimation";
 import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
+import { setCanvasStore } from "@/stores/CanvasStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -69,6 +70,7 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
     const { currentCollisions } = useCollisionStore();
+
     useAnimation({
         canvas,
     });
@@ -465,7 +467,8 @@ export default function Canvas({
         }
 
         setCanvas(newCanvasInstance);
-        window.canvas = canvas;
+        setCanvasStore(newCanvasInstance);
+        window.canvas = newCanvasInstance;
         if (onCanvasReady) {
             onCanvasReady(newCanvasInstance);
         }
@@ -476,7 +479,15 @@ export default function Canvas({
         uiSettings,
         canvas,
         onCanvasReady,
+        setCanvasStore,
     ]);
+
+    // Cleanup canvas on unmount
+    useEffect(() => {
+        return () => {
+            setCanvasStore(null);
+        };
+    }, [setCanvasStore]);
 
     // Initiate listeners
     useEffect(() => {
@@ -782,8 +793,12 @@ export default function Canvas({
             .filter((obj: any) => obj.isCollisionMarker);
         existingMarkers.forEach((marker) => canvas.remove(marker));
 
-        // Add new collision markers only when paused and there are collisions
-        if (!isPlaying && currentCollisions.length > 0) {
+        // Add new collision markers only when paused, collisions exist, and showCollisions is enabled
+        if (
+            !isPlaying &&
+            currentCollisions.length > 0 &&
+            uiSettings.showCollisions
+        ) {
             currentCollisions.forEach((collision) => {
                 const collisionCircle = new CollisionMarker(
                     collision.x,
@@ -797,7 +812,13 @@ export default function Canvas({
         }
 
         canvas.requestRenderAll();
-    }, [canvas, isPlaying, currentCollisions, selectedPage]);
+    }, [
+        canvas,
+        isPlaying,
+        currentCollisions,
+        selectedPage,
+        uiSettings.showCollisions,
+    ]);
 
     return (
         <div
