@@ -3,7 +3,7 @@ import { DatabaseTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
 import { eq } from "drizzle-orm";
-const { pathways } = schema;
+const { pathways, marcher_pages } = schema;
 
 /**
  * Updates the start or end point of a pathway.
@@ -66,3 +66,26 @@ export async function updateEndPoint({
 
     return response;
 }
+
+/**
+ * Finds the page IDs that are associated with a given pathway
+ * @param tx - The database transaction.
+ * @param pathwayId - The ID of the pathway to find the page IDs for.
+ * @returns
+ */
+export const findPageIdsForPathway = async ({
+    tx,
+    pathwayId,
+}: {
+    tx: DatabaseTransaction;
+    pathwayId: number;
+}) => {
+    const results = await tx
+        .selectDistinct({
+            page_id: marcher_pages.page_id,
+        })
+        .from(marcher_pages)
+        .where(eq(marcher_pages.path_data_id, pathwayId))
+        .all();
+    return results.map((result) => result.page_id);
+};

@@ -10,14 +10,16 @@ import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import {
+    fetchMarcherPages,
+    marcherPageKeys,
     useFieldProperties,
     useFieldPropertiesWithSetter,
 } from "@/hooks/queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
-import { fetchMarcherPages } from "@/hooks/queries";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@openmarch/core";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * A component that initializes the state of the application.
@@ -35,6 +37,7 @@ function StateInitializer() {
     const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
     const { isSuccess: fieldPropertiesSuccess, data: fieldProperties } =
         useFieldProperties();
+    const queryClient = useQueryClient();
 
     /**
      * These functions set the fetch function in each respective class.
@@ -54,11 +57,6 @@ function StateInitializer() {
         Marcher.fetchMarchers = () => fetchMarchersAndVisuals(fieldTheme);
         Marcher.fetchMarchers();
     }, [fetchMarchers, fieldPropertiesSuccess, fieldProperties?.theme]);
-
-    useEffect(() => {
-        fetchMarcherPages();
-        // refetch marcherPages when the pages or marchers change
-    }, [pages, marchers]);
 
     useEffect(() => {
         fetchTimingObjects();
@@ -142,7 +140,13 @@ function StateInitializer() {
                         }
                         break;
                     case Constants.MarcherPageTableName:
-                        fetchMarcherPages();
+                        if (!args.pageId)
+                            throw new Error(
+                                "Page ID must be defined on the history response",
+                            );
+                        queryClient.invalidateQueries({
+                            queryKey: [marcherPageKeys.byPage(args.pageId)],
+                        });
                         if (args.marcherIds.length > 0) {
                             // TODO support passing in all of the marchers that were modified in the undo
                             const newMarchers = marchers.filter((marcher) =>
@@ -152,19 +156,37 @@ function StateInitializer() {
                         } else {
                             setSelectedMarchers([]);
                         }
-                        if (args.pageId && args.pageId > 0)
-                            setSelectedPage(getPage(args.pageId));
+                        if (args.pageId && args.pageId > 0) {
+                            const newPage = getPage(args.pageId);
+                            if (!newPage)
+                                throw new Error(
+                                    `Page could not be found with ID ${args.pageId}`,
+                                );
+                            setSelectedPage(newPage);
+                        }
                         break;
                     case Constants.ShapeTableName:
                     case Constants.ShapePageTableName:
                     case Constants.ShapePageMarcherTableName:
-                        fetchMarcherPages();
+                        if (!args.pageId)
+                            throw new Error(
+                                "Page ID must be defined on the history response",
+                            );
+                        queryClient.invalidateQueries({
+                            queryKey: [marcherPageKeys.byPage(args.pageId)],
+                        });
                         fetchShapePages();
                         break;
                     case Constants.PageTableName:
                         fetchTimingObjects();
-                        if (args.pageId && args.pageId > 0)
-                            setSelectedPage(getPage(args.pageId));
+                        if (args.pageId && args.pageId > 0) {
+                            const newPage = getPage(args.pageId);
+                            if (!newPage)
+                                throw new Error(
+                                    `Page could not be found with ID ${args.pageId}`,
+                                );
+                            setSelectedPage(newPage);
+                        }
                         break;
                     case Constants.BeatsTableName:
                     case Constants.MeasureTableName:
@@ -201,6 +223,7 @@ function StateInitializer() {
         fetchFieldProperties,
         fetchTimingObjects,
         updateUndoRedo,
+        queryClient,
     ]);
 
     // Listen for fetch actions from the main process
@@ -216,6 +239,7 @@ function StateInitializer() {
                     fetchTimingObjects();
                     break;
                 case Constants.MarcherPageTableName:
+                    console.warn("Why is this being called?");
                     fetchMarcherPages();
                     break;
             }

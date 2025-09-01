@@ -1,4 +1,9 @@
-import { TestDb, schema, transaction, describeDbTests } from "@/test/base";
+import {
+    DbConnection,
+    schema,
+    transaction,
+    describeDbTests,
+} from "@/test/base";
 import {
     Arc,
     CubicCurve,
@@ -8,14 +13,14 @@ import {
     Spline,
 } from "@openmarch/path-utility";
 import { describe, expect } from "vitest";
-import { updateEndPoint } from "../pathways";
+import { findPageIdsForPathway, updateEndPoint } from "../pathways";
 import { eq } from "drizzle-orm";
 
 describeDbTests("pathways", (baseIt) => {
     const it = baseIt.extend<{
         pathwaysFixture: {
             existingPathways: Path[];
-            db: TestDb;
+            db: DbConnection;
         };
     }>({
         pathwaysFixture: async ({ db }, use) => {
@@ -277,4 +282,40 @@ describeDbTests("pathways", (baseIt) => {
             });
         },
     );
+
+    describe("findPageIdsForPathway", () => {
+        it("No pathways should be associated with any pages yet", async ({
+            marchersAndPages: { expectedMarcherPages },
+            pathwaysFixture: { existingPathways, db },
+        }) => {
+            await transaction(db, async (tx) => {
+                const pageIds = await findPageIdsForPathway({
+                    tx,
+                    pathwayId: existingPathways[0].id,
+                });
+                expect(pageIds).toEqual([]);
+            });
+        });
+
+        it("Pathways should be associated with a page", async ({
+            marchersAndPages,
+            pathwaysFixture: { existingPathways, db },
+        }) => {
+            // Make all marcherPages have pathway 0
+            await db.update(schema.marcher_pages).set({
+                path_data_id: existingPathways[0].id,
+            });
+            const allPageIds = new Set(
+                marchersAndPages.expectedMarcherPages.map((mp) => mp.page_id),
+            );
+            await transaction(db, async (tx) => {
+                const pageIds = await findPageIdsForPathway({
+                    tx,
+                    pathwayId: existingPathways[0].id,
+                });
+                expect(pageIds.length).toEqual(allPageIds.size);
+                expect(pageIds).toEqual(Array.from(allPageIds));
+            });
+        });
+    });
 });

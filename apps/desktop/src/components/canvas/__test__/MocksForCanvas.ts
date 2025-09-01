@@ -128,9 +128,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the first marcherPage",
-        pathway_notes: null,
     },
     {
         id: 2,
@@ -141,9 +139,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the second marcherPage",
-        pathway_notes: null,
     },
     {
         id: 3,
@@ -154,9 +150,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
     {
         id: 4,
@@ -167,9 +161,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the first marcherPage",
-        pathway_notes: null,
     },
     {
         id: 5,
@@ -180,9 +172,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the second marcherPage",
-        pathway_notes: null,
     },
     {
         id: 6,
@@ -193,9 +183,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
     {
         id: 7,
@@ -206,9 +194,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the first marcherPage",
-        pathway_notes: null,
     },
     {
         id: 8,
@@ -219,9 +205,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: "This is the second marcherPage",
-        pathway_notes: null,
     },
     {
         id: 9,
@@ -232,9 +216,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
     {
         id: 10,
@@ -245,9 +227,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
     {
         id: 11,
@@ -258,9 +238,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
     {
         id: 12,
@@ -271,9 +249,7 @@ export const mockMarcherPages: MarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
-        path_data: null,
         notes: null,
-        pathway_notes: null,
     },
 ] as const;
 

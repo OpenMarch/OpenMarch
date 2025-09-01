@@ -10,8 +10,8 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 
 // Define the type for the context value
 type SelectedPageContextProps = {
-    selectedPage: Page | null;
-    setSelectedPage: (page: Page | null) => void;
+    selectedPage: Page;
+    setSelectedPage: (page: Page) => void;
 };
 
 const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
@@ -20,7 +20,7 @@ const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
 
 export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const { pages } = useTimingObjectsStore();
-    const [selectedPage, setSelectedPage] = useState<Page | null>(null);
+    const [selectedPage, setSelectedPage] = useState<Page>(pages[0]);
 
     // Send the selected page to the electron main process
     useEffect(() => {
@@ -31,7 +31,7 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (selectedPage)
             setSelectedPage(
-                pages.find((page) => page.id === selectedPage.id) || null,
+                pages.find((page) => page.id === selectedPage.id) || pages[0],
             );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pages]);
