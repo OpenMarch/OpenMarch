@@ -14,6 +14,7 @@ export const falsyUiSettings: UiSettings = {
     lockY: false,
     previousPaths: false,
     nextPaths: false,
+    showCollisions: true,
     gridLines: false,
     halfLines: false,
     timelinePixelsPerSecond: 40,

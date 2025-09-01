@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Page from "@/global/classes/Page";
@@ -8,11 +8,12 @@ import {
     MarcherTimeline,
 } from "@/utilities/Keyframes";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
-import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useMarcherPages } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
+import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
+import { useCollisionStore } from "@/stores/CollisionStore";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -21,8 +22,13 @@ interface UseAnimationProps {
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { pages } = useTimingObjectsStore()!;
     const { marchers } = useMarcherStore()!;
-    const { setSelectedPage } = useSelectedPage()!;
+    const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const {
+        collisions: pageCollisions,
+        setCollisions,
+        setCurrentCollision,
+    } = useCollisionStore();
 
     // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
@@ -114,6 +120,31 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         return timelines;
     }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
+    // Incremental collision calculation with caching
+    useEffect(() => {
+        setCollisions(marchers, marcherTimelines, pages, marcherPages);
+    }, [marchers, marcherTimelines, pages, marcherPages]);
+
+    // Get collisions for the currently selected page
+    const getCollisionsForSelectedPage = useCallback(() => {
+        if (!selectedPage) {
+            return [];
+        }
+
+        // this looks stupid but empty array if nothing is returned
+        const collisions = selectedPage.nextPageId
+            ? pageCollisions.get(selectedPage.nextPageId)
+            : [];
+
+        return collisions ?? [];
+    }, [pageCollisions, selectedPage]);
+
+    // Update collisions when selected page changes
+    useEffect(() => {
+        setCurrentCollision(selectedPage);
+    }, [selectedPage, getCollisionsForSelectedPage]);
+
+    // Set marcher positions at a specific time
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
@@ -156,23 +187,13 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 // We're past the end, set the selected page to the last one and stop playing
                 setSelectedPage(pages[pages.length - 1]);
                 setIsPlaying(false);
-            } else {
-                const previousPage =
-                    (currentPage &&
-                        currentPage.previousPageId != null &&
-                        pages.find(
-                            (p) => p.id === currentPage?.previousPageId,
-                        )) ??
-                    pages[0];
-                if (!previousPage)
-                    throw new Error(
-                        "Could not find any page to select. This should not happen",
-                    );
-
-                setSelectedPage(previousPage);
+                const lastPage = pages[pages.length - 1];
+                if (lastPage !== selectedPage) {
+                    setSelectedPage(lastPage);
+                }
             }
         },
-        [pages, canvas, setSelectedPage, setIsPlaying],
+        [canvas, pages, selectedPage, setSelectedPage, setIsPlaying],
     );
 
     // Animate the canvas based on playback timestamp

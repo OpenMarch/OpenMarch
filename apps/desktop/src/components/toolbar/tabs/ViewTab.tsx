@@ -2,7 +2,12 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
+import {
+    ArrowsInSimpleIcon,
+    EyeIcon,
+    EyeSlashIcon,
+    WarningCircleIcon,
+} from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
 
 export default function ViewTab() {
@@ -88,6 +93,28 @@ function UiSettingsToolbar() {
                         <EyeIcon className="text-accent" size={24} />
                     ) : (
                         <EyeSlashIcon size={24} />
+                    )}
+                </button>
+            </ToolbarSection>
+            <ToolbarSection>
+                <button
+                    onClick={() => {
+                        setUiSettings({
+                            ...uiSettings,
+                            showCollisions: !uiSettings.showCollisions,
+                        });
+                    }}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <span>Collisions</span>
+                    {uiSettings.showCollisions ? (
+                        <ArrowsInSimpleIcon
+                            className="text-accent"
+                            size={24}
+                            weight="fill"
+                        />
+                    ) : (
+                        <ArrowsInSimpleIcon size={24} />
                     )}
                 </button>
             </ToolbarSection>

@@ -9,6 +9,8 @@ export interface UiSettings {
     previousPaths: boolean;
     /** Boolean to view next page's paths/dots */
     nextPaths: boolean;
+    /** Boolean to show collision markers on the canvas */
+    showCollisions: boolean;
     /** Boolean to view lines for every step on the field */
     gridLines: boolean;
     /** Boolean to view lines for every four steps on the field */
@@ -47,6 +49,7 @@ export const defaultSettings: UiSettings = {
     lockY: false,
     previousPaths: false,
     nextPaths: false,
+    showCollisions: true,
     gridLines: true,
     halfLines: true,
     timelinePixelsPerSecond: 40,

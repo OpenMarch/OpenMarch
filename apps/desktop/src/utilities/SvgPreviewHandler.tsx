@@ -51,6 +51,7 @@ const SvgPreviewHandler: React.FC = () => {
             lockY: false,
             previousPaths: false,
             nextPaths: false,
+            showCollisions: true,
             gridLines: true,
             halfLines: true,
             timelinePixelsPerSecond: 40,

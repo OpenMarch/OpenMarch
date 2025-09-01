@@ -1,15 +1,21 @@
 import { Tabs, TabContent, TabItem, TabsList } from "@openmarch/ui";
 import { FileTab } from "./tabs/FileTab";
+import { CollisionsTab } from "./tabs/CollisionsTab";
 import AlignmentTab from "./tabs/AlignmentTab";
 import ViewTab from "./tabs/ViewTab";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { useEffect, useState } from "react";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
+import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
+import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useCollisionStore } from "@/stores/CollisionStore";
 
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
     const [activeTab, setActiveTab] = useState("alignment");
+    const { selectedPage } = useSelectedPage()!;
+    const { currentCollisions } = useCollisionStore();
 
     // Switch to "view" tab when entering fullscreen mode
     useEffect(() => {
@@ -20,6 +26,13 @@ export default function Topbar() {
             setActiveTab("alignment");
         }
     }, [isFullscreen]);
+
+    // Switch from collisions tab to alignment when page changes and no collisions exist
+    useEffect(() => {
+        if (activeTab === "collisions" && currentCollisions.length === 0) {
+            setActiveTab("alignment");
+        }
+    }, [selectedPage, currentCollisions.length, activeTab]);
 
     return (
         <div
@@ -53,6 +66,19 @@ export default function Topbar() {
                     <TabItem value="view">
                         <T keyName="inspector.shape.viewTab" />
                     </TabItem>
+                    {selectedPage && currentCollisions.length > 0 && (
+                        <TabItem value="collisions">
+                            <div className="flex items-center gap-4">
+                                <WarningIcon
+                                    width={18}
+                                    height={18}
+                                    className="text-yellow size-20"
+                                />
+                                {/*<T keyName="inspector.shape.collisionsTab" /> */}
+                                Collisions
+                            </div>
+                        </TabItem>
+                    )}
                 </TabsList>
 
                 <TabContent value="file">
@@ -67,6 +93,10 @@ export default function Topbar() {
 
                 <TabContent value="view">
                     <ViewTab />
+                </TabContent>
+
+                <TabContent value="collisions">
+                    <CollisionsTab />
                 </TabContent>
             </Tabs>
         </div>
