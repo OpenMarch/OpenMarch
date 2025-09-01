@@ -125,27 +125,49 @@ export const pathways = sqliteTable("pathways", {
     notes: text(),
 });
 
+/**
+ * A MarcherPage is used to represent a Marcher's position on a Page.
+ * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
+ * There should be a MarcherPage for every Marcher and Page combination (M * P).
+ */
 export const marcher_pages = sqliteTable(
     "marcher_pages",
     {
+        /** The id of the MarcherPage in the database */
         id: integer().primaryKey(),
+        /** The id of the Marcher the MarcherPage is associated with */
         marcher_id: integer()
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
+        /** The id of the Page the MarcherPage is associated with */
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
+        /** X coordinate of the MarcherPage in pixels */
         x: real().notNull(),
+        /** Y coordinate of the MarcherPage in pixels */
         y: real().notNull(),
         created_at: text().notNull(),
         updated_at: text()
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        /** The ID of the pathway data */
         path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
+        /**
+         * The position along the pathway (0-1).
+         * This is the position in the pathway the marcher starts at for this coordinate.
+         * If this is null, then it is assumed to be 0 (the start of the pathway).
+         */
         path_start_position: real(),
+        /**
+         * The position along the pathway (0-1).
+         * This is the position in the pathway the marcher ends up at for this coordinate.
+         * If this is null, then it is assumed to be 1 (the end of the pathway).
+         */
         path_end_position: real(),
+        /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
     },
     (table) => [

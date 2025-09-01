@@ -1,20 +1,20 @@
 import { it as baseTest, describe, TestAPI } from "vitest";
 import { schema } from "@/../electron/database/db";
-import { drizzle as sqlJsDrizzle, SQLJsDatabase } from "drizzle-orm/sql-js";
-import {
-    drizzle as betterSqliteDrizzle,
-    BetterSQLite3Database,
-} from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
+import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
+import Database, { RunResult } from "better-sqlite3";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
 import * as mockData from "./mock-data/marchers-and-pages.mjs";
-import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
+import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
+import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 
-type TestDb =
-    | SQLJsDatabase<typeof schema>
-    | BetterSQLite3Database<typeof schema>;
+type DbConnection = BaseSQLiteDatabase<
+    "async",
+    RunResult | void | SqliteRemoteResult<unknown>,
+    typeof schema
+>;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
     return path.resolve(`${task.id}.tmp.dots`);
 };
@@ -60,24 +60,21 @@ const loadSqlIntoDatabase = async (
     db.close();
 };
 
+type marchersAndPages = {
+    expectedBeats: (typeof schema.beats)[];
+    expectedMarchers: (typeof schema.marchers)[];
+    expectedPages: (typeof schema.pages)[];
+    expectedMarcherPages: (typeof schema.marcher_pages)[];
+};
+
 type BaseApi = {
     setupDb: void;
-    marchersAndPages: {
-        expectedBeats: unknown;
-        expectedMarchers: unknown;
-        expectedPages: unknown;
-        expectedMarcherPages: unknown;
-    };
+    marchersAndPages: marchersAndPages;
 };
 type DbTestAPI = {
     setupDb: void;
-    marchersAndPages: {
-        expectedBeats: unknown;
-        expectedMarchers: unknown;
-        expectedPages: unknown;
-        expectedMarcherPages: unknown;
-    };
-    db: TestDb;
+    marchersAndPages: marchersAndPages;
+    db: DbConnection;
 };
 
 /**
@@ -114,11 +111,11 @@ const baseFixture = baseTest.extend<BaseApi>({
     ],
     marchersAndPages: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "marchers-and-pages.sql");
-        await use(mockData);
+        await use(mockData as unknown as marchersAndPages);
     },
 });
 
-const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: TestDb }>({
+const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
     db: async ({ task }, use) => {
         // setup the fixture before each test function
         const SQL = await initSqlJs({
@@ -132,13 +129,13 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: TestDb }>({
                 schema,
                 casing: "snake_case",
                 logger: true,
-            }),
+            }) as unknown as DbConnection,
         );
     },
 });
 
 const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
-    db: TestDb;
+    db: DbConnection;
 }>({
     db: async ({ task, skip }, use) => {
         // setup the fixture before each test function
@@ -161,13 +158,13 @@ const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
                 schema,
                 casing: "snake_case",
                 logger: true,
-            }),
+            }) as unknown as DbConnection,
         );
     },
 });
 
 const transaction = (
-    db: TestDb,
+    db: DbConnection,
     func: (
         tx: SQLiteTransaction<any, any, typeof schema, any>,
     ) => Promise<void>,
@@ -215,5 +212,5 @@ export {
     type DbTestAPI,
     transaction,
     schema,
-    type TestDb,
+    type DbConnection,
 };

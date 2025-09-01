@@ -10,13 +10,6 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 import type { Shape } from "electron/database/tables/ShapeTable";
 import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
-import {
-    CubicCurve,
-    Line,
-    Path,
-    QuadraticCurve,
-    Spline,
-} from "@openmarch/path-utility";
 
 export const mockMarchers: Marcher[] = [
     new Marcher({
@@ -116,10 +109,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        path_data: new Path([
-            new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -133,14 +122,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        path_data: new Path([
-            new QuadraticCurve(
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-            ),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -154,15 +135,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: -200,
         y: -500,
         notes: null,
-        path_data: new Path([
-            new CubicCurve(
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-                { x: 300, y: 300 },
-            ),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -176,14 +148,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the first marcherPage",
-        path_data: new Path([
-            new Spline([
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-            ]),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -197,8 +161,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 284,
         y: 963.1,
         notes: "This is the second marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -212,8 +174,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: -200,
         y: 105.015,
         notes: null,
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -227,8 +187,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -242,8 +200,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
@@ -257,8 +213,6 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         x: -200,
         y: -500,
         notes: null,
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,

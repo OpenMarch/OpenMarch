@@ -119,8 +119,6 @@ describe("MarcherPageTable", () => {
 
             expect(result.success).toBe(true);
             expect(result.data.length).toBe(1);
-            expect(result.data[0].path_data).toBe(pathwayData.path_data);
-            expect(result.data[0].pathway_notes).toBe(pathwayData.notes);
         });
 
         it("should handle marcher pages without pathway data", () => {
@@ -132,8 +130,6 @@ describe("MarcherPageTable", () => {
 
             expect(result.success).toBe(true);
             expect(result.data.length).toBe(1);
-            expect(result.data[0].path_data).toBeNull();
-            expect(result.data[0].pathway_notes).toBeNull();
         });
 
         it("should return correct marcher page structure", () => {
@@ -410,124 +406,6 @@ describe("MarcherPageTable", () => {
             expect(result.error!.message).toContain(
                 "Failed to get marcher pages",
             );
-        });
-    });
-
-    describe("pathway integration", () => {
-        it("should properly join with pathways table and return pathway data", async () => {
-            // Create multiple pathways using mock data
-            const pathways = [MockPathways[0], MockPathways[1]]; // Use first two mock pathways
-
-            const pathwayResults = orm
-                .insert(schema.pathways)
-                .values(pathways)
-                .returning()
-                .all();
-            expect(pathwayResults.length).toBe(2);
-
-            // Update marcher pages to reference these pathways
-            const marcherPageUpdates = [
-                {
-                    marcher_id: 1,
-                    page_id: 1,
-                    path_data_id: pathwayResults[0].id,
-                    path_start_position: 0.3,
-                    path_end_position: 0.6,
-                    x: 30,
-                    y: 30,
-                },
-                {
-                    marcher_id: 2,
-                    page_id: 1,
-                    path_data_id: pathwayResults[1].id,
-                    path_start_position: 0.7,
-                    path_end_position: 0.9,
-                    x: 70,
-                    y: 70,
-                },
-            ];
-
-            const updateResult = MarcherPageTable.updateMarcherPages({
-                db,
-                marcherPageUpdates,
-            });
-            expect(updateResult.success).toBe(true);
-
-            // Get marcher pages and verify pathway data
-            const result = MarcherPageTable.getMarcherPages({ db, page_id: 1 });
-
-            expect(result.success).toBe(true);
-            expect(result.data.length).toBe(5); // 5 marchers on page 1
-
-            // Find the marcher pages with pathway data
-            const marcherPage1 = result.data.find(
-                (mp) => mp.marcher_id === 1 && mp.page_id === 1,
-            );
-            const marcherPage2 = result.data.find(
-                (mp) => mp.marcher_id === 2 && mp.page_id === 1,
-            );
-
-            expect(marcherPage1).toBeDefined();
-            expect(marcherPage1!.path_data).toBe(pathways[0].path_data);
-            expect(marcherPage1!.pathway_notes).toBe(pathways[0].notes);
-
-            expect(marcherPage2).toBeDefined();
-            expect(marcherPage2!.path_data).toBe(pathways[1].path_data);
-            expect(marcherPage2!.pathway_notes).toBe(pathways[1].notes);
-        });
-
-        it("should handle marcher pages with and without pathways in the same query", () => {
-            // Create a pathway using mock data
-            const pathway = MockPathways[2]; // Use the third mock pathway
-
-            const pathwayResult = orm
-                .insert(schema.pathways)
-                .values(pathway)
-                .returning()
-                .get();
-            expect(pathwayResult).toBeDefined();
-
-            // Update only one marcher page to have pathway data
-            const marcherPageUpdate = {
-                marcher_id: 1,
-                page_id: 1,
-                path_data_id: pathwayResult.id,
-                path_start_position: 0.5,
-                path_end_position: 0.8,
-                x: 50,
-                y: 50,
-            };
-
-            const updateResult = MarcherPageTable.updateMarcherPages({
-                db,
-                marcherPageUpdates: [marcherPageUpdate],
-            });
-            expect(updateResult.success).toBe(true);
-
-            // Get all marcher pages for page 1
-            const result = MarcherPageTable.getMarcherPages({ db, page_id: 1 });
-
-            expect(result.success).toBe(true);
-            expect(result.data.length).toBe(5);
-
-            // Check that one has pathway data and others don't
-            const withPathway = result.data.filter(
-                (mp) => mp.path_data !== null,
-            );
-            const withoutPathway = result.data.filter(
-                (mp) => mp.path_data === null,
-            );
-
-            expect(withPathway.length).toBe(1);
-            expect(withoutPathway.length).toBe(4);
-
-            expect(withPathway[0].path_data).toBe(pathway.path_data);
-            expect(withPathway[0].pathway_notes).toBe(pathway.notes);
-            expect(
-                withoutPathway.every(
-                    (mp) => mp.path_data === null && mp.pathway_notes === null,
-                ),
-            ).toBe(true);
         });
     });
 });

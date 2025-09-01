@@ -1183,7 +1183,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 }
 
                 const nextPathway = visual.getNextPathway();
-                nextPathway.updateMarcherPages(curr, next);
+                nextPathway.updatePathwayWithMarcherPages(curr, next);
                 for (const fabricObject of nextPathway.getFabricObjects()) {
                     this.add(fabricObject);
                 }
@@ -1261,9 +1261,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             path_data_id: null,
             path_start_position: null,
             path_end_position: null,
-            path_data: null,
             notes: null,
-            pathway_notes: null,
         };
 
         const response = CoordinateActions.getRoundCoordinates({
