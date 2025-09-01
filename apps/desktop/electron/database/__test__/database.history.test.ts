@@ -1989,14 +1989,14 @@ describe("History Tables and Triggers", () => {
 
     describe("flattenUndoGroupsAbove", () => {
         let db: Database.Database;
-        const testDbPath = ":memory:";
+        const DbConnectionPath = ":memory:";
 
         // Mock console.log to avoid cluttering test output
         beforeEach(() => {
             vi.spyOn(console, "log").mockImplementation(() => {});
 
             // Create a new in-memory database for each test
-            db = new Database(testDbPath);
+            db = new Database(DbConnectionPath);
             createHistoryTables(db);
         });
 

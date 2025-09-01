@@ -9,7 +9,7 @@ import {
 } from "@/utilities/Keyframes";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
-import { useMarcherPages } from "./queries";
+import { useMarcherPages, usePathwaysByPage } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
@@ -29,10 +29,11 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setCollisions,
         setCurrentCollision,
     } = useCollisionStore();
+    const pathwayQuery = usePathwaysByPage(selectedPage.id);
 
     // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
+        useMarcherPages({ pages, filters: { page_id: selectedPage.id } });
 
     const animationFrameRef = useRef<number | null>(null);
 

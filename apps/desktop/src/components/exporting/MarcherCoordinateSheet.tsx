@@ -180,9 +180,7 @@ export default function MarcherCoordinateSheetPreview({
                     path_data_id: null,
                     path_start_position: null,
                     path_end_position: null,
-                    path_data: null,
                     notes: null,
-                    pathway_notes: null,
                 },
                 {
                     id: 2,
@@ -197,9 +195,7 @@ export default function MarcherCoordinateSheetPreview({
                     path_data_id: null,
                     path_start_position: null,
                     path_end_position: null,
-                    path_data: null,
                     notes: null,
-                    pathway_notes: null,
                 },
                 {
                     id: 3,
@@ -216,9 +212,7 @@ export default function MarcherCoordinateSheetPreview({
                     path_data_id: null,
                     path_start_position: null,
                     path_end_position: null,
-                    path_data: null,
                     notes: null,
-                    pathway_notes: null,
                 },
             ]);
         } else {
@@ -228,7 +222,15 @@ export default function MarcherCoordinateSheetPreview({
                 getByMarcherId(marcherPages, marcher?.id || -1),
             );
         }
-    }, [marcher, marcherPages, pages, example, fieldProperties, t]);
+    }, [
+        marcher,
+        marcherPages,
+        pages,
+        example,
+        fieldProperties,
+        t,
+        marcherPagesLoaded,
+    ]);
     return (
         <StaticMarcherCoordinateSheet
             marcher={marcherToUse!}

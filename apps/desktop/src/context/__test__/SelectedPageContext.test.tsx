@@ -13,13 +13,6 @@ window.electron = {
 } as Partial<ElectronApi> as ElectronApi;
 
 describe("SelectedPageContext", () => {
-    it("initial selected pages should be []", async () => {
-        const { result } = renderHook(() => useSelectedPage(), {
-            wrapper: SelectedPageProvider,
-        });
-        expect(result.current?.selectedPage).toEqual(null);
-    });
-
     it("set selected page", async () => {
         const { result } = renderHook(() => useSelectedPage(), {
             wrapper: SelectedPageProvider,
@@ -47,10 +40,6 @@ describe("SelectedPageContext", () => {
         expectedPage = pages[2];
         act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
-
-        // no page
-        act(() => result.current?.setSelectedPage(null));
-        expect(result.current?.selectedPage).toEqual(null);
 
         // copy the page to avoid reference equality issues
         expectedPage = pages[1];

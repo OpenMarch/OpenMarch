@@ -116,10 +116,5 @@ describe("MarcherPage Functions", () => {
         expect(result[0].page_id).toBe(1); // First page
         expect(result[1].page_id).toBe(2); // Second page
         expect(result[2].page_id).toBe(3); // Third page
-
-        // Since path_data is null, all path_data should be null
-        expect(result[0].path_data).toBeNull();
-        expect(result[1].path_data).toBeNull();
-        expect(result[2].path_data).toBeNull();
     });
 });

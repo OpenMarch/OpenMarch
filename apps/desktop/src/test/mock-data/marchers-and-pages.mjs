@@ -7,8 +7,10 @@ const expectedBeats = Array.from({ length: 97 }, (_, i) => ({
     notes: null,
 }));
 
-// Generate expected marchers array (76 marchers from 1 to 76)
-const expectedMarchers = Array.from({ length: 76 }, (_, i) => {
+const numberOfMarchers = 76;
+const numberOfPages = 7;
+
+const expectedMarchers = Array.from({ length: numberOfMarchers }, (_, i) => {
     const marcherNumber = i + 1;
     let instrument, abbreviation;
 
@@ -36,8 +38,7 @@ const expectedMarchers = Array.from({ length: 76 }, (_, i) => {
     };
 });
 
-// Generate expected pages array (7 pages from 0 to 6)
-const expectedPages = Array.from({ length: 7 }, (_, i) => ({
+const expectedPages = Array.from({ length: numberOfPages }, (_, i) => ({
     id: i,
     page_number: 0,
     notes: null,
@@ -46,81 +47,17 @@ const expectedPages = Array.from({ length: 7 }, (_, i) => ({
 // Generate expected marcher_pages array
 const expectedMarcherPages = [];
 
-// Page 0: All marchers in their initial positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: i,
-        marcher_id: i,
-        page_id: 0,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 1: All marchers in new positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 76 + i,
-        marcher_id: i,
-        page_id: 1,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 2: All marchers in new positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 152 + i,
-        marcher_id: i,
-        page_id: 2,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 3: All marchers in new positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 228 + i,
-        marcher_id: i,
-        page_id: 3,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 4: All marchers in new positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 304 + i,
-        marcher_id: i,
-        page_id: 4,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 5: All marchers in new positions
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 380 + i,
-        marcher_id: i,
-        page_id: 5,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
-}
-
-// Page 6: All marchers in their final positions (same as page 0)
-for (let i = 1; i <= 76; i++) {
-    expectedMarcherPages.push({
-        id: 456 + i,
-        marcher_id: i,
-        page_id: 6,
-        x: null, // Ignoring coordinates as requested
-        y: null, // Ignoring coordinates as requested
-    });
+// Generate expected marcher_pages array for all pages (0-6)
+for (let pageId = 0; pageId < numberOfPages; pageId++) {
+    for (let i = 1; i <= numberOfMarchers; i++) {
+        expectedMarcherPages.push({
+            id: pageId * 76 + i,
+            marcher_id: i,
+            page_id: pageId,
+            x: null, // Ignoring coordinates as requested
+            y: null, // Ignoring coordinates as requested
+        });
+    }
 }
 
 // Export all arrays

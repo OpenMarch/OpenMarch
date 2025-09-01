@@ -1,4 +1,4 @@
-import { useFieldProperties } from "@/hooks/queries";
+import { marcherPageKeys, useFieldProperties } from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -22,11 +22,8 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
-import {
-    fetchMarcherPages,
-    useMarcherPages,
-    useUpdateMarcherPages,
-} from "@/hooks/queries";
+import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
+import { useQueryClient } from "@tanstack/react-query";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -504,6 +501,7 @@ function RegisteredActionsHandler() {
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
+    const queryClient = useQueryClient();
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -912,7 +910,11 @@ function RegisteredActionsHandler() {
                                             selectedMarchers[1].drill_number,
                                     }),
                                 );
-                                fetchMarcherPages();
+                                queryClient.invalidateQueries({
+                                    queryKey: [
+                                        marcherPageKeys.byPage(selectedPage.id),
+                                    ],
+                                });
                                 // This causes an infinite loop
                                 // It's not a huge deal to leave it like this as marchers are updated on a refresh
                                 MarcherShape.fetchShapePages();
@@ -1052,6 +1054,7 @@ function RegisteredActionsHandler() {
             t,
             selectedMarchers,
             getSelectedMarcherPages,
+            queryClient,
             alignmentEventMarchers,
             setSelectedMarchers,
             resetAlignmentEvent,

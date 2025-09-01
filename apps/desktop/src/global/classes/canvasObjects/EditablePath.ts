@@ -8,8 +8,7 @@ import {
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { FieldTheme, rgbaToString } from "@openmarch/core";
-import { MarcherPage } from "@/hooks/queries/useMarcherPages";
-import { marcherPagesToPath } from "../MarcherPage";
+import MarcherPage, { marcherPagesToPath } from "../MarcherPage";
 import { db } from "@/global/database/db";
 
 export default class EditablePath {
@@ -60,10 +59,7 @@ export default class EditablePath {
         // This MUST be remembered before creating the promise, otherwise, the path will be the old object
         const newPathObj = this.pathObj;
         await new Promise((resolve) => setTimeout(resolve, 10));
-        if (
-            this._nextMarcherPage.path_data &&
-            this._nextMarcherPage.path_data_id
-        ) {
+        if (this._nextMarcherPage.path_data_id) {
             EditablePath.updatePathway(
                 this._nextMarcherPage.path_data_id,
                 newPathObj,
@@ -117,16 +113,19 @@ export default class EditablePath {
         this._fabricControlPoints = this._getFabricControlPoints();
     }
 
-    updateMarcherPages(marcherPage: MarcherPage, nextMarcherPage: MarcherPage) {
+    updatePathwayWithMarcherPages(
+        marcherPage: MarcherPage,
+        nextMarcherPage: MarcherPage,
+    ) {
         this._marcherPage = marcherPage;
         this._nextMarcherPage = nextMarcherPage;
 
-        this._pathObj =
-            this._nextMarcherPage.path_data ??
-            marcherPagesToPath({
-                startMarcherPage: this._marcherPage,
-                endMarcherPage: this._nextMarcherPage,
-            });
+        // this._pathObj =
+        //     newPathObj ??
+        //     marcherPagesToPath({
+        //         startMarcherPage: this._marcherPage,
+        //         endMarcherPage: this._nextMarcherPage,
+        //     });
 
         this._resetControlPointManager();
         this.updatePath();
