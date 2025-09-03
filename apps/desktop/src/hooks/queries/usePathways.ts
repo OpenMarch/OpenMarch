@@ -1,19 +1,22 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    useQuery,
+    useMutation,
+    useQueryClient,
+    queryOptions,
+} from "@tanstack/react-query";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { conToastError } from "@/utilities/utils";
 import { db, schema } from "@/global/database/db";
 import { Path } from "@openmarch/path-utility";
 import { DbConnection } from "@/test/base";
-import { findPageIdsForPathway } from "@/db-functions/pathways";
+import { findPageIdsForPathway } from "@/db-functions";
 
 const { pathways, marcher_pages } = schema;
 
 // Define types from the existing schema
 export type DatabasePathway = typeof pathways.$inferSelect;
-export type Pathway = DatabasePathway;
-
-export type PathwayData = {
+export type Pathway = {
     id: number;
     path_data: Path;
     notes: string | null;
@@ -22,7 +25,7 @@ export type PathwayData = {
 /**
  * Record structure for pathways indexed by ID
  */
-export type PathwayMap = Record<number, PathwayData>;
+export type PathwaysById = Record<number, Pathway>;
 
 /**
  * Arguments for creating a new pathway
@@ -50,8 +53,8 @@ export const pathwayKeys = {
 /**
  * Converts an array of pathways to a Record indexed by ID
  */
-export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwayMap {
-    const pathwayMap: PathwayMap = {};
+export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwaysById {
+    const pathwayMap: PathwaysById = {};
 
     pathways.forEach((pathway) => {
         pathwayMap[pathway.id] = {
@@ -88,14 +91,15 @@ const pathwayQueries = {
             .where(eq(marcher_pages.page_id, pageId))
             .all();
 
-        return results;
+        const pathwayMap = pathwayMapFromArray(results);
+        return pathwayMap;
     },
 };
 export const _pathwayQueries = pathwayQueries;
 
 // Query hooks
-export const useAllPathways = () => {
-    return useQuery({
+export const allPathwaysQueryOptions = () => {
+    return queryOptions<PathwaysById>({
         queryKey: pathwayKeys.all,
         queryFn: () => pathwayQueries.getAll(db),
     });
@@ -104,8 +108,8 @@ export const useAllPathways = () => {
 /**
  * Fetches all pathways that are associated with a given page
  */
-export const usePathwaysByPage = (pageId: number) => {
-    return useQuery({
+export const pathwaysByPageQueryOptions = (pageId: number) => {
+    return queryOptions<PathwaysById>({
         queryKey: pathwayKeys.byPageId(pageId),
         queryFn: () => pathwayQueries.getByPageId(pageId, db),
         enabled: !!pageId,

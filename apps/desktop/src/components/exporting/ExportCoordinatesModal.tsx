@@ -7,11 +7,11 @@ import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
-import { useFieldProperties } from "@/hooks/queries";
 import {
-    getByMarcherAndPageId,
-    getByMarcherId,
-} from "@/global/classes/MarcherPage";
+    allMarcherPagesQueryOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
+import { getByMarcherId } from "@/global/classes/MarcherPage";
 import {
     Dialog,
     DialogClose,
@@ -46,9 +46,9 @@ import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
-import { useMarcherPages } from "@/hooks/queries";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useQuery } from "@tanstack/react-query";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -68,8 +68,11 @@ function CoordinateSheetExport() {
     const [quarterPages, setQuarterPages] = useState(false);
     const { marchers } = useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        allMarcherPagesQueryOptions({
+            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
+        }),
+    );
     const { data: fieldProperties } = useFieldProperties();
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
@@ -171,17 +174,21 @@ function CoordinateSheetExport() {
             if (isCancelled.current)
                 throw new Error(t("exportCoordinates.cancelledByUser"));
 
+            const pageOrderById: Record<number, number> = {};
+            pages.forEach((page) => {
+                pageOrderById[page.id] = page.order;
+            });
+
             // split to quarter sheets
             if (quarterPages) {
                 // Create quarter sheets for each marcher, organized by performer number
                 groupedSheets = processedMarchers.flatMap((marcher) => {
-                    const marcherPagesForMarcher = getByMarcherId(
-                        marcherPages,
-                        marcher.id,
+                    const marcherPagesForMarcher = Object.values(
+                        marcherPages.marcherPagesByMarcher[marcher.id],
                     ).sort((a, b) => {
-                        const pageA = pages.find((p) => p.id === a.page_id);
-                        const pageB = pages.find((p) => p.id === b.page_id);
-                        return (pageA?.order ?? 0) - (pageB?.order ?? 0);
+                        return (
+                            pageOrderById[a.page_id] - pageOrderById[b.page_id]
+                        );
                     });
 
                     const rowChunks = chunkArray(
@@ -640,10 +647,13 @@ function CoordinateSheetExport() {
 function DrillChartExport() {
     const { pages } = useTimingObjectsStore()!;
     const { data: fieldProperties } = useFieldProperties();
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        allMarcherPagesQueryOptions({
+            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
+        }),
+    );
     const { marchers, marcherVisuals } = useMarchersWithVisuals();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { setSelectedPage } = useSelectedPage()!;
     const { shapePages } = useShapePageStore()!;
 
     // Loading bar
@@ -705,7 +715,7 @@ function DrillChartExport() {
                 // Render marchers for this page
                 await exportCanvas.renderMarchers({
                     marcherVisuals: marcherVisuals,
-                    marcherPages: marcherPages,
+                    marcherPages: marcherPages.marcherPagesByPage[pages[p].id],
                     pageId: pages[p].id,
                 });
 
@@ -722,26 +732,21 @@ function DrillChartExport() {
                 // Render pathways for individual marchers
                 if (individualCharts) {
                     for (let m = 0; m < marchers.length; m++) {
-                        const marcher = getByMarcherAndPageId(
-                            marcherPages,
-                            marchers[m].id,
-                            pages[p].id,
-                        )!;
+                        const marcher =
+                            marcherPages.marcherPagesByMarcher[marchers[m].id][
+                                pages[p].id
+                            ];
                         const prevMarcher =
-                            p > 0
-                                ? getByMarcherAndPageId(
-                                      marcherPages,
-                                      marchers[m].id,
-                                      pages[p - 1].id,
-                                  )!
+                            p > 0 && pages[p].previousPageId
+                                ? marcherPages.marcherPagesByMarcher[
+                                      marchers[m].id
+                                  ][pages[p].previousPageId!]
                                 : null;
                         const nextMarcher =
-                            p < pages.length - 1
-                                ? getByMarcherAndPageId(
-                                      marcherPages,
-                                      marchers[m].id,
-                                      pages[p + 1].id,
-                                  )!
+                            p < pages.length - 1 && pages[p].nextPageId
+                                ? marcherPages.marcherPagesByMarcher[
+                                      marchers[m].id
+                                  ][pages[p].nextPageId!]
                                 : null;
 
                         // Store readable coordinates for this marcher

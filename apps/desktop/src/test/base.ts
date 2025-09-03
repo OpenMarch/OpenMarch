@@ -148,7 +148,7 @@ const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
                 "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for Node by running 'pnpm run test:prepare'\n",
                 error,
             );
-            skip();
+            throw error;
         }
 
         const db = new Database(tempDatabaseFile);

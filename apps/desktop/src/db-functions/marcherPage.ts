@@ -1,5 +1,5 @@
 import { asc, gt, eq, lt, desc } from "drizzle-orm";
-import { DatabaseTransaction } from "./types";
+import { DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 
 type MarcherPageIdentifier =
@@ -10,7 +10,7 @@ type MarcherPageIdentifier =
     | { marcherPageId: number };
 
 async function getMarcherPageByPosition(
-    tx: DatabaseTransaction,
+    tx: DbTransaction,
     id: MarcherPageIdentifier,
     direction: "next" | "previous",
 ): Promise<typeof schema.marcher_pages.$inferSelect | null> {
@@ -68,14 +68,14 @@ async function getMarcherPageByPosition(
 }
 
 export async function getNextMarcherPage(
-    tx: DatabaseTransaction,
+    tx: DbTransaction,
     id: MarcherPageIdentifier,
 ): Promise<typeof schema.marcher_pages.$inferSelect | null> {
     return getMarcherPageByPosition(tx, id, "next");
 }
 
 export async function getPreviousMarcherPage(
-    tx: DatabaseTransaction,
+    tx: DbTransaction,
     id: MarcherPageIdentifier,
 ): Promise<typeof schema.marcher_pages.$inferSelect | null> {
     return getMarcherPageByPosition(tx, id, "previous");
