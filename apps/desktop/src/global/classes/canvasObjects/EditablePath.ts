@@ -8,7 +8,7 @@ import {
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { FieldTheme, rgbaToString } from "@openmarch/core";
-import MarcherPage, { marcherPagesToPath } from "../MarcherPage";
+import MarcherPage from "../MarcherPage";
 import { db } from "@/global/database/db";
 
 export default class EditablePath {

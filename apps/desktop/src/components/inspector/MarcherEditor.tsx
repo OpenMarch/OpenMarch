@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useFieldProperties } from "@/hooks/queries";
-import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
+import {
+    marcherPagesByPageQueryOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
@@ -19,19 +21,23 @@ import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
+import { useQuery } from "@tanstack/react-query";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const [rCoords, setRCoords] = useState<ReadableCoords>();
     const [stepSize, setStepSize] = useState<StepSize>();
     const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
-    const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
     const { selectedPage } = useSelectedPage()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage.id),
+    );
+    const { data: nextMarcherPages } = useQuery({
+        ...marcherPagesByPageQueryOptions(selectedPage.nextPageId!),
+        enabled: selectedPage.nextPageId != null,
+    });
     const { data: fieldProperties } = useFieldProperties();
     const { shapePages } = useShapePageStore()!;
     const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
@@ -98,7 +104,8 @@ function MarcherEditor() {
             !selectedMarchers ||
             !selectedMarchers.length ||
             !fieldProperties ||
-            !marcherPagesLoaded
+            !marcherPagesLoaded ||
+            !nextMarcherPages
         )
             return;
 
@@ -107,7 +114,8 @@ function MarcherEditor() {
                 setMinMaxStepSize(
                     StepSize.getMinAndMaxStepSizesForMarchers({
                         marchers: selectedMarchers,
-                        marcherPages: marcherPages,
+                        startingMarcherPages: Object.values(marcherPages),
+                        endingMarcherPages: Object.values(nextMarcherPages),
                         page: selectedPage,
                         fieldProperties: fieldProperties,
                     }),
@@ -117,13 +125,10 @@ function MarcherEditor() {
             return;
         }
 
-        const selectedMarcherPages =
-            marcherPages.marcherPagesByMarcher[selectedMarchers[0]?.id];
+        const selectedMarcherPages = marcherPages[selectedMarchers[0]?.id];
 
         const selectedMarcherPage =
-            selectedPage?.id !== undefined
-                ? selectedMarcherPages?.[selectedPage?.id]
-                : undefined;
+            selectedPage?.id !== undefined ? selectedMarcherPages : undefined;
 
         if (selectedMarcherPage) {
             const newRcoords =
@@ -133,7 +138,7 @@ function MarcherEditor() {
             if (selectedPage) {
                 const previousMarcherPage =
                     selectedPage?.previousPageId !== null
-                        ? selectedMarcherPages?.[selectedPage?.previousPageId]
+                        ? selectedMarcherPages
                         : undefined;
 
                 setStepSize(
@@ -152,6 +157,7 @@ function MarcherEditor() {
         selectedPage,
         fieldProperties,
         marcherPagesLoaded,
+        nextMarcherPages,
     ]);
 
     const resetForm = useCallback(() => {

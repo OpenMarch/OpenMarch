@@ -1,6 +1,5 @@
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
-import { Path, Spline } from "@openmarch/path-utility";
 import type Page from "./Page";
 
 const { marcher_pages } = schema;
@@ -116,24 +115,24 @@ export interface ModifiedMarcherPageArgs {
     path_end_position?: number | null;
 }
 
-export const marcherPagesToPath = ({
-    startMarcherPage,
-    endMarcherPage,
-}: {
-    startMarcherPage: MarcherPage;
-    endMarcherPage: MarcherPage;
-}): Path => {
-    if (!endMarcherPage.path_data) {
-        return new Path([
-            new Spline([
-                { x: startMarcherPage.x, y: startMarcherPage.y },
-                {
-                    x: (startMarcherPage.x + endMarcherPage.x) / 2,
-                    y: (startMarcherPage.y + endMarcherPage.y) / 2,
-                },
-                { x: endMarcherPage.x, y: endMarcherPage.y },
-            ]),
-        ]);
-    }
-    return endMarcherPage.path_data;
-};
+// export const marcherPagesToPath = ({
+//     startMarcherPage,
+//     endMarcherPage,
+// }: {
+//     startMarcherPage: MarcherPage;
+//     endMarcherPage: MarcherPage;
+// }): Path => {
+//     if (!endMarcherPage.path_data_id) {
+//         return new Path([
+//             new Spline([
+//                 { x: startMarcherPage.x, y: startMarcherPage.y },
+//                 {
+//                     x: (startMarcherPage.x + endMarcherPage.x) / 2,
+//                     y: (startMarcherPage.y + endMarcherPage.y) / 2,
+//                 },
+//                 { x: endMarcherPage.x, y: endMarcherPage.y },
+//             ]),
+//         ]);
+//     }
+//     return endMarcherPage.path_data;
+// };

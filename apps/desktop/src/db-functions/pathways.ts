@@ -1,5 +1,5 @@
 import { Path, Point } from "@openmarch/path-utility";
-import { DatabaseTransaction } from "./types";
+import { DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
 import { eq } from "drizzle-orm";
@@ -19,7 +19,7 @@ export async function updateEndPoint({
     newPoint,
     type,
 }: {
-    tx: DatabaseTransaction;
+    tx: DbTransaction;
     pathwayId: number;
     newPoint: Point;
     type: "start" | "end";
@@ -77,7 +77,7 @@ export const findPageIdsForPathway = async ({
     tx,
     pathwayId,
 }: {
-    tx: DatabaseTransaction;
+    tx: DbTransaction;
     pathwayId: number;
 }) => {
     const results = await tx

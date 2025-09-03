@@ -1,14 +1,11 @@
 import Measure from "./Measure";
 import Beat from "./Beat";
-import type {
-    DatabasePage,
-    ModifiedPageArgs,
-    NewPageArgs,
-} from "../../../electron/database/tables/PageTable";
+import type { DatabasePage } from "../../../electron/database/tables/PageTable";
 import { FIRST_PAGE_ID } from "../../../electron/database/constants";
 import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
+import { ModifiedPageArgs, NewPageArgs } from "@/hooks/queries";
 
 interface Page {
     /** The id of the page in the database

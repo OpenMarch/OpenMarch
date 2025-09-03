@@ -1,7 +1,9 @@
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "./Marcher";
 import MarcherPage from "./MarcherPage";
-import MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import MarcherPageMap, {
+    MarcherPagesByMarcher,
+} from "@/global/classes/MarcherPageIndex";
 import Page from "./Page";
 
 const INCHES_PER_YARD = 36;
@@ -154,19 +156,19 @@ export class StepSize {
      */
     static createStepSizesForMarchers({
         marchers,
-        marcherPages,
+        startingMarcherPages,
+        endingMarcherPages,
         page,
         fieldProperties,
     }: {
         marchers: Marcher[];
-        marcherPages: MarcherPageMap;
+        startingMarcherPages: MarcherPagesByMarcher;
+        endingMarcherPages: MarcherPagesByMarcher;
         page: Page;
         fieldProperties: FieldProperties;
     }) {
-        const startingPages = page.previousPageId
-            ? marcherPages.marcherPagesByPage[page.previousPageId]
-            : null;
-        const endingPages = marcherPages.marcherPagesByPage[page.id];
+        const startingPages = startingMarcherPages;
+        const endingPages = endingMarcherPages;
 
         const output: StepSize[] = [];
         marchers.forEach((marcher) => {
@@ -201,18 +203,21 @@ export class StepSize {
      */
     static getMinAndMaxStepSizesForMarchers({
         marchers,
-        marcherPages,
+        startingMarcherPages,
+        endingMarcherPages,
         page,
         fieldProperties,
     }: {
         marchers: Marcher[];
-        marcherPages: MarcherPageMap;
+        startingMarcherPages: MarcherPagesByMarcher;
+        endingMarcherPages: MarcherPagesByMarcher;
         page: Page;
         fieldProperties: FieldProperties;
     }) {
         const stepSizes = StepSize.createStepSizesForMarchers({
             marchers,
-            marcherPages,
+            startingMarcherPages,
+            endingMarcherPages,
             page,
             fieldProperties,
         }).sort((o1, o2) => StepSize.compare(o1, o2)); // sort by smallest to largest step size

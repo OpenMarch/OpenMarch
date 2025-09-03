@@ -30,9 +30,7 @@ export function createMarcherPages(
                 path_data_id: null,
                 path_start_position: null,
                 path_end_position: null,
-                path_data: null,
                 notes: null,
-                pathway_notes: null,
             });
             currentId++;
         });

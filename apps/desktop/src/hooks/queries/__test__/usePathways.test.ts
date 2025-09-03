@@ -169,7 +169,7 @@ describeDbTests("usePathways", (baseIt) => {
                             pageId,
                             db,
                         );
-                        expect(pathways.length).toEqual(1);
+                        expect(pathways).toEqual(1);
                     },
                 );
 
@@ -180,12 +180,14 @@ describeDbTests("usePathways", (baseIt) => {
                         pathwaysFixture: { existingPathways, db },
                     }) => {
                         expect(existingPathways.length).toBeGreaterThan(0);
-                        const numberOfMarcherPagesOnPage = await db
+                        const numberOfMarcherPagesOnPage = (
+                            await db
 
-                            .select({ count: count() })
-                            .from(schema.marcher_pages)
-                            .where(eq(schema.marcher_pages.page_id, pageId))
-                            .get()?.count;
+                                .select({ count: count() })
+                                .from(schema.marcher_pages)
+                                .where(eq(schema.marcher_pages.page_id, pageId))
+                                .get()
+                        )?.count;
                         expect(numberOfMarcherPagesOnPage).toBeDefined();
                         expect(numberOfMarcherPagesOnPage).toBeGreaterThan(1);
                         if (!numberOfMarcherPagesOnPage)
@@ -219,11 +221,14 @@ describeDbTests("usePathways", (baseIt) => {
                             pageId,
                             db,
                         );
-                        expect(pathways.length).toEqual(
+                        expect(Object.keys(pathways).length).toEqual(
                             marcherPagesOnPage.length,
                         );
                         expect(
-                            pathways.map((p) => [p.id, p.path_data]),
+                            Object.entries(pathways).map(([id, p]) => [
+                                id,
+                                p.path_data,
+                            ]),
                         ).toEqual(
                             expectedPathways.map((p) => [p.id, p.toJson()]),
                         );

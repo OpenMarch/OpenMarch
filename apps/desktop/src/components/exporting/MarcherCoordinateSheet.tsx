@@ -1,6 +1,9 @@
-import { useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPagesByMarcherQueryOptions,
+    marcherPagesByPageQueryOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
 import React, { useEffect, useState } from "react";
-import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
 import { Marcher } from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
 import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
@@ -11,6 +14,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import Beat from "@/global/classes/Beat";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { useQuery } from "@tanstack/react-query";
 
 const FullPageSheetColumnWidths = {
     pageNumber: "10%",
@@ -46,8 +50,9 @@ export default function MarcherCoordinateSheetPreview({
     useXY = false,
 }: MarcherCoordinateSheetProps) {
     const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByMarcherQueryOptions(marcher?.id || -1),
+    );
     const { data: fieldProperties } = useFieldProperties();
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
@@ -218,9 +223,7 @@ export default function MarcherCoordinateSheetPreview({
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
-            setMarcherPagesToUse(
-                getByMarcherId(marcherPages, marcher?.id || -1),
-            );
+            setMarcherPagesToUse(Object.values(marcherPages));
         }
     }, [
         marcher,

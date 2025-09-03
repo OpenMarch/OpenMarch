@@ -3,7 +3,11 @@ import { fabric } from "fabric";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPagesByPageQueryOptions,
+    updateMarcherPagesMutationOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
@@ -21,11 +25,11 @@ import clsx from "clsx";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
-import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
 import useEditablePath from "./hooks/editablePath";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /**
  * The field/stage UI of OpenMarch
@@ -44,17 +48,32 @@ export default function Canvas({
     testCanvas?: OpenMarchCanvas;
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
+    const queryClient = useQueryClient();
     useEditablePath();
     const { isPlaying } = useIsPlaying()!;
     const { marchers, marcherVisuals, updateMarcherVisuals } =
         useMarchersWithVisuals();
     const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
-    const updateMarcherPages = useUpdateMarcherPages();
+    const { selectedPage } = useSelectedPage()!;
+
+    // MarcherPage queries
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage.id),
+    );
+    const { data: previousMarcherPages } = useQuery({
+        ...marcherPagesByPageQueryOptions(selectedPage.previousPageId!),
+        enabled: selectedPage.previousPageId != null,
+    });
+    const { data: nextMarcherPages } = useQuery({
+        ...marcherPagesByPageQueryOptions(selectedPage.nextPageId!),
+        enabled: selectedPage.nextPageId != null,
+    });
+
+    const updateMarcherPages = useMutation(
+        updateMarcherPagesMutationOptions(queryClient),
+    );
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
-    const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { data: fieldProperties } = useFieldProperties();
     const { uiSettings } = useUiSettingsStore()!;
@@ -361,16 +380,10 @@ export default function Canvas({
 
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                prevPageId: uiSettings.previousPaths
-                    ? selectedPage.previousPageId
-                    : null,
-                currPageId: selectedPage.id,
-                nextPageId: uiSettings.nextPaths
-                    ? selectedPage.nextPageId
-                    : null,
+                previousMarcherPages: previousMarcherPages || {},
+                currentMarcherPages: marcherPages,
+                nextMarcherPages: nextMarcherPages || {},
                 marcherIds: selectedMarchers.map((m) => m.id),
-                fromCanvasMarchers: true,
             });
 
             frameRef.current = null;
@@ -379,10 +392,10 @@ export default function Canvas({
         canvas,
         marcherPages,
         marcherVisuals,
+        nextMarcherPages,
+        previousMarcherPages,
         selectedMarchers,
         selectedPage,
-        uiSettings.nextPaths,
-        uiSettings.previousPaths,
     ]);
 
     useEffect(() => {
@@ -481,7 +494,6 @@ export default function Canvas({
         uiSettings,
         canvas,
         onCanvasReady,
-        setCanvasStore,
     ]);
 
     // Cleanup canvas on unmount
@@ -489,7 +501,7 @@ export default function Canvas({
         return () => {
             setCanvasStore(null);
         };
-    }, [setCanvasStore]);
+    }, []);
 
     // Initiate listeners
     useEffect(() => {
@@ -648,14 +660,10 @@ export default function Canvas({
         if (uiSettings.nextPaths || uiSettings.previousPaths) {
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                prevPageId: uiSettings.previousPaths
-                    ? selectedPage.previousPageId
-                    : null,
-                currPageId: selectedPage.id,
-                nextPageId: uiSettings.nextPaths
-                    ? selectedPage.nextPageId
-                    : null,
+                currentMarcherPages: marcherPages,
+                previousMarcherPages: marcherPages,
+                nextMarcherPages: marcherPages,
+
                 marcherIds: marchers.map((m) => m.id),
             });
             canvas.sendCanvasMarchersToFront();
