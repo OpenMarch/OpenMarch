@@ -1,19 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import Page from "@/global/classes/Page";
-import {
-    CoordinateDefinition,
-    getCoordinatesAtTime,
-    MarcherTimeline,
-} from "@/utilities/Keyframes";
-import { getByMarcherId } from "@/global/classes/MarcherPage";
+import { getCoordinatesAtTime } from "@/utilities/Keyframes";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
-import { useMarcherPages, usePathwaysByPage } from "./queries";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useCollisionStore } from "@/stores/CollisionStore";
+import { useManyCoordinateData } from "./queries/useCoordinateData";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -21,113 +14,115 @@ interface UseAnimationProps {
 
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { pages } = useTimingObjectsStore()!;
-    const { marchers } = useMarcherStore()!;
     const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const {
         collisions: pageCollisions,
-        setCollisions,
+        // setCollisions,
         setCurrentCollision,
     } = useCollisionStore();
-    const pathwayQuery = usePathwaysByPage(selectedPage.id);
 
-    // const { data: midsets, isSuccess: midsetsLoaded } = useMidsets();
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages, filters: { page_id: selectedPage.id } });
+    const PAGE_DELTA = 2;
+    const { data: marcherTimelines } = useManyCoordinateData(
+        pages.filter(
+            (p) => Math.abs(p.order - selectedPage.order) < PAGE_DELTA,
+        ),
+    );
 
     const animationFrameRef = useRef<number | null>(null);
 
-    const marcherTimelines = useMemo(() => {
-        if (
-            // !midsetsLoaded ||
-            !marcherPagesLoaded ||
-            // midsets == null ||
-            marcherPages == null
-        ) {
-            // console.debug("not loading timeline");
-            // console.debug("midsetsLoaded", midsetsLoaded);
-            // console.debug("midsets", midsets);
-            // console.debug("marcherPagesLoaded", marcherPagesLoaded);
-            // console.debug("marcherPages", marcherPages);
-            return new Map<number, MarcherTimeline>();
-        }
+    // const marcherTimelines = useMemo(() => {
+    //     if (
+    //         // !midsetsLoaded ||
+    //         !marcherPagesLoaded ||
+    //         // midsets == null ||
+    //         marcherPages == null
+    //     ) {
+    //         // console.debug("not loading timeline");
+    //         // console.debug("midsetsLoaded", midsetsLoaded);
+    //         // console.debug("midsets", midsets);
+    //         // console.debug("marcherPagesLoaded", marcherPagesLoaded);
+    //         // console.debug("marcherPages", marcherPages);
+    //         return new Map<number, MarcherTimeline>();
+    //     }
 
-        const pagesMap = pages.reduce(
-            (acc, page) => {
-                acc[page.id] = page;
-                return acc;
-            },
-            {} as Record<number, Page>,
-        );
+    //     const pagesMap = pages.reduce(
+    //         (acc, page) => {
+    //             acc[page.id] = page;
+    //             return acc;
+    //         },
+    //         {} as Record<number, Page>,
+    //     );
 
-        // Organize midsets by marcher page ID for efficient lookup
-        // const midsetsByMarcherPage = midsets.reduce(
-        //     (acc: Record<number, Midset[]>, midset: Midset) => {
-        //         if (!acc[midset.mp_id]) {
-        //             acc[midset.mp_id] = [];
-        //         }
-        //         acc[midset.mp_id].push(midset);
-        //         return acc;
-        //     },
-        //     {} as Record<number, Midset[]>,
-        // );
+    //     // Organize midsets by marcher page ID for efficient lookup
+    //     // const midsetsByMarcherPage = midsets.reduce(
+    //     //     (acc: Record<number, Midset[]>, midset: Midset) => {
+    //     //         if (!acc[midset.mp_id]) {
+    //     //             acc[midset.mp_id] = [];
+    //     //         }
+    //     //         acc[midset.mp_id].push(midset);
+    //     //         return acc;
+    //     //     },
+    //     //     {} as Record<number, Midset[]>,
+    //     // );
 
-        const timelines = new Map<number, MarcherTimeline>();
-        if (!marchers.length || !pages.length) return timelines;
+    //     const timelines = new Map<number, MarcherTimeline>();
+    //     if (!marchers.length || !pages.length) return timelines;
 
-        for (const marcher of marchers) {
-            const coordinateMap = new Map<number, CoordinateDefinition>();
-            const marcherPagesForMarcher = getByMarcherId(
-                marcherPages,
-                marcher.id,
-            );
+    //     for (const marcher of marchers) {
+    //         const coordinateMap = new Map<number, CoordinateDefinition>();
+    //         const marcherPagesForMarcher = getByMarcherId(
+    //             marcherPages,
+    //             marcher.id,
+    //         );
 
-            for (const marcherPage of marcherPagesForMarcher) {
-                const page = pagesMap[marcherPage.page_id];
-                if (page) {
-                    // // Get midsets for this marcher page
-                    // const midsetsForMarcherPage =
-                    //     midsetsByMarcherPage[marcherPage.id] || [];
+    //         for (const marcherPage of marcherPagesForMarcher) {
+    //             const page = pagesMap[marcherPage.page_id];
+    //             if (page) {
+    //                 // // Get midsets for this marcher page
+    //                 // const midsetsForMarcherPage =
+    //                 //     midsetsByMarcherPage[marcherPage.id] || [];
 
-                    // Add the marcher page position as the base coordinate
-                    coordinateMap.set((page.timestamp + page.duration) * 1000, {
-                        x: marcherPage.x,
-                        y: marcherPage.y,
-                        path: marcherPage.path_data || undefined,
-                        previousPathPosition:
-                            marcherPage.path_start_position || 0,
-                        nextPathPosition: marcherPage.path_end_position || 1,
-                    });
+    //                 // Add the marcher page position as the base coordinate
+    //                 coordinateMap.set((page.timestamp + page.duration) * 1000, {
+    //                     x: marcherPage.x,
+    //                     y: marcherPage.y,
+    //                     path: marcherPage.path_data || undefined,
+    //                     previousPathPosition:
+    //                         marcherPage.path_start_position || 0,
+    //                     nextPathPosition: marcherPage.path_end_position || 1,
+    //                 });
 
-                    // // Add midset positions at their progress placements
-                    // for (const midset of midsetsForMarcherPage) {
-                    //     const progressTime =
-                    //         page.timestamp +
-                    //         page.duration * midset.progress_placement;
-                    //     coordinateMap.set(progressTime, {
-                    //         x: midset.x,
-                    //         y: midset.y,
-                    //         path: midset.path_data || undefined,
-                    //     });
-                    // }
-                }
-            }
+    //                 // // Add midset positions at their progress placements
+    //                 // for (const midset of midsetsForMarcherPage) {
+    //                 //     const progressTime =
+    //                 //         page.timestamp +
+    //                 //         page.duration * midset.progress_placement;
+    //                 //     coordinateMap.set(progressTime, {
+    //                 //         x: midset.x,
+    //                 //         y: midset.y,
+    //                 //         path: midset.path_data || undefined,
+    //                 //     });
+    //                 // }
+    //             }
+    //         }
 
-            const sortedTimestamps = Array.from(coordinateMap.keys()).sort(
-                (a, b) => a - b,
-            );
-            timelines.set(marcher.id, {
-                pathMap: coordinateMap,
-                sortedTimestamps,
-            });
-        }
-        return timelines;
-    }, [marcherPagesLoaded, marcherPages, pages, marchers]);
+    //         const sortedTimestamps = Array.from(coordinateMap.keys()).sort(
+    //             (a, b) => a - b,
+    //         );
+    //         timelines.set(marcher.id, {
+    //             pathMap: coordinateMap,
+    //             sortedTimestamps,
+    //         });
+    //     }
+    //     return timelines;
+    // }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
     // Incremental collision calculation with caching
-    useEffect(() => {
-        setCollisions(marchers, marcherTimelines, pages, marcherPages);
-    }, [marchers, marcherTimelines, pages, marcherPages]);
+    // TODO - make collisions a query and put this back
+    // useEffect(() => {
+    //     setCollisions(marchers, marcherTimelines, pages, marcherPages);
+    // }, [marchers, marcherTimelines, pages, marcherPages]);
 
     // Get collisions for the currently selected page
     const getCollisionsForSelectedPage = useCallback(() => {
@@ -146,7 +141,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     // Update collisions when selected page changes
     useEffect(() => {
         setCurrentCollision(selectedPage);
-    }, [selectedPage, getCollisionsForSelectedPage]);
+    }, [selectedPage, getCollisionsForSelectedPage, setCurrentCollision]);
 
     // Set marcher positions at a specific time
     const setMarcherPositionsAtTime = useCallback(
@@ -155,9 +150,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
-                const timeline = marcherTimelines.get(
-                    canvasMarcher.marcherObj.id,
-                );
+                const timeline = marcherTimelines[canvasMarcher.marcherObj.id];
 
                 if (timeline) {
                     try {

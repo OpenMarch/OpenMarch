@@ -1,11 +1,12 @@
 import EditablePath from "@/global/classes/canvasObjects/EditablePath";
 import {
+    updateMarcherPagesMutationOptions,
     useCreatePathway,
-    useUpdateMarcherPages,
     useUpdatePathway,
 } from "@/hooks/queries";
 import { Path } from "@openmarch/path-utility";
 import { useEffect } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 /**
  * This hook keeps static methods in the EditablePath class up to date with React Query.
@@ -13,7 +14,10 @@ import { useEffect } from "react";
 export default function useEditablePath() {
     const createPathway = useCreatePathway();
     const updatePathway = useUpdatePathway();
-    const updateMarcherPages = useUpdateMarcherPages();
+    const queryClient = useQueryClient();
+    const updateMarcherPages = useMutation(
+        updateMarcherPagesMutationOptions(queryClient),
+    );
 
     useEffect(() => {
         EditablePath.createPathway = (

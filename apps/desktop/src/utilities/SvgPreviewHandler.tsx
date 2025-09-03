@@ -1,10 +1,13 @@
 import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { useFieldProperties } from "@/hooks/queries";
-import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
+import {
+    allMarcherPagesQueryOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import { useQuery } from "@tanstack/react-query";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launch page
@@ -15,8 +18,12 @@ const SvgPreviewHandler: React.FC = () => {
     // Get current values
     const { data: fieldProperties } = useFieldProperties();
     const { pages = [] } = useTimingObjectsStore() ?? {};
-    const { data: marcherPages = {}, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
+    const { data: marcherPages = {} } = useQuery(
+        // This might be overkill
+        allMarcherPagesQueryOptions({
+            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
+        }),
+    );
     const { marchers = [], marcherVisuals = {} } =
         useMarchersWithVisuals() ?? {};
 

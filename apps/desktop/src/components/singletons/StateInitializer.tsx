@@ -12,6 +12,7 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import {
     fetchMarcherPages,
     marcherPageKeys,
+    marcherPagesByPageQueryOptions,
     useFieldProperties,
     useFieldPropertiesWithSetter,
 } from "@/hooks/queries";
@@ -20,6 +21,7 @@ import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
 import { DEFAULT_FIELD_THEME, FieldTheme } from "@openmarch/core";
 import { useQueryClient } from "@tanstack/react-query";
+import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 
 /**
  * A component that initializes the state of the application.
@@ -38,6 +40,28 @@ function StateInitializer() {
     const { isSuccess: fieldPropertiesSuccess, data: fieldProperties } =
         useFieldProperties();
     const queryClient = useQueryClient();
+
+    queryClient.prefetchQuery(
+        coordinateDataQueryOptions(selectedPage, queryClient),
+    );
+    if (selectedPage.nextPageId != null) {
+        const nextPage = pages.find(
+            (page) => page.id === selectedPage.nextPageId,
+        );
+        if (nextPage)
+            queryClient.prefetchQuery(
+                coordinateDataQueryOptions(nextPage, queryClient),
+            );
+    }
+    if (selectedPage.previousPageId != null) {
+        const previousPage = pages.find(
+            (page) => page.id === selectedPage.previousPageId,
+        );
+        if (previousPage)
+            queryClient.prefetchQuery(
+                coordinateDataQueryOptions(previousPage, queryClient),
+            );
+    }
 
     /**
      * These functions set the fetch function in each respective class.

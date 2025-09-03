@@ -1,13 +1,14 @@
-import { marcherPageKeys, useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPageKeys,
+    marcherPagesByPageQueryOptions,
+    updateMarcherPagesMutationOptions,
+    useFieldProperties,
+} from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
-import MarcherPage, {
-    getByMarcherAndPageId,
-    getByPageId,
-} from "@/global/classes/MarcherPage";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
@@ -22,8 +23,7 @@ import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
-import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -481,14 +481,27 @@ export const RegisteredActionsObjects: {
  */
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
+    const queryClient = useQueryClient();
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjectsStore()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { toggleMetronome } = useMetronomeStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
-    const updateMarcherPages = useUpdateMarcherPages().mutate;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage.id),
+    );
+    const { data: previousMarcherPages } = useQuery({
+        ...marcherPagesByPageQueryOptions(selectedPage.previousPageId!),
+        enabled: selectedPage.previousPageId != null,
+    });
+    const { data: nextMarcherPages } = useQuery({
+        ...marcherPagesByPageQueryOptions(selectedPage.nextPageId!),
+        enabled: selectedPage.nextPageId != null,
+    });
+
+    const updateMarcherPages = useMutation(
+        updateMarcherPagesMutationOptions(queryClient),
+    ).mutate;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { data: fieldProperties } = useFieldProperties();
@@ -501,7 +514,6 @@ function RegisteredActionsHandler() {
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
-    const queryClient = useQueryClient();
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -520,8 +532,7 @@ function RegisteredActionsHandler() {
             return [];
         }
 
-        const selectedPageMarcherPages =
-            marcherPages.marcherPagesByPage[selectedPage.id] || {};
+        const selectedPageMarcherPages = Object.values(marcherPages);
         return selectedMarchers
             .map((marcher) => selectedPageMarcherPages[marcher.id])
             .filter(Boolean);
@@ -630,16 +641,12 @@ function RegisteredActionsHandler() {
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage) {
+                    if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
-                    const previousPageMarcherPages = getByPageId(
-                        marcherPages,
-                        previousPage.id,
-                    );
-                    const changes = previousPageMarcherPages.map(
+                    const changes = Object.values(previousMarcherPages).map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
@@ -652,7 +659,7 @@ function RegisteredActionsHandler() {
 
                     toast.success(
                         t("actions.batchEdit.setAllToPreviousSuccess", {
-                            count: previousPageMarcherPages.length,
+                            count: Object.keys(previousMarcherPages).length,
                             currentPage: selectedPage.name,
                             previousPage: previousPage.name,
                         }),
@@ -661,27 +668,21 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage) {
+                    if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
-                    const previousMarcherPages = selectedMarchers
-                        .map((marcher) =>
-                            getByMarcherAndPageId(
-                                marcherPages,
-                                marcher.id,
-                                previousPage.id,
-                            ),
-                        )
-                        .filter(
-                            (marcherPage): marcherPage is MarcherPage =>
-                                marcherPage !== undefined &&
-                                marcherPage.marcher_id !== undefined,
-                        );
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
 
-                    if (previousMarcherPages.length > 0) {
-                        const changes = previousMarcherPages.map(
+                    const filteredPreviousMarcherPages = selectedMarcherIds
+                        .map((marcherId) => previousMarcherPages[marcherId])
+                        .filter(Boolean);
+
+                    if (filteredPreviousMarcherPages.length > 0) {
+                        const changes = filteredPreviousMarcherPages.map(
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
                                 page_id: selectedPage.id,
@@ -696,7 +697,7 @@ function RegisteredActionsHandler() {
                             t(
                                 "actions.batchEdit.setSelectedToPreviousSuccess",
                                 {
-                                    count: previousMarcherPages.length,
+                                    count: filteredPreviousMarcherPages.length,
                                     currentPage: selectedPage.name,
                                     previousPage: previousPage.name,
                                 },
@@ -707,15 +708,17 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setAllMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage) {
+                    if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
 
-                    const nextPageMarcherPages = getByPageId(
-                        marcherPages,
-                        nextPage.id,
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
                     );
+                    const nextPageMarcherPages = selectedMarcherIds
+                        .map((marcherId) => nextMarcherPages[marcherId])
+                        .filter(Boolean);
                     const changes = nextPageMarcherPages.map((marcherPage) => ({
                         marcher_id: marcherPage.marcher_id,
                         page_id: selectedPage.id,
@@ -736,37 +739,32 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage) {
+                    if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
-                    const nextMarcherPages = selectedMarchers
-                        .map((marcher) =>
-                            getByMarcherAndPageId(
-                                marcherPages,
-                                marcher.id,
-                                nextPage.id,
-                            ),
-                        )
-                        .filter(
-                            (marcherPage): marcherPage is MarcherPage =>
-                                marcherPage !== undefined &&
-                                marcherPage.marcher_id !== undefined,
-                        );
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
+                    const nextPageMarcherPages = selectedMarcherIds
+                        .map((marcherId) => nextMarcherPages[marcherId])
+                        .filter(Boolean);
 
-                    if (nextMarcherPages.length > 0) {
-                        const changes = nextMarcherPages.map((marcherPage) => ({
-                            marcher_id: marcherPage.marcher_id,
-                            page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
-                            notes: marcherPage.notes || undefined,
-                        }));
+                    if (nextPageMarcherPages.length > 0) {
+                        const changes = nextPageMarcherPages.map(
+                            (marcherPage) => ({
+                                marcher_id: marcherPage.marcher_id,
+                                page_id: selectedPage.id,
+                                x: marcherPage.x as number,
+                                y: marcherPage.y as number,
+                                notes: marcherPage.notes || undefined,
+                            }),
+                        );
                         updateMarcherPages(changes);
 
                         toast.success(
                             t("actions.batchEdit.setSelectedToNextSuccess", {
-                                count: nextMarcherPages.length,
+                                count: nextPageMarcherPages.length,
                                 currentPage: selectedPage.name,
                                 nextPage: nextPage.name,
                             }),
@@ -1049,10 +1047,11 @@ function RegisteredActionsHandler() {
             setSelectedPage,
             setIsPlaying,
             toggleMetronome,
-            marcherPages,
+            previousMarcherPages,
             updateMarcherPages,
             t,
             selectedMarchers,
+            nextMarcherPages,
             getSelectedMarcherPages,
             queryClient,
             alignmentEventMarchers,

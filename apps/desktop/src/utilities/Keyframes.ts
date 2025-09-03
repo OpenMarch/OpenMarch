@@ -75,10 +75,6 @@ export const getCoordinatesAtTime = (
             pathLength = nextPath.getTotalLength();
             PathLengthCache.set(nextPath, pathLength);
         }
-        const currentPathPosition =
-            (destinationPathPosition - previousPathPosition) *
-                keyframeProgress +
-            previousPathPosition;
 
         const previousPathPositionToUse = previousPathPosition ?? 0;
         const destinationPathPositionToUse = destinationPathPosition ?? 1;
