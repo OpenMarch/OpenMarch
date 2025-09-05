@@ -101,13 +101,19 @@ const getMarcherTimelines = (
     return timelinesByMarcherId;
 };
 
+const keyFromPage = (page: { id: number }) => [
+    "coordinateData",
+    "page",
+    page.id,
+];
+
 // --- coordinate data options (pure; no hooks) ---
 export const coordinateDataQueryOptions = (
     page: { id: number; duration: number; timestamp: number },
     qc: ReturnType<typeof useQueryClient>,
 ) =>
     queryOptions({
-        queryKey: ["coordinateData", page.id, page.duration, page.timestamp],
+        queryKey: keyFromPage(page),
         enabled: !!page.id && page.duration != null && page.timestamp != null,
         queryFn: async () => {
             // Ensure deps exist (fetch if missing/stale)

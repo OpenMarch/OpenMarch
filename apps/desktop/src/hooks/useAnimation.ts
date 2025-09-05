@@ -24,9 +24,11 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     const PAGE_DELTA = 2;
     const { data: marcherTimelines } = useManyCoordinateData(
-        pages.filter(
-            (p) => Math.abs(p.order - selectedPage.order) < PAGE_DELTA,
-        ),
+        selectedPage
+            ? pages.filter(
+                  (p) => Math.abs(p.order - selectedPage.order) <= PAGE_DELTA,
+              )
+            : [],
     );
 
     const animationFrameRef = useRef<number | null>(null);

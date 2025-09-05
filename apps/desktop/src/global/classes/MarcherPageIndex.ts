@@ -53,7 +53,7 @@ export function marcherPageMapFromArray(
     return { marcherPagesByMarcher, marcherPagesByPage };
 }
 
-export function marcherPageByMarcherFromArray(
+export function toMarcherPagesByMarcher(
     rawMarcherPages: MarcherPage[],
 ): MarcherPagesByMarcher {
     const marcherPagesByMarcher: MarcherPagesByMarcher = {};
@@ -63,7 +63,7 @@ export function marcherPageByMarcherFromArray(
     return marcherPagesByMarcher;
 }
 
-export function marcherPagesByPageFromArray(
+export function toMarcherPagesByPage(
     rawMarcherPages: MarcherPage[],
 ): MarcherPagesByPage {
     const marcherPagesByPage: MarcherPagesByPage = {};

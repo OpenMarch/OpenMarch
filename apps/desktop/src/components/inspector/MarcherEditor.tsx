@@ -32,12 +32,14 @@ function MarcherEditor() {
     const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage.id),
+        marcherPagesByPageQueryOptions(selectedPage?.id),
     );
-    const { data: nextMarcherPages } = useQuery({
-        ...marcherPagesByPageQueryOptions(selectedPage.nextPageId!),
-        enabled: selectedPage.nextPageId != null,
-    });
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    );
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    );
     const { data: fieldProperties } = useFieldProperties();
     const { shapePages } = useShapePageStore()!;
     const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
@@ -125,20 +127,20 @@ function MarcherEditor() {
             return;
         }
 
-        const selectedMarcherPages = marcherPages[selectedMarchers[0]?.id];
+        const selectedMarcherPage = marcherPages[selectedMarchers[0]?.id];
+        console.log("marcherPages", marcherPages);
 
-        const selectedMarcherPage =
-            selectedPage?.id !== undefined ? selectedMarcherPages : undefined;
+        console.log("selectedMarcherPage", selectedMarcherPage);
 
         if (selectedMarcherPage) {
             const newRcoords =
                 ReadableCoords.fromMarcherPage(selectedMarcherPage);
             setRCoords(newRcoords);
 
-            if (selectedPage) {
+            if (selectedPage && previousMarcherPages) {
                 const previousMarcherPage =
                     selectedPage?.previousPageId !== null
-                        ? selectedMarcherPages
+                        ? previousMarcherPages[selectedMarchers[0]?.id]
                         : undefined;
 
                 setStepSize(
@@ -158,6 +160,7 @@ function MarcherEditor() {
         fieldProperties,
         marcherPagesLoaded,
         nextMarcherPages,
+        previousMarcherPages,
     ]);
 
     const resetForm = useCallback(() => {
