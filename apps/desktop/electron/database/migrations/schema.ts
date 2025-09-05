@@ -49,9 +49,13 @@ export const beats = sqliteTable(
     "beats",
     {
         id: integer().primaryKey(),
+        /** Duration from this beat to the next in second. */
         duration: real().notNull(),
+        /** The position of this beat in the show. Integer and unique */
         position: integer().notNull(),
+        /** Whether this beat is included in a measure. 0 = false, 1 = true. */
         include_in_measure: integer().default(1).notNull(),
+        /** Human readable notes. */
         notes: text(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
@@ -84,13 +88,16 @@ export const pages = sqliteTable(
     "pages",
     {
         id: integer().primaryKey(),
+        /** Indicates if this page is a subset of another page */
         is_subset: integer().default(0).notNull(),
+        /** Optional notes or description for the page */
         notes: text(),
         created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
         updated_at: text()
             .default("sql`(CURRENT_TIMESTAMP)`")
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        /** The ID of the beat this page starts on */
         start_beat: integer()
             .notNull()
             .references(() => beats.id),
@@ -315,7 +322,7 @@ export const utility = sqliteTable(
     "utility",
     {
         id: integer().primaryKey(),
-        last_page_counts: integer(),
+        last_page_counts: integer().notNull().default(8),
     },
     (_table) => [
         check("utility_last_page_counts_check", sql`last_page_counts > 0`),
