@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import Database from "better-sqlite3";
 import { Constants } from "../../../src/global/Constants";
+import { sql } from "drizzle-orm";
 import {
     calculateHistorySize,
     createHistoryTables,
@@ -13,201 +13,245 @@ import {
     performRedo,
     performUndo,
 } from "../database.history";
+import {
+    DbConnection,
+    initTestDatabaseOrm,
+} from "../tables/__test__/testUtils";
+import { schema } from "../db";
 
-describe("History Tables and Triggers", () => {
-    let db: Database.Database;
+describe("History Tables and Triggers", async () => {
+    let db: DbConnection;
     type HistoryRow = { sequence: number; group: number; sql: string };
 
-    beforeEach(() => {
+    beforeEach(async () => {
         // Create an in-memory SQLite database for each test
-        db = new Database(":memory:");
+        db = await initTestDatabaseOrm();
+        // Drop all tables to ensure clean state
+        await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
+        const tables = await db.all(
+            sql.raw("SELECT name FROM sqlite_master WHERE type='table'"),
+        );
+        for (const table of tables as { name: string }[]) {
+            await db.run(sql.raw(`DROP TABLE IF EXISTS "${table.name}"`));
+        }
+        await db.run(sql.raw("PRAGMA foreign_keys = ON"));
         createHistoryTables(db);
     });
 
-    describe("basic tests", () => {
-        it("should create the history tables", () => {
+    describe("basic tests", async () => {
+        it("should create the history tables", async () => {
             // Check if the undo, redo, and history stats tables were created
-            const tables = db
-                .prepare(
-                    `SELECT name FROM sqlite_master WHERE type='table' AND name IN (?, ?, ?);`,
-                )
-                .all(
-                    Constants.UndoHistoryTableName,
-                    Constants.RedoHistoryTableName,
-                    Constants.HistoryStatsTableName,
-                );
+            const tables = await db.all(
+                sql.raw(`
+                SELECT name FROM sqlite_master WHERE type='table' AND name IN ('${Constants.UndoHistoryTableName}', '${Constants.RedoHistoryTableName}', '${Constants.HistoryStatsTableName}');
+            `),
+            );
 
             expect(tables.length).toBe(3); // All three tables should be created
         });
 
-        it("should create the triggers for a given table", () => {
+        it("should create the triggers for a given table", async () => {
             // Create a test table to attach triggers to
-            db.prepare(
-                "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-            ).run();
+            await db.run(
+                sql.raw(
+                    "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                ),
+            );
 
             // Create the undo triggers for the test table
-            createUndoTriggers(db, "test_table");
+            await createUndoTriggers(db, "test_table");
 
             // Check if the triggers were created
-            const triggers = db
-                .prepare(
-                    `SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = 'test_table';`,
-                )
-                .all();
+            const triggers = await db.all(
+                sql.raw(`
+                    SELECT name FROM sqlite_master WHERE type='trigger' AND tbl_name = 'test_table';
+                `),
+            );
 
             expect(triggers.length).toBe(3); // Should have 3 triggers: insert, update, delete
         });
 
-        describe("undo history", () => {
-            const allUndoRowsByGroup = () =>
-                db
-                    .prepare(
-                        `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group";`,
-                    )
-                    .all() as HistoryRow[];
-            const allUndoRows = () =>
-                db
-                    .prepare(`SELECT * FROM ${Constants.UndoHistoryTableName};`)
-                    .all() as HistoryRow[];
+        describe("undo history", async () => {
+            const allUndoRowsByGroup = async () =>
+                (await db.all(
+                    sql.raw(`
+                        SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group";
+                    `),
+                )) as HistoryRow[];
+            const allUndoRows = async () =>
+                (await db.all(
+                    sql.raw(`SELECT * FROM ${Constants.UndoHistoryTableName};`),
+                )) as HistoryRow[];
 
-            describe("empty undo", () => {
-                it("should do nothing if there are no changes to undo", () => {
+            describe("empty undo", async () => {
+                it("should do nothing if there are no changes to undo", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
-                    const undoRows = () =>
-                        db.prepare("SELECT * FROM history_undo;").all();
-                    expect(undoRows()).toEqual([]); // There should be no rows in the undo history
+                    const undoRows = async () =>
+                        await db.all(sql.raw("SELECT * FROM history_undo;"));
+                    expect(await undoRows()).toEqual([]); // There should be no rows in the undo history
 
                     // Execute the undo action
-                    performUndo(db);
-                    expect(undoRows()).toEqual([]); // There should still be no rows in the undo history
+                    await performUndo(db);
+                    expect(await undoRows()).toEqual([]); // There should still be no rows in the undo history
                 });
-                it("should do nothing if it runs out of changes to undo", () => {
+                it("should do nothing if it runs out of changes to undo", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
-                    const undoRows = () =>
-                        db.prepare("SELECT * FROM history_undo;").all();
-                    expect(undoRows()).toEqual([]);
+                    const undoRows = async () =>
+                        await db.all(sql.raw("SELECT * FROM history_undo;"));
+                    expect(await undoRows()).toEqual([]); // There should still be no rows in the undo history
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("test value");
-                    incrementUndoGroup(db);
-                    expect(undoRows().length).toBe(1);
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"test value"});`,
+                    );
+                    let curRows = await undoRows();
+                    await incrementUndoGroup(db);
+                    expect(curRows.length).toBe(1);
 
                     // Execute the undo action
-                    performUndo(db);
-                    expect(undoRows()).toEqual([]);
+                    await performUndo(db);
+                    expect(await undoRows()).toEqual([]);
 
                     // Execute the undo action again with no changes to undo
-                    performUndo(db);
-                    expect(undoRows()).toEqual([]);
+                    await performUndo(db);
+                    expect(await undoRows()).toEqual([]);
                 });
             });
 
-            describe("INSERT trigger", () => {
-                it("should execute an undo correctly from an insert action", () => {
+            describe("INSERT trigger", async () => {
+                it("should all an undo correctly from an insert action", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("test value");
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"test value"});`,
+                    );
 
                     // Simulate an action that will be logged in the undo history
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("another value");
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"another value"});`,
+                    );
 
                     // Execute the undo action
-                    performUndo(db);
+                    await performUndo(db);
 
                     // Verify that the last insert was undone
-                    const row = db
-                        .prepare("SELECT * FROM test_table WHERE value = ?")
-                        .get("another value");
+                    const row = (
+                        await db.all(
+                            sql`SELECT * FROM test_table WHERE value = ${"another value"}`,
+                        )
+                    )[0];
                     expect(row).toBeUndefined(); // The undo should have deleted the last inserted value
 
                     // Expect there to be no undo actions left
-                    expect(allUndoRows().length).toBe(0);
+                    const allUndoRowsResult = await allUndoRows();
+                    expect(allUndoRowsResult.length).toBe(0);
                 });
 
-                it("should undo groups of inserts correctly", () => {
+                it("should undo groups of inserts correctly", async () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table in three groups
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-1 - test value");
-                    incrementUndoGroup(db);
-                    const groupOneObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g1%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-1 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupOneObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g1%'`,
+                        ),
+                    )) as Row[];
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g2-0 - test value");
-                    incrementUndoGroup(db);
-                    const groupTwoObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g2%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g2-0 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupTwoObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g2%'`,
+                        ),
+                    )) as Row[];
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-1 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-2 - test value");
-                    incrementUndoGroup(db);
-                    const groupThreeObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g3%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-1 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-2 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupThreeObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g3%'`,
+                        ),
+                    )) as Row[];
 
                     // expect all the objects to be in the table
-                    const allObjects = () =>
-                        db.prepare("SELECT * FROM test_table").all() as Row[];
-                    expect(allObjects()).toEqual([
+                    const allObjects = async () =>
+                        (await db.all(
+                            sql.raw("SELECT * FROM test_table"),
+                        )) as Row[];
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                         ...groupThreeObjects,
                     ]);
 
                     // Execute the undo action
-                    let response = performUndo(db);
+                    let response = await performUndo(db);
                     expect(response.success).toBe(true);
                     expect(response.sqlStatements).toEqual([
                         'DELETE FROM "test_table" WHERE rowid=6',
@@ -219,157 +263,170 @@ describe("History Tables and Triggers", () => {
                     );
                     expect(response.error).toBeUndefined();
 
-                    expect(allObjects()).toEqual([
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                     ]);
-                    performUndo(db);
-                    expect(allObjects()).toEqual([...groupOneObjects]);
-                    performUndo(db);
-                    expect(allObjects()).toEqual([]);
+                    await performUndo(db);
+                    expect(await allObjects()).toEqual([...groupOneObjects]);
+                    await performUndo(db);
+                    expect(await allObjects()).toEqual([]);
 
-                    // Expect there to be no undo actions left
-                    expect(allUndoRows().length).toBe(0);
+                    // Expect there to be no undo actions left'
+                    const allUndoRowsResult = await allUndoRows();
+                    expect(allUndoRowsResult.length).toBe(0);
                 });
             });
 
-            describe("UPDATE trigger", () => {
-                it("should execute an undo correctly from an update action", () => {
+            describe("UPDATE trigger", async () => {
+                it("should all an undo correctly from an update action", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
-                    const currentValue = () =>
+                    const currentValue = async () =>
                         (
-                            db
-                                .prepare(
+                            (await db.get(
+                                sql.raw(
                                     "SELECT test_value FROM test_table WHERE id = 1;",
-                                )
-                                .get() as {
+                                ),
+                            )) as {
                                 test_value: string;
                             }
                         ).test_value;
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("test value");
-                    expect(currentValue()).toBe("test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('test value');",
+                        ),
+                    );
+                    expect(await currentValue()).toBe("test value");
+                    await incrementUndoGroup(db);
 
                     // Update the value in the test table
-                    db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
-                    ).run("updated value");
-                    expect(currentValue()).toBe("updated value"); // The value should be updated
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "UPDATE test_table SET test_value = 'updated value' WHERE id = 1;",
+                        ),
+                    );
+                    expect(await currentValue()).toBe("updated value"); // The value should be updated
+                    await incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
-                    db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
-                    ).run("another updated value");
-                    expect(currentValue()).toBe("another updated value"); // The value should be updated
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "UPDATE test_table SET test_value = 'another updated value' WHERE id = 1;",
+                        ),
+                    );
+                    expect(await currentValue()).toBe("another updated value"); // The value should be updated
+                    await incrementUndoGroup(db);
 
                     // Execute the undo action
-                    performUndo(db);
+                    await performUndo(db);
                     // Verify that the last update was undone
-                    expect(currentValue()).toBe("updated value"); // The undo should have reverted the last update
+                    expect(await currentValue()).toBe("updated value"); // The undo should have reverted the last update
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     // Verify that the first update was undone
-                    expect(currentValue()).toBe("test value"); // The undo should have reverted the first update
+                    expect(await currentValue()).toBe("test value"); // The undo should have reverted the first update
 
                     // Expect there to be one undo actions left
-                    expect(allUndoRows().length).toBe(1);
+                    const allUndoRowsResult = await allUndoRows();
+                    expect(allUndoRowsResult.length).toBe(1);
                 });
 
-                it("should undo groups of updates correctly", () => {
+                it("should undo groups of updates correctly", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1 - initial value');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0 - initial value');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2 - initial value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2 - initial value');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const updateSql =
-                        "UPDATE test_table SET test_value = (?) WHERE test_value = (?);";
                     // group 1
-                    db.prepare(updateSql).run(
-                        "g1-0 - updated value",
-                        "g1-0 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-0 - updated value"} WHERE test_value = ${"g1-0 - initial value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - updated value",
-                        "g1-1 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-1 - updated value"} WHERE test_value = ${"g1-1 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(updateSql).run(
-                        "g2-0 - updated value",
-                        "g2-0 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g2-0 - updated value"} WHERE test_value = ${"g2-0 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(updateSql).run(
-                        "g3-0 - updated value",
-                        "g3-0 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-0 - updated value"} WHERE test_value = ${"g3-0 - initial value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g3-1 - updated value",
-                        "g3-1 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-1 - updated value"} WHERE test_value = ${"g3-1 - initial value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g3-2 - updated value",
-                        "g3-2 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-2 - updated value"} WHERE test_value = ${"g3-2 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 1 (again)
-                    db.prepare(updateSql).run(
-                        "g1-0 - second updated value",
-                        "g1-0 - updated value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-0 - second updated value"} WHERE test_value = ${"g1-0 - updated value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - second updated value",
-                        "g1-1 - updated value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-1 - second updated value"} WHERE test_value = ${"g1-1 - updated value"};`,
                     );
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
                     let expectedValues: Row[] = [
                         { id: 1, test_value: "g1-0 - second updated value" },
                         { id: 2, test_value: "g1-1 - second updated value" },
@@ -378,10 +435,10 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action
-                    let response = performUndo(db);
+                    let response = await performUndo(db);
                     expect(response.success).toBe(true);
                     expect(response.sqlStatements).toEqual([
                         'UPDATE "test_table" SET "id"=2,"test_value"=\'g1-1 - updated value\' WHERE rowid=2',
@@ -400,10 +457,10 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -412,10 +469,10 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - initial value" },
                         { id: 6, test_value: "g3-2 - initial value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -424,10 +481,10 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - initial value" },
                         { id: 6, test_value: "g3-2 - initial value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - initial value" },
                         { id: 2, test_value: "g1-1 - initial value" },
@@ -436,28 +493,29 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - initial value" },
                         { id: 6, test_value: "g3-2 - initial value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Expect there to be one undo actions left
-                    expect(allUndoRowsByGroup().length).toBe(1);
+                    const allUndoRowsByGroupResult = await allUndoRowsByGroup();
+                    expect(allUndoRowsByGroupResult.length).toBe(1);
                 });
             });
 
-            describe("DELETE trigger", () => {
-                it("should execute an undo correctly from a delete action", () => {
+            describe("DELETE trigger", async () => {
+                it("should all an undo correctly from a delete action", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
-                    const currentValue = () => {
+                    const currentValue = async () => {
                         try {
                             return (
-                                db
-                                    .prepare(
-                                        "SELECT test_value FROM test_table WHERE id = 1;",
-                                    )
-                                    .get() as {
+                                (await db.get(
+                                    "SELECT test_value FROM test_table WHERE id = 1;",
+                                )) as {
                                     test_value: string;
                                 }
                             ).test_value;
@@ -467,87 +525,115 @@ describe("History Tables and Triggers", () => {
                     };
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("test value");
-                    expect(currentValue()).toBe("test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('test value');",
+                        ),
+                    );
+                    expect(await currentValue()).toBe("test value");
+                    await incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
-                    db.prepare("DELETE FROM test_table WHERE id = 1;").run();
-                    expect(currentValue()).toBeUndefined(); // The value should be deleted
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw("DELETE FROM test_table WHERE id = 1;"),
+                    );
+                    expect(await currentValue()).toBeUndefined(); // The value should be deleted
+                    await incrementUndoGroup(db);
 
                     // Execute the undo action
-                    performUndo(db);
+                    await performUndo(db);
                     // Verify that the last delete was undone
-                    expect(currentValue()).toBe("test value"); // The undo should have restored the last deleted value
+                    expect(await currentValue()).toBe("test value"); // The undo should have restored the last deleted value
 
                     // Expect there to be one undo actions left
-                    expect(allUndoRows().length).toBe(1);
+                    const allUndoRowsByGroupResult = await allUndoRowsByGroup();
+                    expect(allUndoRowsByGroupResult.length).toBe(1);
                 });
 
-                it("should undo groups of deletes correctly", () => {
+                it("should undo groups of deletes correctly", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const updateSql =
-                        "DELETE FROM test_table WHERE test_value = (?);";
                     // group 1
-                    db.prepare(updateSql).run("g1-0");
-                    db.prepare(updateSql).run("g1-1");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-1"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(updateSql).run("g2-0");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g2-0"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(updateSql).run("g3-0");
-                    db.prepare(updateSql).run("g3-1");
-                    db.prepare(updateSql).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-1"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-2"};`,
+                    );
+                    await incrementUndoGroup(db);
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
-                    expect(allRows()).toEqual([]);
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
+                    expect(await allRows()).toEqual([]);
 
                     // Execute the undo action
-                    let response = performUndo(db);
+                    let response = await performUndo(db);
                     expect(response.success).toBe(true);
                     expect(response.sqlStatements).toEqual([
                         'INSERT INTO "test_table" ("id","test_value") VALUES (6,\'g3-2\')',
@@ -564,20 +650,20 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     expectedValues = [
                         { id: 3, test_value: "g2-0" },
                         { id: 4, test_value: "g3-0" },
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
-                    performUndo(db);
+                    await performUndo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0" },
                         { id: 2, test_value: "g1-1" },
@@ -586,380 +672,444 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Expect there to be one undo actions left
-                    expect(allUndoRowsByGroup().length).toBe(1);
+                    const allUndoRowsByGroupResult = await allUndoRowsByGroup();
+                    expect(allUndoRowsByGroupResult.length).toBe(1);
                 });
             });
         });
 
-        describe("redo history", () => {
-            const allRedoRowsByGroup = () =>
-                db
-                    .prepare(
+        describe("redo history", async () => {
+            const allRedoRowsByGroup = async () =>
+                (await db.all(
+                    sql.raw(
                         `SELECT * FROM ${Constants.RedoHistoryTableName} GROUP BY "history_group";`,
-                    )
-                    .all() as HistoryRow[];
-            const allRedoRows = () =>
-                db
-                    .prepare(`SELECT * FROM ${Constants.RedoHistoryTableName};`)
-                    .all() as HistoryRow[];
+                    ),
+                )) as HistoryRow[];
+            const allRedoRows = async () =>
+                (await db.all(
+                    sql.raw(`SELECT * FROM ${Constants.RedoHistoryTableName};`),
+                )) as HistoryRow[];
 
-            describe("empty redo", () => {
-                it("should do nothing if there are no changes to redo", () => {
+            describe("empty redo", async () => {
+                it("should do nothing if there are no changes to redo", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
-                    expect(allRedoRows()).toEqual([]); // There should be no rows in the redo history
+                    expect(await allRedoRows()).toEqual([]); // There should be no rows in the redo history
 
                     // Execute the redo action
-                    performRedo(db);
-                    expect(allRedoRows()).toEqual([]); // There should still be no rows in the redo history
+                    await performRedo(db);
+                    expect(await allRedoRows()).toEqual([]); // There should still be no rows in the redo history
                 });
-                it("should do nothing if it runs out of changes to redo", () => {
+                it("should do nothing if it runs out of changes to redo", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
-                    expect(allRedoRows()).toEqual([]);
+                    expect(await allRedoRows()).toEqual([]);
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("test value");
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"test value"});`,
+                    );
                     // Execute an undo action to add a change to the redo history
-                    performUndo(db);
-                    expect(allRedoRows().length).toBe(1);
+                    await performUndo(db);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(1);
 
                     // Execute the redo action
-                    performRedo(db);
-                    expect(allRedoRows()).toEqual([]);
+                    await performRedo(db);
+                    expect(await allRedoRows()).toEqual([]);
 
                     // Execute the redo action again with no changes to redo
-                    performRedo(db);
-                    expect(allRedoRows()).toEqual([]);
+                    await performRedo(db);
+                    expect(await allRedoRows()).toEqual([]);
                 });
             });
 
-            describe("INSERT trigger", () => {
-                it("should execute a redo correctly from undoing an insert action", () => {
+            describe("INSERT trigger", async () => {
+                it("should all a redo correctly from undoing an insert action", async () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"test value"});`,
+                    );
+                    await incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("another value");
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${"another value"});`,
+                    );
 
-                    const allRows = () =>
-                        db.prepare("SELECT * FROM test_table").all() as Row[];
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw("SELECT * FROM test_table"),
+                        )) as Row[];
                     const completeRows = [
                         { id: 1, value: "test value" },
                         { id: 2, value: "another value" },
                     ];
-                    expect(allRows()).toEqual(completeRows);
+                    expect(await allRows()).toEqual(completeRows);
 
                     // Execute the undo action
-                    performUndo(db);
-                    expect(allRows()).toEqual([completeRows[0]]);
+                    await performUndo(db);
+                    expect(await allRows()).toEqual([completeRows[0]]);
 
                     // Execute the redo action
-                    performRedo(db);
-                    expect(allRows()).toEqual(completeRows);
+                    await performRedo(db);
+                    expect(await allRows()).toEqual(completeRows);
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should undo groups of inserts correctly", () => {
+                it("should undo groups of inserts correctly", async () => {
                     type Row = { id: number; value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table in three groups
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-1 - test value");
-                    incrementUndoGroup(db);
-                    const groupOneObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g1%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-1 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupOneObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g1%'`,
+                        ),
+                    )) as Row[];
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g2-0 - test value");
-                    incrementUndoGroup(db);
-                    const groupTwoObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g2%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g2-0 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupTwoObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g2%'`,
+                        ),
+                    )) as Row[];
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-1 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-2 - test value");
-                    incrementUndoGroup(db);
-                    const groupThreeObjects = db
-                        .prepare("SELECT * FROM test_table WHERE value LIKE ?")
-                        .all("g3%") as Row[];
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-1 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-2 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    const groupThreeObjects = (await db.all(
+                        sql.raw(
+                            `SELECT * FROM test_table WHERE value LIKE 'g3%'`,
+                        ),
+                    )) as Row[];
 
                     // expect all the objects to be in the table
-                    const allObjects = () =>
-                        db.prepare("SELECT * FROM test_table").all() as Row[];
-                    expect(allObjects()).toEqual([
+                    const allObjects = async () =>
+                        (await db.all(
+                            sql.raw("SELECT * FROM test_table"),
+                        )) as Row[];
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                         ...groupThreeObjects,
                     ]);
 
                     // Execute the undo action
-                    performUndo(db);
-                    expect(allObjects()).toEqual([
+                    await performUndo(db);
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                     ]);
-                    performUndo(db);
-                    expect(allObjects()).toEqual([...groupOneObjects]);
-                    performUndo(db);
-                    expect(allObjects()).toEqual([]);
+                    await performUndo(db);
+                    expect(await allObjects()).toEqual([...groupOneObjects]);
+                    await performUndo(db);
+                    expect(await allObjects()).toEqual([]);
 
                     // Execute the redo action
-                    performRedo(db);
-                    expect(allObjects()).toEqual([...groupOneObjects]);
-                    performRedo(db);
-                    expect(allObjects()).toEqual([
+                    await performRedo(db);
+                    expect(await allObjects()).toEqual([...groupOneObjects]);
+                    await performRedo(db);
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                     ]);
-                    performRedo(db);
-                    expect(allObjects()).toEqual([
+                    await performRedo(db);
+                    expect(await allObjects()).toEqual([
                         ...groupOneObjects,
                         ...groupTwoObjects,
                         ...groupThreeObjects,
                     ]);
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should have no redo operations after inserting a new undo entry after INSERT", () => {
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
-                    ).run();
+                it("should have no redo operations after inserting a new undo entry after INSERT", async () => {
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table in three groups
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-1 - test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g1-1 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g2-0 - test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g2-0 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-0 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-1 - test value");
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g3-2 - test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-0 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-1 - test value');`,
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            `INSERT INTO test_table (value) VALUES ('g3-2 - test value');`,
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
                     // Execute the undo action
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
 
-                    expect(allRedoRowsByGroup().length).toBe(3);
+                    let allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(3);
 
                     // Do another action to clear the redo stack
-                    db.prepare(
-                        "INSERT INTO test_table (value) VALUES (?);",
-                    ).run("g1-0 - another value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (value) VALUES ('g1-0 - another value');",
+                        ),
+                    );
 
-                    expect(allRedoRowsByGroup().length).toBe(0);
+                    allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
             });
 
-            describe("UPDATE trigger", () => {
-                it("should execute an undo correctly from an update action", () => {
+            describe("UPDATE trigger", async () => {
+                it("should all an undo correctly from an update action", async () => {
                     // Create history tables and test table
-                    db.prepare(
+                    await db.run(
                         "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    );
 
-                    const currentValue = () =>
+                    const currentValue = async () =>
                         (
-                            db
-                                .prepare(
+                            (await db.get(
+                                sql.raw(
                                     "SELECT test_value FROM test_table WHERE id = 1;",
-                                )
-                                .get() as {
+                                ),
+                            )) as {
                                 test_value: string;
                             }
                         ).test_value;
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('test value');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
                     // Update the values in the test table
-                    db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
-                    ).run("updated value");
-                    incrementUndoGroup(db);
-                    db.prepare(
-                        "UPDATE test_table SET test_value = ? WHERE id = 1;",
-                    ).run("another updated value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "UPDATE test_table SET test_value = 'updated value' WHERE id = 1;",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "UPDATE test_table SET test_value = 'another updated value' WHERE id = 1;",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
                     // Execute two undo actions
-                    performUndo(db);
-                    performUndo(db);
-                    expect(currentValue()).toBe("test value");
+                    await performUndo(db);
+                    await performUndo(db);
+                    expect(await currentValue()).toBe("test value");
 
-                    performRedo(db);
-                    expect(currentValue()).toBe("updated value");
+                    await performRedo(db);
+                    expect(await currentValue()).toBe("updated value");
 
-                    performRedo(db);
-                    expect(currentValue()).toBe("another updated value");
+                    await performRedo(db);
+                    expect(await currentValue()).toBe("another updated value");
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should undo groups of updates correctly", () => {
+                it("should undo groups of updates correctly", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1 - initial value');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0 - initial value');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2 - initial value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2 - initial value');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const updateSql =
-                        "UPDATE test_table SET test_value = (?) WHERE test_value = (?);";
                     // group 1
-                    db.prepare(updateSql).run(
-                        "g1-0 - updated value",
-                        "g1-0 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g1-0 - updated value' WHERE test_value = 'g1-0 - initial value';`,
+                        ),
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - updated value",
-                        "g1-1 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-1 - updated value"} WHERE test_value = ${"g1-1 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(updateSql).run(
-                        "g2-0 - updated value",
-                        "g2-0 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g2-0 - updated value"} WHERE test_value = ${"g2-0 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(updateSql).run(
-                        "g3-0 - updated value",
-                        "g3-0 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-0 - updated value"} WHERE test_value = ${"g3-0 - initial value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g3-1 - updated value",
-                        "g3-1 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-1 - updated value"} WHERE test_value = ${"g3-1 - initial value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g3-2 - updated value",
-                        "g3-2 - initial value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g3-2 - updated value"} WHERE test_value = ${"g3-2 - initial value"};`,
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 1 (again)
-                    db.prepare(updateSql).run(
-                        "g1-0 - second updated value",
-                        "g1-0 - updated value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-0 - second updated value"} WHERE test_value = ${"g1-0 - updated value"};`,
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - second updated value",
-                        "g1-1 - updated value",
+                    await db.run(
+                        sql`UPDATE test_table SET test_value = ${"g1-1 - second updated value"} WHERE test_value = ${"g1-1 - updated value"};`,
                     );
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
                     let expectedValues: Row[] = [
                         { id: 1, test_value: "g1-0 - second updated value" },
                         { id: 2, test_value: "g1-1 - second updated value" },
@@ -968,16 +1118,16 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute four undo actions
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
 
                     // Execute a redo action
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -986,9 +1136,9 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - initial value" },
                         { id: 6, test_value: "g3-2 - initial value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -997,9 +1147,9 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - initial value" },
                         { id: 6, test_value: "g3-2 - initial value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - updated value" },
                         { id: 2, test_value: "g1-1 - updated value" },
@@ -1008,9 +1158,9 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 1, test_value: "g1-0 - second updated value" },
                         { id: 2, test_value: "g1-1 - second updated value" },
@@ -1019,93 +1169,113 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should have no redo operations after inserting a new undo entry after UPDATE", () => {
+                it("should have no redo operations after inserting a new undo entry after UPDATE", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1 - initial value');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0 - initial value");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0 - initial value');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1 - initial value");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2 - initial value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1 - initial value');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2 - initial value');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const updateSql =
-                        "UPDATE test_table SET test_value = (?) WHERE test_value = (?);";
                     // group 1
-                    db.prepare(updateSql).run(
-                        "g1-0 - updated value",
-                        "g1-0 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g1-0 - updated value' WHERE test_value = 'g1-0 - initial value';`,
+                        ),
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - updated value",
-                        "g1-1 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g1-1 - updated value' WHERE test_value = 'g1-1 - initial value';`,
+                        ),
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(updateSql).run(
-                        "g2-0 - updated value",
-                        "g2-0 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g2-0 - updated value' WHERE test_value = 'g2-0 - initial value';`,
+                        ),
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(updateSql).run(
-                        "g3-0 - updated value",
-                        "g3-0 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g3-0 - updated value' WHERE test_value = 'g3-0 - initial value';`,
+                        ),
                     );
-                    db.prepare(updateSql).run(
-                        "g3-1 - updated value",
-                        "g3-1 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g3-1 - updated value' WHERE test_value = 'g3-1 - initial value';`,
+                        ),
                     );
-                    db.prepare(updateSql).run(
-                        "g3-2 - updated value",
-                        "g3-2 - initial value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g3-2 - updated value' WHERE test_value = 'g3-2 - initial value';`,
+                        ),
                     );
-                    incrementUndoGroup(db);
+                    await incrementUndoGroup(db);
                     // group 1 (again)
-                    db.prepare(updateSql).run(
-                        "g1-0 - second updated value",
-                        "g1-0 - updated value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g1-0 - second updated value' WHERE test_value = 'g1-0 - updated value';`,
+                        ),
                     );
-                    db.prepare(updateSql).run(
-                        "g1-1 - second updated value",
-                        "g1-1 - updated value",
+                    await db.run(
+                        sql.raw(
+                            `UPDATE test_table SET test_value = 'g1-1 - second updated value' WHERE test_value = 'g1-1 - updated value';`,
+                        ),
                     );
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
                     let expectedValues: Row[] = [
                         { id: 1, test_value: "g1-0 - second updated value" },
                         { id: 2, test_value: "g1-1 - second updated value" },
@@ -1114,39 +1284,43 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1 - updated value" },
                         { id: 6, test_value: "g3-2 - updated value" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute four undo actions
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
 
-                    expect(allRedoRowsByGroup().length).toBe(4);
+                    let allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(4);
 
                     // Do another action to clear the redo stack
-                    db.prepare(
-                        "UPDATE test_table SET test_value = (?) WHERE id = 1;",
-                    ).run("updated value!");
-                    expect(allRedoRowsByGroup().length).toBe(0);
+                    await db.run(
+                        sql.raw(
+                            "UPDATE test_table SET test_value = 'updated value!' WHERE id = 1;",
+                        ),
+                    );
+                    allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
             });
 
-            describe("DELETE trigger", () => {
-                it("should execute an undo correctly from a delete action", () => {
+            describe("DELETE trigger", async () => {
+                it("should all an undo correctly from a delete action", async () => {
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
-                    const currentValue = () => {
+                    const currentValue = async () => {
                         try {
                             return (
-                                db
-                                    .prepare(
-                                        "SELECT test_value FROM test_table WHERE id = 1;",
-                                    )
-                                    .get() as {
+                                (await db.get(
+                                    "SELECT test_value FROM test_table WHERE id = 1;",
+                                )) as {
                                     test_value: string;
                                 }
                             ).test_value;
@@ -1156,90 +1330,118 @@ describe("History Tables and Triggers", () => {
                     };
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("test value");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('test value');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
                     // Simulate an action that will be logged in the undo history
-                    db.prepare("DELETE FROM test_table WHERE id = 1;").run();
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw("DELETE FROM test_table WHERE id = 1;"),
+                    );
+                    await incrementUndoGroup(db);
 
                     // Execute the undo action
-                    performUndo(db);
-                    expect(currentValue()).toBeDefined();
+                    await performUndo(db);
+                    expect(await currentValue()).toBeDefined();
 
                     // Execute the redo action
-                    performRedo(db);
-                    expect(currentValue()).toBeUndefined();
+                    await performRedo(db);
+                    expect(await currentValue()).toBeUndefined();
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should undo groups of deletes correctly", () => {
+                it("should undo groups of deletes correctly", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const deleteSql =
-                        "DELETE FROM test_table WHERE test_value = (?);";
                     // group 1
-                    db.prepare(deleteSql).run("g1-0");
-                    db.prepare(deleteSql).run("g1-1");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-1"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(deleteSql).run("g2-0");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g2-0"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(deleteSql).run("g3-0");
-                    db.prepare(deleteSql).run("g3-1");
-                    db.prepare(deleteSql).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-1"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-2"};`,
+                    );
+                    await incrementUndoGroup(db);
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
-                    expect(allRows()).toEqual([]);
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
+                    expect(await allRows()).toEqual([]);
 
                     // Execute three undo actions
-                    performUndo(db);
-                    performUndo(db);
-                    performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
                     let expectedValues = [
                         { id: 1, test_value: "g1-0" },
                         { id: 2, test_value: "g1-1" },
@@ -1248,783 +1450,837 @@ describe("History Tables and Triggers", () => {
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
                     // Execute three redo actions
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 3, test_value: "g2-0" },
                         { id: 4, test_value: "g3-0" },
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
-                    performRedo(db);
+                    await performRedo(db);
                     expectedValues = [
                         { id: 4, test_value: "g3-0" },
                         { id: 5, test_value: "g3-1" },
                         { id: 6, test_value: "g3-2" },
                     ];
-                    expect(allRows()).toEqual(expectedValues);
+                    expect(await allRows()).toEqual(expectedValues);
 
-                    performRedo(db);
-                    expect(allRows()).toEqual([]);
+                    await performRedo(db);
+                    expect(await allRows()).toEqual([]);
 
                     // Expect there to be no redos left
-                    expect(allRedoRows().length).toBe(0);
+                    const allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
 
-                it("should have no redo operations after inserting a new undo entry after DELETE", () => {
+                it("should have no redo operations after inserting a new undo entry after DELETE", async () => {
                     type Row = { id: number; test_value: string };
                     // Create history tables and test table
-                    db.prepare(
-                        "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
-                    ).run();
+                    await db.run(
+                        sql.raw(
+                            "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
+                        ),
+                    );
 
                     // Create undo triggers for the test table
-                    createUndoTriggers(db, "test_table");
+                    await createUndoTriggers(db, "test_table");
 
                     // Insert a value into the test table
                     // group 1
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g1-1");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g1-1');",
+                        ),
+                    );
                     // group 2
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g2-0");
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g2-0');",
+                        ),
+                    );
                     // group 3
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-0");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-1");
-                    db.prepare(
-                        "INSERT INTO test_table (test_value) VALUES (?);",
-                    ).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-0');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-1');",
+                        ),
+                    );
+                    await db.run(
+                        sql.raw(
+                            "INSERT INTO test_table (test_value) VALUES ('g3-2');",
+                        ),
+                    );
+                    await incrementUndoGroup(db);
 
-                    // Update the value in the test table in two groups
-                    const deleteSql =
-                        "DELETE FROM test_table WHERE test_value = (?);";
                     // group 1
-                    db.prepare(deleteSql).run("g1-0");
-                    db.prepare(deleteSql).run("g1-1");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g1-1"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 2
-                    db.prepare(deleteSql).run("g2-0");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g2-0"};`,
+                    );
+                    await incrementUndoGroup(db);
                     // group 3
-                    db.prepare(deleteSql).run("g3-0");
-                    db.prepare(deleteSql).run("g3-1");
-                    db.prepare(deleteSql).run("g3-2");
-                    incrementUndoGroup(db);
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-0"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-1"};`,
+                    );
+                    await db.run(
+                        sql`DELETE FROM test_table WHERE test_value = ${"g3-2"};`,
+                    );
+                    await incrementUndoGroup(db);
 
-                    const allRows = () =>
-                        db
-                            .prepare("SELECT * FROM test_table ORDER BY id")
-                            .all() as Row[];
-                    expect(allRows()).toEqual([]);
+                    const allRows = async () =>
+                        (await db.all(
+                            sql.raw(`SELECT * FROM test_table ORDER BY id`),
+                        )) as Row[];
+                    expect(await allRows()).toEqual([]);
 
                     // Execute three undo actions
-                    performUndo(db);
-                    performUndo(db);
+                    await performUndo(db);
+                    await performUndo(db);
 
-                    expect(allRedoRowsByGroup().length).toBe(2);
+                    let allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(2);
 
                     // Do another action to clear the redo stack
-                    db.prepare("DELETE FROM test_table").run();
-                    expect(allRedoRowsByGroup().length).toBe(0);
+                    await db.run(sql.raw("DELETE FROM test_table"));
+                    allRedoRowsByGroupResult = await allRedoRowsByGroup();
+                    expect(allRedoRowsByGroupResult.length).toBe(0);
                 });
             });
         });
     });
 
-    describe("Advanced Undo/Redo Stress Tests", () => {
-        function setupComplexTables() {
-            db.exec(`
-            CREATE TABLE users (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                name TEXT,
-                age INTEGER,
-                email TEXT UNIQUE
+    describe("Advanced Undo/Redo Stress Tests", async () => {
+        async function setupComplexTables() {
+            // Create users table
+            await db.run(
+                sql.raw(`
+                CREATE TABLE users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT,
+                    age INTEGER,
+                    email TEXT UNIQUE
+                )
+            `),
             );
-            CREATE TABLE orders (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id INTEGER,
-                product TEXT,
-                quantity INTEGER,
-                total_price REAL,
-                FOREIGN KEY(user_id) REFERENCES users(id)
-            );
-            CREATE TABLE payments (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                order_id INTEGER,
-                amount REAL,
-                payment_date TEXT,
-                FOREIGN KEY(order_id) REFERENCES orders(id)
-            );
-        `);
 
-            createUndoTriggers(db, "users");
-            createUndoTriggers(db, "orders");
-            createUndoTriggers(db, "payments");
+            // Create orders table
+            await db.run(
+                sql.raw(`
+                CREATE TABLE orders (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    product TEXT,
+                    quantity INTEGER,
+                    total_price REAL,
+                    FOREIGN KEY(user_id) REFERENCES users(id)
+                )
+            `),
+            );
+
+            // Create payments table
+            await db.run(
+                sql.raw(`
+                CREATE TABLE payments (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    order_id INTEGER,
+                    amount REAL,
+                    payment_date TEXT,
+                    FOREIGN KEY(order_id) REFERENCES orders(id)
+                )
+            `),
+            );
+
+            await createUndoTriggers(db, "users");
+            await createUndoTriggers(db, "orders");
+            await createUndoTriggers(db, "payments");
         }
 
-        it("Complex data with foreign keys and multiple undo/redo intervals", () => {
-            setupComplexTables();
+        it("Complex data with foreign keys and multiple undo/redo intervals", async () => {
+            await setupComplexTables();
 
             // Insert user data
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("John Doe", 30, "john@example.com");
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Jane Doe", 25, "jane@example.com");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"John Doe"}, ${30}, ${"john@example.com"})`,
+            );
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Jane Doe"}, ${25}, ${"jane@example.com"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Insert orders linked to users
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(1, "Laptop", 1, 1000.0);
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(2, "Phone", 2, 500.0);
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${1}, ${"Laptop"}, ${1}, ${1000.0})`,
+            );
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${2}, ${"Phone"}, ${2}, ${500.0})`,
+            );
+            await incrementUndoGroup(db);
 
             // Insert payments linked to orders
-            db.prepare(
-                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)",
-            ).run(1, 1000.0, "2024-10-08");
-            db.prepare(
-                "INSERT INTO payments (order_id, amount, payment_date) VALUES (?, ?, ?)",
-            ).run(2, 500.0, "2024-10-09");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO payments (order_id, amount, payment_date) VALUES (${1}, ${1000.0}, ${"2024-10-08"})`,
+            );
+            await db.run(
+                sql`INSERT INTO payments (order_id, amount, payment_date) VALUES (${2}, ${500.0}, ${"2024-10-09"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform undo in random intervals
-            performUndo(db); // Undo payments
-            let payments = db.prepare("SELECT * FROM payments").all();
+            await performUndo(db); // Undo payments
+            let payments = await db.all(sql.raw("SELECT * FROM payments"));
             expect(payments.length).toBe(0);
 
-            performUndo(db); // Undo orders
-            let orders = db.prepare("SELECT * FROM orders").all();
+            await performUndo(db); // Undo orders
+            let orders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(orders.length).toBe(0);
 
             // Redo orders and payments
-            performRedo(db);
-            orders = db.prepare("SELECT * FROM orders").all();
+            await performRedo(db);
+            orders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(orders.length).toBe(2);
 
-            performRedo(db);
-            payments = db.prepare("SELECT * FROM payments").all();
+            await performRedo(db);
+            payments = await db.all(sql.raw("SELECT * FROM payments"));
             expect(payments.length).toBe(2);
 
             // Undo back to the users table
-            performUndo(db);
-            performUndo(db);
-            performUndo(db);
-            let users = db.prepare("SELECT * FROM users").all();
+            await performUndo(db);
+            await performUndo(db);
+            await performUndo(db);
+            let users = await db.all(sql.raw("SELECT * FROM users"));
             expect(users.length).toBe(0);
         });
 
-        it("Undo/Redo with random intervals, updates, and WHERE clauses", () => {
-            setupComplexTables();
+        it("Undo/Redo with random intervals, updates, and WHERE clauses", async () => {
+            await setupComplexTables();
 
             // Insert initial users
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Alice", 28, "alice@example.com");
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Bob", 35, "bob@example.com");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Alice"}, ${28}, ${"alice@example.com"})`,
+            );
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Bob"}, ${35}, ${"bob@example.com"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Insert orders with complex WHERE clauses
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(1, "Tablet", 2, 600.0);
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(2, "Monitor", 1, 300.0);
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${1}, ${"Tablet"}, ${2}, ${600.0})`,
+            );
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${2}, ${"Monitor"}, ${1}, ${300.0})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform an update with WHERE
-            db.prepare("UPDATE users SET age = age + 1 WHERE name = ?").run(
-                "Alice",
+            await db.run(
+                sql.raw(`UPDATE users SET age = age + 1 WHERE name = 'Alice'`),
             );
-            incrementUndoGroup(db);
+            await incrementUndoGroup(db);
 
             // Undo the age update and verify the value
-            performUndo(db);
-            let result = db
-                .prepare("SELECT age FROM users WHERE name = ?")
-                .get("Alice") as { age: number };
+            await performUndo(db);
+            let result = (await db.get(
+                sql`SELECT age FROM users WHERE name = ${"Alice"}`,
+            )) as { age: number };
             expect(result.age).toBe(28);
 
             // Undo order insertion and check if the table is empty
-            performUndo(db);
-            let orders = db.prepare("SELECT * FROM orders").all();
+            await performUndo(db);
+            let orders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(orders.length).toBe(0);
 
             // Redo the order insertion and update
-            performRedo(db);
-            performRedo(db);
-            orders = db.prepare("SELECT * FROM orders").all();
+            await performRedo(db);
+            await performRedo(db);
+            orders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(orders.length).toBe(2);
         });
 
-        it("Randomized undo/redo with interleaved data changes", () => {
-            setupComplexTables();
+        it("Randomized undo/redo with interleaved data changes", async () => {
+            await setupComplexTables();
 
             // Insert several users and orders interleaved with undo/redo
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Chris", 40, "chris@example.com");
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Diana", 22, "diana@example.com");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Chris"}, ${40}, ${"chris@example.com"})`,
+            );
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Diana"}, ${22}, ${"diana@example.com"})`,
+            );
+            await incrementUndoGroup(db);
 
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(1, "Desk", 1, 150.0);
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(2, "Chair", 2, 200.0);
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${1}, ${"Desk"}, ${1}, ${150.0})`,
+            );
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${2}, ${"Chair"}, ${2}, ${200.0})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform undo of orders, then insert more data
-            let expectedOrders = db.prepare("SELECT * FROM orders").all();
-            performUndo(db);
-            let currentOrders = db.prepare("SELECT * FROM orders").all();
+            let expectedOrders = await db.all(sql.raw("SELECT * FROM orders"));
+            await performUndo(db);
+            let currentOrders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(currentOrders.length).toBe(0);
-            performRedo(db);
-            currentOrders = db.prepare("SELECT * FROM orders").all();
+            await performRedo(db);
+            currentOrders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(currentOrders).toEqual(expectedOrders);
-            performUndo(db);
+            await performUndo(db);
 
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Eve", 32, "eve@example.com");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Eve"}, ${32}, ${"eve@example.com"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform redo of orders and undo user insertion
-            performRedo(db);
-            performUndo(db);
+            await performRedo(db);
+            await performUndo(db);
 
-            let users = db.prepare("SELECT * FROM users").all();
+            let users = await db.all(sql.raw("SELECT * FROM users"));
             expect(users.length).toBe(2); // Should contain only 'Chris' and 'Diana'
 
-            currentOrders = db.prepare("SELECT * FROM orders").all();
+            currentOrders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(currentOrders.length).toBe(0); // Orders should be restored
         });
 
-        it("Complex updates and deletes with random undo/redo intervals", () => {
-            setupComplexTables();
+        it("Complex updates and deletes with random undo/redo intervals", async () => {
+            await setupComplexTables();
 
             // Insert users and orders
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Frank", 33, "frank@example.com");
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Grace", 29, "grace@example.com");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Frank"}, ${33}, ${"frank@example.com"})`,
+            );
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Grace"}, ${29}, ${"grace@example.com"})`,
+            );
+            await incrementUndoGroup(db);
 
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(1, "Headphones", 1, 100.0);
-            db.prepare(
-                "INSERT INTO orders (user_id, product, quantity, total_price) VALUES (?, ?, ?, ?)",
-            ).run(2, "Keyboard", 1, 120.0);
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${1}, ${"Headphones"}, ${1}, ${100.0})`,
+            );
+            await db.run(
+                sql`INSERT INTO orders (user_id, product, quantity, total_price) VALUES (${2}, ${"Keyboard"}, ${1}, ${120.0})`,
+            );
+            await incrementUndoGroup(db);
 
             // Update and delete data
-            db.prepare("UPDATE users SET email = ? WHERE name = ?").run(
-                "frank_updated@example.com",
-                "Frank",
+            await db.run(
+                sql.raw(
+                    `UPDATE users SET email = 'frank_updated@example.com' WHERE name = 'Frank'`,
+                ),
             );
-            db.prepare("DELETE FROM orders WHERE id = 2");
-            incrementUndoGroup(db);
+            await db.run(sql`DELETE FROM orders WHERE id = ${2}`);
+            await incrementUndoGroup(db);
 
             // Undo deletion and updates
-            performUndo(db);
-            performUndo(db);
+            await performUndo(db);
+            await performUndo(db);
 
-            let user = db
-                .prepare("SELECT * FROM users WHERE name = ?")
-                .get("Frank") as any;
+            let user = (await db.get(
+                sql`SELECT * FROM users WHERE name = ${"Frank"}`,
+            )) as any;
             expect(user.email).toBe("frank@example.com"); // Should be the original email
 
-            performRedo(db);
-            let orders = db.prepare("SELECT * FROM orders").all();
+            await performRedo(db);
+            let orders = await db.all(sql.raw("SELECT * FROM orders"));
             expect(orders.length).toBe(2); // Order should be restored
         });
     });
 
-    describe("Limit Tests", () => {
-        const groupLimit = () =>
+    describe("Limit Tests", async () => {
+        const groupLimit = async () =>
             (
-                db
-                    .prepare(
-                        `SELECT group_limit FROM ${Constants.HistoryStatsTableName}`,
-                    )
-                    .get() as HistoryStatsRow | undefined
+                (await db.get(
+                    `SELECT group_limit FROM ${Constants.HistoryStatsTableName}`,
+                )) as HistoryStatsRow | undefined
             )?.group_limit;
 
-        const undoGroups = () =>
+        const undoGroups = async () =>
             (
-                db
-                    .prepare(
+                (await db.all(
+                    sql.raw(
                         `SELECT * FROM ${Constants.UndoHistoryTableName} GROUP BY "history_group" ORDER BY "history_group" ASC`,
-                    )
-                    .all() as HistoryTableRow[]
+                    ),
+                )) as HistoryTableRow[]
             ).map((row) => row.history_group);
-        it("removes the oldest undo group when the undo limit of 100 is reached", () => {
-            db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
-            ).run();
-            createUndoTriggers(db, "users");
+        it("removes the oldest undo group when the undo limit of 100 is reached", async () => {
+            await db.run(
+                sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT)`,
+            );
+            await createUndoTriggers(db, "users");
 
             // set the limit to 100
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
-            ).run();
-            expect(groupLimit()).toBe(100);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
+                ),
+            );
+            expect(await groupLimit()).toBe(100);
 
             for (let i = 0; i < 99; i++) {
                 // Insert users and orders
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${100 / i}`, i, `email${100 - i}@jeff.com`);
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}@josie.com`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}@jeff.com`})`,
+                );
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${100 / i}`}, ${i + 50}, ${`email${200 - i}@josie.com`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(99);
+            expect((await undoGroups()).length).toBe(99);
             let expectedGroups = Array.from(Array(99).keys()).map((i) => i);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // Insert one more group
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Harry_100", 100, "email@jeff100.com");
-            incrementUndoGroup(db);
-            expect(undoGroups().length).toBe(100);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_100"}, ${100}, ${"email@jeff100.com"})`,
+            );
+            await incrementUndoGroup(db);
+            expect((await undoGroups()).length).toBe(100);
             expectedGroups = [...expectedGroups, 99];
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // Insert another group
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Harry_101", 101, "email@jeff101.com");
-            incrementUndoGroup(db);
-            expect(undoGroups().length).toBe(100);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_101"}, ${101}, ${"email@jeff101.com"})`,
+            );
+            await incrementUndoGroup(db);
+            expect((await undoGroups()).length).toBe(100);
             expectedGroups = Array.from(Array(100).keys()).map((i) => i + 1);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // insert 50 more groups
             for (let i = 102; i < 152; i++) {
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${i}`, i, `email${100 - i}@jeff.com`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${i}`}, ${i}, ${`email${100 - i}@jeff.com`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(100);
+            expect((await undoGroups()).length).toBe(100);
             expectedGroups = Array.from(Array(100).keys()).map((i) => i + 51);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
-            const allRows = db.prepare("SELECT * FROM users").all();
+            const allRows = await db.all(sql.raw("SELECT * FROM users"));
             expect(allRows.length).toBeGreaterThan(150);
         });
 
-        it("removes the oldest undo group when the undo limit of 2000 is reached", () => {
-            db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
-            ).run();
-            createUndoTriggers(db, "users");
+        it("removes the oldest undo group when the undo limit of 2000 is reached", async () => {
+            await db.run(
+                sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);`,
+            );
+            await createUndoTriggers(db, "users");
 
             // set the limit to 2000
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 2000`,
-            ).run();
-            expect(groupLimit()).toBe(2000);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 2000`,
+                ),
+            );
+            expect(await groupLimit()).toBe(2000);
 
             for (let i = 0; i < 1999; i++) {
                 // Insert users and orders
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${2000 / i}`, i, `email${2000 - i}@jeff.com`);
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Josie_${2000 / i}`, i + 50, `email${200 - i}@josie.com`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${2000 / i}`}, ${i}, ${`email${2000 - i}@jeff.com`})`,
+                );
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${2000 / i}`}, ${i + 50}, ${`email${200 - i}@josie.com`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(1999);
+            expect((await undoGroups()).length).toBe(1999);
             let expectedGroups = Array.from(Array(1999).keys()).map((i) => i);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // Insert one more group
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Harry_2000", 2000, "email@jeff2000.com");
-            incrementUndoGroup(db);
-            expect(undoGroups().length).toBe(2000);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_2000"}, ${2000}, ${"email@jeff2000.com"})`,
+            );
+            await incrementUndoGroup(db);
+            expect((await undoGroups()).length).toBe(2000);
             expectedGroups = [...expectedGroups, 1999];
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // Insert another group
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run("Harry_101", 101, "email@jeff101.com");
-            incrementUndoGroup(db);
-            expect(undoGroups().length).toBe(2000);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_101"}, ${101}, ${"email@jeff101.com"})`,
+            );
+            await incrementUndoGroup(db);
+            expect((await undoGroups()).length).toBe(2000);
             expectedGroups = Array.from(Array(2000).keys()).map((i) => i + 1);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // insert 50 more groups
             for (let i = 102; i < 152; i++) {
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${i}`, i, `email${2000 - i}@jeff.com`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${i}`}, ${i}, ${`email${2000 - i}@jeff.com`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(2000);
+            expect((await undoGroups()).length).toBe(2000);
             expectedGroups = Array.from(Array(2000).keys()).map((i) => i + 51);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
-            const allRows = db.prepare("SELECT * FROM users").all();
+            const allRows = await db.all(sql.raw("SELECT * FROM users"));
             expect(allRows.length).toBeGreaterThan(150);
         });
 
-        it("adds more undo groups when the limit is increased", () => {
-            db.prepare(
-                "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
-            ).run();
-            createUndoTriggers(db, "users");
+        it("adds more undo groups when the limit is increased", async () => {
+            await db.run(
+                sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);`,
+            );
+            await createUndoTriggers(db, "users");
 
             // set the limit to 100
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
-            ).run();
-            expect(groupLimit()).toBe(100);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 100`,
+                ),
+            );
+            expect(await groupLimit()).toBe(100);
 
             for (let i = 0; i < 150; i++) {
                 // Insert users and orders
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}`})`,
+                );
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${100 / i}`}, ${i + 50}, ${`email${200 - i}`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(100);
+            expect((await undoGroups()).length).toBe(100);
             let expectedGroups = Array.from(Array(100).keys()).map(
                 (i) => i + 50,
             );
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // set the limit to 200
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
-            ).run();
-            expect(groupLimit()).toBe(200);
-            expect(undoGroups().length).toBe(100);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
+                ),
+            );
+            expect(await groupLimit()).toBe(200);
+            expect((await undoGroups()).length).toBe(100);
 
             for (let i = 150; i < 300; i++) {
                 // Insert users and orders
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}`})`,
+                );
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${100 / i}`}, ${i + 50}, ${`email${200 - i}`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(200);
+            expect((await undoGroups()).length).toBe(200);
             expectedGroups = [
                 ...Array.from(Array(50).keys()).map((i) => i + 100),
                 ...Array.from(Array(150).keys()).map((i) => i + 150),
             ];
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
         });
 
-        it("removes groups when the limit is decreased", () => {
-            db.prepare(
+        it("removes groups when the limit is decreased", async () => {
+            await db.run(
                 "CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);",
-            ).run();
-            createUndoTriggers(db, "users");
+            );
+            await createUndoTriggers(db, "users");
 
             // set the limit to 200
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
-            ).run();
-            expect(groupLimit()).toBe(200);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 200`,
+                ),
+            );
+            expect(await groupLimit()).toBe(200);
 
             for (let i = 0; i < 250; i++) {
                 // Insert users and orders
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Harry_${100 / i}`, i, `email${100 - i}`);
-                db.prepare(
-                    "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-                ).run(`Josie_${100 / i}`, i + 50, `email${200 - i}`);
-                incrementUndoGroup(db);
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}`})`,
+                );
+                await db.run(
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${100 / i}`}, ${i + 50}, ${`email${200 - i}`})`,
+                );
+                await incrementUndoGroup(db);
             }
-            expect(undoGroups().length).toBe(200);
+            expect((await undoGroups()).length).toBe(200);
             let expectedGroups = Array.from(Array(200).keys()).map(
                 (i) => i + 50,
             );
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
 
             // set the limit to 100
-            db.prepare(
-                `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 50`,
-            ).run();
-            expect(groupLimit()).toBe(50);
+            await db.run(
+                sql.raw(
+                    `UPDATE ${Constants.HistoryStatsTableName} SET group_limit = 50`,
+                ),
+            );
+            expect(await groupLimit()).toBe(50);
             // Should not change until next group increment
-            expect(undoGroups().length).toBe(200);
+            expect((await undoGroups()).length).toBe(200);
 
-            db.prepare(
-                "INSERT INTO users (name, age, email) VALUES (?, ?, ?)",
-            ).run(`Harry_last`, 1234, `email_last`);
-            incrementUndoGroup(db);
-            expect(undoGroups().length).toBe(50);
+            await db.run(
+                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_last"}, ${1234}, ${"email_last"})`,
+            );
+            await incrementUndoGroup(db);
+            expect((await undoGroups()).length).toBe(50);
             expectedGroups = Array.from(Array(50).keys()).map((i) => i + 201);
-            expect(undoGroups()).toEqual(expectedGroups);
+            expect(await undoGroups()).toEqual(expectedGroups);
         });
     });
 
-    describe("Advanced Undo/Redo Stress Tests with Reserved Words, Special Characters, and DELETE Operations", () => {
-        function setupComplexTablesWithReservedWords() {
-            db.exec(`
-            CREATE TABLE reserved_words_test (
-                "order" INTEGER PRIMARY KEY AUTOINCREMENT,
-                "group" TEXT,
-                "select" TEXT,
-                "from" TEXT
+    describe("Advanced Undo/Redo Stress Tests with Reserved Words, Special Characters, and DELETE Operations", async () => {
+        async function setupComplexTablesWithReservedWords() {
+            await db.run(
+                sql.raw(`
+                CREATE TABLE reserved_words_test (
+                    "order" INTEGER PRIMARY KEY AUTOINCREMENT,
+                    "group" TEXT,
+                    "select" TEXT,
+                    "from" TEXT
+                );`),
             );
-            CREATE TABLE special_characters_test (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                description TEXT
+            await db.run(
+                sql.raw(`
+                CREATE TABLE special_characters_test (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    description TEXT
+                );
+            `),
             );
-        `);
 
-            createUndoTriggers(db, "reserved_words_test");
-            createUndoTriggers(db, "special_characters_test");
+            await createUndoTriggers(db, "reserved_words_test");
+            await createUndoTriggers(db, "special_characters_test");
         }
 
-        it("Undo/Redo with reserved words, special characters, and DELETE operations", () => {
-            setupComplexTablesWithReservedWords();
+        it("Undo/Redo with reserved words, special characters, and DELETE operations", async () => {
+            await setupComplexTablesWithReservedWords();
 
             // Insert into reserved_words_test
-            db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
-            ).run("Group1", "Select1", "From1");
-            db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
-            ).run("Group2", "Select2", "From2");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO reserved_words_test ("group", "select", "from") VALUES (${"Group1"}, ${"Select1"}, ${"From1"})`,
+            );
+            await db.run(
+                sql`INSERT INTO reserved_words_test ("group", "select", "from") VALUES (${"Group2"}, ${"Select2"}, ${"From2"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Insert into special_characters_test
-            db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)",
-            ).run(
-                "\"Double quote\", 'Single quote', (Parentheses), [Brackets]",
+            await db.run(
+                sql`INSERT INTO special_characters_test (description) VALUES (${"\"Double quote\", 'Single quote', (Parentheses), [Brackets]"})`,
             );
-            db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)",
-            ).run("Escape \\ backslash");
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO special_characters_test (description) VALUES (${"Escape \\ backslash"})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform DELETE operations
-            db.prepare(
-                'DELETE FROM reserved_words_test WHERE "order" = 2',
-            ).run();
-            db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 2",
-            ).run();
-            incrementUndoGroup(db);
+            await db.run(
+                sql`DELETE FROM reserved_words_test WHERE "order" = 2`,
+            );
+            await db.run(sql`DELETE FROM special_characters_test WHERE id = 2`);
+            await incrementUndoGroup(db);
 
             // Undo DELETE operations
-            performUndo(db); // Undo the DELETE from special_characters_test
-            let specialResult = db
-                .prepare("SELECT * FROM special_characters_test")
-                .all();
+            await performUndo(db); // Undo the DELETE from special_characters_test
+            let specialResult = await db.all(
+                "SELECT * FROM special_characters_test",
+            );
             expect(specialResult.length).toBe(2); // Both rows should be back
 
-            performUndo(db); // Undo the DELETE from reserved_words_test
-            let reservedResult = db
-                .prepare("SELECT * FROM reserved_words_test")
-                .all();
+            await performUndo(db); // Undo the DELETE from reserved_words_test
+            let reservedResult = await db.all(
+                "SELECT * FROM reserved_words_test",
+            );
             expect(reservedResult.length).toBe(2); // Both rows should be back
 
             // Redo DELETE operations
-            performUndo(db);
-            performRedo(db); // Redo the DELETE from reserved_words_test
-            reservedResult = db
-                .prepare("SELECT * FROM reserved_words_test")
-                .all();
+            await performUndo(db);
+            await performRedo(db); // Redo the DELETE from reserved_words_test
+            reservedResult = await db.all("SELECT * FROM reserved_words_test");
             expect(reservedResult.length).toBe(2); // One row should be deleted
         });
 
-        it("Undo/Redo with random intervals, updates, deletes, and WHERE clauses", () => {
-            setupComplexTablesWithReservedWords();
+        it("Undo/Redo with random intervals, updates, deletes, and WHERE clauses", async () => {
+            await setupComplexTablesWithReservedWords();
 
             // Insert into both tables
-            db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
-            ).run("Group1", "Select1", "From1");
-            db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)",
-            ).run(
-                '"Complex value (with) {all} kinds [of] special characters!"',
+            await db.run(
+                sql`INSERT INTO reserved_words_test ("group", "select", "from") VALUES (${"Group1"}, ${"Select1"}, ${"From1"})`,
             );
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO special_characters_test (description) VALUES (${'"Complex value (with) {all} kinds [of] special characters!"'})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform updates and DELETEs
-            db.prepare(
-                'UPDATE reserved_words_test SET "group" = ? WHERE "order" = 1',
-            ).run("UpdatedGroup");
-            db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 1",
-            ).run();
-            incrementUndoGroup(db);
+            await db.run(
+                sql.raw(
+                    `UPDATE reserved_words_test SET "group" = 'UpdatedGroup' WHERE "order" = 1`,
+                ),
+            );
+            await db.run(sql`DELETE FROM special_characters_test WHERE id = 1`);
+            await incrementUndoGroup(db);
 
             // Perform undo/redo in random order
-            let response = performUndo(db); // Undo DELETE and update
+            let response = await performUndo(db); // Undo DELETE and update
             expect(response.success).toBe(true);
             expect(response.error).toBeUndefined();
             expect(response.tableNames).toEqual(
                 new Set(["reserved_words_test", "special_characters_test"]),
             );
-            let reservedResult = db
-                .prepare(
-                    'SELECT "group" FROM reserved_words_test WHERE "order" = 1',
-                )
-                .get() as any;
-            let specialResult = db
-                .prepare(
-                    "SELECT description FROM special_characters_test WHERE id = 1",
-                )
-                .get() as any;
+            let reservedResult = (await db.get(
+                'SELECT "group" FROM reserved_words_test WHERE "order" = 1',
+            )) as any;
+            let specialResult = (await db.get(
+                "SELECT description FROM special_characters_test WHERE id = 1",
+            )) as any;
             expect(reservedResult.group).toBe("Group1");
             expect(specialResult.description).toBe(
                 '"Complex value (with) {all} kinds [of] special characters!"',
             );
 
-            performRedo(db); // Redo DELETE and update
-            reservedResult = db
-                .prepare(
+            await performRedo(db); // Redo DELETE and update
+            reservedResult = (
+                await db.all(
                     'SELECT "group" FROM reserved_words_test WHERE "order" = 1',
                 )
-                .get();
-            specialResult = db
-                .prepare("SELECT * FROM special_characters_test")
-                .all();
+            )[0] as any;
+            specialResult = await db.all(
+                "SELECT * FROM special_characters_test",
+            );
             expect(reservedResult.group).toBe("UpdatedGroup");
             expect(specialResult.length).toBe(0); // The row should be deleted
         });
 
-        it("Stress test with multiple DELETEs, special characters, and reserved words", () => {
-            setupComplexTablesWithReservedWords();
+        it("Stress test with multiple DELETEs, special characters, and reserved words", async () => {
+            await setupComplexTablesWithReservedWords();
 
             // Insert several rows into both tables
-            db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
-            ).run("GroupA", "SelectA", "FromA");
-            db.prepare(
-                'INSERT INTO reserved_words_test ("group", "select", "from") VALUES (?, ?, ?)',
-            ).run("GroupB", "SelectB", "FromB");
-            db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)",
-            ).run('Some "special" (value)');
-            db.prepare(
-                "INSERT INTO special_characters_test (description) VALUES (?)",
-            ).run('Another "complex" [test] (entry)');
-            incrementUndoGroup(db);
+            await db.run(
+                sql`INSERT INTO reserved_words_test ("group", "select", "from") VALUES (${"GroupA"}, ${"SelectA"}, ${"FromA"})`,
+            );
+            await db.run(
+                sql`INSERT INTO reserved_words_test ("group", "select", "from") VALUES (${"GroupB"}, ${"SelectB"}, ${"FromB"})`,
+            );
+            await db.run(
+                sql`INSERT INTO special_characters_test (description) VALUES (${'Some "special" (value)'})`,
+            );
+            await db.run(
+                sql`INSERT INTO special_characters_test (description) VALUES (${'Another "complex" [test] (entry)'})`,
+            );
+            await incrementUndoGroup(db);
 
             // Perform random DELETEs
-            db.prepare(
-                'DELETE FROM reserved_words_test WHERE "order" = 1',
-            ).run();
-            db.prepare(
-                "DELETE FROM special_characters_test WHERE id = 2",
-            ).run();
-            incrementUndoGroup(db);
+            await db.run('DELETE FROM reserved_words_test WHERE "order" = 1');
+            await db.run("DELETE FROM special_characters_test WHERE id = 2");
+            await incrementUndoGroup(db);
 
             // Undo all DELETEs
-            performUndo(db);
+            await performUndo(db);
 
-            let reservedResult = db
-                .prepare("SELECT * FROM reserved_words_test")
-                .all();
-            let specialResult = db
-                .prepare("SELECT * FROM special_characters_test")
-                .all();
+            let reservedResult = await db.all(
+                "SELECT * FROM reserved_words_test",
+            );
+            let specialResult = await db.all(
+                "SELECT * FROM special_characters_test",
+            );
             expect(reservedResult.length).toBe(2); // Both rows should be restored
             expect(specialResult.length).toBe(2); // Both rows should be restored
 
             // Redo all DELETEs
-            performRedo(db);
-            performRedo(db);
+            await performRedo(db);
+            await performRedo(db);
 
-            reservedResult = db
-                .prepare("SELECT * FROM reserved_words_test")
-                .all();
-            specialResult = db
-                .prepare("SELECT * FROM special_characters_test")
-                .all();
+            reservedResult = await db.all("SELECT * FROM reserved_words_test");
+            specialResult = await db.all(
+                "SELECT * FROM special_characters_test",
+            );
             expect(reservedResult.length).toBe(1); // One row should be deleted
             expect(specialResult.length).toBe(1); // One row should be deleted
         });
     });
 
-    describe("flattenUndoGroupsAbove", () => {
-        let db: Database.Database;
-        const DbConnectionPath = ":memory:";
+    describe("await flattenUndoGroupsAbove", async () => {
+        let db: DbConnection;
 
         // Mock console.log to avoid cluttering test output
-        beforeEach(() => {
+        beforeEach(async () => {
             vi.spyOn(console, "log").mockImplementation(() => {});
 
             // Create a new in-memory database for each test
-            db = new Database(DbConnectionPath);
+            db = await initTestDatabaseOrm();
             createHistoryTables(db);
         });
 
         afterEach(() => {
             vi.restoreAllMocks();
-            db.close();
+            // Drizzle DB doesn't have a close method - the underlying database connection is managed automatically
         });
 
-        it("should flatten all undo groups above the specified group", () => {
-            // Setup: Create multiple undo groups
-            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
-
+        it("should flatten all undo groups above the specified group", async () => {
             // Insert records with different group numbers
-            db.prepare(insertSql).run(1, 1, "SQL 1");
-            db.prepare(insertSql).run(2, 2, "SQL 2");
-            db.prepare(insertSql).run(3, 3, "SQL 3");
-            db.prepare(insertSql).run(4, 4, "SQL 4");
-            db.prepare(insertSql).run(5, 5, "SQL 5");
+            await db.insert(schema.history_undo).values({
+                sequence: 1,
+                history_group: 1,
+                sql: "SQL 1",
+            });
+            await db.insert(schema.history_undo).values({
+                sequence: 2,
+                history_group: 2,
+                sql: "SQL 2",
+            });
+            await db.insert(schema.history_undo).values({
+                sequence: 3,
+                history_group: 3,
+                sql: "SQL 3",
+            });
+            await db.insert(schema.history_undo).values({
+                sequence: 4,
+                history_group: 4,
+                sql: "SQL 4",
+            });
+            await db.insert(schema.history_undo).values({
+                sequence: 5,
+                history_group: 5,
+                sql: "SQL 5",
+            });
 
             // Execute the function to flatten groups above 2
-            flattenUndoGroupsAbove(db, 2);
+            await flattenUndoGroupsAbove(db, 2);
 
             // Verify: All groups above 2 should now be 2
-            const result = db
-                .prepare(
-                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
-                )
-                .all() as { history_group: number }[];
+            const result = await db
+                .select({ history_group: schema.history_undo.history_group })
+                .from(schema.history_undo)
+                .orderBy(schema.history_undo.sequence);
 
             expect(result).toHaveLength(5);
             expect(result[0].history_group).toBe(1); // Group 1 should remain unchanged
@@ -2034,23 +2290,39 @@ describe("History Tables and Triggers", () => {
             expect(result[4].history_group).toBe(2); // Group 5 should be flattened to 2
         });
 
-        it("should do nothing when there are no groups above the specified group", () => {
-            // Setup: Create undo groups all below or equal to the target
-            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
-
-            db.prepare(insertSql).run(1, 1, "SQL 1");
-            db.prepare(insertSql).run(2, 2, "SQL 2");
-            db.prepare(insertSql).run(3, 3, "SQL 3");
+        it("should do nothing when there are no groups above the specified group", async () => {
+            await db.insert(schema.history_undo).values([
+                {
+                    sequence: 1,
+                    history_group: 1,
+                    sql: "SQL 1",
+                },
+                {
+                    sequence: 2,
+                    history_group: 2,
+                    sql: "SQL 2",
+                },
+                {
+                    sequence: 3,
+                    history_group: 3,
+                    sql: "SQL 3",
+                },
+            ]);
+            // await db.all(
+            //     sql`INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (${2}, ${2}, ${"SQL 2"})`,
+            // );
+            // await db.all(
+            //     sql`INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (${3}, ${3}, ${"SQL 3"})`,
+            // );
 
             // Execute the function to flatten groups above 3
-            flattenUndoGroupsAbove(db, 3);
+            await flattenUndoGroupsAbove(db, 3);
 
             // Verify: No groups should change
-            const result = db
-                .prepare(
-                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
-                )
-                .all() as { history_group: number }[];
+            const result = await db
+                .select({ history_group: schema.history_undo.history_group })
+                .from(schema.history_undo)
+                .orderBy(schema.history_undo.sequence);
 
             expect(result).toHaveLength(3);
             expect(result[0].history_group).toBe(1);
@@ -2058,38 +2330,54 @@ describe("History Tables and Triggers", () => {
             expect(result[2].history_group).toBe(3);
         });
 
-        it("should work with an empty undo history table", () => {
+        it("should work with an empty undo history table", async () => {
             // Execute the function on an empty table
-            flattenUndoGroupsAbove(db, 5);
+            await flattenUndoGroupsAbove(db, 5);
 
             // Verify: No errors should occur
-            const result = db
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName}`,
-                )
-                .get() as { count: number };
-            expect(result.count).toBe(0);
+            const result = await db
+                .select({ count: sql`COUNT(*)`.as("count") })
+                .from(schema.history_undo);
+            expect(result[0].count).toBe(0);
         });
 
-        it("should handle negative group numbers correctly", () => {
-            // Setup: Create undo groups with negative numbers
-            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
-
-            db.prepare(insertSql).run(1, -3, "SQL 1");
-            db.prepare(insertSql).run(2, -2, "SQL 2");
-            db.prepare(insertSql).run(3, -1, "SQL 3");
-            db.prepare(insertSql).run(4, 0, "SQL 4");
-            db.prepare(insertSql).run(5, 1, "SQL 5");
+        it("should handle negative group numbers correctly", async () => {
+            await db.insert(schema.history_undo).values([
+                {
+                    sequence: 1,
+                    history_group: -3,
+                    sql: "SQL 1",
+                },
+                {
+                    sequence: 2,
+                    history_group: -2,
+                    sql: "SQL 2",
+                },
+                {
+                    sequence: 3,
+                    history_group: -1,
+                    sql: "SQL 3",
+                },
+                {
+                    sequence: 4,
+                    history_group: 0,
+                    sql: "SQL 4",
+                },
+                {
+                    sequence: 5,
+                    history_group: 1,
+                    sql: "SQL 5",
+                },
+            ]);
 
             // Execute the function to flatten groups above -2
-            flattenUndoGroupsAbove(db, -2);
+            await flattenUndoGroupsAbove(db, -2);
 
             // Verify: All groups above -2 should now be -2
-            const result = db
-                .prepare(
-                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
-                )
-                .all() as { history_group: number }[];
+            const result = await db
+                .select({ history_group: schema.history_undo.history_group })
+                .from(schema.history_undo)
+                .orderBy(schema.history_undo.sequence);
 
             expect(result).toHaveLength(5);
             expect(result[0].history_group).toBe(-3); // Group -3 should remain unchanged
@@ -2099,30 +2387,39 @@ describe("History Tables and Triggers", () => {
             expect(result[4].history_group).toBe(-2); // Group 1 should be flattened to -2
         });
 
-        it("should work with incrementUndoGroup to flatten newly created groups", () => {
+        it("should work with await incrementUndoGroup to flatten newly created groups", async () => {
             // Setup: Create initial undo group
-            incrementUndoGroup(db); // Group 1
+            await incrementUndoGroup(db); // Group 1
 
-            // Insert a record in group 1
-            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
-            db.prepare(insertSql).run(1, 1, "SQL 1");
+            await db.insert(schema.history_undo).values({
+                sequence: 1,
+                history_group: 1,
+                sql: "SQL 1",
+            });
 
             // Create more undo groups
-            incrementUndoGroup(db); // Group 2
-            db.prepare(insertSql).run(2, 2, "SQL 2");
+            await incrementUndoGroup(db); // Group 2
+            await db.insert(schema.history_undo).values({
+                sequence: 2,
+                history_group: 2,
+                sql: "SQL 2",
+            });
 
-            incrementUndoGroup(db); // Group 3
-            db.prepare(insertSql).run(3, 3, "SQL 3");
+            await incrementUndoGroup(db); // Group 3
+            await db.insert(schema.history_undo).values({
+                sequence: 3,
+                history_group: 3,
+                sql: "SQL 3",
+            });
 
             // Flatten groups above 1
-            flattenUndoGroupsAbove(db, 1);
+            await flattenUndoGroupsAbove(db, 1);
 
             // Verify: All groups above 1 should now be 1
-            const result = db
-                .prepare(
-                    `SELECT history_group FROM ${Constants.UndoHistoryTableName} ORDER BY sequence`,
-                )
-                .all() as { history_group: number }[];
+            const result = await db
+                .select({ history_group: schema.history_undo.history_group })
+                .from(schema.history_undo)
+                .orderBy(schema.history_undo.sequence);
 
             expect(result).toHaveLength(3);
             expect(result[0].history_group).toBe(1);
@@ -2130,16 +2427,16 @@ describe("History Tables and Triggers", () => {
             expect(result[2].history_group).toBe(1); // Group 3 should be flattened to 1
 
             // Verify the current undo group in stats table is unchanged
-            const currentGroup = getCurrentUndoGroup(db);
+            const currentGroup = await getCurrentUndoGroup(db);
             expect(currentGroup).toBe(3); // The current group in stats should still be 3
         });
 
-        it("should log appropriate messages when flattening groups", () => {
+        it("should log appropriate messages when flattening groups", async () => {
             // Setup
             const consoleSpy = vi.spyOn(console, "log");
 
             // Execute the function
-            flattenUndoGroupsAbove(db, 5);
+            await flattenUndoGroupsAbove(db, 5);
 
             // Verify console.log was called with the expected messages
             expect(consoleSpy).toHaveBeenCalledWith(
@@ -2150,33 +2447,32 @@ describe("History Tables and Triggers", () => {
             );
         });
 
-        it("should handle large group numbers and many records efficiently", () => {
-            // Setup: Create many undo groups with large group numbers
-            const insertSql = `INSERT INTO ${Constants.UndoHistoryTableName} (sequence, history_group, sql) VALUES (?, ?, ?)`;
-
+        it("should handle large group numbers and many records efficiently", async () => {
             // Insert 100 records with increasing group numbers
             for (let i = 1; i <= 100; i++) {
-                db.prepare(insertSql).run(i, i * 100, `SQL ${i}`);
+                await db.insert(schema.history_undo).values({
+                    sequence: i,
+                    history_group: i * 100,
+                    sql: `SQL ${i}`,
+                });
             }
 
             // Execute the function to flatten groups above 3000
-            flattenUndoGroupsAbove(db, 3000);
+            await flattenUndoGroupsAbove(db, 3000);
 
             // Verify: All groups above 3000 should now be 3000
-            const result = db
-                .prepare(
-                    `
-      SELECT
-        CASE
-          WHEN history_group <= 3000 THEN 'below_or_equal'
-          ELSE 'above'
-        END as group_category,
-        COUNT(*) as count
-      FROM ${Constants.UndoHistoryTableName}
-      GROUP BY group_category
-    `,
-                )
-                .all() as { group_category: string; count: number }[];
+            const result = (await db.all(
+                sql.raw(`
+          SELECT
+            CASE
+              WHEN history_group <= 3000 THEN 'below_or_equal'
+              ELSE 'above'
+            END as group_category,
+            COUNT(*) as count
+          FROM ${Constants.UndoHistoryTableName}
+          GROUP BY group_category
+        `),
+            )) as { group_category: string; count: number }[];
 
             const belowOrEqual = result.find(
                 (r) => r.group_category === "below_or_equal",
@@ -2188,20 +2484,20 @@ describe("History Tables and Triggers", () => {
         });
     });
 
-    describe("calculateHistorySize", () => {
-        let db: Database.Database;
+    describe("calculateHistorySize", async () => {
+        let db: DbConnection;
 
-        beforeEach(() => {
+        beforeEach(async () => {
             // Create an in-memory SQLite database for each test
-            db = new Database(":memory:");
+            db = await initTestDatabaseOrm();
             // Create the history tables
             createHistoryTables(db);
 
             // Try to create dbstat virtual table, but don't fail if it's not supported
             try {
-                db.prepare(
+                await db.run(
                     "CREATE VIRTUAL TABLE IF NOT EXISTS dbstat USING dbstat",
-                ).run();
+                );
             } catch (e) {
                 console.log(
                     "dbstat not available, tests will use fallback methods",
@@ -2211,61 +2507,65 @@ describe("History Tables and Triggers", () => {
 
         afterEach(() => {
             // Close the database connection after each test
-            db.close();
+            // Note: DbConnection doesn't need explicit closing
         });
 
-        it("should return 0 for empty history tables", () => {
-            const size = calculateHistorySize(db);
+        it("should return 0 for empty history tables", async () => {
+            const size = await calculateHistorySize(db);
             expect(size).toBe(0);
         });
 
-        it("should calculate size after adding history entries", () => {
+        it("should calculate size after adding history entries", async () => {
             // Create a test table to generate history entries
-            db.prepare(
+            await db.run(
                 "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
-            ).run();
-            createUndoTriggers(db, "test_table");
+            );
+            await createUndoTriggers(db, "test_table");
 
             // Get initial size
-            const initialSize = calculateHistorySize(db);
+            const initialSize = await calculateHistorySize(db);
 
             // Add some data to generate history entries
-            incrementUndoGroup(db);
-            db.prepare("INSERT INTO test_table (value) VALUES ('test1')").run();
-            db.prepare("INSERT INTO test_table (value) VALUES ('test2')").run();
-            db.prepare(
+            await incrementUndoGroup(db);
+            await db.run(
+                sql.raw("INSERT INTO test_table (value) VALUES ('test1')"),
+            );
+            await db.run(
+                sql.raw("INSERT INTO test_table (value) VALUES ('test2')"),
+            );
+            await db.run(
                 "UPDATE test_table SET value = 'updated' WHERE id = 1",
-            ).run();
+            );
 
             // Get size after adding data
-            const sizeAfterAdding = calculateHistorySize(db);
+            const sizeAfterAdding = await calculateHistorySize(db);
 
             // Size should have increased
             expect(sizeAfterAdding).toBeGreaterThan(initialSize);
         });
 
-        it("should handle large amounts of history data", () => {
+        it("should handle large amounts of history data", async () => {
             // Create a test table to generate history entries
-            db.prepare(
+            await db.run(
                 "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
-            ).run();
-            createUndoTriggers(db, "test_table");
+            );
+            await createUndoTriggers(db, "test_table");
 
             // Get initial size
-            const initialSize = calculateHistorySize(db);
+            const initialSize = await calculateHistorySize(db);
 
             // Add a significant amount of data
             for (let i = 0; i < 10; i++) {
-                incrementUndoGroup(db);
+                await incrementUndoGroup(db);
                 for (let j = 0; j < 10; j++) {
-                    db.prepare("INSERT INTO test_table (value) VALUES (?)").run(
-                        `test-${i}-${j}`,
+                    await db.run(
+                        sql`INSERT INTO test_table (value) VALUES (${`test-${i}-${j}`})`,
                     );
                 }
             }
 
             // Get size after adding data
-            const sizeAfterAdding = calculateHistorySize(db);
+            const sizeAfterAdding = await calculateHistorySize(db);
 
             // Size should have increased significantly
             expect(sizeAfterAdding).toBeGreaterThan(initialSize);
@@ -2274,19 +2574,21 @@ describe("History Tables and Triggers", () => {
             );
         });
 
-        it("should return consistent results when called multiple times", () => {
+        it("should return consistent results when called multiple times", async () => {
             // Create a test table and add some history
-            db.prepare(
+            await db.run(
                 "CREATE TABLE test_table (id INTEGER PRIMARY KEY, value TEXT)",
-            ).run();
-            createUndoTriggers(db, "test_table");
-            incrementUndoGroup(db);
-            db.prepare("INSERT INTO test_table (value) VALUES ('test')").run();
+            );
+            await createUndoTriggers(db, "test_table");
+            await incrementUndoGroup(db);
+            await db.run(
+                sql.raw("INSERT INTO test_table (value) VALUES ('test')"),
+            );
 
             // Calculate size multiple times
-            const size1 = calculateHistorySize(db);
-            const size2 = calculateHistorySize(db);
-            const size3 = calculateHistorySize(db);
+            const size1 = await calculateHistorySize(db);
+            const size2 = await calculateHistorySize(db);
+            const size3 = await calculateHistorySize(db);
 
             // All calculations should return the same value
             expect(size1).toBe(size2);
