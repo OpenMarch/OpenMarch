@@ -1,8 +1,7 @@
 import { Constants } from "../../src/global/Constants";
-import Database from "better-sqlite3";
-import { DB, getOrm } from "./db";
-import { desc, not, inArray, sql } from "drizzle-orm";
-import * as schema from "./migrations/schema";
+import { gt, sql } from "drizzle-orm";
+import { DbConnection } from "./tables/__test__/testUtils";
+import { schema } from "./db";
 
 type HistoryType = "undo" | "redo";
 
@@ -86,7 +85,7 @@ export type HistoryTableRow = {
  *
  * @param db The database connection
  */
-export function createHistoryTables(db: Database.Database) {
+export async function createHistoryTables(db: DbConnection) {
     const sqlStr = (tableName: string) => `
     CREATE TABLE ${tableName} (
         "sequence" INTEGER PRIMARY KEY,
@@ -94,21 +93,24 @@ export function createHistoryTables(db: Database.Database) {
         "sql" TEXT NOT NULL
     );`;
 
-    db.prepare(sqlStr(Constants.UndoHistoryTableName)).run();
-    db.prepare(sqlStr(Constants.RedoHistoryTableName)).run();
+    await db.run(sql.raw(sqlStr(Constants.UndoHistoryTableName)));
+    await db.run(sql.raw(sqlStr(Constants.RedoHistoryTableName)));
 
-    db.prepare(
-        `CREATE TABLE ${Constants.HistoryStatsTableName} (
+    await db.run(
+        sql.raw(`
+        CREATE TABLE ${Constants.HistoryStatsTableName} (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         cur_undo_group INTEGER NOT NULL,
         cur_redo_group INTEGER NOT NULL,
         group_limit INTEGER NOT NULL
-    );`,
-    ).run();
-    db.prepare(
-        `INSERT OR IGNORE INTO ${Constants.HistoryStatsTableName}
-        (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);`,
-    ).run();
+    );`),
+    );
+
+    await db.run(
+        sql.raw(`
+        INSERT OR IGNORE INTO ${Constants.HistoryStatsTableName}
+        (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);`),
+    );
 }
 
 /**
@@ -118,8 +120,8 @@ export function createHistoryTables(db: Database.Database) {
  * @param db The database connection
  * @param tableName name of the table to create triggers for
  */
-export function createUndoTriggers(db: Database.Database, tableName: string) {
-    createTriggers(db, tableName, "undo", true);
+export async function createUndoTriggers(db: DbConnection, tableName: string) {
+    await createTriggers(db, tableName, "undo", true);
 }
 
 /**
@@ -130,14 +132,8 @@ export function createUndoTriggers(db: Database.Database, tableName: string) {
  * @param db The database connection
  * @returns the new undo group number
  */
-export function incrementUndoGroup(db: Database.Database) {
-    const orm = getOrm(db);
-    return incrementGroupDrizzle(orm, "undo");
-}
-
-// A temporary wrapper until all callers can pass in the ORM. Then this becomes incrementUndoGroup
-export function incrementUndoGroupDrizzle(orm: DB) {
-    return incrementGroupDrizzle(orm, "undo");
+export async function incrementUndoGroup(db: DbConnection) {
+    return await incrementGroup(db, "undo");
 }
 
 /**
@@ -149,8 +145,8 @@ export function incrementUndoGroupDrizzle(orm: DB) {
  * @param db the database connection
  * @returns the response from the undo action
  */
-export function performUndo(db: Database.Database) {
-    return executeHistoryAction(db, "undo");
+export async function performUndo(db: DbConnection) {
+    return await executeHistoryAction(db, "undo");
 }
 
 /**
@@ -163,8 +159,8 @@ export function performUndo(db: Database.Database) {
  * @param db the database connection
  * @returns the response from the redo action
  */
-export function performRedo(db: Database.Database) {
-    return executeHistoryAction(db, "redo");
+export async function performRedo(db: DbConnection) {
+    return await executeHistoryAction(db, "redo");
 }
 
 /**
@@ -173,10 +169,10 @@ export function performRedo(db: Database.Database) {
  * @param db database connection
  * @param tableName name of the table to drop triggers for
  */
-export function dropUndoTriggers(db: Database.Database, tableName: string) {
-    db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_it";`).run();
-    db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_ut";`).run();
-    db.prepare(`DROP TRIGGER IF EXISTS "${tableName}_dt";`).run();
+export async function dropUndoTriggers(db: DbConnection, tableName: string) {
+    await db.run(sql.raw(`DROP TRIGGER IF EXISTS "${tableName}_it";`));
+    await db.run(sql.raw(`DROP TRIGGER IF EXISTS "${tableName}_ut";`));
+    await db.run(sql.raw(`DROP TRIGGER IF EXISTS "${tableName}_dt";`));
 }
 
 /**
@@ -185,20 +181,14 @@ export function dropUndoTriggers(db: Database.Database, tableName: string) {
  *
  * @param db database connection
  */
-export function dropAllUndoTriggers(db: Database.Database) {
+export async function dropAllUndoTriggers(db: DbConnection) {
     // Get all user tables (exclude sqlite internal and history tables)
-    const tables = db
-        .prepare(
-            `SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN (?, ?, ?);`,
-        )
-        .all(
-            Constants.UndoHistoryTableName,
-            Constants.RedoHistoryTableName,
-            Constants.HistoryStatsTableName,
-        ) as { name: string }[];
+    const tables = (await db.all(sql`
+        SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name NOT IN (${Constants.UndoHistoryTableName}, ${Constants.RedoHistoryTableName}, ${Constants.HistoryStatsTableName});
+    `)) as { name: string }[];
 
-    for (const { name } of tables) {
-        dropUndoTriggers(db, name);
+    for (const { name } of await tables) {
+        await dropUndoTriggers(db, name);
     }
 }
 
@@ -211,46 +201,43 @@ export function dropAllUndoTriggers(db: Database.Database) {
  * @param type "undo" or "redo"
  * @returns The new group number for the respective history table
  */
-function incrementGroup(db: Database.Database, type: HistoryType) {
+async function incrementGroup(db: DbConnection, type: HistoryType) {
     const historyTableName =
         type === "undo"
             ? Constants.UndoHistoryTableName
             : Constants.RedoHistoryTableName;
 
     // Get the max group number from the respective history table
-    const maxGroup =
-        (
-            db
-                .prepare(
-                    `SELECT max("history_group") as current_group FROM ${historyTableName};`,
-                )
-                .get() as { current_group?: number }
-        ).current_group || 0;
+    const maxGroupResult = (await db.get(
+        sql.raw(`
+        SELECT max("history_group") as current_group FROM ${historyTableName};
+    `),
+    )) as { current_group?: number };
+    const maxGroup = maxGroupResult.current_group || 0;
 
     const groupString = type === "undo" ? "cur_undo_group" : "cur_redo_group";
     const newGroup = maxGroup + 1;
-    db.prepare(
-        `UPDATE ${Constants.HistoryStatsTableName} SET "${groupString}"=${newGroup};`,
-    ).run();
+    await db.run(
+        sql.raw(`
+        UPDATE ${Constants.HistoryStatsTableName} SET "${groupString}"=${newGroup};
+    `),
+    );
 
-    const groupLimit =
-        (
-            db
-                .prepare(
-                    `SELECT group_limit FROM ${Constants.HistoryStatsTableName};`,
-                )
-                .get() as HistoryStatsRow
-        )?.group_limit || -1;
+    const groupLimitResult = (await db.get(
+        sql.raw(`
+        SELECT group_limit FROM ${Constants.HistoryStatsTableName};
+    `),
+    )) as HistoryStatsRow;
+    const groupLimit = groupLimitResult?.group_limit || -1;
 
     // If the group limit is positive and is reached, delete the oldest group
     if (groupLimit > 0) {
-        const allGroups = (
-            db
-                .prepare(
-                    `SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";`,
-                )
-                .all() as { history_group: number }[]
-        ).map((row) => row.history_group);
+        const allGroupsResult = (await db.all(
+            sql.raw(`
+            SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";
+        `),
+        )) as { history_group: number }[];
+        const allGroups = allGroupsResult.map((row) => row.history_group);
 
         if (allGroups.length > groupLimit) {
             // Delete all of the groups that are older than the group limit
@@ -259,53 +246,16 @@ function incrementGroup(db: Database.Database, type: HistoryType) {
                 allGroups.length - groupLimit,
             );
             for (const group of groupsToDelete) {
-                db.prepare(
-                    `DELETE FROM ${historyTableName} WHERE "history_group"=${group};`,
-                ).run();
+                await db.run(
+                    sql.raw(`
+                    DELETE FROM ${historyTableName} WHERE "history_group"=${group};
+                `),
+                );
             }
         }
     }
 
     return newGroup;
-}
-
-export function incrementGroupDrizzle(orm: DB, type: HistoryType) {
-    const historyTable =
-        type === "undo" ? schema.history_undo : schema.history_redo;
-
-    return orm.transaction((tx) => {
-        const groupLimit = tx
-            .select({ group_limit: schema.history_stats.group_limit })
-            .from(schema.history_stats)
-            .get()!.group_limit;
-
-        const maxGroup = tx
-            .select({
-                max: sql`COALESCE(MAX(${historyTable.history_group}), 0) + 1`,
-            })
-            .from(historyTable)
-            .get()!.max;
-
-        const groupColumn =
-            type === "undo" ? "cur_undo_group" : "cur_redo_group";
-
-        tx.update(schema.history_stats)
-            .set({ [groupColumn]: maxGroup })
-            .run();
-
-        const recentGroupsQuery = tx
-            .selectDistinct({ history_group: historyTable.history_group })
-            .from(historyTable)
-            .orderBy(desc(historyTable.history_group))
-            .limit(groupLimit);
-
-        // Delete all groups except the most recent group_limit groups
-        tx.delete(historyTable)
-            .where(not(inArray(historyTable.history_group, recentGroupsQuery)))
-            .run();
-
-        return maxGroup;
-    });
 }
 
 /**
@@ -315,32 +265,32 @@ export function incrementGroupDrizzle(orm: DB, type: HistoryType) {
  * @param db database connection
  * @param type "undo" or "redo"
  */
-function refreshCurrentGroups(db: Database.Database) {
-    const refreshCurrentGroup = (type: HistoryType) => {
+async function refreshCurrentGroups(db: DbConnection) {
+    const refreshCurrentGroup = async (type: HistoryType) => {
         const tableName =
             type === "undo"
                 ? Constants.UndoHistoryTableName
                 : Constants.RedoHistoryTableName;
         const groupColumn =
             type === "undo" ? "cur_undo_group" : "cur_redo_group";
-        const currentGroup =
-            (
-                db
-                    .prepare(
-                        `SELECT max("history_group") as max_group FROM ${tableName};`,
-                    )
-                    .get() as { max_group: number }
-            ).max_group || 0; // default to 0 if there are no rows in the history table
+        const currentGroupResult = (await db.get(
+            sql.raw(`
+            SELECT max("history_group") as max_group FROM ${tableName};
+        `),
+        )) as { max_group: number };
+        const currentGroup = currentGroupResult.max_group || 0; // default to 0 if there are no rows in the history table
 
-        db.prepare(
-            `UPDATE ${Constants.HistoryStatsTableName} SET "${groupColumn}"=${
+        await db.run(
+            sql.raw(`
+            UPDATE ${Constants.HistoryStatsTableName} SET "${groupColumn}"=${
                 currentGroup + 1
-            };`,
-        ).run();
+            };
+        `),
+        );
     };
 
-    refreshCurrentGroup("undo");
-    refreshCurrentGroup("redo");
+    await refreshCurrentGroup("undo");
+    await refreshCurrentGroup("redo");
 }
 
 /**
@@ -354,29 +304,28 @@ function refreshCurrentGroups(db: Database.Database) {
  * The default behavior of the application has this to true so that the redo history is cleared when a new undo action is inserted.
  * It should be false when a redo is being performed and there are triggers inserting into the undo table.
  */
-function createTriggers(
-    db: Database.Database,
+async function createTriggers(
+    db: DbConnection,
     tableName: string,
     type: HistoryType,
     deleteRedoRows: boolean = true,
 ) {
-    const columns = db
-        .prepare(`SELECT name FROM pragma_table_info('${tableName}');`)
-        .all() as { name: string }[];
+    const columns = (await db.all(
+        sql.raw(`SELECT name FROM pragma_table_info('${tableName}');`),
+    )) as { name: string }[];
 
     const historyTableName =
         type === "undo"
             ? Constants.UndoHistoryTableName
             : Constants.RedoHistoryTableName;
     const groupColumn = type === "undo" ? "cur_undo_group" : "cur_redo_group";
-    const currentGroup = (
-        db
-            .prepare(
-                `SELECT ${groupColumn} as current_group
-                FROM ${Constants.HistoryStatsTableName};`,
-            )
-            .get() as { current_group: number }
-    ).current_group;
+    const currentGroupResult = (await db.get(
+        sql.raw(`
+        SELECT ${groupColumn} as current_group
+        FROM ${Constants.HistoryStatsTableName};
+    `),
+    )) as { current_group: number };
+    const currentGroup = currentGroupResult.current_group;
     if (currentGroup === undefined) {
         console.error(
             "Could not get current group number from history stats table",
@@ -392,7 +341,7 @@ function createTriggers(
             : "";
 
     // Drop the triggers if they already exist
-    dropUndoTriggers(db, tableName);
+    await dropUndoTriggers(db, tableName);
 
     // INSERT trigger
     let sqlStmt = `CREATE TRIGGER IF NOT EXISTS "${tableName}_it" AFTER INSERT ON "${tableName}" BEGIN
@@ -400,7 +349,7 @@ function createTriggers(
             VALUES(NULL, (SELECT ${groupColumn} FROM history_stats), 'DELETE FROM "${tableName}" WHERE rowid='||new.rowid);
         ${sideEffect}
     END;`;
-    db.prepare(sqlStmt).run();
+    await db.run(sql.raw(sqlStmt));
     // UPDATE trigger
     sqlStmt = `CREATE TRIGGER IF NOT EXISTS "${tableName}_ut" AFTER UPDATE ON "${tableName}" BEGIN
         INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
@@ -409,7 +358,7 @@ function createTriggers(
                 .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    db.prepare(sqlStmt).run();
+    await db.run(sql.raw(sqlStmt));
     // DELETE trigger
     sqlStmt = `CREATE TRIGGER IF NOT EXISTS "${tableName}_dt" BEFORE DELETE ON "${tableName}" BEGIN
           INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
@@ -420,7 +369,7 @@ function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    db.prepare(sqlStmt).run();
+    await db.run(sql.raw(sqlStmt));
 }
 
 /**
@@ -431,31 +380,31 @@ function createTriggers(
  * @param mode The mode to switch to, either "undo" or "redo"
  * @param deleteRedoRows true if the redo rows should be deleted when inserting new undo rows.
  */
-const switchTriggerMode = (
-    db: Database.Database,
+const switchTriggerMode = async (
+    db: DbConnection,
     mode: HistoryType,
     deleteRedoRows: boolean,
     tableNames?: Set<string>,
 ) => {
     console.log(`------ Switching triggers to ${mode} mode ------`);
-    let sql = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
+    let sqlQuery = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
     if (tableNames) {
-        sql += ` AND tbl_name IN (${Array.from(tableNames)
+        sqlQuery += ` AND tbl_name IN (${Array.from(tableNames)
             .map((t) => `'${t}'`)
             .join(",")})`;
     }
-    sql += ";";
+    sqlQuery += ";";
     // TODO TEST THIS
-    const triggers = db.prepare(sql).all() as {
+    const triggers = (await db.all(sql.raw(sqlQuery))) as {
         name: string;
         tbl_name: string;
     }[];
     const tables = new Set(triggers.map((t) => t.tbl_name));
     for (const trigger of triggers) {
-        db.prepare(`DROP TRIGGER IF EXISTS ${trigger.name};`).run();
+        await db.run(sql.raw(`DROP TRIGGER IF EXISTS ${trigger.name};`));
     }
     for (const table of tables) {
-        createTriggers(db, table, mode, deleteRedoRows);
+        await createTriggers(db, table, mode, deleteRedoRows);
     }
     console.log(`------ Done switching triggers to ${mode} mode ------`);
 };
@@ -468,10 +417,10 @@ const switchTriggerMode = (
  * @param db the database connection
  * @param type either "undo" or "redo"
  */
-function executeHistoryAction(
-    db: Database.Database,
+async function executeHistoryAction(
+    db: DbConnection,
     type: HistoryType,
-): HistoryResponse {
+): Promise<HistoryResponse> {
     console.log(`\n============ PERFORMING ${type.toUpperCase()} ============`);
     let response: HistoryResponse = {
         success: false,
@@ -485,31 +434,30 @@ function executeHistoryAction(
             type === "undo"
                 ? Constants.UndoHistoryTableName
                 : Constants.RedoHistoryTableName;
-        let currentGroup = (
-            db
-                .prepare(
-                    `SELECT max("history_group") as max_group FROM ${tableName};`,
-                )
-                .get() as { max_group: number }
-        ).max_group;
+        const currentGroupResult = (await db.get(
+            sql.raw(`
+            SELECT max("history_group") as max_group FROM ${tableName};
+        `),
+        )) as { max_group: number };
+        let currentGroup = currentGroupResult.max_group;
 
         // Get all of the SQL statements in the current undo group
-        const getSqlStatements = (group: number) =>
+        const getSqlStatements = async (group: number) =>
             (
-                db
-                    .prepare(
-                        `SELECT sql FROM
-                ${
-                    type === "undo"
-                        ? Constants.UndoHistoryTableName
-                        : Constants.RedoHistoryTableName
-                }
-                WHERE "history_group"=${group} ORDER BY sequence DESC;`,
-                    )
-                    .all() as HistoryTableRow[]
+                (await db.all(
+                    sql.raw(`
+                    SELECT sql FROM
+                    ${
+                        type === "undo"
+                            ? Constants.UndoHistoryTableName
+                            : Constants.RedoHistoryTableName
+                    }
+                    WHERE "history_group"=${group} ORDER BY sequence DESC;
+                `),
+                )) as HistoryTableRow[]
             ).map((row) => row.sql);
 
-        sqlStatements = getSqlStatements(currentGroup);
+        sqlStatements = await getSqlStatements(currentGroup);
         if (sqlStatements.length === 0) {
             console.log("No actions to " + type);
             return {
@@ -529,34 +477,36 @@ function executeHistoryAction(
 
         if (type === "undo") {
             // Switch the triggers to redo mode so that the redo history is updated
-            incrementGroup(db, "redo");
-            switchTriggerMode(db, "redo", false, tableNames);
+            await incrementGroup(db, "redo");
+            await switchTriggerMode(db, "redo", false, tableNames);
         } else {
             // Switch the triggers so that the redo table does not have its rows deleted
-            switchTriggerMode(db, "undo", false, tableNames);
+            await switchTriggerMode(db, "undo", false, tableNames);
         }
 
         // Temporarily disable foreign key checks
-        db.prepare("PRAGMA foreign_keys = OFF;").run();
+        await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
         /// Execute all of the SQL statements in the current history group
         for (const sqlStatement of sqlStatements) {
-            db.prepare(sqlStatement).run();
+            await db.run(sql.raw(sqlStatement));
         }
 
         // Re-enable foreign key checks
-        db.prepare("PRAGMA foreign_keys = ON;").run();
+        await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
 
         // Delete all of the SQL statements in the current undo group
-        db.prepare(
-            `DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};`,
-        ).run();
+        await db.run(
+            sql.raw(`
+            DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
+        `),
+        );
 
         // Refresh the current group number in the history stats table
-        refreshCurrentGroups(db);
+        await refreshCurrentGroups(db);
 
         // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
-        switchTriggerMode(db, "undo", true, tableNames);
+        await switchTriggerMode(db, "undo", true, tableNames);
         response = {
             success: true,
             tableNames,
@@ -590,18 +540,15 @@ function executeHistoryAction(
  *
  * @param db database connection
  */
-export function clearMostRecentRedo(db: Database.Database) {
+export async function clearMostRecentRedo(db: DbConnection) {
     console.log(`-------- Clearing most recent redo --------`);
-    const maxGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}`,
-            )
-            .get() as { max_redo_group: number }
-    ).max_redo_group;
-    db.prepare(
-        `DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ?`,
-    ).run(maxGroup);
+    const maxGroupResult = (await db.get(sql`
+        SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}
+    `)) as { max_redo_group: number };
+    const maxGroup = maxGroupResult.max_redo_group;
+    await db.run(sql`
+        DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ${maxGroup}
+    `);
     console.log(`-------- Done clearing most recent redo --------`);
 }
 
@@ -609,48 +556,44 @@ export function clearMostRecentRedo(db: Database.Database) {
  * @param db database connection
  * @returns The current undo group number in the history stats table
  */
-export function getCurrentUndoGroup(db: Database.Database) {
-    return (
-        db
-            .prepare(
-                `SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};`,
-            )
-            .get() as { cur_undo_group: number }
-    ).cur_undo_group;
+export async function getCurrentUndoGroup(db: DbConnection) {
+    const result = (await db.get(
+        sql.raw(`
+        SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
+    `),
+    )) as { cur_undo_group: number };
+    return result.cur_undo_group;
 }
 
 /**
  * @param db database connection
  * @returns The current redo group number in the history stats table
  */
-export function getCurrentRedoGroup(db: Database.Database) {
-    return (
-        db
-            .prepare(
-                `SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};`,
-            )
-            .get() as { cur_redo_group: number }
-    ).cur_redo_group;
+export async function getCurrentRedoGroup(db: DbConnection) {
+    const result = (await db.get(
+        sql.raw(`
+        SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};
+    `),
+    )) as { cur_redo_group: number };
+    return result.cur_redo_group;
 }
 
-export function getUndoStackLength(db: Database.Database): number {
-    return (
-        db
-            .prepare(
-                `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName};`,
-            )
-            .get() as { count: number }
-    ).count;
+export async function getUndoStackLength(db: DbConnection): Promise<number> {
+    const result = (await db.get(
+        sql.raw(`
+        SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName};
+    `),
+    )) as { count: number };
+    return result.count;
 }
 
-export function getRedoStackLength(db: Database.Database): number {
-    return (
-        db
-            .prepare(
-                `SELECT COUNT(*) as count FROM ${Constants.RedoHistoryTableName};`,
-            )
-            .get() as { count: number }
-    ).count;
+export async function getRedoStackLength(db: DbConnection): Promise<number> {
+    const result = (await db.get(
+        sql.raw(`
+        SELECT COUNT(*) as count FROM ${Constants.RedoHistoryTableName};
+    `),
+    )) as { count: number };
+    return result.count;
 }
 
 /**
@@ -661,31 +604,25 @@ export function getRedoStackLength(db: Database.Database): number {
  *
  * @param db database connection
  */
-export function decrementLastUndoGroup(db: Database.Database) {
+export async function decrementLastUndoGroup(db: DbConnection) {
     console.log(`-------- Decrementing last undo group --------`);
-    const maxGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}`,
-            )
-            .get() as { max_undo_group: number }
-    ).max_undo_group;
+    const maxGroupResult = (await db.get(sql`
+        SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}
+    `)) as { max_undo_group: number };
+    const maxGroup = maxGroupResult.max_undo_group;
 
-    const previousGroup = (
-        db
-            .prepare(
-                `SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ?`,
-            )
-            .get(maxGroup) as { previous_group: number }
-    ).previous_group;
+    const previousGroupResult = (await db.get(sql`
+        SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ${maxGroup}
+    `)) as { previous_group: number };
+    const previousGroup = previousGroupResult.previous_group;
 
     if (previousGroup) {
-        db.prepare(
-            `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group = ?`,
-        ).run(previousGroup, maxGroup);
-        db.prepare(
-            `UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ?`,
-        ).run(previousGroup);
+        await db.run(sql`
+            UPDATE ${Constants.UndoHistoryTableName} SET history_group = ${previousGroup} WHERE history_group = ${maxGroup}
+        `);
+        await db.run(sql`
+            UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ${previousGroup}
+        `);
     }
     console.log(`-------- Done decrementing last undo group --------`);
 }
@@ -698,11 +635,12 @@ export function decrementLastUndoGroup(db: Database.Database) {
  * @param db database connection
  * @param group the group number to flatten above
  */
-export function flattenUndoGroupsAbove(db: Database.Database, group: number) {
+export async function flattenUndoGroupsAbove(db: DbConnection, group: number) {
     console.log(`-------- Flattening undo groups above ${group} --------`);
-    db.prepare(
-        `UPDATE ${Constants.UndoHistoryTableName} SET history_group = ? WHERE history_group > ?`,
-    ).run(group, group);
+    await db
+        .update(schema.history_undo)
+        .set({ history_group: group })
+        .where(gt(schema.history_undo.history_group, group));
     console.log(`-------- Done flattening undo groups above ${group} --------`);
 }
 
@@ -719,12 +657,12 @@ export function flattenUndoGroupsAbove(db: Database.Database, group: number) {
  * @param db database connection
  * @returns the estimated size of the undo and redo history tables in bytes
  */
-export function calculateHistorySize(db: Database.Database) {
+export async function calculateHistorySize(db: DbConnection) {
     // Get average SQL statement length
-    const getSqlLength = (tableName: string): number => {
-        const rows = db
-            .prepare(`SELECT sql FROM ${tableName}`)
-            .all() as HistoryTableRow[];
+    const getSqlLength = async (tableName: string): Promise<number> => {
+        const rows = (await db.all(
+            sql.raw(`SELECT sql FROM ${tableName}`),
+        )) as HistoryTableRow[];
 
         if (rows.length === 0) return 0;
 
@@ -732,8 +670,8 @@ export function calculateHistorySize(db: Database.Database) {
         return totalLength;
     };
 
-    const undoAvgLength = getSqlLength(Constants.UndoHistoryTableName);
-    const redoAvgLength = getSqlLength(Constants.RedoHistoryTableName);
+    const undoAvgLength = await getSqlLength(Constants.UndoHistoryTableName);
+    const redoAvgLength = await getSqlLength(Constants.RedoHistoryTableName);
 
     // Estimate size: row count * (avg SQL length + overhead for other columns)
     // Assuming 2 bytes per character for SQL
