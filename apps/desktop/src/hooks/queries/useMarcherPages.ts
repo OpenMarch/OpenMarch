@@ -6,9 +6,9 @@ import {
     mutationOptions,
 } from "@tanstack/react-query";
 import {
-    marcherPageByMarcherFromArray,
     marcherPageMapFromArray,
-    marcherPagesByPageFromArray,
+    toMarcherPagesByMarcher,
+    toMarcherPagesByPage,
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
 import { updateEndPoint } from "@/db-functions/pathways";
@@ -139,16 +139,19 @@ export const allMarcherPagesQueryOptions = ({
  * Get all marcher pages for a given page id
  *
  * @param pageId - the page id to fetch.
- * @returns
+ * @returns - a Record of all the marcher pages for this page with the marcher ID as the key
  */
-export const marcherPagesByPageQueryOptions = (pageId: number) => {
+export const marcherPagesByPageQueryOptions = (
+    pageId: number | null | undefined,
+) => {
     // Fetch marcher pages without pathway data
     return queryOptions({
-        queryKey: marcherPageKeys.byPage(pageId),
+        queryKey: marcherPageKeys.byPage(pageId!),
         queryFn: async () => {
-            const mpResponse = await marcherPageQueries.getByPage(pageId);
-            return marcherPagesByPageFromArray(mpResponse);
+            const mpResponse = await marcherPageQueries.getByPage(pageId!);
+            return toMarcherPagesByMarcher(mpResponse);
         },
+        enabled: pageId != null,
     });
 };
 
@@ -156,15 +159,20 @@ export const marcherPagesByPageQueryOptions = (pageId: number) => {
  * Get all marcher pages for a given marcher id
  *
  * @param marcherId - the marcher id to fetch.
- * @returns
+ * @returns - a Record of all the marcher pages for this marcher with the page ID as the key
  */
-export const marcherPagesByMarcherQueryOptions = (marcherId: number) => {
+export const marcherPagesByMarcherQueryOptions = (
+    marcherId: number | null | undefined,
+) => {
     return queryOptions({
-        queryKey: marcherPageKeys.byMarcher(marcherId),
+        queryKey: marcherPageKeys.byMarcher(marcherId!),
         queryFn: async () => {
-            const mpResponse = await marcherPageQueries.getByMarcher(marcherId);
-            return marcherPageByMarcherFromArray(mpResponse);
+            const mpResponse = await marcherPageQueries.getByMarcher(
+                marcherId!,
+            );
+            return toMarcherPagesByPage(mpResponse);
         },
+        enabled: marcherId != null,
     });
 };
 

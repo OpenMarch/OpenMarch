@@ -58,16 +58,14 @@ export default function Canvas({
 
     // MarcherPage queries
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage.id),
+        marcherPagesByPageQueryOptions(selectedPage?.id),
     );
-    const { data: previousMarcherPages } = useQuery({
-        ...marcherPagesByPageQueryOptions(selectedPage.previousPageId!),
-        enabled: selectedPage.previousPageId != null,
-    });
-    const { data: nextMarcherPages } = useQuery({
-        ...marcherPagesByPageQueryOptions(selectedPage.nextPageId!),
-        enabled: selectedPage.nextPageId != null,
-    });
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    );
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    );
 
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
