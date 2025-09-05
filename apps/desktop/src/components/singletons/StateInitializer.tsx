@@ -12,7 +12,6 @@ import { useShapePageStore } from "@/stores/ShapePageStore";
 import {
     fetchMarcherPages,
     marcherPageKeys,
-    marcherPagesByPageQueryOptions,
     useFieldProperties,
     useFieldPropertiesWithSetter,
 } from "@/hooks/queries";
@@ -41,26 +40,28 @@ function StateInitializer() {
         useFieldProperties();
     const queryClient = useQueryClient();
 
-    queryClient.prefetchQuery(
-        coordinateDataQueryOptions(selectedPage, queryClient),
-    );
-    if (selectedPage.nextPageId != null) {
-        const nextPage = pages.find(
-            (page) => page.id === selectedPage.nextPageId,
+    if (selectedPage) {
+        queryClient.prefetchQuery(
+            coordinateDataQueryOptions(selectedPage, queryClient),
         );
-        if (nextPage)
-            queryClient.prefetchQuery(
-                coordinateDataQueryOptions(nextPage, queryClient),
+        if (selectedPage.nextPageId != null) {
+            const nextPage = pages.find(
+                (page) => page.id === selectedPage.nextPageId,
             );
-    }
-    if (selectedPage.previousPageId != null) {
-        const previousPage = pages.find(
-            (page) => page.id === selectedPage.previousPageId,
-        );
-        if (previousPage)
-            queryClient.prefetchQuery(
-                coordinateDataQueryOptions(previousPage, queryClient),
+            if (nextPage)
+                queryClient.prefetchQuery(
+                    coordinateDataQueryOptions(nextPage, queryClient),
+                );
+        }
+        if (selectedPage.previousPageId != null) {
+            const previousPage = pages.find(
+                (page) => page.id === selectedPage.previousPageId,
             );
+            if (previousPage)
+                queryClient.prefetchQuery(
+                    coordinateDataQueryOptions(previousPage, queryClient),
+                );
+        }
     }
 
     /**
