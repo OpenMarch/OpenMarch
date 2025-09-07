@@ -63,7 +63,7 @@ export default defineConfig({
         sitemap(),
         yeskunallumami({
             id: "09a72d11-c8dd-43b0-9ee8-e2c7c492bc21",
-            endpointUrl: "https://umami.cool.korhq.com",
+            endpointUrl: "https://umami.cool.dukc.dev",
         }),
     ],
 
