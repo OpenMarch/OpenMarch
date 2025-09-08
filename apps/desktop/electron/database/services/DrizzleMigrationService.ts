@@ -4,13 +4,17 @@ import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
-import Constants, { TablesWithHistory } from "../../../src/global/Constants";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
-import { createUndoTriggers, dropAllUndoTriggers } from "../database.history";
+import {
+    createAllUndoTriggers,
+    dropAllUndoTriggers,
+} from "../database.history";
 import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
+import { DbConnection } from "../tables/__test__/testUtils";
+import { sql } from "drizzle-orm";
 
-export type DB = BetterSQLite3Database<typeof schema>;
+export type DB = BetterSQLite3Database<typeof schema> | DbConnection;
 
 /**
  * Service for handling Drizzle migrations at runtime
@@ -52,17 +56,23 @@ export class DrizzleMigrationService {
 
         try {
             console.log("Dropping history triggers...");
-            dropAllUndoTriggers(this.rawDb);
-            dropAllTriggers(this.rawDb);
+            await dropAllUndoTriggers(this.db);
+            await dropAllTriggers(this.db);
             console.log("Disabling foreign key checks...");
             this.rawDb.pragma("foreign_keys = OFF");
 
             console.log("Applying pending Drizzle migrations...");
 
-            await migrate(this.db, {
-                migrationsFolder: folder,
-                migrationsTable: "__drizzle_migrations",
-            });
+            if (this.db instanceof BetterSQLite3Database) {
+                await migrate(this.db, {
+                    migrationsFolder: folder,
+                    migrationsTable: "__drizzle_migrations",
+                });
+            } else {
+                throw new Error(
+                    "Drizzle migrations are not supported for this database",
+                );
+            }
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {
@@ -70,11 +80,9 @@ export class DrizzleMigrationService {
             throw error;
         } finally {
             console.log("Recreating history triggers...");
-            for (const table of TablesWithHistory) {
-                createUndoTriggers(this.rawDb, table);
-            }
+            await createAllUndoTriggers(this.db);
             console.log("Recreating triggers...");
-            createAllTriggers(this.rawDb);
+            await createAllTriggers(this.db);
             console.log("Enabling foreign key checks...");
             this.rawDb.pragma("foreign_keys = ON");
         }
@@ -130,29 +138,18 @@ export class DrizzleMigrationService {
     }
 
     /** Run any ts migrations that are not in drizzle */
-    async initializeDatabase(db: Database.Database) {
-        db.pragma("user_version = 7");
+    async initializeDatabase(db: DbConnection | DB) {
+        await db.run(sql`PRAGMA user_version = 7`);
 
         // Easier to do this here than in the migration
-        const stmt = db.prepare(`
-            INSERT INTO ${Constants.FieldPropertiesTableName} (
-                id,
-                json_data
-            ) VALUES (
-                1,
-                @json_data
-            );
-        `);
-        stmt.run({
+        await db.insert(schema.field_properties).values({
+            id: 1,
             json_data: JSON.stringify(
                 FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES,
             ),
         });
 
-        for (const table of TablesWithHistory) {
-            createUndoTriggers(db, table);
-        }
-
-        createAllTriggers(db);
+        await createAllUndoTriggers(db);
+        await createAllTriggers(db);
     }
 }

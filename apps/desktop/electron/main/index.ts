@@ -838,15 +838,6 @@ export async function executeHistoryAction(type: "undo" | "redo") {
 }
 
 /**
- * Triggers the renderer to fetch all data of the given type.
- *
- * @param type 'marcher' | 'page' | 'marcher_page'
- */
-export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
-    win?.webContents.send("fetch:all", type);
-}
-
-/**
  * Sets the active database path and reloads the window.
  *
  * @param path path to the database file

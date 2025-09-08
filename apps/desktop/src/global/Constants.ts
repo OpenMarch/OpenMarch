@@ -22,20 +22,4 @@ export const Constants = {
     dotRadius: 5, //deprecated?
 } as const;
 
-/**
- * Tables whose changes are added to the history table
- */
-export const TablesWithHistory = [
-    Constants.MarcherTableName,
-    Constants.PageTableName,
-    Constants.MarcherPageTableName,
-    Constants.ShapeTableName,
-    Constants.ShapePageTableName,
-    Constants.ShapePageMarcherTableName,
-    Constants.FieldPropertiesTableName,
-    Constants.MeasureTableName,
-    Constants.SectionAppearancesTableName,
-    Constants.BeatsTableName,
-] as const;
-
 export default Constants;

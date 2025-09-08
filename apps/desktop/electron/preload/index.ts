@@ -9,7 +9,6 @@ import MarcherPage, {
     ModifiedMarcherPageArgs,
 } from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
-import { TablesWithHistory } from "@/global/Constants";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
@@ -208,9 +207,6 @@ const APP_API = {
     openRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:open", filePath),
 
-    // Triggers
-    onFetch: (callback: (type: (typeof TablesWithHistory)[number]) => void) =>
-        ipcRenderer.on("fetch:all", (event, type) => callback(type)),
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
     sendSelectedPage: (selectedPageId: number) =>
         ipcRenderer.send("send:selectedPage", selectedPageId),

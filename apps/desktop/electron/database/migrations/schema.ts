@@ -57,9 +57,11 @@ export const beats = sqliteTable(
         include_in_measure: integer().default(1).notNull(),
         /** Human readable notes. */
         notes: text(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     },
@@ -77,9 +79,11 @@ export const measures = sqliteTable("measures", {
         .references(() => beats.id),
     rehearsal_mark: text(),
     notes: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
@@ -92,14 +96,17 @@ export const pages = sqliteTable(
         is_subset: integer().default(0).notNull(),
         /** Optional notes or description for the page */
         notes: text(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         /** The ID of the beat this page starts on */
         start_beat: integer()
             .notNull()
+            .unique()
             .references(() => beats.id),
     },
     (table) => [
@@ -112,15 +119,24 @@ export const marchers = sqliteTable(
     "marchers",
     {
         id: integer().primaryKey(),
+        /** The name of the marcher. Optional */
         name: text(),
+        /** The section the marcher is in. E.g. "Color Guard" */
         section: text().notNull(),
+        /** The year of the marcher. First year, freshman, etc.. Optional */
         year: text(),
+        /** Any notes about the marcher. Optional */
         notes: text(),
+        /** The drill prefix of the marcher's drill number. E.g. "BD" if the drill number is "BD1" */
         drill_prefix: text().notNull(),
+        /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
-        created_at: text().notNull(),
+        created_at: text()
+            .notNull()
+            .default(sql`(CURRENT_TIMESTAMP)`),
         updated_at: text()
             .notNull()
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     },
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
@@ -130,6 +146,13 @@ export const pathways = sqliteTable("pathways", {
     id: integer().primaryKey(),
     path_data: text().notNull(),
     notes: text(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
+    updated_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull()
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 /**
@@ -154,8 +177,11 @@ export const marcher_pages = sqliteTable(
         x: real().notNull(),
         /** Y coordinate of the MarcherPage in pixels */
         y: real().notNull(),
-        created_at: text().notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         /** The ID of the pathway data */
@@ -200,9 +226,11 @@ export const midsets = sqliteTable(
         y: real().notNull(),
         /** The progress placement of the midset on the marcher page */
         progress_placement: real().notNull(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         path_data_id: integer().references(() => pathways.id, {
@@ -241,18 +269,23 @@ export const audio_files = sqliteTable("audio_files", {
     nickname: text(),
     data: blob(),
     selected: integer().default(0).notNull(),
-    created_at: text().notNull(),
+    created_at: text()
+        .notNull()
+        .default(sql`(CURRENT_TIMESTAMP)`),
     updated_at: text()
         .notNull()
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
 
 export const shapes = sqliteTable("shapes", {
     id: integer().primaryKey(),
     name: text(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     notes: text(),
@@ -269,9 +302,11 @@ export const shape_pages = sqliteTable(
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
         svg_path: text().notNull(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         notes: text(),
@@ -290,9 +325,11 @@ export const shape_page_marchers = sqliteTable(
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
         position_order: integer(),
-        created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+        created_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull(),
         updated_at: text()
-            .default("sql`(CURRENT_TIMESTAMP)`")
+            .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
             .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
         notes: text(),
@@ -311,9 +348,11 @@ export const section_appearances = sqliteTable("section_appearances", {
     fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     shape_type: text().default("circle").notNull(),
-    created_at: text().default("sql`(CURRENT_TIMESTAMP)`").notNull(),
+    created_at: text()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .notNull(),
     updated_at: text()
-        .default("sql`(CURRENT_TIMESTAMP)`")
+        .default(sql`(CURRENT_TIMESTAMP)`)
         .notNull()
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 });
@@ -323,6 +362,10 @@ export const utility = sqliteTable(
     {
         id: integer().primaryKey(),
         last_page_counts: integer().notNull().default(8),
+        updated_at: text()
+            .default(sql`(CURRENT_TIMESTAMP)`)
+            .notNull()
+            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
     },
     (_table) => [
         check("utility_last_page_counts_check", sql`last_page_counts > 0`),

@@ -13,7 +13,9 @@ import {
 import { queryClient } from "@/App";
 import { updateEndPoint } from "@/db-functions/pathways";
 import { getNextMarcherPage } from "@/db-functions/marcherPage";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, {
+    ModifiedMarcherPageArgs as GlobalModifiedMarcherPageArgs,
+} from "@/global/classes/MarcherPage";
 import { conToastError } from "@/utilities/utils";
 import { DbTransaction, transactionWithHistory } from "@/db-functions";
 
@@ -25,16 +27,8 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
 /**
  * Arguments for modifying an existing marcher page
  */
-export interface ModifiedMarcherPageArgs {
-    marcher_id: number;
-    page_id: number;
-    x: number;
-    y: number;
-    notes?: string | null;
-    path_data_id?: number | null;
-    path_start_position?: number | null;
-    path_end_position?: number | null;
-}
+export interface ModifiedMarcherPageArgs
+    extends GlobalModifiedMarcherPageArgs {}
 
 const KEY_BASE = "marcherPage";
 
@@ -254,7 +248,7 @@ export const fetchMarcherPages = () => {
 export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherPages: ModifiedMarcherPageArgs[]) =>
-            transactionWithHistory(db, async (tx) => {
+            transactionWithHistory(db, "updateMarcherPages", async (tx) => {
                 return marcherPageMutations.updateMarcherPages(
                     tx,
                     modifiedMarcherPages,

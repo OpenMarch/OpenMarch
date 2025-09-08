@@ -11,11 +11,9 @@ import {
 } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
+import { DbConnection, DatabasePage, createPages } from "@/db-functions";
 
 const { pages } = schema;
-
-// Define types from the existing schema
-export type DatabasePage = typeof pages.$inferSelect;
 
 /**
  * Arguments for creating a new page
@@ -141,38 +139,11 @@ export const pagesQueryOptions = (
 
 // Mutation functions (pure business logic)
 const pageMutations = {
-    createPages: async (newPages: NewPageArgs[]): Promise<DatabasePage[]> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
-
-            const results: DatabasePage[] = [];
-
-            for (const newPage of newPages) {
-                const result = await tx
-                    .insert(pages)
-                    .values({
-                        start_beat: newPage.start_beat,
-                        notes: newPage.notes,
-                        is_subset: newPage.is_subset ? 1 : 0,
-                    })
-                    .returning({
-                        id: pages.id,
-                        start_beat: pages.start_beat,
-                        notes: pages.notes,
-                        is_subset: pages.is_subset,
-                        created_at: pages.created_at,
-                        updated_at: pages.updated_at,
-                    })
-                    .get();
-
-                results.push({
-                    ...result,
-                    is_subset: result.is_subset,
-                });
-            }
-
-            return results;
-        });
+    createPages: async (
+        db: DbConnection,
+        newPages: NewPageArgs[],
+    ): Promise<DatabasePage[]> => {
+        return await createPages({ newPages, db });
     },
 
     updatePages: async (

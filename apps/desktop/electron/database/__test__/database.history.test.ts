@@ -2228,15 +2228,22 @@ describe("History Tables and Triggers", async () => {
         });
     });
 
-    describe("await flattenUndoGroupsAbove", async () => {
+    describe("flattenUndoGroupsAbove", async () => {
         let db: DbConnection;
 
         // Mock console.log to avoid cluttering test output
         beforeEach(async () => {
-            vi.spyOn(console, "log").mockImplementation(() => {});
-
-            // Create a new in-memory database for each test
+            // Create an in-memory SQLite database for each test
             db = await initTestDatabaseOrm();
+            // Drop all tables to ensure clean state
+            await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
+            const tables = await db.all(
+                sql.raw("SELECT name FROM sqlite_master WHERE type='table'"),
+            );
+            for (const table of tables as { name: string }[]) {
+                await db.run(sql.raw(`DROP TABLE IF EXISTS "${table.name}"`));
+            }
+            await db.run(sql.raw("PRAGMA foreign_keys = ON"));
             createHistoryTables(db);
         });
 
@@ -2490,7 +2497,15 @@ describe("History Tables and Triggers", async () => {
         beforeEach(async () => {
             // Create an in-memory SQLite database for each test
             db = await initTestDatabaseOrm();
-            // Create the history tables
+            // Drop all tables to ensure clean state
+            await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
+            const tables = await db.all(
+                sql.raw("SELECT name FROM sqlite_master WHERE type='table'"),
+            );
+            for (const table of tables as { name: string }[]) {
+                await db.run(sql.raw(`DROP TABLE IF EXISTS "${table.name}"`));
+            }
+            await db.run(sql.raw("PRAGMA foreign_keys = ON"));
             createHistoryTables(db);
 
             // Try to create dbstat virtual table, but don't fail if it's not supported

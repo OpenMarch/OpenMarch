@@ -1,16 +1,14 @@
 import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { Constants, TablesWithHistory } from "@/global/Constants";
+import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import Marcher from "../../global/classes/Marcher";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import {
-    fetchMarcherPages,
     marcherPageKeys,
     useFieldProperties,
     useFieldPropertiesWithSetter,
@@ -250,32 +248,6 @@ function StateInitializer() {
         updateUndoRedo,
         queryClient,
     ]);
-
-    // Listen for fetch actions from the main process
-    useEffect(() => {
-        const handler = (type: (typeof TablesWithHistory)[number][number]) => {
-            switch (type) {
-                case Constants.MarcherTableName:
-                    fetchMarchers();
-                    break;
-                case Constants.PageTableName:
-                case Constants.BeatsTableName:
-                case Constants.MeasureTableName:
-                    fetchTimingObjects();
-                    break;
-                case Constants.MarcherPageTableName:
-                    console.warn("Why is this being called?");
-                    fetchMarcherPages();
-                    break;
-            }
-        };
-
-        window.electron.onFetch(handler);
-
-        return () => {
-            window.electron.removeFetchListener(); // Remove the event listener
-        };
-    }, [fetchMarchers, fetchTimingObjects]);
 
     return <></>; // Empty fragment
 }
