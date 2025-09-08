@@ -5,6 +5,7 @@ import Constants from "../../../src/global/Constants";
 import { getOrm } from "../db";
 import { eq } from "drizzle-orm";
 import * as schema from "../migrations/schema";
+import { DbConnection } from "./__test__/testUtils";
 
 export const FIRST_BEAT_ID = 0;
 
@@ -17,20 +18,7 @@ export const FIRST_BEAT_ID = 0;
  * @property {string} created_at - The timestamp when the beat was created.
  * @property {string} updated_at - The timestamp when the beat was last updated.
  */
-export interface DatabaseBeat {
-    id: number;
-    /** Duration from this beat to the next in second. */
-    duration: number;
-    /** The position of this beat in the show. Integer and unique */
-    position: number;
-    /** Whether this beat is included in a measure. 0 = false, 1 = true. */
-    include_in_measure: 0 | 1;
-    /** Human readable notes. */
-    notes: string | null;
-    created_at: string;
-    updated_at: string;
-}
-
+export type DatabaseBeat = typeof schema.beats.$inferSelect;
 /**
  * Represents the arguments for creating a new beat in the database.
  * @property {number} duration - The duration of the beat in seconds.
@@ -64,15 +52,8 @@ type InternalModifiedBeat = ModifiedBeatArgs & { position?: number };
  * @param {Database.Database} db - The database instance to use.
  * @returns {DbActions.DatabaseResponse<DatabaseBeat[]>} - The response containing the list of beats.
  */
-export function getBeats({
-    db,
-}: {
-    db: Database.Database;
-}): DbActions.DatabaseResponse<DatabaseBeat[]> {
-    return DbActions.getAllItems<DatabaseBeat>({
-        tableName: Constants.BeatsTableName,
-        db,
-    });
+export function getBeats({ db }: { db: DbConnection }): DatabaseBeat[] {
+    return db.select().from(schema.beats).all();
 }
 
 /**

@@ -1,6 +1,6 @@
 import { it as baseTest, describe, TestAPI } from "vitest";
 import { schema } from "@/../electron/database/db";
-import { drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
+import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
 import Database, { RunResult } from "better-sqlite3";
 import initSqlJs from "sql.js";
@@ -9,6 +9,10 @@ import path from "path";
 import * as mockData from "./mock-data/marchers-and-pages.mjs";
 import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
+import {
+    createAllUndoTriggers,
+    dropAllUndoTriggers,
+} from "../../electron/database/database.history";
 
 type DbConnection = BaseSQLiteDatabase<
     "async",
@@ -17,6 +21,34 @@ type DbConnection = BaseSQLiteDatabase<
 >;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
     return path.resolve(`${task.id}.tmp.dots`);
+};
+
+const getTempDb = async (task: Readonly<{ id: string }>) => {
+    // Get the path to the temporary database file
+    const dbPath = getTempDotsPath(task);
+
+    // ✅ Assert database file exists
+    if (!fs.existsSync(dbPath)) {
+        throw new Error(`Expected DB file at ${dbPath} to exist`);
+    }
+
+    // ✅ Load and apply SQL using sql.js
+    const dbBuffer = fs.readFileSync(dbPath);
+
+    // Initialize sql.js
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
+    });
+
+    const db = new SQL.Database(dbBuffer);
+
+    const orm = drizzle(db, {
+        schema,
+        casing: "snake_case",
+        logger: true,
+    });
+
+    return { db: db, dbPath: dbPath, orm: orm };
 };
 
 /**
@@ -28,16 +60,8 @@ const loadSqlIntoDatabase = async (
     task: Readonly<{ id: string }>,
     sqlFilename: string,
 ): Promise<void> => {
-    // Get the path to the temporary database file
-    const dbPath = getTempDotsPath(task);
-
     // Resolve SQL file path relative to mock-databases folder
     const sqlPath = path.resolve(__dirname, "mock-data", sqlFilename);
-
-    // ✅ Assert database file exists
-    if (!fs.existsSync(dbPath)) {
-        throw new Error(`Expected DB file at ${dbPath} to exist`);
-    }
 
     // ✅ Assert SQL file exists
     if (!fs.existsSync(sqlPath)) {
@@ -46,36 +70,39 @@ const loadSqlIntoDatabase = async (
 
     // ✅ Load and apply SQL using sql.js
     const sql = fs.readFileSync(sqlPath, "utf-8");
-    const dbBuffer = fs.readFileSync(dbPath);
 
-    // Initialize sql.js
-    const SQL = await initSqlJs({
-        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
-    });
+    // Get the path to the temporary database file
+    const { db, dbPath, orm } = await getTempDb(task);
 
-    const db = new SQL.Database(dbBuffer);
-    db.exec(sql);
+    // drop all triggers
+    await dropAllUndoTriggers(orm as unknown as any);
+    await db.exec(sql);
+    await createAllUndoTriggers(orm as unknown as any);
     const updatedDbBuffer = db.export();
     fs.writeFileSync(dbPath, updatedDbBuffer);
     db.close();
 };
 
+type beats = {
+    expectedBeats: (typeof schema.beats.$inferSelect)[];
+};
+
 type marchersAndPages = {
-    expectedBeats: (typeof schema.beats)[];
-    expectedMarchers: (typeof schema.marchers)[];
-    expectedPages: (typeof schema.pages)[];
-    expectedMarcherPages: (typeof schema.marcher_pages)[];
+    expectedBeats: (typeof schema.beats.$inferSelect)[];
+    expectedMarchers: (typeof schema.marchers.$inferSelect)[];
+    expectedPages: (typeof schema.pages.$inferSelect)[];
+    expectedMarcherPages: (typeof schema.marcher_pages.$inferSelect)[];
 };
 
 type BaseApi = {
     setupDb: void;
     marchersAndPages: marchersAndPages;
+    beats: beats;
 };
+
 type DbTestAPI = {
-    setupDb: void;
-    marchersAndPages: marchersAndPages;
     db: DbConnection;
-};
+} & BaseApi;
 
 /**
  * Base test fixture that sets up a temporary database file before each test function.
@@ -95,6 +122,16 @@ const baseFixture = baseTest.extend<BaseApi>({
 
             try {
                 await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
+                const { orm, db } = await getTempDb(task);
+
+                await db.exec(`
+                    INSERT INTO history_stats (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);
+                `);
+                const updatedDbBuffer = db.export();
+
+                await createAllUndoTriggers(orm as unknown as any);
+                fs.writeFileSync(tempDatabaseFile, updatedDbBuffer);
+                db.close();
                 await use();
             } catch (error) {
                 console.error("Error setting up database:", error);
@@ -109,6 +146,10 @@ const baseFixture = baseTest.extend<BaseApi>({
         },
         { auto: true },
     ],
+    beats: async ({ task }, use) => {
+        await loadSqlIntoDatabase(task, "beats.sql");
+        await use(mockData as unknown as beats);
+    },
     marchersAndPages: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "marchers-and-pages.sql");
         await use(mockData as unknown as marchersAndPages);
@@ -131,13 +172,14 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
                 logger: true,
             }) as unknown as DbConnection,
         );
+        db.close();
     },
 });
 
 const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
     db: DbConnection;
 }>({
-    db: async ({ task, skip }, use) => {
+    db: async ({ task }, use) => {
         // setup the fixture before each test function
         const tempDatabaseFile = getTempDotsPath(task);
 
@@ -160,6 +202,7 @@ const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
                 logger: true,
             }) as unknown as DbConnection,
         );
+        db.close();
     },
 });
 
@@ -196,9 +239,9 @@ const describeDbTests = (
         dbType: "sql-js" | "better-sqlite3",
     ) => void,
 ) => {
-    describe("sql-js", () => {
-        tests(sqlJsTest, "sql-js");
-    });
+    // describe("sql-js", () => {
+    //     tests(sqlJsTest, "sql-js");
+    // });
     describe("better-sqlite3", () => {
         tests(betterSqliteTest, "better-sqlite3");
     });

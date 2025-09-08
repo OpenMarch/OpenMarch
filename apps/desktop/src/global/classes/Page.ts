@@ -5,7 +5,7 @@ import { FIRST_PAGE_ID } from "../../../electron/database/constants";
 import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
-import { ModifiedPageArgs, NewPageArgs } from "@/hooks/queries";
+import { ModifiedPageArgs, NewPageArgs } from "@/db-functions";
 
 interface Page {
     /** The id of the page in the database
@@ -72,23 +72,6 @@ export default Page;
 export interface ModifyPagesRequest {
     modifiedPagesArgs: ModifiedPageArgs[];
     lastPageCounts?: number;
-}
-
-/**
- * Creates one or more new pages in the database and updates the store.
- *
- * @param newPagesArgs - The new pages to be created in order of how they should be created.
- * @param fetchPagesFunction - The function to call to fetch the pages from the database. This function updates the store.
- * @returns DatabaseResponse with the new pages.
- */
-export async function createPages(
-    newPagesArgs: NewPageArgs[],
-    fetchPagesFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabasePage[]>> {
-    const createResponse = await window.electron.createPages(newPagesArgs);
-
-    if (createResponse.success) await fetchPagesFunction();
-    return createResponse;
 }
 
 /**

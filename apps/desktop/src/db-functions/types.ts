@@ -3,12 +3,13 @@ import { DbConnection } from "@/test/base";
 import { RunResult } from "better-sqlite3";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
+import { ExtractTablesWithRelations } from "drizzle-orm/relations";
 
 export type DbTransaction = SQLiteTransaction<
     "async",
-    RunResult | void | SqliteRemoteResult<unknown>,
+    void | SqliteRemoteResult<unknown> | RunResult,
     typeof schema,
-    any
+    ExtractTablesWithRelations<typeof schema>
 >;
 
 // Don't ask

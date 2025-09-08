@@ -17,7 +17,7 @@ export const initTestDatabase = async (): Promise<Database.Database> => {
     const migrator = new DrizzleMigrationService(orm, db);
     db.pragma("user_version = 7");
     await migrator.applyPendingMigrations();
-    await migrator.initializeDatabase(db);
+    await migrator.initializeDatabase(orm);
 
     // create 16 beats
     const beatValues = Array.from({ length: 16 }, (_, i) => ({
@@ -39,17 +39,22 @@ export const initTestDatabaseOrm = async (): Promise<DbConnection> => {
     }
     const db = new Database(":memory:");
 
-    const orm = betterSqliteDrizzle(db, {
+    const orm = (await betterSqliteDrizzle(db, {
         schema,
         casing: "snake_case",
         logger: true,
-    }) as unknown as DbConnection;
+    })) as unknown as DbConnection;
+
+    const migrator = new DrizzleMigrationService(orm, db);
+    db.pragma("user_version = 7");
+    await migrator.applyPendingMigrations();
+    await migrator.initializeDatabase(orm);
 
     // create 16 beats
-    // const beatValues = Array.from({ length: 16 }, (_, i) => ({
-    //     duration: 0.5,
-    //     position: i + 1,
-    // }));
-    // orm.insert(schema.beats).values(beatValues).run();
+    const beatValues = Array.from({ length: 16 }, (_, i) => ({
+        duration: 0.5,
+        position: i + 1,
+    }));
+    orm.insert(schema.beats).values(beatValues).run();
     return orm;
 };
