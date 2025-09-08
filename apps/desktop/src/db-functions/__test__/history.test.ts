@@ -34,17 +34,21 @@ describeDbTests("transactionWithHistory", (baseIt) => {
             });
             expect(startGroup?.cur_undo_group).toBe(initialGroup);
             const testValue = "test result";
-            const result = await transactionWithHistory(db, async (tx) => {
-                await tx
-                    .insert(schema.history_undo)
-                    .values({
-                        sequence: 1,
-                        history_group: 1,
-                        sql: "SELECT 1",
-                    })
-                    .run();
-                return testValue;
-            });
+            const result = await transactionWithHistory(
+                db,
+                "test",
+                async (tx) => {
+                    await tx
+                        .insert(schema.history_undo)
+                        .values({
+                            sequence: 1,
+                            history_group: 1,
+                            sql: "SELECT 1",
+                        })
+                        .run();
+                    return testValue;
+                },
+            );
 
             expect(result).toBe(testValue);
             const endGroup = await db.query.history_stats.findFirst({

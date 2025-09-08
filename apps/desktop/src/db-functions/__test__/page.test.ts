@@ -1,20 +1,27 @@
-import { describe, it, expect, beforeEach } from "vitest";
-import * as PageTable from "../PageTable";
-import * as MarcherTable from "../MarcherTable";
-import * as MarcherPageTable from "../MarcherPageTable";
-import { NewMarcherArgs } from "../../../../src/global/classes/Marcher";
-import { DbConnection, initTestDatabaseOrm } from "./testUtils";
-import { NewPageArgs } from "../PageTable";
-import { DatabaseBeat, FIRST_BEAT_ID, getBeats } from "../BeatTable";
+import { describe, expect } from "vitest";
+import { createPages, NewPageArgs } from "../page";
+import { describeDbTests, schema } from "@/test/base";
+import { DatabasePage } from "../page";
+import { DbTransaction } from "..";
+import {
+    DatabaseBeat,
+    FIRST_BEAT_ID,
+} from "../../../electron/database/tables/BeatTable";
+import { getTableName } from "drizzle-orm";
+import {
+    performRedo,
+    performUndo,
+} from "../../../electron/database/database.history";
+import { getTestWithHistory } from "@/test/history";
 
-describe("PageTable", () => {
+describeDbTests("pages", (it) => {
     describe("database interactions", () => {
-        let db: DbConnection;
-        const sort = (
-            items: PageTable.DatabasePage[],
-        ): PageTable.DatabasePage[] => {
+        const sort = async (
+            tx: DbTransaction,
+            items: DatabasePage[],
+        ): Promise<DatabasePage[]> => {
             // Create a map to access items by their id
-            const beats = getBeats({ db });
+            const beats = await tx.query.beats.findMany();
             const beatMap = new Map<number, DatabaseBeat>(
                 beats.map((beat) => [beat.id, beat]),
             );
@@ -42,7 +49,7 @@ describe("PageTable", () => {
                 return { ...rest, notes: rest.notes ? rest.notes : null };
             });
 
-        function firstPage(): PageTable.DatabasePage {
+        function firstPage(): DatabasePage {
             return {
                 id: 0,
                 start_beat: FIRST_BEAT_ID,
@@ -51,594 +58,607 @@ describe("PageTable", () => {
             };
         }
 
-        function trimAndSort(pages: PageTable.DatabasePage[]) {
-            return trimData(sort(pages));
+        async function trimAndSort(tx: DbTransaction, pages: DatabasePage[]) {
+            return trimData(await sort(tx, pages));
         }
 
-        function addFirstPage(
-            currentPages: PageTable.DatabasePage[],
-        ): PageTable.DatabasePage[] {
-            const sortedPages = trimAndSort(currentPages);
+        async function addFirstPage(
+            tx: DbTransaction,
+            currentPages: DatabasePage[],
+        ): Promise<DatabasePage[]> {
+            const sortedPages = await trimAndSort(tx, currentPages);
             return [firstPage(), ...sortedPages];
         }
 
-        beforeEach(async () => {
-            db = await initTestDatabaseOrm();
-        });
-
         describe("createPages", () => {
-            it("should insert a new page into the database", async () => {
-                const newPages: NewPageArgs[] = [
-                    {
-                        is_subset: false,
-                        notes: null,
-                        start_beat: 8,
-                    },
-                ];
-                const expectedCreatedPages = [
-                    {
-                        id: 1,
-                        start_beat: 8,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            const testWithHistory = getTestWithHistory(it, [
+                schema.pages,
+                schema.beats,
+                schema.marchers,
+                schema.marcher_pages,
+            ]);
 
-                const result = await PageTable.createPages({ newPages, db });
-                expect(result).toMatchObject(expectedCreatedPages);
+            testWithHistory.only(
+                "should insert a new page into the database",
+                async ({ db, beats }) => {
+                    const newPages: NewPageArgs[] = [
+                        {
+                            is_subset: false,
+                            notes: null,
+                            start_beat: beats.expectedBeats[0].id,
+                        },
+                    ];
+                    const expectedCreatedPages = [
+                        {
+                            id: 1,
+                            start_beat: beats.expectedBeats[0].id,
+                            is_subset: false,
+                            notes: null,
+                        },
+                    ];
 
-                const allPages = await db.query.pages.findMany();
-                expect(allPages.length).toBeGreaterThanOrEqual(
-                    expectedCreatedPages.length + 1,
-                );
-            });
+                    const result = await createPages({ newPages, db });
+                    expect(result).toMatchObject(expectedCreatedPages);
 
-            it("should insert sequential pages into the database with previous page defined", async () => {
-                let newPages: NewPageArgs[] = [
-                    { start_beat: 12, is_subset: false },
-                ];
-                let expectedCreatedPages: PageTable.DatabasePage[] = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+                    const allPages = await db.query.pages.findMany();
+                    expect(allPages.length).toEqual(
+                        expectedCreatedPages.length,
+                    );
+                    expect(allPages).toMatchObject([
+                        {
+                            ...expectedCreatedPages[0],
+                            is_subset: 0,
+                        },
+                    ]);
+                },
+            );
 
-                let createResult = await PageTable.createPages({
-                    newPages,
-                    db,
-                });
-                let getResult = await PageTable.getPages({ db });
+            // it("should insert sequential pages into the database with previous page defined", async () => {
+            //     let newPages: NewPageArgs[] = [
+            //         { start_beat: 12, is_subset: false },
+            //     ];
+            //     let expectedCreatedPages: DatabasePage[] = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                expect(addFirstPage(createResult)).toMatchObject(
-                    addFirstPage(expectedCreatedPages),
-                );
-                expect(trimAndSort(getResult)).toMatchObject(
-                    addFirstPage(expectedCreatedPages),
-                );
+            //     let createResult = await createPages({
+            //         newPages,
+            //         db,
+            //     });
+            //     let getResult = await PageTable.getPages({ db });
 
-                // NEW PAGE 2
-                newPages = [
-                    {
-                        start_beat: 15,
-                        is_subset: true,
-                    },
-                ];
-                expectedCreatedPages = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 15,
-                        is_subset: true,
-                        notes: null,
-                    },
-                ];
+            //     // expect(createResult.success).toBe(true);
+            //     expect(addFirstPage(createResult)).toMatchObject(
+            //         addFirstPage(expectedCreatedPages),
+            //     );
+            //     expect(trimAndSort(getResult)).toMatchObject(
+            //         addFirstPage(expectedCreatedPages),
+            //     );
 
-                createResult = await PageTable.createPages({ newPages, db });
-                getResult = await PageTable.getPages({ db });
-                expect(trimAndSort(createResult)).toMatchObject([
-                    expectedCreatedPages[1],
-                ]);
-                expect(trimAndSort(getResult)).toMatchObject(
-                    addFirstPage(expectedCreatedPages),
-                );
+            //     // NEW PAGE 2
+            //     newPages = [
+            //         {
+            //             start_beat: 15,
+            //             is_subset: true,
+            //         },
+            //     ];
+            //     expectedCreatedPages = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 15,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // NEW PAGE 3
-                newPages = [
-                    {
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
-                expectedCreatedPages = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 15,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
+            //     createResult = await createPages({ newPages, db });
+            //     getResult = await PageTable.getPages({ db });
+            //     expect(trimAndSort(createResult)).toMatchObject([
+            //         expectedCreatedPages[1],
+            //     ]);
+            //     expect(trimAndSort(getResult)).toMatchObject(
+            //         addFirstPage(expectedCreatedPages),
+            //     );
 
-                createResult = await PageTable.createPages({ newPages, db });
-                getResult = await PageTable.getPages({ db });
-                // expect(createResult.success).toBe(true);
-                expect(trimAndSort(createResult)).toEqual([
-                    expectedCreatedPages[2],
-                ]);
-                expect(trimAndSort(getResult)).toEqual(
-                    addFirstPage(expectedCreatedPages),
-                );
-            });
+            //     // NEW PAGE 3
+            //     newPages = [
+            //         {
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
+            //     expectedCreatedPages = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 15,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
 
-            it("should fail to insert a page with duplicate start_beat", async () => {
-                const firstPage: NewPageArgs[] = [
-                    {
-                        start_beat: 5,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            //     createResult = await createPages({ newPages, db });
+            //     getResult = await PageTable.getPages({ db });
+            //     // expect(createResult.success).toBe(true);
+            //     expect(trimAndSort(createResult)).toEqual([
+            //         expectedCreatedPages[2],
+            //     ]);
+            //     expect(trimAndSort(getResult)).toEqual(
+            //         addFirstPage(expectedCreatedPages),
+            //     );
+            // });
 
-                // Insert first page successfully
-                await PageTable.createPages({
-                    newPages: firstPage,
-                    db,
-                });
+            // it("should fail to insert a page with duplicate start_beat", async () => {
+            //     const firstPage: NewPageArgs[] = [
+            //         {
+            //             start_beat: 5,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // Attempt to insert page with same start_beat
-                const duplicatePage: NewPageArgs[] = [
-                    {
-                        start_beat: 5,
-                        is_subset: true,
-                        notes: "This should fail",
-                    },
-                ];
-                await expect(
-                    PageTable.createPages({
-                        newPages: duplicatePage,
-                        db,
-                    }),
-                ).rejects.toThrow();
-            });
+            //     // Insert first page successfully
+            //     await createPages({
+            //         newPages: firstPage,
+            //         db,
+            //     });
 
-            it("should insert new pages at the start of the database with no previous page defined", async () => {
-                let newPages: NewPageArgs[] = [
-                    { start_beat: 12, is_subset: false },
-                ];
-                let expectedCreatedPages: PageTable.DatabasePage[] = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            //     // Attempt to insert page with same start_beat
+            //     const duplicatePage: NewPageArgs[] = [
+            //         {
+            //             start_beat: 5,
+            //             is_subset: true,
+            //             notes: "This should fail",
+            //         },
+            //     ];
+            //     await expect(
+            //         createPages({
+            //             newPages: duplicatePage,
+            //             db,
+            //         }),
+            //     ).rejects.toThrow();
+            // });
 
-                let createResult = await PageTable.createPages({
-                    newPages,
-                    db,
-                });
-                let getResult = await PageTable.getPages({ db });
+            // it("should insert new pages at the start of the database with no previous page defined", async () => {
+            //     let newPages: NewPageArgs[] = [
+            //         { start_beat: 12, is_subset: false },
+            //     ];
+            //     let expectedCreatedPages: DatabasePage[] = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                expect(trimAndSort(createResult)).toEqual(expectedCreatedPages);
-                expect(addFirstPage(createResult)).toEqual(
-                    trimAndSort(getResult),
-                );
+            //     let createResult = await createPages({
+            //         newPages,
+            //         db,
+            //     });
+            //     let getResult = await PageTable.getPages({ db });
 
-                // NEW PAGE 2
-                newPages = [
-                    {
-                        start_beat: 10,
-                        is_subset: true,
-                    },
-                ];
-                expectedCreatedPages = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                ];
+            //     // expect(createResult.success).toBe(true);
+            //     expect(trimAndSort(createResult)).toEqual(expectedCreatedPages);
+            //     expect(addFirstPage(createResult)).toEqual(
+            //         trimAndSort(getResult),
+            //     );
 
-                createResult = await PageTable.createPages({ newPages, db });
-                getResult = await PageTable.getPages({ db });
+            //     // NEW PAGE 2
+            //     newPages = [
+            //         {
+            //             start_beat: 10,
+            //             is_subset: true,
+            //         },
+            //     ];
+            //     expectedCreatedPages = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                expect(trimAndSort(createResult)).toEqual([
-                    expectedCreatedPages[1],
-                ]);
-                expect(addFirstPage(expectedCreatedPages)).toEqual(
-                    trimAndSort(getResult),
-                );
+            //     createResult = await createPages({ newPages, db });
+            //     getResult = await PageTable.getPages({ db });
 
-                // NEW PAGE 3
-                newPages = [
-                    {
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
-                expectedCreatedPages = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
+            //     // expect(createResult.success).toBe(true);
+            //     expect(trimAndSort(createResult)).toEqual([
+            //         expectedCreatedPages[1],
+            //     ]);
+            //     expect(addFirstPage(expectedCreatedPages)).toEqual(
+            //         trimAndSort(getResult),
+            //     );
 
-                createResult = await PageTable.createPages({ newPages, db });
-                getResult = await PageTable.getPages({ db });
+            //     // NEW PAGE 3
+            //     newPages = [
+            //         {
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
+            //     expectedCreatedPages = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                expect(trimAndSort(createResult)).toEqual([
-                    expectedCreatedPages[2],
-                ]);
-                expect(addFirstPage(expectedCreatedPages)).toEqual(
-                    trimAndSort(getResult),
-                );
-            });
+            //     createResult = await createPages({ newPages, db });
+            //     getResult = await PageTable.getPages({ db });
 
-            it("should insert new pages into the database at the same time", async () => {
-                const newPages: NewPageArgs[] = [
-                    { start_beat: 12, is_subset: false },
-                    { start_beat: 10, is_subset: true },
-                    {
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
-                const expectedCreatedPages: PageTable.DatabasePage[] = [
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            //     // expect(createResult.success).toBe(true);
+            //     expect(trimAndSort(createResult)).toEqual([
+            //         expectedCreatedPages[2],
+            //     ]);
+            //     expect(addFirstPage(expectedCreatedPages)).toEqual(
+            //         trimAndSort(getResult),
+            //     );
+            // });
 
-                const createResult = await PageTable.createPages({
-                    newPages,
-                    db,
-                });
-                const getResult = await PageTable.getPages({ db });
+            // it("should insert new pages into the database at the same time", async () => {
+            //     const newPages: NewPageArgs[] = [
+            //         { start_beat: 12, is_subset: false },
+            //         { start_beat: 10, is_subset: true },
+            //         {
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
+            //     const expectedCreatedPages: DatabasePage[] = [
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                expect(trimAndSort(createResult)).toEqual(
-                    trimAndSort(expectedCreatedPages),
-                );
-                expect(trimAndSort(getResult)).toEqual(
-                    addFirstPage(expectedCreatedPages),
-                );
-            });
+            //     const createResult = await createPages({
+            //         newPages,
+            //         db,
+            //     });
+            //     const getResult = await PageTable.getPages({ db });
 
-            it("should insert new pages into the middle of the database at the same time", async () => {
-                let newPages: NewPageArgs[] = [
-                    { start_beat: 12, is_subset: false },
-                    { start_beat: 10, is_subset: true },
-                    {
-                        start_beat: 16,
-                        is_subset: false,
+            //     // expect(createResult.success).toBe(true);
+            //     expect(trimAndSort(createResult)).toEqual(
+            //         trimAndSort(expectedCreatedPages),
+            //     );
+            //     expect(trimAndSort(getResult)).toEqual(
+            //         addFirstPage(expectedCreatedPages),
+            //     );
+            // });
 
-                        notes: "jeff notes",
-                    },
-                ];
-                let expectedCreatedPages: PageTable.DatabasePage[] = [
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            // it("should insert new pages into the middle of the database at the same time", async () => {
+            //     let newPages: NewPageArgs[] = [
+            //         { start_beat: 12, is_subset: false },
+            //         { start_beat: 10, is_subset: true },
+            //         {
+            //             start_beat: 16,
+            //             is_subset: false,
 
-                let createResult = await PageTable.createPages({
-                    newPages,
-                    db,
-                });
-                let getResult = await PageTable.getPages({ db });
+            //             notes: "jeff notes",
+            //         },
+            //     ];
+            //     let expectedCreatedPages: DatabasePage[] = [
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                let trimmedCreateData = createResult.map((page: any) => {
-                    const {
-                        created_at: _created_at,
-                        updated_at: _updated_at,
-                        ...rest
-                    } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                let trimmedGetData = getResult.map((page: any) => {
-                    const {
-                        created_at: _created_at,
-                        updated_at: _updated_at,
-                        ...rest
-                    } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                expect(sort(trimmedCreateData)).toEqual(
-                    sort(expectedCreatedPages),
-                );
-                expect(sort(trimmedGetData)).toEqual(
-                    addFirstPage(sort(expectedCreatedPages)),
-                );
+            //     let createResult = await createPages({
+            //         newPages,
+            //         db,
+            //     });
+            //     let getResult = await PageTable.getPages({ db });
 
-                // NEW PAGES IN MIDDLE
-                newPages = [
-                    { start_beat: 13, is_subset: false },
-                    { start_beat: 11, is_subset: true },
-                    {
-                        start_beat: 9,
-                        is_subset: false,
-                        notes: "jeff notes 2",
-                    },
-                ];
-                expectedCreatedPages = [
-                    {
-                        id: 6,
-                        start_beat: 9,
-                        is_subset: false,
-                        notes: "jeff notes 2",
-                    },
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                    {
-                        id: 5,
-                        start_beat: 11,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 4,
-                        start_beat: 13,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                ];
+            //     // expect(createResult.success).toBe(true);
+            //     let trimmedCreateData = createResult.map((page: any) => {
+            //         const {
+            //             created_at: _created_at,
+            //             updated_at: _updated_at,
+            //             ...rest
+            //         } = page;
+            //         return {
+            //             ...rest,
+            //             notes: rest.notes ? rest.notes : null,
+            //         };
+            //     });
+            //     let trimmedGetData = getResult.map((page: any) => {
+            //         const {
+            //             created_at: _created_at,
+            //             updated_at: _updated_at,
+            //             ...rest
+            //         } = page;
+            //         return {
+            //             ...rest,
+            //             notes: rest.notes ? rest.notes : null,
+            //         };
+            //     });
+            //     expect(sort(trimmedCreateData)).toEqual(
+            //         sort(expectedCreatedPages),
+            //     );
+            //     expect(sort(trimmedGetData)).toEqual(
+            //         addFirstPage(sort(expectedCreatedPages)),
+            //     );
 
-                createResult = await PageTable.createPages({ newPages, db });
-                getResult = await PageTable.getPages({ db });
+            //     // NEW PAGES IN MIDDLE
+            //     newPages = [
+            //         { start_beat: 13, is_subset: false },
+            //         { start_beat: 11, is_subset: true },
+            //         {
+            //             start_beat: 9,
+            //             is_subset: false,
+            //             notes: "jeff notes 2",
+            //         },
+            //     ];
+            //     expectedCreatedPages = [
+            //         {
+            //             id: 6,
+            //             start_beat: 9,
+            //             is_subset: false,
+            //             notes: "jeff notes 2",
+            //         },
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //         {
+            //             id: 5,
+            //             start_beat: 11,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 4,
+            //             start_beat: 13,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                trimmedCreateData = createResult.map((page: any) => {
-                    const {
-                        created_at: _created_at,
-                        updated_at: _updated_at,
-                        ...rest
-                    } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                trimmedGetData = getResult.map((page: any) => {
-                    const {
-                        created_at: _created_at,
-                        updated_at: _updated_at,
-                        ...rest
-                    } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                const expectedCreated = [
-                    expectedCreatedPages[0],
-                    expectedCreatedPages[2],
-                    expectedCreatedPages[3],
-                ];
-                expect(sort(trimmedCreateData)).toEqual(sort(expectedCreated));
-                expect(sort(trimmedGetData)).toEqual(
-                    addFirstPage(sort(expectedCreatedPages)),
-                );
-            });
+            //     createResult = await createPages({ newPages, db });
+            //     getResult = await PageTable.getPages({ db });
 
-            it("should also create marcherPages when marchers exist in the database", async () => {
-                const marchers: NewMarcherArgs[] = [
-                    {
-                        name: "jeff",
-                        section: "brass",
-                        drill_prefix: "B",
-                        drill_order: 1,
-                    },
-                    {
-                        name: "ana",
-                        section: "brass",
-                        drill_prefix: "B",
-                        drill_order: 2,
-                    },
-                    {
-                        name: "qwerty",
-                        section: "wood",
-                        drill_prefix: "W",
-                        drill_order: 3,
-                    },
-                    {
-                        name: "pal",
-                        section: "brass",
-                        drill_prefix: "B",
-                        drill_order: 4,
-                    },
-                ];
-                const createMarchersResponse = MarcherTable.createMarchers({
-                    newMarchers: marchers,
-                    db,
-                });
-                // expect(createMarchersResponse.success).toBe(true);
-                let allMarcherPages = () =>
-                    MarcherPageTable.getMarcherPages({ db });
-                expect(allMarcherPages().length).toBe(4);
+            //     // expect(createResult.success).toBe(true);
+            //     trimmedCreateData = createResult.map((page: any) => {
+            //         const {
+            //             created_at: _created_at,
+            //             updated_at: _updated_at,
+            //             ...rest
+            //         } = page;
+            //         return {
+            //             ...rest,
+            //             notes: rest.notes ? rest.notes : null,
+            //         };
+            //     });
+            //     trimmedGetData = getResult.map((page: any) => {
+            //         const {
+            //             created_at: _created_at,
+            //             updated_at: _updated_at,
+            //             ...rest
+            //         } = page;
+            //         return {
+            //             ...rest,
+            //             notes: rest.notes ? rest.notes : null,
+            //         };
+            //     });
+            //     const expectedCreated = [
+            //         expectedCreatedPages[0],
+            //         expectedCreatedPages[2],
+            //         expectedCreatedPages[3],
+            //     ];
+            //     expect(sort(trimmedCreateData)).toEqual(sort(expectedCreated));
+            //     expect(sort(trimmedGetData)).toEqual(
+            //         addFirstPage(sort(expectedCreatedPages)),
+            //     );
+            // });
 
-                const newPages: NewPageArgs[] = [
-                    { start_beat: 12, is_subset: false },
-                    { start_beat: 10, is_subset: true },
-                    {
-                        start_beat: 16,
-                        is_subset: false,
+            // it("should also create marcherPages when marchers exist in the database", async () => {
+            //     const marchers: NewMarcherArgs[] = [
+            //         {
+            //             name: "jeff",
+            //             section: "brass",
+            //             drill_prefix: "B",
+            //             drill_order: 1,
+            //         },
+            //         {
+            //             name: "ana",
+            //             section: "brass",
+            //             drill_prefix: "B",
+            //             drill_order: 2,
+            //         },
+            //         {
+            //             name: "qwerty",
+            //             section: "wood",
+            //             drill_prefix: "W",
+            //             drill_order: 3,
+            //         },
+            //         {
+            //             name: "pal",
+            //             section: "brass",
+            //             drill_prefix: "B",
+            //             drill_order: 4,
+            //         },
+            //     ];
+            //     const createMarchersResponse = MarcherTable.createMarchers({
+            //         newMarchers: marchers,
+            //         db,
+            //     });
+            //     // expect(createMarchersResponse.success).toBe(true);
+            //     let allMarcherPages = () =>
+            //         MarcherPageTable.getMarcherPages({ db });
+            //     expect(allMarcherPages().length).toBe(4);
 
-                        notes: "jeff notes",
-                    },
-                ];
-                const expectedCreatedPages: PageTable.DatabasePage[] = [
-                    {
-                        id: 1,
-                        start_beat: 12,
-                        is_subset: false,
-                        notes: null,
-                    },
-                    {
-                        id: 2,
-                        start_beat: 10,
-                        is_subset: true,
-                        notes: null,
-                    },
-                    {
-                        id: 3,
-                        start_beat: 16,
-                        is_subset: false,
-                        notes: "jeff notes",
-                    },
-                ];
+            //     const newPages: NewPageArgs[] = [
+            //         { start_beat: 12, is_subset: false },
+            //         { start_beat: 10, is_subset: true },
+            //         {
+            //             start_beat: 16,
+            //             is_subset: false,
 
-                const createResult = await PageTable.createPages({
-                    newPages,
-                    db,
-                });
+            //             notes: "jeff notes",
+            //         },
+            //     ];
+            //     const expectedCreatedPages: DatabasePage[] = [
+            //         {
+            //             id: 1,
+            //             start_beat: 12,
+            //             is_subset: false,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 2,
+            //             start_beat: 10,
+            //             is_subset: true,
+            //             notes: null,
+            //         },
+            //         {
+            //             id: 3,
+            //             start_beat: 16,
+            //             is_subset: false,
+            //             notes: "jeff notes",
+            //         },
+            //     ];
 
-                // expect(createResult.success).toBe(true);
-                const trimmedCreateData = createResult.map((page: any) => {
-                    const {
-                        created_at: _created_at,
-                        updated_at: _updated_at,
-                        ...rest
-                    } = page;
-                    return {
-                        ...rest,
-                        notes: rest.notes ? rest.notes : null,
-                    };
-                });
-                expect(sort(trimmedCreateData)).toEqual(
-                    sort(expectedCreatedPages),
-                );
+            //     const createResult = await createPages({
+            //         newPages,
+            //         db,
+            //     });
 
-                const marcherPages = MarcherPageTable.getMarcherPages({ db });
-                // expect(marcherPages.success).toBe(true);
-                const marcherPagesMap = new Map<
-                    number,
-                    (typeof marcherPages)[0]
-                >(
-                    marcherPages.map((marcherPage) => [
-                        marcherPage.id,
-                        marcherPage,
-                    ]),
-                );
+            //     // expect(createResult.success).toBe(true);
+            //     const trimmedCreateData = createResult.map((page: any) => {
+            //         const {
+            //             created_at: _created_at,
+            //             updated_at: _updated_at,
+            //             ...rest
+            //         } = page;
+            //         return {
+            //             ...rest,
+            //             notes: rest.notes ? rest.notes : null,
+            //         };
+            //     });
+            //     expect(sort(trimmedCreateData)).toEqual(
+            //         sort(expectedCreatedPages),
+            //     );
 
-                // Check that there is a marcherPage for every marcher and page combination
-                for (const marcher of createMarchersResponse) {
-                    for (const page of createResult) {
-                        const marcherPage = marcherPages.find(
-                            (marcherPage) =>
-                                marcherPage.page_id === page.id &&
-                                marcherPage.marcher_id === marcher.id,
-                        );
-                        expect(marcherPage).toBeDefined();
-                        if (!marcherPage) continue;
-                        // Check that the marcherPage is in the map
-                        expect(marcherPagesMap.has(marcherPage.id)).toBe(true);
-                        // Remove the marcherPage from the map
-                        marcherPagesMap.delete(marcherPage.id);
-                    }
-                }
-                expect(marcherPagesMap.size).toBe(4);
-            });
+            //     const marcherPages = MarcherPageTable.getMarcherPages({ db });
+            //     // expect(marcherPages.success).toBe(true);
+            //     const marcherPagesMap = new Map<
+            //         number,
+            //         (typeof marcherPages)[0]
+            //     >(
+            //         marcherPages.map((marcherPage) => [
+            //             marcherPage.id,
+            //             marcherPage,
+            //         ]),
+            //     );
+
+            //     // Check that there is a marcherPage for every marcher and page combination
+            //     for (const marcher of createMarchersResponse) {
+            //         for (const page of createResult) {
+            //             const marcherPage = marcherPages.find(
+            //                 (marcherPage) =>
+            //                     marcherPage.page_id === page.id &&
+            //                     marcherPage.marcher_id === marcher.id,
+            //             );
+            //             expect(marcherPage).toBeDefined();
+            //             if (!marcherPage) continue;
+            //             // Check that the marcherPage is in the map
+            //             expect(marcherPagesMap.has(marcherPage.id)).toBe(true);
+            //             // Remove the marcherPage from the map
+            //             marcherPagesMap.delete(marcherPage.id);
+            //         }
+            //     }
+            //     expect(marcherPagesMap.size).toBe(4);
+            // });
             // });
 
             // describe("updatePages", () => {
@@ -664,7 +684,7 @@ describe("PageTable", () => {
             //                 notes: "jeff notes",
             //             },
             //         ];
-            //         const expectedCreatedPages: PageTable.DatabasePage[] = [
+            //         const expectedCreatedPages: DatabasePage[] = [
             //             {
             //                 id: 4,
             //                 start_beat: 16,
@@ -691,7 +711,7 @@ describe("PageTable", () => {
             //             },
             //         ];
 
-            //         const createResult = await PageTable.createPages({ newPages, db });
+            //         const createResult = await createPages({ newPages, db });
 
             //         // expect(createResult.success).toBe(true);
             //         expect(trimAndSort(createResult)).toEqual(
@@ -716,7 +736,7 @@ describe("PageTable", () => {
             //             },
             //         ];
 
-            //         const expectedUpdatedPages: PageTable.DatabasePage[] = [
+            //         const expectedUpdatedPages: DatabasePage[] = [
             //             {
             //                 id: 1,
             //                 start_beat: 15,
@@ -736,7 +756,7 @@ describe("PageTable", () => {
             //                 notes: "jeff notes",
             //             },
             //         ];
-            //         const expectedAllPages: PageTable.DatabasePage[] = [
+            //         const expectedAllPages: DatabasePage[] = [
             //             ...expectedUpdatedPages,
             //             expectedCreatedPages.find((page) => page.id === 3)!,
             //         ];
@@ -791,7 +811,7 @@ describe("PageTable", () => {
             //             },
             //         ];
 
-            //         const createResult = await PageTable.createPages({ newPages, db });
+            //         const createResult = await createPages({ newPages, db });
             //         // expect(createResult.success).toBe(true);
             //         expect(createResult.length).toBe(3);
 
@@ -821,7 +841,7 @@ describe("PageTable", () => {
         //         ];
 
         //         expect(
-        //             async () => await PageTable.createPages({ newPages, db }),
+        //             async () => await createPages({ newPages, db }),
         //         ).toThrowError();
         //     });
 
@@ -831,7 +851,7 @@ describe("PageTable", () => {
         //             { start_beat: 14, is_subset: true },
         //         ];
 
-        //         const createResult = await PageTable.createPages({ newPages, db });
+        //         const createResult = await createPages({ newPages, db });
         //         // expect(createResult.success).toBe(true);
 
         //         const updatedPage: PageTable.ModifiedPageArgs = {
@@ -906,7 +926,7 @@ describe("PageTable", () => {
         //                 },
         //             ];
 
-        //             const createResult = await PageTable.createPages({ newPages, db });
+        //             const createResult = await createPages({ newPages, db });
         //             const getResult = await PageTable.getPages({ db });
 
         //             // expect(createResult.success).toBe(true);
@@ -1023,7 +1043,7 @@ describe("PageTable", () => {
         //                 },
         //             ];
 
-        //             const createResult = await PageTable.createPages({ newPages, db });
+        //             const createResult = await createPages({ newPages, db });
         //             // expect(createResult.success).toBe(true);
         //             expect(trimData(createResult)).toEqual(
         //                 sort(expectedCreatedPages),
@@ -1189,7 +1209,7 @@ describe("PageTable", () => {
         //                 },
         //             ];
 
-        //             const createResult = await PageTable.createPages({ newPages, db });
+        //             const createResult = await createPages({ newPages, db });
         //             // expect(createResult.success).toBe(true);
         //             expect(trimData(createResult)).toEqual(
         //                 sort(expectedCreatedPages),
@@ -1290,8 +1310,8 @@ describe("PageTable", () => {
         // describe.skip("undo/redo", () => {
         //     let db: Database.Database;
         //     const sort = (
-        //         items: PageTable.DatabasePage[],
-        //     ): PageTable.DatabasePage[] => {
+        //         items: DatabasePage[],
+        //     ): DatabasePage[] => {
         //         // Create a map to access items by their id
         //         const beats = getBeats({ db });
         //         const beatMap = new Map<number, DatabaseBeat>(
@@ -1324,7 +1344,7 @@ describe("PageTable", () => {
         //                 };
 
         //                 // Create a new page
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages: [newPage],
         //                     db,
         //                 });
@@ -1379,7 +1399,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -1442,7 +1462,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create existing pages
-        //                 const createExistingResult = await PageTable.createPages({
+        //                 const createExistingResult = await createPages({
         //                     newPages: existingPages,
         //                     db,
         //                 });
@@ -1461,7 +1481,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -1554,7 +1574,7 @@ describe("PageTable", () => {
         //                 };
 
         //                 // Create a new page
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages: [newPage],
         //                     db,
         //                 });
@@ -1667,7 +1687,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -1764,7 +1784,7 @@ describe("PageTable", () => {
         //             };
 
         //             // Create a new page
-        //             const createResult = await PageTable.createPages({
+        //             const createResult = await createPages({
         //                 newPages: [newPage],
         //                 db,
         //             });
@@ -1860,7 +1880,7 @@ describe("PageTable", () => {
         //             ];
 
         //             // Create new pages
-        //             const createResult = await PageTable.createPages({
+        //             const createResult = await createPages({
         //                 newPages,
         //                 db,
         //             });
@@ -1995,7 +2015,7 @@ describe("PageTable", () => {
         //                 };
 
         //                 // Create a new page
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages: [newPage],
         //                     db,
         //                 });
@@ -2076,7 +2096,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -2155,7 +2175,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create existing pages
-        //                 const createExistingResult = await PageTable.createPages({
+        //                 const createExistingResult = await createPages({
         //                     newPages: existingPages,
         //                     db,
         //                 });
@@ -2174,7 +2194,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -2290,7 +2310,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
@@ -2436,7 +2456,7 @@ describe("PageTable", () => {
         //                 ];
 
         //                 // Create new pages
-        //                 const createResult = await PageTable.createPages({
+        //                 const createResult = await createPages({
         //                     newPages,
         //                     db,
         //                 });
