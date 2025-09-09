@@ -7,12 +7,11 @@ import {
     DatabaseBeat,
     FIRST_BEAT_ID,
 } from "../../../electron/database/tables/BeatTable";
-import { getTableName } from "drizzle-orm";
-import {
-    performRedo,
-    performUndo,
-} from "../../../electron/database/database.history";
 import { getTestWithHistory } from "@/test/history";
+
+const subsetBooleanToInteger = (page: any) => {
+    return { ...page, is_subset: page.is_subset ? 1 : 0 };
+};
 
 describeDbTests("pages", (it) => {
     describe("database interactions", () => {
@@ -78,171 +77,196 @@ describeDbTests("pages", (it) => {
                 schema.marcher_pages,
             ]);
 
-            testWithHistory.only(
-                "should insert a new page into the database",
-                async ({ db, beats }) => {
-                    const newPages: NewPageArgs[] = [
+            testWithHistory.for([
+                {
+                    description: "Single page",
+                    newPages: [
                         {
                             is_subset: false,
                             notes: null,
-                            start_beat: beats.expectedBeats[0].id,
+                            start_beat: 1,
                         },
-                    ];
-                    const expectedCreatedPages = [
+                    ],
+                },
+                {
+                    description: "Single subset page",
+                    newPages: [
                         {
-                            id: 1,
-                            start_beat: beats.expectedBeats[0].id,
+                            is_subset: true,
+                            notes: null,
+                            start_beat: 1,
+                        },
+                    ],
+                },
+                {
+                    description: "Single page with notes",
+                    newPages: [
+                        {
+                            is_subset: false,
+                            notes: "jeff notes",
+                            start_beat: 1,
+                        },
+                    ],
+                },
+                {
+                    description: "Two pages",
+                    newPages: [
+                        {
                             is_subset: false,
                             notes: null,
+                            start_beat: 1,
                         },
-                    ];
+                        {
+                            is_subset: true,
+                            notes: null,
+                            start_beat: 2,
+                        },
+                    ],
+                },
+                {
+                    description: "Many pages",
+                    newPages: [
+                        {
+                            is_subset: false,
+                            notes: null,
+                            start_beat: 1,
+                        },
+                        {
+                            is_subset: true,
+                            notes: null,
+                            start_beat: 4,
+                        },
+                        {
+                            is_subset: false,
+                            notes: "jeff notes",
+                            start_beat: 2,
+                        },
+                        {
+                            is_subset: true,
+                            notes: null,
+                            start_beat: 7,
+                        },
+                        {
+                            is_subset: true,
+                            notes: null,
+                            start_beat: 15,
+                        },
+                        {
+                            is_subset: false,
+                            notes: null,
+                            start_beat: 8,
+                        },
+                    ],
+                },
+            ])(
+                "%# insert new page(s) with no existing pages - $description",
+                async ({ newPages }, { db, beats, expectNumberOfChanges }) => {
+                    const expectedCreatedPages = newPages.map(
+                        (newPage, index) => ({
+                            ...newPage,
+                            id: index + 1,
+                        }),
+                    );
 
                     const result = await createPages({ newPages, db });
-                    expect(result).toMatchObject(expectedCreatedPages);
+                    expect(new Set(result)).toMatchObject(
+                        new Set(expectedCreatedPages),
+                    );
 
                     const allPages = await db.query.pages.findMany();
                     expect(allPages.length).toEqual(
                         expectedCreatedPages.length,
                     );
-                    expect(allPages).toMatchObject([
-                        {
-                            ...expectedCreatedPages[0],
-                            is_subset: 0,
-                        },
-                    ]);
+                    expect(new Set(allPages)).toMatchObject(
+                        new Set(
+                            expectedCreatedPages.map(subsetBooleanToInteger),
+                        ),
+                    );
+                    await expectNumberOfChanges.test(1);
                 },
             );
 
-            // it("should insert sequential pages into the database with previous page defined", async () => {
-            //     let newPages: NewPageArgs[] = [
-            //         { start_beat: 12, is_subset: false },
-            //     ];
-            //     let expectedCreatedPages: DatabasePage[] = [
-            //         {
-            //             id: 1,
-            //             start_beat: 12,
-            //             is_subset: false,
-            //             notes: null,
-            //         },
-            //     ];
+            testWithHistory(
+                "should insert sequential pages into the database with previous page defined",
+                async ({ db, beats, expectNumberOfChanges }) => {
+                    const existingPagesArgs: NewPageArgs[] = [
+                        {
+                            start_beat: 1,
+                            is_subset: false,
+                        },
+                    ];
+                    const createdExistingPages = await createPages({
+                        newPages: existingPagesArgs,
+                        db,
+                    });
+                    const existingPages = await db.query.pages.findMany();
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState();
 
-            //     let createResult = await createPages({
-            //         newPages,
-            //         db,
-            //     });
-            //     let getResult = await PageTable.getPages({ db });
+                    expect(existingPages).toMatchObject(
+                        existingPagesArgs.map(subsetBooleanToInteger),
+                    );
+                    expect(createdExistingPages).toMatchObject(
+                        existingPagesArgs,
+                    );
 
-            //     // expect(createResult.success).toBe(true);
-            //     expect(addFirstPage(createResult)).toMatchObject(
-            //         addFirstPage(expectedCreatedPages),
-            //     );
-            //     expect(trimAndSort(getResult)).toMatchObject(
-            //         addFirstPage(expectedCreatedPages),
-            //     );
+                    let newPagesArgs: NewPageArgs[] = [
+                        {
+                            start_beat: 2,
+                            is_subset: false,
+                        },
+                    ];
+                    const createdNewPages = await createPages({
+                        newPages: newPagesArgs,
+                        db,
+                    });
+                    const allPages = await db.query.pages.findMany();
+                    expect(allPages).toMatchObject(
+                        [...existingPagesArgs, ...newPagesArgs].map(
+                            subsetBooleanToInteger,
+                        ),
+                    );
+                    expect(createdNewPages).toMatchObject(newPagesArgs);
 
-            //     // NEW PAGE 2
-            //     newPages = [
-            //         {
-            //             start_beat: 15,
-            //             is_subset: true,
-            //         },
-            //     ];
-            //     expectedCreatedPages = [
-            //         {
-            //             id: 1,
-            //             start_beat: 12,
-            //             is_subset: false,
-            //             notes: null,
-            //         },
-            //         {
-            //             id: 2,
-            //             start_beat: 15,
-            //             is_subset: true,
-            //             notes: null,
-            //         },
-            //     ];
+                    await expectNumberOfChanges.test(1, databaseState);
+                },
+            );
 
-            //     createResult = await createPages({ newPages, db });
-            //     getResult = await PageTable.getPages({ db });
-            //     expect(trimAndSort(createResult)).toMatchObject([
-            //         expectedCreatedPages[1],
-            //     ]);
-            //     expect(trimAndSort(getResult)).toMatchObject(
-            //         addFirstPage(expectedCreatedPages),
-            //     );
+            // testWithHistory(
+            //     "should fail to insert a page with duplicate start_beat",
+            //     async ({ db, beats }) => {
+            //         const firstPage: NewPageArgs[] = [
+            //             {
+            //                 start_beat: beats.expectedBeats[3].id,
+            //                 is_subset: false,
+            //                 notes: null,
+            //             },
+            //         ];
 
-            //     // NEW PAGE 3
-            //     newPages = [
-            //         {
-            //             start_beat: 16,
-            //             is_subset: false,
-            //             notes: "jeff notes",
-            //         },
-            //     ];
-            //     expectedCreatedPages = [
-            //         {
-            //             id: 1,
-            //             start_beat: 12,
-            //             is_subset: false,
-            //             notes: null,
-            //         },
-            //         {
-            //             id: 2,
-            //             start_beat: 15,
-            //             is_subset: true,
-            //             notes: null,
-            //         },
-            //         {
-            //             id: 3,
-            //             start_beat: 16,
-            //             is_subset: false,
-            //             notes: "jeff notes",
-            //         },
-            //     ];
-
-            //     createResult = await createPages({ newPages, db });
-            //     getResult = await PageTable.getPages({ db });
-            //     // expect(createResult.success).toBe(true);
-            //     expect(trimAndSort(createResult)).toEqual([
-            //         expectedCreatedPages[2],
-            //     ]);
-            //     expect(trimAndSort(getResult)).toEqual(
-            //         addFirstPage(expectedCreatedPages),
-            //     );
-            // });
-
-            // it("should fail to insert a page with duplicate start_beat", async () => {
-            //     const firstPage: NewPageArgs[] = [
-            //         {
-            //             start_beat: 5,
-            //             is_subset: false,
-            //             notes: null,
-            //         },
-            //     ];
-
-            //     // Insert first page successfully
-            //     await createPages({
-            //         newPages: firstPage,
-            //         db,
-            //     });
-
-            //     // Attempt to insert page with same start_beat
-            //     const duplicatePage: NewPageArgs[] = [
-            //         {
-            //             start_beat: 5,
-            //             is_subset: true,
-            //             notes: "This should fail",
-            //         },
-            //     ];
-            //     await expect(
-            //         createPages({
-            //             newPages: duplicatePage,
+            //         // Insert first page successfully
+            //         await createPages({
+            //             newPages: firstPage,
             //             db,
-            //         }),
-            //     ).rejects.toThrow();
-            // });
+            //         });
 
-            // it("should insert new pages at the start of the database with no previous page defined", async () => {
+            //         // Attempt to insert page with same start_beat
+            //         const duplicatePage: NewPageArgs[] = [
+            //             {
+            //                 start_beat: beats.expectedBeats[3].id,
+            //                 is_subset: true,
+            //                 notes: "This should fail",
+            //             },
+            //         ];
+            //         await expect(
+            //             createPages({
+            //                 newPages: duplicatePage,
+            //                 db,
+            //             }),
+            //         ).rejects.toThrow();
+            //     },
+            // );
+
+            // it("should insert new pages at the start of the database with no previous page defined", async ({db}) => {
             //     let newPages: NewPageArgs[] = [
             //         { start_beat: 12, is_subset: false },
             //     ];
@@ -259,10 +283,10 @@ describeDbTests("pages", (it) => {
             //         newPages,
             //         db,
             //     });
-            //     let getResult = await PageTable.getPages({ db });
+            //     let getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
-            //     expect(trimAndSort(createResult)).toEqual(expectedCreatedPages);
+            //     expect(createResult.map(subsetBooleanToInteger)).toEqual(expectedCreatedPages);
             //     expect(addFirstPage(createResult)).toEqual(
             //         trimAndSort(getResult),
             //     );
@@ -290,7 +314,7 @@ describeDbTests("pages", (it) => {
             //     ];
 
             //     createResult = await createPages({ newPages, db });
-            //     getResult = await PageTable.getPages({ db });
+            //     getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
             //     expect(trimAndSort(createResult)).toEqual([
@@ -330,7 +354,7 @@ describeDbTests("pages", (it) => {
             //     ];
 
             //     createResult = await createPages({ newPages, db });
-            //     getResult = await PageTable.getPages({ db });
+            //     getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
             //     expect(trimAndSort(createResult)).toEqual([
@@ -341,7 +365,7 @@ describeDbTests("pages", (it) => {
             //     );
             // });
 
-            // it("should insert new pages into the database at the same time", async () => {
+            // it("should insert new pages into the database at the same time", async ({db}) => {
             //     const newPages: NewPageArgs[] = [
             //         { start_beat: 12, is_subset: false },
             //         { start_beat: 10, is_subset: true },
@@ -376,7 +400,7 @@ describeDbTests("pages", (it) => {
             //         newPages,
             //         db,
             //     });
-            //     const getResult = await PageTable.getPages({ db });
+            //     const getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
             //     expect(trimAndSort(createResult)).toEqual(
@@ -387,7 +411,7 @@ describeDbTests("pages", (it) => {
             //     );
             // });
 
-            // it("should insert new pages into the middle of the database at the same time", async () => {
+            // it("should insert new pages into the middle of the database at the same time", async ({db}) => {
             //     let newPages: NewPageArgs[] = [
             //         { start_beat: 12, is_subset: false },
             //         { start_beat: 10, is_subset: true },
@@ -423,7 +447,7 @@ describeDbTests("pages", (it) => {
             //         newPages,
             //         db,
             //     });
-            //     let getResult = await PageTable.getPages({ db });
+            //     let getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
             //     let trimmedCreateData = createResult.map((page: any) => {
@@ -505,7 +529,7 @@ describeDbTests("pages", (it) => {
             //     ];
 
             //     createResult = await createPages({ newPages, db });
-            //     getResult = await PageTable.getPages({ db });
+            //     getResult = await getPages({ db });
 
             //     // expect(createResult.success).toBe(true);
             //     trimmedCreateData = createResult.map((page: any) => {
@@ -541,7 +565,7 @@ describeDbTests("pages", (it) => {
             //     );
             // });
 
-            // it("should also create marcherPages when marchers exist in the database", async () => {
+            // it("should also create marcherPages when marchers exist in the database", async ({db}) => {
             //     const marchers: NewMarcherArgs[] = [
             //         {
             //             name: "jeff",
@@ -662,7 +686,7 @@ describeDbTests("pages", (it) => {
             // });
 
             // describe("updatePages", () => {
-            //     it("updates multiple pages", async () => {
+            //     it("updates multiple pages", async ({db}) => {
             //         const newPages: NewPageArgs[] = [
             //             {
             //                 start_beat: 8,
@@ -781,7 +805,7 @@ describeDbTests("pages", (it) => {
             //             sort(expectedUpdatedPages),
             //         );
 
-            //         const allPages = await PageTable.getPages({ db });
+            //         const allPages = await getPages({ db });
             //         // expect(allPages.success).toBe(true);
             //         const trimmedAllData = allPages.map((page: any) => {
             //             const {
@@ -799,7 +823,7 @@ describeDbTests("pages", (it) => {
             //         );
             //     });
 
-            //     it("should not update values if it is undefined in the updatedPageArgs", async () => {
+            //     it("should not update values if it is undefined in the updatedPageArgs", async ({db}) => {
             //         const newPages: NewPageArgs[] = [
             //             { start_beat: 12, is_subset: true },
             //             { start_beat: 10, is_subset: true },
@@ -834,7 +858,7 @@ describeDbTests("pages", (it) => {
             //     });
         });
 
-        //     it.only("should fail to create pages with duplicate start_beat values", async () => {
+        //     it.only("should fail to create pages with duplicate start_beat values", async ({db}) => {
         //         const newPages: NewPageArgs[] = [
         //             { start_beat: 12, is_subset: true },
         //             { start_beat: 12, is_subset: false }, // Duplicate start_beat
@@ -845,7 +869,7 @@ describeDbTests("pages", (it) => {
         //         ).toThrowError();
         //     });
 
-        //     it("should fail to update page with existing start_beat value", async () => {
+        //     it("should fail to update page with existing start_beat value", async ({db}) => {
         //         const newPages: NewPageArgs[] = [
         //             { start_beat: 12, is_subset: true },
         //             { start_beat: 14, is_subset: true },
@@ -867,7 +891,7 @@ describeDbTests("pages", (it) => {
         //         expect(updateResult.error).toBeDefined();
         //     });
 
-        //     it("should fail to update the first page", async () => {
+        //     it("should fail to update the first page", async ({db}) => {
         //         const updateFirstBeat = () => {
         //             db.update(schema.pages)
         //                 .set({ is_subset: 1 })
@@ -877,7 +901,7 @@ describeDbTests("pages", (it) => {
         //         expect(updateFirstBeat).toThrow();
         //     });
 
-        //     it("should not fail to update the first page's notes", async () => {
+        //     it("should not fail to update the first page's notes", async ({db}) => {
         //         const updateFirstBeat = () => {
         //             db.update(schema.pages)
         //                 .set({ notes: "test" })
@@ -885,7 +909,7 @@ describeDbTests("pages", (it) => {
         //                 .run();
         //         };
         //         expect(updateFirstBeat).not.toThrow();
-        //         const getResult = await PageTable.getPages({ db });
+        //         const getResult = await getPages({ db });
         //         // expect(getResult.success).toBe(true);
         //         const firstPage = getResult.find(
         //             (page) => page.id === FIRST_PAGE_ID,
@@ -894,7 +918,7 @@ describeDbTests("pages", (it) => {
         //     });
 
         //     describe("deletePage", () => {
-        //         it("should delete a page by id from the database", async () => {
+        //         it("should delete a page by id from the database", async ({db}) => {
         //             const newPages: NewPageArgs[] = [
         //                 {
         //                     start_beat: 16,
@@ -927,7 +951,7 @@ describeDbTests("pages", (it) => {
         //             ];
 
         //             const createResult = await createPages({ newPages, db });
-        //             const getResult = await PageTable.getPages({ db });
+        //             const getResult = await getPages({ db });
 
         //             // expect(createResult.success).toBe(true);
         //             expect(trimAndSort(getResult)).toEqual(
@@ -973,13 +997,13 @@ describeDbTests("pages", (it) => {
         //                 },
         //             );
         //             expect(trimmedDeleteData).toEqual([expectedDeletedPage]);
-        //             const allPages = await PageTable.getPages({ db });
+        //             const allPages = await getPages({ db });
         //             // expect(allPages.success).toBe(true);
         //             expect(trimAndSort(allPages)).toEqual(
         //                 addFirstPage(expectedPages),
         //             );
         //         });
-        //         it("should delete multiple pages by id from the database", async () => {
+        //         it("should delete multiple pages by id from the database", async ({db}) => {
         //             const newPages: NewPageArgs[] = [
         //                 { start_beat: 12, is_subset: false },
         //                 { start_beat: 10, is_subset: true },
@@ -1097,14 +1121,14 @@ describeDbTests("pages", (it) => {
         //             expect(trimData(deletePageResponse)).toEqual(
         //                 trimData(expectedDeletedPages),
         //             );
-        //             const allPages = await PageTable.getPages({ db });
+        //             const allPages = await getPages({ db });
         //             // expect(allPages.success).toBe(true);
         //             expect(trimAndSort(allPages)).toEqual(
         //                 addFirstPage(expectedPages),
         //             );
         //         });
 
-        //         it("should delete pages and their associated marcherPages", async () => {
+        //         it("should delete pages and their associated marcherPages", async ({db}) => {
         //             const marchers: NewMarcherArgs[] = [
         //                 {
         //                     name: "jeff",
@@ -1267,7 +1291,7 @@ describeDbTests("pages", (it) => {
         //             expect(trimData(deletePageResponse)).toEqual(
         //                 trimData(expectedDeletedPages),
         //             );
-        //             const allPages = await PageTable.getPages({ db });
+        //             const allPages = await getPages({ db });
         //             // expect(allPages.success).toBe(true);
         //             expect(trimAndSort(allPages)).toEqual(
         //                 addFirstPage(expectedPages),
@@ -1336,8 +1360,8 @@ describeDbTests("pages", (it) => {
         //         db = await initTestDatabase();
         //     });
         //     describe("CreatePages", () => {
-        //         describe("without any marchers", async () => {
-        //             it("should undo and redo a single created page correctly", async () => {
+        //         describe("without any marchers", async ({db}) => {
+        //             it("should undo and redo a single created page correctly", async ({db}) => {
         //                 const newPage: NewPageArgs = {
         //                     start_beat: 12,
         //                     is_subset: false,
@@ -1360,7 +1384,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the page is no longer in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(1);
 
@@ -1369,7 +1393,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the page is back in the database
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(getPagesAfterRedo.length).toBe(2);
         //                 const redonePage = sort(getPagesAfterRedo)[1];
@@ -1381,12 +1405,12 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the page is no longer in the database
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(getPagesAfterUndo2.length).toBe(1);
         //             });
 
-        //             it("should undo and redo multiple created pages correctly", async () => {
+        //             it("should undo and redo multiple created pages correctly", async ({db}) => {
         //                 const newPages: NewPageArgs[] = [
         //                     {
         //                         start_beat: 16,
@@ -1422,7 +1446,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the pages are no longer in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(1);
 
@@ -1431,7 +1455,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the pages are back in the database
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(getPagesAfterRedo.length).toBe(4);
         //                 const redonePages = getPagesAfterRedo.filter(
@@ -1450,12 +1474,12 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the pages are no longer in the database
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(getPagesAfterUndo2.length).toBe(1);
         //             });
 
-        //             it("can undo, redo, and undo the creation of multiple pages while other pages exist in the database", async () => {
+        //             it("can undo, redo, and undo the creation of multiple pages while other pages exist in the database", async ({db}) => {
         //                 const existingPages: NewPageArgs[] = [
         //                     { start_beat: 5, is_subset: false },
         //                     { start_beat: 8, is_subset: true },
@@ -1504,7 +1528,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the new pages are no longer in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(3);
 
@@ -1513,7 +1537,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the new pages are back in the database
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(getPagesAfterRedo.length).toBe(6);
         //                 const redonePages = getPagesAfterRedo
@@ -1532,13 +1556,13 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the new pages are no longer in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(getPagesAfterUndo2.length).toBe(3);
         //             });
         //         });
-        //         describe("with marchers", async () => {
-        //             it("should undo, redo, and undo the creation of a single page and the associated marcher pages when 3 marchers exist", async () => {
+        //         describe("with marchers", async ({db}) => {
+        //             it("should undo, redo, and undo the creation of a single page and the associated marcher pages when 3 marchers exist", async ({db}) => {
         //                 const marchers: NewMarcherArgs[] = [
         //                     {
         //                         name: "jeff",
@@ -1598,7 +1622,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the page and marcher pages are no longer in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(1);
 
@@ -1612,7 +1636,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the page and marcher pages are back in the database
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(getPagesAfterRedo.length).toBe(2);
         //                 const redonePage = getPagesAfterRedo.filter(
@@ -1631,7 +1655,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the page and marcher pages are no longer in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -1645,7 +1669,7 @@ describeDbTests("pages", (it) => {
         //                 expect(marcherPagesAfterUndo2.length).toBe(3);
         //             });
 
-        //             it("should undo, redo, and undo the creation of multiple pages and the associated marcher pages when 3 marchers exist", async () => {
+        //             it("should undo, redo, and undo the creation of multiple pages and the associated marcher pages when 3 marchers exist", async ({db}) => {
         //                 const marchers: NewMarcherArgs[] = [
         //                     {
         //                         name: "jeff",
@@ -1717,7 +1741,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are no longer in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(1);
 
@@ -1731,7 +1755,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are back in the database
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -1759,7 +1783,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are no longer in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -1776,7 +1800,7 @@ describeDbTests("pages", (it) => {
         //     });
 
         //     describe("updatePages", () => {
-        //         it("can undo, redo, and undo the updating of a single page", async () => {
+        //         it("can undo, redo, and undo the updating of a single page", async ({db}) => {
         //             const newPage: NewPageArgs = {
         //                 start_beat: 12,
         //                 is_subset: false,
@@ -1820,7 +1844,7 @@ describeDbTests("pages", (it) => {
         //             // expect(undoResult.success).toBe(true);
 
         //             // Verify the page is reverted to its original state
-        //             const getPagesAfterUndo = await PageTable.getPages({ db });
+        //             const getPagesAfterUndo = await getPages({ db });
         //             // expect(getPagesAfterUndo.success).toBe(true);
         //             expect(getPagesAfterUndo.length).toBe(2);
         //             const revertedPage = getPagesAfterUndo.filter(
@@ -1835,7 +1859,7 @@ describeDbTests("pages", (it) => {
         //             // expect(redoResult.success).toBe(true);
 
         //             // Verify the page is updated again
-        //             const getPagesAfterRedo = await PageTable.getPages({ db });
+        //             const getPagesAfterRedo = await getPages({ db });
         //             // expect(getPagesAfterRedo.success).toBe(true);
         //             expect(
         //                 getPagesAfterRedo.filter((p) => p.id !== FIRST_PAGE_ID)
@@ -1853,7 +1877,7 @@ describeDbTests("pages", (it) => {
         //             // expect(undoResult2.success).toBe(true);
 
         //             // Verify the page is reverted to its original state again
-        //             const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //             const getPagesAfterUndo2 = await getPages({ db });
         //             // expect(getPagesAfterUndo2.success).toBe(true);
         //             expect(
         //                 getPagesAfterUndo2.filter(
@@ -1867,7 +1891,7 @@ describeDbTests("pages", (it) => {
         //             expect(revertedPage2.is_subset).toBe(false);
         //             expect(revertedPage2.notes).toBeNull();
         //         });
-        //         it("can undo, redo, and undo the updating of multiple pages at once", async () => {
+        //         it("can undo, redo, and undo the updating of multiple pages at once", async ({db}) => {
         //             const newPages: NewPageArgs[] = [
         //                 {
         //                     start_beat: 16,
@@ -1938,7 +1962,7 @@ describeDbTests("pages", (it) => {
         //             // expect(undoResult.success).toBe(true);
 
         //             // Verify the pages are reverted to their original state
-        //             const getPagesAfterUndo = await PageTable.getPages({ db });
+        //             const getPagesAfterUndo = await getPages({ db });
         //             // expect(getPagesAfterUndo.success).toBe(true);
         //             expect(getPagesAfterUndo.length).toBe(4);
         //             const revertedPages = getPagesAfterUndo.filter(
@@ -1959,7 +1983,7 @@ describeDbTests("pages", (it) => {
         //             // expect(redoResult.success).toBe(true);
 
         //             // Verify the pages are updated again
-        //             const getPagesAfterRedo = await PageTable.getPages({ db });
+        //             const getPagesAfterRedo = await getPages({ db });
         //             // expect(getPagesAfterRedo.success).toBe(true);
         //             expect(
         //                 getPagesAfterRedo.filter((p) => p.id !== FIRST_PAGE_ID)
@@ -1983,7 +2007,7 @@ describeDbTests("pages", (it) => {
         //             // expect(undoResult2.success).toBe(true);
 
         //             // Verify the pages are reverted to their original state again
-        //             const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //             const getPagesAfterUndo2 = await getPages({ db });
         //             // expect(getPagesAfterUndo2.success).toBe(true);
         //             expect(
         //                 getPagesAfterUndo2.filter(
@@ -2006,8 +2030,8 @@ describeDbTests("pages", (it) => {
         //     });
 
         //     describe("deletePages", () => {
-        //         describe("without any marchers", async () => {
-        //             it("should undo, redo, and undo a single page being deleted", async () => {
+        //         describe("without any marchers", async ({db}) => {
+        //             it("should undo, redo, and undo a single page being deleted", async ({db}) => {
         //                 const newPage: NewPageArgs = {
         //                     start_beat: 12,
         //                     is_subset: false,
@@ -2042,7 +2066,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the page is back in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(2);
         //                 const undonePage = getPagesAfterUndo.filter(
@@ -2056,7 +2080,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the page is deleted again
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -2069,7 +2093,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the page is back in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -2083,7 +2107,7 @@ describeDbTests("pages", (it) => {
         //                 expect(undonePage2.is_subset).toBe(false);
         //             });
 
-        //             it("should undo, redo, and undo multiple pages being deleted", async () => {
+        //             it("should undo, redo, and undo multiple pages being deleted", async ({db}) => {
         //                 const newPages: NewPageArgs[] = [
         //                     { start_beat: 12, is_subset: false },
         //                     { start_beat: 10, is_subset: true },
@@ -2125,7 +2149,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the pages are back in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(4);
         //                 const undonePages = getPagesAfterUndo.filter(
@@ -2140,7 +2164,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the pages are deleted again
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -2153,7 +2177,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the pages are back in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -2168,7 +2192,7 @@ describeDbTests("pages", (it) => {
         //                 );
         //             });
 
-        //             it("should undo, redo, and undo multiple pages being deleted while other pages already exist", async () => {
+        //             it("should undo, redo, and undo multiple pages being deleted while other pages already exist", async ({db}) => {
         //                 const existingPages: NewPageArgs[] = [
         //                     { start_beat: 5, is_subset: false },
         //                     { start_beat: 8, is_subset: true },
@@ -2223,7 +2247,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the new pages are back in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(getPagesAfterUndo.length).toBe(6);
         //                 const undonePages = getPagesAfterUndo
@@ -2238,7 +2262,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the new pages are deleted again
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -2251,7 +2275,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the new pages are back in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -2267,8 +2291,8 @@ describeDbTests("pages", (it) => {
         //             });
         //         });
 
-        //         describe("with marchers", async () => {
-        //             it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers exist", async () => {
+        //         describe("with marchers", async ({db}) => {
+        //             it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers exist", async ({db}) => {
         //                 const marchers: NewMarcherArgs[] = [
         //                     {
         //                         name: "jeff",
@@ -2352,7 +2376,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are back in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo.filter(
@@ -2376,7 +2400,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are deleted again
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -2394,7 +2418,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are back in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -2414,7 +2438,7 @@ describeDbTests("pages", (it) => {
         //                 expect(marcherPagesAfterUndo2.length).toBe(12);
         //             });
 
-        //             it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers and pages exist", async () => {
+        //             it("should undo, redo, and undo the deletion of multiple pages and their MarcherPages when marchers and pages exist", async ({db}) => {
         //                 const marchers: NewMarcherArgs[] = [
         //                     {
         //                         name: "jeff",
@@ -2498,7 +2522,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are back in the database
-        //                 const getPagesAfterUndo = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo = await getPages({ db });
         //                 // expect(getPagesAfterUndo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo.filter(
@@ -2522,7 +2546,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(redoResult.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are deleted again
-        //                 const getPagesAfterRedo = await PageTable.getPages({ db });
+        //                 const getPagesAfterRedo = await getPages({ db });
         //                 // expect(getPagesAfterRedo.success).toBe(true);
         //                 expect(
         //                     getPagesAfterRedo.filter(
@@ -2540,7 +2564,7 @@ describeDbTests("pages", (it) => {
         //                 // expect(undoResult2.success).toBe(true);
 
         //                 // Verify the pages and marcher pages are back in the database again
-        //                 const getPagesAfterUndo2 = await PageTable.getPages({ db });
+        //                 const getPagesAfterUndo2 = await getPages({ db });
         //                 // expect(getPagesAfterUndo2.success).toBe(true);
         //                 expect(
         //                     getPagesAfterUndo2.filter(
@@ -2570,7 +2594,7 @@ describeDbTests("pages", (it) => {
         //         db = await initTestDatabase();
         //     });
 
-        //     it("should update the last page counts in the utility record", async () => {
+        //     it("should update the last page counts in the utility record", async ({db}) => {
         //         // Initial value should be default (likely 0 or null)
         //         const initialUtilityRecord = UtilityTable.getUtilityRecord({ db });
         //         // expect(initialUtilityRecord.success).toBe(true);
@@ -2594,7 +2618,7 @@ describeDbTests("pages", (it) => {
         //         );
         //     });
 
-        //     it("should update the last page counts with a different value", async () => {
+        //     it("should update the last page counts with a different value", async ({db}) => {
         //         // Update with an initial value
         //         PageTable.updateLastPageCounts({
         //             db,
@@ -2620,7 +2644,7 @@ describeDbTests("pages", (it) => {
         //         );
         //     });
 
-        //     it("should not use the next undo group", async () => {
+        //     it("should not use the next undo group", async ({db}) => {
         //         // Get the current undo group
         //         const initialUndoGroup = History.incrementUndoGroup(db);
 

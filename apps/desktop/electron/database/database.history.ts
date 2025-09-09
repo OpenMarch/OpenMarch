@@ -340,13 +340,13 @@ async function createTriggers(
     type: HistoryType,
     deleteRedoRows: boolean = true,
 ) {
-    const forbiddenTables: string[] = [
+    const forbiddenTables = new Set<string>([
         Constants.UndoHistoryTableName,
         Constants.RedoHistoryTableName,
         Constants.HistoryStatsTableName,
-    ];
+    ]);
 
-    if (forbiddenTables.includes(tableName))
+    if (forbiddenTables.has(tableName))
         throw new Error(
             `Cannot create triggers for ${tableName} as it is a forbidden table`,
         );
@@ -427,6 +427,19 @@ const switchTriggerMode = async (
     tableNames?: Set<string>,
 ) => {
     console.log(`------ Switching triggers to ${mode} mode ------`);
+    // assert that the table names, if provided, are all valid tables in the database
+    if (tableNames) {
+        for (const tableName of tableNames) {
+            const table = await db.get(
+                sql.raw(
+                    `SELECT * FROM sqlite_master WHERE name='${tableName}'`,
+                ),
+            );
+            if (!table) {
+                throw new Error(`Table ${tableName} does not exist`);
+            }
+        }
+    }
     let sqlQuery = `SELECT * FROM sqlite_master WHERE type='trigger' AND ("name" LIKE '%$_ut' ESCAPE '$' OR "name" LIKE  '%$_it' ESCAPE '$' OR "name" LIKE  '%$_dt' ESCAPE '$')`;
     if (tableNames) {
         sqlQuery += ` AND tbl_name IN (${Array.from(tableNames)
@@ -435,12 +448,14 @@ const switchTriggerMode = async (
     }
     sqlQuery += ";";
     // TODO TEST THIS
-    const triggers = (await db.all(sql.raw(sqlQuery))) as {
+    const existingTriggers = (await db.all(sql.raw(sqlQuery))) as {
         name: string;
         tbl_name: string;
     }[];
-    const tables = new Set(triggers.map((t) => t.tbl_name));
-    for (const trigger of triggers) {
+    const tables = tableNames
+        ? new Set(tableNames)
+        : new Set(existingTriggers.map((t) => t.tbl_name));
+    for (const trigger of existingTriggers) {
         await db.run(sql.raw(`DROP TRIGGER IF EXISTS ${trigger.name};`));
     }
     for (const table of tables) {
@@ -529,13 +544,13 @@ async function executeHistoryAction(
 
         /// Execute all of the SQL statements in the current history group
         for (const sqlStatement of sqlStatements) {
-            await db.run(sql.raw(sqlStatement));
+            await db.run(sqlStatement);
         }
 
         // Re-enable foreign key checks
         await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
 
-        // Delete all of the SQL statements in the current undo group
+        // Delete all of the SQL statements in the current history group
         await db.run(
             sql.raw(`
             DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
