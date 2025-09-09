@@ -56,11 +56,6 @@ export const transactionWithHistory = async <T>(
             // Execute the function
             const result = await func(tx);
 
-            const historyRows = await tx
-                .select()
-                .from(schema.history_undo)
-                .all();
-            console.log("historyRows", historyRows);
             const groupAfter = (
                 await tx
                     .select({ max: max(schema.history_undo.history_group) })

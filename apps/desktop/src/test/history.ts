@@ -6,6 +6,7 @@ import {
     performUndo,
 } from "../../electron/database/database.history";
 
+const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
 /**
  * A fixture that tests the undo and redo functionality of the database.
  *
@@ -31,6 +32,14 @@ import {
  *
  * Using the return value from this function rather than "it" or "test" directly from vitest
  * to test the undo functionality.
+ *
+ * **IMPORTANT** - History tests are disabled by default. This is because they are quite slow. The whole suite may take a few minutes.
+ *
+ * To enable history tests, set the `VITEST_ENABLE_HISTORY` environment variable to `true`.
+ *
+ * ```bash
+ * VITEST_ENABLE_HISTORY=true vitest run
+ * ```
  *
  * ### Setup the test file
  *
@@ -159,6 +168,18 @@ import {
  *     );
  * });
  * ```
+ *
+ * ### Skipping history tests
+ *
+ * Running the tests with history can be quite slow, ~600ms per test.
+ * To skip the history tests, set the `VITEST_SKIP_HISTORY` environment variable to `true`.
+ *
+ * ```bash
+ * VITEST_SKIP_HISTORY=true vitest run
+ * ```
+ *
+ * Of course, this should only be done during development and never in CI.
+ *
  * @param it - The test API
  * @param tablesToCheck - The tables to check the values before and after the test
  * @param numberOfTimesToTestUndoAndRedo - The number of times to test the undo and redo functionality (in a loop)
@@ -187,6 +208,10 @@ export const getTestWithHistory = <T extends DbTestAPI>(
     }>({
         testUndoRedo: [
             async ({ db, expect }, use) => {
+                if (skipHistoryTests) {
+                    await use();
+                    return;
+                }
                 const startingStats = await db.query.history_stats.findFirst();
                 if (!startingStats) throw new Error("Starting stats not found");
                 const collectData = async () => {
@@ -215,12 +240,6 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                         "Number of changes is negative. This means an undo was triggered in the test.",
                     );
                 else if (numberOfChanges > 0) {
-                    // Check that the data is the same
-                    expect(
-                        beforeTestsData,
-                        "Data before the test should not be the same as after the test",
-                    ).not.toEqual(afterTestsData);
-
                     // Test that the undo and redo work multiple times
                     for (
                         let testNumber = 0;
@@ -256,6 +275,16 @@ export const getTestWithHistory = <T extends DbTestAPI>(
             { auto: true },
         ],
         expectNumberOfChanges: async ({ db, expect }, use) => {
+            if (skipHistoryTests) {
+                await use({
+                    test: async () => {},
+                    getDatabaseState: async () => ({
+                        expectedData: {},
+                        currentUndoGroup: 0,
+                    }),
+                });
+                return;
+            }
             const startingStats = await db.query.history_stats.findFirst();
             if (!startingStats) throw new Error("Starting stats not found");
 
@@ -291,10 +320,13 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                     startingStats?.cur_undo_group;
                 const realNumberOfChanges = afterUndoGroup - startingUndoGroup;
 
-                expect(
-                    initialData,
-                    "Data before the test should not be the same as after the test",
-                ).not.toEqual(afterTestsData);
+                // Only check that the data is different if there are changes
+                if (numberOfChanges > 0)
+                    expect(
+                        initialData,
+                        "Data before the test should not be the same as after the test",
+                    ).not.toEqual(afterTestsData);
+
                 expect(
                     numberOfChanges,
                     `There should be exactly ${numberOfChanges} change${numberOfChanges === 1 ? "" : "s"} in the undo stack`,

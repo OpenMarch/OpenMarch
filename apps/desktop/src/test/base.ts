@@ -83,6 +83,8 @@ const loadSqlIntoDatabase = async (
     db.close();
 };
 
+/********* FIXTURES *********/
+
 type beats = {
     expectedBeats: (typeof schema.beats.$inferSelect)[];
 };
@@ -94,11 +96,18 @@ type marchersAndPages = {
     expectedMarcherPages: (typeof schema.marcher_pages.$inferSelect)[];
 };
 
+type marchers = {
+    expectedMarchers: (typeof schema.marchers.$inferSelect)[];
+};
+
 type BaseApi = {
     setupDb: void;
     marchersAndPages: marchersAndPages;
     beats: beats;
+    marchers: marchers;
 };
+
+/********* END FIXTURES *********/
 
 type DbTestAPI = {
     db: DbConnection;
@@ -153,6 +162,10 @@ const baseFixture = baseTest.extend<BaseApi>({
     marchersAndPages: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "marchers-and-pages.sql");
         await use(mockData as unknown as marchersAndPages);
+    },
+    marchers: async ({ task }, use) => {
+        await loadSqlIntoDatabase(task, "marchers.sql");
+        await use(mockData as unknown as marchers);
     },
 });
 
@@ -239,11 +252,20 @@ const describeDbTests = (
         dbType: "sql-js" | "better-sqlite3",
     ) => void,
 ) => {
+    // Better-sqlite is disabled by default just to remove redundancy. It is run in CI.
+    // Feel free to enable it by setting the `VITEST_ENABLE_BETTER_SQLITE` environment variable to `true`.
+    const runBetterSqliteTests =
+        process.env.VITEST_ENABLE_BETTER_SQLITE === "true";
+    if (runBetterSqliteTests)
+        describe("better-sqlite3", () => {
+            tests(betterSqliteTest, "better-sqlite3");
+        });
+    else
+        describe.skip("better-sqlite3", () => {
+            tests(betterSqliteTest, "better-sqlite3");
+        });
     describe("sql-js", () => {
         tests(sqlJsTest, "sql-js");
-    });
-    describe("better-sqlite3", () => {
-        tests(betterSqliteTest, "better-sqlite3");
     });
 };
 
