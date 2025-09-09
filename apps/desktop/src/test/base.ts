@@ -125,7 +125,7 @@ const baseFixture = baseTest.extend<BaseApi>({
                 const { orm, db } = await getTempDb(task);
 
                 await db.exec(`
-                    INSERT INTO history_stats (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 0, 0, 500);
+                    INSERT INTO history_stats (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 1, 1, 500);
                 `);
                 const updatedDbBuffer = db.export();
 
@@ -239,9 +239,9 @@ const describeDbTests = (
         dbType: "sql-js" | "better-sqlite3",
     ) => void,
 ) => {
-    // describe("sql-js", () => {
-    //     tests(sqlJsTest, "sql-js");
-    // });
+    describe("sql-js", () => {
+        tests(sqlJsTest, "sql-js");
+    });
     describe("better-sqlite3", () => {
         tests(betterSqliteTest, "better-sqlite3");
     });
