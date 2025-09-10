@@ -1,6 +1,13 @@
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
+/**
+ * ENVIRONMENT VARIABLES
+ *
+ * VITEST_ENABLE_BETTER_SQLITE - Enable better-sqlite3 database driver
+ * VITEST_ENABLE_HISTORY - Enable history reporter (Tests undo/redo functionality at the cost of much slower tests)
+ */
+
 export default defineConfig({
     resolve: {
         alias: {
