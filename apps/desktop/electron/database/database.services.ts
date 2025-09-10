@@ -7,11 +7,7 @@ import * as Utilities from "./utilities";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
-import * as MarcherTable from "./tables/MarcherTable";
-import * as PageTable from "./tables/PageTable";
-import * as MarcherPageTable from "./tables/MarcherPageTable";
 import { DatabaseResponse } from "./DatabaseActions";
-import { DatabaseMarcher } from "../../src/global/classes/Marcher";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
@@ -242,62 +238,8 @@ export function initHandlers() {
     ipcMain.handle("sql:proxy", handleSqlProxy);
 
     // File IO handlers located in electron/main/index.ts
-    // Marcher
-    ipcMain.handle("marcher:getAll", async () =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.getMarchers, {}),
-    );
-    ipcMain.handle("marcher:insert", async (_, args) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.createMarchers, {
-            newMarchers: args,
-        }),
-    );
-    ipcMain.handle("marcher:update", async (_, args) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.updateMarchers, {
-            modifiedMarchers: args,
-        }),
-    );
-    ipcMain.handle("marcher:delete", async (_, marcherIds) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.deleteMarchers, {
-            marcherIds,
-        }),
-    );
-
-    // MarcherPage
-    ipcMain.handle("marcher_page:getAll", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPages, args),
-    );
-    ipcMain.handle("marcher_page:get", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPage, args),
-    );
-    ipcMain.handle("marcher_page:update", async (_, args) =>
-        connectWrapper(MarcherPageTable.updateMarcherPages, {
-            marcherPageUpdates: args,
-        }),
-    );
 
     // **** Timing Objects ****
-
-    // Page
-    ipcMain.handle("page:getAll", async () =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
-    );
-    ipcMain.handle("page:insert", async (_, args) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
-            newPages: args,
-        }),
-    );
-    ipcMain.handle(
-        "page:update",
-        async (_, pages: PageTable.ModifiedPageArgs[]) =>
-            connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
-                modifiedPages: pages,
-            }),
-    );
-    ipcMain.handle("page:delete", async (_, pageIds) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
-            pageIds,
-        }),
-    );
 
     // Beats
     ipcMain.handle("beat:getAll", async () =>
@@ -843,8 +785,6 @@ async function updateAudioFiles(
 async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
     const db = connect();
     try {
-        History.incrementUndoGroup(db);
-
         const wasSelectedStmt = db.prepare(
             `SELECT selected FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
         );
@@ -865,7 +805,6 @@ async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
         console.error(error);
         throw error;
     } finally {
-        History.incrementUndoGroup(db);
         db.close();
     }
 
