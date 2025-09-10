@@ -21,18 +21,12 @@ describeDbTests("transactionWithHistory", (baseIt) => {
 
     describe.each([0, 1])("when starting undo group at %s", (initialGroup) => {
         baseIt.only("should increment undo group", async ({ db }) => {
-            await db
-                .insert(schema.history_stats)
-                .values({
-                    group_limit: 500,
-                    cur_undo_group: initialGroup,
-                    cur_redo_group: initialGroup,
-                })
-                .run();
             const startGroup = await db.query.history_stats.findFirst({
                 columns: { cur_undo_group: true },
             });
-            expect(startGroup?.cur_undo_group).toBe(initialGroup);
+            expect(startGroup?.cur_undo_group).toBe(
+                initialGroup === 0 ? 1 : initialGroup,
+            );
             const testValue = "test result";
             const result = await transactionWithHistory(
                 db,

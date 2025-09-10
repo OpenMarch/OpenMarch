@@ -106,7 +106,6 @@ export const pages = sqliteTable(
         /** The ID of the beat this page starts on */
         start_beat: integer()
             .notNull()
-            .unique()
             .references(() => beats.id),
     },
     (table) => [
