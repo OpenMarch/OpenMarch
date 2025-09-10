@@ -1,13 +1,5 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import {
-    DatabaseMarcher,
-    ModifiedMarcherArgs,
-    NewMarcherArgs,
-} from "@/global/classes/Marcher";
-import MarcherPage, {
-    DatabaseMarcherPage,
-    ModifiedMarcherPageArgs,
-} from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
@@ -17,11 +9,6 @@ import {
     NewBeatArgs,
     ModifiedBeatArgs,
 } from "electron/database/tables/BeatTable";
-import {
-    DatabasePage,
-    ModifiedPageArgs,
-    NewPageArgs,
-} from "electron/database/tables/PageTable";
 import {
     ModifiedShapePageMarcherArgs,
     NewShapePageMarcherArgs,
@@ -296,68 +283,7 @@ const APP_API = {
     removeImportFieldPropertiesFileListener: () =>
         ipcRenderer.removeAllListeners("field_properties:onImport"),
 
-    // Marcher
-    /**
-     * @returns A serialized array of all marchers in the database.
-     * This means you must call `new Marcher(marcher)` on each marcher or else the instance methods will not work.
-     */
-    getMarchers: () =>
-        ipcRenderer.invoke("marcher:getAll") as Promise<
-            DatabaseResponse<DatabaseMarcher[]>
-        >,
-    createMarchers: (newMarchers: NewMarcherArgs[]) =>
-        ipcRenderer.invoke("marcher:insert", newMarchers) as Promise<
-            DatabaseResponse<DatabaseMarcher[]>
-        >,
-    updateMarchers: (modifiedMarchers: ModifiedMarcherArgs[]) =>
-        ipcRenderer.invoke("marcher:update", modifiedMarchers) as Promise<
-            DatabaseResponse<DatabaseMarcher[]>
-        >,
-    deleteMarchers: (marcherIds: Set<number>) =>
-        ipcRenderer.invoke("marcher:delete", marcherIds) as Promise<
-            DatabaseResponse<DatabaseMarcher[]>
-        >,
-
-    // MarcherPage
-    getMarcherPages: (args: { marcher_id?: number; page_id?: number }) =>
-        ipcRenderer.invoke("marcher_page:getAll", args) as Promise<
-            DatabaseResponse<DatabaseMarcherPage[]>
-        >,
-    getMarcherPage: (id: { marcher_id: number; page_id: number }) =>
-        ipcRenderer.invoke("marcher_page:get", id) as Promise<
-            DatabaseResponse<DatabaseMarcherPage>
-        >,
-    updateMarcherPages: (args: ModifiedMarcherPageArgs[]) =>
-        ipcRenderer.invoke("marcher_page:update", args) as Promise<
-            DatabaseResponse<DatabaseMarcherPage>
-        >,
-
     // **** Timing Objects ****
-
-    // Page
-    getPages: () =>
-        ipcRenderer.invoke("page:getAll") as Promise<
-            DatabaseResponse<DatabasePage[]>
-        >,
-    createPages: (pages: NewPageArgs[]) =>
-        ipcRenderer.invoke("page:insert", pages) as Promise<
-            DatabaseResponse<DatabasePage[]>
-        >,
-    updatePages: (
-        modifiedPages: ModifiedPageArgs[],
-        addToHistoryQueue?: boolean,
-        updateInReverse?: boolean,
-    ) =>
-        ipcRenderer.invoke(
-            "page:update",
-            modifiedPages,
-            addToHistoryQueue,
-            updateInReverse,
-        ) as Promise<DatabaseResponse<DatabasePage[]>>,
-    deletePages: (pageIds: Set<number>) =>
-        ipcRenderer.invoke("page:delete", pageIds) as Promise<
-            DatabaseResponse<DatabasePage[]>
-        >,
 
     // Beat
     getBeats: () =>
