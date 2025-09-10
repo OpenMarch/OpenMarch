@@ -350,6 +350,18 @@ export async function updatePages({
     return transactionResult;
 }
 
+const filterOutFirstPage = (pageIds: Set<number>): Set<number> => {
+    if (pageIds.has(FIRST_PAGE_ID)) {
+        console.warn(
+            "Attempting to delete the first page (ID: " +
+                FIRST_PAGE_ID +
+                "), which is not allowed. Filtering it out.",
+        );
+        pageIds.delete(FIRST_PAGE_ID);
+    }
+    return pageIds;
+};
+
 const deletePagesInTransaction = async ({
     pageIds,
     tx,
@@ -357,7 +369,8 @@ const deletePagesInTransaction = async ({
     pageIds: Set<number>;
     tx: DbTransaction;
 }): Promise<DatabasePage[]> => {
-    pageIds.delete(FIRST_PAGE_ID);
+    pageIds = filterOutFirstPage(pageIds);
+    if (pageIds.size === 0) return [];
     const deletedPages = await tx
         .delete(schema.pages)
         .where(inArray(schema.pages.id, Array.from(pageIds)))
@@ -379,6 +392,8 @@ export async function deletePages({
     pageIds: Set<number>;
     db: DbConnection;
 }): Promise<DatabasePage[]> {
+    pageIds = filterOutFirstPage(pageIds);
+    if (pageIds.size === 0) return [];
     // Ensure the first page is not deleted
     const response = await transactionWithHistory(
         db,

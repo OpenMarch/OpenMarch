@@ -6,7 +6,10 @@ import Database, { RunResult } from "better-sqlite3";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
-import * as mockData from "./mock-data/marchers-and-pages.mjs";
+import * as mockDataMarchersAndPages from "./mock-data/marchers-and-pages.mjs";
+import * as mockDataMarchers from "./mock-data/marchers.mjs";
+import * as mockDataPages from "./mock-data/pages.mjs";
+import * as mockDataBeats from "./mock-data/beats.mjs";
 import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import {
@@ -84,26 +87,55 @@ const loadSqlIntoDatabase = async (
 };
 
 /********* FIXTURES *********/
-
 type beats = {
-    expectedBeats: (typeof schema.beats.$inferSelect)[];
+    expectedBeats: Omit<
+        typeof schema.beats.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
+};
+
+type pages = {
+    expectedBeats: Omit<
+        typeof schema.beats.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
+    expectedPages: Omit<
+        typeof schema.pages.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
 };
 
 type marchersAndPages = {
-    expectedBeats: (typeof schema.beats.$inferSelect)[];
-    expectedMarchers: (typeof schema.marchers.$inferSelect)[];
-    expectedPages: (typeof schema.pages.$inferSelect)[];
-    expectedMarcherPages: (typeof schema.marcher_pages.$inferSelect)[];
+    expectedBeats: Omit<
+        typeof schema.beats.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
+    expectedMarchers: Omit<
+        typeof schema.marchers.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
+    expectedPages: Omit<
+        typeof schema.pages.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
+    expectedMarcherPages: Omit<
+        typeof schema.marcher_pages.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
 };
 
 type marchers = {
-    expectedMarchers: (typeof schema.marchers.$inferSelect)[];
+    expectedMarchers: Omit<
+        typeof schema.marchers.$inferSelect,
+        "created_at" | "updated_at"
+    >[];
 };
 
 type BaseApi = {
     setupDb: void;
     marchersAndPages: marchersAndPages;
     beats: beats;
+    pages: pages;
     marchers: marchers;
 };
 
@@ -136,9 +168,11 @@ const baseFixture = baseTest.extend<BaseApi>({
                 await db.exec(`
                     INSERT INTO history_stats (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 1, 1, 500);
                 `);
+
+                // create the undo triggers and save the database
+                await createAllUndoTriggers(orm as unknown as any);
                 const updatedDbBuffer = db.export();
 
-                await createAllUndoTriggers(orm as unknown as any);
                 fs.writeFileSync(tempDatabaseFile, updatedDbBuffer);
                 db.close();
                 await use();
@@ -157,15 +191,19 @@ const baseFixture = baseTest.extend<BaseApi>({
     ],
     beats: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "beats.sql");
-        await use(mockData as unknown as beats);
+        await use(mockDataBeats);
     },
     marchersAndPages: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "marchers-and-pages.sql");
-        await use(mockData as unknown as marchersAndPages);
+        await use(mockDataMarchersAndPages);
+    },
+    pages: async ({ task }, use) => {
+        await loadSqlIntoDatabase(task, "pages.sql");
+        await use(mockDataPages);
     },
     marchers: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "marchers.sql");
-        await use(mockData as unknown as marchers);
+        await use(mockDataMarchers);
     },
 });
 
@@ -258,10 +296,6 @@ const describeDbTests = (
         process.env.VITEST_ENABLE_BETTER_SQLITE === "true";
     if (runBetterSqliteTests)
         describe("better-sqlite3", () => {
-            tests(betterSqliteTest, "better-sqlite3");
-        });
-    else
-        describe.skip("better-sqlite3", () => {
             tests(betterSqliteTest, "better-sqlite3");
         });
     describe("sql-js", () => {

@@ -56,12 +56,20 @@ export const transactionWithHistory = async <T>(
             // Execute the function
             const result = await func(tx);
 
-            const groupAfter = (
-                await tx
-                    .select({ max: max(schema.history_undo.history_group) })
-                    .from(schema.history_undo)
-                    .get()
-            )?.max;
+            const groupAfter =
+                (
+                    await tx
+                        .select({ max: max(schema.history_undo.history_group) })
+                        .from(schema.history_undo)
+                        .get()
+                )?.max ??
+                (
+                    await tx.query.history_stats.findFirst({
+                        columns: {
+                            cur_undo_group: true,
+                        },
+                    })
+                )?.cur_undo_group;
 
             // Ensure that the group was not changed by the function
             // This is important to ensure predictable undo/redo behavior

@@ -324,7 +324,7 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                 if (numberOfChanges > 0)
                     expect(
                         initialData,
-                        "Data before the test should not be the same as after the test",
+                        "Data before the test should not be the same before and after the test. Did you provide the wrong number of changes?",
                     ).not.toEqual(afterTestsData);
 
                 expect(
