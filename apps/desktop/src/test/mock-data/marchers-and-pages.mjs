@@ -4,6 +4,8 @@ const expectedBeats = Array.from({ length: 97 }, (_, i) => ({
     duration: 0.5,
     beat_number: i,
     measure_id: 1,
+    position: i,
+    include_in_measure: 1,
     notes: null,
 }));
 
@@ -11,35 +13,42 @@ const numberOfMarchers = 76;
 const numberOfPages = 7;
 
 const expectedMarchers = Array.from({ length: numberOfMarchers }, (_, i) => {
-    const marcherNumber = i + 1;
-    let instrument, abbreviation;
+    let marcherNumber = i + 1;
+    let drill_order = marcherNumber;
+    let section, drill_prefix;
 
     if (marcherNumber <= 24) {
-        instrument = "Trumpet";
-        abbreviation = "T";
+        section = "Trumpet";
+        drill_prefix = "T";
     } else if (marcherNumber <= 40) {
-        instrument = "Mellophone";
-        abbreviation = "M";
+        section = "Mellophone";
+        drill_prefix = "M";
+        drill_order = marcherNumber - 24;
     } else if (marcherNumber <= 64) {
-        instrument = "Baritone";
-        abbreviation = "B";
+        section = "Baritone";
+        drill_prefix = "B";
+        drill_order = marcherNumber - 40;
     } else {
-        instrument = "Tuba";
-        abbreviation = "U";
+        section = "Tuba";
+        drill_prefix = "U";
+        drill_order = marcherNumber - 64;
     }
 
     return {
         id: marcherNumber,
         name: null,
-        instrument,
-        section: null,
-        abbreviation,
-        number: marcherNumber,
+        section,
+        drill_prefix,
+        drill_order,
+        year: null,
+        notes: null,
     };
 });
 
 const expectedPages = Array.from({ length: numberOfPages }, (_, i) => ({
     id: i,
+    is_subset: i % 2 === 0 ? 0 : 1,
+    start_beat: Math.floor((expectedBeats.length * i) / numberOfPages),
     page_number: 0,
     notes: null,
 }));

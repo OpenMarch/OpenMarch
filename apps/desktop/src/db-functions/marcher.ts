@@ -3,6 +3,7 @@ import { eq } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { ModifiedMarcherPageArgs } from "@/hooks/queries";
+import { transactionWithHistory } from "./history";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
