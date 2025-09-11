@@ -175,6 +175,9 @@ export async function createMarchersInTransaction({
 /**
  * Creates a list of marchers with the given values.
  *
+ * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
+ *
+ *
  * @param newMarchers Array of NewMarcherArgs containing the marcher data to create
  * @param db The database connection
  * @returns Promise<DatabaseMarcher[]> Array of created marchers

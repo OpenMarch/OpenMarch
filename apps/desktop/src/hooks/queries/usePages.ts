@@ -1,17 +1,23 @@
 import { db, schema } from "@/global/database/db";
-import { eq, and } from "drizzle-orm";
-import { incrementUndoGroup } from "@/global/classes/History";
+import { eq } from "drizzle-orm";
 import {
-    useQueryClient,
-    useMutation,
     queryOptions,
-    useQuery,
     mutationOptions,
     QueryClient,
 } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
-import { DbConnection, DatabasePage, createPages } from "@/db-functions";
+import {
+    DbConnection,
+    DatabasePage,
+    createPages,
+    getPages,
+    realDatabasePageToDatabasePage,
+    deletePages,
+    transactionWithHistory,
+    updatePagesInTransaction,
+    updateLastPageCounts,
+} from "@/db-functions";
 
 const { pages } = schema;
 
@@ -40,75 +46,78 @@ const KEY_BASE = "page";
 // Query key factory
 export const pageKeys = {
     /** This should almost never be used unless you absolutely need every page in the show at one time */
-    all: () => ["page"] as const,
+    all: () => [KEY_BASE] as const,
     byId: (pageId: number) => [KEY_BASE, "id", pageId] as const,
     byStartBeat: (startBeat: number) =>
         [KEY_BASE, "startBeat", startBeat] as const,
     single: (pageId: number) => [KEY_BASE, "single", pageId] as const,
 };
 
-const getKeyForFilters = (filters: PageQueryFilters) => {
-    if (
-        !filters ||
-        (filters.id === undefined && filters.start_beat === undefined)
-    )
-        return pageKeys.all();
-
-    if (filters.id !== undefined) return pageKeys.byId(filters.id);
-
-    if (filters.start_beat !== undefined)
-        return pageKeys.byStartBeat(filters.start_beat);
-
-    throw new Error("Invalid page filters provided to getKeyForFilters");
-};
-
 const pageQueries = {
-    getAll: async (filters?: PageQueryFilters): Promise<DatabasePage[]> => {
-        const conditions = [];
-        if (filters?.id !== undefined) {
-            conditions.push(eq(pages.id, filters.id));
-        }
-        if (filters?.start_beat !== undefined) {
-            conditions.push(eq(pages.start_beat, filters.start_beat));
-        }
-
-        // Build the query with conditions
-        if (conditions.length > 0) {
-            return await db.query.pages.findMany({
-                where:
-                    conditions.length > 1 ? and(...conditions) : conditions[0],
-            });
-        } else {
-            // No conditions, return all rows
-            console.warn(
-                "Returning all page rows. This should not happen as this fetches all pages in the show. You should probably use getById or getByStartBeat",
-            );
-            return await db.query.pages.findMany();
-        }
+    getAll: async (db: DbConnection): Promise<DatabasePage[]> => {
+        return await getPages({ db });
     },
+    getById: async (
+        db: DbConnection,
+        pageId: number,
+    ): Promise<DatabasePage | undefined> => {
+        const dbResponse = await db.query.pages.findFirst({
+            where: eq(pages.id, pageId),
+        });
 
-    getById: async (pageId: number): Promise<DatabasePage | undefined> => {
-        const result = await pageQueries.getAll({ id: pageId });
-        return result[0];
+        return dbResponse
+            ? realDatabasePageToDatabasePage(dbResponse)
+            : undefined;
     },
 
     getByStartBeat: async (
+        db: DbConnection,
         startBeat: number,
     ): Promise<DatabasePage | undefined> => {
-        const result = await pageQueries.getAll({ start_beat: startBeat });
-        return result[0];
+        const dbResponse = await db.query.pages.findFirst({
+            where: eq(pages.start_beat, startBeat),
+        });
+
+        return dbResponse
+            ? realDatabasePageToDatabasePage(dbResponse)
+            : undefined;
     },
 };
 
+export interface ModifyPagesRequest {
+    modifiedPagesArgs: ModifiedPageArgs[];
+    lastPageCounts?: number;
+}
 /**
- * Filters for the pageQueries.getAll function
+ * Represents a request to modify multiple pages with optional last page count tracking.
+ *
+ * @param modifiedPagesArgs - An array of page modification arguments to be applied.
+ * @param lastPageCounts - Optional number of counts for the last page, used for tracking page modifications.
  */
-type PageQueryFilters =
-    | {
-          id?: number;
-          start_beat?: number;
-      }
-    | undefined;
+const updatePagesAndLastPageCounts = async ({
+    db,
+    modifiedPages,
+}: {
+    db: DbConnection;
+    modifiedPages: ModifyPagesRequest;
+}) => {
+    return await transactionWithHistory(
+        db,
+        "Update Page and Last Page Counts",
+        async (tx) => {
+            await updatePagesInTransaction({
+                modifiedPages: modifiedPages.modifiedPagesArgs,
+                tx,
+            });
+            if (modifiedPages.lastPageCounts !== undefined) {
+                await updateLastPageCounts({
+                    lastPageCounts: modifiedPages.lastPageCounts,
+                    tx,
+                });
+            }
+        },
+    );
+};
 
 /**
  * Query options for the pages query
@@ -116,108 +125,31 @@ type PageQueryFilters =
  * @param args - the filters to use for the query, or the page id to fetch
  * @returns
  */
-export const pagesQueryOptions = (
-    args:
-        | {
-              filters?: PageQueryFilters;
-          }
-        | number,
-) => {
-    const filters = typeof args === "number" ? { id: args } : args.filters;
-    if (!filters || Object.keys(filters).length === 0)
-        console.warn(
-            "No filters provided to usePages which will fetch every page in the show. This is inefficient and should be avoided.",
-        );
-
+export const allPagesQueryOptions = () => {
     return queryOptions<DatabasePage[]>({
-        queryKey: getKeyForFilters(filters),
+        queryKey: pageKeys.all(),
         queryFn: async () => {
-            return await pageQueries.getAll(filters);
+            return await pageQueries.getAll(db);
         },
     });
 };
 
-// Mutation functions (pure business logic)
-const pageMutations = {
-    createPages: async (
-        db: DbConnection,
-        newPages: NewPageArgs[],
-    ): Promise<DatabasePage[]> => {
-        return await createPages({ newPages, db });
-    },
+export const pageQueryByIdOptions = (id: number) => {
+    return queryOptions<DatabasePage | undefined>({
+        queryKey: pageKeys.byId(id),
+        queryFn: async () => {
+            return await pageQueries.getById(db, id);
+        },
+    });
+};
 
-    updatePages: async (
-        modifiedPages: ModifiedPageArgs[],
-    ): Promise<DatabasePage[]> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
-
-            const results: DatabasePage[] = [];
-
-            for (const modifiedPage of modifiedPages) {
-                const { id, ...updateData } = modifiedPage;
-
-                // Convert boolean to integer for is_subset if provided
-                const updateValues: any = { ...updateData };
-                if (updateValues.is_subset !== undefined) {
-                    updateValues.is_subset = updateValues.is_subset ? 1 : 0;
-                }
-
-                const result = await tx
-                    .update(pages)
-                    .set(updateValues)
-                    .where(eq(pages.id, id))
-                    .returning({
-                        id: pages.id,
-                        start_beat: pages.start_beat,
-                        notes: pages.notes,
-                        is_subset: pages.is_subset,
-                        created_at: pages.created_at,
-                        updated_at: pages.updated_at,
-                    })
-                    .get();
-
-                results.push({
-                    ...result,
-                    is_subset: result.is_subset,
-                });
-            }
-
-            return results;
-        });
-    },
-
-    deletePages: async (pageIds: Set<number>): Promise<DatabasePage[]> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
-
-            const results: DatabasePage[] = [];
-
-            for (const pageId of pageIds) {
-                const result = await tx
-                    .delete(pages)
-                    .where(eq(pages.id, pageId))
-                    .returning({
-                        id: pages.id,
-                        start_beat: pages.start_beat,
-                        notes: pages.notes,
-                        is_subset: pages.is_subset,
-                        created_at: pages.created_at,
-                        updated_at: pages.updated_at,
-                    })
-                    .get();
-
-                if (result) {
-                    results.push({
-                        ...result,
-                        is_subset: result.is_subset,
-                    });
-                }
-            }
-
-            return results;
-        });
-    },
+export const pageQueryByStartBeatOptions = (startBeat: number) => {
+    return queryOptions<DatabasePage | undefined>({
+        queryKey: pageKeys.byStartBeat(startBeat),
+        queryFn: async () => {
+            return await pageQueries.getByStartBeat(db, startBeat);
+        },
+    });
 };
 
 export const fetchPages = () => {
@@ -226,7 +158,7 @@ export const fetchPages = () => {
 
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: pageMutations.createPages,
+        mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
         onSuccess: (_, variables) => {
             // Invalidate all page queries
             qc.invalidateQueries({
@@ -241,11 +173,13 @@ export const createPagesMutationOptions = (qc: QueryClient) => {
 
 export const updatePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: pageMutations.updatePages,
+        mutationFn: (modifiedPages: ModifyPagesRequest) =>
+            updatePagesAndLastPageCounts({ db, modifiedPages }),
         onSuccess: (_, variables) => {
             // Invalidate all page queries
             const pageIds = new Set<number>();
-            for (const modifiedArgs of variables) pageIds.add(modifiedArgs.id);
+            for (const modifiedArgs of variables.modifiedPagesArgs)
+                pageIds.add(modifiedArgs.id);
 
             qc.invalidateQueries({
                 queryKey: Array.from(pageIds).map((pageId) =>
@@ -264,7 +198,7 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
 
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
-        mutationFn: pageMutations.deletePages,
+        mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
         onSuccess: (_, variables) => {
             // Invalidate all page queries
             qc.invalidateQueries({
@@ -275,15 +209,4 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
             conToastError(`Error deleting pages`, e, variables);
         },
     });
-};
-
-// Hook for using pages query
-export const usePages = (
-    args:
-        | {
-              filters?: PageQueryFilters;
-          }
-        | number,
-) => {
-    return useQuery(pagesQueryOptions(args));
 };

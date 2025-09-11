@@ -1,5 +1,5 @@
 import { TestAPI } from "vitest";
-import { DbTestAPI } from "./base";
+import { DbConnection, DbTestAPI } from "./base";
 import { getTableName, Table } from "drizzle-orm";
 import {
     performRedo,
@@ -115,7 +115,8 @@ const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
  *         const result2 = await createPages({ newPages2, db });
  *
  *         // Test that exactly 2 changes were made and undo/redo works
- *         await expectNumberOfChanges.test(2);
+ *         // YOU MUST AWAIT THE TEST FUNCTION
+ *         await expectNumberOfChanges.test(db, 2);
  *     }
  * );
  * ```
@@ -137,7 +138,8 @@ const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
  *         });
  *
  *         // Test that exactly 1 change was made and undo/redo works
- *         await expectNumberOfChanges.test(1);
+ *         // YOU MUST AWAIT THE TEST FUNCTION
+ *         await expectNumberOfChanges.test(db, 1);
  *     }
  * );
  * ```
@@ -157,13 +159,13 @@ const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
  *             const preRun = await createPages({ newPages1, db });
  *
  *             // Get the database state before the test
- *             const databaseState = await expectNumberOfChanges.getDatabaseState();
+ *             const databaseState = await expectNumberOfChanges.getDatabaseState(db);
  *
  *             // Run the test
  *             const result2 = await createPages({ newPages2, db });
  *
  *             // Test that exactly 1 change was made (after the pre-existing data) and undo/redo works
- *             await expectNumberOfChanges.test(1, databaseState);
+ *             await expectNumberOfChanges.test(db, 1, databaseState);
  *         }
  *     );
  * });
@@ -194,13 +196,14 @@ export const getTestWithHistory = <T extends DbTestAPI>(
         testUndoRedo: void;
         expectNumberOfChanges: {
             test: (
+                db: DbConnection,
                 numberOfChanges: number,
                 customData?: {
                     currentUndoGroup: number;
                     expectedData: Record<string, any[]>;
                 },
             ) => Promise<void>;
-            getDatabaseState: () => Promise<{
+            getDatabaseState: (db: DbConnection) => Promise<{
                 expectedData: Record<string, any[]>;
                 currentUndoGroup: number;
             }>;
@@ -288,10 +291,10 @@ export const getTestWithHistory = <T extends DbTestAPI>(
             const startingStats = await db.query.history_stats.findFirst();
             if (!startingStats) throw new Error("Starting stats not found");
 
-            const collectData = async () => {
+            const collectData = async (connection: DbConnection) => {
                 const output: Record<string, any[]> = {};
                 for (const table of tablesToCheck) {
-                    output[getTableName(table)] = await db
+                    output[getTableName(table)] = await connection
                         .select()
                         .from(table)
                         .all();
@@ -299,9 +302,10 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                 return output;
             };
 
-            const beforeTestsData = await collectData();
+            const beforeTestsData = await collectData(db);
 
             const testUndoRedo = async (
+                db: DbConnection,
                 numberOfChanges: number,
                 customData?: {
                     currentUndoGroup: number;
@@ -309,10 +313,28 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                 },
             ) => {
                 const initialData = customData?.expectedData ?? beforeTestsData;
-                const afterTestsData = await collectData();
+                const afterTestsData = await collectData(db);
                 const afterUndoGroup = (
-                    await db.query.history_stats.findFirst()
-                )?.cur_undo_group;
+                    await db.query.history_undo.findFirst({
+                        columns: { history_group: true },
+                        orderBy: (table, { desc }) => desc(table.history_group),
+                    })
+                )?.history_group;
+                const historyStatsUndoGroup = (
+                    await db.query.history_stats.findFirst({
+                        columns: { cur_undo_group: true },
+                        orderBy: (table, { desc }) =>
+                            desc(table.cur_undo_group),
+                    })
+                )?.cur_undo_group!;
+
+                expect(afterUndoGroup).toBeDefined();
+                expect(
+                    afterUndoGroup === historyStatsUndoGroup ||
+                        afterUndoGroup === historyStatsUndoGroup - 1,
+                    "After undo group should be the same as the history stats undo group or the history stats undo group - 1",
+                ).toBeTruthy();
+
                 if (!afterUndoGroup) throw new Error("After stats not found");
 
                 const startingUndoGroup =
@@ -340,7 +362,7 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                     for (let i = 0; i < numberOfChanges; i++)
                         await performUndo(db as unknown as any);
 
-                    const dataAfterUndo = await collectData();
+                    const dataAfterUndo = await collectData(db);
                     expect(
                         dataAfterUndo,
                         `UNDO #${testNumber + 1} - ` +
@@ -350,7 +372,7 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                     // Test that the redo works
                     for (let i = 0; i < numberOfChanges; i++)
                         await performRedo(db as unknown as any);
-                    const dataAfterRedo = await collectData();
+                    const dataAfterRedo = await collectData(db);
                     expect(
                         dataAfterRedo,
                         `REDO #${testNumber + 1} - ` +
@@ -359,13 +381,13 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                 }
             };
 
-            const getDatabaseState = async () => {
+            const getDatabaseState = async (db: DbConnection) => {
                 const currentUndoGroup = (
                     await db.query.history_stats.findFirst()
                 )?.cur_undo_group;
                 if (currentUndoGroup == null)
                     throw new Error("Current undo group not found");
-                const data = await collectData();
+                const data = await collectData(db);
                 return {
                     expectedData: data,
                     currentUndoGroup,

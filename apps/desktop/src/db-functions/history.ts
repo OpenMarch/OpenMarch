@@ -10,6 +10,9 @@ import { schema } from "@/global/database/db";
 /**
  * Runs a function in a transaction with undo/redo history tracking.
  *
+ * This function will group all of the database actions performed inside of it into a single undo/redo group.
+ * Using a regular transaction will cause each database action to be its own undo/redo event.
+ *
  * @param db - The database connection
  * @param funcName - The name of the function to run in the transaction. This is for  logging.
  * @param func - The function to run in the transaction

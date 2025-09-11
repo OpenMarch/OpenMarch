@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { initTestDatabase } from "./testUtils";
-import * as History from "../../database.history";
+import * as History from "../../database.history.legacy";
 import Database from "better-sqlite3";
 import * as BeatTable from "../BeatTable";
 import Constants from "../../../../src/global/Constants";
-import { FIRST_PAGE_ID } from "../../constants";
+import { FIRST_PAGE_ID } from "@/db-functions";
 
 const sorter = (a: any, b: any) => a.position - b.position;
 
