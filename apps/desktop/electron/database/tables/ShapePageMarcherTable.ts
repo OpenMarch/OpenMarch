@@ -1,7 +1,7 @@
 import Constants from "../../../src/global/Constants";
 import Database from "better-sqlite3";
 import * as DbActions from "../DatabaseActions";
-import * as History from "../database.history";
+import * as History from "../database.history.legacy";
 import { deleteShapePages, ShapePage } from "./ShapePageTable";
 
 /**

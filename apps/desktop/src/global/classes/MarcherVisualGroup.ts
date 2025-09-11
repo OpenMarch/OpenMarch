@@ -2,7 +2,6 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import Marcher from "@/global/classes/Marcher";
 import {
@@ -11,7 +10,6 @@ import {
 } from "@/global/classes/SectionAppearance";
 import EditablePath from "./canvasObjects/EditablePath";
 import { FieldTheme } from "@openmarch/core";
-import { Line, Path } from "@openmarch/path-utility";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.

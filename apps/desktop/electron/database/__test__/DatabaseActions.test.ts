@@ -1,8 +1,11 @@
 import Database from "better-sqlite3";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as DbActions from "../DatabaseActions";
-import { createHistoryTables, createUndoTriggers } from "../database.history";
-import * as History from "../database.history";
+import {
+    createHistoryTables,
+    createUndoTriggers,
+} from "../database.history.legacy";
+import * as History from "../database.history.legacy";
 
 // Mock ipcMain and ipcRenderer
 vi.mock("electron", () => ({

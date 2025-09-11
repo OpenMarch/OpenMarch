@@ -6,6 +6,7 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
+import { assert } from "@/utilities/utils";
 
 export const FIRST_PAGE_ID = 0;
 
@@ -23,7 +24,7 @@ export interface DatabasePage {
 }
 type RealDatabasePage = typeof schema.pages.$inferSelect;
 
-const realDatabasePageToDatabasePage = (
+export const realDatabasePageToDatabasePage = (
     page: RealDatabasePage,
 ): DatabasePage => {
     return {
@@ -149,18 +150,18 @@ export async function getAdjacentPage({
 /**
  * Updates the last page counts in the utility record. Does not use the next undo group.
  *
- * @param db The database connection.
+ * @param tx The database transaction.
  * @param lastPageCounts The number of last page counts to update.
  * @returns A database response containing the updated utility record.
  */
 export const updateLastPageCounts = async ({
-    db,
+    tx,
     lastPageCounts,
 }: {
-    db: DbConnection;
+    tx: DbTransaction;
     lastPageCounts: number;
 }): Promise<typeof schema.utility.$inferSelect | null> => {
-    const response = db
+    const response = tx
         .update(schema.utility)
         .set({
             last_page_counts: lastPageCounts,
@@ -171,6 +172,15 @@ export const updateLastPageCounts = async ({
     return response;
 };
 
+/**
+ * Creates one or many new pages in the database as well as the marcher pages for each page.
+ *
+ * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
+ *
+ * @param newPages The new pages to create.
+ * @param tx The database transaction.
+ * @returns
+ */
 const createPagesInTransaction = async ({
     newPages,
     tx,
@@ -286,7 +296,7 @@ export async function createPages({
     return transactionResult;
 }
 
-const updatePagesInTransaction = async ({
+export const updatePagesInTransaction = async ({
     modifiedPages,
     tx,
 }: {
@@ -407,3 +417,87 @@ export async function deletePages({
     );
     return response;
 }
+
+/**
+ * Creates a new page at the next available beat after the current last page.
+ *
+ * @param tx The database transaction.
+ * @param newPageCounts The number of counts for the new page.
+ * @returns True if the new page was created, false if no more beats are available.
+ */
+export const createLastPage = async ({
+    db,
+    newPageCounts,
+}: {
+    db: DbConnection;
+    newPageCounts: number;
+}) => {
+    const transactionResult = await transactionWithHistory(
+        db,
+        "createLastPage",
+        async (tx) => {
+            return await createLastPageInTransaction({
+                tx,
+                newPageCounts,
+            });
+        },
+    );
+    return transactionResult;
+};
+
+/**
+ * Creates a new page at the next available beat after the current last page.
+ *
+ * Same as createLastPage, but not wrapped in a history transaction. Only use this inside of a transactionWithHistory.
+ *
+ * @param tx The database transaction.
+ * @param newPageCounts The number of counts for the new page.
+ * @returns
+ */
+export const createLastPageInTransaction = async ({
+    tx,
+    newPageCounts,
+}: {
+    tx: DbTransaction;
+    newPageCounts: number;
+}) => {
+    const lastPageCounts = (await tx.query.utility.findFirst())
+        ?.last_page_counts;
+    assert(lastPageCounts != null, "Last page counts not found");
+
+    const lastPage = await tx
+        .select({
+            id: schema.pages.id,
+            start_beat_id: schema.beats.id,
+            beat_position: schema.beats.position,
+        })
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(desc(schema.beats.position))
+        .limit(1)
+        .get();
+    assert(lastPage != null, "Last page not found");
+    const nextBeatToStartOn = await tx.query.beats.findFirst({
+        where: gt(schema.beats.position, lastPage.beat_position),
+        orderBy: asc(schema.beats.position),
+        offset: lastPageCounts,
+    });
+
+    if (!nextBeatToStartOn) throw new Error("No next beat to start on found");
+
+    await createPagesInTransaction({
+        newPages: [
+            {
+                start_beat: nextBeatToStartOn.id,
+                is_subset: false,
+            },
+        ],
+        tx,
+    });
+
+    await updateLastPageCounts({
+        tx,
+        lastPageCounts: newPageCounts,
+    });
+    return true;
+};

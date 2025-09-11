@@ -18,7 +18,6 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
-import { FIRST_PAGE_ID } from "../database/constants";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import {
@@ -221,10 +220,6 @@ app.whenReady().then(async () => {
     );
     ipcMain.handle("field_properties:import", async () =>
         importFieldPropertiesFile(),
-    );
-    ipcMain.handle(
-        "selectedPageId:get",
-        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
 
     // Recent files handlers
@@ -909,7 +904,7 @@ async function setActiveDb(path: string, isNewFile = false) {
         );
 
         if (isNewFile) {
-            await migrator.initializeDatabase(db);
+            await migrator.initializeDatabase(drizzleDb);
         }
 
         store.set("databasePath", path); // Save current db path
