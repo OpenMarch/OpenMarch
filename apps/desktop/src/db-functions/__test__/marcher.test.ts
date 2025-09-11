@@ -24,7 +24,7 @@ describeDbTests("marchers", (it) => {
                 async ({ db, expectNumberOfChanges }) => {
                     const result = await getMarchers({ db });
                     expect(result).toEqual([]);
-                    await expectNumberOfChanges.test(0);
+                    await expectNumberOfChanges.test(db, 0);
                 },
             );
 
@@ -40,7 +40,7 @@ describeDbTests("marchers", (it) => {
                     expect(result.sort(sort)).toMatchObject(
                         marchers.expectedMarchers.sort(sort),
                     );
-                    await expectNumberOfChanges.test(0);
+                    await expectNumberOfChanges.test(db, 0);
                 },
             );
         });
@@ -177,7 +177,7 @@ describeDbTests("marchers", (it) => {
                                 expect(new Set(allMarchers)).toMatchObject(
                                     new Set(expectedCreatedMarchers),
                                 );
-                                await expectNumberOfChanges.test(1);
+                                await expectNumberOfChanges.test(db, 1);
                             },
                         );
 
@@ -208,6 +208,7 @@ describeDbTests("marchers", (it) => {
                                 );
                                 // Expect that each marcher creation is a separate change on the undo stack
                                 await expectNumberOfChanges.test(
+                                    db,
                                     newMarchers.length,
                                 );
                             },
@@ -294,7 +295,7 @@ describeDbTests("marchers", (it) => {
                         const existingMarchers =
                             await db.query.marchers.findMany();
                         const databaseState =
-                            await expectNumberOfChanges.getDatabaseState();
+                            await expectNumberOfChanges.getDatabaseState(db);
 
                         expect(existingMarchers).toMatchObject(
                             existingMarchersArgs,
@@ -317,7 +318,7 @@ describeDbTests("marchers", (it) => {
                             newMarchersArgs,
                         );
 
-                        await expectNumberOfChanges.test(1, databaseState);
+                        await expectNumberOfChanges.test(db, 1, databaseState);
                     },
                 );
             });
@@ -410,7 +411,7 @@ describeDbTests("marchers", (it) => {
                                     ).toBeDefined();
                                 }
                             }
-                            await expectNumberOfChanges.test(1);
+                            await expectNumberOfChanges.test(db, 1);
                         },
                     );
                 });
@@ -504,7 +505,9 @@ describeDbTests("marchers", (it) => {
                             );
 
                             const databaseState =
-                                await expectNumberOfChanges.getDatabaseState();
+                                await expectNumberOfChanges.getDatabaseState(
+                                    db,
+                                );
 
                             // Create new marchers
                             await createMarchers({
@@ -542,7 +545,11 @@ describeDbTests("marchers", (it) => {
                                     ).toBeDefined();
                                 }
                             }
-                            await expectNumberOfChanges.test(1, databaseState);
+                            await expectNumberOfChanges.test(
+                                db,
+                                1,
+                                databaseState,
+                            );
                         },
                     );
                 });
@@ -739,7 +746,9 @@ describeDbTests("marchers", (it) => {
                             });
 
                             const databaseState =
-                                await expectNumberOfChanges.getDatabaseState();
+                                await expectNumberOfChanges.getDatabaseState(
+                                    db,
+                                );
 
                             // Update the marchers
                             const updateResult = await updateMarchers({
@@ -760,11 +769,13 @@ describeDbTests("marchers", (it) => {
 
                             if (isChangeExpected)
                                 await expectNumberOfChanges.test(
+                                    db,
                                     1,
                                     databaseState,
                                 );
                             else
                                 await expectNumberOfChanges.test(
+                                    db,
                                     0,
                                     databaseState,
                                 );
@@ -781,7 +792,9 @@ describeDbTests("marchers", (it) => {
                             });
 
                             const databaseState =
-                                await expectNumberOfChanges.getDatabaseState();
+                                await expectNumberOfChanges.getDatabaseState(
+                                    db,
+                                );
 
                             // Update the marchers individually
                             for (const modifiedMarcher of modifiedMarchersArgs) {
@@ -816,11 +829,13 @@ describeDbTests("marchers", (it) => {
 
                             if (isChangeExpected)
                                 await expectNumberOfChanges.test(
+                                    db,
                                     modifiedMarchersArgs.length,
                                     databaseState,
                                 );
                             else
                                 await expectNumberOfChanges.test(
+                                    db,
                                     0,
                                     databaseState,
                                 );
@@ -957,7 +972,9 @@ describeDbTests("marchers", (it) => {
                             ).toBe(existingMarchersArgs.length);
 
                             const databaseState =
-                                await expectNumberOfChanges.getDatabaseState();
+                                await expectNumberOfChanges.getDatabaseState(
+                                    db,
+                                );
 
                             const deleteResult = await deleteMarchers({
                                 marcherIds: new Set(marcherIdsToDelete),
@@ -986,7 +1003,11 @@ describeDbTests("marchers", (it) => {
                                 ).toBeFalsy();
                             }
 
-                            await expectNumberOfChanges.test(1, databaseState);
+                            await expectNumberOfChanges.test(
+                                db,
+                                1,
+                                databaseState,
+                            );
                         },
                     );
 
@@ -1006,7 +1027,9 @@ describeDbTests("marchers", (it) => {
                             ).toBe(existingMarchersArgs.length);
 
                             const databaseState =
-                                await expectNumberOfChanges.getDatabaseState();
+                                await expectNumberOfChanges.getDatabaseState(
+                                    db,
+                                );
 
                             for (const marcherId of marcherIdsToDelete) {
                                 await deleteMarchers({
@@ -1035,6 +1058,7 @@ describeDbTests("marchers", (it) => {
                             }
 
                             await expectNumberOfChanges.test(
+                                db,
                                 marcherIdsToDelete.length,
                                 databaseState,
                             );
@@ -1078,7 +1102,7 @@ describeDbTests("marchers", (it) => {
                         );
 
                         const databaseState =
-                            await expectNumberOfChanges.getDatabaseState();
+                            await expectNumberOfChanges.getDatabaseState(db);
 
                         // Delete marchers
                         await deleteMarchers({
@@ -1114,7 +1138,7 @@ describeDbTests("marchers", (it) => {
                             );
                         }
 
-                        await expectNumberOfChanges.test(1, databaseState);
+                        await expectNumberOfChanges.test(db, 1, databaseState);
                     },
                 );
             });

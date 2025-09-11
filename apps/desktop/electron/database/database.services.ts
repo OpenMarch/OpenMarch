@@ -2,7 +2,7 @@ import { ipcMain } from "electron";
 import Database from "better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
-import * as History from "./database.history";
+import * as History from "./database.history.legacy";
 import * as Utilities from "./utilities";
 import AudioFile, {
     ModifiedAudioFileArgs,
