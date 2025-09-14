@@ -25,6 +25,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
+import { marcherPageKeys } from "./useMarcherPages";
 
 const { pages } = schema;
 
@@ -154,6 +155,9 @@ export const createPagesMutationOptions = (qc: QueryClient) => {
             qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error creating pages`, e, variables);
@@ -172,12 +176,11 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
                 pageIds.add(modifiedArgs.id);
 
             qc.invalidateQueries({
-                queryKey: Array.from(pageIds).map((pageId) =>
-                    pageKeys.byId(pageId),
-                ),
-            });
-            qc.invalidateQueries({
                 queryKey: [KEY_BASE],
+            });
+
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
             });
         },
         onError: (e, variables) => {
@@ -194,6 +197,9 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
             // Invalidate all page queries
             qc.invalidateQueries({
                 queryKey: [KEY_BASE],
+            });
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
             });
         },
         onError: (e, variables) => {
