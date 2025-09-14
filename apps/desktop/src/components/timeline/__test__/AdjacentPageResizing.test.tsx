@@ -8,7 +8,7 @@ import {
     beforeAll,
 } from "vitest";
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";

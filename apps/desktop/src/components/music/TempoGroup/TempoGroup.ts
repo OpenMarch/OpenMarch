@@ -1,23 +1,26 @@
-import type {
-    DatabaseBeat,
-    ModifiedBeatArgs,
-    NewBeatArgs,
-} from "electron/database/tables/BeatTable";
-import Measure, {
-    cascadeDeleteMeasures,
-    createMeasures,
-    updateMeasures,
-} from "../../../global/classes/Measure";
+import Measure from "../../../global/classes/Measure";
 import Beat, {
-    createBeats,
     durationToTempo,
     fromDatabaseBeat,
-    updateBeats,
 } from "../../../global/classes/Beat";
-import { GroupFunction } from "../../../utilities/ApiFunctions";
 import type { NewMeasureArgs } from "@/global/classes/Measure";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
+import {
+    createBeatsInTransaction,
+    createMeasuresInTransaction,
+    DatabaseBeat,
+    ModifiedBeatArgs,
+    NewBeatArgs,
+    transactionWithHistory,
+    updateBeatsInTransaction,
+    updateMeasuresInTransaction,
+} from "@/db-functions";
+import { db } from "@/global/database/db";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { measureKeys } from "@/hooks/queries/useMeasures";
+import { beatKeys } from "@/hooks/queries";
+import { conToastError } from "@/utilities/utils";
 
 export type TempoGroup = {
     /**
@@ -333,7 +336,7 @@ export const newBeatsFromTempoGroup = ({
                     : duration;
                 beats.push({
                     duration: beatDuration,
-                    include_in_measure: 1 as 1 | 0,
+                    include_in_measure: true,
                 });
             }
         }
@@ -345,7 +348,7 @@ export const newBeatsFromTempoGroup = ({
             for (let j = 0; j < bigBeatsPerMeasure; j++) {
                 beats.push({
                     duration: 60 / currentTempo,
-                    include_in_measure: 1 as 1 | 0,
+                    include_in_measure: true,
                 });
                 currentTempo += tempoDelta;
             }
@@ -391,14 +394,54 @@ export const getNewMeasuresFromCreatedBeats = ({
 };
 
 /**
+ * Generic custom hook for tempo group mutations
+ * Handles common success/error patterns and query invalidation
+ */
+const useTempoGroupMutation = <TArgs>(
+    mutationFn: (args: TArgs) => Promise<void>,
+    errorKey: string,
+    successKey?: string,
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn,
+        onSuccess: () => {
+            // Invalidate all relevant queries
+            queryClient.invalidateQueries({
+                queryKey: measureKeys.all(),
+            });
+            queryClient.invalidateQueries({
+                queryKey: beatKeys.all(),
+            });
+
+            if (successKey) toast.success(tolgee.t(successKey));
+        },
+        onError: (error) => {
+            conToastError(tolgee.t(errorKey), error);
+        },
+    });
+};
+
+export const useCreateFromTempoGroup = () => {
+    return useTempoGroupMutation(
+        _createFromTempoGroup,
+        "tempoGroup.createNewBeatsError",
+        "music.tempoGroupCreated",
+    );
+};
+
+/**
  * Creates new beats and measures in the database from a tempo group
  */
-export const createFromTempoGroup = async (
-    tempoGroup: TempoGroup,
-    refreshFunction: () => Promise<void>,
-    endTempo?: number,
-    startingPosition?: number,
-): Promise<{ success: boolean }> => {
+export const _createFromTempoGroup = async ({
+    tempoGroup,
+    endTempo,
+    startingPosition,
+}: {
+    tempoGroup: TempoGroup;
+    endTempo?: number;
+    startingPosition?: number;
+}) => {
     const beatsToCreate = newBeatsFromTempoGroup({
         tempo: tempoGroup.tempo,
         numRepeats: tempoGroup.numOfRepeats,
@@ -407,19 +450,14 @@ export const createFromTempoGroup = async (
         strongBeatIndexes: tempoGroup.strongBeatIndexes,
     });
 
-    const createBeatsResponse = await createBeats(
-        beatsToCreate,
-        async () => {},
-        startingPosition,
-    );
-    if (!createBeatsResponse.success) {
-        toast.error(tolgee.t("tempoGroup.createBeatsError"));
-        console.error("Error creating beats", createBeatsResponse);
-        return { success: false };
-    }
-    try {
-        // Step 3: Convert database beats to Beat objects
-        const databaseBeats = createBeatsResponse.data;
+    transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
+        const createBeatsResponse = await createBeatsInTransaction({
+            tx,
+            newBeats: beatsToCreate,
+            startingPosition,
+        });
+
+        const databaseBeats = createBeatsResponse;
         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
             (a, b) => a.position - b.position,
         );
@@ -431,42 +469,34 @@ export const createFromTempoGroup = async (
             rehearsalMark: tempoGroup.name,
         });
 
-        const createMeasuresResponse = await createMeasures(
-            newMeasures,
-            async () => {},
-        );
-        if (!createMeasuresResponse.success) {
-            throw new Error("Error creating measures");
-        }
-
-        refreshFunction();
-
-        return { success: true };
-    } catch (error) {
-        toast.error(tolgee.t("tempoGroup.createNewBeatsError"));
-        console.error("Error creating new beats", error);
-        window.electron.undo();
-        return { success: false };
-    }
+        await createMeasuresInTransaction({
+            tx,
+            newItems: newMeasures,
+        });
+    });
 };
 
-export const updateTempoGroup = async ({
+export const useUpdateTempoGroup = () => {
+    return useTempoGroupMutation(
+        _updateTempoGroup,
+        "tempoGroup.errorUpdatingTempoGroup",
+        "music.tempoGroupUpdated",
+    );
+};
+
+export const _updateTempoGroup = async ({
     tempoGroup,
     newTempo,
     newName,
     newStrongBeatIndexes,
-    refreshFunction,
 }: {
     tempoGroup: TempoGroup;
     newTempo: number;
     newName: string;
     newStrongBeatIndexes?: number[];
-    refreshFunction: () => Promise<void>;
 }) => {
     if (!tempoGroup.measures || !tempoGroup.measures.length) {
-        toast.error(tolgee.t("tempoGroup.noMeasures"));
-        console.error("Tempo group has no measures", tempoGroup);
-        return;
+        throw new Error("Tempo group has no measures");
     }
 
     const oldBeats = tempoGroup.measures?.flatMap((measure) => measure.beats);
@@ -478,17 +508,10 @@ export const updateTempoGroup = async ({
         strongBeatIndexes: newStrongBeatIndexes,
     });
 
-    console.log("oldBeats", oldBeats);
-    console.log("newBeats", newBeats);
     if (oldBeats.length !== newBeats.length) {
-        toast.error(tolgee.t("tempoGroup.differentBeatsError"));
-        console.error(
+        throw new Error(
             "Tempo group has different number of beats. This should not happen. Please reach out to us!",
-            tempoGroup,
-            oldBeats,
-            newBeats,
         );
-        return;
     }
 
     const updatedBeats: ModifiedBeatArgs[] = [];
@@ -499,55 +522,49 @@ export const updateTempoGroup = async ({
         });
     }
 
-    const functionsToExecute = [];
+    transactionWithHistory(db, "updateTempoGroup", async (tx) => {
+        await updateBeatsInTransaction({
+            tx,
+            modifiedBeats: updatedBeats,
+        });
 
-    functionsToExecute.push(() => updateBeats(updatedBeats, async () => {}));
-
-    if (newName !== tempoGroup.measures[0].rehearsalMark) {
-        functionsToExecute.push(() =>
-            updateMeasures(
-                [
+        if (
+            tempoGroup.measures &&
+            newName !== tempoGroup.measures[0].rehearsalMark
+        ) {
+            await updateMeasuresInTransaction({
+                tx,
+                modifiedItems: [
                     {
                         id: tempoGroup.measures![0].id,
                         rehearsal_mark: newName.trim() === "" ? null : newName,
                     },
                 ],
-                async () => {},
-            ),
-        );
-    }
-
-    const result = await GroupFunction({
-        functionsToExecute,
-        useNextUndoGroup: true,
+            });
+        }
     });
-
-    if (result.success) {
-        refreshFunction();
-    }
-
-    return result;
 };
 
-export const updateManualTempos = async ({
+export const useUpdateManualTempos = () => {
+    return useTempoGroupMutation(
+        _updateManualTempos,
+        "tempoGroup.differentBeatsError",
+        "music.tempoGroupUpdated",
+    );
+};
+
+export const _updateManualTempos = async ({
     tempoGroup,
     newManualTempos,
-    refreshFunction,
 }: {
     tempoGroup: TempoGroup;
     newManualTempos: number[];
-    refreshFunction: () => Promise<void>;
 }) => {
     const oldBeats = tempoGroup.measures?.flatMap((measure) => measure.beats);
     if (!oldBeats || oldBeats.length !== newManualTempos.length) {
-        toast.error(tolgee.t("tempoGroup.differentBeatsError"));
-        console.error(
+        throw new Error(
             "Tempo group has different number of beats. This should not happen.",
-            tempoGroup,
-            oldBeats,
-            newManualTempos,
         );
-        return;
     }
 
     const updatedBeats: ModifiedBeatArgs[] = [];
@@ -558,39 +575,12 @@ export const updateManualTempos = async ({
         });
     }
 
-    const result = await updateBeats(updatedBeats, async () => {});
-
-    if (result.success) {
-        refreshFunction();
-    }
-
-    return result;
-};
-
-export const handleCascadeDelete = async (
-    tempoGroup: TempoGroup,
-    fetchTimingObjects: () => Promise<void>,
-) => {
-    if (!tempoGroup.measures || !tempoGroup.measures.length) {
-        toast.error(tolgee.t("tempoGroup.noMeasures"));
-        console.error("Tempo group has no measures", tempoGroup);
-        return;
-    }
-    try {
-        const response = await cascadeDeleteMeasures(
-            tempoGroup.measures,
-            fetchTimingObjects,
-        );
-        if (!response) {
-            toast.error(tolgee.t("tempoGroup.deleteFailed"));
-            console.error("Failed to delete tempo group", response);
-            return;
-        }
-        toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
-    } catch (error) {
-        toast.error(tolgee.t("tempoGroup.deleteFailed"));
-        console.error("Failed to delete tempo group", error);
-    }
+    transactionWithHistory(db, "updateManualTempos", async (tx) => {
+        await updateBeatsInTransaction({
+            tx,
+            modifiedBeats: updatedBeats,
+        });
+    });
 };
 
 /**

@@ -18,10 +18,10 @@ import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
-import { MarcherVisualMap } from "@/stores/MarcherVisualStore";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs } from "@/hooks/queries";
+import { MarcherVisualMap } from "@/hooks";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.

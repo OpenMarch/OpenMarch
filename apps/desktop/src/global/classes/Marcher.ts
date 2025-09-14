@@ -1,8 +1,19 @@
 import { schema } from "../database/db";
 import { getSectionObjectByName } from "./Sections";
 
-type Marcher = typeof schema.marchers.$inferSelect;
+type Marcher = typeof schema.marchers.$inferSelect & {
+    drill_number: string;
+};
 export default Marcher;
+
+export const dbMarcherToMarcher = (
+    dbMarcher: typeof schema.marchers.$inferSelect,
+): Marcher => {
+    return {
+        ...dbMarcher,
+        drill_number: `${dbMarcher.drill_prefix}${dbMarcher.drill_order}`,
+    };
+};
 
 /**
  * Compares a marcher to another marcher based on their section and drill order.

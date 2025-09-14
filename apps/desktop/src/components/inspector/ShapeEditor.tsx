@@ -13,7 +13,7 @@ import {
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import {
     SvgCommandEnum,
     SvgCommands,
@@ -24,7 +24,7 @@ import { T, useTolgee } from "@tolgee/react";
 export default function ShapeEditor() {
     const { selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
-    const { pages } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
 
     const { t } = useTolgee();

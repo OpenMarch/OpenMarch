@@ -2,7 +2,7 @@ import {
     marcherPageKeys,
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
-    useFieldProperties,
+    fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -19,7 +19,7 @@ import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { toast } from "sonner";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
@@ -484,7 +484,7 @@ function RegisteredActionsHandler() {
     const queryClient = useQueryClient();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { pages } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { toggleMetronome } = useMetronomeStore()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
@@ -502,7 +502,7 @@ function RegisteredActionsHandler() {
     ).mutate;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {

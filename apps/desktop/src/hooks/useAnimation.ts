@@ -3,7 +3,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
 import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
@@ -13,7 +13,7 @@ interface UseAnimationProps {
 }
 
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
-    const { pages } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
     const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const {

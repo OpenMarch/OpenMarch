@@ -1,0 +1,548 @@
+---
+description: When needing to create interactions with the database after creating a new table
+alwaysApply: false
+---
+
+# New Table Interactions with React Query
+
+## 🎯 **Rule: Always Use React Query with Separated Database Logic**
+
+When adding new database table interactions in OpenMarch, **always create both a database function file and a React Query hook file**. This ensures separation of concerns, better testability, and improved developer experience.
+
+## 📋 **Required Steps for New Tables**
+
+### 1. **Create Database Function File**
+
+Create a new file in `apps/desktop/src/db-functions/[tableName].ts`
+
+**Template:**
+
+```typescript
+import { eq, inArray, and } from "drizzle-orm";
+import {
+    DbConnection,
+    DbTransaction,
+    transactionWithHistory,
+} from "@/db-functions";
+import { schema } from "@/global/database/db";
+
+const { table_name } = schema;
+
+/** How a table item is represented in the database */
+export interface Database{tableName} {
+    id: number;
+    // Define other fields based on schema
+}
+
+// Only do this if it's needed to convert the real database values to something else
+// I.e. integer -> boolean in sqlite
+type RealDatabase{tableName} = typeof schema.table_name.$inferSelect;
+
+export const realDatabase{tableName}ToDatabase{tableName} = (
+    item: RealDatabase{tableName},
+): Database{tableName} => {
+    return {
+        ...item,
+        // Add any necessary transformations
+    };
+};
+
+export interface New{tableName}Args {
+    // Define required fields
+}
+
+interface RealNew{tableName}Args {
+    // Define fields as they appear in database (e.g., boolean as 0|1)
+}
+
+const new{tableName}ArgsToRealNew{tableName}Args = (
+    args: New{tableName}Args,
+): RealNew{tableName}Args => {
+    return {
+        ...args,
+        // Add any necessary transformations
+    };
+};
+
+
+export interface Modified{tableName}Args {
+    id: number;
+    // Define optional fields
+}
+
+interface RealModified{tableName}Args {
+    id: number;
+    // Define fields as they appear in database
+}
+
+const modified{tableName}ArgsToRealModified{tableName}Args = (
+    args: Modified{tableName}Args,
+): RealModified{tableName}Args => {
+    return {
+        ...args,
+        // Add any necessary transformations
+    };
+};
+
+/**
+ * Gets all items from the database.
+ */
+export async function get{tableName}s({
+    db,
+}: {
+    db: DbConnection;
+}): Promise<Database{tableName}[]> {
+    const result = await db.query.table_name.findMany();
+    return result.map(realDatabase{tableName}ToDatabase{tableName});
+}
+
+/**
+ * Gets a single item by ID.
+ */
+export async function get{tableName}ById({
+    db,
+    id,
+}: {
+    db: DbConnection;
+    id: number;
+}): Promise<Database{tableName} | undefined> {
+    const result = await db.query.table_name.findFirst({
+        where: eq(schema.table_name.id, id),
+    });
+    return result
+        ? realDatabase{tableName}ToDatabase{tableName}(result)
+        : undefined;
+}
+
+/**
+ * Creates new items in the database.
+ */
+export async function create{tableName}s({
+    newItems,
+    db,
+}: {
+    newItems: New{tableName}Args[];
+    db: DbConnection;
+}): Promise<Database{tableName}[]> {
+    if (newItems.length === 0) {
+        console.log("No new items to create");
+        return [];
+    }
+
+    const transactionResult = await transactionWithHistory(
+        db,
+        "create{tableName}s",
+        async (tx) => {
+            return await create{tableName}sInTransaction({
+                newItems,
+                tx,
+            });
+        },
+    );
+    return transactionResult;
+}
+
+const create{tableName}sInTransaction = async ({
+    newItems,
+    tx,
+}: {
+    newItems: New{tableName}Args[];
+    tx: DbTransaction;
+}): Promise<Database{tableName}[]> => {
+    const createdItems = await tx
+        .insert(schema.table_name)
+        .values(newItems.map(new{tableName}ArgsToRealNew{tableName}Args))
+        .returning();
+
+    return createdItems.map(realDatabase{tableName}ToDatabase{tableName});
+};
+
+/**
+ * Updates existing items in the database.
+ */
+export async function update{tableName}s({
+    db,
+    modifiedItems,
+}: {
+    db: DbConnection;
+    modifiedItems: Modified{tableName}Args[];
+}): Promise<Database{tableName}[]> {
+    const transactionResult = await transactionWithHistory(
+        db,
+        "update{tableName}s",
+        async (tx) => {
+            return await update{tableName}sInTransaction({
+                modifiedItems,
+                tx,
+            });
+        },
+    );
+    return transactionResult;
+}
+
+export const update{tableName}sInTransaction = async ({
+    modifiedItems,
+    tx,
+}: {
+    modifiedItems: Modified{tableName}Args[];
+    tx: DbTransaction;
+}): Promise<Database{tableName}[]> => {
+    const updatedItems: Database{tableName}[] = [];
+    const realModifiedItems = modifiedItems.map(
+        modified{tableName}ArgsToRealModified{tableName}Args,
+    );
+
+    for (const modifiedItem of realModifiedItems) {
+        const { id, ...updateData } = modifiedItem;
+        const updatedItem = await tx
+            .update(schema.table_name)
+            .set(updateData)
+            .where(eq(schema.table_name.id, id))
+            .returning()
+            .get();
+        updatedItems.push(
+            realDatabase{tableName}ToDatabase{tableName}(updatedItem),
+        );
+    }
+
+    return updatedItems;
+};
+
+/**
+ * Deletes items from the database.
+ */
+export async function delete{tableName}s({
+    itemIds,
+    db,
+}: {
+    itemIds: Set<number>;
+    db: DbConnection;
+}): Promise<Database{tableName}[]> {
+    if (itemIds.size === 0) return [];
+
+    const response = await transactionWithHistory(
+        db,
+        "delete{tableName}s",
+        async (tx) => {
+            return await delete{tableName}sInTransaction({
+                itemIds,
+                tx,
+            });
+        },
+    );
+    return response;
+}
+
+const delete{tableName}sInTransaction = async ({
+    itemIds,
+    tx,
+}: {
+    itemIds: Set<number>;
+    tx: DbTransaction;
+}): Promise<Database{tableName}[]> => {
+    const deletedItems = await tx
+        .delete(schema.table_name)
+        .where(inArray(schema.table_name.id, Array.from(itemIds)))
+        .returning();
+
+    return deletedItems.map(realDatabase{tableName}ToDatabase{tableName});
+};
+```
+
+### 2. **Create React Query Hook File**
+
+Create a new file in `apps/desktop/src/hooks/queries/use[TableName].ts`
+
+**Template:**
+
+```typescript
+import { db, schema } from "@/global/database/db";
+import { eq } from "drizzle-orm";
+import {
+    queryOptions,
+    mutationOptions,
+    QueryClient,
+} from "@tanstack/react-query";
+import { queryClient } from "@/App";
+import { conToastError } from "@/utilities/utils";
+import {
+    DbConnection,
+    Database{tableName},
+    create{tableName}s,
+    get{tableName}s,
+    get{tableName}ById,
+    realDatabase{tableName}ToDatabase{tableName},
+    delete{tableName}s,
+    update{tableName}sInTransaction,
+} from "@/db-functions";
+
+const { table_name } = schema;
+
+const KEY_BASE = "{tableName}";
+
+// Query key factory
+export const {tableName}Keys = {
+    all: () => [KEY_BASE] as const,
+    byId: (id: number) => [KEY_BASE, "id", id] as const,
+    // Add other specific keys as needed
+};
+
+const {tableName}Queries = {
+    getAll: async (db: DbConnection): Promise<Database{tableName}[]> => {
+        return await get{tableName}s({ db });
+    },
+    getById: async (
+        db: DbConnection,
+        id: number,
+    ): Promise<Database{tableName} | undefined> => {
+        return await get{tableName}ById({ db, id });
+    },
+};
+
+/**
+ * Query options for getting all items
+ */
+export const all{tableName}sQueryOptions = () => {
+    return queryOptions<Database{tableName}[]>({
+        queryKey: {tableName}Keys.all(),
+        queryFn: async () => {
+            return await {tableName}Queries.getAll(db);
+        },
+    });
+};
+
+export const {tableName}QueryByIdOptions = (id: number) => {
+    return queryOptions<Database{tableName} | undefined>({
+        queryKey: {tableName}Keys.byId(id),
+        queryFn: async () => {
+            return await {tableName}Queries.getById(db, id);
+        },
+    });
+};
+
+export const fetch{tableName}s = () => {
+    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+};
+
+export const create{tableName}sMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (newItems: New{tableName}Args[]) =>
+            create{tableName}s({ db, newItems }),
+        onSuccess: (_, variables) => {
+            // Invalidate all queries
+            qc.invalidateQueries({
+                queryKey: [KEY_BASE],
+            });
+        },
+        onError: (e, variables) => {
+            conToastError(`Error creating items`, e, variables);
+        },
+    });
+};
+
+export const update{tableName}sMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (modifiedItems: Modified{tableName}Args[]) =>
+            update{tableName}s({ db, modifiedItems }),
+        onSuccess: (_, variables) => {
+            // Invalidate specific queries
+            const itemIds = new Set<number>();
+            for (const modifiedArgs of variables) itemIds.add(modifiedArgs.id);
+
+            qc.invalidateQueries({
+                queryKey: Array.from(itemIds).map((id) =>
+                    {tableName}Keys.byId(id),
+                ),
+            });
+            qc.invalidateQueries({
+                queryKey: [KEY_BASE],
+            });
+        },
+        onError: (e, variables) => {
+            conToastError(`Error updating items`, e, variables);
+        },
+    });
+};
+
+export const delete{tableName}sMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (itemIds: Set<number>) => delete{tableName}s({ db, itemIds }),
+        onSuccess: (_, variables) => {
+            // Invalidate all queries
+            qc.invalidateQueries({
+                queryKey: [KEY_BASE],
+            });
+        },
+        onError: (e, variables) => {
+            conToastError(`Error deleting items`, e, variables);
+        },
+    });
+};
+```
+
+### 3. **Update Index Files**
+
+Add exports to `apps/desktop/src/db-functions/index.ts`:
+
+```typescript
+export * from "./{tableName}";
+```
+
+Add exports to `apps/desktop/src/hooks/queries/index.ts`:
+
+```typescript
+export * from "./use{tableName}";
+```
+
+### 4. **Follow Naming Conventions**
+
+- **Database File**: `[tableName].ts` (camelCase table name)
+- **Hook File**: `use[TableName].ts` (PascalCase table name)
+- **Function Names**: `get[TableNames]`, `create[TableNames]`, `update[TableNames]`, `delete[TableNames]`
+- **Query Keys**: `[tableName]` (camelCase)
+- **Types**: `Database[TableName]`, `New[TableName]Args`, `Modified[TableName]Args`
+
+### 5. **Required Features**
+
+✅ **Separation of Concerns**: Database logic separate from React Query logic
+✅ **Type Safety**: Full TypeScript support with proper type transformations
+✅ **Transaction Support**: All mutations use `transactionWithHistory`
+✅ **History Integration**: Automatic undo/redo support
+✅ **Smart Invalidation**: Selective cache invalidation
+✅ **Error Handling**: Built-in error states with toast notifications
+✅ **Loading States**: Automatic loading management
+✅ **Data Transformation**: Proper conversion between database and application types
+
+### 6. **Advanced Patterns**
+
+#### **Complex Database Operations**
+
+```typescript
+// In db-functions/{tableName}.ts
+export async function get{tableName}sWithRelatedData({
+    db,
+    filters,
+}: {
+    db: DbConnection;
+    filters?: { status?: string; category?: string };
+}): Promise<Database{tableName}[]> {
+    const conditions = [];
+
+    if (filters?.status) {
+        conditions.push(eq(schema.table_name.status, filters.status));
+    }
+    if (filters?.category) {
+        conditions.push(eq(schema.table_name.category, filters.category));
+    }
+
+    const query = db.query.table_name.findMany({
+        where: conditions.length > 0 ? and(...conditions) : undefined,
+        with: {
+            relatedTable: true, // Include related data
+        },
+    });
+
+    const result = await query;
+    return result.map(realDatabase{tableName}ToDatabase{tableName});
+}
+```
+
+#### **Custom Query Keys**
+
+```typescript
+// In hooks/queries/use{tableName}.ts
+export const {tableName}Keys = {
+    all: () => [KEY_BASE] as const,
+    byId: (id: number) => [KEY_BASE, "id", id] as const,
+    byStatus: (status: string) => [KEY_BASE, "status", status] as const,
+    byCategory: (category: string) => [KEY_BASE, "category", category] as const,
+    withRelated: () => [KEY_BASE, "withRelated"] as const,
+};
+```
+
+#### **Complex Mutations**
+
+```typescript
+// In db-functions/{tableName}.ts
+export interface ComplexUpdateRequest {
+    modifiedItems: Modified{tableName}Args[];
+    relatedUpdates?: RelatedTableArgs[];
+    metadata?: { reason: string; userId: number };
+}
+
+export async function complexUpdate{tableName}s({
+    db,
+    request,
+}: {
+    db: DbConnection;
+    request: ComplexUpdateRequest;
+}): Promise<Database{tableName}[]> {
+    const transactionResult = await transactionWithHistory(
+        db,
+        `Complex update: ${request.metadata?.reason || "Unknown"}`,
+        async (tx) => {
+            // Update main table
+            const updatedItems = await update{tableName}sInTransaction({
+                modifiedItems: request.modifiedItems,
+                tx,
+            });
+
+            // Update related tables if needed
+            if (request.relatedUpdates) {
+                await updateRelatedTableInTransaction({
+                    relatedUpdates: request.relatedUpdates,
+                    tx,
+                });
+            }
+
+            return updatedItems;
+        },
+    );
+    return transactionResult;
+}
+```
+
+## 🚫 **What NOT to Do**
+
+- ❌ Don't put database logic directly in React Query hooks
+- ❌ Don't skip the data transformation layer
+- ❌ Don't forget to handle database-specific types (e.g., boolean as 0|1)
+- ❌ Don't manually manage cache invalidation
+- ❌ Don't skip transaction support
+- ❌ Don't forget error handling with toast notifications
+
+## ✅ **What to Always Do**
+
+- ✅ Create separate database function files and React Query hook files
+- ✅ Include proper TypeScript types with transformations
+- ✅ Use `transactionWithHistory` for all mutations
+- ✅ Put all of the core database login in a "inTransaction" function that takes a transaction as an argument
+- ✅ Implement smart cache invalidation
+- ✅ Follow the established naming conventions
+- ✅ Include comprehensive error handling
+- ✅ Add data transformation functions
+- ✅ Export both database functions and query options
+
+## 🔄 **Migration Checklist**
+
+When migrating existing table files:
+
+1. ✅ Create database function file in `db-functions/`
+2. ✅ Create React Query hook file in `hooks/queries/`
+3. ✅ Update all components to use new query options
+4. ✅ Remove old table file
+5. ✅ Update imports throughout codebase
+6. ✅ Test all functionality
+7. ✅ Update documentation
+
+## 📝 **Key Differences from Old Pattern**
+
+- **Separation**: Database logic is now separate from React Query logic
+- **Type Safety**: Explicit type transformations between database and application types
+- **Query Options**: Uses `queryOptions` and `mutationOptions` instead of direct hooks
+- **Error Handling**: Centralized error handling with toast notifications
+- **History**: Automatic undo/redo integration through `transactionWithHistory`
+- **ORM Usage**: Uses Drizzle rather than raw SQL from better-sqlite3
+- **Renderer-first**: None of the database logic is stored in the main process
+
+This rule ensures OpenMarch maintains a clean separation of concerns while providing a modern, efficient, and consistent approach to data management.

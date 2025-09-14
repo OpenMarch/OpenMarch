@@ -9,7 +9,7 @@ import MarcherCoordinateSheetPreview, {
 } from "./MarcherCoordinateSheet";
 import {
     allMarcherPagesQueryOptions,
-    useFieldProperties,
+    fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import {
@@ -32,7 +32,7 @@ import {
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useMarchersWithVisuals, useTimingObjects } from "@/hooks";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { rgbaToString } from "@openmarch/core";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
@@ -45,10 +45,10 @@ import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -66,14 +66,16 @@ function CoordinateSheetExport() {
     const [roundingDenominator, setRoundingDenominator] = useState(4);
     const [organizeBySection, setOrganizeBySection] = useState(false);
     const [quarterPages, setQuarterPages] = useState(false);
-    const { marchers } = useMarchersWithVisuals();
-    const { pages } = useTimingObjectsStore()!;
+    const { data: marchers, isSuccess: marchersLoaded } = useQuery(
+        allMarchersQueryOptions(),
+    );
+    const { pages } = useTimingObjects();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
@@ -119,9 +121,8 @@ function CoordinateSheetExport() {
             return;
         }
 
-        if (!marcherPagesLoaded) {
-            toast.error(t("exportCoordinates.marcherPagesNotLoaded"));
-            setIsLoading(false);
+        if (!marcherPagesLoaded || !marchersLoaded) {
+            setIsLoading(true);
             return;
         }
 
@@ -393,15 +394,16 @@ function CoordinateSheetExport() {
         t,
         fieldProperties,
         marcherPagesLoaded,
+        marchersLoaded,
         marchers,
+        pages,
         quarterPages,
         organizeBySection,
         marcherPages,
-        pages,
         roundingDenominator,
         isTerse,
-        includeMeasures,
         useXY,
+        includeMeasures,
     ]);
 
     return (
@@ -570,7 +572,7 @@ function CoordinateSheetExport() {
                 <Button
                     size="compact"
                     onClick={handleExport}
-                    disabled={isLoading || marchers.length === 0}
+                    disabled={isLoading || !marchersLoaded}
                 >
                     {isLoading ? (
                         <T keyName="exportCoordinates.exporting" />
@@ -649,14 +651,17 @@ function CoordinateSheetExport() {
 }
 
 function DrillChartExport() {
-    const { pages } = useTimingObjectsStore()!;
-    const { data: fieldProperties } = useFieldProperties();
+    const { pages } = useTimingObjects()!;
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const marcherVisuals = useMarchersWithVisuals();
+    const { data: marchers, isSuccess: marchersLoaded } = useQuery(
+        allMarchersQueryOptions(),
+    );
     const { setSelectedPage } = useSelectedPage()!;
     const { shapePages } = useShapePageStore()!;
 
@@ -686,6 +691,9 @@ function DrillChartExport() {
         }> => {
             if (!marcherPagesLoaded) {
                 throw new Error(t("exportCoordinates.marcherPagesNotLoaded"));
+            }
+            if (!marchersLoaded) {
+                throw new Error(t("exportCoordinates.marchersNotLoaded"));
             }
 
             // Setup export canvas for SVG generation
@@ -862,12 +870,14 @@ function DrillChartExport() {
         },
         [
             marcherPagesLoaded,
+            marchersLoaded,
             fieldProperties,
             marchers,
             t,
             pages,
             marcherVisuals,
             marcherPages,
+            shapePages,
             individualCharts,
         ],
     );
@@ -884,6 +894,9 @@ function DrillChartExport() {
             exportName: string,
             exportDir: string,
         ) => {
+            if (!marchersLoaded) {
+                throw new Error(t("exportCoordinates.marchersNotLoaded"));
+            }
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {
                 const result =
@@ -927,13 +940,14 @@ function DrillChartExport() {
                 }
             }
         },
-        [individualCharts, marchers, pages, t],
+        [individualCharts, marchers, marchersLoaded, pages, t],
     );
 
     // Check if we have the minimum requirements for export
     const canExport = !!(
         fieldProperties &&
         pages.length > 1 &&
+        marchers &&
         marchers.length > 0
     );
 
@@ -1060,7 +1074,15 @@ function DrillChartExport() {
                 setCurrentStep("");
             }, 1000);
         }
-    }, [generateExportSVGs, exportMarcherSVGs, t]);
+    }, [
+        marcherVisuals,
+        setSelectedPage,
+        pages,
+        shapePages,
+        generateExportSVGs,
+        t,
+        exportMarcherSVGs,
+    ]);
 
     return (
         <div className="flex flex-col gap-20">
@@ -1151,7 +1173,10 @@ function DrillChartExport() {
                             </div>
                             <div>
                                 {t("exportCoordinates.marcher", {
-                                    status: marchers.length > 0 ? "✓" : "✗",
+                                    status:
+                                        marchers && marchers.length > 0
+                                            ? "✓"
+                                            : "✗",
                                 })}
                             </div>
                         </div>

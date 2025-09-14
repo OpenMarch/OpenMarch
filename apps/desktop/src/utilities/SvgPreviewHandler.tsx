@@ -2,11 +2,11 @@ import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import {
     allMarcherPagesQueryOptions,
-    useFieldProperties,
+    allMarchersQueryOptions,
+    fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import { useMarchersWithVisuals, useTimingObjects } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
 
 /**
@@ -16,16 +16,16 @@ const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
 
     // Get current values
-    const { data: fieldProperties } = useFieldProperties();
-    const { pages = [] } = useTimingObjectsStore() ?? {};
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { pages = [] } = useTimingObjects() ?? {};
     const { data: marcherPages = {} } = useQuery(
         // This might be overkill
         allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const { marchers = [], marcherVisuals = {} } =
-        useMarchersWithVisuals() ?? {};
+    const marcherVisuals = useMarchersWithVisuals();
+    const { data: marchers } = useQuery(allMarchersQueryOptions());
 
     // Refs to store current values for use in the IPC handler
     const fieldPropertiesRef = useRef(fieldProperties);
@@ -140,7 +140,7 @@ const SvgPreviewHandler: React.FC = () => {
                 }
             }
         },
-        [createSvgCanvas],
+        [createSvgCanvas, marcherVisuals],
     );
 
     /**

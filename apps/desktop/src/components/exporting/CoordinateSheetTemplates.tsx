@@ -1,5 +1,5 @@
 import React from "react";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";

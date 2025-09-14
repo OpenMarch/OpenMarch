@@ -1,5 +1,4 @@
 import {
-    useQuery,
     useMutation,
     useQueryClient,
     queryOptions,
@@ -11,6 +10,7 @@ import { db, schema } from "@/global/database/db";
 import { Path } from "@openmarch/path-utility";
 import { DbConnection } from "@/test/base";
 import { findPageIdsForPathway } from "@/db-functions";
+import { DEFAULT_STALE_TIME } from "./constants";
 
 const { pathways, marcher_pages } = schema;
 
@@ -53,7 +53,9 @@ export const pathwayKeys = {
 /**
  * Converts an array of pathways to a Record indexed by ID
  */
-export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwaysById {
+export function pathwayMapFromArray(
+    pathways: Omit<DatabasePathway, "created_at" | "updated_at">[],
+): PathwaysById {
     const pathwayMap: PathwaysById = {};
 
     pathways.forEach((pathway) => {
@@ -102,6 +104,7 @@ export const allPathwaysQueryOptions = () => {
     return queryOptions<PathwaysById>({
         queryKey: pathwayKeys.all,
         queryFn: () => pathwayQueries.getAll(db),
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
@@ -113,6 +116,7 @@ export const pathwaysByPageQueryOptions = (pageId: number) => {
         queryKey: pathwayKeys.byPageId(pageId),
         queryFn: () => pathwayQueries.getByPageId(pageId, db),
         enabled: !!pageId,
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 

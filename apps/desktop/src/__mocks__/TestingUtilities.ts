@@ -1,4 +1,4 @@
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 

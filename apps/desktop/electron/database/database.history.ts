@@ -6,7 +6,7 @@ import { DB, schema } from "./db";
 type HistoryType = "undo" | "redo";
 
 const tablesWithHistory = [
-    // schema.beats,
+    schema.beats,
     schema.pages,
     schema.measures,
     schema.marchers,

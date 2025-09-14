@@ -12,7 +12,7 @@ import type { DatabasePage } from "../../../../electron/database/tables/PageTabl
 import { FIRST_PAGE_ID } from "../../../../electron/database/constants";
 import { ElectronApi } from "../../../../electron/preload";
 import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { conToastError } from "@/utilities/utils";
 

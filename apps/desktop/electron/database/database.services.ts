@@ -11,8 +11,6 @@ import { DatabaseResponse } from "./DatabaseActions";
 import * as ShapeTable from "./tables/ShapeTable";
 import * as ShapePageTable from "./tables/ShapePageTable";
 import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
-import * as BeatTable from "./tables/BeatTable";
-import * as UtilityTable from "./tables/UtilityTable";
 import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
@@ -239,29 +237,6 @@ export function initHandlers() {
 
     // File IO handlers located in electron/main/index.ts
 
-    // **** Timing Objects ****
-
-    // Beats
-    ipcMain.handle("beat:getAll", async () =>
-        connectWrapper(BeatTable.getBeats),
-    );
-    ipcMain.handle("beat:insert", async (_, newBeats, startingPosition) =>
-        connectWrapper(BeatTable.createBeats, {
-            newBeats,
-            startingPosition,
-        }),
-    );
-    ipcMain.handle("beat:update", async (_, modifiedBeats) =>
-        connectWrapper(BeatTable.updateBeats, {
-            modifiedBeats,
-        }),
-    );
-    ipcMain.handle("beat:delete", async (_, beatIds) =>
-        connectWrapper(BeatTable.deleteBeats, {
-            beatIds,
-        }),
-    );
-
     // Audio Files
     // ipcMain.handle("audio:insert") is defined in main/index.ts
     ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
@@ -397,25 +372,6 @@ export function initHandlers() {
         "utilities:swap_marchers",
         async (_, args: Utilities.SwapMarchersArgs) =>
             connectWrapper(Utilities.swapMarchers, args),
-    );
-
-    ipcMain.handle("utility:getRecord", async () =>
-        connectWrapper<UtilityTable.UtilityRecord | null>(
-            UtilityTable.getUtilityRecord,
-            {},
-        ),
-    );
-    ipcMain.handle(
-        "utility:updateRecord",
-        async (
-            _,
-            utilityRecord: UtilityTable.ModifiedUtilityRecord,
-            useNextUndoGroup: boolean,
-        ) =>
-            connectWrapper<UtilityTable.UtilityRecord>(
-                UtilityTable.updateUtilityRecord,
-                { utilityRecord, useNextUndoGroup },
-            ),
     );
 
     // History utilities
@@ -642,14 +598,6 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
-/**
- * Creates new measures in the database, completely replacing the old ABC string.
- * See documentation in createMeasureTable for how measures in OpenMarch are stored.
- * This also selects the newly created audio file.
- *
- * @param new_ABC_data The new ABC string to put into the database
- * @returns LegacyDatabaseResponse
- */
 export async function insertAudioFile(
     audioFile: AudioFile,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {

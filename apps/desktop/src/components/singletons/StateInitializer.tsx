@@ -2,21 +2,14 @@ import { useCallback, useEffect } from "react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { Constants } from "@/global/Constants";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useMarcherStore } from "@/stores/MarcherStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import {
-    marcherPageKeys,
-    useFieldProperties,
-    useFieldPropertiesWithSetter,
-} from "@/hooks/queries";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { marcherPageKeys } from "@/hooks/queries";
+import { useTimingObjects } from "@/hooks";
 import { useUndoRedoStore } from "@/stores/UndoRedoStore";
-import { fetchMarchersAndVisuals } from "@/global/classes/MarcherVisualGroup";
-import { DEFAULT_FIELD_THEME, FieldTheme } from "@openmarch/core";
 import { useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 
@@ -25,17 +18,13 @@ import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
  * @returns <> </>
  */
 function StateInitializer() {
-    const { marchers, fetchMarchers } = useMarcherStore();
-    const { pages, fetchTimingObjects } = useTimingObjectsStore();
+    const { pages } = useTimingObjects();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
-    const { fetchFieldProperties } = useFieldPropertiesWithSetter();
     const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
-    const { isSuccess: fieldPropertiesSuccess, data: fieldProperties } =
-        useFieldProperties();
     const queryClient = useQueryClient();
 
     if (selectedPage) {
@@ -72,18 +61,6 @@ function StateInitializer() {
      * This component exists so that OpenMarch doesn't rely on other components
      * to ensure the initial state has been retrieved.
      */
-
-    useEffect(() => {
-        const fieldTheme: FieldTheme = fieldPropertiesSuccess
-            ? fieldProperties.theme
-            : DEFAULT_FIELD_THEME;
-        Marcher.fetchMarchers = () => fetchMarchersAndVisuals(fieldTheme);
-        Marcher.fetchMarchers();
-    }, [fetchMarchers, fieldPropertiesSuccess, fieldProperties?.theme]);
-
-    useEffect(() => {
-        fetchTimingObjects();
-    }, [fetchTimingObjects]);
 
     useEffect(() => {
         MarcherShape.fetchShapePages = fetchShapePages;
@@ -131,123 +108,123 @@ function StateInitializer() {
         setSelectedMarcherShapes([]);
     }, [selectedPage, setSelectedMarcherShapes]);
 
-    const getMarcher = useCallback(
-        (id: number) => {
-            return marchers.find((marcher) => marcher.id === id) || null;
-        },
-        [marchers],
-    );
+    // const getMarcher = useCallback(
+    //     (id: number) => {
+    //         return marchers.find((marcher) => marcher.id === id) || null;
+    //     },
+    //     [marchers],
+    // );
 
-    const getPage = useCallback(
-        (id: number) => {
-            return pages.find((page) => page.id === id) || null;
-        },
-        [pages],
-    );
+    // const getPage = useCallback(
+    //     (id: number) => {
+    //         return pages.find((page) => page.id === id) || null;
+    //     },
+    //     [pages],
+    // );
 
     // Listen for history actions (undo/redo) from the main process
-    useEffect(() => {
-        const handler = (args: HistoryResponse) => {
-            for (const tableName of args.tableNames) {
-                switch (tableName) {
-                    case Constants.MarcherTableName:
-                        fetchMarchers();
-                        if (args.marcherIds.length > 0) {
-                            // TODO support passing in all of the marchers that were modified in the undo
-                            const newMarchers = marchers.filter((marcher) =>
-                                args.marcherIds.includes(marcher.id),
-                            );
-                            setSelectedMarchers(newMarchers);
-                        } else {
-                            setSelectedMarchers([]);
-                        }
-                        break;
-                    case Constants.MarcherPageTableName:
-                        if (!args.pageId)
-                            throw new Error(
-                                "Page ID must be defined on the history response",
-                            );
-                        queryClient.invalidateQueries({
-                            queryKey: [marcherPageKeys.byPage(args.pageId)],
-                        });
-                        if (args.marcherIds.length > 0) {
-                            // TODO support passing in all of the marchers that were modified in the undo
-                            const newMarchers = marchers.filter((marcher) =>
-                                args.marcherIds.includes(marcher.id),
-                            );
-                            setSelectedMarchers(newMarchers);
-                        } else {
-                            setSelectedMarchers([]);
-                        }
-                        if (args.pageId && args.pageId > 0) {
-                            const newPage = getPage(args.pageId);
-                            if (!newPage)
-                                throw new Error(
-                                    `Page could not be found with ID ${args.pageId}`,
-                                );
-                            setSelectedPage(newPage);
-                        }
-                        break;
-                    case Constants.ShapeTableName:
-                    case Constants.ShapePageTableName:
-                    case Constants.ShapePageMarcherTableName:
-                        if (!args.pageId)
-                            throw new Error(
-                                "Page ID must be defined on the history response",
-                            );
-                        queryClient.invalidateQueries({
-                            queryKey: [marcherPageKeys.byPage(args.pageId)],
-                        });
-                        fetchShapePages();
-                        break;
-                    case Constants.PageTableName:
-                        fetchTimingObjects();
-                        if (args.pageId && args.pageId > 0) {
-                            const newPage = getPage(args.pageId);
-                            if (!newPage)
-                                throw new Error(
-                                    `Page could not be found with ID ${args.pageId}`,
-                                );
-                            setSelectedPage(newPage);
-                        }
-                        break;
-                    case Constants.BeatsTableName:
-                    case Constants.MeasureTableName:
-                        fetchTimingObjects();
-                        break;
-                    case Constants.FieldPropertiesTableName:
-                        fetchFieldProperties();
-                }
-            }
+    // useEffect(() => {
+    //     const handler = (args: HistoryResponse) => {
+    //         for (const tableName of args.tableNames) {
+    //             switch (tableName) {
+    //                 case Constants.MarcherTableName:
+    //                     fetchMarchers();
+    //                     if (args.marcherIds.length > 0) {
+    //                         // TODO support passing in all of the marchers that were modified in the undo
+    //                         const newMarchers = marchers.filter((marcher) =>
+    //                             args.marcherIds.includes(marcher.id),
+    //                         );
+    //                         setSelectedMarchers(newMarchers);
+    //                     } else {
+    //                         setSelectedMarchers([]);
+    //                     }
+    //                     break;
+    //                 case Constants.MarcherPageTableName:
+    //                     if (!args.pageId)
+    //                         throw new Error(
+    //                             "Page ID must be defined on the history response",
+    //                         );
+    //                     queryClient.invalidateQueries({
+    //                         queryKey: [marcherPageKeys.byPage(args.pageId)],
+    //                     });
+    //                     if (args.marcherIds.length > 0) {
+    //                         // TODO support passing in all of the marchers that were modified in the undo
+    //                         const newMarchers = marchers.filter((marcher) =>
+    //                             args.marcherIds.includes(marcher.id),
+    //                         );
+    //                         setSelectedMarchers(newMarchers);
+    //                     } else {
+    //                         setSelectedMarchers([]);
+    //                     }
+    //                     if (args.pageId && args.pageId > 0) {
+    //                         const newPage = getPage(args.pageId);
+    //                         if (!newPage)
+    //                             throw new Error(
+    //                                 `Page could not be found with ID ${args.pageId}`,
+    //                             );
+    //                         setSelectedPage(newPage);
+    //                     }
+    //                     break;
+    //                 case Constants.ShapeTableName:
+    //                 case Constants.ShapePageTableName:
+    //                 case Constants.ShapePageMarcherTableName:
+    //                     if (!args.pageId)
+    //                         throw new Error(
+    //                             "Page ID must be defined on the history response",
+    //                         );
+    //                     queryClient.invalidateQueries({
+    //                         queryKey: [marcherPageKeys.byPage(args.pageId)],
+    //                     });
+    //                     fetchShapePages();
+    //                     break;
+    //                 case Constants.PageTableName:
+    //                     fetchTimingObjects();
+    //                     if (args.pageId && args.pageId > 0) {
+    //                         const newPage = getPage(args.pageId);
+    //                         if (!newPage)
+    //                             throw new Error(
+    //                                 `Page could not be found with ID ${args.pageId}`,
+    //                             );
+    //                         setSelectedPage(newPage);
+    //                     }
+    //                     break;
+    //                 case Constants.BeatsTableName:
+    //                 case Constants.MeasureTableName:
+    //                     fetchTimingObjects();
+    //                     break;
+    //                 case Constants.FieldPropertiesTableName:
+    //                     fetchFieldProperties();
+    //             }
+    //         }
 
-            updateUndoRedo();
-        };
+    //         updateUndoRedo();
+    //     };
 
-        window.electron.onHistoryAction(handler);
+    //     window.electron.onHistoryAction(handler);
 
-        window.electron.onImportFieldPropertiesFile(() =>
-            fetchFieldProperties(),
-        );
+    //     window.electron.onImportFieldPropertiesFile(() =>
+    //         fetchFieldProperties(),
+    //     );
 
-        updateUndoRedo();
+    //     updateUndoRedo();
 
-        return () => {
-            window.electron.removeHistoryActionListener(); // Remove the event listener
-            window.electron.removeImportFieldPropertiesFileListener();
-        };
-    }, [
-        getMarcher,
-        getPage,
-        fetchMarchers,
-        setSelectedPage,
-        setSelectedMarchers,
-        marchers,
-        fetchShapePages,
-        fetchFieldProperties,
-        fetchTimingObjects,
-        updateUndoRedo,
-        queryClient,
-    ]);
+    //     return () => {
+    //         window.electron.removeHistoryActionListener(); // Remove the event listener
+    //         window.electron.removeImportFieldPropertiesFileListener();
+    //     };
+    // }, [
+    //     getMarcher,
+    //     getPage,
+    //     fetchMarchers,
+    //     setSelectedPage,
+    //     setSelectedMarchers,
+    //     marchers,
+    //     fetchShapePages,
+    //     fetchFieldProperties,
+    //     fetchTimingObjects,
+    //     updateUndoRedo,
+    //     queryClient,
+    // ]);
 
     return <></>; // Empty fragment
 }

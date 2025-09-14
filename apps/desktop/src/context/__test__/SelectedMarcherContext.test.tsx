@@ -5,7 +5,7 @@ import {
     SelectedMarchersProvider,
 } from "@/context/SelectedMarchersContext";
 import { ElectronApi } from "electron/preload";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // Mock the electron api

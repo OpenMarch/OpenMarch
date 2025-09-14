@@ -13,7 +13,7 @@ import {
 import MarcherList from "../MarcherList";
 import { mockMarchers } from "@/__mocks__/globalMocks";
 import { useMarcherStore } from "@/stores/MarcherStore";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import {
     afterEach,
     beforeEach,
