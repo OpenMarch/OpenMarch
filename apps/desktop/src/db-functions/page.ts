@@ -2,6 +2,7 @@ import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
+    FIRST_BEAT_ID,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -188,6 +189,7 @@ const createPagesInTransaction = async ({
     newPages: NewPageArgs[];
     tx: DbTransaction;
 }): Promise<DatabasePage[]> => {
+    console.debug("new page args", newPages);
     // Reverse the order of the new pages so that they are created in the correct order
     const createdPages = await tx
         .insert(schema.pages)
@@ -466,23 +468,26 @@ export const createLastPageInTransaction = async ({
     assert(lastPageCounts != null, "Last page counts not found");
 
     const lastPage = await tx
-        .select({
-            id: schema.pages.id,
-            start_beat_id: schema.beats.id,
-            beat_position: schema.beats.position,
-        })
+        .select()
         .from(schema.pages)
         .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
         .orderBy(desc(schema.beats.position))
         .limit(1)
         .get();
+    console.debug("last page", lastPage);
     assert(lastPage != null, "Last page not found");
-    const nextBeatToStartOn = await tx.query.beats.findFirst({
-        where: gt(schema.beats.position, lastPage.beat_position),
-        orderBy: asc(schema.beats.position),
-        offset: lastPageCounts,
-    });
-
+    const allBeats = await tx.query.beats.findMany();
+    console.debug("all beats", allBeats);
+    const nextBeatToStartOn = await tx
+        .select({
+            id: schema.beats.id,
+        })
+        .from(schema.beats)
+        .where(gt(schema.beats.position, lastPage.beats.position))
+        .orderBy(asc(schema.beats.position))
+        .limit(1)
+        .get();
+    console.debug("next beat to start on", nextBeatToStartOn);
     if (!nextBeatToStartOn) throw new Error("No next beat to start on found");
 
     await createPagesInTransaction({

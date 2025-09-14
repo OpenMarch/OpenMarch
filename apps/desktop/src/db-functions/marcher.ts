@@ -301,3 +301,15 @@ export async function deleteMarchers({
     );
     return deleteResponse;
 }
+
+// export async function swapMarchersInTransaction({
+//     marcher1Id,
+//     marcher2Id,
+//     tx,
+// }: {
+//     marcher1Id: number;
+//     marcher2Id: number;
+//     tx: DbTransaction;
+// }): Promise<DatabaseMarcher[]> {
+
+// }
