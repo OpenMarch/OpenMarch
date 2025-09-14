@@ -246,27 +246,6 @@ app.whenReady().then(async () => {
 });
 
 function initGetters() {
-    // Store selected page and marchers
-    ipcMain.on("send:selectedPage", async (_, selectedPageId: number) => {
-        store.set("selectedPageId", selectedPageId);
-    });
-    ipcMain.on(
-        "send:selectedMarchers",
-        async (_, selectedMarchersId: number[]) => {
-            store.set("selectedMarchersId", selectedMarchersId);
-        },
-    );
-
-    // Store locked x or y axis
-    store.set("lockX", false);
-    store.set("lockY", false);
-    ipcMain.on("send:lockX", async (_, lockX: boolean) => {
-        store.set("lockX", lockX as boolean);
-    });
-    ipcMain.on("send:lockY", async (_, lockY: boolean) => {
-        store.set("lockY", lockY as boolean);
-    });
-
     // Exports
     ipcMain.handle("export:pdf", async (_, params) => {
         return await PDFExportService.export(

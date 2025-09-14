@@ -1,16 +1,15 @@
 import {
     marcherPagesByMarcherQueryOptions,
-    marcherPagesByPageQueryOptions,
-    useFieldProperties,
+    fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import React, { useEffect, useState } from "react";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import Beat from "@/global/classes/Beat";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
@@ -49,11 +48,11 @@ export default function MarcherCoordinateSheetPreview({
     terse = false,
     useXY = false,
 }: MarcherCoordinateSheetProps) {
-    const { pages } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByMarcherQueryOptions(marcher?.id || -1),
     );
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>(
@@ -100,15 +99,18 @@ export default function MarcherCoordinateSheetPreview({
             } satisfies Measure;
         });
         if (example && fieldProperties) {
-            setMarcherToUse(
-                new Marcher({
-                    id: 1,
-                    name: t("exportCoordinates.exampleMarcherName"),
-                    section: t("exportCoordinates.exampleMarcherSection"),
-                    drill_prefix: "B",
-                    drill_order: 1,
-                }),
-            );
+            setMarcherToUse({
+                id: 1,
+                name: t("exportCoordinates.exampleMarcherName"),
+                section: t("exportCoordinates.exampleMarcherSection"),
+                drill_prefix: "B",
+                drill_order: 1,
+                drill_number: "B1",
+                year: null,
+                notes: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            });
             const pages = [
                 {
                     id: 1,

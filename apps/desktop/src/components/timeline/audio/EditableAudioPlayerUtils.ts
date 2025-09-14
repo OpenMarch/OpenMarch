@@ -1,22 +1,31 @@
-import Beat, {
-    createBeats,
-    deleteBeats,
-    fromDatabaseBeat,
-} from "@/global/classes/Beat";
-import Measure, {
-    createMeasures,
-    deleteMeasures,
-} from "@/global/classes/Measure";
-import Page, { updatePages } from "@/global/classes/Page";
-import { GroupFunction } from "@/utilities/ApiFunctions";
+import Beat, { fromDatabaseBeat } from "@/global/classes/Beat";
+import Measure from "@/global/classes/Measure";
+import Page from "@/global/classes/Page";
 import { conToastError } from "@/utilities/utils";
+import { db } from "@/global/database/db";
+import { transactionWithHistory } from "@/db-functions";
+import {
+    createBeatsInTransaction,
+    deleteBeatsInTransaction,
+} from "@/db-functions/beat";
+import {
+    createMeasuresInTransaction,
+    deleteMeasuresInTransaction,
+} from "@/db-functions/measures";
+import { updatePagesInTransaction } from "@/db-functions/page";
 import {
     DatabaseBeat,
     ModifiedBeatArgs,
+    ModifiedPageArgs,
     NewBeatArgs,
-} from "electron/database/tables/BeatTable";
-import type { NewMeasureArgs } from "@/global/classes/Measure";
-import type { ModifiedPageArgs } from "electron/database/tables/PageTable";
+    NewMeasureArgs,
+} from "@/db-functions";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { measureKeys } from "@/hooks/queries/useMeasures";
+import { beatKeys } from "@/hooks/queries/useBeats";
+import { pageKeys } from "@/hooks/queries/usePages";
+import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * Creates new temporary beats by subdividing the time between the last existing beat and the current time.
@@ -215,7 +224,7 @@ export const prepareBeatsForCreation = (beats: Beat[]): NewBeatArgs[] => {
         if (beat.duration > 0)
             output.push({
                 duration: beat.duration,
-                include_in_measure: 1 as 0 | 1,
+                include_in_measure: true,
             });
     }
     return output;
@@ -328,36 +337,137 @@ export const prepareMeasuresForCreation = (
  * @param measuresToCreate - The measures to create
  * @param oldMeasures - The old measures to delete
  * @param oldBeats - The old beats to delete
- * @param refreshFunction - Function to refresh the UI after updates
  * @returns A promise resolving to the result of the database operations
  */
-export const performDatabaseOperations = async (
-    pagesToUpdate: ModifiedPageArgs[],
-    measuresToCreate: NewMeasureArgs[],
-    oldMeasures: Measure[],
-    oldBeats: Beat[],
-    refreshFunction: () => Promise<void>,
-): Promise<{ success: boolean }> => {
+export const _performDatabaseOperations = async ({
+    pagesToUpdate,
+    measuresToCreate,
+    oldMeasures,
+    oldBeats,
+}: {
+    pagesToUpdate: ModifiedPageArgs[];
+    measuresToCreate: NewMeasureArgs[];
+    oldMeasures: Measure[];
+    oldBeats: Beat[];
+}): Promise<void> => {
     const measureIdsToDelete = new Set(
         oldMeasures.map((measure) => measure.id),
     );
     const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
 
-    const result = await GroupFunction({
-        functionsToExecute: [
-            () => updatePages(pagesToUpdate, async () => {}),
-            () => createMeasures(measuresToCreate, async () => {}),
-            () => deleteMeasures(measureIdsToDelete, async () => {}),
-            () => deleteBeats(beatIdsToDelete, async () => {}),
-        ],
-        useNextUndoGroup: false,
+    await transactionWithHistory(db, "replaceAllBeatObjects", async (tx) => {
+        // Update pages
+        if (pagesToUpdate.length > 0) {
+            await updatePagesInTransaction({
+                tx,
+                modifiedPages: pagesToUpdate,
+            });
+        }
+
+        // Create new measures
+        if (measuresToCreate.length > 0) {
+            await createMeasuresInTransaction({
+                tx,
+                newItems: measuresToCreate,
+            });
+        }
+
+        // Delete old measures
+        if (measureIdsToDelete.size > 0) {
+            await deleteMeasuresInTransaction({
+                tx,
+                itemIds: measureIdsToDelete,
+            });
+        }
+
+        // Delete old beats
+        if (beatIdsToDelete.size > 0) {
+            await deleteBeatsInTransaction({
+                tx,
+                beatIds: beatIdsToDelete,
+            });
+        }
     });
+};
 
-    if (result.success) {
-        refreshFunction();
-    }
+/**
+ * Generic mutation hook for audio player operations
+ */
+const useAudioPlayerMutation = <TArgs>(
+    mutationFn: (args: TArgs) => Promise<void>,
+    errorKey: string,
+    successKey?: string,
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn,
+        onSuccess: () => {
+            // Invalidate all relevant queries
+            queryClient.invalidateQueries({
+                queryKey: measureKeys.all(),
+            });
+            queryClient.invalidateQueries({
+                queryKey: beatKeys.all(),
+            });
+            queryClient.invalidateQueries({
+                queryKey: pageKeys.all(),
+            });
 
-    return result;
+            if (successKey) toast.success(tolgee.t(successKey));
+        },
+        onError: (error) => {
+            conToastError(tolgee.t(errorKey), error);
+        },
+    });
+};
+
+/**
+ * Creates beats in the database and returns them
+ */
+export const _createBeatsWithResult = async ({
+    newBeats,
+}: {
+    newBeats: NewBeatArgs[];
+}): Promise<DatabaseBeat[]> => {
+    return await transactionWithHistory(db, "createBeats", async (tx) => {
+        return await createBeatsInTransaction({
+            tx,
+            newBeats,
+        });
+    });
+};
+
+/**
+ * Creates beats in the database (for mutation hook)
+ */
+export const _createBeats = async ({
+    newBeats,
+}: {
+    newBeats: NewBeatArgs[];
+}): Promise<void> => {
+    await _createBeatsWithResult({ newBeats });
+};
+
+/**
+ * Mutation hook for creating beats
+ */
+export const useCreateBeats = () => {
+    return useAudioPlayerMutation(
+        _createBeats,
+        "audio.beats.create.error",
+        "audio.beats.create.success",
+    );
+};
+
+/**
+ * Mutation hook for replacing all beat objects
+ */
+export const useReplaceAllBeatObjects = () => {
+    return useAudioPlayerMutation(
+        _replaceAllBeatObjects,
+        "audio.beats.replace.error",
+        "audio.beats.replace.success",
+    );
 };
 
 /**
@@ -461,68 +571,51 @@ export const createNewBeatsForTempoChange = ({
  * @param newMeasures - The new measures to be created
  * @param oldMeasures - The existing measures to be replaced
  * @param pages - Pages associated with the old beats
- * @param refreshFunction - Function to refresh the UI after updates
  * @returns An object indicating whether the beat creation and update was successful
  */
-export const replaceAllBeatObjects = async ({
+export const _replaceAllBeatObjects = async ({
     newBeats,
     oldBeats,
     newMeasures,
     oldMeasures,
     pages,
-    refreshFunction,
-    t,
 }: {
     newBeats: Beat[];
     oldBeats: Beat[];
     newMeasures: Measure[];
     oldMeasures: Measure[];
     pages: Page[];
-    refreshFunction: () => Promise<void>;
-    t: (key: string) => string; // Tolgee translation function
-}): Promise<{ success: boolean }> => {
+}): Promise<void> => {
     // Step 1: Prepare beats for creation
     const beatsToCreate = prepareBeatsForCreation(newBeats);
 
     // Step 2: Create beats in the database
-    const createBeatsResponse = await createBeats(
-        beatsToCreate,
-        async () => {},
+    const createdBeats = await _createBeatsWithResult({
+        newBeats: beatsToCreate,
+    });
+
+    // Step 3: Convert database beats to Beat objects
+    const convertedBeats = convertDatabaseBeatsToBeats(createdBeats);
+
+    // Step 4: Prepare page updates
+    const { pagesToUpdate } = preparePageUpdates(
+        pages,
+        oldBeats,
+        convertedBeats,
     );
-    if (!createBeatsResponse.success) {
-        conToastError(t("audio.beats.create.error"), createBeatsResponse);
-        return { success: false };
-    }
-    try {
-        // Step 3: Convert database beats to Beat objects
-        const databaseBeats = createBeatsResponse.data;
-        const createdBeats = convertDatabaseBeatsToBeats(databaseBeats);
 
-        // Step 4: Prepare page updates
-        const { pagesToUpdate } = preparePageUpdates(
-            pages,
-            oldBeats,
-            createdBeats,
-        );
+    // Step 5: Prepare measure updates
+    const measuresToCreate = prepareMeasuresForCreation(
+        newMeasures,
+        newBeats,
+        convertedBeats,
+    );
 
-        // Step 5: Prepare measure updates
-        const measuresToCreate = prepareMeasuresForCreation(
-            newMeasures,
-            newBeats,
-            createdBeats,
-        );
-
-        // Step 6: Perform database operations
-        return await performDatabaseOperations(
-            pagesToUpdate,
-            measuresToCreate,
-            oldMeasures,
-            oldBeats,
-            refreshFunction,
-        );
-    } catch (error) {
-        console.error("Error creating new beats", error);
-        window.electron.undo();
-        return { success: false };
-    }
+    // Step 6: Perform database operations
+    await _performDatabaseOperations({
+        pagesToUpdate,
+        measuresToCreate,
+        oldMeasures,
+        oldBeats,
+    });
 };

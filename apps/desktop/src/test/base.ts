@@ -23,7 +23,8 @@ type DbConnection = BaseSQLiteDatabase<
     typeof schema
 >;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
-    return path.resolve(`${task.id}.tmp.dots`);
+    const taskId = task.id.startsWith("-") ? task.id.slice(1) : task.id;
+    return path.resolve(`${taskId}.tmp.dots`);
 };
 
 const getTempDb = async (task: Readonly<{ id: string }>) => {

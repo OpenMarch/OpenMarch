@@ -5,7 +5,7 @@ import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
@@ -19,7 +19,7 @@ export default function EditableBeatAudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
-    const { beats, measures, fetchTimingObjects } = useTimingObjectsStore();
+    const { beats, measures, fetchTimingObjects } = useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);

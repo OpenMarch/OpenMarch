@@ -1,7 +1,4 @@
-import {
-    handleCascadeDelete,
-    TempoGroup,
-} from "@/components/music/TempoGroup/TempoGroup";
+import { TempoGroup } from "@/components/music/TempoGroup/TempoGroup";
 import { useMemo, useState } from "react";
 import { PencilSimpleIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import EditableTempoGroup from "./EditableTempoGroup";
@@ -16,9 +13,9 @@ import {
     TooltipClassName,
 } from "@openmarch/ui";
 import { AlertDialog } from "@openmarch/ui";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import * as Tooltip from "@radix-ui/react-tooltip";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
+import { useCascadeDeleteMeasures } from "@/global/classes/Measure";
 
 export default function TempoGroupCard({
     tempoGroup,
@@ -59,8 +56,8 @@ function StaticTempoGroupCard({
     setNewGroupFormIndex: (index: number) => void;
     index: number;
 }) {
-    const [isDeleting, setIsDeleting] = useState(false);
-    const t = useTolgee();
+    const { mutate: cascadeDeleteMeasures, isPending: isDeleting } =
+        useCascadeDeleteMeasures();
     const isManualTempo = useMemo(
         () => !!tempoGroup.manualTempos?.length,
         [tempoGroup.manualTempos],
@@ -70,7 +67,6 @@ function StaticTempoGroupCard({
         [tempoGroup.strongBeatIndexes, isManualTempo],
     );
     const trimmedName = tempoGroup.name.trim();
-    const { fetchTimingObjects } = useTimingObjectsStore();
     return (
         <>
             {tempoGroup.name && trimmedName !== "" && trimmedName !== "-" && (
@@ -163,15 +159,14 @@ function StaticTempoGroupCard({
                                             variant="red"
                                             className="w-full"
                                             onClick={() => {
-                                                setIsDeleting(true);
-                                                handleCascadeDelete(
-                                                    tempoGroup,
-                                                    fetchTimingObjects,
-                                                ).then(() =>
-                                                    setIsDeleting(false),
+                                                cascadeDeleteMeasures(
+                                                    tempoGroup.measures ?? [],
                                                 );
                                             }}
-                                            disabled={isDeleting}
+                                            disabled={
+                                                isDeleting ||
+                                                !tempoGroup.measures
+                                            }
                                         >
                                             <T keyName="music.deleteAllMeasures" />
                                         </Button>

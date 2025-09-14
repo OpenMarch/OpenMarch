@@ -2,7 +2,6 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
-import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import Marcher from "@/global/classes/Marcher";
 import {
     getSectionAppearance,
@@ -141,31 +140,4 @@ export function marcherVisualsFromMarchers({
         });
     }
     return newVisuals;
-}
-
-/**
- * Fetches marchers and their associated visuals from the store.
- */
-export async function fetchMarchersAndVisuals(fieldTheme: FieldTheme) {
-    await useMarcherStore.getState().fetchMarchers();
-    const marchers = useMarcherStore.getState().marchers;
-    const sectionAppearances = await SectionAppearance.getSectionAppearances();
-    await useMarcherVisualStore
-        .getState()
-        .updateMarcherVisuals(marchers, fieldTheme, sectionAppearances);
-}
-
-/**
- * Combined store fetch to retrieve marchers and their associated visuals.
- */
-export function useMarchersWithVisuals() {
-    const marchers = useMarcherStore((state) => state.marchers);
-    const marcherVisuals = useMarcherVisualStore(
-        (state) => state.marcherVisuals,
-    );
-    const updateMarcherVisuals = useMarcherVisualStore(
-        (state) => state.updateMarcherVisuals,
-    );
-
-    return { marchers, marcherVisuals, updateMarcherVisuals };
 }

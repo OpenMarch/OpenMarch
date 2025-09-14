@@ -6,7 +6,8 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
-    useFieldProperties,
+    fieldPropertiesQueryOptions,
+    allMarchersQueryOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -18,11 +19,9 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
@@ -30,6 +29,7 @@ import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
 import useEditablePath from "./hooks/editablePath";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
 
 /**
  * The field/stage UI of OpenMarch
@@ -51,9 +51,9 @@ export default function Canvas({
     const queryClient = useQueryClient();
     useEditablePath();
     const { isPlaying } = useIsPlaying()!;
-    const { marchers, marcherVisuals, updateMarcherVisuals } =
-        useMarchersWithVisuals();
-    const { pages } = useTimingObjectsStore()!;
+    const marcherVisuals = useMarchersWithVisuals();
+    const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
 
     // MarcherPage queries
@@ -73,7 +73,7 @@ export default function Canvas({
     const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
         useShapePageStore()!;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,
@@ -81,8 +81,7 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
-    const { sectionAppearances, fetchSectionAppearances } =
-        useSectionAppearanceStore();
+    const { fetchSectionAppearances } = useSectionAppearanceStore();
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -549,16 +548,16 @@ export default function Canvas({
         }
     }, [canvas, updateMarcherPages]);
 
-    // Sync marcher visuals with marchers and section appearances
-    useEffect(() => {
-        if (marchers && sectionAppearances && fieldProperties) {
-            updateMarcherVisuals(
-                marchers,
-                fieldProperties.theme,
-                sectionAppearances,
-            );
-        }
-    }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
+    // // Sync marcher visuals with marchers and section appearances
+    // useEffect(() => {
+    //     if (marchers && sectionAppearances && fieldProperties) {
+    //         updateMarcherVisuals(
+    //             marchers,
+    //             fieldProperties.theme,
+    //             sectionAppearances,
+    //         );
+    //     }
+    // }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -655,7 +654,7 @@ export default function Canvas({
         if (!canvas || !selectedPage || !fieldProperties || !marcherPagesLoaded)
             return;
 
-        if (uiSettings.nextPaths || uiSettings.previousPaths) {
+        if (marchers && (uiSettings.nextPaths || uiSettings.previousPaths)) {
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
                 currentMarcherPages: marcherPages,

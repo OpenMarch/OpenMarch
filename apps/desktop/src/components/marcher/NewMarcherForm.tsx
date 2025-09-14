@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Marcher, NewMarcherArgs } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import {
     getSectionObjectByName,
     SECTIONS,
@@ -15,12 +15,16 @@ import {
     Button,
     Input,
 } from "@openmarch/ui";
-import { toast } from "sonner";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
 import FormField from "../ui/FormField";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { T, useTolgee } from "@tolgee/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    allMarchersQueryOptions,
+    createMarchersMutationOptions,
+} from "@/hooks/queries";
+import { NewMarcherArgs } from "@/db-functions";
 
 interface NewMarcherFormProps {
     disabledProp?: boolean;
@@ -45,7 +49,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const [drillPrefixTouched, setDrillPrefixTouched] =
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
-    const { marchers, marcherVisuals } = useMarchersWithVisuals()!;
+    const queryClient = useQueryClient();
+    const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const createMarchers = useMutation(
+        createMarchersMutationOptions(queryClient),
+    ).mutate;
     const [submitIsDisabled, setSubmitIsDisabled] = useState<boolean>(true);
     const formRef = useRef<HTMLFormElement>(null);
     const { setContent } = useSidebarModalStore();
@@ -74,7 +82,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingDrillOrders = new Set<number>(
-            marchers
+            (marchers || [])
                 .filter(
                     (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
                 )
@@ -98,32 +106,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                     drill_order: newDrillOrder,
                 });
             }
-            const response = await Marcher.createMarchers(newMarchers);
-            const drillNumbers = response.data.map(
-                (marcher: Marcher) => marcher.drill_number,
-            );
-
-            if (response.success)
-                toast.success(
-                    t("marchers.created", {
-                        count: response.data.length,
-                        drillNumbers: drillNumbers.join(", "),
-                    }),
-                );
-            else {
-                toast.error(
-                    t("marchers.createError", {
-                        count: response.data.length,
-                        drillNumbers: drillNumbers.join(", "),
-                    }),
-                );
-                console.error(
-                    `Error creating marcher${
-                        response.data.length === 1 ? "" : "s"
-                    } ${drillNumbers.join(", ")}`,
-                    response.error,
-                );
-            }
+            createMarchers(newMarchers);
         }
         resetForm();
     };
@@ -154,7 +137,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
 
     const validateDrillOrder = useCallback(
         (drillOrder: number) => {
-            const existingMarchers = marchers.filter(
+            const existingMarchers = (marchers || []).filter(
                 (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
             );
             if (
@@ -180,7 +163,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     const resetDrillOrder = useCallback(() => {
         // this is an object to avoid an unsafe reference warning
         const i = { newOrder: 1 };
-        const existingMarchers = marchers.filter(
+        const existingMarchers = (marchers || []).filter(
             (marcher: Marcher) => marcher.drill_prefix === drillPrefix,
         );
         while (

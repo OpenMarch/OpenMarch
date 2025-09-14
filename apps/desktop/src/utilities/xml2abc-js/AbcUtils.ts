@@ -1,7 +1,7 @@
 import BeatUnit from "@/global/classes/BeatUnit";
 import TimeSignature from "@/global/classes/TimeSignature";
-import type { NewBeatArgs } from "electron/database/tables/BeatTable";
 import xml2abcInterpreter from "./xml2abcInterpreter";
+import { NewBeatArgs } from "@/db-functions";
 
 interface TemporaryNewMeasureArgs {
     beatIndex: number;
@@ -192,7 +192,7 @@ export const abcToNewBeatsAndMeasures = (
         for (let i = 0; i < bigBeats; i++)
             newBeats.push({
                 duration: beatDuration,
-                include_in_measure: 1,
+                include_in_measure: true,
             });
     }
 

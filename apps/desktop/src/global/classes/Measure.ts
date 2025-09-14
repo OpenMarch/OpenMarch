@@ -1,11 +1,20 @@
-import Beat, { beatsDuration, compareBeats, deleteBeats } from "./Beat";
+import Beat, { beatsDuration, compareBeats } from "./Beat";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
-import { GroupFunction } from "@/utilities/ApiFunctions";
-import { deletePages } from "./Page";
 import { db, schema } from "../database/db";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "./History";
 import { promiseToDatabaseResponse } from "../database/adapters";
+import {
+    allDatabasePagesQueryOptions,
+    beatKeys,
+    measureKeys,
+    pageKeys,
+} from "@/hooks/queries";
+import { queryClient } from "@/App";
+import { useMutation } from "@tanstack/react-query";
+import { conToastError } from "@/utilities/utils";
+import tolgee from "../singletons/Tolgee";
+import { toast } from "sonner";
 
 const { measures } = schema;
 
@@ -274,34 +283,41 @@ export const deleteMeasures = async (
 /** Deletes all measures, beats, and pages associated with the measures */
 export const cascadeDeleteMeasures = async (
     measures: Measure[],
-    fetchMeasuresFunction: () => Promise<void>,
-) => {
+): Promise<{
+    pageIdsToDelete: Set<number>;
+    beatIdsToDelete: Set<number>;
+    measureIdsToDelete: Set<number>;
+}> => {
     const beatIdsToDelete = new Set(
         measures.flatMap((m) => m.beats.map((b) => b.id)),
     );
-    const pages = await window.electron.getPages();
-    if (!pages.success) {
-        throw new Error("Failed to get pages");
-    }
+    const pages = await queryClient.ensureQueryData(
+        allDatabasePagesQueryOptions(),
+    );
     const pageIdsToDelete = new Set(
-        pages.data
-            .filter((p) => beatIdsToDelete.has(p.start_beat))
-            .map((p) => p.id),
+        pages.filter((p) => beatIdsToDelete.has(p.start_beat)).map((p) => p.id),
     );
 
-    const fakeFetch = async () => {};
-    const result = await GroupFunction({
-        functionsToExecute: [
-            () => deleteMeasures(new Set(measures.map((m) => m.id)), fakeFetch),
-            () => deletePages(pageIdsToDelete, fakeFetch),
-            () => deleteBeats(beatIdsToDelete, fakeFetch),
-        ],
-        useNextUndoGroup: true,
+    return {
+        pageIdsToDelete,
+        beatIdsToDelete,
+        measureIdsToDelete: new Set(measures.map((m) => m.id)),
+    };
+};
+
+export const useCascadeDeleteMeasures = () => {
+    return useMutation({
+        mutationFn: (measuresToDelete: Measure[]) =>
+            cascadeDeleteMeasures(measuresToDelete),
+        onSuccess: () => {
+            toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
+            queryClient.invalidateQueries({ queryKey: measureKeys.all() });
+            queryClient.invalidateQueries({ queryKey: pageKeys.all() });
+            queryClient.invalidateQueries({ queryKey: beatKeys.all() });
+        },
+        onError: (error: Error, variables: Measure[]) => {
+            conToastError(tolgee.t("tempoGroup.deleteFailed"));
+            return;
+        },
     });
-
-    if (result.success) {
-        fetchMeasuresFunction();
-    }
-
-    return result;
 };

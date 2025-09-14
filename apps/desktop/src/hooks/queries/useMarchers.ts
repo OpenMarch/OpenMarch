@@ -16,7 +16,8 @@ import {
     NewMarcherArgs,
     ModifiedMarcherArgs,
 } from "@/db-functions";
-import Marcher from "@/global/classes/Marcher";
+import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
+import { DEFAULT_STALE_TIME } from "./constants";
 
 const { marchers } = schema;
 
@@ -34,15 +35,16 @@ export const marcherKeys = {
 
 const marcherQueries = {
     getAll: async (db: DbConnection): Promise<Marcher[]> => {
-        return await getMarchers({ db });
+        return (await getMarchers({ db })).map(dbMarcherToMarcher);
     },
     getById: async (
         db: DbConnection,
         marcherId: number,
     ): Promise<Marcher | undefined> => {
-        return await db.query.marchers.findFirst({
+        const dbMarcher = await db.query.marchers.findFirst({
             where: eq(marchers.id, marcherId),
         });
+        return dbMarcher ? dbMarcherToMarcher(dbMarcher) : undefined;
     },
 };
 
@@ -58,6 +60,7 @@ export const allMarchersQueryOptions = () => {
         queryFn: async () => {
             return await marcherQueries.getAll(db);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
@@ -67,6 +70,7 @@ export const marcherQueryByIdOptions = (id: number) => {
         queryFn: async () => {
             return await marcherQueries.getById(db, id);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 

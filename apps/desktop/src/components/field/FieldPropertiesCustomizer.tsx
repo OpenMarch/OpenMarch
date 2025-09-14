@@ -34,7 +34,11 @@ import { RgbaColor } from "@uiw/react-color";
 import ColorPicker from "../ui/ColorPicker";
 import FormField from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
-import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
+import {
+    fieldPropertiesQueryOptions,
+    updateFieldPropertiesMutationOptions,
+} from "@/hooks/queries";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const defaultFieldProperties =
     FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
@@ -296,8 +300,11 @@ function CheckpointEditor({
 
 export default function FieldPropertiesCustomizer() {
     const { t } = useTolgee();
-    const { data: fieldProperties } = useFieldProperties();
-    const { mutate: setFieldProperties } = useUpdateFieldProperties();
+    const queryClient = useQueryClient();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { mutate: setFieldProperties } = useMutation(
+        updateFieldPropertiesMutationOptions(queryClient),
+    );
     const [currentFieldProperties, setCurrentFieldProperties] =
         useState<FieldProperties>(fieldProperties ?? defaultFieldProperties);
     const [measurementSystem, setMeasurementSystem] =
