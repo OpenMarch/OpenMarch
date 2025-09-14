@@ -1,13 +1,13 @@
+import React, { useEffect, useState } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
-import { useEffect, useState } from "react";
-import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
+import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button, Switch, TextArea } from "@openmarch/ui";
-import { useTimingObjects } from "@/hooks";
-import { measureRangeString } from "@/global/classes/Page";
+import { useTimingObjects } from "../../hooks";
+import { measureRangeString } from "../../global/classes/Page";
 import { T, useTranslate } from "@tolgee/react";
-import { updatePagesMutationOptions } from "@/hooks/queries";
+import { updatePagesMutationOptions } from "../../hooks/queries";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { useSplitPage } from "./PageEditor";
+import { useSplitPage } from "./PageEditorUtils";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
@@ -15,9 +15,9 @@ function PageEditor() {
     const { t } = useTranslate();
     const { selectedPage } = useSelectedPage()!;
     const { pages } = useTimingObjects()!;
-    const updatePages = useMutation(
+    const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
-    ).mutate;
+    );
     const splitPage = useSplitPage().mutate;
     const [isFirstPage, setIsFirstPage] = useState(false);
     const [notes, setNotes] = useState(selectedPage?.notes || "");
@@ -40,7 +40,7 @@ function PageEditor() {
         const originalNotes = selectedPage?.notes || "";
 
         if (selectedPage && currentNotes !== originalNotes) {
-            updatePages({
+            updatePagesMutation.mutate({
                 modifiedPagesArgs: [
                     { id: selectedPage.id, notes: notes || null },
                 ],
@@ -106,7 +106,7 @@ function PageEditor() {
                             disabled={isFirstPage}
                             onClick={(e) => {
                                 if (selectedPage) {
-                                    updatePages({
+                                    updatePagesMutation.mutate({
                                         modifiedPagesArgs: [
                                             {
                                                 id: selectedPage.id,

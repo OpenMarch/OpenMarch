@@ -45,6 +45,12 @@ function MusicModalContents() {
         () => TempoGroupsFromMeasures(measures),
         [measures],
     );
+
+    useEffect(() => {
+        console.log("measures", measures);
+        // console.debug("tempoGroups", tempoGroups);
+    }, [measures]);
+
     const newFormRef = useRef<HTMLDivElement>(null);
     const { t } = useTolgee();
 

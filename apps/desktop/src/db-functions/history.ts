@@ -24,7 +24,7 @@ export const transactionWithHistory = async <T>(
     func: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> => {
     return await db.transaction(async (tx) => {
-        console.log(`=========== start ${funcName} ============`);
+        console.debug(`=========== start ${funcName} ============`);
         try {
             await incrementHistoryGroupInTransaction(tx, "undo");
             let groupBefore = (
@@ -103,7 +103,7 @@ export const transactionWithHistory = async <T>(
 
             return result;
         } finally {
-            console.log(`=========== end ${funcName} ============\n`);
+            console.debug(`=========== end ${funcName} ============\n`);
         }
     });
 };
