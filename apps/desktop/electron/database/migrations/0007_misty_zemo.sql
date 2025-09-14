@@ -186,7 +186,7 @@ CREATE TABLE `__new_utility` (
 	CONSTRAINT "utility_id_check" CHECK(id = 0)
 );
 --> statement-breakpoint
-INSERT INTO `__new_utility`("id", "last_page_counts", "updated_at") SELECT "id", "last_page_counts", "updated_at" FROM `utility`;--> statement-breakpoint
+INSERT INTO `__new_utility`("id", "last_page_counts") SELECT "id", "last_page_counts" FROM `utility`;--> statement-breakpoint
 DROP TABLE `utility`;--> statement-breakpoint
 ALTER TABLE `__new_utility` RENAME TO `utility`;--> statement-breakpoint
 ALTER TABLE `pathways` ADD `created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL;--> statement-breakpoint
