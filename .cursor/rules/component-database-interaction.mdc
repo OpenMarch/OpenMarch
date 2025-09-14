@@ -16,9 +16,8 @@ Keep database logic close to the components that use it. This promotes maintaina
 ```txt
 components/
 ├── FeatureName/
-│   ├── FeatureName.ts          # Business logic, types, database operations
-│   ├── FeatureNameCard.tsx     # UI components
-│   └── FeatureNameForm.tsx
+│   ├── FeatureNameUtils.ts          # Business logic, types, database operations
+│   ├── FeatureName.tsx              # UI components
 ```
 
 ### 2. Transaction-Based Operations
