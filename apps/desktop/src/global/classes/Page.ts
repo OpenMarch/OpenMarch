@@ -1,6 +1,5 @@
 import Measure from "./Measure";
 import Beat from "./Beat";
-import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
 import {
@@ -499,71 +498,6 @@ export const getPreviousPage = (
     }
     return prevPage;
 };
-
-/**
- * Creates a new page at the next available beat after the current last page.
- *
- * @param currentLastPage - The last page in the current sequence.
- * @param allBeats - The complete list of beats in the show.
- * @param counts - The number of counts for the new page.
- * @param fetchPagesFunction - Function to update the pages store after creation.
- * @returns A DatabaseResponse with the newly created page, or null if no more beats are available.
- */
-export async function createLastPage({
-    currentLastPage,
-    allBeats,
-    counts,
-    fetchPagesFunction,
-}: {
-    currentLastPage: Page;
-    allBeats: Beat[];
-    counts: number;
-    fetchPagesFunction: () => Promise<void>;
-}): Promise<DatabaseResponse<DatabasePage | undefined>> {
-    const lastPageLastBeat =
-        currentLastPage.beats[currentLastPage.beats.length - 1];
-
-    const nextBeat = allBeats.find(
-        (beat) => beat.position > lastPageLastBeat.position,
-    );
-
-    if (!nextBeat) {
-        const message =
-            "Cannot create a new last page! The show has no beats left";
-        console.log(message);
-        toast.warning(message);
-        return {
-            success: false,
-            error: { message },
-            data: undefined,
-        };
-    }
-
-    // Create the page
-    const createResponse = await createPages(
-        [
-            {
-                start_beat: nextBeat.id,
-                is_subset: false,
-            },
-        ],
-        fetchPagesFunction,
-    );
-
-    if (!createResponse.success) {
-        return { ...createResponse, data: undefined };
-    }
-
-    // Update the last page counts
-    const lastPageCountsResponse = await window.electron.updateUtilityRecord({
-        last_page_counts: counts,
-    });
-    if (!lastPageCountsResponse.success) {
-        console.error("Error updating last page counts:");
-        console.error(lastPageCountsResponse.error);
-    }
-    return { ...createResponse, data: createResponse.data[0] };
-}
 
 // Function to update page duration in the database
 /**

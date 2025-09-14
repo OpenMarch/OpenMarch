@@ -18,6 +18,7 @@ import MarcherPage, {
 } from "@/global/classes/MarcherPage";
 import { conToastError } from "@/utilities/utils";
 import { DbTransaction, transactionWithHistory } from "@/db-functions";
+import { DEFAULT_STALE_TIME } from "./constants";
 
 const { marcher_pages } = schema;
 
@@ -126,6 +127,7 @@ export const allMarcherPagesQueryOptions = ({
             );
             return marcherPageMapFromArray(mpResponse);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
@@ -146,6 +148,7 @@ export const marcherPagesByPageQueryOptions = (
             return toMarcherPagesByMarcher(mpResponse);
         },
         enabled: pageId != null,
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
@@ -167,6 +170,7 @@ export const marcherPagesByMarcherQueryOptions = (
             return toMarcherPagesByPage(mpResponse);
         },
         enabled: marcherId != null,
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 

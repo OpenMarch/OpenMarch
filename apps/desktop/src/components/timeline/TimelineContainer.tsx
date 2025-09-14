@@ -3,7 +3,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useRef } from "react";
 import { XIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import AudioPlayer from "./audio/AudioPlayer";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
@@ -17,10 +17,10 @@ import { T, useTolgee } from "@tolgee/react";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures } = useTimingObjectsStore()!;
+    const { measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
-    const { beats } = useTimingObjectsStore()!;
+    const { beats } = useTimingObjects()!;
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
     const { t } = useTolgee();

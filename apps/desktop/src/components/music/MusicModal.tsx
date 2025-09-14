@@ -9,7 +9,7 @@ import {
 } from "@/components/music/TempoGroup/TempoGroup";
 import { Button } from "@openmarch/ui";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
@@ -34,7 +34,7 @@ export default function MusicModal({
 
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const { measures } = useTimingObjectsStore();
+    const { measures } = useTimingObjects();
     const [newGroupFormIndex, setNewGroupFormIndex] = React.useState<
         number | null
     >(null);

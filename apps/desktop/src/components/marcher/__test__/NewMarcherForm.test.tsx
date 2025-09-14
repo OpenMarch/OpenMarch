@@ -1,7 +1,7 @@
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import NewMarcherForm from "../NewMarcherForm";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import { toast } from "sonner";
 
 vi.mock("sonner");

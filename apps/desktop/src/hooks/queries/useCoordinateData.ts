@@ -8,6 +8,7 @@ import { Pathway, pathwaysByPageQueryOptions } from "./usePathways";
 import { CoordinateDefinition, MarcherTimeline } from "@/utilities/Keyframes";
 import { assert } from "@/utilities/utils";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+import { DEFAULT_STALE_TIME } from "./constants";
 
 const coordinateDataKeys = {
     all: ["coordinateData"] as const,
@@ -136,6 +137,7 @@ export const coordinateDataQueryOptions = (
                 pathways ?? {},
             );
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 
 export const combineMarcherTimelines = (

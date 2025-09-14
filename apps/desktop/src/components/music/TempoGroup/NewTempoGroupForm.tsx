@@ -2,9 +2,8 @@ import {
     TempoGroup,
     getStrongBeatIndexesFromPattern,
     splitPatternString,
-    createFromTempoGroup,
+    useCreateFromTempoGroup,
 } from "@/components/music/TempoGroup/TempoGroup";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { Input, Button, UnitInput, TooltipClassName } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
 import { Form, FormField, Label } from "@radix-ui/react-form";
@@ -26,7 +25,7 @@ const NewTempoGroupForm = React.forwardRef<
     HTMLDivElement,
     NewTempoGroupFormProps
 >((props, ref) => {
-    const { fetchTimingObjects } = useTimingObjectsStore();
+    const createFromTempoGroup = useCreateFromTempoGroup().mutate;
     const subTextClass = clsx("text-text-subtitle text-sub ");
     const [isMixedMeter, setIsMixedMeter] = React.useState(false);
     const [beatsPerMeasure, setBeatsPerMeasure] = React.useState(4);
@@ -93,12 +92,11 @@ const NewTempoGroupForm = React.forwardRef<
             };
         }
 
-        createFromTempoGroup(
-            newTempoGroup,
-            fetchTimingObjects,
-            endTempoValue,
-            props.startingPosition,
-        );
+        createFromTempoGroup({
+            tempoGroup: newTempoGroup,
+            endTempo: endTempoValue,
+            startingPosition: props.startingPosition,
+        });
         setName("");
         toast.success(t("music.tempoGroupCreated"));
         if (props.scrollFunc) {

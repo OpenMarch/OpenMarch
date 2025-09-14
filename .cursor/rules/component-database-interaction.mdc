@@ -1,0 +1,259 @@
+---
+description: When needing to create new custom interactions with the database from a component or when multiple tables need to be modified at once
+alwaysApply: false
+---
+
+# Component Database Interaction Patterns
+
+This document outlines the recommended patterns for database interactions in OpenMarch, based on our feature-based co-location architecture.
+
+## Core Principles
+
+### 1. Feature-Based Co-location
+
+Keep database logic close to the components that use it. This promotes maintainability and reduces cognitive overhead.
+
+```txt
+components/
+├── FeatureName/
+│   ├── FeatureName.ts          # Business logic, types, database operations
+│   ├── FeatureNameCard.tsx     # UI components
+│   └── FeatureNameForm.tsx
+```
+
+### 2. Transaction-Based Operations
+
+Always use `transactionWithHistory()` for operations that modify multiple database entities or require undo/redo support.
+
+### 3. Separation of Concerns
+
+- **Business Logic**: Keep in `.ts` files alongside components
+- **React Integration**: Use custom hooks for React Query mutations
+- **Database Operations**: Use transaction functions from `@/db-functions`
+
+## Pattern Structure
+
+### Database Operations File (`FeatureName.ts`)
+
+```typescript
+import { transactionWithHistory } from "@/db-functions";
+import {
+    createBeatsInTransaction,
+    updateBeatsInTransaction,
+} from "@/db-functions";
+import { db } from "@/global/database/db";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { measureKeys } from "@/hooks/queries/useMeasures";
+import { beatKeys } from "@/hooks/queries";
+import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
+
+// 1. Types and interfaces
+export type FeatureDataType = {
+    id: number;
+    name: string;
+    // ... other properties
+};
+
+// 2. Database operation functions (private, prefixed with _)
+export const _createFeatureData = async ({
+    data,
+    options,
+}: {
+    data: FeatureDataType;
+    options?: SomeOptions;
+}) => {
+    transactionWithHistory(db, "createFeatureData", async (tx) => {
+        // Database operations here
+        const result = await createSomeDataInTransaction({
+            tx,
+            newData: data,
+        });
+
+        // Additional operations if needed
+        await updateRelatedDataInTransaction({
+            tx,
+            data: result,
+        });
+    });
+};
+
+// 3. React Query mutation hooks
+
+/**
+ * @param mutationFn - The mutation function to run
+ * @param errorKey - The tolgee key to display on error (create one if it doesn't exist)
+ * @param successKey - Optional, the tolgee key to display on success
+ */
+const useCreateFeatureMutation = <TArgs>(
+    mutationFn: (args: TArgs) => Promise<void>,
+    errorKey: string,
+    successKey?: string,
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn,
+        onSuccess: () => {
+            // Invalidate all of the relevant queries
+            queryClient.invalidateQueries({
+                queryKey: measureKeys.all(),
+            });
+            queryClient.invalidateQueries({
+                queryKey: beatKeys.all(),
+            });
+            // ... more queries if needed
+
+            if (successKey) toast.success(tolgee.t(successKey));
+        },
+        onError: (error) => {
+            conToastError(tolgee.t(errorKey), error);
+        },
+    });
+};
+
+// 4. Public mutation hooks
+export const useCreateFeatureData = () => {
+    return useCreateFeatureMutation(
+        _createFeatureData,
+        "feature.createDataError",
+    );
+};
+
+// 5. If needed, create more functions with the mutation
+```
+
+## Key Guidelines
+
+### Transaction Usage
+
+- **Always use `transactionWithHistory()`** for operations that:
+    - Modify multiple database entities
+    - Need undo/redo support
+    - Should be atomic (all succeed or all fail)
+
+```typescript
+transactionWithHistory(db, "operationName", async (tx) => {
+    // All database operations here
+    await createBeatsInTransaction({ tx, newBeats });
+    await createMeasuresInTransaction({ tx, newMeasures });
+});
+```
+
+### Error Handling
+
+- Use `conToastError()` with Tolgee keys for user-friendly error messages
+- Include descriptive error keys in your i18n files
+- Log technical details to console for debugging
+
+```typescript
+onError: (error) => {
+    conToastError(tolgee.t("feature.operationError"), error);
+},
+```
+
+### Query Invalidation
+
+- Invalidate all relevant query keys after successful mutations
+- Use the query key factories from `@/hooks/queries`
+- Consider which queries might be affected by your operation
+
+```typescript
+onSuccess: () => {
+    queryClient.invalidateQueries({
+        queryKey: measureKeys.all(),
+    });
+    queryClient.invalidateQueries({
+        queryKey: beatKeys.all(),
+    });
+},
+```
+
+### Generic Mutation Pattern
+
+Create reusable mutation hooks for common patterns:
+
+```typescript
+const useFeatureMutation = <TArgs>(
+    mutationFn: (args: TArgs) => Promise<void>,
+    errorKey: string,
+) => {
+    const queryClient = useQueryClient();
+    return useMutation({
+        mutationFn,
+        onSuccess: () => {
+            // Common invalidation logic
+        },
+        onError: (error) => {
+            conToastError(tolgee.t(errorKey), error);
+        },
+    });
+};
+```
+
+## File Organization
+
+### When to Keep Logic in Component Files
+
+- **Feature-specific business logic**
+- **Complex validation rules**
+- **Domain-specific calculations**
+- **Operations that involve multiple related entities**
+
+### When to Use `db-functions/`
+
+- **Generic database utilities**
+- **Cross-feature operations**
+- **Low-level database operations**
+- **Shared database types and interfaces**
+
+## Examples
+
+### Good: Feature-Specific Logic
+
+```typescript
+// TempoGroup.ts
+export const TempoGroupsFromMeasures = (measures: Measure[]): TempoGroup[] => {
+    // Complex tempo group calculation logic
+};
+
+export const _updateTempoGroup = async ({ tempoGroup, newTempo }) => {
+    transactionWithHistory(db, "updateTempoGroup", async (tx) => {
+        // Update beats and measures together
+    });
+};
+```
+
+### Good: Generic Database Operations
+
+```typescript
+// db-functions/beat.ts
+export const createBeatsInTransaction = async ({ tx, newBeats }) => {
+    // Generic beat creation logic
+};
+```
+
+## Testing Considerations
+
+- Test business logic functions independently of React components
+- Use real database operations in tests (no mocks)
+- Test transaction rollback scenarios
+- Verify query invalidation behavior
+
+## Benefits of This Pattern
+
+1. **Maintainability**: Related code lives together
+2. **Discoverability**: Easy to find feature-specific logic
+3. **Consistency**: Standardized error handling and query invalidation
+4. **Type Safety**: Strong TypeScript typing throughout
+5. **Undo/Redo**: Built-in support for complex operations
+6. **Testing**: Business logic can be tested independently
+
+## Migration Guide
+
+When refactoring existing code to follow this pattern:
+
+1. Move feature-specific logic from `db-functions/` to component files
+2. Extract React Query mutations into custom hooks
+3. Add proper error handling with Tolgee keys
+4. Ensure all operations use `transactionWithHistory()`
+5. Update query invalidation to be comprehensive

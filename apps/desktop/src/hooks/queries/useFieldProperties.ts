@@ -1,10 +1,10 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import {
     getFieldProperties,
     updateFieldProperties,
 } from "@/global/classes/FieldProperties";
+import { DEFAULT_STALE_TIME } from "./constants";
 
 // Query key factory
 export const fieldPropertiesKeys = {
@@ -30,66 +30,27 @@ const fieldPropertiesMutations = {
 };
 
 /**
- * Hook for fetching field properties
+ * Query options for fetching field properties
  */
-export const useFieldProperties = () => {
-    return useQuery({
-        queryKey: fieldPropertiesKeys.detail(),
-        queryFn: async () => {
-            const fieldProperties = await fieldPropertiesQueries.get();
-            ReadableCoords.setFieldProperties(fieldProperties);
-            return fieldProperties;
-        },
-    });
-};
+export const fieldPropertiesQueryOptions = () => ({
+    queryKey: fieldPropertiesKeys.detail(),
+    queryFn: async () => {
+        const fieldProperties = await fieldPropertiesQueries.get();
+        ReadableCoords.setFieldProperties(fieldProperties);
+        return fieldProperties;
+    },
+    staleTime: DEFAULT_STALE_TIME,
+});
 
 /**
- * Hook for updating field properties
+ * Mutation options for updating field properties
  */
-export const useUpdateFieldProperties = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: fieldPropertiesMutations.update,
-        onSuccess: (updatedFieldProperties) => {
-            // Invalidate and refetch field properties
-            queryClient.invalidateQueries({
-                queryKey: fieldPropertiesKeys.detail(),
-            });
-        },
-    });
-};
-
-/**
- * Hook for getting field properties with a setter function
- * This provides a similar API to the original context but uses React Query
- */
-export const useFieldPropertiesWithSetter = () => {
-    const { data: fieldProperties, isLoading, error } = useFieldProperties();
-    const updateMutation = useUpdateFieldProperties();
-    const queryClient = useQueryClient();
-
-    const setFieldProperties = async (
-        newFieldProperties: FieldProperties,
-        updateDatabase = true,
-    ) => {
-        if (updateDatabase) {
-            await updateMutation.mutateAsync(newFieldProperties);
-        } else {
-            // If not updating database, just update ReadableCoords
-            ReadableCoords.setFieldProperties(newFieldProperties);
-        }
-    };
-
-    return {
-        fieldProperties,
-        setFieldProperties,
-        fetchFieldProperties: () =>
-            queryClient.invalidateQueries({
-                queryKey: fieldPropertiesKeys.detail(),
-            }),
-        isLoading,
-        error,
-        isUpdating: updateMutation.isPending,
-    };
-};
+export const updateFieldPropertiesMutationOptions = (queryClient: any) => ({
+    mutationFn: fieldPropertiesMutations.update,
+    onSuccess: (updatedFieldProperties: FieldProperties) => {
+        // Invalidate and refetch field properties
+        queryClient.invalidateQueries({
+            queryKey: fieldPropertiesKeys.detail(),
+        });
+    },
+});

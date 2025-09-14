@@ -11,7 +11,7 @@ import { measureIsMixedMeter } from "../TempoGroup/TempoGroup";
 import type Beat from "../../../global/classes/Beat";
 import { measureIsSameTempo } from "../TempoGroup/TempoGroup";
 import { measureHasOneTempo } from "../TempoGroup/TempoGroup";
-import type { NewBeatArgs } from "electron/database/tables/BeatTable";
+import { NewBeatArgs } from "@/db-functions";
 
 describe("TempoGroupsFromMeasures", () => {
     // Helper function to create a mock beat
@@ -1205,7 +1205,7 @@ describe("newBeatsFromTempoGroup", () => {
         expect(result).toHaveLength(4); // 1 repeat * 4 beats
         result.forEach((beat: NewBeatArgs) => {
             expect(beat.duration).toBe(0.5); // 60/120 = 0.5
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1218,7 +1218,7 @@ describe("newBeatsFromTempoGroup", () => {
         expect(result).toHaveLength(4);
         result.forEach((beat: NewBeatArgs) => {
             expect(beat.duration).toBe(0.5); // 60/120 = 0.5
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1242,7 +1242,7 @@ describe("newBeatsFromTempoGroup", () => {
             expect(Number(beat.duration.toFixed(6))).toBe(
                 expectedDurations[index],
             );
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1255,7 +1255,7 @@ describe("newBeatsFromTempoGroup", () => {
         expect(result).toHaveLength(6); // 3 repeats * 2 beats
         result.forEach((beat: NewBeatArgs) => {
             expect(beat.duration).toBe(0.5);
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1281,7 +1281,7 @@ describe("newBeatsFromTempoGroup", () => {
             expect(Number(beat.duration.toFixed(6))).toBe(
                 expectedDurations[index],
             );
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1293,7 +1293,7 @@ describe("newBeatsFromTempoGroup", () => {
         });
         expect(result).toHaveLength(1);
         expect(result[0].duration).toBe(0.5);
-        expect(result[0].include_in_measure).toBe(1);
+        expect(result[0].include_in_measure).toBe(true);
     });
 
     it("should handle edge case with very fast tempo", () => {
@@ -1305,7 +1305,7 @@ describe("newBeatsFromTempoGroup", () => {
         expect(result).toHaveLength(2);
         result.forEach((beat: NewBeatArgs) => {
             expect(beat.duration).toBe(0.25); // 60/240 = 0.25
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1318,7 +1318,7 @@ describe("newBeatsFromTempoGroup", () => {
         expect(result).toHaveLength(2);
         result.forEach((beat: NewBeatArgs) => {
             expect(beat.duration).toBe(2); // 60/30 = 2
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 
@@ -1344,7 +1344,7 @@ describe("newBeatsFromTempoGroup", () => {
             expect(Number(beat.duration.toFixed(6))).toBe(
                 expectedDurations[index],
             );
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
     it.each([
@@ -1375,7 +1375,7 @@ describe("newBeatsFromTempoGroup", () => {
             expect(result).toHaveLength(bigBeatsPerMeasure); // 1 repeat * 4 beats
             result.forEach((beat: NewBeatArgs, index: number) => {
                 expect(beat.duration).toBe(expectedDurations[index]);
-                expect(beat.include_in_measure).toBe(1);
+                expect(beat.include_in_measure).toBe(true);
             });
         },
     );
@@ -1390,7 +1390,7 @@ describe("newBeatsFromTempoGroup", () => {
         const expectedDurations = [0.5, 0.75, 0.5, 0.5];
         result.forEach((beat: NewBeatArgs, index: number) => {
             expect(beat.duration).toBe(expectedDurations[index]);
-            expect(beat.include_in_measure).toBe(1);
+            expect(beat.include_in_measure).toBe(true);
         });
     });
 });

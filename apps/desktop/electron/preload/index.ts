@@ -5,11 +5,6 @@ import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
 import {
-    DatabaseBeat,
-    NewBeatArgs,
-    ModifiedBeatArgs,
-} from "electron/database/tables/BeatTable";
-import {
     ModifiedShapePageMarcherArgs,
     NewShapePageMarcherArgs,
     ShapePageMarcher,
@@ -24,11 +19,6 @@ import {
     NewShapeArgs,
     Shape,
 } from "electron/database/tables/ShapeTable";
-
-import {
-    UtilityRecord,
-    ModifiedUtilityRecord,
-} from "electron/database/tables/UtilityTable";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "electron/main/services/recent-files-service";
@@ -195,12 +185,6 @@ const APP_API = {
         ipcRenderer.invoke("recent-files:open", filePath),
 
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
-    sendSelectedPage: (selectedPageId: number) =>
-        ipcRenderer.send("send:selectedPage", selectedPageId),
-    sendSelectedMarchers: (selectedMarchersId: number[]) =>
-        ipcRenderer.send("send:selectedMarchers", selectedMarchersId),
-    sendLockX: (lockX: boolean) => ipcRenderer.send("send:lockX", lockX),
-    sendLockY: (lockY: boolean) => ipcRenderer.send("send:lockY", lockY),
 
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("show-save-dialog", options),
@@ -284,26 +268,6 @@ const APP_API = {
         ipcRenderer.removeAllListeners("field_properties:onImport"),
 
     // **** Timing Objects ****
-
-    // Beat
-    getBeats: () =>
-        ipcRenderer.invoke("beat:getAll") as Promise<
-            DatabaseResponse<DatabaseBeat[]>
-        >,
-    createBeats: (newBeats: NewBeatArgs[], startingPosition?: number) =>
-        ipcRenderer.invoke(
-            "beat:insert",
-            newBeats,
-            startingPosition,
-        ) as Promise<DatabaseResponse<DatabaseBeat[]>>,
-    updateBeats: (modifiedBeats: ModifiedBeatArgs[]) =>
-        ipcRenderer.invoke("beat:update", modifiedBeats) as Promise<
-            DatabaseResponse<DatabaseBeat[]>
-        >,
-    deleteBeats: (beatIds: Set<number>) =>
-        ipcRenderer.invoke("beat:delete", beatIds) as Promise<
-            DatabaseResponse<DatabaseBeat[]>
-        >,
 
     // Audio File
     launchInsertAudioFileDialogue: () =>
@@ -402,19 +366,6 @@ const APP_API = {
         ipcRenderer.invoke("shape_page_marcher:delete", idsToDelete) as Promise<
             DatabaseResponse<void>
         >,
-    getUtilityRecord: () =>
-        ipcRenderer.invoke("utility:getRecord") as Promise<
-            DatabaseResponse<UtilityRecord | null>
-        >,
-    updateUtilityRecord: (
-        utilityRecord: ModifiedUtilityRecord,
-        useNextUndoGroup: boolean = true,
-    ) =>
-        ipcRenderer.invoke(
-            "utility:updateRecord",
-            utilityRecord,
-            useNextUndoGroup,
-        ) as Promise<DatabaseResponse<UtilityRecord>>,
 
     // SQL Proxy for Drizzle
     sqlProxy: (

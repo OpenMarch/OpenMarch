@@ -92,9 +92,14 @@ export const transactionWithHistory = async <T>(
             // This is important to ensure predictable undo/redo behavior
             assert(
                 groupAfterIncremented === groupBefore + 1,
-                `Group after incremented does not match. Expected ${groupBefore + 1} but got ${groupAfterIncremented}`,
+                `Undo group after incrementing is not correct. This often happens when we expect an action to be performed in the database during the test that increments the history group, but it did not. Expected group to be '${groupBefore + 1}', but it was '${groupAfterIncremented}'`,
             );
             // NOTE - the group will not be incremented if no database action was performed in the 'func' callback
+            /**
+             * If you're getting this error, here's a quick checklist to validate:
+             *    - Are there triggers for the table that the function is performing actions on?
+             *    - Do the functions actually perform actions on the database?
+             */
 
             return result;
         } finally {

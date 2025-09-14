@@ -195,6 +195,8 @@
         "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
         "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
         "marcher": "Marcher: {status}",
+        "marchersNotLoaded": "Marchers not loaded",
+        "marcherPagesNotLoaded": "Marcher pages not loaded",
         "measuresHeader": "Measure",
         "noFieldProperties": "No field properties provided",
         "noMarcher": "No marcher provided",
@@ -421,7 +423,9 @@
                 "success": "Page split successfully"
             },
             "subset": "Subset",
-            "title": "Page {pageNumber}"
+            "title": "Page {pageNumber}",
+            "deletedSuccessfully": "Page deleted successfully",
+            "deletedFailed": "Page deletion failed"
         },
         "shape": {
             "addSegmentButton": "Add",
@@ -683,7 +687,8 @@
         "deletedSuccessfully": "Tempo group deleted successfully",
         "deleteFailed": "Failed to delete tempo group",
         "differentBeatsError": "Tempo group has different number of beats. This should not happen. Please reach out to us!",
-        "noMeasures": "Tempo group has no measures"
+        "noMeasures": "Tempo group has no measures",
+        "errorUpdatingTempoGroup": "Error updating tempo group"
     },
     "timeline": {
         "audio": "Audio",

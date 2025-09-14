@@ -17,29 +17,16 @@ import {
     transactionWithHistory,
     updatePagesInTransaction,
     updateLastPageCounts,
+    createLastPage,
+    NewPageArgs,
+    ModifiedPageArgs,
 } from "@/db-functions";
+import { DEFAULT_STALE_TIME } from "./constants";
+import { toast } from "sonner";
+import tolgee from "@/global/singletons/Tolgee";
+import { utilityKeys } from "./useUtility";
 
 const { pages } = schema;
-
-/**
- * Arguments for creating a new page
- */
-export interface NewPageArgs {
-    start_beat: number;
-    notes?: string | null;
-    is_subset: boolean;
-}
-
-/**
- * Arguments for modifying an existing page
- */
-export interface ModifiedPageArgs {
-    id: number;
-    start_beat?: number;
-    notes?: string | null;
-    is_subset?: boolean;
-    last_page_counts?: number;
-}
 
 const KEY_BASE = "page";
 
@@ -125,30 +112,33 @@ const updatePagesAndLastPageCounts = async ({
  * @param args - the filters to use for the query, or the page id to fetch
  * @returns
  */
-export const allPagesQueryOptions = () => {
+export const allDatabasePagesQueryOptions = () => {
     return queryOptions<DatabasePage[]>({
         queryKey: pageKeys.all(),
         queryFn: async () => {
             return await pageQueries.getAll(db);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
-export const pageQueryByIdOptions = (id: number) => {
+export const databasePageQueryByIdOptions = (id: number) => {
     return queryOptions<DatabasePage | undefined>({
         queryKey: pageKeys.byId(id),
         queryFn: async () => {
             return await pageQueries.getById(db, id);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
-export const pageQueryByStartBeatOptions = (startBeat: number) => {
+export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
     return queryOptions<DatabasePage | undefined>({
         queryKey: pageKeys.byStartBeat(startBeat),
         queryFn: async () => {
             return await pageQueries.getByStartBeat(db, startBeat);
         },
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
@@ -200,13 +190,34 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
         onSuccess: (_, variables) => {
+            toast.success(tolgee.t("page.deletedSuccessfully"));
             // Invalidate all page queries
             qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting pages`, e, variables);
+            conToastError(tolgee.t("page.deletedFailed"), e, variables);
+        },
+    });
+};
+
+export const createLastPageMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (newPageCounts: number) =>
+            createLastPage({ db, newPageCounts }),
+        onSuccess: (_, variables) => {
+            toast.success(tolgee.t("page.createdSuccessfully"));
+            // Invalidate all page queries
+            qc.invalidateQueries({
+                queryKey: pageKeys.all(),
+            });
+            qc.invalidateQueries({
+                queryKey: utilityKeys.all(),
+            });
+        },
+        onError: (e, variables) => {
+            conToastError(tolgee.t("page.cretePageFailed"), e, variables);
         },
     });
 };

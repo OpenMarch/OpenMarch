@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ListFormProps } from "../../global/Interfaces";
-import { Marcher, ModifiedMarcherArgs } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import { SECTIONS, getTranslatedSectionName } from "@/global/classes/Sections";
 import { Button } from "@openmarch/ui";
 import { TrashIcon } from "@phosphor-icons/react";
@@ -14,8 +14,14 @@ import {
     SelectTriggerText,
 } from "@openmarch/ui";
 import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
 import { T, useTolgee } from "@tolgee/react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    allMarchersQueryOptions,
+    deleteMarchersMutationOptions,
+    updateMarchersMutationOptions,
+} from "@/hooks/queries";
+import { ModifiedMarcherArgs } from "@/db-functions";
 
 export default function MarcherList({
     hasHeader = false,
@@ -23,12 +29,19 @@ export default function MarcherList({
     submitActivatorStateProp = undefined,
     cancelActivatorStateProp = undefined,
 }: ListFormProps) {
+    const queryClient = useQueryClient();
     const { isOpen } = useSidebarModalStore();
     const [isEditingLocal, setIsEditingLocal] = useState(false);
     const [isEditing, setIsEditing] = isEditingStateProp || [
         isEditingLocal,
         setIsEditingLocal,
     ];
+    const deleteMarchers = useMutation(
+        deleteMarchersMutationOptions(queryClient),
+    ).mutate;
+    const updateMarchers = useMutation(
+        updateMarchersMutationOptions(queryClient),
+    ).mutate;
     const { t } = useTolgee();
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
         false,
@@ -38,7 +51,12 @@ export default function MarcherList({
         false,
         undefined,
     ];
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const {
+        data: marchers,
+        isSuccess: marchersSuccess,
+        isLoading: marchersLoading,
+        isError: marchersError,
+    } = useQuery(allMarchersQueryOptions());
 
     // localMarchers are the marchers that are displayed in the table
     const [localMarchers, setLocalMarchers] = useState<Marcher[]>();
@@ -56,10 +74,10 @@ export default function MarcherList({
 
         if (deletionsRef.current.length > 0) {
             const marcherIdsSet = new Set(deletionsRef.current.map((id) => id));
-            await Marcher.deleteMarchers(marcherIdsSet);
+            await deleteMarchers(marcherIdsSet);
         }
 
-        const result = Marcher.updateMarchers(modifiedMarchers);
+        const result = updateMarchers(modifiedMarchers);
         changesRef.current = {};
         deletionsRef.current = [];
         return result;
@@ -119,7 +137,16 @@ export default function MarcherList({
         // eslint-disable-next-line
     }, [cancelActivator, setCancelActivator]);
 
-    if (marchers.length > 0)
+    if (marchersLoading) {
+        return <div>Loading...</div>;
+    }
+
+    if (marchersError) {
+        console.error(marchersError);
+        return <div>Error loading marchers</div>;
+    }
+
+    if (marchersSuccess && marchers.length > 0)
         return (
             <form
                 id={"marcherListForm"}

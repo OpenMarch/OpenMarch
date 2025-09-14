@@ -2,22 +2,23 @@ import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useEffect, useState } from "react";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { Button, Switch, TextArea } from "@openmarch/ui";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import {
-    createPages,
-    measureRangeString,
-    splitPage,
-    updatePages,
-} from "@/global/classes/Page";
-import { toast } from "sonner";
-import { GroupFunction } from "@/utilities/ApiFunctions";
+import { useTimingObjects } from "@/hooks";
+import { measureRangeString } from "@/global/classes/Page";
 import { T, useTranslate } from "@tolgee/react";
+import { updatePagesMutationOptions } from "@/hooks/queries";
+import { useQueryClient, useMutation } from "@tanstack/react-query";
+import { useSplitPage } from "./PageEditor";
 
 // TODO: figure out how to make this work with the new music system
 function PageEditor() {
+    const queryClient = useQueryClient();
     const { t } = useTranslate();
     const { selectedPage } = useSelectedPage()!;
-    const { pages, fetchTimingObjects } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
+    const updatePages = useMutation(
+        updatePagesMutationOptions(queryClient),
+    ).mutate;
+    const splitPage = useSplitPage().mutate;
     const [isFirstPage, setIsFirstPage] = useState(false);
     const [notes, setNotes] = useState(selectedPage?.notes || "");
 
@@ -39,15 +40,10 @@ function PageEditor() {
         const originalNotes = selectedPage?.notes || "";
 
         if (selectedPage && currentNotes !== originalNotes) {
-            updatePages(
-                [{ id: selectedPage.id, notes: notes || null }],
-                fetchTimingObjects,
-            ).then((res) => {
-                if (res.success) {
-                    toast.success("Page notes updated");
-                } else {
-                    toast.error("Failed to update page notes");
-                }
+            updatePages({
+                modifiedPagesArgs: [
+                    { id: selectedPage.id, notes: notes || null },
+                ],
             });
         }
     };
@@ -68,37 +64,6 @@ function PageEditor() {
             setIsFirstPage(selectedPage === firstPage);
         }
     }, [pages, selectedPage]);
-
-    const handleSplitPage = async () => {
-        if (selectedPage) {
-            const newPageArgs = splitPage(selectedPage);
-            if (newPageArgs) {
-                const functionsToExecute: (() => Promise<{
-                    success: boolean;
-                }>)[] = [
-                    () =>
-                        createPages([newPageArgs.newPageArgs], async () => {}),
-                ];
-                if (newPageArgs.modifyPageRequest) {
-                    functionsToExecute.push(() =>
-                        updatePages(
-                            newPageArgs.modifyPageRequest!,
-                            async () => {},
-                        ),
-                    );
-                }
-                const result = await GroupFunction({
-                    functionsToExecute,
-                    useNextUndoGroup: true,
-                });
-
-                if (result.success) {
-                    fetchTimingObjects();
-                    toast.success(t("inspector.page.split.success"));
-                }
-            }
-        }
-    };
 
     if (selectedPage)
         return (
@@ -141,16 +106,15 @@ function PageEditor() {
                             disabled={isFirstPage}
                             onClick={(e) => {
                                 if (selectedPage) {
-                                    updatePages(
-                                        [
+                                    updatePages({
+                                        modifiedPagesArgs: [
                                             {
                                                 id: selectedPage.id,
                                                 is_subset:
                                                     !selectedPage.isSubset,
                                             },
                                         ],
-                                        fetchTimingObjects,
-                                    );
+                                    });
                                 }
                             }}
                             checked={selectedPage?.isSubset || false}
@@ -186,7 +150,7 @@ function PageEditor() {
                     <Button
                         variant="secondary"
                         size="compact"
-                        onClick={handleSplitPage}
+                        onClick={() => splitPage({ page: selectedPage })}
                         disabled={selectedPage?.beats.length <= 1}
                     >
                         <T keyName="inspector.page.splitPage" />

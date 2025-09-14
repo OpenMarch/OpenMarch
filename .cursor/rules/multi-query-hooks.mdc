@@ -1,0 +1,420 @@
+---
+description: When data from multiple queries needs to be combined, transformed, and used across components without re-calculation
+alwaysApply: false
+---
+
+# Multi-Query Hooks Pattern
+
+This rule defines the standard pattern for creating React hooks that combine data from multiple TanStack Query queries using `useQueries`.
+
+## Overview
+
+When a hook needs data from multiple database queries to perform complex operations or transformations, use the `useQueries` pattern with a separate combine function. This pattern ensures proper memoization, loading states, error handling, and type safety.
+
+## Structure Requirements
+
+### 1. File Organization
+
+- **Location**: Place multi-query hooks in `src/hooks/` directory
+- **Naming**: Use descriptive names like `use[Entity][Action]` (e.g., `useTimingObjects`, `useMarcherVisualGroups`)
+- **Exports**: Export both the hook function and the combine function (prefixed with `_`)
+
+### 2. Type Definitions
+
+```typescript
+// Define the return type for the hook
+export type [HookName]Return = {
+    // Define all data properties
+    dataProperty1: Type1[];
+    dataProperty2: Type2;
+    // Always include loading and error states
+    isLoading: boolean;
+    hasError: boolean;
+};
+```
+
+### 3. Combine Function Pattern
+
+```typescript
+export const _combine[HookName] = (
+    results: [
+        UseQueryResult<Type1[]>,
+        UseQueryResult<Type2>,
+        // ... more query results
+    ],
+): [HookName]Return => {
+    // Destructure all query results
+    const {
+        data: data1,
+        isLoading: data1Loading,
+        isError: data1Error,
+    } = results[0];
+    const {
+        data: data2,
+        isLoading: data2Loading,
+        isError: data2Error,
+    } = results[1];
+    // ... continue for all queries
+
+    // Calculate combined loading state
+    const isLoading = data1Loading || data2Loading || /* ... */;
+
+    // Calculate combined error state
+    const hasError = data1Error || data2Error || /* ... */;
+
+    // Check if all data is available
+    const isDataReady = !isLoading && !hasError && data1 && data2 && /* ... */;
+
+    // Return loading state
+    if (isLoading) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: true,
+            hasError: false,
+        };
+    }
+
+    // Return error state
+    if (hasError) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: false,
+            hasError: true,
+        };
+    }
+
+    // Return early if data is not ready (type safety)
+    if (!isDataReady) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: false,
+            hasError: false,
+        };
+    }
+
+    // Perform data transformations and business logic
+    const transformedData1 = transformData1(data1);
+    const transformedData2 = transformData2(data2, transformedData1);
+
+    return {
+        dataProperty1: transformedData1,
+        dataProperty2: transformedData2,
+        isLoading: false,
+        hasError: false,
+    };
+};
+```
+
+### 4. Hook Implementation
+
+```typescript
+export const use[HookName] = (): [HookName]Return => {
+    return useQueries({
+        queries: [
+            queryOptions1(),
+            queryOptions2(),
+            // ... more query options
+        ],
+        // CRITICAL: Use stable function reference, not inline function
+        // This prevents unnecessary re-renders
+        combine: _combine[HookName],
+    });
+};
+```
+
+## Key Requirements
+
+### 1. Memoization
+
+- **ALWAYS** use a stable function reference for the `combine` parameter
+- **NEVER** use inline functions in `useQueries`
+- Prefix combine functions with `_` to indicate they're internal
+
+### 2. Loading States
+
+- Always check `isLoading` for each query
+- Combine all loading states with OR logic
+- Return appropriate loading state with empty/default data
+
+### 3. Error Handling
+
+- Always check `isError` for each query
+- Combine all error states with OR logic
+- Return appropriate error state with empty/default data
+
+### 4. Data Validation
+
+- Check that all required data is available before processing
+- Use early returns for loading, error, and incomplete data states
+- Provide type-safe fallbacks
+
+### 5. Data Transformation
+
+- Perform all business logic and data transformations in the combine function
+- Use proper sorting, filtering, and mapping operations
+- Leverage existing class methods and utility functions
+
+### 6. Type Safety
+
+- Use proper TypeScript types for all query results
+- Define clear return types for the hook
+- Ensure all data transformations are type-safe
+
+## Import Requirements
+
+```typescript
+import { useQueries, UseQueryResult } from "@tanstack/react-query";
+import { queryOptions1, queryOptions2 } from "./queries";
+import { DataType1, DataType2 } from "@/global/classes/DataType";
+import { DatabaseType1, DatabaseType2 } from "@/db-functions";
+```
+
+## Examples
+
+### Simple Multi-Query Hook (useMarcherVisualGroups pattern)
+
+- Returns a map/record of processed data
+- Minimal error handling (returns empty object)
+- Good for optional data combinations
+
+### Complex Multi-Query Hook (useTimingObjects pattern)
+
+- Returns arrays of processed data
+- Comprehensive loading and error states
+- Complex data transformations with dependencies
+- Good for required data with complex processing
+
+## Anti-Patterns to Avoid
+
+1. **Inline combine functions**: Causes unnecessary re-renders
+2. **Missing loading states**: Components can't show loading indicators
+3. **Missing error states**: Components can't handle errors gracefully
+4. **Incomplete data validation**: Can cause runtime errors
+5. **Business logic in components**: Should be in the combine function
+6. **Inconsistent return types**: Always include `isLoading` and `hasError`
+
+## Testing Considerations
+
+- Test loading states by mocking query options to return loading
+- Test error states by mocking query options to return errors
+- Test data transformation logic with various data combinations
+- Test early return conditions (incomplete data)
+- Use real query options, not mocks, for integration testing
+
+## Performance Notes
+
+- The combine function runs on every query state change
+- Keep transformations efficient and avoid expensive operations
+- Consider memoization for expensive calculations within transformations
+- Use stable references to prevent unnecessary re-computations
+
+# Multi-Query Hooks Pattern
+
+This rule defines the standard pattern for creating React hooks that combine data from multiple TanStack Query queries using `useQueries`.
+
+## Overview
+
+When a hook needs data from multiple database queries to perform complex operations or transformations, use the `useQueries` pattern with a separate combine function. This pattern ensures proper memoization, loading states, error handling, and type safety.
+
+## Structure Requirements
+
+### 1. File Organization
+
+- **Location**: Place multi-query hooks in `src/hooks/` directory
+- **Naming**: Use descriptive names like `use[Entity][Action]` (e.g., `useTimingObjects`, `useMarcherVisualGroups`)
+- **Exports**: Export both the hook function and the combine function (prefixed with `_`)
+
+### 2. Type Definitions
+
+```typescript
+// Define the return type for the hook
+export type [HookName]Return = {
+    // Define all data properties
+    dataProperty1: Type1[];
+    dataProperty2: Type2;
+    // Always include loading and error states
+    isLoading: boolean;
+    hasError: boolean;
+};
+```
+
+### 3. Combine Function Pattern
+
+```typescript
+export const _combine[HookName] = (
+    results: [
+        UseQueryResult<Type1[]>,
+        UseQueryResult<Type2>,
+        // ... more query results
+    ],
+): [HookName]Return => {
+    // Destructure all query results
+    const {
+        data: data1,
+        isLoading: data1Loading,
+        isError: data1Error,
+    } = results[0];
+    const {
+        data: data2,
+        isLoading: data2Loading,
+        isError: data2Error,
+    } = results[1];
+    // ... continue for all queries
+
+    // Calculate combined loading state
+    const isLoading = data1Loading || data2Loading || /* ... */;
+
+    // Calculate combined error state
+    const hasError = data1Error || data2Error || /* ... */;
+
+    // Check if all data is available
+    const isDataReady = !isLoading && !hasError && data1 && data2 && /* ... */;
+
+    // Return loading state
+    if (isLoading) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: true,
+            hasError: false,
+        };
+    }
+
+    // Return error state
+    if (hasError) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: false,
+            hasError: true,
+        };
+    }
+
+    // Return early if data is not ready (type safety)
+    if (!isDataReady) {
+        return {
+            dataProperty1: [],
+            dataProperty2: defaultValue,
+            isLoading: false,
+            hasError: false,
+        };
+    }
+
+    // Perform data transformations and business logic
+    const transformedData1 = transformData1(data1);
+    const transformedData2 = transformData2(data2, transformedData1);
+
+    return {
+        dataProperty1: transformedData1,
+        dataProperty2: transformedData2,
+        isLoading: false,
+        hasError: false,
+    };
+};
+```
+
+### 4. Hook Implementation
+
+```typescript
+export const use[HookName] = (): [HookName]Return => {
+    return useQueries({
+        queries: [
+            queryOptions1(),
+            queryOptions2(),
+            // ... more query options
+        ],
+        // CRITICAL: Use stable function reference, not inline function
+        // This prevents unnecessary re-renders
+        combine: _combine[HookName],
+    });
+};
+```
+
+## Key Requirements
+
+### 1. Memoization
+
+- **ALWAYS** use a stable function reference for the `combine` parameter
+- **NEVER** use inline functions in `useQueries`
+- Prefix combine functions with `_` to indicate they're internal
+
+### 2. Loading States
+
+- Always check `isLoading` for each query
+- Combine all loading states with OR logic
+- Return appropriate loading state with empty/default data
+
+### 3. Error Handling
+
+- Always check `isError` for each query
+- Combine all error states with OR logic
+- Return appropriate error state with empty/default data
+
+### 4. Data Validation
+
+- Check that all required data is available before processing
+- Use early returns for loading, error, and incomplete data states
+- Provide type-safe fallbacks
+
+### 5. Data Transformation
+
+- Perform all business logic and data transformations in the combine function
+- Use proper sorting, filtering, and mapping operations
+- Leverage existing class methods and utility functions
+
+### 6. Type Safety
+
+- Use proper TypeScript types for all query results
+- Define clear return types for the hook
+- Ensure all data transformations are type-safe
+
+## Import Requirements
+
+```typescript
+import { useQueries, UseQueryResult } from "@tanstack/react-query";
+import { queryOptions1, queryOptions2 } from "./queries";
+import { DataType1, DataType2 } from "@/global/classes/DataType";
+import { DatabaseType1, DatabaseType2 } from "@/db-functions";
+```
+
+## Examples
+
+### Simple Multi-Query Hook (useMarcherVisualGroups pattern)
+
+- Returns a map/record of processed data
+- Minimal error handling (returns empty object)
+- Good for optional data combinations
+
+### Complex Multi-Query Hook (useTimingObjects pattern)
+
+- Returns arrays of processed data
+- Comprehensive loading and error states
+- Complex data transformations with dependencies
+- Good for required data with complex processing
+
+## Anti-Patterns to Avoid
+
+1. **Inline combine functions**: Causes unnecessary re-renders
+2. **Missing loading states**: Components can't show loading indicators
+3. **Missing error states**: Components can't handle errors gracefully
+4. **Incomplete data validation**: Can cause runtime errors
+5. **Business logic in components**: Should be in the combine function
+6. **Inconsistent return types**: Always include `isLoading` and `hasError`
+
+## Testing Considerations
+
+- Test loading states by mocking query options to return loading
+- Test error states by mocking query options to return errors
+- Test data transformation logic with various data combinations
+- Test early return conditions (incomplete data)
+- Use real query options, not mocks, for integration testing
+
+## Performance Notes
+
+- The combine function runs on every query state change
+- Keep transformations efficient and avoid expensive operations
+- Consider memoization for expensive calculations within transformations
+- Use stable references to prevent unnecessary re-computations

@@ -4,3 +4,7 @@ export * from "./types";
 export * from "./history";
 export * from "./page";
 export * from "./marcher";
+export * from "./beat";
+export * from "./measures";
+export * from "./utility";
+export * from "./sectionAppearance";
