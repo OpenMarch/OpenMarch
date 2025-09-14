@@ -18,6 +18,7 @@ import {
 } from "@/db-functions";
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { marcherPageKeys } from "./useMarcherPages";
 
 const { marchers } = schema;
 
@@ -87,6 +88,9 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
             qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error creating marchers`, e, variables);
@@ -105,12 +109,11 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
                 marcherIds.add(modifiedArgs.id);
 
             qc.invalidateQueries({
-                queryKey: Array.from(marcherIds).map((marcherId) =>
-                    marcherKeys.byId(marcherId),
-                ),
-            });
-            qc.invalidateQueries({
                 queryKey: [KEY_BASE],
+            });
+
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
             });
         },
         onError: (e, variables) => {
@@ -127,6 +130,9 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             // Invalidate all marcher queries
             qc.invalidateQueries({
                 queryKey: [KEY_BASE],
+            });
+            qc.invalidateQueries({
+                queryKey: marcherPageKeys.all(),
             });
         },
         onError: (e, variables) => {
