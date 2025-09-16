@@ -1244,24 +1244,28 @@ function ExportModalContents() {
 
 export default function ExportCoordinatesModal() {
     return (
-        <Dialog>
-            <DialogTrigger
-                asChild
-                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-            >
-                <button type="button" className="flex items-center gap-8">
-                    <ArrowSquareOutIcon size={24} />
-                    <T keyName="exportCoordinates.exportButton" />
-                </button>
-            </DialogTrigger>
+        <>
+            <style>{`.export-coordinates-dialog + [data-radix-popper-content-wrapper],
+                .export-coordinates-dialog ~ [data-radix-popper-content-wrapper]{z-index:10000 !important;}`}</style>
+            <Dialog>
+                <DialogTrigger
+                    asChild
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
+                >
+                    <button type="button" className="flex items-center gap-8">
+                        <ArrowSquareOutIcon size={24} />
+                        <T keyName="exportCoordinates.exportButton" />
+                    </button>
+                </DialogTrigger>
 
-            {/* Dialog Setup */}
-            <DialogContent className="w-[48rem]">
-                <DialogTitle>
-                    <T keyName="exportCoordinates.title" />
-                </DialogTitle>
-                <ExportModalContents />
-            </DialogContent>
-        </Dialog>
+                {/* Dialog Setup */}
+                <DialogContent className="export-coordinates-dialog w-[48rem]">
+                    <DialogTitle>
+                        <T keyName="exportCoordinates.title" />
+                    </DialogTitle>
+                    <ExportModalContents />
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }
