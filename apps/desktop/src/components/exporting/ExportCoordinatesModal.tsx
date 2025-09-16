@@ -510,7 +510,6 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.roundingDenominator" />
                     </Form.Label>
                     <Select
-                        modal={false}
                         value={roundingDenominator.toString()}
                         onValueChange={(value: string) =>
                             setRoundingDenominator(parseInt(value))
