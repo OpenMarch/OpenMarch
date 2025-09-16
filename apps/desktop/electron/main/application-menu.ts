@@ -72,28 +72,28 @@ template.push(
         new MenuItem({
             label: "Edit",
             submenu: [
-                {
-                    label: "Undo",
-                    id: "undo",
-                    accelerator: "CommandOrControl+Z",
-                    // role: 'undo',
-                    click(item: any, focusedWindow: any) {
-                        console.log("Undoing");
-                        // if (focusedWindow) focusedWindow.webContents.undo();
-                        mainProcess.executeHistoryAction("undo");
-                    },
-                },
-                {
-                    label: "Redo",
-                    id: "redo",
-                    accelerator: "Shift+CommandOrControl+Z",
-                    // role: 'redo',
-                    click(item: any, focusedWindow: any) {
-                        console.log("Redoing");
-                        // if (focusedWindow) focusedWindow.webContents.undo();
-                        mainProcess.executeHistoryAction("redo");
-                    },
-                },
+                // {
+                //     label: "Undo",
+                //     id: "undo",
+                //     accelerator: "CommandOrControl+Z",
+                //     // role: 'undo',
+                //     click(item: any, focusedWindow: any) {
+                //         console.log("Undoing");
+                //         // if (focusedWindow) focusedWindow.webContents.undo();
+                //         mainProcess.executeHistoryAction("undo");
+                //     },
+                // },
+                // {
+                //     label: "Redo",
+                //     id: "redo",
+                //     accelerator: "Shift+CommandOrControl+Z",
+                //     // role: 'redo',
+                //     click(item: any, focusedWindow: any) {
+                //         console.log("Redoing");
+                //         // if (focusedWindow) focusedWindow.webContents.undo();
+                //         mainProcess.executeHistoryAction("redo");
+                //     },
+                // },
                 { type: "separator" },
                 { role: "cut" },
                 { role: "copy" },

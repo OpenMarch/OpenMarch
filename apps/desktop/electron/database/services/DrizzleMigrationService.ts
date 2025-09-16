@@ -5,10 +5,6 @@ import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
-import {
-    createAllUndoTriggers,
-    dropAllUndoTriggers,
-} from "../database.history";
 import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
 import { DbConnection } from "../tables/__test__/testUtils";
@@ -55,8 +51,8 @@ export class DrizzleMigrationService {
         console.debug("migrationsFolder:", folder);
 
         try {
-            console.log("Dropping history triggers...");
-            await dropAllUndoTriggers(this.db);
+            // console.log("Dropping history triggers...");
+            // await dropAllUndoTriggers(this.db);
             await dropAllTriggers(this.db);
             console.log("Disabling foreign key checks...");
             this.rawDb.pragma("foreign_keys = OFF");
@@ -79,8 +75,8 @@ export class DrizzleMigrationService {
             console.error("Error applying Drizzle migrations:", error);
             throw error;
         } finally {
-            console.log("Recreating history triggers...");
-            await createAllUndoTriggers(this.db);
+            // console.log("Recreating history triggers...");
+            // await createAllUndoTriggers(this.db);
             console.log("Recreating triggers...");
             await createAllTriggers(this.db);
             console.log("Enabling foreign key checks...");
@@ -149,7 +145,7 @@ export class DrizzleMigrationService {
             ),
         });
 
-        await createAllUndoTriggers(db);
+        // await createAllUndoTriggers(db);
         await createAllTriggers(db);
     }
 }

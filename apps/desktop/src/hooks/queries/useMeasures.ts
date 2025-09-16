@@ -18,7 +18,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 
-const KEY_BASE = "measure";
+const KEY_BASE = "measures";
 
 // Query key factory
 export const measureKeys = {

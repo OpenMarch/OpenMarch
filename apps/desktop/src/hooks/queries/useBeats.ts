@@ -28,7 +28,7 @@ export interface ShiftBeatsArgs {
     shiftAmount: number;
 }
 
-const KEY_BASE = "beat";
+const KEY_BASE = "beats";
 
 // Query key factory
 export const beatKeys = {

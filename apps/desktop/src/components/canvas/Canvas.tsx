@@ -638,7 +638,8 @@ export default function Canvas({
 
     // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (!canvas || !selectedPage || !marchers || !marcherPages) return;
+        if (!canvas || !selectedPage || !marchers || !marcherPagesLoaded)
+            return;
 
         canvas.currentPage = selectedPage;
 
@@ -647,7 +648,14 @@ export default function Canvas({
             marcherPages: marcherPages,
             pageId: selectedPage.id,
         });
-    }, [canvas, marcherPages, marcherVisuals, marchers, selectedPage]);
+    }, [
+        canvas,
+        marcherPages,
+        marcherPagesLoaded,
+        marcherVisuals,
+        marchers,
+        selectedPage,
+    ]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {

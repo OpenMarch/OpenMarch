@@ -14,9 +14,18 @@ import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModa
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import SettingsModal from "../SettingsModal";
 import { T } from "@tolgee/react";
+import {
+    canUndoQueryOptions,
+    canRedoQueryOptions,
+    usePerformHistoryAction,
+} from "@/hooks/queries/useHistory";
+import { useQuery } from "@tanstack/react-query";
 
 export function FileTab() {
     const { isFullscreen } = useFullscreenStore();
+    const { data: canUndo } = useQuery(canUndoQueryOptions);
+    const { data: canRedo } = useQuery(canRedoQueryOptions);
+    const { mutate: performHistoryAction } = usePerformHistoryAction();
     return (
         <div className="flex w-full flex-wrap gap-8">
             <ToolbarSection>
@@ -60,14 +69,16 @@ export function FileTab() {
             {!isFullscreen && (
                 <ToolbarSection>
                     <button
-                        onClick={api.performUndo}
+                        disabled={!canUndo}
+                        onClick={() => performHistoryAction("undo")}
                         className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                     >
                         <ArrowUUpLeftIcon size={24} />
                         <T keyName="fileTab.undo" />
                     </button>
                     <button
-                        onClick={api.performRedo}
+                        disabled={!canRedo}
+                        onClick={() => performHistoryAction("redo")}
                         className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                     >
                         <ArrowUUpRightIcon size={24} />

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
@@ -17,7 +17,7 @@ import {
 } from "@openmarch/ui";
 import { useShapePageStore } from "@/stores/ShapePageStore";
 import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
-import { MinMaxStepSizes, StepSize } from "@/global/classes/StepSize";
+import { StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -27,9 +27,6 @@ import { useQuery } from "@tanstack/react-query";
 
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
-    const [rCoords, setRCoords] = useState<ReadableCoords>();
-    const [stepSize, setStepSize] = useState<StepSize>();
-    const [minMaxStepSize, setMinMaxStepSize] = useState<MinMaxStepSizes>();
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
@@ -98,69 +95,84 @@ function MarcherEditor() {
         );
     }, [selectedMarchers, spmsForThisPage]);
 
-    useEffect(() => {
-        setRCoords(undefined);
-        setStepSize(undefined);
-        setMinMaxStepSize(undefined);
+    const rCoords = useMemo(() => {
+        if (selectedMarchers.length !== 1 || !marcherPagesLoaded)
+            return undefined;
+
+        const selectedMarcherPage = marcherPages[selectedMarchers[0].id];
+        if (!selectedMarcherPage) {
+            console.error(
+                `Selected marcher page not found for marcher ${selectedMarchers[0].id}`,
+            );
+            return undefined;
+        }
+        const newRcoords = ReadableCoords.fromMarcherPage(selectedMarcherPage);
+        return newRcoords;
+    }, [selectedMarchers, marcherPagesLoaded, marcherPages]);
+
+    const stepSize = useMemo(() => {
         if (
-            !selectedMarchers ||
-            !selectedMarchers.length ||
-            !fieldProperties ||
+            selectedMarchers.length !== 1 ||
             !marcherPagesLoaded ||
-            !nextMarcherPages
+            !previousMarcherPages ||
+            !selectedPage ||
+            !fieldProperties
         )
-            return;
+            return undefined;
 
-        if (selectedMarchers.length > 1) {
-            if (selectedPage) {
-                setMinMaxStepSize(
-                    StepSize.getMinAndMaxStepSizesForMarchers({
-                        marchers: selectedMarchers,
-                        startingMarcherPages: Object.values(marcherPages),
-                        endingMarcherPages: Object.values(nextMarcherPages),
-                        page: selectedPage,
-                        fieldProperties: fieldProperties,
-                    }),
-                );
-            }
+        const previousMarcherPage =
+            selectedPage?.previousPageId !== null
+                ? previousMarcherPages[selectedMarchers[0]?.id]
+                : undefined;
 
-            return;
+        const selectedMarcherPage = marcherPages[selectedMarchers[0].id];
+        if (!selectedMarcherPage) {
+            console.error(
+                `Selected marcher page not found for marcher ${selectedMarchers[0].id}`,
+            );
+            return undefined;
         }
-
-        const selectedMarcherPage = marcherPages[selectedMarchers[0]?.id];
-        console.log("marcherPages", marcherPages);
-
-        console.log("selectedMarcherPage", selectedMarcherPage);
-
-        if (selectedMarcherPage) {
-            const newRcoords =
-                ReadableCoords.fromMarcherPage(selectedMarcherPage);
-            setRCoords(newRcoords);
-
-            if (selectedPage && previousMarcherPages) {
-                const previousMarcherPage =
-                    selectedPage?.previousPageId !== null
-                        ? previousMarcherPages[selectedMarchers[0]?.id]
-                        : undefined;
-
-                setStepSize(
-                    StepSize.createStepSizeForMarcher({
-                        startingPage: previousMarcherPage,
-                        endingPage: selectedMarcherPage,
-                        page: selectedPage,
-                        fieldProperties,
-                    }),
-                );
-            }
-        }
+        return StepSize.createStepSizeForMarcher({
+            startingPage: previousMarcherPage,
+            endingPage: selectedMarcherPage,
+            page: selectedPage,
+            fieldProperties,
+        });
     }, [
         selectedMarchers,
-        marcherPages,
+        marcherPagesLoaded,
+        previousMarcherPages,
         selectedPage,
         fieldProperties,
+        marcherPages,
+    ]);
+
+    const minMaxStepSize = useMemo(() => {
+        if (
+            selectedMarchers.length <= 1 ||
+            !marcherPagesLoaded ||
+            !previousMarcherPages ||
+            !selectedPage ||
+            !fieldProperties ||
+            !nextMarcherPages
+        )
+            return undefined;
+
+        return StepSize.getMinAndMaxStepSizesForMarchers({
+            marchers: selectedMarchers,
+            startingMarcherPages: marcherPages,
+            endingMarcherPages: nextMarcherPages,
+            page: selectedPage,
+            fieldProperties,
+        });
+    }, [
+        selectedMarchers,
         marcherPagesLoaded,
-        nextMarcherPages,
         previousMarcherPages,
+        selectedPage,
+        fieldProperties,
+        marcherPages,
+        nextMarcherPages,
     ]);
 
     const resetForm = useCallback(() => {

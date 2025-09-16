@@ -24,7 +24,7 @@ describeDbTests("pages", (it) => {
     ]);
 
     describe("createPages", () => {
-        describe("insert with no existing pages", () => {
+        describe.only("insert with no existing pages", () => {
             describe.each([
                 {
                     description: "Single page",
@@ -1158,6 +1158,9 @@ describeDbTests("pages", (it) => {
                         db,
                     });
 
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState(db);
+
                     // Attempt to update with conflicting start_beat should fail
                     await expect(
                         updatePages({
@@ -1166,7 +1169,7 @@ describeDbTests("pages", (it) => {
                         }),
                     ).rejects.toThrow();
 
-                    await expectNumberOfChanges.test(db, 0);
+                    await expectNumberOfChanges.test(db, 0, databaseState);
                 },
             );
         });
@@ -1545,7 +1548,7 @@ describeDbTests("pages", (it) => {
         });
     });
 
-    describe.only("createLastPage", () => {
+    describe("createLastPage", () => {
         testWithHistory.for([
             {
                 description: "eight counts",
@@ -1652,13 +1655,6 @@ describeDbTests("pages", (it) => {
                 expect(pagesBeforeCreate.length).toBe(
                     marchersAndPages.expectedPages.length,
                 );
-                const utilityBeforeCreate = await db.query.utility.findFirst()!;
-                if (!utilityBeforeCreate) {
-                    await db.insert(schema.utility).values({
-                        id: 0,
-                        last_page_counts: newPageCounts * 2,
-                    });
-                }
                 const databaseState =
                     await expectNumberOfChanges.getDatabaseState(db);
 

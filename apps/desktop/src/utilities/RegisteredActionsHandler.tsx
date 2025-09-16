@@ -24,6 +24,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -512,6 +513,7 @@ function RegisteredActionsHandler() {
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
+    const { mutate: performHistoryAction } = usePerformHistoryAction();
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -599,10 +601,10 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     break;
                 case RegisteredActionsEnum.performUndo:
-                    window.electron.undo();
+                    performHistoryAction("undo");
                     break;
                 case RegisteredActionsEnum.performRedo:
-                    window.electron.redo();
+                    performHistoryAction("redo");
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
