@@ -136,9 +136,13 @@ function CoordinateSheetExport() {
             const processedMarchers = marchers
                 .map((marcher) => ({
                     ...marcher,
+                    // Use raw DB section with the numeric part of drill_number as fallback display name
                     name:
                         marcher.name ||
-                        `${marcher.section} ${marcher.drill_order}`,
+                        `${marcher.section} ${
+                            marcher.drill_number.match(/\d+/)?.[0] ||
+                            String(marcher.drill_order)
+                        }`,
                 }))
                 .sort((a, b) => {
                     const sectionCompare = (a.section || "").localeCompare(
@@ -506,6 +510,7 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.roundingDenominator" />
                     </Form.Label>
                     <Select
+                        modal={false}
                         value={roundingDenominator.toString()}
                         onValueChange={(value: string) =>
                             setRoundingDenominator(parseInt(value))
