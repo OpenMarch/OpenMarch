@@ -20,7 +20,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 
-const KEY_BASE = "sectionAppearance";
+const KEY_BASE = "section_appearances";
 
 // Query key factory
 export const sectionAppearanceKeys = {

@@ -33,22 +33,3 @@ export async function closeCurrentFile() {
     const response = await window.electron.closeCurrentFile();
     return response;
 }
-
-/**
- * Performs an undo action by popping the last action off the history stack.
- * @returns Response data from the server.
- */
-export async function performUndo() {
-    const response = await window.electron.undo();
-    return response;
-}
-
-/**
- * Performs a redo action by popping the last action off the redo stack.
- * Note, the redo stack is deleted when a new action is performed.
- * @returns Response data from the server.
- */
-export async function performRedo() {
-    const response = await window.electron.redo();
-    return response;
-}

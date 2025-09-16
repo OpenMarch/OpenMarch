@@ -1,9 +1,7 @@
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "./Marcher";
 import MarcherPage from "./MarcherPage";
-import MarcherPageMap, {
-    MarcherPagesByMarcher,
-} from "@/global/classes/MarcherPageIndex";
+import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import Page from "./Page";
 
 const INCHES_PER_YARD = 36;

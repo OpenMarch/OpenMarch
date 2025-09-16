@@ -53,7 +53,7 @@ const DEFAULT_STARTING_DATA: StartingData = {
 
 const calculateStartingData = async (
     tx: DbTransaction,
-    currentPageId: number | null,
+    currentPageId: number,
 ): Promise<StartingData> => {
     const fieldPropertiesResult = await tx.query.field_properties.findFirst();
     if (!fieldPropertiesResult) {
@@ -66,21 +66,15 @@ const calculateStartingData = async (
         JSON.parse(fieldPropertiesResult.json_data),
     );
     const pixelsPerStep = fieldProperties.pixelsPerStep;
-    const stepInterval = 2;
-    const intervalInPixels = stepInterval * pixelsPerStep;
+    console.log("pixelsPerStep", pixelsPerStep);
+    const _stepInterval = 2;
+    const intervalInPixels = _stepInterval * pixelsPerStep;
 
     // start 4 steps in front of and inside the top left corner of the field
     let startingPoint = {
-        x: intervalInPixels * 4,
-        y: intervalInPixels * 4,
+        x: 8 * pixelsPerStep,
+        y: 8 * pixelsPerStep,
     };
-
-    if (!currentPageId) {
-        return {
-            point: startingPoint,
-            spacing: stepInterval,
-        };
-    }
 
     const getExistingMarcherPageWithCoordinates = async (startingPoint: {
         x: number;
@@ -99,15 +93,22 @@ const calculateStartingData = async (
         });
     let existingMarcherPageWithCoordinates =
         await getExistingMarcherPageWithCoordinates(startingPoint);
-    while (existingMarcherPageWithCoordinates) {
-        startingPoint.y += intervalInPixels;
+    while (
+        existingMarcherPageWithCoordinates &&
+        existingMarcherPageWithCoordinates?.id != null
+    ) {
+        console.log(
+            "existingMarcherPageWithCoordinates",
+            existingMarcherPageWithCoordinates,
+        );
+        startingPoint.y += pixelsPerStep * 2;
         existingMarcherPageWithCoordinates =
             await getExistingMarcherPageWithCoordinates(startingPoint);
     }
 
     return {
         point: startingPoint,
-        spacing: stepInterval,
+        spacing: intervalInPixels,
     };
 };
 
@@ -150,8 +151,10 @@ export async function createMarchersInTransaction({
     // Create a marcherPage for each marcher
     const newMarcherPages: ModifiedMarcherPageArgs[] = [];
 
+    console.log("allPages", allPages);
     for (const page of allPages) {
         const startingData = await calculateStartingData(tx, page.id);
+        console.log("startingData", startingData);
         for (const [index, marcher] of createdMarchers.entries()) {
             newMarcherPages.push({
                 marcher_id: marcher.id,

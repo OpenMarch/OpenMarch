@@ -24,7 +24,6 @@ function StateInitializer() {
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
-    const updateUndoRedo = useUndoRedoStore((s) => s.updateUndoRedo);
     const queryClient = useQueryClient();
 
     if (selectedPage) {

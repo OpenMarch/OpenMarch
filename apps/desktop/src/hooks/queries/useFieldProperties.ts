@@ -8,7 +8,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 
 // Query key factory
 export const fieldPropertiesKeys = {
-    all: ["fieldProperties"] as const,
+    all: ["field_properties"] as const,
     details: () => [...fieldPropertiesKeys.all, "detail"] as const,
     detail: () => [...fieldPropertiesKeys.details()] as const,
 };

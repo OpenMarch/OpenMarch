@@ -376,6 +376,11 @@ const APP_API = {
         ipcRenderer.invoke("sql:proxy", sql, params, method) as Promise<{
             rows: any[] | any;
         }>,
+    /** Only needed for the triggers */
+    unsafeSqlProxy: (sql: string) =>
+        ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
+            rows: any[] | any;
+        }>,
 
     // Utilities
     swapMarchers: (args: {
