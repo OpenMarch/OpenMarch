@@ -29,7 +29,7 @@ import { marcherPageKeys } from "./useMarcherPages";
 
 const { pages } = schema;
 
-const KEY_BASE = "page";
+const KEY_BASE = "pages";
 
 // Query key factory
 export const pageKeys = {

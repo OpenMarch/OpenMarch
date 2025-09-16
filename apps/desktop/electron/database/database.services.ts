@@ -191,6 +191,10 @@ async function handleSqlProxyWithDb(
     }
 }
 
+async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
+    return await db.exec(sql);
+}
+
 let persistentConnection: Database.Database | null = null;
 let persistentConnectionPath: string | null = null;
 async function handleSqlProxy(
@@ -224,6 +228,16 @@ async function handleSqlProxy(
     }
 }
 
+/** Directly executes the SQL query without any parameters */
+async function handleUnsafeSqlProxy(_: any, sql: string) {
+    try {
+        return await handleUnsafeSqlProxyWithDb(connect(), sql);
+    } catch (error: any) {
+        console.error("Error from unsafe SQL proxy:", error);
+        throw error;
+    }
+}
+
 // exported for use in tests
 export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 
@@ -234,6 +248,7 @@ export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
     ipcMain.handle("sql:proxy", handleSqlProxy);
+    ipcMain.handle("unsafeSql:proxy", handleUnsafeSqlProxy);
 
     // File IO handlers located in electron/main/index.ts
 
@@ -375,40 +390,40 @@ export function initHandlers() {
     );
 
     // History utilities
-    ipcMain.handle("history:flattenUndoGroupsAbove", async (_, group: number) =>
-        connectWrapper(({ db }) => {
-            History.flattenUndoGroupsAbove(db, group);
-            return { success: true, data: null };
-        }),
-    );
+    // ipcMain.handle("history:flattenUndoGroupsAbove", async (_, group: number) =>
+    //     connectWrapper(({ db }) => {
+    //         History.flattenUndoGroupsAbove(db, group);
+    //         return { success: true, data: null };
+    //     }),
+    // );
 
-    ipcMain.handle("history:getCurrentRedoGroup", async () =>
-        connectWrapper(({ db }) => {
-            const redoGroup = History.getCurrentRedoGroup(db);
-            return { success: true, data: redoGroup };
-        }),
-    );
+    // ipcMain.handle("history:getCurrentRedoGroup", async () =>
+    //     connectWrapper(({ db }) => {
+    //         const redoGroup = History.getCurrentRedoGroup(db);
+    //         return { success: true, data: redoGroup };
+    //     }),
+    // );
 
-    ipcMain.handle("history:getCurrentUndoGroup", async () =>
-        connectWrapper(({ db }) => {
-            const undoGroup = History.getCurrentUndoGroup(db);
-            return { success: true, data: undoGroup };
-        }),
-    );
+    // ipcMain.handle("history:getCurrentUndoGroup", async () =>
+    //     connectWrapper(({ db }) => {
+    //         const undoGroup = History.getCurrentUndoGroup(db);
+    //         return { success: true, data: undoGroup };
+    //     }),
+    // );
 
-    ipcMain.handle("history:getUndoStackLength", async () =>
-        connectWrapper(({ db }) => {
-            const undoLength = History.getUndoStackLength(db);
-            return { success: true, data: undoLength };
-        }),
-    );
+    // ipcMain.handle("history:getUndoStackLength", async () =>
+    //     connectWrapper(({ db }) => {
+    //         const undoLength = History.getUndoStackLength(db);
+    //         return { success: true, data: undoLength };
+    //     }),
+    // );
 
-    ipcMain.handle("history:getRedoStackLength", async () =>
-        connectWrapper(({ db }) => {
-            const redoLength = History.getRedoStackLength(db);
-            return { success: true, data: redoLength };
-        }),
-    );
+    // ipcMain.handle("history:getRedoStackLength", async () =>
+    //     connectWrapper(({ db }) => {
+    //         const redoLength = History.getRedoStackLength(db);
+    //         return { success: true, data: redoLength };
+    //     }),
+    // );
 
     // for (const tableController of Object.values(ALL_TABLES)) {
     //     tableController.ipcCrudHandlers();
@@ -416,104 +431,6 @@ export function initHandlers() {
 }
 
 /* ======================= History Functions ======================= */
-/**
- * Retrieves the table name from an SQL statement.
- * Assumes the table name is surrounded by double quotes. E.g.`UPDATE "table_name"`
- *
- * @param sql The SQL statement to get the table name from
- * @returns The table name from the SQL statement
- */
-const tableNameFromSql = (sql: string): string => {
-    return sql.match(/"(.*?)"/)?.[0].replaceAll('"', "") || "";
-};
-
-/**
- * Get the action from an SQL statement used in the history table.
- * Only "UPDATE", "DELETE", or "INSERT" - "ERROR" if invalid
- *
- * @param sql The SQL statement to get the action from
- * @returns The action from the SQL statement.
- */
-const sqlActionFromSql = (
-    sql: string,
-): "UPDATE" | "DELETE" | "INSERT" | "ERROR" => {
-    const action = sql.split(" ")[0].toUpperCase();
-    if (action === "UPDATE" || action === "DELETE" || action === "INSERT")
-        return action;
-    return "ERROR";
-};
-
-const rowIdFromSql = (sql: string): number => {
-    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[0] || "-1");
-};
-
-/**
- *
- * @param type The type of history action to perform, either "undo" or "redo"
- * @param db The database connection to use, or undefined to create a new connection
- * @returns Response from the history action
- */
-export function performHistoryAction(
-    type: "undo" | "redo",
-    db?: Database.Database,
-): HistoryResponse {
-    const dbToUse = db || connect();
-    let response: History.HistoryResponse;
-
-    let marcherIds: number[] = [];
-    let pageId: number | undefined;
-
-    try {
-        if (type === "undo") response = History.performUndo(dbToUse);
-        else response = History.performRedo(dbToUse);
-
-        // Get the marcher ids and page id from the SQL statements
-        for (const sqlStatement of response.sqlStatements) {
-            // Do not record the pageId or marcherIds if it is a DELETE statement
-            if (sqlActionFromSql(sqlStatement) !== "DELETE") {
-                const tableName = tableNameFromSql(sqlStatement);
-                if (tableName === Constants.MarcherTableName) {
-                    const marcherId = rowIdFromSql(sqlStatement);
-                    marcherIds.push(marcherId);
-                } else if (tableName === Constants.PageTableName) {
-                    const newPageId = rowIdFromSql(sqlStatement);
-                    if (newPageId > (pageId || -1)) pageId = newPageId;
-                } else if (tableName === Constants.MarcherPageTableName) {
-                    // If it's a marcher page, get the marcher id and page id of that marcher page
-                    const marcherPageId = rowIdFromSql(sqlStatement);
-                    const marcherPage = dbToUse
-                        .prepare(
-                            `SELECT marcher_id, page_id FROM ${Constants.MarcherPageTableName} WHERE rowid = (?)`,
-                        )
-                        .get(marcherPageId) as
-                        | { marcher_id: number; page_id: number }
-                        | undefined;
-                    if (marcherPage) {
-                        marcherIds.push(marcherPage.marcher_id);
-                        if (marcherPage.page_id > (pageId || -1))
-                            pageId = marcherPage.page_id;
-                    }
-                }
-            }
-        }
-    } catch (error: any) {
-        response = {
-            success: false,
-            error: {
-                message: error?.message || "Could not get error message",
-                stack: error?.stack || "Could not get stack",
-            },
-            tableNames: new Set(),
-            sqlStatements: [],
-        };
-        console.error(error);
-    } finally {
-        if (!db) dbToUse.close();
-    }
-
-    return { ...response, marcherIds, pageId };
-}
-
 /* ============================ Audio Files ============================ */
 /**
  * Gets the information on the audio files in the database.

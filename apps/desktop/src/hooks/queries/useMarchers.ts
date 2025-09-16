@@ -22,7 +22,7 @@ import { marcherPageKeys } from "./useMarcherPages";
 
 const { marchers } = schema;
 
-const KEY_BASE = "marcher";
+const KEY_BASE = "marchers";
 
 // Query key factory
 export const marcherKeys = {

@@ -12,10 +12,7 @@ import * as mockDataPages from "./mock-data/pages.mjs";
 import * as mockDataBeats from "./mock-data/beats.mjs";
 import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
-import {
-    createAllUndoTriggers,
-    dropAllUndoTriggers,
-} from "../../electron/database/database.history";
+import { createAllUndoTriggers, dropAllUndoTriggers } from "@/db-functions";
 
 type DbConnection = BaseSQLiteDatabase<
     "async",

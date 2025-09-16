@@ -1,10 +1,7 @@
 import { TestAPI } from "vitest";
 import { DbConnection, DbTestAPI } from "./base";
 import { getTableName, Table } from "drizzle-orm";
-import {
-    performRedo,
-    performUndo,
-} from "../../electron/database/database.history";
+import { performRedo, performUndo } from "@/db-functions";
 
 const skipHistoryTests = !(process.env.VITEST_ENABLE_HISTORY === "true");
 /**
@@ -288,8 +285,12 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                 });
                 return;
             }
-            const startingStats = await db.query.history_stats.findFirst();
-            if (!startingStats) throw new Error("Starting stats not found");
+            const startingStats = (await db.query.history_undo.findFirst({
+                columns: { history_group: true },
+                orderBy: (table, { desc }) => desc(table.history_group),
+            })) ?? { history_group: 0 };
+            if (startingStats == null)
+                throw new Error("Starting stats not found");
 
             const collectData = async (connection: DbConnection) => {
                 const output: Record<string, any[]> = {};
@@ -314,77 +315,103 @@ export const getTestWithHistory = <T extends DbTestAPI>(
             ) => {
                 const initialData = customData?.expectedData ?? beforeTestsData;
                 const afterTestsData = await collectData(db);
-                const afterUndoGroup = (
-                    await db.query.history_undo.findFirst({
-                        columns: { history_group: true },
-                        orderBy: (table, { desc }) => desc(table.history_group),
-                    })
-                )?.history_group;
-                const historyStatsUndoGroup = (
-                    await db.query.history_stats.findFirst({
-                        columns: { cur_undo_group: true },
-                        orderBy: (table, { desc }) =>
-                            desc(table.cur_undo_group),
-                    })
-                )?.cur_undo_group!;
+                if (numberOfChanges > 0) {
+                    const afterUndoGroup = (
+                        await db.query.history_undo.findFirst({
+                            columns: { history_group: true },
+                            orderBy: (table, { desc }) =>
+                                desc(table.history_group),
+                        })
+                    )?.history_group;
+                    const historyStatsUndoGroup = (
+                        await db.query.history_stats.findFirst({
+                            columns: { cur_undo_group: true },
+                        })
+                    )?.cur_undo_group!;
 
-                expect(afterUndoGroup).toBeDefined();
-                expect(
-                    afterUndoGroup === historyStatsUndoGroup ||
-                        afterUndoGroup === historyStatsUndoGroup - 1,
-                    "After undo group should be the same as the history stats undo group or the history stats undo group - 1",
-                ).toBeTruthy();
-
-                if (!afterUndoGroup) throw new Error("After stats not found");
-
-                const startingUndoGroup =
-                    customData?.currentUndoGroup ??
-                    startingStats?.cur_undo_group;
-                const realNumberOfChanges = afterUndoGroup - startingUndoGroup;
-
-                // Only check that the data is different if there are changes
-                if (numberOfChanges > 0)
+                    expect(afterUndoGroup).toBeDefined();
                     expect(
-                        initialData,
-                        "Data before the test should not be the same before and after the test. Did you provide the wrong number of changes?",
-                    ).not.toEqual(afterTestsData);
+                        afterUndoGroup === historyStatsUndoGroup ||
+                            afterUndoGroup === historyStatsUndoGroup - 1,
+                        "After undo group should be the same as the history stats undo group or the history stats undo group - 1",
+                    ).toBeTruthy();
 
-                expect(
-                    numberOfChanges,
-                    `There should be exactly ${numberOfChanges} change${numberOfChanges === 1 ? "" : "s"} in the undo stack`,
-                ).toEqual(realNumberOfChanges);
-                for (
-                    let testNumber = 0;
-                    testNumber < numberOfTimesToTestUndoAndRedo;
-                    testNumber++
-                ) {
-                    // Test that the undo works
-                    for (let i = 0; i < numberOfChanges; i++)
-                        await performUndo(db as unknown as any);
+                    if (!afterUndoGroup)
+                        throw new Error("After stats not found");
 
-                    const dataAfterUndo = await collectData(db);
+                    const startingUndoGroup =
+                        customData?.currentUndoGroup ??
+                        startingStats?.history_group;
+                    const realNumberOfChanges =
+                        afterUndoGroup - startingUndoGroup;
+
+                    // Only check that the data is different if there are changes
+                    if (numberOfChanges > 0)
+                        expect(
+                            initialData,
+                            "Data before the test should not be the same before and after the test. Did you provide the wrong number of changes?",
+                        ).not.toEqual(afterTestsData);
+
                     expect(
-                        dataAfterUndo,
-                        `UNDO #${testNumber + 1} - ` +
-                            "Data after undo should be the same as before the test",
-                    ).toEqual(initialData);
+                        numberOfChanges,
+                        `There should be exactly ${numberOfChanges} change${numberOfChanges === 1 ? "" : "s"} in the undo stack`,
+                    ).toEqual(realNumberOfChanges);
+                    for (
+                        let testNumber = 0;
+                        testNumber < numberOfTimesToTestUndoAndRedo;
+                        testNumber++
+                    ) {
+                        // Test that the undo works
+                        for (let i = 0; i < numberOfChanges; i++)
+                            await performUndo(db as unknown as any);
 
-                    // Test that the redo works
-                    for (let i = 0; i < numberOfChanges; i++)
-                        await performRedo(db as unknown as any);
-                    const dataAfterRedo = await collectData(db);
+                        const dataAfterUndo = await collectData(db);
+                        expect(
+                            dataAfterUndo,
+                            `UNDO #${testNumber + 1} - ` +
+                                "Data after undo should be the same as before the test",
+                        ).toEqual(initialData);
+
+                        // Test that the redo works
+                        for (let i = 0; i < numberOfChanges; i++)
+                            await performRedo(db as unknown as any);
+                        const dataAfterRedo = await collectData(db);
+                        expect(
+                            dataAfterRedo,
+                            `REDO #${testNumber + 1} - ` +
+                                "Data after redo should be the same as after the test",
+                        ).toEqual(afterTestsData);
+                    }
+                } else {
+                    expect(customData?.expectedData ?? initialData).toEqual(
+                        afterTestsData,
+                    );
+
+                    // expect there to be nothing in the undo or redo stack
                     expect(
-                        dataAfterRedo,
-                        `REDO #${testNumber + 1} - ` +
-                            "Data after redo should be the same as after the test",
-                    ).toEqual(afterTestsData);
+                        await db.query.history_undo.findFirst({
+                            where: (table, { gt }) =>
+                                gt(
+                                    table.history_group,
+                                    customData?.currentUndoGroup ?? 0,
+                                ),
+                        }),
+                    ).toBeUndefined();
+                    expect(
+                        await db.query.history_redo.findFirst(),
+                    ).toBeUndefined();
                 }
             };
 
             const getDatabaseState = async (db: DbConnection) => {
-                const currentUndoGroup = (
-                    await db.query.history_stats.findFirst()
-                )?.cur_undo_group;
+                const currentUndoGroup =
+                    (
+                        await db.query.history_undo.findFirst({
+                            columns: { history_group: true },
+                            orderBy: (table, { desc }) =>
+                                desc(table.history_group),
+                        })
+                    )?.history_group ?? 0;
                 if (currentUndoGroup == null)
                     throw new Error("Current undo group not found");
                 const data = await collectData(db);

@@ -31,12 +31,12 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
 export interface ModifiedMarcherPageArgs
     extends GlobalModifiedMarcherPageArgs {}
 
-const KEY_BASE = "marcherPage";
+const KEY_BASE = "marcher_pages";
 
 // Query key factory
 export const marcherPageKeys = {
     /** This should almost never be used unless you absolutely need every marcherPage in the show at one time */
-    all: () => ["marcherPage"] as const,
+    all: () => [KEY_BASE] as const,
     byPage: (pageId: number) => [KEY_BASE, "page", pageId] as const,
     byMarcher: (marcherId: number) => [KEY_BASE, "marcher", marcherId] as const,
     single: ({ marcherId, pageId }: { marcherId: number; pageId: number }) => [
@@ -264,11 +264,14 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
             for (const modifiedArgs of variables)
                 pageIds.add(modifiedArgs.page_id);
 
-            queryClient.invalidateQueries({
-                queryKey: Array.from(pageIds).map((pageId) =>
-                    marcherPageKeys.byPage(pageId),
-                ),
-            });
+            const keys = Array.from(pageIds).map((pageId) =>
+                marcherPageKeys.byPage(pageId),
+            );
+
+            for (const key of keys)
+                queryClient.invalidateQueries({
+                    queryKey: key,
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error updating coordinates`, e, variables);
