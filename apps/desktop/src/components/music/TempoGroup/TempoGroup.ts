@@ -401,11 +401,17 @@ const useTempoGroupMutation = <TArgs>(
     mutationFn: (args: TArgs) => Promise<void>,
     errorKey: string,
     successKey?: string,
+    callback?: () => void,
 ) => {
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
         onSuccess: () => {
+            console.log(
+                "invalidating queries",
+                measureKeys.all(),
+                beatKeys.all(),
+            );
             // Invalidate all relevant queries
             queryClient.invalidateQueries({
                 queryKey: measureKeys.all(),
@@ -415,6 +421,7 @@ const useTempoGroupMutation = <TArgs>(
             });
 
             if (successKey) toast.success(tolgee.t(successKey));
+            if (callback) callback();
         },
         onError: (error) => {
             conToastError(tolgee.t(errorKey), error);
@@ -422,11 +429,12 @@ const useTempoGroupMutation = <TArgs>(
     });
 };
 
-export const useCreateFromTempoGroup = () => {
+export const useCreateFromTempoGroup = (callback?: () => void) => {
     return useTempoGroupMutation(
         _createFromTempoGroup,
         "tempoGroup.createNewBeatsError",
         "music.tempoGroupCreated",
+        callback,
     );
 };
 
@@ -450,7 +458,7 @@ export const _createFromTempoGroup = async ({
         strongBeatIndexes: tempoGroup.strongBeatIndexes,
     });
 
-    transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
+    await transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
         const createBeatsResponse = await createBeatsInTransaction({
             tx,
             newBeats: beatsToCreate,

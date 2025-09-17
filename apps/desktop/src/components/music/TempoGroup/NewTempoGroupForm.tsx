@@ -11,7 +11,6 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import clsx from "clsx";
 import React, { useMemo } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
-import { toast } from "sonner";
 import { T, useTolgee } from "@tolgee/react";
 export const maxMixedMeterBeats = 30;
 
@@ -25,13 +24,24 @@ const NewTempoGroupForm = React.forwardRef<
     HTMLDivElement,
     NewTempoGroupFormProps
 >((props, ref) => {
-    const createFromTempoGroup = useCreateFromTempoGroup().mutate;
+    const [tempo, setTempo] = React.useState("120");
+
+    const callback = React.useCallback(() => {
+        setName("");
+        if (props.scrollFunc) {
+            props.scrollFunc();
+        }
+        if (props.setSelfHidden) {
+            props.setSelfHidden();
+        }
+    }, [props]);
+
+    const createFromTempoGroup = useCreateFromTempoGroup(callback).mutate;
     const subTextClass = clsx("text-text-subtitle text-sub ");
     const [isMixedMeter, setIsMixedMeter] = React.useState(false);
     const [beatsPerMeasure, setBeatsPerMeasure] = React.useState(4);
     const [selectedPattern, setSelectedPattern] = React.useState<string>("");
     const [name, setName] = React.useState("");
-    const [tempo, setTempo] = React.useState("120");
     const [endTempo, setEndTempo] = React.useState("");
     const [repeats, setRepeats] = React.useState("4");
     const { t } = useTolgee();
@@ -97,14 +107,6 @@ const NewTempoGroupForm = React.forwardRef<
             endTempo: endTempoValue,
             startingPosition: props.startingPosition,
         });
-        setName("");
-        toast.success(t("music.tempoGroupCreated"));
-        if (props.scrollFunc) {
-            props.scrollFunc();
-        }
-        if (props.setSelfHidden) {
-            props.setSelfHidden();
-        }
     };
 
     return (
