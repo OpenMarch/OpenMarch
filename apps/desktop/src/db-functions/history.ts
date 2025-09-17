@@ -4,7 +4,7 @@ import {
 } from "@/global/classes/History";
 import { assert } from "@/utilities/utils";
 import { DbConnection, DbTransaction } from "./types";
-import { count, max } from "drizzle-orm";
+import { max } from "drizzle-orm";
 import { DB, schema } from "@/global/database/db";
 import { Constants } from "../../src/global/Constants";
 import { getTableName, gt, sql, eq, desc, count } from "drizzle-orm";
@@ -516,8 +516,8 @@ async function createTriggers(
         END;`;
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
-    console.debug("Creating insert trigger for", insertTrigger);
-    await window.electron.unsafeSqlProxy(insertTrigger);
+    if (process.env.VITEST) db.run(sql.raw(insertTrigger));
+    else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
         BEGIN
@@ -537,7 +537,9 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    await window.electron.unsafeSqlProxy(updateTrigger);
+    if (process.env.VITEST) db.run(sql.raw(updateTrigger));
+    else await window.electron.unsafeSqlProxy(updateTrigger);
+
     // DELETE trigger
     const deleteTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_dt' BEFORE DELETE ON "${tableName}"
         BEGIN
@@ -551,7 +553,8 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    await window.electron.unsafeSqlProxy(deleteTrigger);
+    if (process.env.VITEST) db.run(sql.raw(deleteTrigger));
+    else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 
 /**
@@ -597,17 +600,19 @@ const switchTriggerMode = async (
         tbl_name: string;
     }[];
     let existingTriggers: ExistingTriggers = [];
-    if (Array.isArray(existingTriggersResponse)) {
-        existingTriggers = (
-            existingTriggersResponse as unknown as string[][]
-        ).map((t) => {
-            return {
-                name: t[0] as string,
-                tbl_name: t[1] as string,
-            };
-        });
-    } else {
-        existingTriggers = existingTriggersResponse;
+    if (existingTriggersResponse.length > 0) {
+        if (Array.isArray(existingTriggersResponse[0])) {
+            existingTriggers = (
+                existingTriggersResponse as unknown as string[][]
+            ).map((t) => {
+                return {
+                    name: t[0],
+                    tbl_name: t[1],
+                };
+            });
+        } else {
+            existingTriggers = existingTriggersResponse as ExistingTriggers;
+        }
     }
 
     // as {
