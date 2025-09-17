@@ -24,7 +24,7 @@ describeDbTests("pages", (it) => {
     ]);
 
     describe("createPages", () => {
-        describe.only("insert with no existing pages", () => {
+        describe("insert with no existing pages", () => {
             describe.each([
                 {
                     description: "Single page",
