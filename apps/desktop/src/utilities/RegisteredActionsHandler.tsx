@@ -24,7 +24,11 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePerformHistoryAction } from "@/hooks/queries/useHistory";
+import {
+    usePerformHistoryAction,
+    canUndoQueryOptions,
+    canRedoQueryOptions,
+} from "@/hooks/queries/useHistory";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -268,10 +272,16 @@ export const RegisteredActionsObjects: {
     }),
     performUndo: new RegisteredAction({
         descKey: "actions.edit.undo",
+        keyboardShortcut: new KeyboardShortcut({ key: "z", control: true }),
         enumString: "performUndo",
     }),
     performRedo: new RegisteredAction({
         descKey: "actions.edit.redo",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "z",
+            control: true,
+            shift: true,
+        }),
         enumString: "performRedo",
     }),
 
@@ -504,6 +514,8 @@ function RegisteredActionsHandler() {
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: canUndo } = useQuery(canUndoQueryOptions);
+    const { data: canRedo } = useQuery(canRedoQueryOptions);
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const { setSelectedMarcherShapes } = useShapePageStore()!;
     const {
@@ -601,10 +613,14 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     break;
                 case RegisteredActionsEnum.performUndo:
-                    performHistoryAction("undo");
+                    if (canUndo) performHistoryAction("undo");
+                    else toast.warning(t("actions.edit.noUndoAvailable"));
+
                     break;
                 case RegisteredActionsEnum.performRedo:
-                    performHistoryAction("redo");
+                    if (canRedo) performHistoryAction("redo");
+                    else toast.warning(t("actions.edit.noRedoAvailable"));
+
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
@@ -1040,6 +1056,7 @@ function RegisteredActionsHandler() {
             fieldProperties,
             marcherPagesLoaded,
             setSelectedAudioFile,
+            performHistoryAction,
             setUiSettings,
             uiSettings,
             pages,
@@ -1061,6 +1078,8 @@ function RegisteredActionsHandler() {
             alignmentEventNewMarcherPages,
             setAlignmentEvent,
             setAlignmentEventMarchers,
+            canUndo,
+            canRedo,
         ],
     );
 
