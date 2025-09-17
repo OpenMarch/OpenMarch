@@ -530,7 +530,7 @@ export const _updateTempoGroup = async ({
         });
     }
 
-    transactionWithHistory(db, "updateTempoGroup", async (tx) => {
+    await transactionWithHistory(db, "updateTempoGroup", async (tx) => {
         await updateBeatsInTransaction({
             tx,
             modifiedBeats: updatedBeats,
