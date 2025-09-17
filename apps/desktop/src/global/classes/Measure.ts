@@ -15,6 +15,12 @@ import { useMutation } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "../singletons/Tolgee";
 import { toast } from "sonner";
+import { deleteMeasuresInTransaction } from "@/db-functions/measures";
+import {
+    deleteBeatsInTransaction,
+    deletePagesInTransaction,
+    transactionWithHistory,
+} from "@/db-functions";
 
 const { measures } = schema;
 
@@ -281,13 +287,7 @@ export const deleteMeasures = async (
 };
 
 /** Deletes all measures, beats, and pages associated with the measures */
-export const cascadeDeleteMeasures = async (
-    measures: Measure[],
-): Promise<{
-    pageIdsToDelete: Set<number>;
-    beatIdsToDelete: Set<number>;
-    measureIdsToDelete: Set<number>;
-}> => {
+export const cascadeDeleteMeasures = async (measures: Measure[]) => {
     const beatIdsToDelete = new Set(
         measures.flatMap((m) => m.beats.map((b) => b.id)),
     );
@@ -298,11 +298,20 @@ export const cascadeDeleteMeasures = async (
         pages.filter((p) => beatIdsToDelete.has(p.start_beat)).map((p) => p.id),
     );
 
-    return {
-        pageIdsToDelete,
-        beatIdsToDelete,
-        measureIdsToDelete: new Set(measures.map((m) => m.id)),
-    };
+    await transactionWithHistory(db, "cascadeDeleteMeasures", async (tx) => {
+        await deleteMeasuresInTransaction({
+            tx,
+            itemIds: new Set(measures.map((m) => m.id)),
+        });
+        await deletePagesInTransaction({
+            tx,
+            pageIds: pageIdsToDelete,
+        });
+        await deleteBeatsInTransaction({
+            tx,
+            beatIds: beatIdsToDelete,
+        });
+    });
 };
 
 export const useCascadeDeleteMeasures = () => {

@@ -2,7 +2,6 @@ import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
-    FIRST_BEAT_ID,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -374,7 +373,7 @@ const filterOutFirstPage = (pageIds: Set<number>): Set<number> => {
     return pageIds;
 };
 
-const deletePagesInTransaction = async ({
+export const deletePagesInTransaction = async ({
     pageIds,
     tx,
 }: {

@@ -1,4 +1,4 @@
-import { useQueries, UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
     allDatabaseBeatsQueryOptions,
     allDatabaseMeasuresQueryOptions,
@@ -11,9 +11,8 @@ import Beat, {
 } from "@/global/classes/Beat";
 import Measure, { fromDatabaseMeasures } from "@/global/classes/Measure";
 import Page, { fromDatabasePages } from "@/global/classes/Page";
-import { DatabaseUtility } from "@/db-functions/utility";
-import { DatabaseBeat, DatabaseMeasure, DatabasePage } from "@/db-functions";
 import { queryClient } from "@/App";
+import { useCallback, useMemo } from "react";
 
 export type TimingObjects = {
     beats: Beat[];
@@ -24,47 +23,72 @@ export type TimingObjects = {
     hasError: boolean;
 };
 
-export const _combineTimingObjects = (
-    results: [
-        UseQueryResult<DatabasePage[]>,
-        UseQueryResult<DatabaseMeasure[]>,
-        UseQueryResult<DatabaseBeat[]>,
-        UseQueryResult<DatabaseUtility | undefined>,
-    ],
-): TimingObjects => {
+const processTimingObjects = (
+    pagesData: any[],
+    measuresData: any[],
+    beatsData: any[],
+    utilityData: any,
+): { beats: Beat[]; measures: Measure[]; pages: Page[] } => {
+    // First create beats with default timestamps
+    const rawBeats = [...beatsData]
+        .sort((a, b) => a.position - b.position)
+        .map((beat, index) => fromDatabaseBeat(beat, index));
+    // Then calculate the actual timestamps based on durations
+    const createdBeats = calculateTimestamps(rawBeats);
+    const createdMeasures = fromDatabaseMeasures({
+        databaseMeasures: measuresData,
+        allBeats: createdBeats,
+    });
+
+    const lastPageCounts = utilityData.last_page_counts;
+
+    const createdPages = fromDatabasePages({
+        databasePages: pagesData,
+        allMeasures: createdMeasures,
+        allBeats: createdBeats,
+        lastPageCounts,
+    });
+
+    return {
+        beats: createdBeats,
+        measures: createdMeasures,
+        pages: createdPages,
+    };
+};
+
+export const useTimingObjects = (): TimingObjects => {
     const {
-        data: pages,
+        data: pagesData,
         isLoading: pagesLoading,
         isError: pagesError,
-    } = results[0];
+        isSuccess: pagesSuccess,
+    } = useQuery(allDatabasePagesQueryOptions());
     const {
-        data: measures,
+        data: measuresData,
         isLoading: measuresLoading,
         isError: measuresError,
-    } = results[1];
+        isSuccess: measuresSuccess,
+    } = useQuery(allDatabaseMeasuresQueryOptions());
     const {
-        data: beats,
+        data: beatsData,
         isLoading: beatsLoading,
         isError: beatsError,
-    } = results[2];
+        isSuccess: beatsSuccess,
+    } = useQuery(allDatabaseBeatsQueryOptions());
     const {
-        data: utility,
+        data: utilityData,
         isLoading: utilityLoading,
         isError: utilityError,
-    } = results[3];
+        isSuccess: utilitySuccess,
+    } = useQuery(getUtilityQueryOptions());
 
-    // Check if any query is still loading
     const isLoading =
         pagesLoading || measuresLoading || beatsLoading || utilityLoading;
-
-    // Check if any query has an error
     const hasError = pagesError || measuresError || beatsError || utilityError;
-
-    // Check if all data is available
     const isDataReady =
-        !isLoading && !hasError && beats && measures && pages && utility;
+        pagesSuccess && measuresSuccess && beatsSuccess && utilitySuccess;
 
-    const fetchTimingObjects = () => {
+    const fetchTimingObjects = useCallback(() => {
         queryClient.invalidateQueries({
             queryKey: allDatabasePagesQueryOptions().queryKey,
         });
@@ -77,84 +101,35 @@ export const _combineTimingObjects = (
         queryClient.invalidateQueries({
             queryKey: getUtilityQueryOptions().queryKey,
         });
-    };
+    }, []);
 
-    // Return loading state
-    if (isLoading) {
-        return {
-            pages: [],
-            measures: [],
-            beats: [],
-            fetchTimingObjects,
-            isLoading: true,
-            hasError: false,
-        };
-    }
+    const processedData = useMemo(() => {
+        if (
+            !isDataReady ||
+            !pagesData ||
+            !measuresData ||
+            !beatsData ||
+            !utilityData
+        ) {
+            return {
+                beats: [],
+                measures: [],
+                pages: [],
+            };
+        }
 
-    // Return error state
-    if (hasError) {
-        return {
-            pages: [],
-            measures: [],
-            beats: [],
-            fetchTimingObjects,
-            isLoading: false,
-            hasError: true,
-        };
-    }
-
-    // Return early if data is not ready (shouldn't happen after loading/error checks, but good for type safety)
-    if (!isDataReady) {
-        return {
-            pages: [],
-            measures: [],
-            beats: [],
-            fetchTimingObjects,
-            isLoading: false,
-            hasError: false,
-        };
-    }
-
-    // First create beats with default timestamps
-    const rawBeats = beats
-        .sort((a, b) => a.position - b.position)
-        .map((beat, index) => fromDatabaseBeat(beat, index));
-    // Then calculate the actual timestamps based on durations
-    const createdBeats = calculateTimestamps(rawBeats);
-    const createdMeasures = fromDatabaseMeasures({
-        databaseMeasures: measures,
-        allBeats: createdBeats,
-    });
-
-    const lastPageCounts = utility.last_page_counts;
-
-    const createdPages = fromDatabasePages({
-        databasePages: pages,
-        allMeasures: createdMeasures,
-        allBeats: createdBeats,
-        lastPageCounts,
-    });
+        return processTimingObjects(
+            pagesData,
+            measuresData,
+            beatsData,
+            utilityData,
+        );
+    }, [isDataReady, pagesData, measuresData, beatsData, utilityData]);
 
     return {
-        pages: createdPages,
-        measures: createdMeasures,
-        beats: createdBeats,
+        ...processedData,
         fetchTimingObjects,
-        isLoading: false,
-        hasError: false,
+        isLoading,
+        hasError,
     };
-};
-
-export const useTimingObjects = () => {
-    return useQueries({
-        queries: [
-            allDatabasePagesQueryOptions(),
-            allDatabaseMeasuresQueryOptions(),
-            allDatabaseBeatsQueryOptions(),
-            getUtilityQueryOptions(),
-        ],
-        // This must not be a stable function, not an inline function, otherwise it will be called every time the component re-renders
-        // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization
-        combine: _combineTimingObjects,
-    });
 };

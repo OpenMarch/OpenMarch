@@ -507,6 +507,14 @@ async function createTriggers(
     // // Drop the triggers if they already exist
     // dropUndoTriggers(db, tableName);
 
+    const columnNames = columns.map((c) => {
+        let columnName: string;
+        if (Array.isArray(c)) columnName = c[0];
+        else if (typeof c === "object") columnName = c.name;
+        else throw new Error(`Unknown column type: ${typeof c}`);
+        return columnName;
+    });
+
     // INSERT trigger
     let insertTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_it'
         AFTER INSERT ON "${tableName}"
@@ -530,15 +538,8 @@ async function createTriggers(
             VALUES(
                 NULL,
                 (SELECT ${groupColumn} FROM history_stats),
-                'UPDATE "${tableName}" SET ${columns
-                    .map((c) => {
-                        let columnName: string;
-                        if (Array.isArray(c)) columnName = c[0];
-                        else if (typeof c === "object") columnName = c.name;
-                        else
-                            throw new Error(`Unknown column type: ${typeof c}`);
-                        return `"${columnName}"='||quote(old."${columnName}")||'`;
-                    })
+                'UPDATE "${tableName}" SET ${columnNames
+                    .map((c) => `"${c}"='||quote(old."${c}")||'`)
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
@@ -551,10 +552,10 @@ async function createTriggers(
         INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
         VALUES(NULL, (
             SELECT ${groupColumn} FROM history_stats),
-            'INSERT INTO "${tableName}" (${columns
-                .map((column) => `"${column.name}"`)
-                .join(",")}) VALUES (${columns
-                .map((c) => `'||quote(old."${c.name}")||'`)
+            'INSERT INTO "${tableName}" (${columnNames
+                .map((c) => `"${c}"`)
+                .join(",")}) VALUES (${columnNames
+                .map((c) => `'||quote(old."${c}")||'`)
                 .join(",")})');
           ${sideEffect}
       END;`;
