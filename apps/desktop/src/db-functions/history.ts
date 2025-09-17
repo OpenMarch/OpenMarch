@@ -340,42 +340,42 @@ export async function dropAllUndoTriggers(db: DbConnection | DB) {
  * @param type "undo" or "redo"
  * @returns The new group number for the respective history table
  */
-async function incrementGroup(db: DbConnection | DB, type: HistoryType) {
-    const historyTableName =
-        type === "undo"
-            ? Constants.UndoHistoryTableName
-            : Constants.RedoHistoryTableName;
+async function incrementGroup(db: DbConnection, type: HistoryType) {
+    const historyTable =
+        type === "undo" ? schema.history_undo : schema.history_redo;
 
     // Get the max group number from the respective history table
-    const maxGroupResult = (await db.get(
-        sql.raw(`
-        SELECT max("history_group") as current_group FROM ${historyTableName};
-    `),
-    )) as { current_group?: number };
-    const maxGroup = maxGroupResult.current_group || 0;
+    const maxGroupResult = await db
+        .select({ current_group: max(historyTable.history_group) })
+        .from(historyTable)
+        .get();
+    const maxGroup = maxGroupResult?.current_group || 0;
 
     const groupString = type === "undo" ? "cur_undo_group" : "cur_redo_group";
     const newGroup = maxGroup + 1;
-    await db.run(
-        sql.raw(`
-        UPDATE ${Constants.HistoryStatsTableName} SET "${groupString}"=${newGroup};
-    `),
-    );
+    await db
+        .update(schema.history_stats)
+        .set({ [groupString]: newGroup })
+        .run();
 
-    const groupLimitResult = (await db.get(
-        sql.raw(`
-        SELECT group_limit FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as HistoryStatsRow;
+    const groupLimitResult = await db
+        .select({ group_limit: schema.history_stats.group_limit })
+        .from(schema.history_stats)
+        .get();
     const groupLimit = groupLimitResult?.group_limit || -1;
 
     // If the group limit is positive and is reached, delete the oldest group
     if (groupLimit > 0) {
-        const allGroupsResult = (await db.all(
-            sql.raw(`
-            SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";
-        `),
-        )) as { history_group: number }[];
+        const allGroupsResult = await db
+            .select({ history_group: historyTable.history_group })
+            .from(historyTable)
+            .orderBy(historyTable.history_group)
+            .all();
+        // const allGroupsResult = (await db.all(
+        //     sql.raw(`
+        //     SELECT DISTINCT "history_group" FROM ${historyTableName} ORDER BY "history_group";
+        // `),
+        // )) as { history_group: number }[];
         const allGroups = allGroupsResult.map((row) => row.history_group);
 
         if (allGroups.length > groupLimit) {
@@ -385,11 +385,15 @@ async function incrementGroup(db: DbConnection | DB, type: HistoryType) {
                 allGroups.length - groupLimit,
             );
             for (const group of groupsToDelete) {
-                await db.run(
-                    sql.raw(`
-                    DELETE FROM ${historyTableName} WHERE "history_group"=${group};
-                `),
-                );
+                await db
+                    .delete(historyTable)
+                    .where(eq(historyTable.history_group, group))
+                    .run();
+                // await db.run(
+                //     sql.raw(`
+                //     DELETE FROM ${historyTableName} WHERE "history_group"=${group};
+                // `),
+                // );
             }
         }
     }
@@ -516,7 +520,8 @@ async function createTriggers(
         END;`;
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
-    if (process.env.VITEST) db.run(sql.raw(insertTrigger));
+    const isViteTest = typeof process !== "undefined" && process.env.VITEST;
+    if (isViteTest) db.run(sql.raw(insertTrigger));
     else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
@@ -537,7 +542,7 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    if (process.env.VITEST) db.run(sql.raw(updateTrigger));
+    if (isViteTest) db.run(sql.raw(updateTrigger));
     else await window.electron.unsafeSqlProxy(updateTrigger);
 
     // DELETE trigger
@@ -553,7 +558,7 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    if (process.env.VITEST) db.run(sql.raw(deleteTrigger));
+    if (isViteTest) db.run(sql.raw(deleteTrigger));
     else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 
@@ -644,7 +649,9 @@ async function executeHistoryAction(
     db: DbConnection,
     type: HistoryType,
 ): Promise<HistoryResponse> {
-    console.log(`\n============ PERFORMING ${type.toUpperCase()} ============`);
+    console.debug(
+        `\n============ PERFORMING ${type.toUpperCase()} ============`,
+    );
     let response: HistoryResponse = {
         success: false,
         tableNames: new Set(),
@@ -756,7 +763,7 @@ async function executeHistoryAction(
             },
         };
     } finally {
-        console.log(
+        console.debug(
             `============ FINISHED ${type.toUpperCase()} =============\n`,
         );
     }
@@ -773,7 +780,7 @@ async function executeHistoryAction(
  * @param db database connection
  */
 export async function clearMostRecentRedo(db: DbConnection | DB) {
-    console.log(`-------- Clearing most recent redo --------`);
+    console.debug(`-------- Clearing most recent redo --------`);
     const maxGroupResult = (await db.get(sql`
         SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}
     `)) as { max_redo_group: number };
@@ -781,7 +788,7 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
     await db.run(sql`
         DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ${maxGroup}
     `);
-    console.log(`-------- Done clearing most recent redo --------`);
+    console.debug(`-------- Done clearing most recent redo --------`);
 }
 
 /**
@@ -835,7 +842,7 @@ export async function getRedoStackLength(db: DbConnection): Promise<number> {
  * @param db database connection
  */
 export async function decrementLastUndoGroup(db: DbConnection | DB) {
-    console.log(`-------- Decrementing last undo group --------`);
+    console.debug(`-------- Decrementing last undo group --------`);
     const maxGroupResult = (await db.get(sql`
         SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}
     `)) as { max_undo_group: number };
@@ -854,7 +861,7 @@ export async function decrementLastUndoGroup(db: DbConnection | DB) {
             UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ${previousGroup}
         `);
     }
-    console.log(`-------- Done decrementing last undo group --------`);
+    console.debug(`-------- Done decrementing last undo group --------`);
 }
 
 /**
@@ -869,12 +876,14 @@ export async function flattenUndoGroupsAbove(
     db: DbConnection | DB,
     group: number,
 ) {
-    console.log(`-------- Flattening undo groups above ${group} --------`);
+    console.debug(`-------- Flattening undo groups above ${group} --------`);
     await db
         .update(schema.history_undo)
         .set({ history_group: group })
         .where(gt(schema.history_undo.history_group, group));
-    console.log(`-------- Done flattening undo groups above ${group} --------`);
+    console.debug(
+        `-------- Done flattening undo groups above ${group} --------`,
+    );
 }
 
 /**
