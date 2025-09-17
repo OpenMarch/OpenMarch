@@ -62,7 +62,8 @@ export const _createFeatureData = async ({
     data: FeatureDataType;
     options?: SomeOptions;
 }) => {
-    transactionWithHistory(db, "createFeatureData", async (tx) => {
+    // VERY IMPORTANT this is called with "await"
+    await transactionWithHistory(db, "createFeatureData", async (tx) => {
         // Database operations here
         const result = await createSomeDataInTransaction({
             tx,
@@ -129,9 +130,12 @@ export const useCreateFeatureData = () => {
     - Modify multiple database entities
     - Need undo/redo support
     - Should be atomic (all succeed or all fail)
+- **Always `await` when using `transactionWithHistory()`**:
+    - If this is not done, the database action may not finish in time for the query to be invalidated
+    - This means that the UI will be stuck with the old state
 
 ```typescript
-transactionWithHistory(db, "operationName", async (tx) => {
+await transactionWithHistory(db, "operationName", async (tx) => {
     // All database operations here
     await createBeatsInTransaction({ tx, newBeats });
     await createMeasuresInTransaction({ tx, newMeasures });
