@@ -46,11 +46,6 @@ function MusicModalContents() {
         [measures],
     );
 
-    useEffect(() => {
-        console.log("measures", measures);
-        // console.debug("tempoGroups", tempoGroups);
-    }, [measures]);
-
     const newFormRef = useRef<HTMLDivElement>(null);
     const { t } = useTolgee();
 
@@ -118,7 +113,10 @@ function MusicModalContents() {
                 </div>
                 <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
                     {tempoGroups.map((tempoGroup, i) => (
-                        <div key={i} className="flex flex-col gap-8">
+                        <div
+                            key={tempoGroup.measures?.[0]?.id ?? i}
+                            className="flex flex-col gap-8"
+                        >
                             <TempoGroupCard
                                 tempoGroup={tempoGroup}
                                 index={i}
