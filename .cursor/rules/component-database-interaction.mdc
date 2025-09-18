@@ -54,7 +54,8 @@ export type FeatureDataType = {
     // ... other properties
 };
 
-// 2. Database operation functions (private, prefixed with _)
+// 2. Database operation functions (private, prefixed with '_')
+//    This can still be exported for testing
 export const _createFeatureData = async ({
     data,
     options,
