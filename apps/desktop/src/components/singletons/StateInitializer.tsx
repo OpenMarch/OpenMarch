@@ -1,15 +1,10 @@
-import { useCallback, useEffect } from "react";
+import { useEffect } from "react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { Constants } from "@/global/Constants";
-import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import type { HistoryResponse } from "electron/database/database.services";
 import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useShapePageStore } from "@/stores/ShapePageStore";
-import { marcherPageKeys } from "@/hooks/queries";
 import { useTimingObjects } from "@/hooks";
-import { useUndoRedoStore } from "@/stores/UndoRedoStore";
 import { useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 
@@ -21,13 +16,12 @@ function StateInitializer() {
     const { pages } = useTimingObjects();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { setSelectedMarchers } = useSelectedMarchers()!;
     const { fetchShapePages, setSelectedMarcherShapes, selectedMarcherShapes } =
         useShapePageStore()!;
     const queryClient = useQueryClient();
 
     if (selectedPage) {
-        queryClient.prefetchQuery(
+        void queryClient.prefetchQuery(
             coordinateDataQueryOptions(selectedPage, queryClient),
         );
         if (selectedPage.nextPageId != null) {
@@ -35,7 +29,7 @@ function StateInitializer() {
                 (page) => page.id === selectedPage.nextPageId,
             );
             if (nextPage)
-                queryClient.prefetchQuery(
+                void queryClient.prefetchQuery(
                     coordinateDataQueryOptions(nextPage, queryClient),
                 );
         }
@@ -44,7 +38,7 @@ function StateInitializer() {
                 (page) => page.id === selectedPage.previousPageId,
             );
             if (previousPage)
-                queryClient.prefetchQuery(
+                void queryClient.prefetchQuery(
                     coordinateDataQueryOptions(previousPage, queryClient),
                 );
         }

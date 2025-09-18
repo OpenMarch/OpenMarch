@@ -406,21 +406,21 @@ const useTempoGroupMutation = <TArgs>(
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
-        onSuccess: () => {
-            console.log(
-                "invalidating queries",
-                measureKeys.all(),
-                beatKeys.all(),
-            );
-            // Invalidate all relevant queries
-            queryClient.invalidateQueries({
-                queryKey: measureKeys.all(),
-            });
-            queryClient.invalidateQueries({
-                queryKey: beatKeys.all(),
-            });
-
+        onSuccess: async () => {
             if (successKey) toast.success(tolgee.t(successKey));
+        },
+        onSettled: () => {
+            // Invalidate all relevant queries
+            // BEATS MUST BE INVALIDATED FIRST - if not, the measures will be incorrect
+            void queryClient
+                .invalidateQueries({
+                    queryKey: beatKeys.all(),
+                })
+                .then(() => {
+                    void queryClient.invalidateQueries({
+                        queryKey: measureKeys.all(),
+                    });
+                });
             if (callback) callback();
         },
         onError: (error) => {

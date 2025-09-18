@@ -22,7 +22,6 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
@@ -81,7 +80,6 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
-    const { fetchSectionAppearances } = useSectionAppearanceStore();
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -538,15 +536,10 @@ export default function Canvas({
 
     // Update section appearances
     useEffect(() => {
-        fetchSectionAppearances();
-    }, [fetchSectionAppearances]);
-
-    // Update section appearances
-    useEffect(() => {
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
         }
-    }, [canvas, updateMarcherPages]);
+    }, [canvas, updateMarcherPages.mutate]);
 
     // // Sync marcher visuals with marchers and section appearances
     // useEffect(() => {
@@ -590,7 +583,7 @@ export default function Canvas({
             visualGroup
                 .getNextPathway()
                 .getFabricObjects()
-                .forEach((fabricObject) => {
+                .forEach((fabricObject: fabric.Object) => {
                     canvas.add(fabricObject);
                 });
             visualGroup
@@ -643,11 +636,15 @@ export default function Canvas({
 
         canvas.currentPage = selectedPage;
 
-        canvas.renderMarchers({
-            marcherVisuals: marcherVisuals,
-            marcherPages: marcherPages,
-            pageId: selectedPage.id,
-        });
+        canvas
+            .renderMarchers({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                pageId: selectedPage.id,
+            })
+            .catch((error) => {
+                console.error("Error rendering marchers", error);
+            });
     }, [
         canvas,
         marcherPages,
@@ -791,11 +788,15 @@ export default function Canvas({
     // rendered at their final positions for the selected page.
     useEffect(() => {
         if (canvas && !isPlaying && selectedPage && marcherPagesLoaded) {
-            canvas.renderMarchers({
-                marcherPages: marcherPages,
-                pageId: selectedPage.id,
-                marcherVisuals: marcherVisuals,
-            });
+            canvas
+                .renderMarchers({
+                    marcherPages: marcherPages,
+                    pageId: selectedPage.id,
+                    marcherVisuals: marcherVisuals,
+                })
+                .catch((error) => {
+                    console.error("Error rendering marchers", error);
+                });
         }
     }, [
         canvas,

@@ -241,12 +241,10 @@ export const deleteMeasuresInTransaction = async ({
     itemIds: Set<number>;
     tx: DbTransaction;
 }): Promise<DatabaseMeasure[]> => {
-    console.log("deleting measures", itemIds);
     const deletedItems = await tx
         .delete(schema.measures)
         .where(inArray(schema.measures.id, Array.from(itemIds)))
         .returning();
-    console.log("deletedItems", deletedItems);
 
     return deletedItems.map(realDatabaseMeasureToDatabaseMeasure);
 };

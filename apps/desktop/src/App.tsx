@@ -60,7 +60,7 @@ function App() {
         if (pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
         console.log("Loading plugins...");
-        window.plugins
+        void window.plugins
             ?.list()
             .then(async (pluginPaths: string[]) => {
                 for (const path of pluginPaths) {
@@ -105,7 +105,7 @@ function App() {
 
     useEffect(() => {
         // Check if database is ready
-        window.electron.databaseIsReady().then((result: boolean) => {
+        void window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
         });
     }, []);
@@ -123,7 +123,7 @@ function App() {
             .getMutationCache()
             .subscribe((event) => {
                 if (event?.type === "updated") {
-                    queryClient.invalidateQueries({
+                    void queryClient.invalidateQueries({
                         queryKey: historyKeys.all(),
                     });
                 }
@@ -132,7 +132,7 @@ function App() {
     }, [databaseIsReady]);
 
     useEffect(() => {
-        window.electron
+        void window.electron
             .invoke("settings:get", "optOutAnalytics")
             .then((optOut) => {
                 if (optOut === undefined) {
@@ -145,14 +145,17 @@ function App() {
 
     useEffect(() => {
         if (appCanvas && isCodegen) {
-            window.electron.codegen.clearMouseActions();
+            void window.electron.codegen.clearMouseActions();
             const cleanup = attachCodegenListeners(appCanvas);
             return cleanup;
         }
     }, [appCanvas, isCodegen]);
 
     useEffect(() => {
-        if (databaseIsReady) createAllUndoTriggers(db);
+        if (databaseIsReady)
+            createAllUndoTriggers(db).catch((error) => {
+                console.error("Error creating undo triggers:", error);
+            });
     }, [databaseIsReady]);
 
     return (
