@@ -1,14 +1,24 @@
 /* eslint-env node */
 module.exports = {
-    extends: ["eslint:recommended", "react-app", "plugin:astro/recommended"],
+    extends: [
+        "eslint:recommended",
+        "react-app",
+        "plugin:astro/recommended",
+        "plugin:@tanstack/query/recommended",
+    ],
     ignorePatterns: [
         "**/node_modules/*",
         "**/dist/*",
         "**/dist-electron/*",
         "**/build/*",
         "**/src/styles/**/*.css",
+        ".eslintrc.cjs",
     ],
     parser: "@typescript-eslint/parser",
+    parserOptions: {
+        project: "./tsconfig.json",
+        tsconfigRootDir: __dirname,
+    },
     root: true,
     globals: {
         console: "readonly",
@@ -21,6 +31,7 @@ module.exports = {
     plugins: ["eslint-plugin-react"],
     rules: {
         "@typescript-eslint/no-var-requires": "off",
+        "@typescript-eslint/no-floating-promises": "error",
         "react/prop-types": "warn",
         "react/no-unescaped-entities": "warn",
         "react/jsx-key": "warn",
