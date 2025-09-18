@@ -13,6 +13,12 @@ import Measure, { fromDatabaseMeasures } from "@/global/classes/Measure";
 import Page, { fromDatabasePages } from "@/global/classes/Page";
 import { queryClient } from "@/App";
 import { useCallback, useMemo } from "react";
+import {
+    DatabaseBeat,
+    DatabaseMeasure,
+    DatabasePage,
+    DatabaseUtility,
+} from "@/db-functions";
 
 export type TimingObjects = {
     beats: Beat[];
@@ -24,13 +30,13 @@ export type TimingObjects = {
 };
 
 const processTimingObjects = (
-    pagesData: any[],
-    measuresData: any[],
-    beatsData: any[],
-    utilityData: any,
+    pagesData: DatabasePage[],
+    measuresData: DatabaseMeasure[],
+    beatsData: DatabaseBeat[],
+    utilityData: DatabaseUtility,
 ): { beats: Beat[]; measures: Measure[]; pages: Page[] } => {
     // First create beats with default timestamps
-    const rawBeats = [...beatsData]
+    const rawBeats = beatsData
         .sort((a, b) => a.position - b.position)
         .map((beat, index) => fromDatabaseBeat(beat, index));
     // Then calculate the actual timestamps based on durations
