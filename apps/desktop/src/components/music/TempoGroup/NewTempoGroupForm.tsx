@@ -36,7 +36,7 @@ const NewTempoGroupForm = React.forwardRef<
         }
     }, [props]);
 
-    const createFromTempoGroup = useCreateFromTempoGroup(callback).mutate;
+    const { mutate: createFromTempoGroup } = useCreateFromTempoGroup(callback);
     const subTextClass = clsx("text-text-subtitle text-sub ");
     const [isMixedMeter, setIsMixedMeter] = React.useState(false);
     const [beatsPerMeasure, setBeatsPerMeasure] = React.useState(4);
@@ -102,7 +102,7 @@ const NewTempoGroupForm = React.forwardRef<
             };
         }
 
-        createFromTempoGroup({
+        void createFromTempoGroup({
             tempoGroup: newTempoGroup,
             endTempo: endTempoValue,
             startingPosition: props.startingPosition,
