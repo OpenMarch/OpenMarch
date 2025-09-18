@@ -53,9 +53,9 @@ export const createMeasuresMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newItems: NewMeasureArgs[]) =>
             createMeasures({ db, newItems }),
-        onSuccess: (_, variables) => {
+        onSettled: () => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -69,15 +69,16 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedItems: ModifiedMeasureArgs[]) =>
             updateMeasures({ db, modifiedItems }),
-        onSuccess: (_, variables) => {
+        onSettled: (variables) => {
+            if (!variables) return;
             // Invalidate specific queries
             const itemIds = new Set<number>();
             for (const modifiedArgs of variables) itemIds.add(modifiedArgs.id);
 
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: Array.from(itemIds).map((id) => measureKeys.byId(id)),
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -90,9 +91,9 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
 export const deleteMeasuresMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (itemIds: Set<number>) => deleteMeasures({ db, itemIds }),
-        onSuccess: (_, variables) => {
+        onSettled: () => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },

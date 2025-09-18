@@ -96,7 +96,7 @@ export const createSectionAppearancesMutationOptions = (qc: QueryClient) => {
             createSectionAppearances({ db, newItems }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -123,21 +123,21 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
             }
 
             // Invalidate by ID queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: Array.from(itemIds).map((id) =>
                     sectionAppearanceKeys.byId(id),
                 ),
             });
 
             // Invalidate by section queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: Array.from(sections).map((section) =>
                     sectionAppearanceKeys.bySection(section),
                 ),
             });
 
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -153,7 +153,7 @@ export const deleteSectionAppearancesMutationOptions = (qc: QueryClient) => {
             deleteSectionAppearances({ db, itemIds }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },

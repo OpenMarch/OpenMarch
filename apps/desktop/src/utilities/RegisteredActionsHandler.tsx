@@ -564,24 +564,30 @@ function RegisteredActionsHandler() {
             // Check if this is an electron action
             switch (action) {
                 case RegisteredActionsEnum.launchLoadFileDialogue:
-                    window.electron.databaseLoad();
+                    void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
-                    window.electron.databaseSave();
+                    void window.electron.databaseSave();
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
-                    window.electron.databaseCreate();
+                    void window.electron.databaseCreate();
                     break;
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
-                    window.electron.launchInsertAudioFileDialogue().then(() => {
-                        AudioFile.getSelectedAudioFile().then((response) => {
-                            const selectedAudioFileWithoutAudio = {
-                                ...response,
-                                data: undefined,
-                            };
-                            setSelectedAudioFile(selectedAudioFileWithoutAudio);
+                    void window.electron
+                        .launchInsertAudioFileDialogue()
+                        .then(() => {
+                            AudioFile.getSelectedAudioFile().then(
+                                (response) => {
+                                    const selectedAudioFileWithoutAudio = {
+                                        ...response,
+                                        data: undefined,
+                                    };
+                                    setSelectedAudioFile(
+                                        selectedAudioFileWithoutAudio,
+                                    );
+                                },
+                            );
                         });
-                    });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     console.log("launchImportMusicXmlFileDialogue");
@@ -908,7 +914,7 @@ function RegisteredActionsHandler() {
                     }
 
                     const marchersStr = `marchers ${selectedMarchers[0].drill_number} and ${selectedMarchers[1].drill_number}`;
-                    window.electron
+                    void window.electron
                         .swapMarchers({
                             pageId: selectedPage.id,
                             marcher1Id: selectedMarchers[0].id,
@@ -924,7 +930,7 @@ function RegisteredActionsHandler() {
                                             selectedMarchers[1].drill_number,
                                     }),
                                 );
-                                queryClient.invalidateQueries({
+                                void queryClient.invalidateQueries({
                                     queryKey: [
                                         marcherPageKeys.byPage(selectedPage.id),
                                     ],
