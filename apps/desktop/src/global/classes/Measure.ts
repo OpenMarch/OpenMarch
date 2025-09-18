@@ -232,62 +232,8 @@ export const fromDatabaseMeasures = (args: {
     return createdMeasures;
 };
 
-/**
- * Creates multiple measures in the database and optionally refreshes the measures data.
- * @param measures - An array of new measure arguments to be created.
- * @param fetchMeasuresFunction - A function to fetch updated measures after successful creation. This should update the stores
- * @returns A promise resolving to the database response containing created measures.
- */
-export const createMeasures = async (
-    measures: NewMeasureArgs[],
-    fetchMeasuresFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await promiseToDatabaseResponse(() =>
-        createMeasuresDb(measures),
-    );
-    if (response.success) fetchMeasuresFunction();
-    else console.error("Failed to create measures", response.error);
-    return response;
-};
-
-/**
- * Updates multiple measures in the database and optionally refreshes the measures data.
- * @param measures - An array of measure modifications to be applied.
- * @param fetchMeasuresFunction - A function to fetch updated measures after successful update. This should update the stores
- * @returns A promise resolving to the database response containing updated measures.
- */
-export const updateMeasures = async (
-    measures: ModifiedMeasureArgs[],
-    fetchMeasuresFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await promiseToDatabaseResponse(() =>
-        updateMeasuresDb(measures),
-    );
-    if (response.success) fetchMeasuresFunction();
-    else console.error("Failed to update measures", response.error);
-    return response;
-};
-
-/**
- * Deletes measures from the database by their IDs and optionally refreshes the measures list
- * @param measureIds Set of measure IDs to be deleted
- * @param fetchMeasuresFunction Optional callback function to refresh measures after deletion
- * @returns A promise resolving to the database response with the deleted measures
- */
-export const deleteMeasures = async (
-    measureIds: Set<number>,
-    fetchMeasuresFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseMeasure[]>> => {
-    const response = await promiseToDatabaseResponse(() =>
-        deleteMeasuresDb(measureIds),
-    );
-    if (response.success) fetchMeasuresFunction();
-    else console.error("Failed to delete measures", response.error);
-    return response;
-};
-
 /** Deletes all measures, beats, and pages associated with the measures */
-export const cascadeDeleteMeasures = async (measures: Measure[]) => {
+export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
     const beatIdsToDelete = new Set(
         measures.flatMap((m) => m.beats.map((b) => b.id)),
     );
@@ -317,7 +263,7 @@ export const cascadeDeleteMeasures = async (measures: Measure[]) => {
 export const useCascadeDeleteMeasures = () => {
     return useMutation({
         mutationFn: (measuresToDelete: Measure[]) =>
-            cascadeDeleteMeasures(measuresToDelete),
+            _cascadeDeleteMeasures(measuresToDelete),
         onSuccess: () => {
             toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
             queryClient.invalidateQueries({ queryKey: measureKeys.all() });
