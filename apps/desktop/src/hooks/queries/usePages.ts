@@ -97,7 +97,7 @@ const updatePagesAndLastPageCounts = async ({
                 modifiedPages: modifiedPages.modifiedPagesArgs,
                 tx,
             });
-            if (modifiedPages.lastPageCounts !== undefined) {
+            if (modifiedPages.lastPageCounts != null) {
                 await updateLastPageCounts({
                     lastPageCounts: modifiedPages.lastPageCounts,
                     tx,
@@ -150,12 +150,15 @@ export const fetchPages = () => {
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
-        onSuccess: (_, variables) => {
+        onSuccess: async (_, variables) => {
             // Invalidate all page queries
-            qc.invalidateQueries({
+            await qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
+                queryKey: utilityKeys.all(),
+            });
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },
@@ -169,17 +172,21 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedPages: ModifyPagesRequest) =>
             updatePagesAndLastPageCounts({ db, modifiedPages }),
-        onSuccess: (_, variables) => {
+        onSuccess: async (_, variables) => {
             // Invalidate all page queries
             const pageIds = new Set<number>();
             for (const modifiedArgs of variables.modifiedPagesArgs)
                 pageIds.add(modifiedArgs.id);
 
-            qc.invalidateQueries({
+            await qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
 
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
+                queryKey: utilityKeys.all(),
+            });
+
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },
@@ -192,13 +199,16 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
-        onSuccess: (_, variables) => {
+        onSuccess: async (_, variables) => {
             toast.success(tolgee.t("page.deletedSuccessfully"));
             // Invalidate all page queries
-            qc.invalidateQueries({
+            await qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
+                queryKey: utilityKeys.all(),
+            });
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },
@@ -215,10 +225,10 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
         onSuccess: (_, variables) => {
             toast.success(tolgee.t("page.createdSuccessfully"));
             // Invalidate all page queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: pageKeys.all(),
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: utilityKeys.all(),
             });
         },
