@@ -396,42 +396,12 @@ export default class DefaultListeners implements CanvasListeners {
         }
     };
 
-    // Simplified and optimized boundary check for better performance
+    // Delegate to canvas' authoritative bounds logic
     private checkCanvasBounds() {
-        // Skip if canvas is not initialized or during active zoom
-        if (!this.canvas.viewportTransform || this._isZooming) return;
-
-        const vpt = this.canvas.viewportTransform;
-        const zoom = this.canvas.getZoom();
-        const canvasWidth = this.canvas.width || 0;
-        const canvasHeight = this.canvas.height || 0;
-
-        // Fast boundary check with minimal calculations
-        // These are more forgiving boundaries to avoid frequent adjustments
-        let needsAdjustment = false;
-
-        // Check horizontal position
-        if (vpt[4] > canvasWidth * 0.5) {
-            vpt[4] = canvasWidth * 0.5;
-            needsAdjustment = true;
-        } else if (vpt[4] < -canvasWidth * (zoom - 0.5)) {
-            vpt[4] = -canvasWidth * (zoom - 0.5);
-            needsAdjustment = true;
-        }
-
-        // Check vertical position
-        if (vpt[5] > canvasHeight * 0.5) {
-            vpt[5] = canvasHeight * 0.5;
-            needsAdjustment = true;
-        } else if (vpt[5] < -canvasHeight * (zoom - 0.5)) {
-            vpt[5] = -canvasHeight * (zoom - 0.5);
-            needsAdjustment = true;
-        }
-
-        // Only re-render if needed
-        if (needsAdjustment) {
-            this.canvas.requestRenderAll();
-        }
+        if (this._isZooming) return;
+        // The canvas handles accurate content-aware clamping
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (this.canvas as any).checkCanvasBounds?.();
     }
 
     // Lasso selection methods

@@ -220,9 +220,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Set canvas size
         this.refreshCanvasSize();
         // Update canvas size on window resize
-        window.addEventListener("resize", (evt) => {
-            this.refreshCanvasSize();
-        });
+        window.addEventListener("resize", () => this.refreshCanvasSize());
 
         this._fieldProperties = fieldProperties;
 
@@ -448,24 +446,52 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         const vpt = this.viewportTransform;
         const zoom = this.getZoom();
-        const canvasWidth = this.width || 0;
-        const canvasHeight = this.height || 0;
+
+        // Content dimensions (the field) should clamp panning.
+        // Fall back to canvas dimensions if fieldProperties aren't ready.
+        const contentWidth = this.fieldProperties?.width ?? this.width ?? 0;
+        const contentHeight = this.fieldProperties?.height ?? this.height ?? 0;
+
+        const viewportWidth = this.getWidth();
+        const viewportHeight = this.getHeight();
+
+        // Visible size of the content at current zoom
+        const visibleContentWidth = contentWidth * zoom;
+        const visibleContentHeight = contentHeight * zoom;
+
+        // Compute min/max translate so content can be moved until its edge aligns with viewport edge.
+        // Fabric vpt[4]/vpt[5] are translation in pixels after zoom.
+        // We use a symmetric clamp around the two edge positions (0 and diff) with some leeway margin.
+        // Padding strategy: always allow overscroll padding on BOTH sides so the user
+        // sees space around the field regardless of fit.
+        // When content fits (diff >= 0): allow range [-outerPadding, diff + outerPadding]
+        // When content larger (diff < 0): allow range [diff - outerPadding, 0 + outerPadding]
+        const outerPadding = 96; // px overscroll on each side
+
+        const diffX = viewportWidth - visibleContentWidth; // > 0 if content fits horizontally
+        const diffY = viewportHeight - visibleContentHeight; // > 0 if content fits vertically
+
+        const minX = (diffX >= 0 ? 0 : diffX) - outerPadding;
+        const maxX = (diffX >= 0 ? diffX : 0) + outerPadding;
+
+        const minY = (diffY >= 0 ? 0 : diffY) - outerPadding;
+        const maxY = (diffY >= 0 ? diffY : 0) + outerPadding;
 
         let needsAdjustment = false;
 
-        if (vpt[4] > canvasWidth * zoom) {
-            vpt[4] = canvasWidth * zoom;
+        if (vpt[4] < minX) {
+            vpt[4] = minX;
             needsAdjustment = true;
-        } else if (vpt[4] < -canvasWidth * 1.25 * zoom) {
-            vpt[4] = -canvasWidth * 1.25 * zoom;
+        } else if (vpt[4] > maxX) {
+            vpt[4] = maxX;
             needsAdjustment = true;
         }
 
-        if (vpt[5] > canvasHeight * zoom) {
-            vpt[5] = canvasHeight * zoom;
+        if (vpt[5] < minY) {
+            vpt[5] = minY;
             needsAdjustment = true;
-        } else if (vpt[5] < -canvasHeight * zoom) {
-            vpt[5] = -canvasHeight * zoom;
+        } else if (vpt[5] > maxY) {
+            vpt[5] = maxY;
             needsAdjustment = true;
         }
 
@@ -670,6 +696,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 height: 100%;
                 transform-origin: 0 0;
                 will-change: transform;
+                box-sizing: border-box;
             `;
             if (canvasElement.parentNode) {
                 canvasElement.parentNode.insertBefore(
@@ -677,6 +704,34 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     canvasElement,
                 );
                 this.cssZoomWrapper.appendChild(canvasElement);
+                // Keep Fabric canvas sized to the wrapper, not the window
+                try {
+                    const refresh = () => this.refreshCanvasSize();
+                    refresh();
+                    // Observe the viewport element that actually defines available space
+                    // teal wrapper = parent of canvas-container
+                    // cssZoomWrapper -> canvas-container -> viewport wrapper
+                    const viewportEl = this.cssZoomWrapper.parentElement
+                        ? this.cssZoomWrapper.parentElement.parentElement
+                        : null;
+                    // @ts-ignore
+                    this._viewportEl = viewportEl || null;
+                    if (typeof ResizeObserver !== "undefined") {
+                        if (viewportEl) {
+                            const ro = new ResizeObserver(() => refresh());
+                            ro.observe(viewportEl);
+                            // @ts-ignore
+                            this._viewportResizeObserver = ro;
+                        } else {
+                            const ro = new ResizeObserver(() => refresh());
+                            ro.observe(this.cssZoomWrapper);
+                            // @ts-ignore
+                            this._wrapperResizeObserver = ro;
+                        }
+                    }
+                } catch {
+                    // ignore observer setup failures
+                }
                 const upperCanvas = (this as any)
                     .upperCanvasEl as HTMLCanvasElement | null;
                 if (
@@ -843,8 +898,47 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******************* INSTANCE METHODS ******************/
     refreshCanvasSize() {
-        this.setWidth(window.innerWidth);
-        this.setHeight(window.innerHeight);
+        // Prefer the outer viewport wrapper (teal wrapper) if available,
+        // fallback to canvas-zoom-wrapper, then window size
+        // @ts-ignore
+        const viewportEl: HTMLElement | null = this._viewportEl || null;
+        const targetRect = viewportEl
+            ? viewportEl.getBoundingClientRect()
+            : this.cssZoomWrapper
+              ? this.cssZoomWrapper.getBoundingClientRect()
+              : ({ width: window.innerWidth, height: window.innerHeight } as any);
+
+        const width = Math.max(0, Math.floor(targetRect.width));
+        const height = Math.max(0, Math.floor(targetRect.height));
+
+        this.setWidth(width);
+        this.setHeight(height);
+    }
+
+    /**
+     * Compute the "base zoom" so that the field fits vertically in the current viewport.
+     * If the field already fits at 1.0, base zoom is 1.0.
+     */
+    public getBaseZoom(): number {
+        const viewportHeight = this.getHeight();
+        const fieldHeight = this.fieldProperties?.height ?? viewportHeight;
+        if (fieldHeight <= 0 || viewportHeight <= 0) return 1.0;
+        const fitVerticalZoom = viewportHeight / fieldHeight;
+        return Math.min(1.0, fitVerticalZoom);
+    }
+
+    /** Center the field in the viewport at base zoom. */
+    public centerAtBaseZoom(): void {
+        const viewportWidth = this.getWidth();
+        const viewportHeight = this.getHeight();
+        const fieldWidth = this.fieldProperties?.width ?? viewportWidth;
+        const fieldHeight = this.fieldProperties?.height ?? viewportHeight;
+
+        const baseZoom = this.getBaseZoom();
+        const panX = (viewportWidth - fieldWidth * baseZoom) / 2;
+        const panY = (viewportHeight - fieldHeight * baseZoom) / 2;
+        this.setViewportTransform([baseZoom, 0, 0, baseZoom, panX, panY]);
+        this.requestRenderAll();
     }
 
     get listeners() {
