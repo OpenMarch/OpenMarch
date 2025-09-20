@@ -41,8 +41,8 @@
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
         "@openmarch/core": "workspace:*",
-        "@openmarch/musicxml-parser": "workspace:*",
         "@openmarch/metronome": "workspace:*",
+        "@openmarch/musicxml-parser": "workspace:*",
         "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",
@@ -81,6 +81,7 @@
         "jszip": "^3.10.1",
         "lodash": "^4.17.21",
         "nan": "^2.22.2",
+        "pdfjs-dist": "^5.4.149",
         "pdfkit": "^0.17.1",
         "posthog-js": "^1.256.2",
         "react": "^18.3.1",
@@ -96,6 +97,7 @@
         "uuid": "^11.1.0",
         "wavesurfer.js": "^7.9.9",
         "xml2abc": "file:external-packages/xml2abc.tgz",
+        "zod": "^4.1.9",
         "zustand": "^4.5.7"
     },
     "devDependencies": {
