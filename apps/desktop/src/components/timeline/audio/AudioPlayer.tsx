@@ -61,6 +61,7 @@ export const getLivePlaybackPosition = (): number => {
  * The audio player handles playback via Web Audio API.
  * Metronome controls are managed by MetronomeModal.
  */
+// eslint-disable-next-line max-lines-per-function
 export default function AudioPlayer() {
     const { t } = useTolgee();
     const { theme } = useTheme();
@@ -131,7 +132,7 @@ export default function AudioPlayer() {
             float32Array.length,
             audioContext.sampleRate,
         );
-        newBuffer.copyToChannel(float32Array, 0);
+        void newBuffer.copyToChannel(float32Array, 0);
 
         // Set the metronome buffer in state
         setMetronomeBuffer(newBuffer);
@@ -155,7 +156,7 @@ export default function AudioPlayer() {
 
             setWaveformBuffer(audioFile.data.slice(0));
 
-            audioContext.decodeAudioData(
+            void audioContext.decodeAudioData(
                 audioFile.data.slice(0),
                 (buffer) => {
                     if (!isCancelled) {
@@ -291,7 +292,7 @@ export default function AudioPlayer() {
 
         // Load the audio data for visualization
         const blob = new Blob([waveformBuffer], { type: "audio/wav" });
-        ws.loadBlob(blob);
+        void ws.loadBlob(blob);
 
         // Initialize regions plugin
         const regions = ws.registerPlugin(RegionsPlugin.create());

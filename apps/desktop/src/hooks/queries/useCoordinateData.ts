@@ -2,6 +2,7 @@ import {
     queryOptions,
     useQueries,
     useQueryClient,
+    UseQueryResult,
 } from "@tanstack/react-query";
 import { marcherPagesByPageQueryOptions } from "./useMarcherPages";
 import { Pathway, pathwaysByPageQueryOptions } from "./usePathways";
@@ -16,10 +17,12 @@ const coordinateDataKeys = {
         [...coordinateDataKeys.all, "page", pageId] as const,
 };
 
+type MarcherTimelinesByMarcherId = Map<number, MarcherTimeline>;
+
 /**
  * Get the timeline for one page for all marchers
  *
- * @param destinationTimestamp - in seconds, the destination timestamp of the page
+ * @param destinationTimestamp - in milliseconds, the destination timestamp of the page
  * @param marcherPages - the marcher pages for the page
  * @param pathwaysById - a record of pathway IDs to their pathways
  * @returns - a record of marcher IDs to their timelines for the page
@@ -28,14 +31,14 @@ const getMarcherTimelines = (
     destinationTimestamp: number,
     marcherPages: MarcherPagesByMarcher,
     pathwaysById: Record<number, Pathway>,
-): Record<number, MarcherTimeline> => {
+): MarcherTimelinesByMarcherId => {
     if (marcherPages == null) {
         console.debug("not loading timeline");
         // console.debug("midsetsLoaded", midsetsLoaded);
         // console.debug("midsets", midsets);
         // console.debug("marcherPagesLoaded", marcherPagesLoaded);
         console.debug("marcherPages", marcherPages);
-        return {};
+        return new Map<number, MarcherTimeline>();
     }
     const marcherPagesArray = Object.values(marcherPages);
 
@@ -58,7 +61,10 @@ const getMarcherTimelines = (
     //     {} as Record<number, Midset[]>,
     // );
 
-    const timelinesByMarcherId: Record<number, MarcherTimeline> = {};
+    const timelinesByMarcherId: MarcherTimelinesByMarcherId = new Map<
+        number,
+        MarcherTimeline
+    >();
     if (!marcherPagesArray.length) return timelinesByMarcherId;
 
     for (const marcherPage of marcherPagesArray) {
@@ -94,10 +100,10 @@ const getMarcherTimelines = (
         const sortedTimestamps = Array.from(coordinateMap.keys()).sort(
             (a, b) => a - b,
         );
-        timelinesByMarcherId[marcherPage.marcher_id] = {
+        timelinesByMarcherId.set(marcherPage.marcher_id, {
             pathMap: coordinateMap,
             sortedTimestamps,
-        };
+        });
     }
     return timelinesByMarcherId;
 };
@@ -132,7 +138,7 @@ export const coordinateDataQueryOptions = (
             ]);
 
             return getMarcherTimelines(
-                page.timestamp + page.duration,
+                (page.timestamp + page.duration) * 1000,
                 marcherPages ?? {},
                 pathways ?? {},
             );
@@ -141,25 +147,49 @@ export const coordinateDataQueryOptions = (
     });
 
 export const combineMarcherTimelines = (
-    timelines: Record<number, MarcherTimeline>[],
+    timelineMaps: MarcherTimelinesByMarcherId[],
 ) => {
-    return timelines.reduce((acc, r) => {
-        for (const [marcherId, timeline] of Object.entries(r ?? {})) {
-            for (const [timestamp, coordinate] of Object.entries(
-                timeline.pathMap,
-            )) {
-                acc[parseInt(marcherId)].pathMap.set(
-                    parseFloat(timestamp),
-                    coordinate,
-                );
-                acc[parseInt(marcherId)].sortedTimestamps.push(
-                    parseFloat(timestamp),
-                );
-                acc[parseInt(marcherId)].sortedTimestamps.sort((a, b) => a - b);
+    const combinedTimelines: MarcherTimelinesByMarcherId = new Map<
+        number,
+        MarcherTimeline
+    >();
+    for (const timelineMap of timelineMaps) {
+        for (const [marcherId, timeline] of timelineMap.entries()) {
+            // Initialize the marcher timeline if it doesn't exist
+            const combinedTimeline = combinedTimelines.get(marcherId) ?? {
+                pathMap: new Map<number, CoordinateDefinition>(),
+                sortedTimestamps: [],
+            };
+            for (const [timestamp, coordinate] of timeline.pathMap.entries()) {
+                combinedTimeline.pathMap.set(timestamp, coordinate);
             }
+            combinedTimelines.set(marcherId, combinedTimeline);
         }
-        return acc;
-    }, {});
+    }
+
+    // Combine and sort timestamps
+    for (const [marcherId, timeline] of combinedTimelines.entries()) {
+        const timestamps = Array.from(timeline.pathMap.keys());
+        const newSortedTimestamps = timestamps.sort((a, b) => a - b);
+        combinedTimelines.set(marcherId, {
+            ...timeline,
+            sortedTimestamps: newSortedTimestamps,
+        });
+    }
+
+    return combinedTimelines;
+};
+
+const combineQueryResults = (
+    results: UseQueryResult<Map<number, MarcherTimeline>>[],
+) => {
+    const output = {
+        data: combineMarcherTimelines(results.map((r) => r.data ?? new Map())),
+        isPending: results.some((r) => r.isPending),
+        isFetching: results.some((r) => r.isFetching),
+        error: results.find((r) => r.error)?.error,
+    };
+    return output;
 };
 
 /**
@@ -173,15 +203,8 @@ export const useManyCoordinateData = (
 ) => {
     const qc = useQueryClient();
 
-    // TODO - memoize the pages array to prevent unnecessary re-renders
-
     return useQueries({
         queries: pages.map((page) => coordinateDataQueryOptions(page, qc)),
-        combine: (results) => ({
-            data: combineMarcherTimelines(results.map((r) => r.data ?? {})),
-            isPending: results.some((r) => r.isPending),
-            isFetching: results.some((r) => r.isFetching),
-            error: results.find((r) => r.error)?.error,
-        }),
+        combine: combineQueryResults,
     });
 };

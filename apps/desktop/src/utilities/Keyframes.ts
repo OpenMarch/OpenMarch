@@ -40,7 +40,7 @@ export const getCoordinatesAtTime = (
 
     const { current: currentTimestamp, next: nextTimestamp } =
         findSurroundingTimestamps({
-            timestamps: marcherTimeline.sortedTimestamps,
+            sortedTimestamps: marcherTimeline.sortedTimestamps,
             targetTimestamp: timestampMilliseconds,
         });
 
@@ -103,6 +103,7 @@ export const getCoordinatesAtTime = (
 
     return interpolatedCoordinate;
 };
+
 /**
  * Binary search algorithm to find the timestamps surrounding a target.
  *
@@ -112,36 +113,36 @@ export const getCoordinatesAtTime = (
  *          and the timestamp immediately after the target (`next`).
  *          Returns null for either if not found.
  */
-function findSurroundingTimestamps({
-    timestamps,
+export function findSurroundingTimestamps({
+    sortedTimestamps,
     targetTimestamp,
 }: {
-    timestamps: number[];
+    sortedTimestamps: number[];
     targetTimestamp: number;
 }): { current: number | null; next: number | null } {
     let low = 0;
-    let high = timestamps.length - 1;
+    let high = sortedTimestamps.length - 1;
 
-    if (timestamps.length === 0) {
+    if (sortedTimestamps.length === 0) {
         return { current: null, next: null };
     }
 
     // If target is before the first element
-    if (targetTimestamp < timestamps[0]) {
-        return { current: null, next: timestamps[0] };
+    if (targetTimestamp < sortedTimestamps[0]) {
+        return { current: null, next: sortedTimestamps[0] };
     }
 
     // If target is after or at the last element
-    if (targetTimestamp >= timestamps[high]) {
-        return { current: timestamps[high], next: null };
+    if (targetTimestamp >= sortedTimestamps[high]) {
+        return { current: sortedTimestamps[high], next: null };
     }
 
     while (low <= high) {
         const mid = Math.floor((low + high) / 2);
-        const midT = timestamps[mid];
+        const midT = sortedTimestamps[mid];
 
         if (midT === targetTimestamp) {
-            return { current: midT, next: timestamps[mid + 1] ?? null };
+            return { current: midT, next: sortedTimestamps[mid + 1] ?? null };
         }
 
         if (midT < targetTimestamp) {
@@ -154,5 +155,5 @@ function findSurroundingTimestamps({
     // At this point, high < low.
     // timestamps[high] is the value before the target.
     // timestamps[low] is the value after the target.
-    return { current: timestamps[high], next: timestamps[low] };
+    return { current: sortedTimestamps[high], next: sortedTimestamps[low] };
 }
