@@ -11,25 +11,18 @@ import {
     toMarcherPagesByPage,
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
-import { updateEndPoint } from "@/db-functions/pathways";
-import { getNextMarcherPage } from "@/db-functions/marcherPage";
-import MarcherPage, {
-    ModifiedMarcherPageArgs as GlobalModifiedMarcherPageArgs,
-} from "@/global/classes/MarcherPage";
+import {
+    ModifiedMarcherPageArgs,
+    swapMarchers,
+    updateMarcherPages,
+} from "@/db-functions/marcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { conToastError } from "@/utilities/utils";
-import { DbTransaction, transactionWithHistory } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import tolgee from "@/global/singletons/Tolgee";
+import { toast } from "sonner";
 
 const { marcher_pages } = schema;
-
-// Define types from the existing schema - remove pathway fields from base type
-export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
-
-/**
- * Arguments for modifying an existing marcher page
- */
-export interface ModifiedMarcherPageArgs
-    extends GlobalModifiedMarcherPageArgs {}
 
 const KEY_BASE = "marcher_pages";
 
@@ -119,6 +112,7 @@ export const allMarcherPagesQueryOptions = ({
     pinkyPromiseThatYouKnowWhatYouAreDoing?: boolean;
 }) => {
     return queryOptions({
+        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: marcherPageKeys.all(),
         queryFn: async () => {
             const mpResponse = await marcherPageQueries.getAll(
@@ -174,76 +168,6 @@ export const marcherPagesByMarcherQueryOptions = (
     });
 };
 
-// Mutation functions (pure business logic)
-const marcherPageMutations = {
-    updateMarcherPages: async (
-        tx: DbTransaction,
-        modifiedMarcherPages: ModifiedMarcherPageArgs[],
-    ): Promise<DatabaseMarcherPage[]> => {
-        const results: DatabaseMarcherPage[] = [];
-
-        for (const modifiedMarcherPage of modifiedMarcherPages) {
-            const { marcher_id, page_id, ...updateData } = modifiedMarcherPage;
-
-            const currentMarcherPage = await tx
-                .update(marcher_pages)
-                .set(updateData)
-                .where(
-                    and(
-                        eq(marcher_pages.marcher_id, marcher_id),
-                        eq(marcher_pages.page_id, page_id),
-                    ),
-                )
-                .returning({
-                    id: marcher_pages.id,
-                    marcher_id: marcher_pages.marcher_id,
-                    page_id: marcher_pages.page_id,
-                    x: marcher_pages.x,
-                    y: marcher_pages.y,
-                    created_at: marcher_pages.created_at,
-                    updated_at: marcher_pages.updated_at,
-                    path_data_id: marcher_pages.path_data_id,
-                    path_start_position: marcher_pages.path_start_position,
-                    path_end_position: marcher_pages.path_end_position,
-                    notes: marcher_pages.notes,
-                })
-                .get();
-
-            if (currentMarcherPage.path_data_id) {
-                updateEndPoint({
-                    tx,
-                    pathwayId: currentMarcherPage.path_data_id,
-                    newPoint: {
-                        x: currentMarcherPage.x,
-                        y: currentMarcherPage.y,
-                    },
-                    type: "end",
-                });
-            }
-
-            const nextMarcherPage = await getNextMarcherPage(tx, {
-                marcherPageId: currentMarcherPage.id,
-            });
-
-            if (nextMarcherPage && nextMarcherPage.path_data_id) {
-                updateEndPoint({
-                    tx,
-                    pathwayId: nextMarcherPage.path_data_id,
-                    newPoint: {
-                        x: currentMarcherPage.x,
-                        y: currentMarcherPage.y,
-                    },
-                    type: "start",
-                });
-            }
-
-            results.push(currentMarcherPage);
-        }
-
-        return results;
-    },
-};
-
 export const fetchMarcherPages = () => {
     queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
@@ -252,12 +176,7 @@ export const fetchMarcherPages = () => {
 export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherPages: ModifiedMarcherPageArgs[]) =>
-            transactionWithHistory(db, "updateMarcherPages", async (tx) => {
-                return marcherPageMutations.updateMarcherPages(
-                    tx,
-                    modifiedMarcherPages,
-                );
-            }),
+            updateMarcherPages({ db, modifiedMarcherPages }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher pages queries
             const pageIds = new Set<number>();
@@ -269,12 +188,59 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
             );
 
             for (const key of keys)
-                queryClient.invalidateQueries({
+                void queryClient.invalidateQueries({
                     queryKey: key,
                 });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating coordinates`, e, variables);
+            conToastError(`Error updating pages`, e, variables);
+        },
+    });
+};
+
+export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
+    return mutationOptions({
+        mutationFn: ({
+            pageId,
+            marcher1Id,
+            marcher2Id,
+        }: {
+            pageId: number;
+            marcher1Id: number;
+            marcher2Id: number;
+        }) => swapMarchers({ db, pageId, marcher1Id, marcher2Id }),
+        onSuccess: (_, variables) => {
+            // Invalidate all marcher pages queries
+            void queryClient.invalidateQueries({
+                queryKey: marcherPageKeys.byPage(variables.pageId),
+            });
+
+            // Get the marchers so we can get the drill numbers for the success message
+            const marcher1Promise = db.query.marchers.findFirst({
+                where: eq(schema.marchers.id, variables.marcher1Id),
+            });
+            const marcher2Promise = db.query.marchers.findFirst({
+                where: eq(schema.marchers.id, variables.marcher2Id),
+            });
+            void Promise.all([marcher1Promise, marcher2Promise]).then(
+                ([marcher1, marcher2]) => {
+                    if (marcher1 && marcher2) {
+                        const drillNumber1 =
+                            marcher1.drill_prefix + marcher1.drill_order;
+                        const drillNumber2 =
+                            marcher2.drill_prefix + marcher2.drill_order;
+                        toast.success(
+                            tolgee.t("actions.swap.success", {
+                                marcher1: drillNumber1,
+                                marcher2: drillNumber2,
+                            }),
+                        );
+                    }
+                },
+            );
+        },
+        onError: (e, variables) => {
+            conToastError(`Error swapping marchers`, e, variables);
         },
     });
 };

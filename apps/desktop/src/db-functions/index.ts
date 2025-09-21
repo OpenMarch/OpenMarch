@@ -8,3 +8,6 @@ export * from "./beat";
 export * from "./measures";
 export * from "./utility";
 export * from "./sectionAppearance";
+export * from "./shapes";
+export * from "./shapePages";
+export * from "./shapePageMarchers";

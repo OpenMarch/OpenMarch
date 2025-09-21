@@ -131,7 +131,7 @@ async function createWindow(title?: string) {
 
     if (url) {
         // electron-vite-vue#298
-        win.loadURL(url);
+        void win.loadURL(url);
         win.on("ready-to-show", () => {
             // Always open DevTools in codegen mode for debugging
             if (win && (isCodegen || process.env.NODE_ENV === "development")) {
@@ -139,7 +139,7 @@ async function createWindow(title?: string) {
             }
         });
     } else {
-        win.loadFile(indexHtml);
+        void win.loadFile(indexHtml);
     }
 
     // Test actively push message to the Electron-Renderer
@@ -171,7 +171,7 @@ async function createWindow(title?: string) {
 
     // Make all links open with the browser, not with the application
     win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith("https:")) shell.openExternal(url);
+        if (url.startsWith("https:")) void shell.openExternal(url);
         return { action: "deny" };
     });
 
@@ -179,7 +179,7 @@ async function createWindow(title?: string) {
     update(win);
 }
 
-app.whenReady().then(async () => {
+void app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
@@ -212,8 +212,6 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
-    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
-    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("field_properties:export", async () =>
         exportFieldPropertiesFile(),
@@ -235,7 +233,7 @@ app.whenReady().then(async () => {
         store.set("databasePath", filePath);
         addRecentFile(filePath);
 
-        setActiveDb(filePath);
+        await setActiveDb(filePath);
         return 200;
     });
 
@@ -356,7 +354,7 @@ ipcMain.on("window:maximize", () => {
 });
 
 ipcMain.on("window:close", () => {
-    closeCurrentFile();
+    void closeCurrentFile();
     win?.close();
 });
 
@@ -389,7 +387,7 @@ ipcMain.handle("set-language", (event, language) => {
 // file management
 
 ipcMain.handle("closeCurrentFile", () => {
-    closeCurrentFile();
+    void closeCurrentFile();
 });
 
 // Plugins
@@ -459,7 +457,7 @@ app.on("activate", () => {
     if (allWindows.length) {
         allWindows[0].focus();
     } else {
-        createWindow();
+        void createWindow();
     }
 });
 
@@ -474,9 +472,9 @@ ipcMain.handle("open-win", (_, arg) => {
     });
 
     if (process.env.VITE_DEV_SERVER_URL) {
-        childWindow.loadURL(`${url}#${arg}`);
+        void childWindow.loadURL(`${url}#${arg}`);
     } else {
-        childWindow.loadFile(indexHtml, { hash: arg });
+        void childWindow.loadFile(indexHtml, { hash: arg });
     }
 });
 
@@ -789,26 +787,6 @@ export async function insertAudioFile(): Promise<
             },
         };
     }
-}
-
-/**
- * Performs an undo or redo action on the history stacks based on the type.
- *
- * @param type 'undo' or 'redo'
- * @returns 200 for success, -1 for failure
- */
-export async function executeHistoryAction(type: "undo" | "redo") {
-    const response = DatabaseServices.performHistoryAction(type);
-
-    if (!response.success) {
-        console.log(`Error ${type}ing`);
-        return -1;
-    }
-
-    // send a message to the renderer to fetch the updated data
-    win?.webContents.send("history:action", response);
-
-    return 200;
 }
 
 /**

@@ -3,8 +3,8 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
-import { ModifiedMarcherPageArgs } from "@/hooks/queries";
 import { rgbaToString } from "@openmarch/core";
+import { ModifiedMarcherPageArgs } from "@/db-functions";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -269,6 +269,7 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.selection = true;
     }
 
+    // eslint-disable-next-line max-lines-per-function
     private updateMomentum = () => {
         if (
             Math.abs(this.momentumX) > this.MOMENTUM_THRESHOLD ||

@@ -4,10 +4,9 @@
  */
 
 import { FieldProperties } from "@openmarch/core";
-import MarcherPage, {
-    ModifiedMarcherPageArgs,
-} from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import { ModifiedMarcherPageArgs } from "@/db-functions";
 
 /**
  * Any type that contains an x and y coordinate, primarily used for MarcherPages

@@ -1,11 +1,17 @@
+import {
+    createShapePages,
+    ModifiedShapePageArgs,
+    ShapePage,
+} from "@/db-functions";
 import OpenMarchCanvas from "./OpenMarchCanvas";
-import type { ShapePage } from "electron/database/tables/ShapePageTable";
-import type { ModifiedShapePageMarcherArgs } from "electron/database/tables/ShapePageMarcherTable";
 import { ShapePath } from "./ShapePath";
 import { ShapePoint } from "./ShapePoint";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
 import { SvgCommandEnum } from "./SvgCommand";
-import { fetchMarcherPages } from "@/hooks/queries";
+import { shapePageKeys } from "@/hooks/queries";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/App";
+import { db, schema } from "@/global/database/db";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -22,7 +28,6 @@ export class MarcherShape extends StaticMarcherShape {
      * Fetches all of the ShapePages from the database.
      * This is attached to the ShapePage store and needs to be updated in a useEffect hook so that the UI is updated.
      */
-    static fetchShapePages: () => Promise<void>;
 
     /**
      * Constructs a new `MarcherShape` instance with the provided `ShapePage` and `OpenMarchCanvas`.
@@ -49,7 +54,7 @@ export class MarcherShape extends StaticMarcherShape {
         const points = ShapePoint.fromString(shapePage.svg_path);
         super({ canvas, canvasMarchers: [], points });
         this.shapePage = shapePage;
-        this.refreshMarchers();
+        void this.refreshMarchers();
     }
 
     /**
@@ -63,14 +68,11 @@ export class MarcherShape extends StaticMarcherShape {
             console.error("refreshMarchers: Canvas is not defined.");
             return;
         }
-        const spmsResponse = await window.electron.getShapePageMarchers(
-            this.shapePage.id,
-        );
-        if (!spmsResponse.success) {
-            console.error(spmsResponse.error);
-            return;
-        }
-        const marcherIds = spmsResponse.data
+        const spmsResponse = await db.query.shape_page_marchers.findMany({
+            where: (table, { eq }) =>
+                eq(table.shape_page_id, this.shapePage.id),
+        });
+        const marcherIds = spmsResponse
             .sort((a, b) => a.position_order - b.position_order)
             .map((spm) => spm.marcher_id);
 
@@ -86,14 +88,17 @@ export class MarcherShape extends StaticMarcherShape {
         });
     }
 
-    recreatePath(pathArg: VanillaPoint[]): ShapePath {
+    recreatePath(
+        pathArg: VanillaPoint[],
+        updateMarcherShapeFn?: (marcherShape: MarcherShape) => Promise<unknown>,
+    ): ShapePath {
         // Disable control to prevent errors from non-existent control points
         const controlWasEnabled = this._controlEnabled;
         if (controlWasEnabled) this.disableControl();
 
         const newPath = super.recreatePath(pathArg);
         if (this.dirty) {
-            MarcherShape.updateMarcherShape(this);
+            void updateMarcherShapeFn?.(this);
             this.dirty = false;
         }
 
@@ -105,7 +110,9 @@ export class MarcherShape extends StaticMarcherShape {
     /**
      * Adds a new segment to the shape path, determining the direction of the new segment based on the existing path.
      */
-    addSegment() {
+    async addSegment(
+        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
+    ) {
         // Figure out if its pointing left or right
         const lastPoint =
             this.shapePath.points[this.shapePath.points.length - 1];
@@ -144,7 +151,7 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints([...this.shapePath.points, newPoint]);
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        MarcherShape.updateMarcherShape(this);
+        await updateMarcherShapeFn(this);
     }
 
     /**
@@ -152,13 +159,16 @@ export class MarcherShape extends StaticMarcherShape {
      *
      * @param index - The index of the segment to delete.
      */
-    deleteSegment(index: number) {
+    async deleteSegment(
+        index: number,
+        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
+    ) {
         this.setShapePathPoints(
             this.shapePath.points.filter((_, i) => i !== index),
         );
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        MarcherShape.updateMarcherShape(this);
+        await updateMarcherShapeFn(this);
     }
 
     /**
@@ -168,13 +178,16 @@ export class MarcherShape extends StaticMarcherShape {
      * @param newSvg - The new SVG command to apply to the segment.
      * @throws {Error} If the index is out of bounds or if the first point of the path is being edited.
      */
-    updateSegment({
-        index,
-        newSvg,
-    }: {
-        index: number;
-        newSvg: SvgCommandEnum;
-    }) {
+    updateSegment(
+        {
+            index,
+            newSvg,
+        }: {
+            index: number;
+            newSvg: SvgCommandEnum;
+        },
+        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
+    ) {
         if (index >= this.shapePath.points.length)
             throw new Error(
                 `Index ${index} is out of bounds for path with length ${this.shapePath.points.length}`,
@@ -234,7 +247,7 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints(newPoints);
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        MarcherShape.updateMarcherShape(this);
+        void updateMarcherShapeFn(this);
     }
 
     /**
@@ -247,208 +260,112 @@ export class MarcherShape extends StaticMarcherShape {
     }
 
     /****************** DATABASE FUNCTIONS *******************/
-    /**
-     * Fetches all of the ShapePages from the database.
-     * This is attached to the ShapePage store and needs to be updated in a useEffect hook so that the UI is updated.
-     */
-    static async getShapePages() {
-        return await window.electron.getShapePages();
-    }
+}
 
-    /**
-     * Checks if fetchPages is defined. If not, it logs an error to the console.
-     */
-    static checkForFetchShapePages() {
-        if (!this.fetchShapePages)
-            console.error(
-                "fetchShapePages is not defined. The UI will not update properly.",
-            );
-    }
-
-    /**
-     * Creates a new StaticMarcherShape on the canvas and associates it with the specified page and marchers.
-     *
-     * This method handles the creation of the shape, shape page, and the association of marchers to the shape page.
-     * It ensures that the necessary database records are created and that the shape is properly initialized on the canvas.
-     *
-     * @param pageId - The ID of the page to associate the new shape with.
-     * @param marcherIds - The IDs of the marchers to associate with the new shape.
-     * @param start - The starting point of the shape, represented as an object with `x` and `y` properties.
-     * @param end - The ending point of the shape, represented as an object with `x` and `y` properties.
-     * @returns A Promise that resolves when the shape has been successfully created.
-     */
-    static async createMarcherShape({
-        pageId,
-        marcherIds,
-        start,
-        end,
-        points,
-    }: {
-        pageId: number;
-        marcherIds: number[];
-        start: { x: number; y: number };
-        end: { x: number; y: number };
-        points?: ShapePoint[];
-    }) {
-        try {
-            // If points are provided, use them to create the SVG path
-            // Otherwise, fall back to creating a simple line
-            const svgPath = points
-                ? new ShapePath(points).toString()
-                : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
-
-            const itemIds: { id: number }[] = marcherIds.map((id) => {
-                return { id };
+export const useCreateMarcherShape = () => {
+    return useMutation({
+        mutationFn: _createMarcherShape,
+        onMutate: () => {
+            queryClient.invalidateQueries({
+                queryKey: shapePageKeys.all(),
             });
-            const marcherCoordinates = MarcherShape.distributeAlongPath({
-                svgPath,
-                itemIds,
-            }).map((marcherCoordinate) => {
-                return {
-                    marcher_id: marcherCoordinate.id,
-                    x: marcherCoordinate.x,
-                    y: marcherCoordinate.y,
-                };
-            });
-            const createShapePageResponse =
-                await window.electron.createShapePages([
-                    {
-                        page_id: pageId,
-                        svg_path: svgPath,
-                        marcher_coordinates: marcherCoordinates,
-                    },
-                ]);
-            if (!createShapePageResponse.success)
-                throw new Error(
-                    `Error creating MarcherShape: ${createShapePageResponse.error?.message}\n`,
-                );
-        } catch (error: any) {
-            console.error(`Error creating StaticMarcherShape - ${error}`);
-        }
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
-        fetchMarcherPages();
-    }
+        },
+    });
+};
 
-    /**
-     * Updates the SVG path of a MarcherShape object in the canvas.
-     * @param marcherShape - The MarcherShape object to update.
-     * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
-     */
-    static async updateMarcherShape(marcherShape: MarcherShape) {
-        let marcherCoordinates: { marcher_id: number; x: number; y: number }[] =
-            [];
-        const canvasMarchers = marcherShape.canvasMarchers;
+/**
+ * Creates a new StaticMarcherShape on the canvas and associates it with the specified page and marchers.
+ *
+ * This method handles the creation of the shape, shape page, and the association of marchers to the shape page.
+ * It ensures that the necessary database records are created and that the shape is properly initialized on the canvas.
+ *
+ * @param pageId - The ID of the page to associate the new shape with.
+ * @param marcherIds - The IDs of the marchers to associate with the new shape.
+ * @param start - The starting point of the shape, represented as an object with `x` and `y` properties.
+ * @param end - The ending point of the shape, represented as an object with `x` and `y` properties.
+ * @returns A Promise that resolves when the shape has been successfully created.
+ */
+async function _createMarcherShape({
+    pageId,
+    marcherIds,
+    start,
+    end,
+    points,
+}: {
+    pageId: number;
+    marcherIds: number[];
+    start: { x: number; y: number };
+    end: { x: number; y: number };
+    points?: ShapePoint[];
+}) {
+    // If points are provided, use them to create the SVG path
+    // Otherwise, fall back to creating a simple line
+    const svgPath = points
+        ? new ShapePath(points).toString()
+        : `M ${start.x} ${start.y} L ${end.x} ${end.y}`;
 
-        if (canvasMarchers && canvasMarchers.length > 0) {
-            const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
-                (cm) => {
-                    return { id: cm.marcherObj.id };
-                },
-            );
-            marcherCoordinates = MarcherShape.distributeAlongPath({
-                svgPath: marcherShape.shapePath,
-                itemIds,
-            }).map((marcherCoordinate) => {
-                return {
-                    marcher_id: marcherCoordinate.id,
-                    x: marcherCoordinate.x,
-                    y: marcherCoordinate.y,
-                };
-            });
-        }
+    const itemIds: { id: number }[] = marcherIds.map((id) => {
+        return { id };
+    });
+    const marcherCoordinates = MarcherShape.distributeAlongPath({
+        svgPath,
+        itemIds,
+    }).map((marcherCoordinate) => {
+        return {
+            marcher_id: marcherCoordinate.id,
+            x: marcherCoordinate.x,
+            y: marcherCoordinate.y,
+        };
+    });
+    await createShapePages({
+        db,
+        newItems: [
+            {
+                page_id: pageId,
+                svg_path: svgPath,
+                marcher_coordinates: marcherCoordinates,
+            },
+        ],
+    });
+}
 
-        if (!marcherShape.shapePage) {
-            // This is really only to prevent the error  that prints from the update response
-            return;
-        } else {
-            const updateResponse = await window.electron.updateShapePages([
-                {
-                    id: marcherShape.shapePage.id,
-                    svg_path: marcherShape.shapePath.toString(),
-                    marcher_coordinates: marcherCoordinates,
-                },
-            ]);
-            if (!updateResponse.success)
-                console.error(
-                    `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
-                );
-        }
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
-    }
+/**
+ * Updates the SVG path of a MarcherShape object in the canvas.
+ * @param marcherShape - The MarcherShape object to update.
+ * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
+ */
+export function getUpdateMarcherShapeArgs(
+    marcherShape: MarcherShape,
+): ModifiedShapePageArgs | null {
+    let marcherCoordinates: { marcher_id: number; x: number; y: number }[] = [];
+    const canvasMarchers = marcherShape.canvasMarchers;
 
-    /**
-     * Updates the marcher coordinates for a set of modified shape pages.
-     *
-     * This should seldom be called directly. Often, you would call `updateMarcherShape` instead.
-     *
-     * @param modifiedSpms - An array of modified shape page marcher arguments to update.
-     * @returns - A Promise that resolves when the update is complete, or rejects with an error message.
-     */
-    static async updateShapePageMarchers(
-        modifiedSpms: ModifiedShapePageMarcherArgs[],
-    ) {
-        const updateResponse =
-            await window.electron.updateShapePageMarchers(modifiedSpms);
-        if (!updateResponse.success)
-            console.error(
-                `Error updating StaticMarcherShape: ${updateResponse.error?.message}\n`,
-            );
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
-        fetchMarcherPages();
-        return updateResponse;
-    }
-
-    /**
-     * Copies a shape to another page.
-     *
-     * @param shape - The shape to copy.
-     * @param targetPageId - The page to copy the shape to.
-     * @returns A Promise that resolves when the copy is complete, or rejects with an error message.
-     */
-    static async copyToPage(shape: MarcherShape, targetPageId: number) {
-        const response = await window.electron.copyShapePageToPage(
-            shape.shapePage.id,
-            targetPageId,
+    if (canvasMarchers && canvasMarchers.length > 0) {
+        const itemIds: { id: number }[] = marcherShape.canvasMarchers.map(
+            (cm) => {
+                return { id: cm.marcherObj.id };
+            },
         );
-        if (!response.success)
-            console.error(
-                `Error copying StaticMarcherShape: ${response.error?.message}\n`,
-            );
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
-        fetchMarcherPages();
-        return response;
+        marcherCoordinates = MarcherShape.distributeAlongPath({
+            svgPath: marcherShape.shapePath,
+            itemIds,
+        }).map((marcherCoordinate) => {
+            return {
+                marcher_id: marcherCoordinate.id,
+                x: marcherCoordinate.x,
+                y: marcherCoordinate.y,
+            };
+        });
     }
 
-    /**
-     * Deletes a MarcherShape object from the canvas.
-     * @param marcherShape - The MarcherShape object to delete.
-     * @returns - A Promise that resolves when the deletion is complete, or rejects with an error message.
-     */
-    static async deleteMarcherShape(marcherShape: MarcherShape) {
-        const deleteResponse = await window.electron.deleteShapes(
-            new Set([marcherShape.shapePage.shape_id]),
-        );
-        if (!deleteResponse.success)
-            console.error(
-                `Error deleting StaticMarcherShape - ${deleteResponse.error}`,
-            );
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
-    }
-
-    static async deleteShapePage(shapePageId: number) {
-        const deleteResponse = await window.electron.deleteShapePages(
-            new Set([shapePageId]),
-        );
-        if (!deleteResponse.success)
-            console.error(
-                `Error deleting StaticMarcherShape - ${deleteResponse.error}`,
-            );
-        this.checkForFetchShapePages();
-        this.fetchShapePages();
+    if (!marcherShape.shapePage) {
+        // This is really only to prevent the error  that prints from the update response
+        return null;
+    } else {
+        return {
+            id: marcherShape.shapePage.id,
+            svg_path: marcherShape.shapePath.toString(),
+            marcher_coordinates: marcherCoordinates,
+        };
     }
 }

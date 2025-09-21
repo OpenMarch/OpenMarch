@@ -1,6 +1,5 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -20,6 +19,7 @@ import {
     updatePagesMutationOptions,
 } from "@/hooks/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSelectionStore } from "@/stores/SelectionStore";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -71,12 +71,13 @@ export const getAvailableOffsets = ({
     return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
 };
 
+// eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();
     const { pages, beats } = useTimingObjects()!;
     const { mutate: updatePages } = useMutation(
@@ -314,7 +315,7 @@ export default function PageTimeline() {
                     )}
                     onClick={() => {
                         setSelectedPage(pages[0]);
-                        setSelectedMarcherShapes([]);
+                        setSelectedShapePageIds([]);
                     }}
                     title={t("timeline.page.firstPage")}
                     aria-label={t("timeline.page.firstPage")}
@@ -324,6 +325,7 @@ export default function PageTimeline() {
                 </div>
             )}
             {/* ------------------------------------ PAGES ------------------------------------ */}
+            {/* eslint-disable-next-line max-lines-per-function */}
             {pages.map((page, index) => {
                 if (index === 0) return null;
                 const width = getWidth(page);
@@ -363,7 +365,7 @@ export default function PageTimeline() {
                                     )}
                                     onClick={() => {
                                         if (!isPlaying) setSelectedPage(page);
-                                        setSelectedMarcherShapes([]);
+                                        setSelectedShapePageIds([]);
                                     }}
                                 >
                                     <div className="rig static z-10">

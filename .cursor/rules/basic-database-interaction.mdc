@@ -1,5 +1,5 @@
 ---
-description: When needing to create interactions with the database after creating a new table
+description: When needing to create interactions with the database in the renderer after creating a new table
 alwaysApply: false
 ---
 
@@ -278,7 +278,7 @@ import {
 
 const { table_name } = schema;
 
-const KEY_BASE = "{tableName}";
+const KEY_BASE = "{table_name}";
 
 // Query key factory
 export const {tableName}Keys = {

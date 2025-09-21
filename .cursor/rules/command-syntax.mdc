@@ -1,0 +1,9 @@
+---
+alwaysApply: true
+---
+
+# Running Commands
+
+When running commands, start with the following "source ~/.zshrc"
+
+When running vitest, use "npx vitest run {test_here}"

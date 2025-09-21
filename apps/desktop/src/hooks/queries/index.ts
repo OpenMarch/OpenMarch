@@ -9,4 +9,5 @@ export * from "./useBeats";
 export * from "./useUtility";
 export * from "./useMarchers";
 export * from "./useSectionAppearances";
+export * from "./useShapePages";
 export * from "./constants";
