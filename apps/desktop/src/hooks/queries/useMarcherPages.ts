@@ -21,6 +21,7 @@ import { conToastError } from "@/utilities/utils";
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
+import { coordinateDataKeys } from "./useCoordinateData";
 
 const { marcher_pages } = schema;
 
@@ -172,6 +173,21 @@ export const fetchMarcherPages = () => {
     queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
+const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
+    // Invalidate marcherPage queries for each affected page
+    for (const pageId of pageIds) {
+        void queryClient
+            .invalidateQueries({
+                queryKey: marcherPageKeys.byPage(pageId),
+            })
+            .then(() => {
+                queryClient.invalidateQueries({
+                    queryKey: coordinateDataKeys.byPageId(pageId),
+                });
+            });
+    }
+};
+
 // Mutation hooks
 export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
@@ -179,18 +195,8 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
             updateMarcherPages({ db, modifiedMarcherPages }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher pages queries
-            const pageIds = new Set<number>();
-            for (const modifiedArgs of variables)
-                pageIds.add(modifiedArgs.page_id);
-
-            const keys = Array.from(pageIds).map((pageId) =>
-                marcherPageKeys.byPage(pageId),
-            );
-
-            for (const key of keys)
-                void queryClient.invalidateQueries({
-                    queryKey: key,
-                });
+            const pageIds = new Set<number>(variables.map((m) => m.page_id));
+            invalidateByPage(queryClient, pageIds);
         },
         onError: (e, variables) => {
             conToastError(`Error updating pages`, e, variables);
@@ -210,10 +216,7 @@ export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
             marcher2Id: number;
         }) => swapMarchers({ db, pageId, marcher1Id, marcher2Id }),
         onSuccess: (_, variables) => {
-            // Invalidate all marcher pages queries
-            void queryClient.invalidateQueries({
-                queryKey: marcherPageKeys.byPage(variables.pageId),
-            });
+            void invalidateByPage(queryClient, new Set([variables.pageId]));
 
             // Get the marchers so we can get the drill numbers for the success message
             const marcher1Promise = db.query.marchers.findFirst({

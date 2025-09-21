@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
+import { coordinateDataKeys } from "./useCoordinateData";
 
 const { pages } = schema;
 
@@ -39,6 +40,22 @@ export const pageKeys = {
     byStartBeat: (startBeat: number) =>
         [KEY_BASE, "startBeat", startBeat] as const,
     single: (pageId: number) => [KEY_BASE, "single", pageId] as const,
+};
+
+const invalidateQueries = async (qc: QueryClient) => {
+    await qc.invalidateQueries({
+        queryKey: pageKeys.all(),
+    });
+    const marcherPagePromise = qc.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+    });
+    const utilityPromise = qc.invalidateQueries({
+        queryKey: utilityKeys.all(),
+    });
+    await Promise.all([marcherPagePromise, utilityPromise]);
+    void qc.invalidateQueries({
+        queryKey: coordinateDataKeys.all,
+    });
 };
 
 const pageQueries = {
@@ -144,23 +161,14 @@ export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
 };
 
 export const fetchPages = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+    queryClient.invalidateQueries({ queryKey: pageKeys.all() });
 };
 
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
         onSuccess: async (_, variables) => {
-            // Invalidate all page queries
-            await qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
-            void qc.invalidateQueries({
-                queryKey: utilityKeys.all(),
-            });
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
+            void invalidateQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error creating pages`, e, variables);
@@ -173,22 +181,7 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
         mutationFn: (modifiedPages: ModifyPagesRequest) =>
             updatePagesAndLastPageCounts({ db, modifiedPages }),
         onSuccess: async (_, variables) => {
-            // Invalidate all page queries
-            const pageIds = new Set<number>();
-            for (const modifiedArgs of variables.modifiedPagesArgs)
-                pageIds.add(modifiedArgs.id);
-
-            await qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
-
-            void qc.invalidateQueries({
-                queryKey: utilityKeys.all(),
-            });
-
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
+            void invalidateQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error updating pages`, e, variables);
@@ -202,15 +195,7 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
         onSuccess: async (_, variables) => {
             toast.success(tolgee.t("page.deletedSuccessfully"));
             // Invalidate all page queries
-            await qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
-            void qc.invalidateQueries({
-                queryKey: utilityKeys.all(),
-            });
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
+            void invalidateQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("page.deletedFailed"), e, variables);
@@ -225,12 +210,7 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
         onSuccess: (_, variables) => {
             toast.success(tolgee.t("page.createdSuccessfully"));
             // Invalidate all page queries
-            void qc.invalidateQueries({
-                queryKey: pageKeys.all(),
-            });
-            void qc.invalidateQueries({
-                queryKey: utilityKeys.all(),
-            });
+            void invalidateQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("page.cretePageFailed"), e, variables);
