@@ -1,17 +1,17 @@
 import { describe, expect, it, beforeEach, vi } from "vitest";
-import { canvasManager, useCanvasStore } from "../CanvasStore";
+import { useCanvasStore, setCanvasStore } from "../CanvasStore";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { renderHook } from "@testing-library/react";
 
 describe("CanvasStore", () => {
     beforeEach(() => {
-        // Reset the canvas manager before each test
-        canvasManager.setCanvas(null);
+        // Reset the canvas store before each test
+        setCanvasStore(null);
     });
 
-    describe("canvasManager", () => {
+    describe("useCanvasStore", () => {
         it("should initialize with null canvas", () => {
-            expect(canvasManager.getCanvas()).toBeNull();
+            const state = useCanvasStore.getState();
+            expect(state.canvas).toBeNull();
         });
 
         it("should set and get canvas instance", () => {
@@ -23,25 +23,42 @@ describe("CanvasStore", () => {
                 requestRenderAll: vi.fn(),
             } as unknown as OpenMarchCanvas;
 
-            canvasManager.setCanvas(mockCanvas);
-            expect(canvasManager.getCanvas()).toBe(mockCanvas);
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            const state = useCanvasStore.getState();
+            expect(state.canvas).toBe(mockCanvas);
         });
 
         it("should handle setting canvas to null", () => {
             const mockCanvas = {} as OpenMarchCanvas;
-            canvasManager.setCanvas(mockCanvas);
-            expect(canvasManager.getCanvas()).toBe(mockCanvas);
 
-            canvasManager.setCanvas(null);
-            expect(canvasManager.getCanvas()).toBeNull();
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            let state = useCanvasStore.getState();
+            expect(state.canvas).toBe(mockCanvas);
+
+            useCanvasStore.getState().setCanvas(null);
+            state = useCanvasStore.getState();
+            expect(state.canvas).toBeNull();
+        });
+
+        it("should track viewport state", () => {
+            const state = useCanvasStore.getState();
+
+            // Initial viewport state
+            expect(state.viewport).toEqual({
+                zoom: 1,
+                panX: 0,
+                panY: 0,
+            });
         });
     });
 
     describe("zoomToCollisions", () => {
         it("should do nothing when canvas is null", () => {
-            canvasManager.setCanvas(null);
+            useCanvasStore.getState().setCanvas(null);
             // Should not throw
-            expect(() => canvasManager.zoomToCollisions()).not.toThrow();
+            expect(() =>
+                useCanvasStore.getState().zoomToCollisions(),
+            ).not.toThrow();
         });
 
         it("should do nothing when no collision markers exist", () => {
@@ -53,8 +70,8 @@ describe("CanvasStore", () => {
                 requestRenderAll: vi.fn(),
             } as unknown as OpenMarchCanvas;
 
-            canvasManager.setCanvas(mockCanvas);
-            canvasManager.zoomToCollisions();
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            useCanvasStore.getState().zoomToCollisions();
 
             expect(mockCanvas.getObjects).toHaveBeenCalled();
             expect(mockCanvas.setViewportTransform).not.toHaveBeenCalled();
@@ -85,8 +102,8 @@ describe("CanvasStore", () => {
                 requestRenderAll: vi.fn(),
             } as unknown as OpenMarchCanvas;
 
-            canvasManager.setCanvas(mockCanvas);
-            canvasManager.zoomToCollisions();
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            useCanvasStore.getState().zoomToCollisions();
 
             expect(mockCanvas.getObjects).toHaveBeenCalled();
             expect(mockCanvas.getWidth).toHaveBeenCalled();
@@ -126,8 +143,8 @@ describe("CanvasStore", () => {
                 requestRenderAll: vi.fn(),
             } as unknown as OpenMarchCanvas;
 
-            canvasManager.setCanvas(mockCanvas);
-            canvasManager.zoomToCollisions();
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            useCanvasStore.getState().zoomToCollisions();
 
             const transformCall = (mockCanvas.setViewportTransform as any).mock
                 .calls[0][0];
@@ -141,28 +158,59 @@ describe("CanvasStore", () => {
         });
     });
 
-    describe("useCanvasStore hook", () => {
-        it("should return stable function references", () => {
-            const { result, rerender } = renderHook(() => useCanvasStore());
-
-            const firstSetCanvas = result.current.setCanvas;
-            const firstZoomToCollisions = result.current.zoomToCollisions;
-
-            rerender();
-
-            expect(result.current.setCanvas).toBe(firstSetCanvas);
-            expect(result.current.zoomToCollisions).toBe(firstZoomToCollisions);
+    describe("zoomToFit", () => {
+        it("should do nothing when canvas is null", () => {
+            useCanvasStore.getState().setCanvas(null);
+            expect(() => useCanvasStore.getState().zoomToFit()).not.toThrow();
         });
 
-        it("should call canvasManager methods", () => {
-            const { result } = renderHook(() => useCanvasStore());
+        it("should zoom to fit all objects when no specific objects provided", () => {
+            const mockObjects = [
+                { left: 100, top: 100, width: 50, height: 50 },
+                { left: 200, top: 200, width: 50, height: 50 },
+            ];
+
+            const mockCanvas = {
+                getObjects: vi.fn().mockReturnValue(mockObjects),
+                getWidth: vi.fn().mockReturnValue(800),
+                getHeight: vi.fn().mockReturnValue(600),
+                setViewportTransform: vi.fn(),
+                requestRenderAll: vi.fn(),
+            } as unknown as OpenMarchCanvas;
+
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            useCanvasStore.getState().zoomToFit();
+
+            expect(mockCanvas.getObjects).toHaveBeenCalled();
+            expect(mockCanvas.setViewportTransform).toHaveBeenCalled();
+            expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
+        });
+    });
+
+    describe("resetViewport", () => {
+        it("should reset viewport to default values", () => {
+            const mockCanvas = {
+                setViewportTransform: vi.fn(),
+                requestRenderAll: vi.fn(),
+            } as unknown as OpenMarchCanvas;
+
+            useCanvasStore.getState().setCanvas(mockCanvas);
+            useCanvasStore.getState().resetViewport();
+
+            expect(mockCanvas.setViewportTransform).toHaveBeenCalledWith([
+                1, 0, 0, 1, 0, 0,
+            ]);
+            expect(mockCanvas.requestRenderAll).toHaveBeenCalled();
+        });
+    });
+
+    describe("backward compatibility exports", () => {
+        it("should work with setCanvasStore export", () => {
             const mockCanvas = {} as OpenMarchCanvas;
+            setCanvasStore(mockCanvas);
 
-            result.current.setCanvas(mockCanvas);
-            expect(canvasManager.getCanvas()).toBe(mockCanvas);
-
-            result.current.setCanvas(null);
-            expect(canvasManager.getCanvas()).toBeNull();
+            const state = useCanvasStore.getState();
+            expect(state.canvas).toBe(mockCanvas);
         });
     });
 });

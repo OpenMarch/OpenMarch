@@ -1,7 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
+    allDatabaseShapePagesQueryOptions,
+    shapePageMarchersQueryByPageIdOptions,
 } from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
@@ -15,8 +17,6 @@ import {
     SelectItem,
     SelectTriggerCompact,
 } from "@openmarch/ui";
-import { useShapePageStore } from "@/stores/ShapePageStore";
-import type { ShapePageMarcher } from "electron/database/tables/ShapePageMarcherTable";
 import { StepSize } from "@/global/classes/StepSize";
 import MarcherRotationInput from "./MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -25,6 +25,7 @@ import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
 
+// eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const { selectedPage } = useSelectedPage()!;
@@ -38,9 +39,8 @@ function MarcherEditor() {
         marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { shapePages } = useShapePageStore()!;
-    const [spmsForThisPage, setSpmsForThisPage] = useState<ShapePageMarcher[]>(
-        [],
+    const { data: spmsForThisPage } = useQuery(
+        shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
     );
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
@@ -62,27 +62,8 @@ function MarcherEditor() {
         // const fieldSide = form[fieldSideId].value;
     };
 
-    useEffect(() => {
-        const shapePageIds = new Set<number>();
-        for (const shapePage of shapePages) {
-            if (shapePage.page_id === selectedPage?.id) {
-                shapePageIds.add(shapePage.id);
-            }
-        }
-
-        window.electron.getShapePageMarchers().then((response) => {
-            if (response.success) {
-                const spmsForThisPage = response.data.filter((spm) =>
-                    shapePageIds.has(spm.shape_page_id),
-                );
-                setSpmsForThisPage(spmsForThisPage);
-            } else {
-                console.error(response.error);
-            }
-        });
-    }, [selectedPage, shapePages]);
-
     const createLineIsVisible = useCallback(() => {
+        if (!spmsForThisPage) return false;
         const marcherIdsWithShapes = new Set<number>(
             spmsForThisPage.map((spm) => spm.marcher_id),
         );

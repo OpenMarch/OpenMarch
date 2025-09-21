@@ -13,14 +13,13 @@ import * as CoordinateActions from "@/utilities/CoordinateActions";
 import Page from "@/global/classes/Page";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import * as Selectable from "./interfaces/Selectable";
-import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
-import { ModifiedMarcherPageArgs } from "@/hooks/queries";
+import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks";
 
 /**
@@ -235,7 +234,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (listeners) this.setListeners(listeners);
 
         this._backgroundImage = null;
-        this.refreshBackgroundImage();
+        void this.refreshBackgroundImage();
 
         this.requestRenderAll();
 
@@ -918,7 +917,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
             if (existingMarcherShape) {
                 existingMarcherShape.setShapePage(shapePage);
-                existingMarcherShape.refreshMarchers();
+                void existingMarcherShape.refreshMarchers();
             } else {
                 this.marcherShapes.push(
                     new MarcherShape({
@@ -1324,6 +1323,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @param halfLines Whether or not to include half lines (every 4 steps)
      * @returns
      */
+    // eslint-disable-next-line max-lines-per-function
     private createFieldGrid = ({
         gridLines = true,
         halfLines = true,

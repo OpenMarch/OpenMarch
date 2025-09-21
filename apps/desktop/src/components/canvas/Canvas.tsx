@@ -8,6 +8,7 @@ import {
     updateMarcherPagesMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
+    shapePagesQueryByPageIdOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -16,7 +17,6 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -29,6 +29,7 @@ import { setCanvasStore } from "@/stores/CanvasStore";
 import useEditablePath from "./hooks/editablePath";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
+import { useSelectionStore } from "@/stores/SelectionStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -38,6 +39,7 @@ import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
  * @param onCanvasReady Callback function that receives the canvas instance once it's initialized.
  * @returns
  */
+// eslint-disable-next-line max-lines-per-function
 export default function Canvas({
     className = "",
     testCanvas,
@@ -69,8 +71,12 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
-        useShapePageStore()!;
+    const { data: shapePagesOnSelectedPage } = useQuery(
+        shapePagesQueryByPageIdOptions(selectedPage?.id!),
+    );
+    const { selectedShapePageIds, setSelectedShapePageIds } =
+        useSelectionStore()!;
+
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
@@ -290,7 +296,9 @@ export default function Canvas({
                                 marcherShapesToSelect.push(marcherShape);
                             }
                         }
-                        setSelectedMarcherShapes(marcherShapesToSelect);
+                        setSelectedShapePageIds(
+                            marcherShapesToSelect.map((ms) => ms.shapePage.id),
+                        );
                     }
 
                     break;
@@ -313,8 +321,8 @@ export default function Canvas({
     }, [
         activeObjectsAreGloballySelected,
         canvas,
-        setSelectedMarcherShapes,
         setSelectedMarchers,
+        setSelectedShapePageIds,
     ]);
 
     /**
@@ -688,33 +696,27 @@ export default function Canvas({
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change
     useEffect(() => {
-        if (canvas && selectedPage && shapePages) {
-            canvas.currentPage = selectedPage;
-            const currentShapePages = shapePages.filter(
-                (sp) => sp.page_id === selectedPage.id,
-            );
+        if (canvas && shapePagesOnSelectedPage) {
             canvas.renderMarcherShapes({
-                shapePages: currentShapePages,
+                shapePages: shapePagesOnSelectedPage,
             });
         }
-    }, [canvas, selectedPage, shapePages]);
+    }, [canvas, selectedPage, shapePagesOnSelectedPage]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {
-        if (canvas && selectedMarcherShapes) {
+        if (canvas && selectedShapePageIds) {
             // Disable control of all of the non-selected shape pages and enable control of selected ones
-            const selectedMarcherShapeSpIds = new Set(
-                selectedMarcherShapes.map((ms) => ms.shapePage.id),
-            );
+            const selectedIdSet = new Set(selectedShapePageIds);
             for (const marcherShape of canvas.marcherShapes) {
-                if (selectedMarcherShapeSpIds.has(marcherShape.shapePage.id))
+                if (selectedIdSet.has(marcherShape.shapePage.id))
                     marcherShape.enableControl();
                 else {
                     marcherShape.disableControl();
                 }
             }
         }
-    }, [canvas, selectedMarcherShapes]);
+    }, [canvas, selectedShapePageIds]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
@@ -738,7 +740,7 @@ export default function Canvas({
             setTimeout(() => {
                 centerAndFitCanvas();
                 setSelectedMarchers([]);
-                setSelectedMarcherShapes([]);
+                setSelectedShapePageIds([]);
             }, 100);
         }
 
@@ -750,8 +752,8 @@ export default function Canvas({
         canvas,
         centerAndFitCanvas,
         setSelectedMarchers,
-        setSelectedMarcherShapes,
         setPerspective,
+        setSelectedShapePageIds,
     ]);
 
     // Set up container resize observer and window resize handler to keep canvas centered in fullscreen mode

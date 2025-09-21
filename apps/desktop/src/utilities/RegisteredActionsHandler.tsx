@@ -1,8 +1,8 @@
 import {
-    marcherPageKeys,
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
     fieldPropertiesQueryOptions,
+    swapMarchersMutationOptions,
 } from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -15,9 +15,9 @@ import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
-import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useCreateMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { useShapePageStore } from "@/stores/ShapePageStore";
+import { useSelectionStore } from "@/stores/SelectionStore";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
 import tolgee from "@/global/singletons/Tolgee";
@@ -490,6 +490,7 @@ export const RegisteredActionsObjects: {
  *
  * All actions in OpenMarch that can be a keyboard shortcut or a button click should be registered here.
  */
+// eslint-disable-next-line max-lines-per-function
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
@@ -507,17 +508,20 @@ function RegisteredActionsHandler() {
     const { data: nextMarcherPages } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
     );
-
-    const updateMarcherPages = useMutation(
+    const { mutate: swapMarchers } = useMutation(
+        swapMarchersMutationOptions(queryClient),
+    );
+    const { mutate: updateMarcherPages } = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
-    ).mutate;
+    );
+    const { mutate: createMarcherShape } = useCreateMarcherShape();
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: canUndo } = useQuery(canUndoQueryOptions);
     const { data: canRedo } = useQuery(canRedoQueryOptions);
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -558,6 +562,7 @@ function RegisteredActionsHandler() {
      * Trigger a RegisteredAction.
      */
     const triggerAction = useCallback(
+        // eslint-disable-next-line max-lines-per-function
         (action: RegisteredActionsEnum) => {
             let isElectronAction = true;
 
@@ -912,46 +917,11 @@ function RegisteredActionsHandler() {
                         toast.error(t("actions.swap.mustSelectTwo"));
                         return;
                     }
-
-                    const marchersStr = `marchers ${selectedMarchers[0].drill_number} and ${selectedMarchers[1].drill_number}`;
-                    void window.electron
-                        .swapMarchers({
-                            pageId: selectedPage.id,
-                            marcher1Id: selectedMarchers[0].id,
-                            marcher2Id: selectedMarchers[1].id,
-                        })
-                        .then((response) => {
-                            if (response.success) {
-                                toast.success(
-                                    t("actions.swap.success", {
-                                        marcher1:
-                                            selectedMarchers[0].drill_number,
-                                        marcher2:
-                                            selectedMarchers[1].drill_number,
-                                    }),
-                                );
-                                void queryClient.invalidateQueries({
-                                    queryKey: [
-                                        marcherPageKeys.byPage(selectedPage.id),
-                                    ],
-                                });
-                                // This causes an infinite loop
-                                // It's not a huge deal to leave it like this as marchers are updated on a refresh
-                                MarcherShape.fetchShapePages();
-                            } else {
-                                const errorMessage =
-                                    "Could not swap marchers " + marchersStr;
-                                console.error(errorMessage, response.error);
-                                toast.error(
-                                    t("actions.swap.error", {
-                                        marcher1:
-                                            selectedMarchers[0].drill_number,
-                                        marcher2:
-                                            selectedMarchers[1].drill_number,
-                                    }),
-                                );
-                            }
-                        });
+                    swapMarchers({
+                        pageId: selectedPage.id,
+                        marcher1Id: selectedMarchers[0].id,
+                        marcher2Id: selectedMarchers[1].id,
+                    });
                     break;
                 }
 
@@ -989,7 +959,7 @@ function RegisteredActionsHandler() {
                     } else {
                         // Deselect all shapes and marchers
                         setSelectedMarchers([]);
-                        setSelectedMarcherShapes([]);
+                        setSelectedShapePageIds([]);
                     }
                     break;
                 }
@@ -1015,7 +985,7 @@ function RegisteredActionsHandler() {
                     const marcherIds = alignmentEventNewMarcherPages.map(
                         (marcherPage) => marcherPage.marcher_id,
                     );
-                    MarcherShape.createMarcherShape({
+                    createMarcherShape({
                         marcherIds,
                         start: firstMarcherPage,
                         end: lastMarcherPage,
@@ -1062,7 +1032,10 @@ function RegisteredActionsHandler() {
             fieldProperties,
             marcherPagesLoaded,
             setSelectedAudioFile,
+            canUndo,
             performHistoryAction,
+            t,
+            canRedo,
             setUiSettings,
             uiSettings,
             pages,
@@ -1072,20 +1045,18 @@ function RegisteredActionsHandler() {
             toggleMetronome,
             previousMarcherPages,
             updateMarcherPages,
-            t,
             selectedMarchers,
             nextMarcherPages,
             getSelectedMarcherPages,
-            queryClient,
+            swapMarchers,
             alignmentEventMarchers,
             setSelectedMarchers,
             resetAlignmentEvent,
-            setSelectedMarcherShapes,
+            setSelectedShapePageIds,
             alignmentEventNewMarcherPages,
+            createMarcherShape,
             setAlignmentEvent,
             setAlignmentEventMarchers,
-            canUndo,
-            canRedo,
         ],
     );
 
@@ -1116,6 +1087,7 @@ function RegisteredActionsHandler() {
      * Handles the keyboard shortcuts for entire react side of the application.
      */
     const handleKeyDown = useCallback(
+        // eslint-disable-next-line max-lines-per-function
         (e: KeyboardEvent) => {
             if (
                 uiSettings.focussedComponent === "canvas" &&

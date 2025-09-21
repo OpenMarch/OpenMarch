@@ -4,21 +4,6 @@ import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
 import { DatabaseResponse } from "electron/database/DatabaseActions";
-import {
-    ModifiedShapePageMarcherArgs,
-    NewShapePageMarcherArgs,
-    ShapePageMarcher,
-} from "electron/database/tables/ShapePageMarcherTable";
-import {
-    ModifiedShapePageArgs,
-    NewShapePageArgs,
-    ShapePage,
-} from "electron/database/tables/ShapePageTable";
-import {
-    ModifiedShapeArgs,
-    NewShapeArgs,
-    Shape,
-} from "electron/database/tables/ShapeTable";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "electron/main/services/recent-files-service";
@@ -108,7 +93,7 @@ function useLoading() {
 
 // eslint-disable-next-line react-hooks/rules-of-hooks
 const { appendLoading, removeLoading } = useLoading();
-domReady().then(appendLoading);
+void domReady().then(appendLoading);
 
 window.onmessage = (ev) => {
     ev.data.payload === "removeLoading" && removeLoading();
@@ -289,83 +274,6 @@ const APP_API = {
             "audio:delete",
             audioFileId,
         ) as Promise<AudioFile | null>,
-
-    /*********** SHAPES ***********/
-    // Shape
-    getShapes: () =>
-        ipcRenderer.invoke("shape:getAll") as Promise<
-            DatabaseResponse<Shape[]>
-        >,
-    createShapes: (newShapes: NewShapeArgs[]) =>
-        ipcRenderer.invoke("shape:insert", newShapes) as Promise<
-            DatabaseResponse<Shape[]>
-        >,
-    updateShapes: (modifiedShapes: ModifiedShapeArgs[]) =>
-        ipcRenderer.invoke("shape:update", modifiedShapes) as Promise<
-            DatabaseResponse<Shape[]>
-        >,
-    deleteShapes: (idsToDelete: Set<number>) =>
-        ipcRenderer.invoke("shape:delete", idsToDelete) as Promise<
-            DatabaseResponse<Shape[]>
-        >,
-
-    // ShapePage
-    getShapePages: () =>
-        ipcRenderer.invoke("shape_page:getAll") as Promise<
-            DatabaseResponse<ShapePage[]>
-        >,
-    createShapePages: (newShapePages: NewShapePageArgs[]) =>
-        ipcRenderer.invoke("shape_page:insert", newShapePages) as Promise<
-            DatabaseResponse<ShapePage[]>
-        >,
-    updateShapePages: (modifiedShapePages: ModifiedShapePageArgs[]) =>
-        ipcRenderer.invoke("shape_page:update", modifiedShapePages) as Promise<
-            DatabaseResponse<ShapePage[]>
-        >,
-    deleteShapePages: (idsToDelete: Set<number>) =>
-        ipcRenderer.invoke("shape_page:delete", idsToDelete) as Promise<
-            DatabaseResponse<ShapePage[]>
-        >,
-    copyShapePageToPage: (shapePageId: number, targetPageId: number) =>
-        ipcRenderer.invoke(
-            "shape_page:copy",
-            shapePageId,
-            targetPageId,
-        ) as Promise<DatabaseResponse<ShapePage[]>>,
-
-    //ShapePageMarcher
-    getShapePageMarchers: (shapePageId?: number, marcherIds?: Set<number>) =>
-        ipcRenderer.invoke(
-            "shape_page_marcher:get",
-            shapePageId,
-            marcherIds,
-        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
-    getShapePageMarcherByMarcherPage: (marcherPage: {
-        marcher_id: number;
-        page_id: number;
-    }) =>
-        ipcRenderer.invoke(
-            "shape_page_marcher:get_by_marcher_page",
-            marcherPage,
-        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
-    createShapePageMarchers: (
-        newShapePageMarcherArgs: NewShapePageMarcherArgs[],
-    ) =>
-        ipcRenderer.invoke(
-            "shape_page_marcher:insert",
-            newShapePageMarcherArgs,
-        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
-    updateShapePageMarchers: (
-        modifiedShapePageMarcher: ModifiedShapePageMarcherArgs[],
-    ) =>
-        ipcRenderer.invoke(
-            "shape_page_marcher:update",
-            modifiedShapePageMarcher,
-        ) as Promise<DatabaseResponse<ShapePageMarcher[]>>,
-    deleteShapePageMarchers: (idsToDelete: Set<number>) =>
-        ipcRenderer.invoke("shape_page_marcher:delete", idsToDelete) as Promise<
-            DatabaseResponse<void>
-        >,
 
     // SQL Proxy for Drizzle
     sqlProxy: (
