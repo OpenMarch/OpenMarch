@@ -14,14 +14,17 @@ import { DEFAULT_STALE_TIME } from "./constants";
 const KEY_BASE = "coordinateData";
 export const coordinateDataKeys = {
     all: [KEY_BASE] as const,
-    byPage: (args: { id: number; timestamp: number; duration: number }) =>
+    byPageId: (pageId: number) =>
         [
             ...coordinateDataKeys.all,
             {
-                page_id: args.id,
-                timestamp: args.timestamp,
-                duration: args.duration,
+                pageId,
             },
+        ] as const,
+    byPage: (args: { id: number; timestamp: number; duration: number }) =>
+        [
+            ...coordinateDataKeys.byPageId(args.id),
+            { timestamp: args.timestamp, duration: args.duration },
         ] as const,
 };
 
