@@ -14,8 +14,15 @@ import { DEFAULT_STALE_TIME } from "./constants";
 const KEY_BASE = "coordinateData";
 export const coordinateDataKeys = {
     all: [KEY_BASE] as const,
-    byPageId: (pageId: number) =>
-        [...coordinateDataKeys.all, { pageId }] as const,
+    byPage: (args: { id: number; timestamp: number; duration: number }) =>
+        [
+            ...coordinateDataKeys.all,
+            {
+                page_id: args.id,
+                timestamp: args.timestamp,
+                duration: args.duration,
+            },
+        ] as const,
 };
 
 type MarcherTimelinesByMarcherId = Map<number, MarcherTimeline>;
@@ -116,9 +123,8 @@ export const coordinateDataQueryOptions = (
 ) =>
     queryOptions({
         // eslint-disable-next-line @tanstack/query/exhaustive-deps
-        queryKey: coordinateDataKeys.byPageId(page.id),
+        queryKey: coordinateDataKeys.byPage(page),
         queryFn: async () => {
-            console.log("fetching coordinate data for page", page.id);
             // Ensure deps exist (fetch if missing/stale)
             const marcherPagesPromise = qc.ensureQueryData(
                 marcherPagesByPageQueryOptions(page.id),
