@@ -4,14 +4,7 @@ import {
     getCoordinatesAtTime,
     MarcherTimeline,
 } from "../Keyframes";
-import {
-    Path,
-    Line,
-    Arc,
-    CubicCurve,
-    Spline,
-    Point,
-} from "@openmarch/path-utility";
+import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/path-utility";
 
 describe("getCoordinatesAtTime", () => {
     describe("with coordinate definitions (no paths)", () => {
