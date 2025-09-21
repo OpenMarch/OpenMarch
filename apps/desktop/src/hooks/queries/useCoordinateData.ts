@@ -11,10 +11,11 @@ import { assert } from "@/utilities/utils";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import { DEFAULT_STALE_TIME } from "./constants";
 
-const coordinateDataKeys = {
-    all: ["coordinateData"] as const,
+const KEY_BASE = "coordinateData";
+export const coordinateDataKeys = {
+    all: [KEY_BASE] as const,
     byPageId: (pageId: number) =>
-        [...coordinateDataKeys.all, "page", pageId] as const,
+        [...coordinateDataKeys.all, { pageId }] as const,
 };
 
 type MarcherTimelinesByMarcherId = Map<number, MarcherTimeline>;
@@ -108,21 +109,16 @@ const getMarcherTimelines = (
     return timelinesByMarcherId;
 };
 
-const keyFromPage = (page: { id: number }) => [
-    "coordinateData",
-    "page",
-    page.id,
-];
-
 // --- coordinate data options (pure; no hooks) ---
 export const coordinateDataQueryOptions = (
     page: { id: number; duration: number; timestamp: number },
     qc: ReturnType<typeof useQueryClient>,
 ) =>
     queryOptions({
-        queryKey: keyFromPage(page),
-        enabled: !!page.id && page.duration != null && page.timestamp != null,
+        // eslint-disable-next-line @tanstack/query/exhaustive-deps
+        queryKey: coordinateDataKeys.byPageId(page.id),
         queryFn: async () => {
+            console.log("fetching coordinate data for page", page.id);
             // Ensure deps exist (fetch if missing/stale)
             const marcherPagesPromise = qc.ensureQueryData(
                 marcherPagesByPageQueryOptions(page.id),
