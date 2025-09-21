@@ -33,6 +33,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setCurrentCollision,
     } = useCollisionStore();
 
+    // The number of pages +/- to fetch
     const PAGE_DELTA = 2;
     const { data: marcherTimelines } = useManyCoordinateData(
         selectedPage
@@ -160,6 +161,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
+            let output = true;
 
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
@@ -173,15 +175,18 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                         timeMilliseconds,
                         timeline,
                     );
-                    canvasMarcher.setLiveCoordinates(coords);
+                    if (!coords) output = false;
+                    else canvasMarcher.setLiveCoordinates(coords);
                 } else {
                     console.debug(
                         `Marcher ${canvasMarcher.marcherObj.id} has no timeline at time ${timeMilliseconds}`,
                     );
+                    output = false;
                 }
             }
 
             canvas.requestRenderAll();
+            return output;
         },
         [canvas, marcherTimelines],
     );
@@ -224,11 +229,14 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
             try {
                 const currentTime = getLivePlaybackPosition() * 1000; // s to ms
-                setMarcherPositionsAtTime(currentTime);
+                const continueAnimation =
+                    setMarcherPositionsAtTime(currentTime);
                 void updateSelectedPage(currentTime);
                 animationFrameRef.current = requestAnimationFrame(animate);
+                if (!continueAnimation) setIsPlaying(false);
             } catch (e) {
                 console.error(e);
+                setIsPlaying(false);
             }
         };
 
