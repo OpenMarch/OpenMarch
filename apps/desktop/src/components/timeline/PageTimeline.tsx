@@ -257,9 +257,6 @@ export default function PageTimeline() {
                 newCounts: newBeats.length - (nextPage ? 0 : 1),
             });
 
-            // Log the update args
-            console.log("update args", updateArgs);
-
             await updatePages(updateArgs);
 
             // Clean up the data attribute
