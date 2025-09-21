@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
@@ -7,13 +7,24 @@ import { useTimingObjects } from "@/hooks";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
+import Page from "@/global/classes/Page";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
     const { pages } = useTimingObjects()!;
+    const pagesById: Record<number, Page> = useMemo(() => {
+        return pages.reduce(
+            (acc, page) => {
+                acc[page.id] = page;
+                return acc;
+            },
+            {} as Record<number, Page>,
+        );
+    }, [pages]);
     const { setSelectedPage, selectedPage } = useSelectedPage()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const {
@@ -152,18 +163,21 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
-                const timeline = marcherTimelines[canvasMarcher.marcherObj.id];
+                const timeline = marcherTimelines.get(
+                    canvasMarcher.marcherObj.id,
+                );
 
                 if (timeline) {
-                    try {
-                        const coords = getCoordinatesAtTime(
-                            timeMilliseconds,
-                            timeline,
-                        );
-                        canvasMarcher.setLiveCoordinates(coords);
-                    } catch (e) {
-                        // Ignore errors, as they can happen when scrubbing before the first page
-                    }
+                    // try {
+                    const coords = getCoordinatesAtTime(
+                        timeMilliseconds,
+                        timeline,
+                    );
+                    canvasMarcher.setLiveCoordinates(coords);
+                } else {
+                    console.debug(
+                        `Marcher ${canvasMarcher.marcherObj.id} has no timeline at time ${timeMilliseconds}`,
+                    );
                 }
             }
 
@@ -174,14 +188,18 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     // Update the selected page based on playback timestamp
     const updateSelectedPage = useCallback(
-        (currentTime: number) => {
+        async (currentTime: number) => {
             if (!pages.length || !canvas) return;
 
-            const currentPage = pages.find(
-                (p) =>
-                    currentTime >= p.timestamp * 1000 &&
-                    currentTime < (p.timestamp + p.duration) * 1000,
-            );
+            const currentPage = pages.find((p) => {
+                const nextPage = p.nextPageId ? pagesById[p.nextPageId] : null;
+                if (nextPage == null) return false;
+                return (
+                    currentTime >= (p.timestamp + p.duration) * 1000 &&
+                    currentTime <
+                        (nextPage.timestamp + nextPage.duration) * 1000
+                );
+            });
             if (!currentPage) {
                 // We're past the end, set the selected page to the last one and stop playing
                 setSelectedPage(pages[pages.length - 1]);
@@ -190,9 +208,12 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 if (lastPage !== selectedPage) {
                     setSelectedPage(lastPage);
                 }
+            } else if (currentPage?.id !== selectedPage?.id) {
+                // We're on a different page, set the selected page to the current page
+                setSelectedPage(currentPage);
             }
         },
-        [canvas, pages, selectedPage, setSelectedPage, setIsPlaying],
+        [pages, canvas, selectedPage, pagesById, setSelectedPage, setIsPlaying],
     );
 
     // Animate the canvas based on playback timestamp
@@ -201,11 +222,14 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         const animate = () => {
             if (!canvas) return;
 
-            const currentTime = getLivePlaybackPosition() * 1000; // s to ms
-            setMarcherPositionsAtTime(currentTime);
-            updateSelectedPage(currentTime);
-
-            animationFrameRef.current = requestAnimationFrame(animate);
+            try {
+                const currentTime = getLivePlaybackPosition() * 1000; // s to ms
+                setMarcherPositionsAtTime(currentTime);
+                void updateSelectedPage(currentTime);
+                animationFrameRef.current = requestAnimationFrame(animate);
+            } catch (e) {
+                console.error(e);
+            }
         };
 
         // Start the animation loop
@@ -223,7 +247,13 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 cancelAnimationFrame(animationFrameRef.current);
             }
         };
-    }, [isPlaying, canvas, setMarcherPositionsAtTime, updateSelectedPage]);
+    }, [
+        isPlaying,
+        canvas,
+        setMarcherPositionsAtTime,
+        updateSelectedPage,
+        marcherTimelines,
+    ]);
 
     return { setMarcherPositionsAtTime };
 };
