@@ -106,22 +106,27 @@ const updatePagesAndLastPageCounts = async ({
     db: DbConnection;
     modifiedPages: ModifyPagesRequest;
 }) => {
-    return await transactionWithHistory(
-        db,
-        "Update Page and Last Page Counts",
-        async (tx) => {
-            await updatePagesInTransaction({
-                modifiedPages: modifiedPages.modifiedPagesArgs,
-                tx,
-            });
-            if (modifiedPages.lastPageCounts != null) {
-                await updateLastPageCounts({
-                    lastPageCounts: modifiedPages.lastPageCounts,
-                    tx,
-                });
-            }
-        },
-    );
+    if (
+        modifiedPages.modifiedPagesArgs.length > 0 ||
+        modifiedPages.lastPageCounts != null
+    )
+        return await transactionWithHistory(
+            db,
+            "Update Page and Last Page Counts",
+            async (tx) => {
+                if (modifiedPages.modifiedPagesArgs.length > 0)
+                    await updatePagesInTransaction({
+                        modifiedPages: modifiedPages.modifiedPagesArgs,
+                        tx,
+                    });
+                if (modifiedPages.lastPageCounts != null) {
+                    await updateLastPageCounts({
+                        lastPageCounts: modifiedPages.lastPageCounts,
+                        tx,
+                    });
+                }
+            },
+        );
 };
 
 /**

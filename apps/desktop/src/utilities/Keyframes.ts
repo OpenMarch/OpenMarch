@@ -32,7 +32,7 @@ const PathLengthCache = new WeakMap<IPath, number>();
 export const getCoordinatesAtTime = (
     timestampMilliseconds: number,
     marcherTimeline: MarcherTimeline,
-) => {
+): Coordinate | false => {
     if (timestampMilliseconds < 0)
         throw new Error(
             `Cannot use negative timestamp: ${timestampMilliseconds}`,
@@ -44,8 +44,10 @@ export const getCoordinatesAtTime = (
             targetTimestamp: timestampMilliseconds,
         });
 
-    if (currentTimestamp === null || nextTimestamp === null)
+    if (currentTimestamp === null)
         throw new Error("No timestamp found! This shouldn't happen");
+    // Likely the end, return false
+    if (!nextTimestamp) return false;
 
     const previousCoordinate = marcherTimeline.pathMap.get(currentTimestamp);
     const nextCoordinate = marcherTimeline.pathMap.get(nextTimestamp);
