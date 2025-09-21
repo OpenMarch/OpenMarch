@@ -2,8 +2,8 @@ import { FieldProperties } from "@openmarch/core";
 import { eq } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
-import { ModifiedMarcherPageArgs } from "@/hooks/queries";
 import { transactionWithHistory } from "./history";
+import { ModifiedMarcherPageArgs } from "@/db-functions";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -170,7 +170,7 @@ export async function createMarchersInTransaction({
             tx.insert(schema.marcher_pages).values(marcherPage),
         );
     }
-    Promise.all(marcherPagePromises);
+    await Promise.all(marcherPagePromises);
 
     return createdMarchers;
 }
@@ -304,15 +304,3 @@ export async function deleteMarchers({
     );
     return deleteResponse;
 }
-
-// export async function swapMarchersInTransaction({
-//     marcher1Id,
-//     marcher2Id,
-//     tx,
-// }: {
-//     marcher1Id: number;
-//     marcher2Id: number;
-//     tx: DbTransaction;
-// }): Promise<DatabaseMarcher[]> {
-
-// }

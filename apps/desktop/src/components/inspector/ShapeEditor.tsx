@@ -1,7 +1,9 @@
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button } from "@openmarch/ui";
-import { useShapePageStore } from "@/stores/ShapePageStore";
-import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import {
+    getUpdateMarcherShapeArgs,
+    MarcherShape,
+} from "@/global/classes/canvasObjects/MarcherShape";
 import { useCallback } from "react";
 import * as Form from "@radix-ui/react-form";
 import {
@@ -11,23 +13,51 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
-import { toast } from "sonner";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useTimingObjects } from "@/hooks";
 import {
     SvgCommandEnum,
     SvgCommands,
     secondSegmentSvgCommands,
 } from "@/global/classes/canvasObjects/SvgCommand";
 import { T, useTolgee } from "@tolgee/react";
+import { useSelectionStore } from "@/stores/SelectionStore";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    copyShapePageToPageMutationOptions,
+    deleteShapePagesMutationOptions,
+    updateShapePagesMutationOptions,
+} from "@/hooks/queries";
+import { useCanvasStore } from "@/stores/CanvasStore";
+import { assert } from "@/utilities/utils";
 
+// eslint-disable-next-line max-lines-per-function
 export default function ShapeEditor() {
-    const { selectedMarcherShapes, setSelectedMarcherShapes } =
-        useShapePageStore()!;
-    const { pages } = useTimingObjects()!;
+    const queryClient = useQueryClient();
+    const { selectedShapePageIds } = useSelectionStore()!;
     const { selectedPage } = useSelectedPage()!;
+    const { mutate: copyShapePageToPage, isPending: isCopyingShapePageToPage } =
+        useMutation(copyShapePageToPageMutationOptions(queryClient));
 
     const { t } = useTolgee();
+    const { canvas } = useCanvasStore();
+    const { mutate: updateShapePage } = useMutation(
+        updateShapePagesMutationOptions(queryClient),
+    );
+    const { mutate: deleteShapePage } = useMutation(
+        deleteShapePagesMutationOptions(queryClient),
+    );
+
+    const getMarcherShapesByShapePageId: () => Record<number, MarcherShape> =
+        useCallback(() => {
+            if (!canvas) return {};
+            return canvas.marcherShapes.reduce(
+                (acc, marcherShape) => {
+                    acc[marcherShape.shapePage.id] = marcherShape;
+                    return acc;
+                },
+                {} as Record<number, MarcherShape>,
+            );
+        }, [canvas]);
 
     // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<
     //     Map<number, boolean>
@@ -76,6 +106,20 @@ export default function ShapeEditor() {
     //     }
     // }, [pages, selectedMarcherShapes, selectedPage, shapePages]);
 
+    const pushUpdates = useCallback(
+        async (marcherShape: MarcherShape) => {
+            const updateArgs = getUpdateMarcherShapeArgs(marcherShape);
+            if (!updateArgs) {
+                console.debug(
+                    "No update args for marcher shape",
+                    marcherShape.shapePage.id,
+                );
+                return;
+            }
+            updateShapePage([updateArgs]);
+        },
+        [updateShapePage],
+    );
     const updateSegment = useCallback(
         ({
             shapePageId,
@@ -86,68 +130,27 @@ export default function ShapeEditor() {
             index: number;
             newSvg: SvgCommandEnum;
         }) => {
-            const marcherShape = selectedMarcherShapes.find(
+            assert(canvas, "Canvas is not set");
+            const marcherShape = canvas.marcherShapes.find(
                 (marcherShape) => marcherShape.shapePage.id === shapePageId,
             );
             if (!marcherShape) {
                 console.error("Marcher shape not found with id", shapePageId);
                 return;
             }
-            marcherShape.updateSegment({ index, newSvg });
+            marcherShape.updateSegment({ index, newSvg }, pushUpdates);
         },
-        [selectedMarcherShapes],
+        [canvas, pushUpdates],
     );
 
-    const handleCopy = useCallback(
-        async (marcherShape: MarcherShape, targetPageId: number) => {
-            const page = pages.find((page) => page.id === targetPageId);
-
-            if (!page) {
-                const message = t("inspector.shape.errorPageNotFound", {
-                    pageId: targetPageId,
-                });
-                console.error(message);
-                toast.error(message);
-                return;
-            }
-
-            const response = await MarcherShape.copyToPage(
-                marcherShape,
-                targetPageId,
-            );
-
-            if (response.success && response.data) {
-                toast.success(
-                    t("inspector.shape.successfullyCopied", {
-                        pageName: page.name,
-                    }),
-                );
-            } else {
-                console.error(
-                    `Error creating pages:`,
-                    response.error?.message || "",
-                );
-                toast.error(
-                    t("inspector.shape.errorCopyingPage", {
-                        pageName: page.name,
-                    }),
-                );
-            }
-        },
-        [pages, t],
-    );
     const handleDeleteShape = useCallback(
         (marcherShape: MarcherShape) => {
-            MarcherShape.deleteShapePage(marcherShape.shapePage.id);
-            setSelectedMarcherShapes(
-                selectedMarcherShapes.filter(
-                    (shape) => shape.shapePage.id !== marcherShape.shapePage.id,
-                ),
-            );
+            deleteShapePage(new Set([marcherShape.shapePage.id]));
         },
-        [selectedMarcherShapes, setSelectedMarcherShapes],
+        [deleteShapePage],
     );
 
+    // eslint-disable-next-line max-lines-per-function
     const singleShapeEditor = (marcherShape: MarcherShape) => {
         return (
             <Form.Root
@@ -159,17 +162,15 @@ export default function ShapeEditor() {
                         <>
                             <Button
                                 disabled={
-                                    selectedPage.previousPageId === null
-                                    // ||
-                                    // shapeIsOnPreviousPage.get(
-                                    //     marcherShape.shapePage.id,
-                                    // )
+                                    selectedPage.previousPageId == null ||
+                                    isCopyingShapePageToPage
                                 }
                                 onClick={() => {
-                                    handleCopy(
-                                        marcherShape,
-                                        selectedPage.previousPageId!,
-                                    );
+                                    copyShapePageToPage({
+                                        shapePageId: marcherShape.shapePage.id,
+                                        targetPageId:
+                                            selectedPage.previousPageId!,
+                                    });
                                 }}
                                 className="min-h-0 w-fit"
                                 type="button"
@@ -181,30 +182,23 @@ export default function ShapeEditor() {
                                         ? t(
                                               "inspector.shape.errorNoPreviousPage",
                                           )
-                                        : // : !shapeIsOnPreviousPage.get(
-                                          //         marcherShape.shapePage.id,
-                                          //     )
-                                          t(
+                                        : t(
                                               "inspector.shape.copyToPreviousPage",
                                           )
-                                    //   ?"Cannot copy. The previous page already has this shape"
                                 }
                             >
                                 <T keyName="inspector.shape.copyToPreviousPageButton" />
                             </Button>
                             <Button
                                 disabled={
-                                    selectedPage.nextPageId === null
-                                    // ||
-                                    // shapeIsOnNextPage.get(
-                                    //     marcherShape.shapePage.id,
-                                    // )
+                                    selectedPage.nextPageId === null ||
+                                    isCopyingShapePageToPage
                                 }
                                 onClick={() => {
-                                    handleCopy(
-                                        marcherShape,
-                                        selectedPage.nextPageId!,
-                                    );
+                                    copyShapePageToPage({
+                                        shapePageId: marcherShape.shapePage.id,
+                                        targetPageId: selectedPage.nextPageId!,
+                                    });
                                 }}
                                 className="min-h-0 w-fit"
                                 type="button"
@@ -213,11 +207,7 @@ export default function ShapeEditor() {
                                 tooltipText={
                                     selectedPage.nextPageId === null
                                         ? t("inspector.shape.errorNoNextPage")
-                                        : // : !shapeIsOnNextPage.get(
-                                          //         marcherShape.shapePage.id,
-                                          //     )
-                                          t("inspector.shape.copyToNextPage")
-                                    //   ?"Cannot copy. The next page already has this shape"
+                                        : t("inspector.shape.copyToNextPage")
                                 }
                             >
                                 <T keyName="inspector.shape.copyToNextPageButton" />
@@ -294,7 +284,7 @@ export default function ShapeEditor() {
                     <div className="flex flex-wrap gap-8">
                         <Button
                             onClick={() => {
-                                marcherShape.addSegment();
+                                marcherShape.addSegment(pushUpdates);
                             }}
                             type="button"
                             size="compact"
@@ -309,6 +299,7 @@ export default function ShapeEditor() {
                             onClick={() => {
                                 marcherShape.deleteSegment(
                                     marcherShape.shapePath.points.length - 1,
+                                    pushUpdates,
                                 );
                             }}
                             className="min-h-0"
@@ -345,20 +336,20 @@ export default function ShapeEditor() {
         );
     };
 
+    const marcherShapesByShapePageId = getMarcherShapesByShapePageId();
     return (
-        selectedMarcherShapes.length > 0 && (
+        selectedShapePageIds.length > 0 && (
             <InspectorCollapsible
                 defaultOpen
                 title={"Shape"}
                 className="mt-12 flex flex-col gap-12 overflow-y-auto"
             >
-                {selectedMarcherShapes.map((marcherShape) => {
+                {selectedShapePageIds.map((shapePageId) => {
                     return (
-                        <div
-                            key={marcherShape.shapePage.id}
-                            className="flex flex-col gap-12"
-                        >
-                            {singleShapeEditor(marcherShape)}
+                        <div key={shapePageId} className="flex flex-col gap-12">
+                            {singleShapeEditor(
+                                marcherShapesByShapePageId[shapePageId],
+                            )}
                         </div>
                     );
                 })}

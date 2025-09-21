@@ -2,10 +2,10 @@ import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
+    ModifiedMarcherPageArgs,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
-import { ModifiedMarcherPageArgs } from "@/global/classes/MarcherPage";
 import { assert } from "@/utilities/utils";
 
 export const FIRST_PAGE_ID = 0;

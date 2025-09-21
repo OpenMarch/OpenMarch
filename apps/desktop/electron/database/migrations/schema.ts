@@ -323,7 +323,7 @@ export const shape_page_marchers = sqliteTable(
         marcher_id: integer()
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
-        position_order: integer(),
+        position_order: integer().notNull(),
         created_at: text()
             .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull(),

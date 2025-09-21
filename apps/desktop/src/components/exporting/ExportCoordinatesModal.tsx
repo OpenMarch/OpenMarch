@@ -8,6 +8,7 @@ import MarcherCoordinateSheetPreview, {
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import {
+    allDatabaseShapePagesQueryOptions,
     allMarcherPagesQueryOptions,
     fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
@@ -45,10 +46,10 @@ import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
+import { assert } from "@/utilities/utils";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -59,6 +60,7 @@ function chunkArray<T>(arr: T[], size: number): T[][] {
 }
 const QUARTER_ROWS = 28; // Increased from 25 to fit more rows
 
+// eslint-disable-next-line max-lines-per-function
 function CoordinateSheetExport() {
     const [isTerse, setIsTerse] = useState(false);
     const [includeMeasures, setIncludeMeasures] = useState(true);
@@ -82,6 +84,7 @@ function CoordinateSheetExport() {
     const isCancelled = useRef(false);
     const t = tolgee.t;
 
+    // eslint-disable-next-line max-lines-per-function
     const handleExport = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
@@ -646,6 +649,7 @@ function CoordinateSheetExport() {
     );
 }
 
+// eslint-disable-next-line max-lines-per-function
 function DrillChartExport() {
     const { pages } = useTimingObjects()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -659,7 +663,7 @@ function DrillChartExport() {
         allMarchersQueryOptions(),
     );
     const { setSelectedPage } = useSelectedPage()!;
-    const { shapePages } = useShapePageStore()!;
+    const { data: shapePages } = useQuery(allDatabaseShapePagesQueryOptions());
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -679,6 +683,7 @@ function DrillChartExport() {
      * @return A promise that resolves to an object containing SVG strings and readable coordinates.
      */
     const generateExportSVGs = useCallback(
+        // eslint-disable-next-line max-lines-per-function
         async (
             exportCanvas: OpenMarchCanvas,
         ): Promise<{
@@ -727,6 +732,7 @@ function DrillChartExport() {
                     pageId: pages[p].id,
                 });
 
+                assert(shapePages != null, "Shape pages not loaded");
                 // Render previous, current, and next shapes
                 exportCanvas.renderMarcherShapes({
                     shapePages: shapePages.filter(
@@ -950,6 +956,7 @@ function DrillChartExport() {
     /**
      * Handles the export process, generating SVGs and exporting them as PDFs.
      */
+    // eslint-disable-next-line max-lines-per-function
     const handleExport = useCallback(async () => {
         isCancelled.current = false;
         setIsLoading(true);
@@ -986,6 +993,7 @@ function DrillChartExport() {
         exportCanvas.setHeight(originalHeight);
         exportCanvas.viewportTransform = originalViewportTransform;
         setSelectedPage(pages[pages.length - 1]);
+        assert(shapePages != null, "Shape pages not loaded");
         exportCanvas.renderMarcherShapes({
             shapePages: shapePages.filter(
                 (sp) => sp.page_id === pages[pages.length - 1].id,
