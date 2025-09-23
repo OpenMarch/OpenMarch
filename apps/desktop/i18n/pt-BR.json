@@ -20,11 +20,11 @@
             "setAllToNext": "Defina todas as coordenadas dos marchadores para a próxima página",
             "setAllToNextSuccess": "Todas as {count} coordenadas dos marchadores na página {currentPage} foram definidas com sucesso para as coordenadas da próxima página {nextPage}",
             "setAllToPrevious": "Defina todas as coordenadas dos marchadores para a página anterior",
-            "setAllToPreviousSuccess": "\"Todas as {{count}} coordenadas dos marchadores na página {{currentPage}} foram definidas com sucesso para as coordenadas da página anterior {{previousPage}}\"",
+            "setAllToPreviousSuccess": "\"Todas as {count} coordenadas dos marchadores na página {currentPage} foram definidas com sucesso para as coordenadas da página anterior {previousPage}\"",
             "setSelectedToNext": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a próxima página",
             "setSelectedToNextSuccess": "{count, plural, one {Sucesso ao definir # coordenada de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} other {Sucesso ao definir # coordenadas de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} }",
             "setSelectedToPrevious": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a página anterior",
-            "setSelectedToPreviousSuccess": "\"{{count}} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {{currentPage}} foi definida com sucesso para as coordenadas da página anterior {{previousPage}}\""
+            "setSelectedToPreviousSuccess": "\"{count} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {currentPage} foi definida com sucesso para as coordenadas da página anterior {previousPage}\""
         },
         "cursor": {
             "defaultMode": "Definir modo do cursor como padrão",
@@ -67,9 +67,9 @@
             "delete": "Exclui as formas selecionadas atualmente"
         },
         "swap": {
-            "error": "Não foi possível trocar marchadores {{marcher1}} e {{marcher2}}",
+            "error": "Não foi possível trocar marchadores {marcher1} e {marcher2}",
             "mustSelectTwo": "Só é possível trocar quando 2 marchadores estão selecionados.",
-            "success": "Trocou marchadores {{marcher1}} e {{marcher2}}",
+            "success": "Trocou marchadores {marcher1} e {marcher2}",
             "swap": "Trocar marchadores"
         },
         "ui": {

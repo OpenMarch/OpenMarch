@@ -35,13 +35,17 @@ const tablesWithHistory = [
  * @param func - The function to run in the transaction
  * @returns The result of the function
  */
+// eslint-disable-next-line max-lines-per-function
 export const transactionWithHistory = async <T>(
     db: DbConnection,
     funcName: string,
     func: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> => {
     return await db.transaction(async (tx) => {
-        console.debug(`=========== start ${funcName} ============`);
+        void window.electron.log(
+            "info",
+            `=========== start ${funcName} ============`,
+        );
         try {
             await incrementHistoryGroupInTransaction(tx, "undo");
             let groupBefore = (
@@ -69,9 +73,8 @@ export const transactionWithHistory = async <T>(
                     assert(maxGroup != null, "Max group is undefined");
                     groupBefore = maxGroup.max ?? 0;
                 }
-            } else {
-                assert(groupBefore != null, "Group before is undefined");
             }
+            assert(groupBefore != null, "Group before is undefined");
 
             // Execute the function
             const result = await func(tx);
@@ -96,7 +99,12 @@ export const transactionWithHistory = async <T>(
             assert(groupAfter != null, "Group after is undefined");
             assert(
                 groupBefore === groupAfter,
-                `Group before and after do not match. Expected ${groupBefore} but got ${groupAfter}`,
+                `Group before and after do not match. Expected ${groupBefore} but got ${groupAfter}.
+                ${
+                    groupBefore > groupAfter
+                        ? "The expected group is greater, meaning that the function didn't perform any database actions on tables that are tracked by undo/redo history triggers"
+                        : "Group after is greater than the expected. This means that the function incremented the group number after performing database actions. This will cause these actions to be treated separately in the undo/redo history"
+                }`,
             );
             await incrementHistoryGroupInTransaction(tx, "undo");
 
@@ -120,7 +128,10 @@ export const transactionWithHistory = async <T>(
 
             return result;
         } finally {
-            console.debug(`=========== end ${funcName} ============\n`);
+            void window.electron.log(
+                "info",
+                `=========== end ${funcName} ============\n`,
+            );
         }
     });
 };
@@ -577,7 +588,10 @@ const switchTriggerMode = async (
     deleteRedoRows: boolean,
     tableNames?: Set<string>,
 ) => {
-    console.debug(`------ Switching triggers to ${mode} mode ------`);
+    void window.electron.log(
+        "info",
+        `------ Switching triggers to ${mode} mode ------`,
+    );
     // assert that the table names, if provided, are all valid tables in the database
     if (tableNames) {
         for (const tableName of tableNames) {
@@ -625,7 +639,7 @@ const switchTriggerMode = async (
     //     name: string;
     //     tbl_name: string;
     // }[];
-    console.debug("Existing triggers", existingTriggers);
+    void window.electron.log("info", "Existing triggers", existingTriggers);
     const tables = tableNames
         ? new Set(tableNames)
         : new Set(existingTriggers.map((t) => t.tbl_name));
@@ -635,7 +649,10 @@ const switchTriggerMode = async (
     for (const table of tables) {
         await createTriggers(db, table, mode, deleteRedoRows);
     }
-    console.debug(`------ Done switching triggers to ${mode} mode ------`);
+    void window.electron.log(
+        "info",
+        `------ Done switching triggers to ${mode} mode ------`,
+    );
 };
 
 /**
@@ -646,11 +663,13 @@ const switchTriggerMode = async (
  * @param db the database connection
  * @param type either "undo" or "redo"
  */
+// eslint-disable-next-line max-lines-per-function
 async function executeHistoryAction(
     db: DbConnection,
     type: HistoryType,
 ): Promise<HistoryResponse> {
-    console.debug(
+    void window.electron.log(
+        "info",
         `\n============ PERFORMING ${type.toUpperCase()} ============`,
     );
     let response: HistoryResponse = {
@@ -698,6 +717,7 @@ async function executeHistoryAction(
 
         // sqlStatements = await getSqlStatements(currentGroup);
         if (sqlStatements.length === 0) {
+            void window.electron.log("info", "No actions to " + type);
             console.debug("No actions to " + type);
             await refreshCurrentGroups(db);
             return {
@@ -754,6 +774,7 @@ async function executeHistoryAction(
         };
     } catch (err: any) {
         console.error(err);
+        void window.electron.log("error", err);
         response = {
             success: false,
             tableNames: new Set(),
@@ -764,7 +785,8 @@ async function executeHistoryAction(
             },
         };
     } finally {
-        console.debug(
+        void window.electron.log(
+            "info",
             `============ FINISHED ${type.toUpperCase()} =============\n`,
         );
     }
@@ -781,7 +803,10 @@ async function executeHistoryAction(
  * @param db database connection
  */
 export async function clearMostRecentRedo(db: DbConnection | DB) {
-    console.debug(`-------- Clearing most recent redo --------`);
+    void window.electron.log(
+        "info",
+        `-------- Clearing most recent redo --------`,
+    );
     const maxGroupResult = (await db.get(sql`
         SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}
     `)) as { max_redo_group: number };
@@ -789,7 +814,10 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
     await db.run(sql`
         DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ${maxGroup}
     `);
-    console.debug(`-------- Done clearing most recent redo --------`);
+    void window.electron.log(
+        "info",
+        `-------- Done clearing most recent redo --------`,
+    );
 }
 
 /**
@@ -843,7 +871,10 @@ export async function getRedoStackLength(db: DbConnection): Promise<number> {
  * @param db database connection
  */
 export async function decrementLastUndoGroup(db: DbConnection | DB) {
-    console.debug(`-------- Decrementing last undo group --------`);
+    void window.electron.log(
+        "info",
+        `-------- Decrementing last undo group --------`,
+    );
     const maxGroupResult = (await db.get(sql`
         SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}
     `)) as { max_undo_group: number };
@@ -862,7 +893,10 @@ export async function decrementLastUndoGroup(db: DbConnection | DB) {
             UPDATE ${Constants.HistoryStatsTableName} SET cur_undo_group = ${previousGroup}
         `);
     }
-    console.debug(`-------- Done decrementing last undo group --------`);
+    void window.electron.log(
+        "info",
+        `-------- Done decrementing last undo group --------`,
+    );
 }
 
 /**
@@ -877,12 +911,16 @@ export async function flattenUndoGroupsAbove(
     db: DbConnection | DB,
     group: number,
 ) {
-    console.debug(`-------- Flattening undo groups above ${group} --------`);
+    void window.electron.log(
+        "info",
+        `-------- Flattening undo groups above ${group} --------`,
+    );
     await db
         .update(schema.history_undo)
         .set({ history_group: group })
         .where(gt(schema.history_undo.history_group, group));
-    console.debug(
+    void window.electron.log(
+        "info",
         `-------- Done flattening undo groups above ${group} --------`,
     );
 }

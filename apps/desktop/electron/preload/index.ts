@@ -299,6 +299,13 @@ const APP_API = {
         ipcRenderer.invoke("utilities:swap_marchers", args) as Promise<
             DatabaseResponse<MarcherPage[]>
         >,
+
+    // Logging
+    log: (
+        level: "log" | "info" | "warn" | "error",
+        message: string,
+        ...args: any[]
+    ) => ipcRenderer.invoke("log:print", level, message, ...args),
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

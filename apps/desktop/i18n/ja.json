@@ -20,11 +20,11 @@
             "setAllToNext": "すべての マーカー座標を 次のページに設定",
             "setAllToNextSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の次のページ {nextPage} の座標に成功して設定しました",
             "setAllToPrevious": "すべての マーカー座標を 前のページに設定",
-            "setAllToPreviousSuccess": "すべての {{count}} マーカー座標をページ {{currentPage}} 上の前のページ {{previousPage}} の座標に成功して設定しました",
+            "setAllToPreviousSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の前のページ {previousPage} の座標に成功して設定しました",
             "setSelectedToNext": "選択したマーチャーの座標を 次のページに設定",
             "setSelectedToNextSuccess": "{value, plural, other {'{'count, plural, other '{'ページ '{'currentPage'}' 上の '{'count'}' ヶ所の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'\n'{'count, plural, one '{'ページ '{'currentPage'}' 上の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'}}",
             "setSelectedToPrevious": "選択したマーチャーの座標を 前のページに設定",
-            "setSelectedToPreviousSuccess": "ページ {{currentPage}} 上の {{count}} マーカー座標を前のページ {{previousPage}} の座標に成功して設定しました"
+            "setSelectedToPreviousSuccess": "ページ {currentPage} 上の {count} マーカー座標を前のページ {previousPage} の座標に成功して設定しました"
         },
         "cursor": {
             "defaultMode": "カーソルモードをデフォルトに設定",
@@ -67,9 +67,9 @@
             "delete": "選択されている形状を削除"
         },
         "swap": {
-            "error": "スワップできませんでした マーチャーズ {{marcher1}} と {{marcher2}}",
+            "error": "スワップできませんでした マーチャーズ {marcher1} と {marcher2}",
             "mustSelectTwo": "2 人の行進者を選択した場合にのみ交換可能です。",
-            "success": "スワップしました マーチャーズ {{marcher1}} と {{marcher2}}",
+            "success": "スワップしました マーチャーズ {marcher1} と {marcher2}",
             "swap": "スワップ マーチャーズ"
         },
         "ui": {

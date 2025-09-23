@@ -548,10 +548,10 @@ function RegisteredActionsHandler() {
             return [];
         }
 
-        const selectedPageMarcherPages = Object.values(marcherPages);
-        return selectedMarchers
-            .map((marcher) => selectedPageMarcherPages[marcher.id])
-            .filter(Boolean);
+        const output = selectedMarchers.map(
+            (marcher) => marcherPages[marcher.id],
+        );
+        return output;
     }, [marcherPages, marcherPagesLoaded, selectedMarchers, selectedPage]);
 
     // Arrow movement defaults
@@ -1239,16 +1239,23 @@ function RegisteredActionsHandler() {
      * Register the button refs for the keyboard shortcuts
      */
     useEffect(() => {
-        registeredButtonActions.forEach((buttonAction) => {
-            if (!buttonAction.buttonRef.current) {
-                // console.error(
-                //     `No button ref for ${buttonAction.registeredAction}`
-                // );
-                return;
-            }
-            buttonAction.buttonRef.current.onclick = () =>
-                triggerAction(buttonAction.registeredAction);
-        });
+        const assignClickHandlers = () => {
+            registeredButtonActions.forEach((buttonAction) => {
+                if (!buttonAction.buttonRef.current) {
+                    // console.error(
+                    //     `No button ref for ${buttonAction.registeredAction}`
+                    // );
+                    return;
+                }
+                buttonAction.buttonRef.current.onclick = () =>
+                    triggerAction(buttonAction.registeredAction);
+            });
+        };
+
+        // Use setTimeout to ensure button refs are set after components mount
+        const timeoutId = setTimeout(assignClickHandlers, 0);
+
+        return () => clearTimeout(timeoutId);
     }, [registeredButtonActions, triggerAction]);
 
     return <></>; // empty fragment
