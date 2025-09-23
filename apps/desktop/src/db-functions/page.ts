@@ -304,19 +304,32 @@ export const updatePagesInTransaction = async ({
     modifiedPages: ModifiedPageArgs[];
     tx: DbTransaction;
 }): Promise<DatabasePage[]> => {
-    // Ensure the first page is not updated
+    // Ensure the first page is not updated (except for notes)
     const firstPageFound = modifiedPages.find(
         (page) => page.id === FIRST_PAGE_ID,
     );
     if (firstPageFound) {
-        console.warn(
-            "Attempting to modify the first page (ID: " +
-                FIRST_PAGE_ID +
-                "), which is not allowed. Filtering it out.",
+        // Check if anything other than notes is being modified
+        const hasNonNotesChanges = Object.keys(firstPageFound).some(
+            (key) => key !== "id" && key !== "notes",
         );
-        modifiedPages = modifiedPages.filter(
-            (page) => page.id !== FIRST_PAGE_ID,
-        );
+
+        if (hasNonNotesChanges) {
+            console.warn(
+                "Attempting to modify the first page (ID: " +
+                    FIRST_PAGE_ID +
+                    "), which is not allowed. Filtering it out.",
+            );
+            modifiedPages = modifiedPages.filter(
+                (page) => page.id !== FIRST_PAGE_ID,
+            );
+            // Only include the notes if it was changed
+            if (firstPageFound.notes !== undefined)
+                modifiedPages.push({
+                    id: firstPageFound.id,
+                    notes: firstPageFound.notes,
+                });
+        }
     }
 
     const updatedPages: DatabasePage[] = [];
