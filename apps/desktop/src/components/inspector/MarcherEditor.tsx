@@ -2,7 +2,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
-    allDatabaseShapePagesQueryOptions,
     shapePageMarchersQueryByPageIdOptions,
 } from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";

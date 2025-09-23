@@ -10,7 +10,7 @@ import {
     deleteShapePageMarchersInTransaction,
     getSpmByMarcherPage,
     NewShapePageMarcherArgs,
-    swapPositionOrder,
+    swapPositionOrderInTransaction,
 } from "./shapePageMarchers";
 
 const { marcher_pages } = schema;
@@ -206,6 +206,7 @@ export async function updateMarcherPages({
     return transactionResult;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export const _swapSpms = async ({
     tx,
     spm1,
@@ -218,7 +219,7 @@ export const _swapSpms = async ({
     if (spm1 && spm2) {
         // Both SPMs exist. Swap the position order of the SPMs
         if (spm1.shape_page_id === spm2.shape_page_id) {
-            const updateSpmsResponse = swapPositionOrder({
+            const updateSpmsResponse = swapPositionOrderInTransaction({
                 tx,
                 spmId1: spm1.id,
                 spmId2: spm2.id,
@@ -226,6 +227,18 @@ export const _swapSpms = async ({
             assert(updateSpmsResponse, `Could not update shape page marchers`);
         } else {
             // Swap the shape_page that these SPMs are in
+            // Ensure both position_order values are not null
+            assert(
+                spm1.position_order !== null &&
+                    spm1.position_order !== undefined,
+                `ShapePageMarcher ${spm1.id} has null or undefined position_order`,
+            );
+            assert(
+                spm2.position_order !== null &&
+                    spm2.position_order !== undefined,
+                `ShapePageMarcher ${spm2.id} has null or undefined position_order`,
+            );
+
             const deleteSpmsResponse =
                 await deleteShapePageMarchersInTransaction({
                     tx,
@@ -263,6 +276,13 @@ export const _swapSpms = async ({
             marcherPageWithoutSpm,
             `Could not find marcher page without spm`,
         );
+
+        // Ensure position_order is not null
+        assert(
+            spm.position_order !== null && spm.position_order !== undefined,
+            `ShapePageMarcher ${spm.id} has null or undefined position_order`,
+        );
+
         const newSpm: NewShapePageMarcherArgs = {
             marcher_id: marcherPageWithoutSpm.marcher_id,
             shape_page_id: spm.shape_page_id,
@@ -355,4 +375,26 @@ export const swapMarchersInTransaction = async ({
             spm2,
         });
     }
+
+    const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [
+        {
+            page_id: pageId,
+            marcher_id: marcherPage1.marcher_id,
+            x: marcherPage2.x,
+            y: marcherPage2.y,
+        },
+        {
+            page_id: pageId,
+            marcher_id: marcherPage2.marcher_id,
+            x: marcherPage1.x,
+            y: marcherPage1.y,
+        },
+    ];
+
+    const updatedMarcherPages = await updateMarcherPagesInTransaction({
+        tx,
+        modifiedMarcherPages,
+    });
+
+    return updatedMarcherPages;
 };

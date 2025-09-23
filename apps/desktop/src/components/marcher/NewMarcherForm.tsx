@@ -36,7 +36,7 @@ const defaultSection = (t: (key: string) => string) =>
 const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
-// eslint-disable-next-line react/prop-types
+// eslint-disable-next-line react/prop-types, max-lines-per-function
 const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     disabledProp = false,
 }: NewMarcherFormProps) => {

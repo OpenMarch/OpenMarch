@@ -9,7 +9,7 @@ import { toast } from "sonner";
  * @param additional Optional additional parameters to log alongside the message. These will not be displayed in the toast.
  */
 export const conToastError = (message: string, ...additional: any[]) => {
-    console.log(message, ...additional);
+    console.error(message, ...additional);
     toast.error(message);
 };
 

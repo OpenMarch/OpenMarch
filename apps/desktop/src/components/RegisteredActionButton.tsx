@@ -29,6 +29,7 @@ interface registeredActionButtonProps
  * @param rest The rest of the button props. (e.g. className, onClick, etc.)
  * @returns
  */
+// eslint-disable-next-line max-lines-per-function
 export default function RegisteredActionButton({
     registeredAction,
     children,
@@ -55,11 +56,22 @@ export default function RegisteredActionButton({
             RegisteredActionsEnum[
                 registeredAction.enumString as keyof typeof RegisteredActionsEnum
             ];
-        if (buttonRef.current)
-            linkRegisteredAction(registeredActionEnum, buttonRef);
+
+        // Use a callback to ensure the button ref is set before linking
+        const linkAction = () => {
+            if (buttonRef.current) {
+                linkRegisteredAction(registeredActionEnum, buttonRef);
+            }
+        };
+
+        // Use setTimeout to ensure the ref is set after the component mounts
+        const timeoutId = setTimeout(linkAction, 0);
 
         // Remove on unmount
-        return () => removeRegisteredAction(registeredActionEnum, buttonRef);
+        return () => {
+            clearTimeout(timeoutId);
+            removeRegisteredAction(registeredActionEnum, buttonRef);
+        };
     }, [
         linkRegisteredAction,
         registeredAction.enumString,

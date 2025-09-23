@@ -20,11 +20,11 @@
             "setAllToNext": "Set all marcher coordinates to next page",
             "setAllToNextSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}",
             "setAllToPrevious": "Set all marcher coordinates to previous page",
-            "setAllToPreviousSuccess": "Successfully set all {{count}} marcher coordinates on page {{currentPage}} to the coordinates of the previous page {{previousPage}}",
+            "setAllToPreviousSuccess": "Successfully set all {count} marcher coordinates on page {currentPage} to the coordinates of the previous page {previousPage}",
             "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
             "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
             "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
-            "setSelectedToPreviousSuccess": "Successfully set {{count}} marcher coordinate{{count, plural, one {} other {s}}} on page {{currentPage}} to the coordinates of the previous page {{previousPage}}"
+            "setSelectedToPreviousSuccess": "Successfully set {count} marcher coordinate{count, plural, one {} other {s}} on page {currentPage} to the coordinates of the previous page {previousPage}"
         },
         "cursor": {
             "defaultMode": "Set cursor mode to default",
@@ -67,9 +67,9 @@
             "delete": "Deletes the current selected shapes"
         },
         "swap": {
-            "error": "Could not swap marchers {{marcher1}} and {{marcher2}}",
+            "error": "Could not swap marchers {marcher1} and {marcher2}",
             "mustSelectTwo": "Can only swap when 2 marchers are selected.",
-            "success": "Swapped marchers {{marcher1}} and {{marcher2}}",
+            "success": "Swapped marchers {marcher1} and {marcher2}",
             "swap": "Swap marchers"
         },
         "ui": {

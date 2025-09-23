@@ -171,7 +171,7 @@ async function handleSqlProxyWithDb(
                 return {
                     rows: rows
                         ? Object.values(rows as Record<string, any>)
-                        : [],
+                        : undefined,
                 };
             case "run":
                 rows = result.run(...params);
