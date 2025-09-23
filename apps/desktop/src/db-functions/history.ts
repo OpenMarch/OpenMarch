@@ -1,14 +1,14 @@
 import {
     incrementHistoryGroupInTransaction,
     getCurrentHistoryGroup,
-} from "@/global/classes/History";
-import { assert } from "@/utilities/utils";
+} from "../global/classes/History";
+import { assert } from "../utilities/utils";
 import { DbConnection, DbTransaction } from "./types";
 import { max } from "drizzle-orm";
-import { DB, schema } from "@/global/database/db";
-import { Constants } from "../../src/global/Constants";
+import { DB, schema } from "../global/database/db";
+import { Constants } from "../global/Constants";
 import { getTableName, gt, sql, eq, desc, count } from "drizzle-orm";
-import { tableNamesToQueryKeys } from "@/hooks/queries/utils";
+import { tableNamesToQueryKeys } from "../hooks/queries/utils";
 
 const tablesWithHistory = [
     schema.beats,
