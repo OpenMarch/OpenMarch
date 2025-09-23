@@ -225,11 +225,11 @@ async function _incrementPositionOrder({
 }
 
 export async function swapPositionOrder({
-    tx,
+    db,
     spmId1,
     spmId2,
 }: {
-    tx: DbTransaction;
+    db: DbTransaction;
     spmId1: number;
     spmId2: number;
 }): Promise<[DatabaseShapePageMarcher, DatabaseShapePageMarcher]> {
@@ -267,6 +267,16 @@ export async function swapPositionOrderInTransaction({
     assert(
         smp1.shape_page_id === smp2.shape_page_id,
         `ShapePageMarchers must be on the same shape page to be swapped`,
+    );
+
+    // Ensure both position_order values are not null
+    assert(
+        smp1.position_order !== null && smp1.position_order !== undefined,
+        `ShapePageMarcher ${spmId1} has null or undefined position_order`,
+    );
+    assert(
+        smp2.position_order !== null && smp2.position_order !== undefined,
+        `ShapePageMarcher ${spmId2} has null or undefined position_order`,
     );
 
     // Find a temporary position order that is not already taken to prevent a unique constraint violation

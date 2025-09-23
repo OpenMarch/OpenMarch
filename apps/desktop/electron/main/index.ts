@@ -444,6 +444,37 @@ ipcMain.handle("plugins:uninstall", async (_, fileName) => {
     }
 });
 
+// Log handler - allows renderer to send logs to main process
+ipcMain.handle(
+    "log:print",
+    (
+        _,
+        level: "log" | "info" | "warn" | "error",
+        message: string,
+        ...args: any[]
+    ) => {
+        const timestamp = new Date().toISOString();
+        const prefix = `[Renderer ${timestamp}]`;
+
+        switch (level) {
+            case "log":
+                console.log(prefix, message, ...args);
+                break;
+            case "info":
+                console.info(prefix, message, ...args);
+                break;
+            case "warn":
+                console.warn(prefix, message, ...args);
+                break;
+            case "error":
+                console.error(prefix, message, ...args);
+                break;
+            default:
+                console.log(prefix, message, ...args);
+        }
+    },
+);
+
 app.on("second-instance", () => {
     if (win) {
         // Focus on the main window if the user tried to open another
