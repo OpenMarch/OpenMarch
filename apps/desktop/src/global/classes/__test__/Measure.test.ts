@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import Beat from "../Beat";
 import { setupTestSqlProxy } from "@/__mocks__/TestSqlProxy";
-import { FIRST_BEAT_ID } from "../../../../electron/database/tables/BeatTable";
 import { db, schema } from "@/global/database/db";
 import {
     DatabaseMeasure,
@@ -15,6 +14,7 @@ import {
     type NewMeasureArgs,
     type ModifiedMeasureArgs,
 } from "../Measure";
+import { FIRST_BEAT_ID } from "@/db-functions";
 
 const { beats } = schema;
 

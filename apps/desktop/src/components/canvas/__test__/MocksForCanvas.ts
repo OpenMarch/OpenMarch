@@ -29,42 +29,54 @@ export const falsyUiSettings: UiSettings = {
 };
 
 export const mockMarchers: Marcher[] = [
-    new Marcher({
+    {
         id: 1,
         name: "Marc Sylvester",
         section: "Flute",
         drill_prefix: "F",
         drill_order: 1,
+        drill_number: "F1",
         notes: "Inducted in 2001 - DCI Hall of Fame (probably didn't play flute",
         year: "Freshman",
-    }),
-    new Marcher({
+        created_at: "some time",
+        updated_at: "some time",
+    },
+    {
         id: 2,
         name: "George Zingali",
         section: "Snare",
         drill_prefix: "S",
         drill_order: 1,
+        drill_number: "S1",
         notes: "Inducted in 1991 - DCI Hall of Fame",
         year: "Sophomore",
-    }),
-    new Marcher({
+        created_at: "some time",
+        updated_at: "some time",
+    },
+    {
         id: 3,
         name: "John Bilby",
         section: "Trumpet",
         drill_prefix: "T",
         drill_order: 1,
-        notes: undefined,
-        year: undefined,
-    }),
-    new Marcher({
+        drill_number: "T1",
+        notes: null,
+        year: null,
+        created_at: "some time",
+        updated_at: "some time",
+    },
+    {
         id: 4,
         name: "",
         section: "Baritone",
         drill_prefix: "B",
         drill_order: 2,
-        notes: undefined,
-        year: undefined,
-    }),
+        drill_number: "B2",
+        notes: null,
+        year: null,
+        created_at: "some time",
+        updated_at: "some time",
+    },
 ] as const;
 
 export const mockPages: Page[] = [
