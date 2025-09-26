@@ -11,6 +11,16 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
+const timestamps = {
+    created_at: text()
+        .notNull()
+        .default(sql`(CURRENT_TIMESTAMP)`),
+    updated_at: text()
+        .notNull()
+        .default(sql`(CURRENT_TIMESTAMP)`)
+        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+};
+
 // Drizzle defaults to using Buffer for "blob", which does not exist in the browser
 // Uint8Array is available on both Node and the browser
 const browserSafeBinaryBlob = customType<{
@@ -57,13 +67,7 @@ export const beats = sqliteTable(
         include_in_measure: integer().default(1).notNull(),
         /** Human readable notes. */
         notes: text(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
     },
     (_table) => [
         check("beats_duration_check", sql`duration >= 0`),
@@ -96,13 +100,7 @@ export const pages = sqliteTable(
         is_subset: integer().default(0).notNull(),
         /** Optional notes or description for the page */
         notes: text(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
         /** The ID of the beat this page starts on */
         start_beat: integer()
             .notNull()
@@ -130,13 +128,7 @@ export const marchers = sqliteTable(
         drill_prefix: text().notNull(),
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
-        created_at: text()
-            .notNull()
-            .default(sql`(CURRENT_TIMESTAMP)`),
-        updated_at: text()
-            .notNull()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
     },
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
 );
@@ -145,13 +137,7 @@ export const pathways = sqliteTable("pathways", {
     id: integer().primaryKey(),
     path_data: text().notNull(),
     notes: text(),
-    created_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull(),
-    updated_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    ...timestamps,
 });
 
 /**
@@ -176,13 +162,7 @@ export const marcher_pages = sqliteTable(
         x: real().notNull(),
         /** Y coordinate of the MarcherPage in pixels */
         y: real().notNull(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
         /** The ID of the pathway data */
         path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
@@ -225,13 +205,7 @@ export const midsets = sqliteTable(
         y: real().notNull(),
         /** The progress placement of the midset on the marcher page */
         progress_placement: real().notNull(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
         path_data_id: integer().references(() => pathways.id, {
             onDelete: "set null",
         }),
@@ -268,25 +242,13 @@ export const audio_files = sqliteTable("audio_files", {
     nickname: text(),
     data: blob(),
     selected: integer().default(0).notNull(),
-    created_at: text()
-        .notNull()
-        .default(sql`(CURRENT_TIMESTAMP)`),
-    updated_at: text()
-        .notNull()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    ...timestamps,
 });
 
 export const shapes = sqliteTable("shapes", {
     id: integer().primaryKey(),
     name: text(),
-    created_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull(),
-    updated_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    ...timestamps,
     notes: text(),
 });
 
@@ -301,13 +263,7 @@ export const shape_pages = sqliteTable(
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
         svg_path: text().notNull(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
         notes: text(),
     },
     (table) => [unique().on(table.page_id, table.shape_id)],
@@ -324,13 +280,7 @@ export const shape_page_marchers = sqliteTable(
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
         position_order: integer().notNull(),
-        created_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull(),
-        updated_at: text()
-            .default(sql`(CURRENT_TIMESTAMP)`)
-            .notNull()
-            .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+        ...timestamps,
         notes: text(),
     },
     (table) => [
@@ -347,13 +297,7 @@ export const section_appearances = sqliteTable("section_appearances", {
     fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
     shape_type: text().default("circle").notNull(),
-    created_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull(),
-    updated_at: text()
-        .default(sql`(CURRENT_TIMESTAMP)`)
-        .notNull()
-        .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
+    ...timestamps,
 });
 
 export const utility = sqliteTable(
