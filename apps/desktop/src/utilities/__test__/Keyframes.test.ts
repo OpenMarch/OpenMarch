@@ -204,14 +204,14 @@ describe("getCoordinatesAtTime", () => {
 
             it("should handle timestamp very close to first keyframe", () => {
                 const result = getCoordinatesAtTime(1, marcherTimeline);
-                expect(result.x).toBeCloseTo(0.1, 5);
-                expect(result.y).toBeCloseTo(0.1, 5);
+                expect(result?.x).toBeCloseTo(0.1, 5);
+                expect(result?.y).toBeCloseTo(0.1, 5);
             });
 
             it("should handle timestamp very close to last keyframe", () => {
                 const result = getCoordinatesAtTime(999, marcherTimeline);
-                expect(result.x).toBeCloseTo(99.9, 5);
-                expect(result.y).toBeCloseTo(99.9, 5);
+                expect(result?.x).toBeCloseTo(99.9, 5);
+                expect(result?.y).toBeCloseTo(99.9, 5);
             });
         });
 
