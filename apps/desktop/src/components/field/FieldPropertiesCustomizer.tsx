@@ -111,19 +111,19 @@ function CheckpointEditor({
                         <Input
                             type="text" // Changed from "number"
                             inputMode="numeric" // Better mobile experience
-                            pattern="-?[0-9]*" // Ensures only numbers can be entered
+                            pattern="-?[0-9]*\.?[0-9]*" // Ensures only numbers and decimals can be entered
                             className={inputClassname}
                             onBlur={(e) => {
                                 e.preventDefault();
-                                const parsedInt = parseInt(e.target.value);
+                                const parsedFloat = parseFloat(e.target.value);
 
-                                if (!isNaN(parsedInt)) {
+                                if (!isNaN(parsedFloat)) {
                                     updateCheckpoint({
                                         axis,
                                         oldCheckpoint: checkpoint,
                                         newCheckpoint: {
                                             ...checkpoint,
-                                            stepsFromCenterFront: parseInt(
+                                            stepsFromCenterFront: parseFloat(
                                                 e.target.value,
                                             ),
                                         },
@@ -131,13 +131,14 @@ function CheckpointEditor({
                                 }
                             }}
                             onChange={(e) => {
-                                // Only allow numbers and negative sign
+                                // Allow numbers, decimal point, and negative sign
                                 const filtered = e.target.value.replace(
-                                    /[^\d-]/g,
+                                    /[^\d.-]/g,
                                     "",
                                 );
-                                // Ensure only one negative sign at start
+                                // Ensure only one decimal point and one negative sign at start
                                 const normalized = filtered
+                                    .replace(/\.+/g, ".")
                                     .replace(/--+/g, "-")
                                     .replace(/(.+)-/g, "$1");
                                 e.target.value = normalized;
