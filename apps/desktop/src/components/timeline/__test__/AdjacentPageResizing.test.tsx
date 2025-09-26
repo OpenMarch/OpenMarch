@@ -12,7 +12,6 @@ import { useTimingObjects } from "@/hooks";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { ElectronApi } from "electron/preload";
 import Beat from "@/global/classes/Beat";
@@ -24,11 +23,10 @@ import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
 // Mock the hooks
-vi.mock("@/stores/TimingObjectsStore");
+vi.mock("@/hooks");
 vi.mock("@/stores/UiSettingsStore");
 vi.mock("@/context/IsPlayingContext");
 vi.mock("@/context/SelectedPageContext");
-vi.mock("@/stores/ShapePageStore");
 vi.mock("@/context/SelectedAudioFileContext");
 
 // Create mock data
@@ -138,12 +136,14 @@ describe.todo("Adjacent Page Resizing", () => {
             getTheme: vi.fn().mockResolvedValue(null),
         } as Partial<ElectronApi> as ElectronApi;
 
-        // Mock the useTimingObjectsStore hook
-        vi.mocked(useTimingObjectsStore).mockReturnValue({
+        // Mock the useTimingObjects hook
+        vi.mocked(useTimingObjects).mockReturnValue({
             pages: mockPages,
             beats: mockBeats,
             measures: [],
             fetchTimingObjects: vi.fn().mockResolvedValue(undefined),
+            isLoading: false,
+            hasError: false,
         });
 
         // Mock the useUiSettingsStore hook
@@ -166,22 +166,10 @@ describe.todo("Adjacent Page Resizing", () => {
             setSelectedPage: vi.fn(),
         });
 
-        // Mock the useShapePageStore hook
-        vi.mocked(useShapePageStore).mockReturnValue({
-            setSelectedMarcherShapes: vi.fn(),
-        });
-
         // Mock the useSelectedAudioFile hook
         vi.mocked(useSelectedAudioFile).mockReturnValue({
             selectedAudioFile: null,
             setSelectedAudioFile: vi.fn(),
-        });
-
-        // Create a mock for getState to return the current state
-        useTimingObjectsStore.getState = vi.fn().mockReturnValue({
-            pages: mockPages,
-            beats: mockBeats,
-            measures: [],
         });
     });
 
@@ -234,7 +222,8 @@ describe.todo("Adjacent Page Resizing", () => {
         });
 
         // The updatePages function should be called
-        expect(window.electron.updatePages).toHaveBeenCalled();
+        // Note: In the new query style, this would be tested through the mutation hook
+        // expect(window.electron.updatePages).toHaveBeenCalled();
     });
 
     it("ensures next page width doesn't go below minimum when dragging", async () => {

@@ -62,6 +62,13 @@ const calculateMaxVelocity = (
             const startPos = getCoordinatesAtTime(pageStartTime, timeline);
             const endPos = getCoordinatesAtTime(pageEndTime, timeline);
 
+            if (!startPos || !endPos) {
+                console.warn(
+                    `Marcher ${timeline.pathMap.get(pageStartTime)?.x} has no position at ${pageStartTime} or ${pageEndTime}`,
+                );
+                continue;
+            }
+
             // Calculate distance traveled
             const distance = Math.sqrt(
                 Math.pow(endPos.x - startPos.x, 2) +
@@ -144,6 +151,12 @@ const sweepNPruneCollision = (
 
             try {
                 const position = getCoordinatesAtTime(time, timeline);
+                if (!position) {
+                    console.warn(
+                        `Marcher ${marcherId} has no position at ${time}`,
+                    );
+                    continue;
+                }
                 marcherPositionsAtTime.push({
                     id: marcherId,
                     x: position.x,
