@@ -19,8 +19,10 @@ export default function CanvasZoomControls({
         if (!canvas) return;
 
         const updateZoom = () => {
-            // Always use Fabric.js zoom for display
-            setCurrentZoom(Math.round(canvas.getZoom() * 100));
+            // Display relative to base zoom so base == 100%
+            const base = (canvas as any).getBaseZoom?.() ?? 1.0;
+            const ratio = canvas.getZoom() / (base || 1);
+            setCurrentZoom(Math.round(ratio * 100));
         };
 
         updateZoom();
@@ -87,8 +89,9 @@ export default function CanvasZoomControls({
 
         const fieldWidth = canvas.fieldProperties.width;
         const fieldHeight = canvas.fieldProperties.height;
-        const viewportWidth = canvas.width;
-        const viewportHeight = canvas.height;
+        // Use actual wrapper-sized viewport
+        const viewportWidth = canvas.getWidth();
+        const viewportHeight = canvas.getHeight();
 
         if (
             fieldWidth <= 0 ||
@@ -106,17 +109,10 @@ export default function CanvasZoomControls({
             return;
         }
 
-        // Set zoom to 100% (zoom factor of 1.0)
-        const newZoom = 1.0;
-
-        // Calculate translation to center the field (at 100% zoom) within the viewport.
-        // This assumes the field content (grid, lines, etc.) is drawn starting from (0,0)
-        // in the Fabric canvas coordinate system, up to (fieldWidth, fieldHeight).
-        const panX = (viewportWidth - fieldWidth) / 2;
-        const panY = (viewportHeight - fieldHeight) / 2;
-
-        // Apply the new viewport transform: zoom is 1.0, pan is calculated
-        canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);
+        // Center at base zoom (treated as 100%)
+        if (typeof (canvas as any).centerAtBaseZoom === "function") {
+            (canvas as any).centerAtBaseZoom();
+        }
 
         // Ensure any CSS transforms are reset if they were part of an older system.
         // This helps ensure a clean state if CSS transforms were previously affecting the view.
