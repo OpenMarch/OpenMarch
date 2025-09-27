@@ -59,9 +59,15 @@ export function pathwayMapFromArray(
     const pathwayMap: PathwaysById = {};
 
     pathways.forEach((pathway) => {
+        const pathData = Path.fromJson(
+            pathway.path_data,
+            undefined,
+            undefined,
+            pathway.id,
+        );
         pathwayMap[pathway.id] = {
             id: pathway.id,
-            path_data: Path.fromJson(pathway.path_data),
+            path_data: pathData,
             notes: pathway.notes,
         };
     });
@@ -223,7 +229,7 @@ export const useCreatePathway = () => {
             // Invalidate all pathway queries
             if (pageIds) {
                 pageIds.forEach((pageId) => {
-                    queryClient.invalidateQueries({
+                    void queryClient.invalidateQueries({
                         queryKey: pathwayKeys.byPageId(pageId),
                     });
                 });
@@ -250,7 +256,7 @@ export const useUpdatePathway = () => {
         onSuccess: ({ pageIds }) => {
             if (pageIds)
                 pageIds.forEach((pageId) => {
-                    queryClient.invalidateQueries({
+                    void queryClient.invalidateQueries({
                         queryKey: pathwayKeys.byPageId(pageId),
                     });
                 });
@@ -270,7 +276,7 @@ export const useDeletePathways = () => {
         onSuccess: ({ pageIds }) => {
             if (pageIds)
                 pageIds.forEach((pageId) => {
-                    queryClient.invalidateQueries({
+                    void queryClient.invalidateQueries({
                         queryKey: pathwayKeys.byPageId(pageId),
                     });
                 });

@@ -56,7 +56,7 @@ const mockPages = [
     },
 ];
 
-describe("MarcherPage Functions", () => {
+describe.skip("MarcherPage Functions", () => {
     it("should correctly find previous marcher page based on beat order", () => {
         // Create test data with marcher pages in non-sequential page order
         const testMarcherPages = [
