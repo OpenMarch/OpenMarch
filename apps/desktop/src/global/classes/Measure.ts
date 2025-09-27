@@ -1,9 +1,5 @@
 import Beat, { beatsDuration, compareBeats } from "./Beat";
-import { DatabaseResponse } from "electron/database/DatabaseActions";
 import { db, schema } from "../database/db";
-import { eq, inArray } from "drizzle-orm";
-import { incrementUndoGroup } from "./History";
-import { promiseToDatabaseResponse } from "../database/adapters";
 import {
     allDatabasePagesQueryOptions,
     beatKeys,
@@ -57,116 +53,6 @@ export type NewMeasureArgs = Omit<
 export type ModifiedMeasureArgs = Partial<typeof measures.$inferInsert> & {
     id: number;
 };
-
-// Database functions
-export async function getMeasures(): Promise<
-    DatabaseResponse<DatabaseMeasure[]>
-> {
-    return promiseToDatabaseResponse(async () => {
-        return await getMeasuresDb();
-    });
-}
-
-export async function getMeasuresDb(): Promise<DatabaseMeasure[]> {
-    return await db.select().from(measures).all();
-}
-
-export async function getMeasureById(
-    id: number,
-): Promise<DatabaseResponse<DatabaseMeasure | undefined>> {
-    return promiseToDatabaseResponse(async () => {
-        return await getMeasureByIdDb(id);
-    });
-}
-
-export async function getMeasureByIdDb(
-    id: number,
-): Promise<DatabaseMeasure | undefined> {
-    const result = await db
-        .select()
-        .from(measures)
-        .where(eq(measures.id, id))
-        .get();
-
-    // Drizzle .get() may return an object with undefined properties when no row is found
-    return result?.id !== undefined ? result : undefined;
-}
-
-export async function createMeasuresDb(
-    newMeasures: NewMeasureArgs[],
-): Promise<DatabaseMeasure[]> {
-    return await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        const createdMeasures: DatabaseMeasure[] = [];
-        for (const measure of newMeasures) {
-            const result = await tx
-                .insert(measures)
-                .values({
-                    start_beat: measure.start_beat,
-                    rehearsal_mark: measure.rehearsal_mark ?? null,
-                    notes: measure.notes ?? null,
-                })
-                .returning()
-                .get();
-            createdMeasures.push(result);
-        }
-        return createdMeasures;
-    });
-}
-
-export async function updateMeasuresDb(
-    modifiedMeasures: ModifiedMeasureArgs[],
-): Promise<DatabaseMeasure[]> {
-    return await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        const updatedMeasures: DatabaseMeasure[] = [];
-        for (const measure of modifiedMeasures) {
-            const result = await tx
-                .update(measures)
-                .set(measure)
-                .where(eq(measures.id, measure.id))
-                .returning()
-                .get();
-            updatedMeasures.push(result);
-        }
-        return updatedMeasures;
-    });
-}
-
-export async function deleteMeasuresDb(
-    measureIds: Set<number>,
-): Promise<DatabaseMeasure[]> {
-    return await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        const measureIdArray = Array.from(measureIds);
-        return await tx
-            .delete(measures)
-            .where(inArray(measures.id, measureIdArray))
-            .returning()
-            .all();
-    });
-}
-
-export async function getMeasuresByBeatId(
-    beatId: number,
-): Promise<DatabaseResponse<DatabaseMeasure[]>> {
-    return promiseToDatabaseResponse(async () => {
-        return await getMeasuresByBeatIdDb(beatId);
-    });
-}
-
-export async function getMeasuresByBeatIdDb(
-    beatId: number,
-): Promise<DatabaseMeasure[]> {
-    return await db
-        .select()
-        .from(measures)
-        .where(eq(measures.start_beat, beatId))
-        .all();
-}
 
 /** A type that stores a beat with the index that it occurs in a list with all beats */
 type BeatWithIndex = Beat & { index: number };

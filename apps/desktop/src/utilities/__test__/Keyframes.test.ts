@@ -27,11 +27,10 @@ describe("getCoordinatesAtTime", () => {
                 const result1 = getCoordinatesAtTime(0, marcherTimeline);
                 expect(result1).toEqual({ x: 0, y: 0 });
 
-                // Note: The function doesn't handle exact last timestamp due to nextTimestamp being null
-                // This is a limitation of the current implementation
-                expect(() =>
-                    getCoordinatesAtTime(1000, marcherTimeline),
-                ).toThrow("No timestamp found! This shouldn't happen");
+                // Note: The function returns null when at the last timestamp due to nextTimestamp being null
+                // This is the expected behavior of the current implementation
+                const result2 = getCoordinatesAtTime(1000, marcherTimeline);
+                expect(result2).toBeNull();
             });
 
             it("should interpolate coordinates at halfway point", () => {
@@ -196,10 +195,9 @@ describe("getCoordinatesAtTime", () => {
             });
 
             it("should handle timestamp exactly at last keyframe", () => {
-                // The function doesn't handle exact last timestamp due to nextTimestamp being null
-                expect(() =>
-                    getCoordinatesAtTime(1000, marcherTimeline),
-                ).toThrow("No timestamp found! This shouldn't happen");
+                // The function returns null when at the last timestamp due to nextTimestamp being null
+                const result = getCoordinatesAtTime(1000, marcherTimeline);
+                expect(result).toBeNull();
             });
 
             it("should handle timestamp very close to first keyframe", () => {
@@ -285,10 +283,9 @@ describe("getCoordinatesAtTime", () => {
                     sortedTimestamps: [500],
                 };
 
-                // The function doesn't handle single keyframes due to nextTimestamp being null
-                expect(() => getCoordinatesAtTime(500, timeline)).toThrow(
-                    "No timestamp found! This shouldn't happen",
-                );
+                // The function returns null for single keyframes due to nextTimestamp being null
+                const result = getCoordinatesAtTime(500, timeline);
+                expect(result).toBeNull();
             });
 
             it("should handle irregular time intervals", () => {

@@ -1,9 +1,7 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
 import * as DbServices from "electron/database/database.services";
-import { DatabaseResponse } from "electron/database/DatabaseActions";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "electron/main/services/recent-files-service";
@@ -230,14 +228,6 @@ const APP_API = {
     redo: () => ipcRenderer.invoke("history:redo"),
     flattenUndoGroupsAbove: (group: number) =>
         ipcRenderer.invoke("history:flattenUndoGroupsAbove", group),
-    getCurrentUndoGroup: () =>
-        ipcRenderer.invoke("history:getCurrentUndoGroup") as Promise<
-            DatabaseResponse<number>
-        >,
-    getCurrentRedoGroup: () =>
-        ipcRenderer.invoke("history:getCurrentRedoGroup") as Promise<
-            DatabaseResponse<number>
-        >,
     getUndoStackLength: () => ipcRenderer.invoke("history:getUndoStackLength"),
     getRedoStackLength: () => ipcRenderer.invoke("history:getRedoStackLength"),
 
@@ -289,16 +279,6 @@ const APP_API = {
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
             rows: any[] | any;
         }>,
-
-    // Utilities
-    swapMarchers: (args: {
-        pageId: number;
-        marcher1Id: number;
-        marcher2Id: number;
-    }) =>
-        ipcRenderer.invoke("utilities:swap_marchers", args) as Promise<
-            DatabaseResponse<MarcherPage[]>
-        >,
 
     // Logging
     log: (

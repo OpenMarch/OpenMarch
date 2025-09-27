@@ -1,13 +1,11 @@
 import Page, {
     fromDatabasePages,
     generatePageNames,
-    updatePageCountRequest,
     yankOrPushPagesAfterIndex,
 } from "../Page";
 import Measure from "../Measure";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
-import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { conToastError } from "@/utilities/utils";
 import { DatabasePage, FIRST_BEAT_ID, FIRST_PAGE_ID } from "@/db-functions";
 
@@ -699,94 +697,6 @@ describe("Page", () => {
 
     // Mock the console.error to avoid polluting test output
     vi.spyOn(console, "error").mockImplementation(() => {});
-
-    describe("page duration update", () => {
-        // Mock the hooks
-        vi.mock("@/stores/TimingObjectsStore");
-        vi.mock("@/stores/UiSettingsStore");
-        vi.mock("@/context/IsPlayingContext");
-        vi.mock("@/context/SelectedPageContext");
-        vi.mock("@/stores/ShapePageStore");
-        vi.mock("@/context/SelectedAudioFileContext");
-
-        // Create mock data
-        const mockBeats: Beat[] = [
-            { id: 1, position: 1, duration: 0 } as Beat,
-            { id: 2, position: 2, duration: 1 } as Beat,
-            { id: 3, position: 3, duration: 1 } as Beat,
-            { id: 4, position: 4, duration: 1 } as Beat,
-            { id: 5, position: 5, duration: 1 } as Beat,
-            { id: 6, position: 6, duration: 1 } as Beat,
-            { id: 7, position: 7, duration: 1 } as Beat,
-        ];
-
-        const mockPages: Page[] = [
-            {
-                id: 0,
-                name: "0",
-                counts: 0,
-                notes: null,
-                order: 0,
-                isSubset: false,
-                duration: 0,
-                beats: [mockBeats[0]],
-                measures: null,
-                measureBeatToStartOn: null,
-                measureBeatToEndOn: null,
-                timestamp: 0,
-                previousPageId: null,
-                nextPageId: 1,
-            } as Page,
-            {
-                id: 1,
-                name: "1",
-                counts: 2,
-                notes: null,
-                order: 1,
-                isSubset: false,
-                duration: 2,
-                beats: [mockBeats[0], mockBeats[1]],
-                measures: null,
-                measureBeatToStartOn: null,
-                measureBeatToEndOn: null,
-                timestamp: 0,
-                previousPageId: 0,
-                nextPageId: 2,
-            } as Page,
-            {
-                id: 2,
-                name: "2",
-                counts: 2,
-                notes: null,
-                order: 2,
-                isSubset: false,
-                duration: 2,
-                beats: [mockBeats[2], mockBeats[3]],
-                measures: null,
-                measureBeatToStartOn: null,
-                measureBeatToEndOn: null,
-                timestamp: 2,
-                previousPageId: 1,
-                nextPageId: 3,
-            } as Page,
-            {
-                id: 3,
-                name: "3",
-                counts: 2,
-                notes: null,
-                order: 3,
-                isSubset: false,
-                duration: 2,
-                beats: [mockBeats[4], mockBeats[5]],
-                measures: null,
-                measureBeatToStartOn: null,
-                measureBeatToEndOn: null,
-                timestamp: 4,
-                previousPageId: 2,
-                nextPageId: null,
-            } as Page,
-        ];
-    });
 
     describe("yankOrPushPagesAfterIndex", () => {
         // Mock the conToastError function
