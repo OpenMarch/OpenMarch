@@ -6,8 +6,6 @@ import * as History from "./database.history.legacy";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
-import { DatabaseResponse } from "./DatabaseActions";
-import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -100,38 +98,6 @@ export function connect() {
             error,
         );
     }
-}
-
-/* ============================ Handlers ============================ */
-async function connectWrapper<T>(
-    func: (args: any) => DatabaseResponse<T | undefined> | T,
-    args: any = {},
-): Promise<DatabaseResponse<T | undefined>> {
-    const db = connect();
-    db.pragma("foreign_keys = ON");
-    const orm = getOrm(db);
-    let result: Promise<DatabaseResponse<T | undefined>>;
-    try {
-        let fnResult = func({ ...args, db, orm });
-        if (
-            !fnResult ||
-            typeof fnResult !== "object" ||
-            !("success" in fnResult)
-        ) {
-            fnResult = { success: true, data: fnResult };
-        }
-        result = Promise.resolve(fnResult);
-    } catch (error: any) {
-        console.error(error);
-        result = Promise.resolve({
-            success: false,
-            data: undefined,
-            error: { message: error.message, stack: error.stack },
-        });
-    } finally {
-        db.close();
-    }
-    return result;
 }
 
 /**

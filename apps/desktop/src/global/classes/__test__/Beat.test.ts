@@ -7,7 +7,7 @@ import {
     calculateTimestamps,
 } from "../Beat";
 import type Beat from "../Beat";
-import { DatabaseBeat } from "electron/database/tables/BeatTable";
+import { DatabaseBeat } from "@/db-functions";
 
 describe("Beat", () => {
     describe("compareBeats", () => {
@@ -185,7 +185,7 @@ describe("Beat", () => {
                 id: 1,
                 position: 10,
                 duration: 2.5,
-                include_in_measure: 1,
+                include_in_measure: true,
                 notes: "Test note",
                 created_at: "2022-01-01 00:00:00",
                 updated_at: "2022-01-01 00:00:00",
@@ -212,7 +212,7 @@ describe("Beat", () => {
                 id: 2,
                 position: 20,
                 duration: 1.5,
-                include_in_measure: 0,
+                include_in_measure: false,
                 notes: null,
                 created_at: "2022-01-01 00:00:00",
                 updated_at: "2022-01-01 00:00:00",
@@ -231,7 +231,7 @@ describe("Beat", () => {
                 id: 3,
                 position: 30,
                 duration: 3.0,
-                include_in_measure: 1,
+                include_in_measure: true,
                 notes: null,
                 created_at: "2022-01-01 00:00:00",
                 updated_at: "2022-01-01 00:00:00",

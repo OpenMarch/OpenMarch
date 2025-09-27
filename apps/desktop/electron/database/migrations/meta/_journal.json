@@ -57,6 +57,13 @@
             "when": 1757474673889,
             "tag": "0007_misty_zemo",
             "breakpoints": true
+        },
+        {
+            "idx": 8,
+            "version": "6",
+            "when": 1758910347493,
+            "tag": "0008_round_mathemanic",
+            "breakpoints": true
         }
     ]
 }
