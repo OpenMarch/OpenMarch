@@ -35,7 +35,7 @@ template.push(
                     label: "Open File",
                     accelerator: "CommandOrControl+O",
                     click(item: any, focusedWindow: any) {
-                        mainProcess.loadDatabaseFile();
+                        void mainProcess.loadDatabaseFile();
                     },
                 },
                 { type: "separator" },
@@ -43,7 +43,7 @@ template.push(
                     label: "Create New",
                     accelerator: "CommandOrControl+N",
                     click() {
-                        mainProcess.newFile();
+                        void mainProcess.newFile();
                     },
                 },
                 {
@@ -56,14 +56,14 @@ template.push(
                                 "There is currently no active document to save or export.",
                             );
                         }
-                        mainProcess.saveFile();
+                        void mainProcess.saveFile();
                     },
                 },
                 {
                     label: "Close File",
                     accelerator: "CommandOrControl+Q",
                     click(item: any, focusedWindow: any) {
-                        mainProcess.closeCurrentFile();
+                        void mainProcess.closeCurrentFile();
                     },
                 },
             ],

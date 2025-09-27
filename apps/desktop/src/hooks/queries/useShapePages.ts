@@ -94,10 +94,6 @@ export const shapePageMarchersQueryByPageIdOptions = (pageId: number) => {
     });
 };
 
-export const fetchShapePages = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-};
-
 export const updateShapePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedItems: ModifiedShapePageArgs[]) =>

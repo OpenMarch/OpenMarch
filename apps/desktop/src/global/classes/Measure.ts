@@ -150,11 +150,11 @@ export const useCascadeDeleteMeasures = () => {
     return useMutation({
         mutationFn: (measuresToDelete: Measure[]) =>
             _cascadeDeleteMeasures(measuresToDelete),
-        onSuccess: () => {
+        onSuccess: async () => {
             toast.success(tolgee.t("tempoGroup.deletedSuccessfully"));
-            queryClient.invalidateQueries({ queryKey: measureKeys.all() });
-            queryClient.invalidateQueries({ queryKey: pageKeys.all() });
-            queryClient.invalidateQueries({ queryKey: beatKeys.all() });
+            await queryClient.invalidateQueries({ queryKey: beatKeys.all() });
+            void queryClient.invalidateQueries({ queryKey: pageKeys.all() });
+            void queryClient.invalidateQueries({ queryKey: measureKeys.all() });
         },
         onError: (error: Error, variables: Measure[]) => {
             conToastError(tolgee.t("tempoGroup.deleteFailed"));

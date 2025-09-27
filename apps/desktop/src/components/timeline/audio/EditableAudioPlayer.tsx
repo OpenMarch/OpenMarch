@@ -40,6 +40,7 @@ import { T } from "@tolgee/react";
  * Editable version of the AudioPlayer component.
  * Pass the ref of the timeline container so this component can scroll
  */
+// eslint-disable-next-line max-lines-per-function
 export default function EditableAudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
@@ -67,7 +68,7 @@ export default function EditableAudioPlayer() {
         if (isAudioPlaying) {
             waveSurfer.pause();
         } else {
-            waveSurfer.play();
+            void waveSurfer.play();
         }
         setIsAudioPlaying(!isAudioPlaying);
     }, [waveSurfer, isAudioPlaying]);

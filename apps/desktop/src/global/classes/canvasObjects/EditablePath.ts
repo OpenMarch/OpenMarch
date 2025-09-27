@@ -97,7 +97,7 @@ export default class EditablePath {
                         );
                     },
                     (_e, _newPoint: Point) => {
-                        this._triggerPathUpdate();
+                        void this._triggerPathUpdate();
                     },
                     this._fieldTheme,
                 ),

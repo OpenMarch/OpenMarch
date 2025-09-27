@@ -15,6 +15,7 @@ import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
 
+// eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
 
@@ -35,7 +36,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
             }
         };
 
-        fetchDbPath();
+        void fetchDbPath();
     }, []);
 
     return (

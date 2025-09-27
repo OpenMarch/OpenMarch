@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { TestAPI } from "vitest";
 import { DbConnection, DbTestAPI } from "./base";
 import { getTableName, Table } from "drizzle-orm";

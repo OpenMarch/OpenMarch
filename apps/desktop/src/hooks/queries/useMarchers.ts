@@ -76,7 +76,7 @@ export const marcherQueryByIdOptions = (id: number) => {
 };
 
 export const fetchMarchers = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
 export const createMarchersMutationOptions = (qc: QueryClient) => {
@@ -85,10 +85,10 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
             createMarchers({ db, newMarchers }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },
@@ -108,11 +108,11 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
             for (const modifiedArgs of variables)
                 marcherIds.add(modifiedArgs.id);
 
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
 
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },
@@ -128,10 +128,10 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             deleteMarchers({ db, marcherIds }),
         onSuccess: (_, variables) => {
             // Invalidate all marcher queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
             });
         },

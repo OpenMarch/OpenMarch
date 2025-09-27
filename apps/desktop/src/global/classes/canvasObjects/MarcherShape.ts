@@ -266,7 +266,7 @@ export const useCreateMarcherShape = () => {
     return useMutation({
         mutationFn: _createMarcherShape,
         onMutate: () => {
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: shapePageKeys.all(),
             });
         },

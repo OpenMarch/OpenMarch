@@ -15,6 +15,7 @@ import { T } from "@tolgee/react";
  * An audio player with editable beat markers.
  * Allows users to resize beats to adjust their duration.
  */
+// eslint-disable-next-line max-lines-per-function
 export default function EditableBeatAudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
@@ -36,7 +37,7 @@ export default function EditableBeatAudioPlayer() {
         const audio = audioRef.current;
 
         if (isPlaying) {
-            audio.play();
+            void audio.play();
         } else {
             audio.currentTime = selectedPage
                 ? selectedPage.timestamp + selectedPage.duration
