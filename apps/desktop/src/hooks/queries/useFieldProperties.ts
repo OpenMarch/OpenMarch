@@ -49,7 +49,7 @@ export const updateFieldPropertiesMutationOptions = (queryClient: any) => ({
     mutationFn: fieldPropertiesMutations.update,
     onSuccess: (updatedFieldProperties: FieldProperties) => {
         // Invalidate and refetch field properties
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
             queryKey: fieldPropertiesKeys.detail(),
         });
     },

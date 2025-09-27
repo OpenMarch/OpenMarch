@@ -12,6 +12,7 @@ import {
 import { T, useTranslate } from "@tolgee/react";
 import { PuzzlePieceIcon } from "@phosphor-icons/react";
 
+// eslint-disable-next-line max-lines-per-function
 export default function PluginsContents() {
     const { t } = useTranslate();
 
@@ -59,7 +60,7 @@ export default function PluginsContents() {
             }
             setOfficialPlugins(official);
         }
-        fetchOfficialPlugins();
+        void fetchOfficialPlugins();
     }, []);
 
     useEffect(() => {
@@ -93,7 +94,7 @@ export default function PluginsContents() {
             }
             setCommunityPlugins(community);
         }
-        fetchCommunityPlugins();
+        void fetchCommunityPlugins();
     }, []);
 
     return (
@@ -137,6 +138,7 @@ export default function PluginsContents() {
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
                     {plugins.length > 0 ? (
+                        // eslint-disable-next-line max-lines-per-function
                         plugins.map((plugin, index) => (
                             <div
                                 className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"
@@ -231,6 +233,7 @@ export default function PluginsContents() {
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
                     {officialPlugins.length > 0 ? (
+                        // eslint-disable-next-line max-lines-per-function
                         officialPlugins.map((plugin, index) => (
                             <div
                                 className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"
@@ -345,6 +348,7 @@ export default function PluginsContents() {
                     className="border-stroke flex flex-col gap-8 rounded-[14px] border p-8"
                 >
                     {communityPlugins.length > 0 ? (
+                        // eslint-disable-next-line max-lines-per-function
                         communityPlugins.map((plugin, index) => (
                             <div
                                 className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-6 border p-12"

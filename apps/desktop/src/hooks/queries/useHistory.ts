@@ -50,7 +50,7 @@ export const usePerformHistoryAction = () => {
     return useMutation({
         mutationFn: (type: "undo" | "redo") => performHistoryAction(type, db),
         onSuccess: (response) => {
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
 

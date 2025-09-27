@@ -186,16 +186,16 @@ const useMusicXmlMutation = <TArgs>(
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
-        onSuccess: (result) => {
+        onSuccess: async () => {
             // Invalidate all of the relevant queries
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
+                queryKey: pageKeys.all(),
+            });
+            void queryClient.invalidateQueries({
                 queryKey: measureKeys.all(),
             });
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: beatKeys.all(),
-            });
-            queryClient.invalidateQueries({
-                queryKey: pageKeys.all(),
             });
 
             if (successKey) {

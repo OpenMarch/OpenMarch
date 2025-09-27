@@ -261,6 +261,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setMarcherPositionsAtTime,
         updateSelectedPage,
         marcherTimelines,
+        setIsPlaying,
     ]);
 
     return { setMarcherPositionsAtTime };

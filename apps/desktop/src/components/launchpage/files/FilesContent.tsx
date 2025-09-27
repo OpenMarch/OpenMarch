@@ -9,6 +9,7 @@ import { WarningCircleIcon } from "@phosphor-icons/react";
 
 import type { RecentFile } from "electron/main/services/recent-files-service";
 
+// eslint-disable-next-line max-lines-per-function
 export default function FilesTabContent() {
     const { t } = useTolgee();
 
@@ -16,7 +17,7 @@ export default function FilesTabContent() {
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        loadRecentFiles();
+        void loadRecentFiles();
     }, []);
 
     const loadRecentFiles = async () => {
@@ -60,7 +61,7 @@ export default function FilesTabContent() {
         event.stopPropagation(); // Prevent opening the file when clicking the remove button
         try {
             await window.electron.removeRecentFile(filePath);
-            loadRecentFiles(); // Reload the list
+            void loadRecentFiles(); // Reload the list
         } catch (error) {
             console.error("Failed to remove file from recent list:", error);
             toast.error(t("launchpage.files.failedToRemoveRecent"));

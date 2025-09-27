@@ -170,7 +170,7 @@ export const marcherPagesByMarcherQueryOptions = (
 };
 
 export const fetchMarcherPages = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
 const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
@@ -181,7 +181,7 @@ const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
                 queryKey: marcherPageKeys.byPage(pageId),
             })
             .then(() => {
-                queryClient.invalidateQueries({
+                void queryClient.invalidateQueries({
                     queryKey: coordinateDataKeys.byPageId(pageId),
                 });
             });

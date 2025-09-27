@@ -96,11 +96,12 @@ const useCreateFeatureMutation = <TArgs>(
         mutationFn,
         onSuccess: () => {
             // Invalidate all of the relevant queries
-            queryClient.invalidateQueries({
-                queryKey: measureKeys.all(),
-            });
-            queryClient.invalidateQueries({
+            // Always invalidate beats first and wait for them to finish. This is important because measures rely on beats
+            await queryClient.invalidateQueries({
                 queryKey: beatKeys.all(),
+            });
+            void queryClient.invalidateQueries({
+                queryKey: measureKeys.all(),
             });
             // ... more queries if needed
 
@@ -163,11 +164,12 @@ onError: (error) => {
 
 ```typescript
 onSuccess: () => {
-    queryClient.invalidateQueries({
-        queryKey: measureKeys.all(),
-    });
-    queryClient.invalidateQueries({
+    // Always invalidate beats first and wait for them to finish
+    await queryClient.invalidateQueries({
         queryKey: beatKeys.all(),
+    });
+    void queryClient.invalidateQueries({
+        queryKey: measureKeys.all(),
     });
 },
 ```

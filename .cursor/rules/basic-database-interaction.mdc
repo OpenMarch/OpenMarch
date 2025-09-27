@@ -320,17 +320,13 @@ export const {tableName}QueryByIdOptions = (id: number) => {
     });
 };
 
-export const fetch{tableName}s = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-};
-
 export const create{tableName}sMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newItems: New{tableName}Args[]) =>
             create{tableName}s({ db, newItems }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -349,12 +345,12 @@ export const update{tableName}sMutationOptions = (qc: QueryClient) => {
             const itemIds = new Set<number>();
             for (const modifiedArgs of variables) itemIds.add(modifiedArgs.id);
 
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: Array.from(itemIds).map((id) =>
                     {tableName}Keys.byId(id),
                 ),
             });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -369,7 +365,7 @@ export const delete{tableName}sMutationOptions = (qc: QueryClient) => {
         mutationFn: (itemIds: Set<number>) => delete{tableName}s({ db, itemIds }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },

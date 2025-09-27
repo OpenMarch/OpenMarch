@@ -49,7 +49,7 @@ module.exports = {
     overrides: [
         {
             // Disable for tests and React components
-            files: ["*.test.ts*", "src/components/**/*.tsx"],
+            files: ["*.test.ts*", "**/*.tsx"],
             rules: {
                 "max-lines-per-function": "off",
             },

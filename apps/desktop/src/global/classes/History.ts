@@ -7,7 +7,7 @@ import { DbTransaction } from "@/db-functions";
 type HistoryType = "undo" | "redo";
 
 export async function incrementUndoGroup(orm: DBTransaction | DB) {
-    orm.transaction(async (tx) => {
+    void orm.transaction(async (tx) => {
         return incrementHistoryGroupInTransaction(tx as DbTransaction, "undo");
     });
 }
