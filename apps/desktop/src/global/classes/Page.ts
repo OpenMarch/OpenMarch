@@ -224,6 +224,7 @@ type BeatWithIndex = Beat & { index: number };
  * @param databasePages The pages from the database
  * @returns A list of Page objects
  */
+// eslint-disable-next-line max-lines-per-function
 export function fromDatabasePages({
     databasePages,
     allMeasures,
@@ -509,7 +510,6 @@ export const getPreviousPage = (
  * @param newCounts The target duration (in counts) for the page
  * @param pages Array of all pages in the project
  * @param beats Array of all beats in the project
- * @param fetchPagesFunction Callback to refresh pages after updating
  * @returns {Promise<void>} Resolves after updating page duration or handling update failure
  */
 export const updatePageCountRequest = ({

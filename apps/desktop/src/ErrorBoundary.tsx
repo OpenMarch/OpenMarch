@@ -30,6 +30,7 @@ export default class ErrorBoundary extends React.Component<
         window.location.reload();
     };
 
+    // eslint-disable-next-line max-lines-per-function
     render() {
         if (this.state.hasError) {
             return (
@@ -113,7 +114,7 @@ export default class ErrorBoundary extends React.Component<
                                     className="flex h-full w-full items-center justify-center gap-4"
                                     size="compact"
                                     onClick={() => {
-                                        navigator.clipboard.writeText(
+                                        void navigator.clipboard.writeText(
                                             "contact@openmarch.com",
                                         );
                                         alert("Email copied to clipboard!");

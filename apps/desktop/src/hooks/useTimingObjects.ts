@@ -24,6 +24,7 @@ export type TimingObjects = {
     hasError: boolean;
 };
 
+// eslint-disable-next-line max-lines-per-function
 export const _combineTimingObjects = (
     results: [
         UseQueryResult<DatabasePage[]>,
@@ -67,18 +68,18 @@ export const _combineTimingObjects = (
         console.error("Utility query error:", results[3]);
     }
 
-    const fetchTimingObjects = () => {
-        queryClient.invalidateQueries({
+    const fetchTimingObjects = async () => {
+        await queryClient.invalidateQueries({
             queryKey: allDatabaseBeatsQueryOptions().queryKey,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
+            queryKey: getUtilityQueryOptions().queryKey,
+        });
+        void queryClient.invalidateQueries({
             queryKey: allDatabasePagesQueryOptions().queryKey,
         });
-        queryClient.invalidateQueries({
+        void queryClient.invalidateQueries({
             queryKey: allDatabaseMeasuresQueryOptions().queryKey,
-        });
-        queryClient.invalidateQueries({
-            queryKey: getUtilityQueryOptions().queryKey,
         });
     };
 

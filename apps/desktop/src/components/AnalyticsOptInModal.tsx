@@ -9,6 +9,7 @@ interface AnalyticsOptInModalProps {
     onChoice: (hasOptedIn: boolean) => void;
 }
 
+// eslint-disable-next-line max-lines-per-function
 export default function AnalyticsOptInModal({
     onChoice,
 }: AnalyticsOptInModalProps) {
@@ -38,7 +39,7 @@ export default function AnalyticsOptInModal({
             }
         };
 
-        checkEnv();
+        void checkEnv();
 
         return () => {
             if (timer) clearTimeout(timer);

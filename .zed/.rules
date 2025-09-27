@@ -167,7 +167,7 @@ export const useCreateTableName = () => {
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: tableNameKeys.lists(),
             });
         },
@@ -203,13 +203,13 @@ export const useUpdateTableName = () => {
         onSuccess: (data, variables) => {
             // Invalidate specific queries
             variables.forEach(({ id }) => {
-                queryClient.invalidateQueries({
+                void queryClient.invalidateQueries({
                     queryKey: tableNameKeys.detail(id),
                 });
             });
 
             // Invalidate list queries
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: tableNameKeys.lists(),
             });
         },
@@ -236,13 +236,13 @@ export const useDeleteTableName = () => {
         onSuccess: (data, variables) => {
             // Invalidate specific queries
             variables.forEach((id) => {
-                queryClient.invalidateQueries({
+                void queryClient.invalidateQueries({
                     queryKey: tableNameKeys.detail(id),
                 });
             });
 
             // Invalidate list queries
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: tableNameKeys.lists(),
             });
         },

@@ -62,7 +62,7 @@ export const allDatabaseBeatsQueryOptions = () => {
 };
 
 export const fetchBeats = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
 export const createBeatsMutationOptions = (qc: QueryClient) => {
@@ -73,7 +73,7 @@ export const createBeatsMutationOptions = (qc: QueryClient) => {
         }) => createBeats({ db, ...args }),
         onSuccess: (_, variables) => {
             // Invalidate all beat queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -92,12 +92,7 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
             const beatIds = new Set<number>();
             for (const modifiedArgs of variables) beatIds.add(modifiedArgs.id);
 
-            qc.invalidateQueries({
-                queryKey: Array.from(beatIds).map((beatId) =>
-                    beatKeys.byId(beatId),
-                ),
-            });
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -112,7 +107,7 @@ export const deleteBeatsMutationOptions = (qc: QueryClient) => {
         mutationFn: (beatIds: Set<number>) => deleteBeats({ db, beatIds }),
         onSuccess: (_, variables) => {
             // Invalidate all beat queries
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -127,7 +122,7 @@ export const shiftBeatsMutationOptions = (qc: QueryClient) => {
         mutationFn: (args: ShiftBeatsArgs) => shiftBeats({ db, ...args }),
         onSuccess: (_, variables) => {
             // Invalidate all beat queries since positions may have changed
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
@@ -142,7 +137,7 @@ export const flattenOrderMutationOptions = (qc: QueryClient) => {
         mutationFn: () => flattenOrder({ db }),
         onSuccess: () => {
             // Invalidate all beat queries since positions may have changed
-            qc.invalidateQueries({
+            void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
         },
