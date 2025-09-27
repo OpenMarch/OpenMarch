@@ -1,60 +1,64 @@
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
-import MarcherPage, {
+import {
     DatabaseMarcherPage,
     databaseMarcherPagesToMarcherPages,
 } from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
-import type { Shape } from "electron/database/tables/ShapeTable";
-import type { ShapePage } from "electron/database/tables/ShapePageTable";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
-import {
-    CubicCurve,
-    Line,
-    Path,
-    QuadraticCurve,
-    Spline,
-} from "@openmarch/path-utility";
+import { DatabaseShape, DatabaseShapePage } from "@/db-functions";
 
 export const mockMarchers: Marcher[] = [
-    new Marcher({
+    {
         id: 1,
         name: "Marc Sylvester",
         section: "Flute",
         drill_prefix: "F",
         drill_order: 1,
+        drill_number: "F1",
         notes: "Inducted in 2001 - DCI Hall of Fame (probably didn't play flute",
         year: "Freshman",
-    }),
-    new Marcher({
+        created_at: "some_time",
+        updated_at: "other_time",
+    },
+    {
         id: 2,
         name: "George Zingali",
         section: "Snare",
         drill_prefix: "S",
         drill_order: 1,
+        drill_number: "S1",
         notes: "Inducted in 1991 - DCI Hall of Fame",
         year: "Sophomore",
-    }),
-    new Marcher({
+        created_at: "some_time",
+        updated_at: "other_time",
+    },
+    {
         id: 3,
         name: "John Bilby",
         section: "Trumpet",
         drill_prefix: "T",
         drill_order: 1,
-        notes: undefined,
-        year: undefined,
-    }),
-    new Marcher({
+        drill_number: "T1",
+        notes: null,
+        year: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+    },
+    {
         id: 4,
         name: "",
         section: "Baritone",
         drill_prefix: "B",
         drill_order: 2,
-        notes: undefined,
-        year: undefined,
-    }),
+        drill_number: "B2",
+        notes: null,
+        year: null,
+        created_at: "some_time",
+        updated_at: "other_time",
+    },
 ] as const;
 
 export const mockPages: Page[] = [
@@ -111,159 +115,120 @@ export const mockPages: Page[] = [
 export const mockMarcherPages: DatabaseMarcherPage[] = [
     {
         id: 1,
-        id_for_html: "marcherPage_1",
         marcher_id: 1,
         page_id: 1,
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        path_data: new Path([
-            new Line({ x: 0, y: 0 }, { x: 100, y: 100 }),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 2,
-        id_for_html: "marcherPage_2",
         marcher_id: 2,
         page_id: 1,
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        path_data: new Path([
-            new QuadraticCurve(
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-            ),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 3,
-        id_for_html: "marcherPage_3",
         marcher_id: 3,
         page_id: 1,
         x: -200,
         y: -500,
         notes: null,
-        path_data: new Path([
-            new CubicCurve(
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-                { x: 300, y: 300 },
-            ),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 4,
-        id_for_html: "marcherPage_4",
         marcher_id: 1,
         page_id: 2,
         x: 0,
         y: 0,
         notes: "This is the first marcherPage",
-        path_data: new Path([
-            new Spline([
-                { x: 0, y: 0 },
-                { x: 100, y: 100 },
-                { x: 200, y: 200 },
-            ]),
-        ]).toJson(),
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 5,
-        id_for_html: "marcherPage_5",
         marcher_id: 2,
         page_id: 2,
         x: 284,
         y: 963.1,
         notes: "This is the second marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 6,
-        id_for_html: "marcherPage_6",
         marcher_id: 3,
         page_id: 2,
         x: -200,
         y: 105.015,
         notes: null,
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 1,
-        id_for_html: "marcherPage_7",
         marcher_id: 1,
         page_id: 3,
         x: 50,
         y: 50,
         notes: "This is the first marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 2,
-        id_for_html: "marcherPage_8",
         marcher_id: 2,
         page_id: 3,
         x: 0,
         y: 0,
         notes: "This is the second marcherPage",
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
     {
         id: 3,
-        id_for_html: "marcherPage_9",
         marcher_id: 3,
         page_id: 3,
         x: -200,
         y: -500,
         notes: null,
-        path_data: null,
-        pathway_notes: null,
         created_at: "some_time",
         updated_at: "other_time",
         path_data_id: null,
-        path_position: null,
+        path_start_position: null,
+        path_end_position: null,
     },
 ] as const;
 
@@ -303,7 +268,7 @@ export const mockMarcherLines: MarcherLine[] = [
     }),
 ] as const;
 
-export const mockShapes: Shape[] = [
+export const mockShapes: DatabaseShape[] = [
     {
         id: 1,
         name: "Shape 1",
@@ -327,7 +292,7 @@ export const mockShapes: Shape[] = [
     },
 ] as const;
 
-export const mockShapePages: ShapePage[] = [
+export const mockShapePages: DatabaseShapePage[] = [
     {
         id: 1,
         shape_id: 1,

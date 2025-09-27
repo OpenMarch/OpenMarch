@@ -1,9 +1,4 @@
-import type { DatabaseResponse } from "electron/database/DatabaseActions";
-import type {
-    DatabaseBeat,
-    ModifiedBeatArgs,
-    NewBeatArgs,
-} from "electron/database/tables/BeatTable";
+import type { DatabaseBeat } from "@/db-functions";
 
 /**
  * A Beat represents a specific point in time in the show.
@@ -26,56 +21,6 @@ interface Beat {
     readonly timestamp: number;
 }
 export default Beat;
-
-/**
- * Creates multiple beats in the database and optionally refreshes the beats data.
- * @param beats - An array of new beat arguments to be created.
- * @param fetchBeatsFunction - A function to fetch updated beats after successful creation. This should update the stores
- * @returns A promise resolving to the database response containing created beats.
- */
-export const createBeats = async (
-    beats: NewBeatArgs[],
-    fetchBeatsFunction: () => Promise<void>,
-    startingPosition?: number,
-): Promise<DatabaseResponse<DatabaseBeat[]>> => {
-    const response = await window.electron.createBeats(beats, startingPosition);
-    if (response.success) fetchBeatsFunction();
-    else console.error("Failed to create beats", response.error);
-    return response;
-};
-
-/**
- * Updates multiple beats in the database and optionally refreshes the beats data.
- * @param beats - An array of beat modifications to be applied.
- * @param fetchBeatsFunction - A function to fetch updated beats after successful update. This should update the stores
- * @returns A promise resolving to the database response containing updated beats.
- */
-export const updateBeats = async (
-    beats: ModifiedBeatArgs[],
-    fetchBeatsFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseBeat[]>> => {
-    const response = await window.electron.updateBeats(beats);
-    if (response.success) fetchBeatsFunction();
-    else console.error("Failed to update beats", response.error);
-
-    return response;
-};
-
-/**
- * Deletes multiple beats from the database and optionally refreshes the beats data.
- * @param beatIds - A set of beat IDs to be deleted.
- * @param fetchBeatsFunction - A function to fetch updated beats after successful deletion. This should update the stores
- * @returns A promise resolving to the database response containing deleted beats.
- */
-export const deleteBeats = async (
-    beatIds: Set<number>,
-    fetchBeatsFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabaseBeat[]>> => {
-    const response = await window.electron.deleteBeats(beatIds);
-    if (response.success) fetchBeatsFunction();
-    else console.error("Failed to delete beats", response.error);
-    return response;
-};
 
 /**
  * Compares two Beat objects by their position property. Use this to sort the beats in a show in ascending order.
@@ -110,7 +55,7 @@ export const fromDatabaseBeat = (
         id: beat.id,
         position: beat.position,
         duration: beat.duration,
-        includeInMeasure: beat.include_in_measure >= 1,
+        includeInMeasure: beat.include_in_measure,
         notes: beat.notes,
         index,
         timestamp,

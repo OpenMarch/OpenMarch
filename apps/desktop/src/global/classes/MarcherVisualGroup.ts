@@ -2,13 +2,13 @@ import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
-import { useMarcherStore } from "@/stores/MarcherStore";
-import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import Marcher from "@/global/classes/Marcher";
 import {
     getSectionAppearance,
     SectionAppearance,
 } from "@/global/classes/SectionAppearance";
+import EditablePath from "./canvasObjects/EditablePath";
+import { FieldTheme } from "@openmarch/core";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -23,7 +23,7 @@ export default class MarcherVisualGroup {
 
     /** Unselectable visual elements of pathways */
     previousPathway: Pathway;
-    nextPathway: Pathway;
+    nextPathway: EditablePath;
     previousMidpoint: Midpoint;
     nextMidpoint: Midpoint;
     previousEndPoint: Endpoint;
@@ -34,7 +34,15 @@ export default class MarcherVisualGroup {
      * @param marcher the marcher this visual group is associated with
      * @param sectionAppearance section appearances to apply to the visuals
      */
-    constructor(marcher: Marcher, sectionAppearance?: SectionAppearance) {
+    constructor({
+        marcher,
+        sectionAppearance,
+        fieldTheme,
+    }: {
+        marcher: Marcher;
+        sectionAppearance?: SectionAppearance;
+        fieldTheme: FieldTheme;
+    }) {
         this.marcherId = marcher.id;
 
         this.canvasMarcher = new CanvasMarcher({
@@ -50,12 +58,8 @@ export default class MarcherVisualGroup {
             color: "black",
             strokeWidth: 2,
         });
-        this.nextPathway = new Pathway({
-            marcherId: this.marcherId,
-            start: { x: 0, y: 0 },
-            end: { x: 0, y: 0 },
-            color: "black",
-            strokeWidth: 2,
+        this.nextPathway = new EditablePath({
+            fieldTheme,
         });
 
         this.previousMidpoint = new Midpoint({
@@ -115,43 +119,25 @@ export default class MarcherVisualGroup {
  * Creates a MarcherVisualGroup for each marcher in the receivedMarchers array.
  * Updates existing visuals or creates new ones as needed.
  */
-export function marcherVisualsFromMarchers(
-    receivedMarchers: Marcher[],
-    sectionAppearances?: SectionAppearance[],
-): Record<number, MarcherVisualGroup> {
+export function marcherVisualsFromMarchers({
+    receivedMarchers,
+    sectionAppearances,
+    fieldTheme,
+}: {
+    receivedMarchers: Marcher[];
+    sectionAppearances?: SectionAppearance[];
+    fieldTheme: FieldTheme;
+}): Record<number, MarcherVisualGroup> {
     const newVisuals: Record<number, MarcherVisualGroup> = {};
     for (const marcher of receivedMarchers) {
         const appearance = sectionAppearances
             ? getSectionAppearance(marcher.section, sectionAppearances)
             : undefined;
-        newVisuals[marcher.id] = new MarcherVisualGroup(marcher, appearance);
+        newVisuals[marcher.id] = new MarcherVisualGroup({
+            marcher,
+            sectionAppearance: appearance,
+            fieldTheme,
+        });
     }
     return newVisuals;
-}
-
-/**
- * Fetches marchers and their associated visuals from the store.
- */
-export async function fetchMarchersAndVisuals() {
-    await useMarcherStore.getState().fetchMarchers();
-    const marchers = useMarcherStore.getState().marchers;
-    const sectionAppearances = await SectionAppearance.getSectionAppearances();
-    await useMarcherVisualStore
-        .getState()
-        .updateMarcherVisuals(marchers, sectionAppearances);
-}
-
-/**
- * Combined store fetch to retrieve marchers and their associated visuals.
- */
-export function useMarchersWithVisuals() {
-    const marchers = useMarcherStore((state) => state.marchers);
-    const marcherVisuals = useMarcherVisualStore(
-        (state) => state.marcherVisuals,
-    );
-    const updateMarcherVisuals = useMarcherVisualStore(
-        (state) => state.updateMarcherVisuals,
-    );
-
-    return { marchers, marcherVisuals, updateMarcherVisuals };
 }

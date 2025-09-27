@@ -1,10 +1,9 @@
 import {
-    IPathSegment,
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 import PathCommander from "svg-path-commander";
 
@@ -71,6 +70,14 @@ export class Arc implements IControllableSegment {
         };
     }
 
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
+    }
+
+    getEndPoint(): Point {
+        return this.endPointOverride || this.endPoint;
+    }
+
     private convertToCenterBased(): {
         center: Point;
         startAngle: number;
@@ -120,8 +127,8 @@ export class Arc implements IControllableSegment {
     }
 
     toSvgString(): string {
-        const effectiveStartPoint = this.startPointOverride || this.startPoint;
-        const effectiveEndPoint = this.endPointOverride || this.endPoint;
+        const effectiveStartPoint = this.getStartPoint();
+        const effectiveEndPoint = this.getEndPoint();
 
         return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} A ${this.rx} ${this.ry} ${this.xAxisRotation} ${this.largeArcFlag} ${this.sweepFlag} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
@@ -130,18 +137,18 @@ export class Arc implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
+                startPoint: { ...this.getStartPoint() },
                 rx: this.rx,
                 ry: this.ry,
                 xAxisRotation: this.xAxisRotation,
                 largeArcFlag: this.largeArcFlag,
                 sweepFlag: this.sweepFlag,
-                endPoint: { ...this.endPoint },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "arc") {
             throw new Error(`Cannot create Arc from data of type ${data.type}`);
         }
@@ -169,15 +176,15 @@ export class Arc implements IControllableSegment {
 
         const controlPoints: ControlPoint[] = [
             {
-                id: `cp-${segmentIndex}-start`,
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-end`,
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 1,
                 type: "end" as ControlPointType,
             },
         ];
@@ -194,9 +201,9 @@ export class Arc implements IControllableSegment {
         };
 
         controlPoints.push({
-            id: `cp-${segmentIndex}-center`,
             point: centerPoint,
             segmentIndex,
+            pointIndex: 2,
             type: "center" as ControlPointType,
         });
 

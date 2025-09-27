@@ -1,8 +1,8 @@
 import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
-import type { ModifiedBeatArgs } from "../../../../electron/database/tables/BeatTable";
-import { updateBeats } from "@/global/classes/Beat";
+import { ModifiedBeatArgs, updateBeats } from "@/db-functions";
+import { db } from "@/global/database/db";
 
 /**
  * Calculates the modified beats when a beat's duration is changed. The duration is calculated from the region's width.
@@ -122,13 +122,13 @@ export const getModifiedBeats = ({
  * Allows beats to be resized (which updates their duration) and updates the database.
  */
 export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
-    private fetchTimingObjects: () => Promise<void>;
+    private fetchTimingObjects: () => void;
 
     constructor(
         wsRegions: any,
         beats: Beat[],
         measures: Measure[],
-        fetchTimingObjects: () => Promise<void>,
+        fetchTimingObjects: () => void,
     ) {
         super(wsRegions, beats, measures);
         this.fetchTimingObjects = fetchTimingObjects;
@@ -207,18 +207,13 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
 
             try {
                 // Update the beat in the database
-                const response = await updateBeats(
+                await updateBeats({
+                    db,
                     modifiedBeats,
-                    async () => {},
-                );
-
-                if (!response.success) {
-                    console.error("Failed to update beat:", response.error);
-                    throw new Error();
-                }
+                });
 
                 // Refresh the timing objects to reflect the changes
-                await this.fetchTimingObjects();
+                this.fetchTimingObjects();
             } catch (error) {
                 console.error("Error updating beat:", error);
                 throw new Error();
@@ -229,7 +224,7 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
                 start: region.start,
                 end: region.start + beat.duration,
             });
-            await this.fetchTimingObjects();
+            this.fetchTimingObjects();
         }
     };
 }

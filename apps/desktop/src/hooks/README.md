@@ -80,7 +80,7 @@ updateData.mutate(newData);
 ```
 hooks/
 ├── queries/                    # React Query hooks
-│   ├── usePathways.ts         # Pathways table queries & mutations
+│   ├── useAllPathways.ts         # Pathways table queries & mutations
 │   ├── useMarcherPages.ts     # Marcher pages queries & mutations
 │   ├── useMidsets.ts          # Midsets table queries & mutations
 │   └── index.ts               # Export all hooks

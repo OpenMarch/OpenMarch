@@ -18,7 +18,6 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
-import { FIRST_PAGE_ID } from "../database/constants";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import {
@@ -132,7 +131,7 @@ async function createWindow(title?: string) {
 
     if (url) {
         // electron-vite-vue#298
-        win.loadURL(url);
+        void win.loadURL(url);
         win.on("ready-to-show", () => {
             // Always open DevTools in codegen mode for debugging
             if (win && (isCodegen || process.env.NODE_ENV === "development")) {
@@ -140,7 +139,7 @@ async function createWindow(title?: string) {
             }
         });
     } else {
-        win.loadFile(indexHtml);
+        void win.loadFile(indexHtml);
     }
 
     // Test actively push message to the Electron-Renderer
@@ -172,7 +171,7 @@ async function createWindow(title?: string) {
 
     // Make all links open with the browser, not with the application
     win.webContents.setWindowOpenHandler(({ url }) => {
-        if (url.startsWith("https:")) shell.openExternal(url);
+        if (url.startsWith("https:")) void shell.openExternal(url);
         return { action: "deny" };
     });
 
@@ -180,7 +179,7 @@ async function createWindow(title?: string) {
     update(win);
 }
 
-app.whenReady().then(async () => {
+void app.whenReady().then(async () => {
     app.setName("OpenMarch");
     console.log("NODE:", process.versions.node);
 
@@ -213,18 +212,12 @@ app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
-    ipcMain.handle("history:undo", async () => executeHistoryAction("undo"));
-    ipcMain.handle("history:redo", async () => executeHistoryAction("redo"));
     ipcMain.handle("audio:insert", async () => insertAudioFile());
     ipcMain.handle("field_properties:export", async () =>
         exportFieldPropertiesFile(),
     );
     ipcMain.handle("field_properties:import", async () =>
         importFieldPropertiesFile(),
-    );
-    ipcMain.handle(
-        "selectedPageId:get",
-        async () => store.get("selectedPageId") || FIRST_PAGE_ID,
     );
 
     // Recent files handlers
@@ -240,7 +233,7 @@ app.whenReady().then(async () => {
         store.set("databasePath", filePath);
         addRecentFile(filePath);
 
-        setActiveDb(filePath);
+        await setActiveDb(filePath);
         return 200;
     });
 
@@ -251,27 +244,6 @@ app.whenReady().then(async () => {
 });
 
 function initGetters() {
-    // Store selected page and marchers
-    ipcMain.on("send:selectedPage", async (_, selectedPageId: number) => {
-        store.set("selectedPageId", selectedPageId);
-    });
-    ipcMain.on(
-        "send:selectedMarchers",
-        async (_, selectedMarchersId: number[]) => {
-            store.set("selectedMarchersId", selectedMarchersId);
-        },
-    );
-
-    // Store locked x or y axis
-    store.set("lockX", false);
-    store.set("lockY", false);
-    ipcMain.on("send:lockX", async (_, lockX: boolean) => {
-        store.set("lockX", lockX as boolean);
-    });
-    ipcMain.on("send:lockY", async (_, lockY: boolean) => {
-        store.set("lockY", lockY as boolean);
-    });
-
     // Exports
     ipcMain.handle("export:pdf", async (_, params) => {
         return await PDFExportService.export(
@@ -382,7 +354,7 @@ ipcMain.on("window:maximize", () => {
 });
 
 ipcMain.on("window:close", () => {
-    closeCurrentFile();
+    void closeCurrentFile();
     win?.close();
 });
 
@@ -415,7 +387,7 @@ ipcMain.handle("set-language", (event, language) => {
 // file management
 
 ipcMain.handle("closeCurrentFile", () => {
-    closeCurrentFile();
+    void closeCurrentFile();
 });
 
 // Plugins
@@ -472,6 +444,37 @@ ipcMain.handle("plugins:uninstall", async (_, fileName) => {
     }
 });
 
+// Log handler - allows renderer to send logs to main process
+ipcMain.handle(
+    "log:print",
+    (
+        _,
+        level: "log" | "info" | "warn" | "error",
+        message: string,
+        ...args: any[]
+    ) => {
+        const timestamp = new Date().toISOString();
+        const prefix = `[Renderer ${timestamp}]`;
+
+        switch (level) {
+            case "log":
+                console.log(prefix, message, ...args);
+                break;
+            case "info":
+                console.info(prefix, message, ...args);
+                break;
+            case "warn":
+                console.warn(prefix, message, ...args);
+                break;
+            case "error":
+                console.error(prefix, message, ...args);
+                break;
+            default:
+                console.log(prefix, message, ...args);
+        }
+    },
+);
+
 app.on("second-instance", () => {
     if (win) {
         // Focus on the main window if the user tried to open another
@@ -485,7 +488,7 @@ app.on("activate", () => {
     if (allWindows.length) {
         allWindows[0].focus();
     } else {
-        createWindow();
+        void createWindow();
     }
 });
 
@@ -500,9 +503,9 @@ ipcMain.handle("open-win", (_, arg) => {
     });
 
     if (process.env.VITE_DEV_SERVER_URL) {
-        childWindow.loadURL(`${url}#${arg}`);
+        void childWindow.loadURL(`${url}#${arg}`);
     } else {
-        childWindow.loadFile(indexHtml, { hash: arg });
+        void childWindow.loadFile(indexHtml, { hash: arg });
     }
 });
 
@@ -818,35 +821,6 @@ export async function insertAudioFile(): Promise<
 }
 
 /**
- * Performs an undo or redo action on the history stacks based on the type.
- *
- * @param type 'undo' or 'redo'
- * @returns 200 for success, -1 for failure
- */
-export async function executeHistoryAction(type: "undo" | "redo") {
-    const response = DatabaseServices.performHistoryAction(type);
-
-    if (!response.success) {
-        console.log(`Error ${type}ing`);
-        return -1;
-    }
-
-    // send a message to the renderer to fetch the updated data
-    win?.webContents.send("history:action", response);
-
-    return 200;
-}
-
-/**
- * Triggers the renderer to fetch all data of the given type.
- *
- * @param type 'marcher' | 'page' | 'marcher_page'
- */
-export async function triggerFetch(type: "marcher" | "page" | "marcher_page") {
-    win?.webContents.send("fetch:all", type);
-}
-
-/**
  * Sets the active database path and reloads the window.
  *
  * @param path path to the database file
@@ -918,7 +892,7 @@ async function setActiveDb(path: string, isNewFile = false) {
         );
 
         if (isNewFile) {
-            await migrator.initializeDatabase(db);
+            await migrator.initializeDatabase(drizzleDb);
         }
 
         store.set("databasePath", path); // Save current db path

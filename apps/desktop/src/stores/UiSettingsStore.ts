@@ -130,9 +130,6 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
                 uiSettings.lockX = false;
             }
 
-            window.electron.sendLockX(uiSettings.lockX);
-            window.electron.sendLockY(uiSettings.lockY);
-
             set({ uiSettings: uiSettings });
             saveSettings(uiSettings);
         },

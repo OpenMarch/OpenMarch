@@ -9,7 +9,7 @@ import {
 } from "@/components/music/TempoGroup/TempoGroup";
 import { Button } from "@openmarch/ui";
 import React, { useEffect, useMemo, useRef } from "react";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
@@ -34,7 +34,7 @@ export default function MusicModal({
 
 function MusicModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const { measures } = useTimingObjectsStore();
+    const { measures } = useTimingObjects();
     const [newGroupFormIndex, setNewGroupFormIndex] = React.useState<
         number | null
     >(null);
@@ -45,6 +45,7 @@ function MusicModalContents() {
         () => TempoGroupsFromMeasures(measures),
         [measures],
     );
+
     const newFormRef = useRef<HTMLDivElement>(null);
     const { t } = useTolgee();
 
@@ -112,7 +113,10 @@ function MusicModalContents() {
                 </div>
                 <div id="tempo-groups" className="mx-12 flex flex-col gap-8">
                     {tempoGroups.map((tempoGroup, i) => (
-                        <div key={i} className="flex flex-col gap-8">
+                        <div
+                            key={tempoGroup.measures?.[0]?.id ?? i}
+                            className="flex flex-col gap-8"
+                        >
                             <TempoGroupCard
                                 tempoGroup={tempoGroup}
                                 index={i}

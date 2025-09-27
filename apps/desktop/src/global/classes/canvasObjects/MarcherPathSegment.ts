@@ -1,14 +1,14 @@
 import { fabric } from "fabric";
-import { IPathSegment } from "@openmarch/path-utility";
+import { IControllableSegment } from "@openmarch/path-utility";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { rgbaToString } from "@openmarch/core";
 
 export class MarcherPathSegment {
-    private _segment: IPathSegment;
+    private _segment: IControllableSegment;
     private _canvas: OpenMarchCanvas;
     private _fabricObject: fabric.Object;
 
-    constructor(segment: IPathSegment, canvas: OpenMarchCanvas) {
+    constructor(segment: IControllableSegment, canvas: OpenMarchCanvas) {
         this._segment = segment;
         this._canvas = canvas;
         this._fabricObject = this._createFabricObject();

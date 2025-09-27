@@ -20,11 +20,11 @@
             "setAllToNext": "Fijar todas las coordenadas de marchadores a la página siguiente",
             "setAllToNextSuccess": "Configurado con éxito todas las {count} coordenadas de marchadores en la página {currentPage} a las coordenadas de la siguiente página {nextPage}",
             "setAllToPrevious": "Fijar todas las coordenadas de marchadores a la página anterior",
-            "setAllToPreviousSuccess": "Configurado con éxito todas las {{count}} coordenadas de marchadores en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}",
+            "setAllToPreviousSuccess": "Configurado con éxito todas las {count} coordenadas de marchadores en la página {currentPage} a las coordenadas de la página anterior {previousPage}",
             "setSelectedToNext": "Fijar las coordenadas de los marchadores seleccionados a la página siguiente",
             "setSelectedToNextSuccess": "{count, plural, one {Configuró exitosamente {count} coordenada de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}} other {Configuró exitosamente {count} coordenadas de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}}}",
             "setSelectedToPrevious": "Fijar las coordenadas de los marchadores seleccionados a la página anterior",
-            "setSelectedToPreviousSuccess": "Configurado con éxito {{count}} coordenada{{count, plural, one {} other {s}}} de marcha en la página {{currentPage}} a las coordenadas de la página anterior {{previousPage}}"
+            "setSelectedToPreviousSuccess": "Configurado con éxito {count} coordenada{{count, plural, one {} other {s}}} de marcha en la página {currentPage} a las coordenadas de la página anterior {previousPage}"
         },
         "cursor": {
             "defaultMode": "Establecer modo cursor a predeterminado",
@@ -67,9 +67,9 @@
             "delete": "Elimina las formas seleccionadas actualmente"
         },
         "swap": {
-            "error": "No se pudo intercambiar marchadores {{marcher1}} y {{marcher2}}",
+            "error": "No se pudo intercambiar marchadores {marcher1} y {marcher2}",
             "mustSelectTwo": "Solo se puede intercambiar cuando se seleccionan 2 marchadores.",
-            "success": "Intercambiados marchadores {{marcher1}} y {{marcher2}}",
+            "success": "Intercambiados marchadores {marcher1} y {marcher2}",
             "swap": "Intercambiar marchadores"
         },
         "ui": {

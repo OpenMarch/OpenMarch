@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from "react";
-import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import {
     Button,
     SelectTriggerCompact,
@@ -20,11 +19,7 @@ import {
 } from "@openmarch/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import {
-    SectionAppearance,
-    ModifiedSectionAppearanceArgs,
-    NewSectionAppearanceArgs,
-} from "@/global/classes/SectionAppearance";
+import { SectionAppearance } from "@/global/classes/SectionAppearance";
 import * as Form from "@radix-ui/react-form";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import ColorPicker from "../../ui/ColorPicker";
@@ -35,13 +30,35 @@ import { MarcherListContents } from "../MarchersModal";
 import FormField from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import { getTranslatedSectionName } from "@/global/classes/Sections";
+import {
+    ModifiedSectionAppearanceArgs,
+    NewSectionAppearanceArgs,
+} from "@/db-functions";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    allSectionAppearancesQueryOptions,
+    createSectionAppearancesMutationOptions,
+    deleteSectionAppearancesMutationOptions,
+    updateSectionAppearancesMutationOptions,
+} from "@/hooks/queries";
 
 export default function SectionAppearanceList() {
     const { t } = useTolgee();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
-    const { sectionAppearances, fetchSectionAppearances } =
-        useSectionAppearanceStore();
+    const queryClient = useQueryClient();
+    const { data: sectionAppearances } = useQuery(
+        allSectionAppearancesQueryOptions(),
+    );
+    const { mutate: createSectionAppearances } = useMutation(
+        createSectionAppearancesMutationOptions(queryClient),
+    );
+    const { mutate: updateSectionAppearances } = useMutation(
+        updateSectionAppearancesMutationOptions(queryClient),
+    );
+    const { mutate: deleteSectionAppearances } = useMutation(
+        deleteSectionAppearancesMutationOptions(queryClient),
+    );
     const [localAppearances, setLocalAppearances] = useState<
         SectionAppearance[]
     >([]);
@@ -59,13 +76,9 @@ export default function SectionAppearanceList() {
 
     const shapeOptions = ["circle", "square", "triangle", "x"];
 
-    useEffect(() => {
-        fetchSectionAppearances();
-    }, [fetchSectionAppearances]);
-
     // Reset change tracking when source data changes
     useEffect(() => {
-        setLocalAppearances(sectionAppearances);
+        setLocalAppearances(sectionAppearances || []);
         clearChanges();
     }, [sectionAppearances]);
 
@@ -81,23 +94,17 @@ export default function SectionAppearanceList() {
         }
 
         if (modifiedAppearances.length > 0) {
-            await SectionAppearance.updateSectionAppearances(
-                modifiedAppearances,
-            );
+            updateSectionAppearances(modifiedAppearances);
         }
 
         if (deletionsRef.current.length > 0) {
-            await SectionAppearance.deleteSectionAppearances(
-                deletionsRef.current,
-            );
+            deleteSectionAppearances(new Set(deletionsRef.current));
         }
-
-        await fetchSectionAppearances();
     }
 
     // Handle canceling edits
     function handleCancel() {
-        setLocalAppearances(sectionAppearances);
+        setLocalAppearances(sectionAppearances || []);
         clearChanges();
     }
 
@@ -135,7 +142,7 @@ export default function SectionAppearanceList() {
     function getDeletedSectionNames() {
         return deletionsRef.current
             .map((id) => {
-                const sectionName = sectionAppearances.find(
+                const sectionName = sectionAppearances?.find(
                     (appearance) => appearance.id === id,
                 )?.section;
                 return getTranslatedSectionName(sectionName || "", t);
@@ -148,7 +155,7 @@ export default function SectionAppearanceList() {
         .map((section) => section.name)
         .filter(
             (sectionName) =>
-                !sectionAppearances.some(
+                !sectionAppearances?.some(
                     (appearance) => appearance.section === sectionName,
                 ),
         );
@@ -166,8 +173,7 @@ export default function SectionAppearanceList() {
         };
 
         try {
-            await SectionAppearance.createSectionAppearances([newAppearance]);
-            await fetchSectionAppearances();
+            await createSectionAppearances([newAppearance]);
             toast.success(`Added style for ${sectionName}`);
         } catch (error) {
             toast.error("Failed to create section appearance");
@@ -238,7 +244,7 @@ export default function SectionAppearanceList() {
             <Form.Root
                 onSubmit={(event) => {
                     event.preventDefault();
-                    handleSubmit();
+                    void handleSubmit();
                 }}
                 className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
             >

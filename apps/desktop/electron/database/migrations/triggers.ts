@@ -1,4 +1,6 @@
-import Database from "better-sqlite3";
+import { DbConnection } from "../tables/__test__/testUtils";
+import { DB } from "../db";
+import { sql } from "drizzle-orm";
 
 const triggers = {
     prevent_first_beat_modification: `
@@ -55,10 +57,10 @@ const triggers = {
  * Drops all triggers from the database.
  * @param db - The database instance to drop triggers from.
  */
-export const dropAllTriggers = (db: Database.Database) => {
+export const dropAllTriggers = async (db: DbConnection | DB) => {
     for (const [name] of Object.entries(triggers)) {
         try {
-            db.exec(`DROP TRIGGER IF EXISTS ${name}`);
+            await db.run(sql.raw(`DROP TRIGGER IF EXISTS ${name}`));
         } catch (error) {
             console.error(`Error dropping trigger ${name}:`, error);
             throw error;
@@ -70,10 +72,10 @@ export const dropAllTriggers = (db: Database.Database) => {
  * Creates all triggers in the database.
  * @param db - The database instance to create triggers in.
  */
-export const createAllTriggers = (db: Database.Database) => {
+export const createAllTriggers = async (db: DbConnection | DB) => {
     for (const [name, trigger] of Object.entries(triggers)) {
         try {
-            db.exec(trigger);
+            await db.run(sql.raw(`${trigger}`));
         } catch (error) {
             console.error(`Error creating trigger ${name}:`, error);
             throw error;

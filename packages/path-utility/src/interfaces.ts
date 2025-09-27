@@ -2,13 +2,20 @@
  * A continuous path composed of one or more segments.
  */
 export interface IPath {
-    readonly segments: IPathSegment[];
+    readonly id: number;
+    readonly segments: IControllableSegment[];
 
     /** Returns the total length of the path by summing segment lengths. */
     getTotalLength(): number;
 
     /** Returns a point at a given distance along the entire path. */
     getPointAtLength(dist: number): Point;
+
+    /** Returns the start point of the path. */
+    getStartPoint(): Point;
+
+    /** Returns the last point of the path. */
+    getLastPoint(): Point;
 
     /** Returns the full SVG path `d` attribute string for all segments. */
     toSvgString(): string;
@@ -18,12 +25,28 @@ export interface IPath {
 
     /** Returns the path from a JSON representation. */
     fromJson(json: string): IPath;
+
+    /**
+     * Gets the bounding box based on all control points from all segments.
+     * This includes start points, end points, and any intermediate control points
+     * like bezier curve control points, arc centers, etc.
+     *
+     * @returns An object with minX, minY, maxX, maxY, width, and height properties, or null if no segments exist
+     */
+    getBoundsByControlPoints(): {
+        minX: number;
+        minY: number;
+        maxX: number;
+        maxY: number;
+        width: number;
+        height: number;
+    } | null;
 }
 
 /**
  * Base interface for all path segments.
  */
-export interface IPathSegment {
+export interface IControllableSegment {
     /** The type of the segment (e.g., 'line', 'arc', 'cubic-curve', 'spline') */
     readonly type: string;
 
@@ -39,6 +62,12 @@ export interface IPathSegment {
     /** Returns a point at a given distance along this segment (0 to getLength()). */
     getPointAtLength(dist: number): Point;
 
+    /** Returns the start point of this segment. */
+    getStartPoint(): Point;
+
+    /** Returns the end point of this segment. */
+    getEndPoint(): Point;
+
     /** Returns the SVG path string for this segment. */
     toSvgString(includeMoveTo?: boolean): string;
 
@@ -46,7 +75,22 @@ export interface IPathSegment {
     toJson(): SegmentJsonData;
 
     /** Creates a segment from JSON data. */
-    fromJson(data: SegmentJsonData): IPathSegment;
+    fromJson(data: SegmentJsonData): IControllableSegment;
+
+    /**
+     * Returns all control points for this segment
+     *
+     * @param segmentIndex - The index of the segment this control point belongs to
+     * @returns An array of control points for the segment
+     */
+    getControlPoints(segmentIndex: number): ControlPoint[];
+
+    /** Updates a control point and returns a new segment instance */
+    updateControlPoint(
+        controlPointType: ControlPointType,
+        pointIndex: number | undefined,
+        newPoint: Point,
+    ): IControllableSegment;
 }
 
 /**
@@ -73,19 +117,38 @@ export interface PathJsonData {
 }
 
 /**
- * Represents a control point that can be interactively moved.
+ * A hook to identify a point on a segment.
+ */
+export interface SegmentHook {
+    type: ControlPointType;
+    pointIndex: number;
+    segmentIndex: number;
+}
+
+/**
+ * A base control point that can be used to find a control point in a segment.
  */
 export interface ControlPoint {
-    /** Unique identifier for this control point */
-    id: string;
     /** Current position of the control point */
     point: Point;
     /** Index of the segment this control point belongs to */
     segmentIndex: number;
-    /** Type of control point within the segment */
+    /** An type to find the control point in a segment. Can either be a type or an index. */
     type: ControlPointType;
-    /** Index within the segment's control points (for segments with multiple control points) */
-    pointIndex?: number;
+    /** Index of the control point in the segment */
+    pointIndex: number;
+}
+
+/**
+ * Represents a control point that can be interactively moved.
+ */
+export interface GlobalControlPoint {
+    /** Unique type for this control point */
+    id: string;
+    /** Point of the control point */
+    point: Point;
+    /** Segment control points that this control point is connected to */
+    segmentHooks: SegmentHook[];
 }
 
 /**
@@ -106,21 +169,6 @@ export type ControlPointMoveCallback = (
     controlPointId: string,
     newPoint: Point,
 ) => void;
-
-/**
- * Interface for segments that support control point interaction.
- */
-export interface IControllableSegment extends IPathSegment {
-    /** Returns all control points for this segment */
-    getControlPoints(segmentIndex: number): ControlPoint[];
-
-    /** Updates a control point and returns a new segment instance */
-    updateControlPoint(
-        controlPointType: ControlPointType,
-        pointIndex: number | undefined,
-        newPoint: Point,
-    ): IControllableSegment;
-}
 
 /**
  * Configuration for control point visualization and interaction.

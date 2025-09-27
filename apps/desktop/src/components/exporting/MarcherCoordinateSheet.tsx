@@ -1,16 +1,19 @@
-import { useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPagesByMarcherQueryOptions,
+    fieldPropertiesQueryOptions,
+} from "@/hooks/queries";
 import React, { useEffect, useState } from "react";
-import { useMarcherPages } from "@/hooks/queries/useMarcherPages";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import Page, { measureRangeString } from "@/global/classes/Page";
-import MarcherPage, { getByMarcherId } from "@/global/classes/MarcherPage";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import Measure from "@/global/classes/Measure";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import Beat from "@/global/classes/Beat";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { useQuery } from "@tanstack/react-query";
 
 const FullPageSheetColumnWidths = {
     pageNumber: "10%",
@@ -45,10 +48,11 @@ export default function MarcherCoordinateSheetPreview({
     terse = false,
     useXY = false,
 }: MarcherCoordinateSheetProps) {
-    const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
-    const { data: fieldProperties } = useFieldProperties();
+    const { pages } = useTimingObjects()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByMarcherQueryOptions(marcher?.id || -1),
+    );
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
     const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>(
@@ -95,15 +99,18 @@ export default function MarcherCoordinateSheetPreview({
             } satisfies Measure;
         });
         if (example && fieldProperties) {
-            setMarcherToUse(
-                new Marcher({
-                    id: 1,
-                    name: t("exportCoordinates.exampleMarcherName"),
-                    section: t("exportCoordinates.exampleMarcherSection"),
-                    drill_prefix: "B",
-                    drill_order: 1,
-                }),
-            );
+            setMarcherToUse({
+                id: 1,
+                name: t("exportCoordinates.exampleMarcherName"),
+                section: t("exportCoordinates.exampleMarcherSection"),
+                drill_prefix: "B",
+                drill_order: 1,
+                drill_number: "B1",
+                year: null,
+                notes: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            });
             const pages = [
                 {
                     id: 1,
@@ -175,20 +182,17 @@ export default function MarcherCoordinateSheetPreview({
                     id: 1,
                     marcher_id: 1,
                     page_id: 1,
-                    id_for_html: "example-marcher-page-1",
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
                     path_data_id: null,
-                    path_position: null,
-                    path_data: null,
+                    path_start_position: null,
+                    path_end_position: null,
                     notes: null,
-                    pathway_notes: null,
                 },
                 {
                     id: 2,
                     marcher_id: 1,
                     page_id: 2,
-                    id_for_html: "example-marcher-page-2",
                     x:
                         fieldProperties.centerFrontPoint.xPixels +
                         2.1 * pixelsPerStep,
@@ -196,16 +200,14 @@ export default function MarcherCoordinateSheetPreview({
                         fieldProperties.centerFrontPoint.yPixels +
                         2 * pixelsPerStep,
                     path_data_id: null,
-                    path_position: null,
-                    path_data: null,
+                    path_start_position: null,
+                    path_end_position: null,
                     notes: null,
-                    pathway_notes: null,
                 },
                 {
                     id: 3,
                     marcher_id: 1,
                     page_id: 3,
-                    id_for_html: "example-marcher-page-3",
                     x:
                         fieldProperties.centerFrontPoint.xPixels -
                         5.21 * pixelsPerStep,
@@ -215,20 +217,25 @@ export default function MarcherCoordinateSheetPreview({
                             pixelsPerStep -
                             2.32 * pixelsPerStep),
                     path_data_id: null,
-                    path_position: null,
-                    path_data: null,
+                    path_start_position: null,
+                    path_end_position: null,
                     notes: null,
-                    pathway_notes: null,
                 },
             ]);
         } else {
             setMarcherToUse(marcher);
             setPagesToUse(pages);
-            setMarcherPagesToUse(
-                getByMarcherId(marcherPages, marcher?.id || -1),
-            );
+            setMarcherPagesToUse(Object.values(marcherPages));
         }
-    }, [marcher, marcherPages, pages, example, fieldProperties, t]);
+    }, [
+        marcher,
+        marcherPages,
+        pages,
+        example,
+        fieldProperties,
+        t,
+        marcherPagesLoaded,
+    ]);
     return (
         <StaticMarcherCoordinateSheet
             marcher={marcherToUse!}
@@ -544,7 +551,7 @@ export function StaticMarcherCoordinateSheet({
                                     if (!page || !rCoords) return null;
 
                                     return (
-                                        <tr key={marcherPage.id_for_html}>
+                                        <tr key={marcherPage.id}>
                                             <td
                                                 className="text-center"
                                                 aria-label="page name"
@@ -894,7 +901,7 @@ export function StaticQuarterMarcherSheet({
 
                             return (
                                 <tr
-                                    key={marcherPage.id_for_html}
+                                    key={marcherPage.id}
                                     style={{
                                         backgroundColor: isEven
                                             ? "#f0f0f0"

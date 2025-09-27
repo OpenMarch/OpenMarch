@@ -1,7 +1,7 @@
 import { FieldProperties } from "@openmarch/core";
 import { db, schema } from "../database/db";
 import { eq } from "drizzle-orm";
-import { incrementUndoGroup } from "./History";
+import { transactionWithHistory } from "../../db-functions/history";
 
 const { field_properties } = schema;
 
@@ -26,16 +26,18 @@ export async function getFieldProperties(): Promise<FieldProperties> {
 export async function updateFieldsPropertiesJSON(
     fieldPropertiesJson: string,
 ): Promise<string> {
-    const result = await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        return await tx
-            .update(field_properties)
-            .set({ json_data: fieldPropertiesJson })
-            .where(eq(field_properties.id, 1))
-            .returning()
-            .get();
-    });
+    const result = await transactionWithHistory(
+        db,
+        "updateFieldsPropertiesJSON",
+        async (tx) => {
+            return await tx
+                .update(field_properties)
+                .set({ json_data: fieldPropertiesJson })
+                .where(eq(field_properties.id, 1))
+                .returning()
+                .get();
+        },
+    );
     return result.json_data;
 }
 
@@ -51,15 +53,17 @@ export async function updateFieldProperties(
 export async function updateFieldPropertiesImage(
     image: Uint8Array,
 ): Promise<void> {
-    await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        return await tx
-            .update(field_properties)
-            .set({ image: image })
-            .where(eq(field_properties.id, 1))
-            .run();
-    });
+    await transactionWithHistory(
+        db,
+        "updateFieldPropertiesImage",
+        async (tx) => {
+            return await tx
+                .update(field_properties)
+                .set({ image: image })
+                .where(eq(field_properties.id, 1))
+                .run();
+        },
+    );
 }
 
 export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {
@@ -73,13 +77,15 @@ export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {
 }
 
 export async function deleteFieldPropertiesImage(): Promise<void> {
-    await db.transaction(async (tx) => {
-        await incrementUndoGroup(tx);
-
-        return await tx
-            .update(field_properties)
-            .set({ image: null })
-            .where(eq(field_properties.id, 1))
-            .run();
-    });
+    await transactionWithHistory(
+        db,
+        "deleteFieldPropertiesImage",
+        async (tx) => {
+            return await tx
+                .update(field_properties)
+                .set({ image: null })
+                .where(eq(field_properties.id, 1))
+                .run();
+        },
+    );
 }

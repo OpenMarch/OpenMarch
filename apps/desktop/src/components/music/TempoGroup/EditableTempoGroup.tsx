@@ -3,16 +3,14 @@ import {
     patternStringToLongBeatIndexes,
     splitPatternString,
     TempoGroup,
-    updateManualTempos,
-    updateTempoGroup,
+    useUpdateTempoGroup,
+    useUpdateManualTempos,
 } from "@/components/music/TempoGroup/TempoGroup";
 import { Input, Button, UnitInput } from "@openmarch/ui";
 import { Form, FormField, Label } from "@radix-ui/react-form";
 import clsx from "clsx";
 import React, { useMemo, useState } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import { toast } from "sonner";
 import { T, useTolgee } from "@tolgee/react";
 
 interface EditableTempoGroupProps {
@@ -25,8 +23,9 @@ export default function EditableTempoGroup({
     setIsVisible,
 }: EditableTempoGroupProps) {
     const subTextClass = clsx("text-text-subtitle text-sub");
-    const { fetchTimingObjects } = useTimingObjectsStore();
     const { t } = useTolgee();
+    const updateTempoGroupMutation = useUpdateTempoGroup();
+    const updateManualTemposMutation = useUpdateManualTempos();
     const isMixedMeter = useMemo(
         () => isMixedMeterTempoGroup(tempoGroup),
         [tempoGroup],
@@ -61,28 +60,30 @@ export default function EditableTempoGroup({
         tempoGroup.manualTempos || [],
     );
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        if (!isManualTempo) {
-            updateTempoGroup({
-                tempoGroup,
-                newTempo: Number(tempo),
-                newName: name,
-                newStrongBeatIndexes: isMixedMeter
-                    ? patternStringToLongBeatIndexes(selectedPattern)
-                    : undefined,
-                refreshFunction: fetchTimingObjects,
-            });
-        } else {
-            updateManualTempos({
-                tempoGroup,
-                newManualTempos: manualTempos,
-                refreshFunction: fetchTimingObjects,
-            });
+        try {
+            if (!isManualTempo) {
+                await updateTempoGroupMutation.mutateAsync({
+                    tempoGroup,
+                    newTempo: Number(tempo),
+                    newName: name,
+                    newStrongBeatIndexes: isMixedMeter
+                        ? patternStringToLongBeatIndexes(selectedPattern)
+                        : undefined,
+                });
+            } else {
+                await updateManualTemposMutation.mutateAsync({
+                    tempoGroup,
+                    newManualTempos: manualTempos,
+                });
+            }
+            setIsVisible(false);
+        } catch (error) {
+            // Error handling is done by the mutation hook
+            console.error("Failed to update tempo group:", error);
         }
-        toast.success(t("music.tempoGroupUpdated"));
-        setIsVisible(false);
     };
 
     return (
@@ -269,7 +270,14 @@ export default function EditableTempoGroup({
                     >
                         <T keyName="music.cancel" />
                     </Button>
-                    <Button type="submit" disabled={saveDisabled}>
+                    <Button
+                        type="submit"
+                        disabled={
+                            saveDisabled ||
+                            updateTempoGroupMutation.isPending ||
+                            updateManualTemposMutation.isPending
+                        }
+                    >
                         <T keyName="music.saveChanges" />
                     </Button>
                 </div>

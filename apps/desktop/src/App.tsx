@@ -26,6 +26,9 @@ import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenLis
 import ErrorBoundary from "./ErrorBoundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { createAllUndoTriggers } from "./db-functions";
+import { db } from "./global/database/db";
+import { historyKeys } from "./hooks/queries/useHistory";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -57,7 +60,7 @@ function App() {
         if (pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
         console.log("Loading plugins...");
-        window.plugins
+        void window.plugins
             ?.list()
             .then(async (pluginPaths: string[]) => {
                 for (const path of pluginPaths) {
@@ -102,7 +105,7 @@ function App() {
 
     useEffect(() => {
         // Check if database is ready
-        window.electron.databaseIsReady().then((result: boolean) => {
+        void window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
         });
     }, []);
@@ -111,8 +114,25 @@ function App() {
         fetchUiSettings();
     }, [fetchUiSettings]);
 
+    /**
+     * Invalidate history queries when a mutation is added.
+     * This is to keep the UI fresh for when an undo/redo is available.
+     */
     useEffect(() => {
-        window.electron
+        const unsubscribe = queryClient
+            .getMutationCache()
+            .subscribe((event) => {
+                if (event?.type === "updated") {
+                    void queryClient.invalidateQueries({
+                        queryKey: historyKeys.all(),
+                    });
+                }
+            });
+        return () => unsubscribe();
+    }, [databaseIsReady]);
+
+    useEffect(() => {
+        void window.electron
             .invoke("settings:get", "optOutAnalytics")
             .then((optOut) => {
                 if (optOut === undefined) {
@@ -125,11 +145,18 @@ function App() {
 
     useEffect(() => {
         if (appCanvas && isCodegen) {
-            window.electron.codegen.clearMouseActions();
+            void window.electron.codegen.clearMouseActions();
             const cleanup = attachCodegenListeners(appCanvas);
             return cleanup;
         }
     }, [appCanvas, isCodegen]);
+
+    useEffect(() => {
+        if (databaseIsReady)
+            createAllUndoTriggers(db).catch((error) => {
+                console.error("Error creating undo triggers:", error);
+            });
+    }, [databaseIsReady]);
 
     return (
         <ErrorBoundary>

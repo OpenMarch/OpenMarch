@@ -40,6 +40,7 @@
         }
     },
     "dependencies": {
+        "@openmarch/core": "workspace:*",
         "svg-path-commander": "^2.1.11",
         "uuid": "^11.1.0"
     }

@@ -6,7 +6,7 @@ import path from "path";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";

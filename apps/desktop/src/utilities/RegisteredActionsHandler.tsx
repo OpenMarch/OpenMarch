@@ -1,32 +1,34 @@
-import { useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPagesByPageQueryOptions,
+    updateMarcherPagesMutationOptions,
+    fieldPropertiesQueryOptions,
+    swapMarchersMutationOptions,
+} from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
-import MarcherPage, {
-    getByMarcherAndPageId,
-    getByPageId,
-} from "@/global/classes/MarcherPage";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
-import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
+import { useCreateMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { useShapePageStore } from "@/stores/ShapePageStore";
+import { useSelectionStore } from "@/stores/SelectionStore";
 import { toast } from "sonner";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 import tolgee from "@/global/singletons/Tolgee";
 import { useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-    fetchMarcherPages,
-    useMarcherPages,
-    useUpdateMarcherPages,
-} from "@/hooks/queries";
+    usePerformHistoryAction,
+    canUndoQueryOptions,
+    canRedoQueryOptions,
+} from "@/hooks/queries/useHistory";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -270,10 +272,16 @@ export const RegisteredActionsObjects: {
     }),
     performUndo: new RegisteredAction({
         descKey: "actions.edit.undo",
+        keyboardShortcut: new KeyboardShortcut({ key: "z", control: true }),
         enumString: "performUndo",
     }),
     performRedo: new RegisteredAction({
         descKey: "actions.edit.redo",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "z",
+            control: true,
+            shift: true,
+        }),
         enumString: "performRedo",
     }),
 
@@ -482,21 +490,38 @@ export const RegisteredActionsObjects: {
  *
  * All actions in OpenMarch that can be a keyboard shortcut or a button click should be registered here.
  */
+// eslint-disable-next-line max-lines-per-function
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
+    const queryClient = useQueryClient();
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { pages } = useTimingObjectsStore()!;
+    const { pages } = useTimingObjects()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
     const { toggleMetronome } = useMetronomeStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
-    const updateMarcherPages = useUpdateMarcherPages().mutate;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.id),
+    );
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    );
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    );
+    const { mutate: swapMarchers } = useMutation(
+        swapMarchersMutationOptions(queryClient),
+    );
+    const { mutate: updateMarcherPages } = useMutation(
+        updateMarcherPagesMutationOptions(queryClient),
+    );
+    const { mutate: createMarcherShape } = useCreateMarcherShape();
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const { setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: canUndo } = useQuery(canUndoQueryOptions);
+    const { data: canRedo } = useQuery(canRedoQueryOptions);
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore()!;
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -504,6 +529,7 @@ function RegisteredActionsHandler() {
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
+    const { mutate: performHistoryAction } = usePerformHistoryAction();
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -522,11 +548,10 @@ function RegisteredActionsHandler() {
             return [];
         }
 
-        const selectedPageMarcherPages =
-            marcherPages.marcherPagesByPage[selectedPage.id] || {};
-        return selectedMarchers
-            .map((marcher) => selectedPageMarcherPages[marcher.id])
-            .filter(Boolean);
+        const output = selectedMarchers.map(
+            (marcher) => marcherPages[marcher.id],
+        );
+        return output;
     }, [marcherPages, marcherPagesLoaded, selectedMarchers, selectedPage]);
 
     // Arrow movement defaults
@@ -537,30 +562,37 @@ function RegisteredActionsHandler() {
      * Trigger a RegisteredAction.
      */
     const triggerAction = useCallback(
+        // eslint-disable-next-line max-lines-per-function
         (action: RegisteredActionsEnum) => {
             let isElectronAction = true;
 
             // Check if this is an electron action
             switch (action) {
                 case RegisteredActionsEnum.launchLoadFileDialogue:
-                    window.electron.databaseLoad();
+                    void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
-                    window.electron.databaseSave();
+                    void window.electron.databaseSave();
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
-                    window.electron.databaseCreate();
+                    void window.electron.databaseCreate();
                     break;
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
-                    window.electron.launchInsertAudioFileDialogue().then(() => {
-                        AudioFile.getSelectedAudioFile().then((response) => {
-                            const selectedAudioFileWithoutAudio = {
-                                ...response,
-                                data: undefined,
-                            };
-                            setSelectedAudioFile(selectedAudioFileWithoutAudio);
+                    void window.electron
+                        .launchInsertAudioFileDialogue()
+                        .then(() => {
+                            AudioFile.getSelectedAudioFile().then(
+                                (response) => {
+                                    const selectedAudioFileWithoutAudio = {
+                                        ...response,
+                                        data: undefined,
+                                    };
+                                    setSelectedAudioFile(
+                                        selectedAudioFileWithoutAudio,
+                                    );
+                                },
+                            );
                         });
-                    });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     console.log("launchImportMusicXmlFileDialogue");
@@ -592,10 +624,14 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     break;
                 case RegisteredActionsEnum.performUndo:
-                    window.electron.undo();
+                    if (canUndo) performHistoryAction("undo");
+                    else toast.warning(t("actions.edit.noUndoAvailable"));
+
                     break;
                 case RegisteredActionsEnum.performRedo:
-                    window.electron.redo();
+                    if (canRedo) performHistoryAction("redo");
+                    else toast.warning(t("actions.edit.noRedoAvailable"));
+
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
@@ -632,16 +668,12 @@ function RegisteredActionsHandler() {
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage) {
+                    if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
-                    const previousPageMarcherPages = getByPageId(
-                        marcherPages,
-                        previousPage.id,
-                    );
-                    const changes = previousPageMarcherPages.map(
+                    const changes = Object.values(previousMarcherPages).map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
@@ -654,7 +686,7 @@ function RegisteredActionsHandler() {
 
                     toast.success(
                         t("actions.batchEdit.setAllToPreviousSuccess", {
-                            count: previousPageMarcherPages.length,
+                            count: Object.keys(previousMarcherPages).length,
                             currentPage: selectedPage.name,
                             previousPage: previousPage.name,
                         }),
@@ -663,27 +695,21 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
                     const previousPage = getPreviousPage(selectedPage, pages);
-                    if (!previousPage) {
+                    if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
                         return;
                     }
 
-                    const previousMarcherPages = selectedMarchers
-                        .map((marcher) =>
-                            getByMarcherAndPageId(
-                                marcherPages,
-                                marcher.id,
-                                previousPage.id,
-                            ),
-                        )
-                        .filter(
-                            (marcherPage): marcherPage is MarcherPage =>
-                                marcherPage !== undefined &&
-                                marcherPage.marcher_id !== undefined,
-                        );
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
 
-                    if (previousMarcherPages.length > 0) {
-                        const changes = previousMarcherPages.map(
+                    const filteredPreviousMarcherPages = selectedMarcherIds
+                        .map((marcherId) => previousMarcherPages[marcherId])
+                        .filter(Boolean);
+
+                    if (filteredPreviousMarcherPages.length > 0) {
+                        const changes = filteredPreviousMarcherPages.map(
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
                                 page_id: selectedPage.id,
@@ -698,7 +724,7 @@ function RegisteredActionsHandler() {
                             t(
                                 "actions.batchEdit.setSelectedToPreviousSuccess",
                                 {
-                                    count: previousMarcherPages.length,
+                                    count: filteredPreviousMarcherPages.length,
                                     currentPage: selectedPage.name,
                                     previousPage: previousPage.name,
                                 },
@@ -709,15 +735,17 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setAllMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage) {
+                    if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
 
-                    const nextPageMarcherPages = getByPageId(
-                        marcherPages,
-                        nextPage.id,
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
                     );
+                    const nextPageMarcherPages = selectedMarcherIds
+                        .map((marcherId) => nextMarcherPages[marcherId])
+                        .filter(Boolean);
                     const changes = nextPageMarcherPages.map((marcherPage) => ({
                         marcher_id: marcherPage.marcher_id,
                         page_id: selectedPage.id,
@@ -738,37 +766,32 @@ function RegisteredActionsHandler() {
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (!nextPage) {
+                    if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
-                    const nextMarcherPages = selectedMarchers
-                        .map((marcher) =>
-                            getByMarcherAndPageId(
-                                marcherPages,
-                                marcher.id,
-                                nextPage.id,
-                            ),
-                        )
-                        .filter(
-                            (marcherPage): marcherPage is MarcherPage =>
-                                marcherPage !== undefined &&
-                                marcherPage.marcher_id !== undefined,
-                        );
+                    const selectedMarcherIds = selectedMarchers.map(
+                        (marcher) => marcher.id,
+                    );
+                    const nextPageMarcherPages = selectedMarcherIds
+                        .map((marcherId) => nextMarcherPages[marcherId])
+                        .filter(Boolean);
 
-                    if (nextMarcherPages.length > 0) {
-                        const changes = nextMarcherPages.map((marcherPage) => ({
-                            marcher_id: marcherPage.marcher_id,
-                            page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
-                            notes: marcherPage.notes || undefined,
-                        }));
+                    if (nextPageMarcherPages.length > 0) {
+                        const changes = nextPageMarcherPages.map(
+                            (marcherPage) => ({
+                                marcher_id: marcherPage.marcher_id,
+                                page_id: selectedPage.id,
+                                x: marcherPage.x as number,
+                                y: marcherPage.y as number,
+                                notes: marcherPage.notes || undefined,
+                            }),
+                        );
                         updateMarcherPages(changes);
 
                         toast.success(
                             t("actions.batchEdit.setSelectedToNextSuccess", {
-                                count: nextMarcherPages.length,
+                                count: nextPageMarcherPages.length,
                                 currentPage: selectedPage.name,
                                 nextPage: nextPage.name,
                             }),
@@ -894,42 +917,11 @@ function RegisteredActionsHandler() {
                         toast.error(t("actions.swap.mustSelectTwo"));
                         return;
                     }
-
-                    const marchersStr = `marchers ${selectedMarchers[0].drill_number} and ${selectedMarchers[1].drill_number}`;
-                    window.electron
-                        .swapMarchers({
-                            pageId: selectedPage.id,
-                            marcher1Id: selectedMarchers[0].id,
-                            marcher2Id: selectedMarchers[1].id,
-                        })
-                        .then((response) => {
-                            if (response.success) {
-                                toast.success(
-                                    t("actions.swap.success", {
-                                        marcher1:
-                                            selectedMarchers[0].drill_number,
-                                        marcher2:
-                                            selectedMarchers[1].drill_number,
-                                    }),
-                                );
-                                fetchMarcherPages();
-                                // This causes an infinite loop
-                                // It's not a huge deal to leave it like this as marchers are updated on a refresh
-                                MarcherShape.fetchShapePages();
-                            } else {
-                                const errorMessage =
-                                    "Could not swap marchers " + marchersStr;
-                                console.error(errorMessage, response.error);
-                                toast.error(
-                                    t("actions.swap.error", {
-                                        marcher1:
-                                            selectedMarchers[0].drill_number,
-                                        marcher2:
-                                            selectedMarchers[1].drill_number,
-                                    }),
-                                );
-                            }
-                        });
+                    swapMarchers({
+                        pageId: selectedPage.id,
+                        marcher1Id: selectedMarchers[0].id,
+                        marcher2Id: selectedMarchers[1].id,
+                    });
                     break;
                 }
 
@@ -967,7 +959,7 @@ function RegisteredActionsHandler() {
                     } else {
                         // Deselect all shapes and marchers
                         setSelectedMarchers([]);
-                        setSelectedMarcherShapes([]);
+                        setSelectedShapePageIds([]);
                     }
                     break;
                 }
@@ -993,7 +985,7 @@ function RegisteredActionsHandler() {
                     const marcherIds = alignmentEventNewMarcherPages.map(
                         (marcherPage) => marcherPage.marcher_id,
                     );
-                    MarcherShape.createMarcherShape({
+                    createMarcherShape({
                         marcherIds,
                         start: firstMarcherPage,
                         end: lastMarcherPage,
@@ -1040,6 +1032,10 @@ function RegisteredActionsHandler() {
             fieldProperties,
             marcherPagesLoaded,
             setSelectedAudioFile,
+            canUndo,
+            performHistoryAction,
+            t,
+            canRedo,
             setUiSettings,
             uiSettings,
             pages,
@@ -1047,16 +1043,18 @@ function RegisteredActionsHandler() {
             setSelectedPage,
             setIsPlaying,
             toggleMetronome,
-            marcherPages,
+            previousMarcherPages,
             updateMarcherPages,
-            t,
             selectedMarchers,
+            nextMarcherPages,
             getSelectedMarcherPages,
+            swapMarchers,
             alignmentEventMarchers,
             setSelectedMarchers,
             resetAlignmentEvent,
-            setSelectedMarcherShapes,
+            setSelectedShapePageIds,
             alignmentEventNewMarcherPages,
+            createMarcherShape,
             setAlignmentEvent,
             setAlignmentEventMarchers,
         ],
@@ -1089,6 +1087,7 @@ function RegisteredActionsHandler() {
      * Handles the keyboard shortcuts for entire react side of the application.
      */
     const handleKeyDown = useCallback(
+        // eslint-disable-next-line max-lines-per-function
         (e: KeyboardEvent) => {
             if (
                 uiSettings.focussedComponent === "canvas" &&
@@ -1240,16 +1239,23 @@ function RegisteredActionsHandler() {
      * Register the button refs for the keyboard shortcuts
      */
     useEffect(() => {
-        registeredButtonActions.forEach((buttonAction) => {
-            if (!buttonAction.buttonRef.current) {
-                // console.error(
-                //     `No button ref for ${buttonAction.registeredAction}`
-                // );
-                return;
-            }
-            buttonAction.buttonRef.current.onclick = () =>
-                triggerAction(buttonAction.registeredAction);
-        });
+        const assignClickHandlers = () => {
+            registeredButtonActions.forEach((buttonAction) => {
+                if (!buttonAction.buttonRef.current) {
+                    // console.error(
+                    //     `No button ref for ${buttonAction.registeredAction}`
+                    // );
+                    return;
+                }
+                buttonAction.buttonRef.current.onclick = () =>
+                    triggerAction(buttonAction.registeredAction);
+            });
+        };
+
+        // Use setTimeout to ensure button refs are set after components mount
+        const timeoutId = setTimeout(assignClickHandlers, 0);
+
+        return () => clearTimeout(timeoutId);
     }, [registeredButtonActions, triggerAction]);
 
     return <></>; // empty fragment

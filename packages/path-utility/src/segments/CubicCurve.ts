@@ -1,11 +1,10 @@
 import PathCommander from "svg-path-commander";
 import {
-    IPathSegment,
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
 
 /**
@@ -38,6 +37,14 @@ export class CubicCurve implements IControllableSegment {
         return { x: point.x, y: point.y };
     }
 
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
+    }
+
+    getEndPoint(): Point {
+        return this.endPointOverride || this.endPoint;
+    }
+
     toSvgString(): string {
         const effectiveStartPoint = this.startPointOverride || this.startPoint;
         const effectiveEndPoint = this.endPointOverride || this.endPoint;
@@ -49,15 +56,15 @@ export class CubicCurve implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
+                startPoint: { ...this.getStartPoint() },
                 controlPoint1: { ...this.controlPoint1 },
                 controlPoint2: { ...this.controlPoint2 },
-                endPoint: { ...this.endPoint },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "cubic-curve") {
             throw new Error(
                 `Cannot create CubicCurve from data of type ${data.type}`,
@@ -88,27 +95,27 @@ export class CubicCurve implements IControllableSegment {
 
         return [
             {
-                id: `cp-${segmentIndex}-start`,
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-control1`,
                 point: { ...this.controlPoint1 },
                 segmentIndex,
+                pointIndex: 1,
                 type: "control1" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-control2`,
                 point: { ...this.controlPoint2 },
                 segmentIndex,
+                pointIndex: 2,
                 type: "control2" as ControlPointType,
             },
             {
-                id: `cp-${segmentIndex}-end`,
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 3,
                 type: "end" as ControlPointType,
             },
         ];

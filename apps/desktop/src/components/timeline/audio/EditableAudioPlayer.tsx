@@ -9,7 +9,7 @@ import {
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 // @ts-ignore - Importing the regions plugin
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
@@ -28,15 +28,13 @@ import {
 import Beat from "@/global/classes/Beat";
 import { Button } from "@openmarch/ui";
 import {
-    replaceAllBeatObjects,
+    useReplaceAllBeatObjects,
     createNewTemporaryBeats,
     createNewTemporaryMeasures,
 } from "./EditableAudioPlayerUtils";
 import { useTheme } from "@/context/ThemeContext";
-import { conToastError } from "@/utilities/utils";
-import { toast } from "sonner";
 import Measure from "@/global/classes/Measure";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
 
 /**
  * Editable version of the AudioPlayer component.
@@ -46,8 +44,7 @@ export default function EditableAudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     // We'll use beats later for creating regions based on timing objects
-    const { beats, pages, measures, fetchTimingObjects } =
-        useTimingObjectsStore();
+    const { beats, pages, measures, fetchTimingObjects } = useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -62,7 +59,7 @@ export default function EditableAudioPlayer() {
     );
     const [temporaryBeats, setTemporaryBeats] = useState<Beat[]>([]);
     const [temporaryMeasures, setTemporaryMeasures] = useState<Measure[]>([]);
-    const { t } = useTolgee();
+    const replaceAllBeatObjectsMutation = useReplaceAllBeatObjects();
 
     const togglePlayPause = useCallback(() => {
         if (!waveSurfer) return;
@@ -265,21 +262,18 @@ export default function EditableAudioPlayer() {
     };
 
     const handleSave = async () => {
-        const pageUpdates = await replaceAllBeatObjects({
-            newBeats: temporaryBeats,
-            oldBeats: beats,
-            newMeasures: temporaryMeasures,
-            oldMeasures: measures,
-            pages,
-            refreshFunction: fetchTimingObjects,
-            t,
-        });
-        if (!pageUpdates.success) {
-            conToastError(t("audio.beats.save.error"), pageUpdates);
-            return;
-        } else {
-            toast.success(t("audio.beats.save.success"));
+        try {
+            await replaceAllBeatObjectsMutation.mutateAsync({
+                newBeats: temporaryBeats,
+                oldBeats: beats,
+                newMeasures: temporaryMeasures,
+                oldMeasures: measures,
+                pages,
+            });
             setBeatsToDisplay("real");
+        } catch (error) {
+            // Error handling is done in the mutation hook
+            console.error("Error saving beats:", error);
         }
     };
 
@@ -345,7 +339,10 @@ export default function EditableAudioPlayer() {
                             <Button
                                 className="w-full whitespace-nowrap"
                                 size={"compact"}
-                                disabled={isAudioPlaying}
+                                disabled={
+                                    isAudioPlaying ||
+                                    replaceAllBeatObjectsMutation.isPending
+                                }
                                 onClick={handleSave}
                             >
                                 <T keyName="audio.saveNewBeats.label" />

@@ -3,7 +3,13 @@ import { fabric } from "fabric";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useFieldProperties } from "@/hooks/queries";
+import {
+    marcherPagesByPageQueryOptions,
+    updateMarcherPagesMutationOptions,
+    fieldPropertiesQueryOptions,
+    allMarchersQueryOptions,
+    shapePagesQueryByPageIdOptions,
+} from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
@@ -11,20 +17,19 @@ import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import Marcher from "@/global/classes/Marcher";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import clsx from "clsx";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
-import { useSectionAppearanceStore } from "@/stores/SectionAppearanceStore";
 import { useAnimation } from "@/hooks/useAnimation";
-import { useMarcherPages, useUpdateMarcherPages } from "@/hooks/queries";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
+import useEditablePath from "./hooks/editablePath";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
+import { useSelectionStore } from "@/stores/SelectionStore";
 
 /**
  * The field/stage UI of OpenMarch
@@ -34,6 +39,7 @@ import { setCanvasStore } from "@/stores/CanvasStore";
  * @param onCanvasReady Callback function that receives the canvas instance once it's initialized.
  * @returns
  */
+// eslint-disable-next-line max-lines-per-function
 export default function Canvas({
     className = "",
     testCanvas,
@@ -43,18 +49,36 @@ export default function Canvas({
     testCanvas?: OpenMarchCanvas;
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
+    const queryClient = useQueryClient();
+    useEditablePath();
     const { isPlaying } = useIsPlaying()!;
-    const { marchers, marcherVisuals, updateMarcherVisuals } =
-        useMarchersWithVisuals();
-    const { pages } = useTimingObjectsStore()!;
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } =
-        useMarcherPages({ pages });
-    const updateMarcherPages = useUpdateMarcherPages();
-    const { shapePages, selectedMarcherShapes, setSelectedMarcherShapes } =
-        useShapePageStore()!;
+    const marcherVisuals = useMarchersWithVisuals();
+    const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
+
+    // MarcherPage queries
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.id),
+    );
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    );
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    );
+
+    const updateMarcherPages = useMutation(
+        updateMarcherPagesMutationOptions(queryClient),
+    );
+    const { data: shapePagesOnSelectedPage } = useQuery(
+        shapePagesQueryByPageIdOptions(selectedPage?.id!),
+    );
+    const { selectedShapePageIds, setSelectedShapePageIds } =
+        useSelectionStore()!;
+
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
-    const { data: fieldProperties } = useFieldProperties();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,
@@ -62,8 +86,6 @@ export default function Canvas({
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
     } = useAlignmentEventStore()!;
-    const { sectionAppearances, fetchSectionAppearances } =
-        useSectionAppearanceStore();
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -274,7 +296,9 @@ export default function Canvas({
                                 marcherShapesToSelect.push(marcherShape);
                             }
                         }
-                        setSelectedMarcherShapes(marcherShapesToSelect);
+                        setSelectedShapePageIds(
+                            marcherShapesToSelect.map((ms) => ms.shapePage.id),
+                        );
                     }
 
                     break;
@@ -297,8 +321,8 @@ export default function Canvas({
     }, [
         activeObjectsAreGloballySelected,
         canvas,
-        setSelectedMarcherShapes,
         setSelectedMarchers,
+        setSelectedShapePageIds,
     ]);
 
     /**
@@ -359,16 +383,10 @@ export default function Canvas({
 
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                prevPageId: uiSettings.previousPaths
-                    ? selectedPage.previousPageId
-                    : null,
-                currPageId: selectedPage.id,
-                nextPageId: uiSettings.nextPaths
-                    ? selectedPage.nextPageId
-                    : null,
+                previousMarcherPages: previousMarcherPages || {},
+                currentMarcherPages: marcherPages,
+                nextMarcherPages: nextMarcherPages || {},
                 marcherIds: selectedMarchers.map((m) => m.id),
-                fromCanvasMarchers: true,
             });
 
             frameRef.current = null;
@@ -377,10 +395,10 @@ export default function Canvas({
         canvas,
         marcherPages,
         marcherVisuals,
+        nextMarcherPages,
+        previousMarcherPages,
         selectedMarchers,
         selectedPage,
-        uiSettings.nextPaths,
-        uiSettings.previousPaths,
     ]);
 
     useEffect(() => {
@@ -479,7 +497,6 @@ export default function Canvas({
         uiSettings,
         canvas,
         onCanvasReady,
-        setCanvasStore,
     ]);
 
     // Cleanup canvas on unmount
@@ -487,7 +504,7 @@ export default function Canvas({
         return () => {
             setCanvasStore(null);
         };
-    }, [setCanvasStore]);
+    }, []);
 
     // Initiate listeners
     useEffect(() => {
@@ -527,22 +544,21 @@ export default function Canvas({
 
     // Update section appearances
     useEffect(() => {
-        fetchSectionAppearances();
-    }, [fetchSectionAppearances]);
-
-    // Update section appearances
-    useEffect(() => {
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
         }
-    }, [canvas, updateMarcherPages]);
+    }, [canvas, updateMarcherPages.mutate]);
 
-    // Sync marcher visuals with marchers and section appearances
-    useEffect(() => {
-        if (marchers && sectionAppearances) {
-            updateMarcherVisuals(marchers, sectionAppearances);
-        }
-    }, [marchers, sectionAppearances, updateMarcherVisuals]);
+    // // Sync marcher visuals with marchers and section appearances
+    // useEffect(() => {
+    //     if (marchers && sectionAppearances && fieldProperties) {
+    //         updateMarcherVisuals(
+    //             marchers,
+    //             fieldProperties.theme,
+    //             sectionAppearances,
+    //         );
+    //     }
+    // }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -572,13 +588,18 @@ export default function Canvas({
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
             canvas.add(visualGroup.getPreviousPathway());
-            canvas.add(visualGroup.getNextPathway());
+            visualGroup
+                .getNextPathway()
+                .getFabricObjects()
+                .forEach((fabricObject: fabric.Object) => {
+                    canvas.add(fabricObject);
+                });
             visualGroup
                 .getPreviousPathway()
                 .setColor(fieldProperties.theme.previousPath);
-            visualGroup
-                .getNextPathway()
-                .setColor(fieldProperties.theme.nextPath);
+            // visualGroup
+            //     .getNextPathway()
+            //     .setColor(fieldProperties.theme.nextPath);
 
             canvas.add(visualGroup.getPreviousMidpoint());
             canvas.add(visualGroup.getNextMidpoint());
@@ -618,33 +639,41 @@ export default function Canvas({
 
     // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (!canvas || !selectedPage || !marchers || !marcherPages) return;
+        if (!canvas || !selectedPage || !marchers || !marcherPagesLoaded)
+            return;
 
         canvas.currentPage = selectedPage;
 
-        canvas.renderMarchers({
-            marcherVisuals: marcherVisuals,
-            marcherPages: marcherPages,
-            pageId: selectedPage.id,
-        });
-    }, [canvas, marcherPages, marcherVisuals, marchers, selectedPage]);
+        canvas
+            .renderMarchers({
+                marcherVisuals: marcherVisuals,
+                marcherPages: marcherPages,
+                pageId: selectedPage.id,
+            })
+            .catch((error) => {
+                console.error("Error rendering marchers", error);
+            });
+    }, [
+        canvas,
+        marcherPages,
+        marcherPagesLoaded,
+        marcherVisuals,
+        marchers,
+        selectedPage,
+    ]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
         if (!canvas || !selectedPage || !fieldProperties || !marcherPagesLoaded)
             return;
 
-        if (uiSettings.nextPaths || uiSettings.previousPaths) {
+        if (marchers && (uiSettings.nextPaths || uiSettings.previousPaths)) {
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
-                prevPageId: uiSettings.previousPaths
-                    ? selectedPage.previousPageId
-                    : null,
-                currPageId: selectedPage.id,
-                nextPageId: uiSettings.nextPaths
-                    ? selectedPage.nextPageId
-                    : null,
+                currentMarcherPages: marcherPages,
+                previousMarcherPages: marcherPages,
+                nextMarcherPages: marcherPages,
+
                 marcherIds: marchers.map((m) => m.id),
             });
             canvas.sendCanvasMarchersToFront();
@@ -667,33 +696,27 @@ export default function Canvas({
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change
     useEffect(() => {
-        if (canvas && selectedPage && shapePages) {
-            canvas.currentPage = selectedPage;
-            const currentShapePages = shapePages.filter(
-                (sp) => sp.page_id === selectedPage.id,
-            );
+        if (canvas && shapePagesOnSelectedPage) {
             canvas.renderMarcherShapes({
-                shapePages: currentShapePages,
+                shapePages: shapePagesOnSelectedPage,
             });
         }
-    }, [canvas, selectedPage, shapePages]);
+    }, [canvas, selectedPage, shapePagesOnSelectedPage]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {
-        if (canvas && selectedMarcherShapes) {
+        if (canvas && selectedShapePageIds) {
             // Disable control of all of the non-selected shape pages and enable control of selected ones
-            const selectedMarcherShapeSpIds = new Set(
-                selectedMarcherShapes.map((ms) => ms.shapePage.id),
-            );
+            const selectedIdSet = new Set(selectedShapePageIds);
             for (const marcherShape of canvas.marcherShapes) {
-                if (selectedMarcherShapeSpIds.has(marcherShape.shapePage.id))
+                if (selectedIdSet.has(marcherShape.shapePage.id))
                     marcherShape.enableControl();
                 else {
                     marcherShape.disableControl();
                 }
             }
         }
-    }, [canvas, selectedMarcherShapes]);
+    }, [canvas, selectedShapePageIds]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
@@ -717,7 +740,7 @@ export default function Canvas({
             setTimeout(() => {
                 centerAndFitCanvas();
                 setSelectedMarchers([]);
-                setSelectedMarcherShapes([]);
+                setSelectedShapePageIds([]);
             }, 100);
         }
 
@@ -729,8 +752,8 @@ export default function Canvas({
         canvas,
         centerAndFitCanvas,
         setSelectedMarchers,
-        setSelectedMarcherShapes,
         setPerspective,
+        setSelectedShapePageIds,
     ]);
 
     // Set up container resize observer and window resize handler to keep canvas centered in fullscreen mode
@@ -767,11 +790,15 @@ export default function Canvas({
     // rendered at their final positions for the selected page.
     useEffect(() => {
         if (canvas && !isPlaying && selectedPage && marcherPagesLoaded) {
-            canvas.renderMarchers({
-                marcherPages: marcherPages,
-                pageId: selectedPage.id,
-                marcherVisuals: marcherVisuals,
-            });
+            canvas
+                .renderMarchers({
+                    marcherPages: marcherPages,
+                    pageId: selectedPage.id,
+                    marcherVisuals: marcherVisuals,
+                })
+                .catch((error) => {
+                    console.error("Error rendering marchers", error);
+                });
         }
     }, [
         canvas,

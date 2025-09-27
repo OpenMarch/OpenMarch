@@ -1,25 +1,25 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useShapePageStore } from "@/stores/ShapePageStore";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
-import Page, {
-    createLastPage,
-    ModifyPagesRequest,
-    updatePageCountRequest,
-    updatePages,
-    deletePages,
-} from "@/global/classes/Page";
+import { useTimingObjects } from "@/hooks";
+import Page, { updatePageCountRequest } from "@/global/classes/Page";
 import clsx from "clsx";
 import Beat, { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Button, Switch, TooltipClassName } from "@openmarch/ui";
-import { toast } from "sonner";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
 import * as ToolTip from "@radix-ui/react-tooltip";
+import {
+    createLastPageMutationOptions,
+    deletePagesMutationOptions,
+    ModifyPagesRequest,
+    updatePagesMutationOptions,
+} from "@/hooks/queries";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSelectionStore } from "@/stores/SelectionStore";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -71,13 +71,25 @@ export const getAvailableOffsets = ({
     return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
 };
 
+// eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
+    const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { setSelectedMarcherShapes } = useShapePageStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();
-    const { pages, beats, fetchTimingObjects } = useTimingObjectsStore()!;
+    const { pages, beats } = useTimingObjects()!;
+    const { mutate: updatePages } = useMutation(
+        updatePagesMutationOptions(queryClient),
+    );
+    const { mutate: createLastPage } = useMutation(
+        createLastPageMutationOptions(queryClient),
+    );
+    const { mutate: deletePages } = useMutation(
+        deletePagesMutationOptions(queryClient),
+    );
+
     // Page clicking and dragging
     const resizingPage = useRef<Page | null>(null);
     const [isResizing, setIsResizing] = useState(false);
@@ -205,11 +217,11 @@ export default function PageTimeline() {
                 }
             }
         },
-        [uiSettings.timelinePixelsPerSecond, pages, getWidth],
+        [pages, uiSettings.timelinePixelsPerSecond, beats, getWidth],
     );
 
     // Function to handle the end of resizing
-    const handlePageResizeEnd = useCallback(() => {
+    const handlePageResizeEnd = useCallback(async () => {
         const pageElement = document.querySelector(
             `[timeline-page-id="${resizingPage.current?.id}"]`,
         );
@@ -245,7 +257,7 @@ export default function PageTimeline() {
                 newCounts: newBeats.length - (nextPage ? 0 : 1),
             });
 
-            updatePages(updateArgs, fetchTimingObjects);
+            await updatePages(updateArgs);
 
             // Clean up the data attribute
             delete pageElement.dataset.newDuration;
@@ -260,7 +272,7 @@ export default function PageTimeline() {
         // Remove event listeners
         document.removeEventListener("mousemove", handlePageResizeMove);
         document.removeEventListener("mouseup", handlePageResizeEnd);
-    }, [handlePageResizeMove, pages, beats, fetchTimingObjects]);
+    }, [handlePageResizeMove, pages, beats, updatePages]);
 
     // Clean up event listeners when component unmounts
     useEffect(() => {
@@ -269,22 +281,6 @@ export default function PageTimeline() {
             document.removeEventListener("mouseup", handlePageResizeEnd);
         };
     }, [handlePageResizeEnd, handlePageResizeMove]);
-
-    async function handleDeletePage(pageId: number, pageName: string) {
-        const response = await deletePages(
-            new Set([pageId]),
-            fetchTimingObjects,
-        );
-        if (response.success) {
-            toast.success(
-                t("timeline.page.deleted", {
-                    pageName: pageName,
-                }),
-            );
-        } else {
-            toast.error(t("timeline.page.deleteFailed"));
-        }
-    }
 
     function nextPageBeatDiff(nextPageId: number, currId: number): number {
         const currPageDrag = currentDragCounts[currId];
@@ -316,7 +312,7 @@ export default function PageTimeline() {
                     )}
                     onClick={() => {
                         setSelectedPage(pages[0]);
-                        setSelectedMarcherShapes([]);
+                        setSelectedShapePageIds([]);
                     }}
                     title={t("timeline.page.firstPage")}
                     aria-label={t("timeline.page.firstPage")}
@@ -326,6 +322,7 @@ export default function PageTimeline() {
                 </div>
             )}
             {/* ------------------------------------ PAGES ------------------------------------ */}
+            {/* eslint-disable-next-line max-lines-per-function */}
             {pages.map((page, index) => {
                 if (index === 0) return null;
                 const width = getWidth(page);
@@ -365,7 +362,7 @@ export default function PageTimeline() {
                                     )}
                                     onClick={() => {
                                         if (!isPlaying) setSelectedPage(page);
-                                        setSelectedMarcherShapes([]);
+                                        setSelectedShapePageIds([]);
                                     }}
                                 >
                                     <div className="rig static z-10">
@@ -458,16 +455,15 @@ export default function PageTimeline() {
                                     </label>
                                     <Switch
                                         onClick={(e) => {
-                                            updatePages(
-                                                [
+                                            updatePages({
+                                                modifiedPagesArgs: [
                                                     {
                                                         id: page.id,
                                                         is_subset:
                                                             !page.isSubset,
                                                     },
                                                 ],
-                                                fetchTimingObjects,
-                                            );
+                                            });
                                         }}
                                         checked={page?.isSubset || false}
                                     />
@@ -478,7 +474,7 @@ export default function PageTimeline() {
                                     </label>
                                     <Button
                                         onClick={() =>
-                                            handleDeletePage(page.id, page.name)
+                                            deletePages(new Set([page.id]))
                                         }
                                         size="compact"
                                         variant="red"
@@ -495,14 +491,7 @@ export default function PageTimeline() {
             {!isFullscreen && (
                 <button
                     className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
-                    onClick={() =>
-                        createLastPage({
-                            currentLastPage: pages[pages.length - 1],
-                            allBeats: beats,
-                            counts: 8,
-                            fetchPagesFunction: fetchTimingObjects,
-                        })
-                    }
+                    onClick={() => createLastPage(8)}
                 >
                     <PlusIcon size={20} />
                 </button>

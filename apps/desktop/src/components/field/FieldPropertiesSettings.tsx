@@ -4,11 +4,18 @@ import FieldIoButtons from "./FieldIoButtons";
 import { FieldProperties } from "@openmarch/core";
 import { T } from "@tolgee/react";
 import { Button } from "@openmarch/ui";
-import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
+import {
+    fieldPropertiesQueryOptions,
+    updateFieldPropertiesMutationOptions,
+} from "@/hooks/queries";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function FieldPropertiesSettings() {
-    const { data: fieldProperties } = useFieldProperties();
-    const { mutate: setFieldProperties } = useUpdateFieldProperties();
+    const queryClient = useQueryClient();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { mutate: setFieldProperties } = useMutation(
+        updateFieldPropertiesMutationOptions(queryClient),
+    );
 
     if (!fieldProperties)
         return (

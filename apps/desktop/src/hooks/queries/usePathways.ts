@@ -1,19 +1,31 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { db, schema } from "@/global/database/db";
+import {
+    useMutation,
+    useQueryClient,
+    queryOptions,
+} from "@tanstack/react-query";
 import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { conToastError } from "@/utilities/utils";
+import { db, schema } from "@/global/database/db";
+import { Path } from "@openmarch/path-utility";
+import { DbConnection } from "@/test/base";
+import { findPageIdsForPathway } from "@/db-functions";
+import { DEFAULT_STALE_TIME } from "./constants";
 
-const { pathways } = schema;
+const { pathways, marcher_pages } = schema;
 
 // Define types from the existing schema
 export type DatabasePathway = typeof pathways.$inferSelect;
-export type Pathway = DatabasePathway;
+export type Pathway = {
+    id: number;
+    path_data: Path;
+    notes: string | null;
+};
 
 /**
  * Record structure for pathways indexed by ID
  */
-export type PathwayMap = Record<number, Pathway>;
+export type PathwaysById = Record<number, Pathway>;
 
 /**
  * Arguments for creating a new pathway
@@ -35,21 +47,29 @@ export interface ModifiedPathwayArgs {
 // Query key factory
 export const pathwayKeys = {
     all: ["pathways"] as const,
-    lists: () => [...pathwayKeys.all, "list"] as const,
-    list: (filters: { id?: number; ids?: number[] } = {}) =>
-        [...pathwayKeys.lists(), filters] as const,
-    details: () => [...pathwayKeys.all, "detail"] as const,
-    detail: (id: number) => [...pathwayKeys.details(), id] as const,
+    byPageId: (pageId: number) => [...pathwayKeys.all, "page", pageId] as const,
 };
 
 /**
  * Converts an array of pathways to a Record indexed by ID
  */
-export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwayMap {
-    const pathwayMap: PathwayMap = {};
+export function pathwayMapFromArray(
+    pathways: Omit<DatabasePathway, "created_at" | "updated_at">[],
+): PathwaysById {
+    const pathwayMap: PathwaysById = {};
 
     pathways.forEach((pathway) => {
-        pathwayMap[pathway.id] = pathway;
+        const pathData = Path.fromJson(
+            pathway.path_data,
+            undefined,
+            undefined,
+            pathway.id,
+        );
+        pathwayMap[pathway.id] = {
+            id: pathway.id,
+            path_data: pathData,
+            notes: pathway.notes,
+        };
     });
 
     return pathwayMap;
@@ -57,152 +77,193 @@ export function pathwayMapFromArray(pathways: DatabasePathway[]): PathwayMap {
 
 // Query functions
 const pathwayQueries = {
-    getAll: async (filters?: {
-        id?: number;
-        ids?: number[];
-    }): Promise<DatabasePathway[]> => {
-        let queryBuilder = db.select().from(pathways).$dynamic();
+    getAll: async (db: DbConnection) => {
+        const results = await db.query.pathways.findMany();
 
-        if (filters?.id !== undefined) {
-            queryBuilder = queryBuilder.where(eq(pathways.id, filters.id));
-        }
-
-        if (filters?.ids !== undefined && filters.ids.length > 0) {
-            queryBuilder = queryBuilder.where(
-                inArray(pathways.id, filters.ids),
-            );
-        }
-
-        return await queryBuilder.all();
+        return pathwayMapFromArray(results);
     },
 
-    getById: async (id: number): Promise<DatabasePathway | undefined> => {
+    getByPageId: async (pageId: number, db: DbConnection) => {
         const results = await db
-            .select()
+
+            .selectDistinct({
+                id: pathways.id,
+                path_data: pathways.path_data,
+                notes: pathways.notes,
+            })
             .from(pathways)
-            .where(eq(pathways.id, id))
+            .innerJoin(
+                marcher_pages,
+                eq(pathways.id, marcher_pages.path_data_id),
+            )
+            .where(eq(marcher_pages.page_id, pageId))
             .all();
 
-        return results[0];
+        const pathwayMap = pathwayMapFromArray(results);
+        return pathwayMap;
     },
 };
+export const _pathwayQueries = pathwayQueries;
 
 // Query hooks
-export const usePathways = (filters?: { id?: number; ids?: number[] }) => {
-    return useQuery({
-        queryKey: pathwayKeys.list(filters || {}),
-        queryFn: () => pathwayQueries.getAll(filters),
-        select: (data: DatabasePathway[]) => pathwayMapFromArray(data),
+export const allPathwaysQueryOptions = () => {
+    return queryOptions<PathwaysById>({
+        queryKey: pathwayKeys.all,
+        queryFn: () => pathwayQueries.getAll(db),
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
-export const usePathway = (id: number) => {
-    return useQuery({
-        queryKey: pathwayKeys.detail(id),
-        queryFn: () => pathwayQueries.getById(id),
-        enabled: !!id,
+/**
+ * Fetches all pathways that are associated with a given page
+ */
+export const pathwaysByPageQueryOptions = (pageId: number) => {
+    return queryOptions<PathwaysById>({
+        queryKey: pathwayKeys.byPageId(pageId),
+        queryFn: () => pathwayQueries.getByPageId(pageId, db),
+        enabled: !!pageId,
+        staleTime: DEFAULT_STALE_TIME,
     });
+};
+
+type MutationResult = {
+    pathways: DatabasePathway[];
+    pageIds?: number[];
+};
+
+// Mutation functions (pure business logic)
+const pathwayMutations = {
+    createPathway: async ({
+        newPathwayArgs,
+        marcherPageIds,
+    }: {
+        newPathwayArgs: NewPathwayArgs;
+        marcherPageIds?: number[];
+    }): Promise<MutationResult> => {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const createdPathway = await tx
+                .insert(pathways)
+                .values(newPathwayArgs)
+                .returning()
+                .get();
+
+            if (marcherPageIds) {
+                await tx
+                    .update(marcher_pages)
+                    .set({
+                        path_data_id: createdPathway.id,
+                        path_start_position: 0,
+                        path_end_position: 0,
+                    })
+                    .where(inArray(marcher_pages.id, marcherPageIds));
+            }
+
+            const pageIds = await findPageIdsForPathway({
+                tx,
+                pathwayId: createdPathway.id,
+            });
+
+            return { pathways: [createdPathway], pageIds };
+        });
+    },
+
+    updatePathway: async (
+        modifiedPathway: ModifiedPathwayArgs,
+    ): Promise<MutationResult> => {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const { id, ...updateData } = modifiedPathway;
+            const updatedResult = await tx
+                .update(pathways)
+                .set(updateData)
+                .where(eq(pathways.id, id))
+                .returning()
+                .get();
+
+            const pageIds = await findPageIdsForPathway({
+                tx,
+                pathwayId: updatedResult.id,
+            });
+
+            return { pathways: [updatedResult], pageIds };
+        });
+    },
+
+    deletePathways: async (pathwayIds: number[]): Promise<MutationResult> => {
+        return await db.transaction(async (tx) => {
+            await incrementUndoGroup(tx);
+
+            const results = await tx
+                .delete(pathways)
+                .where(inArray(pathways.id, pathwayIds))
+                .returning()
+                .all();
+
+            const pageIdsSet = new Set<number>();
+
+            for (const pathwayId of pathwayIds) {
+                const pageIdsForPathway = await findPageIdsForPathway({
+                    tx,
+                    pathwayId,
+                });
+                pageIdsForPathway.forEach((pageId) => {
+                    pageIdsSet.add(pageId);
+                });
+            }
+
+            return { pathways: results, pageIds: Array.from(pageIdsSet) };
+        });
+    },
 };
 
 // Mutation hooks
-export const useCreatePathways = () => {
+export const useCreatePathway = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (
-            newPathways: NewPathwayArgs[],
-        ): Promise<DatabasePathway[]> => {
-            return await db.transaction(async (tx) => {
-                await incrementUndoGroup(tx);
-
-                const results = await tx
-                    .insert(pathways)
-                    .values(newPathways)
-                    .returning()
-                    .all();
-
-                return results;
-            });
-        },
-        onSuccess: () => {
+        mutationFn: pathwayMutations.createPathway,
+        onSuccess: ({ pageIds }) => {
             // Invalidate all pathway queries
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
+            if (pageIds) {
+                pageIds.forEach((pageId) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: pathwayKeys.byPageId(pageId),
+                    });
+                });
+            }
         },
-        onError: (error: Error, variables: NewPathwayArgs[]) => {
+        onError: (
+            error: Error,
+            variables: {
+                newPathwayArgs: NewPathwayArgs;
+                marcherPageIds?: number[];
+            },
+        ) => {
             // Log the error for debugging/telemetry
-            conToastError(
-                `Failed to create ${variables.length} pathway${
-                    variables.length === 1 ? "" : "s"
-                }`,
-                { error, variables },
-            );
-
-            // Re-invalidate pathway queries to ensure UI state is consistent
-            // This helps recover from any optimistic updates that might have been applied
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
+            conToastError(`Failed to create pathway`, { error, variables });
         },
     });
 };
 
-export const useUpdatePathways = () => {
+export const useUpdatePathway = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (
-            modifiedPathways: ModifiedPathwayArgs[],
-        ): Promise<DatabasePathway[]> => {
-            return await db.transaction(async (tx) => {
-                await incrementUndoGroup(tx);
-
-                const results: DatabasePathway[] = [];
-
-                for (const modifiedPathway of modifiedPathways) {
-                    const { id, ...updateData } = modifiedPathway;
-                    const result = await tx
-                        .update(pathways)
-                        .set(updateData)
-                        .where(eq(pathways.id, id))
-                        .returning()
-                        .get();
-                    results.push(result);
-                }
-
-                return results;
-            });
-        },
-        onSuccess: (data, variables) => {
-            // Invalidate specific pathway queries
-            variables.forEach(({ id }) => {
-                queryClient.invalidateQueries({
-                    queryKey: pathwayKeys.detail(id),
+        mutationFn: pathwayMutations.updatePathway,
+        onSuccess: ({ pageIds }) => {
+            if (pageIds)
+                pageIds.forEach((pageId) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: pathwayKeys.byPageId(pageId),
+                    });
                 });
-            });
-
-            // Invalidate list queries
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
-
-            // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
-            // when they detect pathway changes through their own query logic
         },
-        onError: (error: Error, variables: ModifiedPathwayArgs[]) => {
+        onError: (error: Error, variables: ModifiedPathwayArgs) => {
             // Log the error for debugging/telemetry
-            conToastError(
-                `Failed to update ${variables.length} pathway${
-                    variables.length === 1 ? "" : "s"
-                }`,
-                { error, variables },
-            );
-
-            // Re-invalidate pathway queries to ensure UI state is consistent
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
+            conToastError(`Failed to update pathway`, { error, variables });
         },
     });
 };
@@ -211,36 +272,14 @@ export const useDeletePathways = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: async (
-            pathwayIds: number[],
-        ): Promise<DatabasePathway[]> => {
-            return await db.transaction(async (tx) => {
-                await incrementUndoGroup(tx);
-
-                const results = await tx
-                    .delete(pathways)
-                    .where(inArray(pathways.id, pathwayIds))
-                    .returning()
-                    .all();
-
-                return results;
-            });
-        },
-        onSuccess: (data, variables) => {
-            // Invalidate specific pathway queries
-            variables.forEach((id) => {
-                queryClient.invalidateQueries({
-                    queryKey: pathwayKeys.detail(id),
+        mutationFn: pathwayMutations.deletePathways,
+        onSuccess: ({ pageIds }) => {
+            if (pageIds)
+                pageIds.forEach((pageId) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: pathwayKeys.byPageId(pageId),
+                    });
                 });
-            });
-
-            // Invalidate list queries
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
-
-            // Note: Dependent queries (marcherPages, midsets) will handle their own invalidation
-            // when they detect pathway changes through their own query logic
         },
         onError: (error: Error, variables: number[]) => {
             // Log the error for debugging/telemetry
@@ -250,11 +289,6 @@ export const useDeletePathways = () => {
                 }`,
                 { error, variables },
             );
-
-            // Re-invalidate pathway queries to ensure UI state is consistent
-            queryClient.invalidateQueries({
-                queryKey: pathwayKeys.lists(),
-            });
         },
     });
 };

@@ -3,11 +3,19 @@ import {
     ArrowUUpLeftIcon,
     ArrowUUpRightIcon,
 } from "@phosphor-icons/react";
-import * as api from "@/api/api";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
+import { useQuery } from "@tanstack/react-query";
+import {
+    canRedoQueryOptions,
+    canUndoQueryOptions,
+    usePerformHistoryAction,
+} from "@/hooks/queries/useHistory";
 
 export default function FileControls() {
     const { isFullscreen } = useFullscreenStore();
+    const { data: canUndo } = useQuery(canUndoQueryOptions);
+    const { data: canRedo } = useQuery(canRedoQueryOptions);
+    const { mutate: performHistoryAction } = usePerformHistoryAction();
 
     return (
         <div className="titlebar-button flex w-fit gap-8">
@@ -20,13 +28,15 @@ export default function FileControls() {
                         <ArrowCounterClockwiseIcon size={18} />
                     </button>
                     <button
-                        onClick={api.performUndo}
+                        disabled={!canUndo}
+                        onClick={() => performHistoryAction("undo")}
                         className="hover:text-accent focus-visible:text-accent outline-hidden duration-150 ease-out disabled:opacity-50"
                     >
                         <ArrowUUpLeftIcon size={18} />
                     </button>
                     <button
-                        onClick={api.performRedo}
+                        disabled={!canRedo}
+                        onClick={() => performHistoryAction("redo")}
                         className="hover:text-accent focus-visible:text-accent outline-hidden duration-150 ease-out disabled:opacity-50"
                     >
                         <ArrowUUpRightIcon size={18} />

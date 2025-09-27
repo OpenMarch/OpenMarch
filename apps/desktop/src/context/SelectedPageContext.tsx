@@ -6,12 +6,12 @@ import {
     useState,
 } from "react";
 import Page from "@/global/classes/Page";
-import { useTimingObjectsStore } from "@/stores/TimingObjectsStore";
+import { useTimingObjects } from "@/hooks";
 
 // Define the type for the context value
 type SelectedPageContextProps = {
     selectedPage: Page | null;
-    setSelectedPage: (page: Page | null) => void;
+    setSelectedPage: (page: Page) => void;
 };
 
 const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
@@ -19,13 +19,8 @@ const SelectedPageContext = createContext<SelectedPageContextProps | undefined>(
 );
 
 export function SelectedPageProvider({ children }: { children: ReactNode }) {
-    const { pages } = useTimingObjectsStore();
+    const { pages } = useTimingObjects();
     const [selectedPage, setSelectedPage] = useState<Page | null>(null);
-
-    // Send the selected page to the electron main process
-    useEffect(() => {
-        if (selectedPage) window.electron.sendSelectedPage(selectedPage.id);
-    }, [selectedPage]);
 
     // Update the selected page if the pages list changes. This refreshes the information of the selected page
     useEffect(() => {

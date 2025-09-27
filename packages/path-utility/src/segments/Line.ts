@@ -1,13 +1,11 @@
 import PathCommander from "svg-path-commander";
 import {
-    IPathSegment,
     Point,
     SegmentJsonData,
     IControllableSegment,
-    ControlPoint,
     ControlPointType,
+    ControlPoint,
 } from "../interfaces";
-import { v4 as uuidv4 } from "uuid";
 
 /**
  * Represents a straight line segment between two points.
@@ -37,6 +35,14 @@ export class Line implements IControllableSegment {
         return { x: point.x, y: point.y };
     }
 
+    getStartPoint(): Point {
+        return this.startPointOverride || this.startPoint;
+    }
+
+    getEndPoint(): Point {
+        return this.endPointOverride || this.endPoint;
+    }
+
     toSvgString(includeMoveTo = false): string {
         const effectiveStartPoint = this.startPointOverride || this.startPoint;
         const effectiveEndPoint = this.endPointOverride || this.endPoint;
@@ -51,13 +57,13 @@ export class Line implements IControllableSegment {
         return {
             type: this.type,
             data: {
-                startPoint: { ...this.startPoint },
-                endPoint: { ...this.endPoint },
+                startPoint: { ...this.getStartPoint() },
+                endPoint: { ...this.getEndPoint() },
             },
         };
     }
 
-    fromJson(data: SegmentJsonData): IPathSegment {
+    fromJson(data: SegmentJsonData): IControllableSegment {
         if (data.type !== "line") {
             throw new Error(
                 `Cannot create Line from data of type ${data.type}`,
@@ -82,15 +88,15 @@ export class Line implements IControllableSegment {
 
         return [
             {
-                id: uuidv4(),
                 point: { ...effectiveStartPoint },
                 segmentIndex,
+                pointIndex: 0,
                 type: "start" as ControlPointType,
             },
             {
-                id: uuidv4(),
                 point: { ...effectiveEndPoint },
                 segmentIndex,
+                pointIndex: 1,
                 type: "end" as ControlPointType,
             },
         ];

@@ -5,19 +5,28 @@ import {
 } from "@/context/SelectedPageContext";
 import { ElectronApi } from "electron/preload";
 import { mockPages } from "@/__mocks__/globalMocks";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi, beforeEach } from "vitest";
 
 // Mock the electron api
 window.electron = {
     sendSelectedPage: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
+// Mock the useTimingObjects hook
+vi.mock("@/hooks", () => ({
+    useTimingObjects: vi.fn(() => ({
+        pages: mockPages,
+        measures: [],
+        beats: [],
+        fetchTimingObjects: vi.fn(),
+        isLoading: false,
+        hasError: false,
+    })),
+}));
+
 describe("SelectedPageContext", () => {
-    it("initial selected pages should be []", async () => {
-        const { result } = renderHook(() => useSelectedPage(), {
-            wrapper: SelectedPageProvider,
-        });
-        expect(result.current?.selectedPage).toEqual(null);
+    beforeEach(() => {
+        vi.clearAllMocks();
     });
 
     it("set selected page", async () => {
@@ -28,7 +37,7 @@ describe("SelectedPageContext", () => {
 
         // copy the first marcher to avoid reference equality issues
         const expectedPage = pages[0];
-        act(() => result.current?.setSelectedPage(expectedPage));
+        void act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
     });
 
@@ -40,21 +49,17 @@ describe("SelectedPageContext", () => {
 
         // copy the page to avoid reference equality issues
         let expectedPage = pages[0];
-        act(() => result.current?.setSelectedPage(expectedPage));
+        void act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
 
         // copy the page to avoid reference equality issues
         expectedPage = pages[2];
-        act(() => result.current?.setSelectedPage(expectedPage));
+        void act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
-
-        // no page
-        act(() => result.current?.setSelectedPage(null));
-        expect(result.current?.selectedPage).toEqual(null);
 
         // copy the page to avoid reference equality issues
         expectedPage = pages[1];
-        act(() => result.current?.setSelectedPage(expectedPage));
+        void act(() => result.current?.setSelectedPage(expectedPage));
         expect(result.current?.selectedPage).toEqual({ ...expectedPage });
     });
 });

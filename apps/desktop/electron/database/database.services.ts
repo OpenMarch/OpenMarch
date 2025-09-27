@@ -2,22 +2,10 @@ import { ipcMain } from "electron";
 import Database from "better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
-import * as History from "./database.history";
-import * as Utilities from "./utilities";
+import * as History from "./database.history.legacy";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
-import * as MarcherTable from "./tables/MarcherTable";
-import * as PageTable from "./tables/PageTable";
-import * as MarcherPageTable from "./tables/MarcherPageTable";
-import { DatabaseResponse } from "./DatabaseActions";
-import { DatabaseMarcher } from "../../src/global/classes/Marcher";
-import * as ShapeTable from "./tables/ShapeTable";
-import * as ShapePageTable from "./tables/ShapePageTable";
-import * as ShapePageMarcherTable from "./tables/ShapePageMarcherTable";
-import * as BeatTable from "./tables/BeatTable";
-import * as UtilityTable from "./tables/UtilityTable";
-import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -112,38 +100,6 @@ export function connect() {
     }
 }
 
-/* ============================ Handlers ============================ */
-async function connectWrapper<T>(
-    func: (args: any) => DatabaseResponse<T | undefined> | T,
-    args: any = {},
-): Promise<DatabaseResponse<T | undefined>> {
-    const db = connect();
-    db.pragma("foreign_keys = ON");
-    const orm = getOrm(db);
-    let result: Promise<DatabaseResponse<T | undefined>>;
-    try {
-        let fnResult = func({ ...args, db, orm });
-        if (
-            !fnResult ||
-            typeof fnResult !== "object" ||
-            !("success" in fnResult)
-        ) {
-            fnResult = { success: true, data: fnResult };
-        }
-        result = Promise.resolve(fnResult);
-    } catch (error: any) {
-        console.error(error);
-        result = Promise.resolve({
-            success: false,
-            data: undefined,
-            error: { message: error.message, stack: error.stack },
-        });
-    } finally {
-        db.close();
-    }
-    return result;
-}
-
 /**
  * Core SQL proxy logic with dependency injection for Drizzle ORM
  *
@@ -181,7 +137,7 @@ async function handleSqlProxyWithDb(
                 return {
                     rows: rows
                         ? Object.values(rows as Record<string, any>)
-                        : [],
+                        : undefined,
                 };
             case "run":
                 rows = result.run(...params);
@@ -195,6 +151,10 @@ async function handleSqlProxyWithDb(
         console.error("Error from SQL proxy:", error);
         throw error;
     }
+}
+
+async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
+    return await db.exec(sql);
 }
 
 let persistentConnection: Database.Database | null = null;
@@ -230,6 +190,16 @@ async function handleSqlProxy(
     }
 }
 
+/** Directly executes the SQL query without any parameters */
+async function handleUnsafeSqlProxy(_: any, sql: string) {
+    try {
+        return await handleUnsafeSqlProxyWithDb(connect(), sql);
+    } catch (error: any) {
+        console.error("Error from unsafe SQL proxy:", error);
+        throw error;
+    }
+}
+
 // exported for use in tests
 export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 
@@ -240,85 +210,9 @@ export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
     ipcMain.handle("sql:proxy", handleSqlProxy);
+    ipcMain.handle("unsafeSql:proxy", handleUnsafeSqlProxy);
 
     // File IO handlers located in electron/main/index.ts
-    // Marcher
-    ipcMain.handle("marcher:getAll", async () =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.getMarchers, {}),
-    );
-    ipcMain.handle("marcher:insert", async (_, args) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.createMarchers, {
-            newMarchers: args,
-        }),
-    );
-    ipcMain.handle("marcher:update", async (_, args) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.updateMarchers, {
-            modifiedMarchers: args,
-        }),
-    );
-    ipcMain.handle("marcher:delete", async (_, marcherIds) =>
-        connectWrapper<DatabaseMarcher[]>(MarcherTable.deleteMarchers, {
-            marcherIds,
-        }),
-    );
-
-    // MarcherPage
-    ipcMain.handle("marcher_page:getAll", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPages, args),
-    );
-    ipcMain.handle("marcher_page:get", async (_, args) =>
-        connectWrapper(MarcherPageTable.getMarcherPage, args),
-    );
-    ipcMain.handle("marcher_page:update", async (_, args) =>
-        connectWrapper(MarcherPageTable.updateMarcherPages, {
-            marcherPageUpdates: args,
-        }),
-    );
-
-    // **** Timing Objects ****
-
-    // Page
-    ipcMain.handle("page:getAll", async () =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.getPages),
-    );
-    ipcMain.handle("page:insert", async (_, args) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.createPages, {
-            newPages: args,
-        }),
-    );
-    ipcMain.handle(
-        "page:update",
-        async (_, pages: PageTable.ModifiedPageArgs[]) =>
-            connectWrapper<PageTable.DatabasePage[]>(PageTable.updatePages, {
-                modifiedPages: pages,
-            }),
-    );
-    ipcMain.handle("page:delete", async (_, pageIds) =>
-        connectWrapper<PageTable.DatabasePage[]>(PageTable.deletePages, {
-            pageIds,
-        }),
-    );
-
-    // Beats
-    ipcMain.handle("beat:getAll", async () =>
-        connectWrapper(BeatTable.getBeats),
-    );
-    ipcMain.handle("beat:insert", async (_, newBeats, startingPosition) =>
-        connectWrapper(BeatTable.createBeats, {
-            newBeats,
-            startingPosition,
-        }),
-    );
-    ipcMain.handle("beat:update", async (_, modifiedBeats) =>
-        connectWrapper(BeatTable.updateBeats, {
-            modifiedBeats,
-        }),
-    );
-    ipcMain.handle("beat:delete", async (_, beatIds) =>
-        connectWrapper(BeatTable.deleteBeats, {
-            beatIds,
-        }),
-    );
 
     // Audio Files
     // ipcMain.handle("audio:insert") is defined in main/index.ts
@@ -333,289 +227,9 @@ export function initHandlers() {
     ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
         deleteAudioFile(audioFileId),
     );
-
-    /*********** SHAPES ***********/
-    // Shape
-    ipcMain.handle("shape:getAll", async () =>
-        connectWrapper<ShapeTable.Shape[]>(ShapeTable.getShapes),
-    );
-    ipcMain.handle("shape:insert", async (_, args: ShapeTable.NewShapeArgs[]) =>
-        connectWrapper<ShapeTable.Shape[]>(ShapeTable.createShapes, { args }),
-    );
-    ipcMain.handle(
-        "shape:update",
-        async (_, args: ShapeTable.ModifiedShapeArgs[]) =>
-            connectWrapper<ShapeTable.Shape[]>(ShapeTable.updateShapes, {
-                args,
-            }),
-    );
-    ipcMain.handle("shape:delete", async (_, shapeIds: Set<number>) =>
-        connectWrapper<ShapeTable.Shape[]>(ShapeTable.deleteShapes, {
-            ids: shapeIds,
-        }),
-    );
-
-    // ShapePage
-    ipcMain.handle("shape_page:getAll", async () =>
-        connectWrapper<ShapePageTable.ShapePage[]>(
-            ShapePageTable.getShapePages,
-        ),
-    );
-    ipcMain.handle(
-        "shape_page:insert",
-        async (_, args: ShapePageTable.NewShapePageArgs[]) =>
-            connectWrapper<ShapePageTable.ShapePage[]>(
-                ShapePageTable.createShapePages,
-                { args },
-            ),
-    );
-    ipcMain.handle(
-        "shape_page:update",
-        async (_, args: ShapePageTable.ModifiedShapePageArgs[]) =>
-            connectWrapper<ShapePageTable.ShapePage[]>(
-                ShapePageTable.updateShapePages,
-                {
-                    args,
-                },
-            ),
-    );
-    ipcMain.handle("shape_page:delete", async (_, shapePageIds: Set<number>) =>
-        connectWrapper<ShapePageTable.ShapePage[]>(
-            ShapePageTable.deleteShapePages,
-            {
-                ids: shapePageIds,
-            },
-        ),
-    );
-
-    ipcMain.handle(
-        "shape_page:copy",
-        async (_, shapePageId: number, targetPageId: number) =>
-            connectWrapper<ShapePageTable.ShapePage | null>(
-                ShapePageTable.copyShapePageToPage,
-                {
-                    shapePageId,
-                    targetPageId,
-                },
-            ),
-    );
-
-    // ShapePageMarcher
-    ipcMain.handle(
-        "shape_page_marcher:get",
-        async (_, shapePageId: number, marcherIds: Set<number>) =>
-            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
-                ShapePageMarcherTable.getShapePageMarchers,
-                {
-                    shapePageId,
-                    marcherIds,
-                },
-            ),
-    );
-    ipcMain.handle(
-        "shape_page_marcher:get_by_marcher_page",
-        async (_, marcherPage: { marcher_id: number; page_id: number }) =>
-            connectWrapper<ShapePageMarcherTable.ShapePageMarcher | null>(
-                ShapePageMarcherTable.getSpmByMarcherPage,
-                { marcherPage },
-            ),
-    );
-    ipcMain.handle(
-        "shape_page_marcher:insert",
-        async (_, args: ShapePageMarcherTable.NewShapePageMarcherArgs[]) =>
-            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
-                ShapePageMarcherTable.createShapePageMarchers,
-                { args },
-            ),
-    );
-    ipcMain.handle(
-        "shape_page_marcher:update",
-        async (_, args: ShapePageMarcherTable.ModifiedShapePageMarcherArgs[]) =>
-            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
-                ShapePageMarcherTable.updateShapePageMarchers,
-                {
-                    args,
-                },
-            ),
-    );
-    ipcMain.handle(
-        "shape_page_marcher:delete",
-        async (_, shapePageMarcherIds: Set<number>) =>
-            connectWrapper<ShapePageMarcherTable.ShapePageMarcher[]>(
-                ShapePageMarcherTable.deleteShapePageMarchers,
-                {
-                    ids: shapePageMarcherIds,
-                },
-            ),
-    );
-
-    // utilities
-
-    ipcMain.handle(
-        "utilities:swap_marchers",
-        async (_, args: Utilities.SwapMarchersArgs) =>
-            connectWrapper(Utilities.swapMarchers, args),
-    );
-
-    ipcMain.handle("utility:getRecord", async () =>
-        connectWrapper<UtilityTable.UtilityRecord | null>(
-            UtilityTable.getUtilityRecord,
-            {},
-        ),
-    );
-    ipcMain.handle(
-        "utility:updateRecord",
-        async (
-            _,
-            utilityRecord: UtilityTable.ModifiedUtilityRecord,
-            useNextUndoGroup: boolean,
-        ) =>
-            connectWrapper<UtilityTable.UtilityRecord>(
-                UtilityTable.updateUtilityRecord,
-                { utilityRecord, useNextUndoGroup },
-            ),
-    );
-
-    // History utilities
-    ipcMain.handle("history:flattenUndoGroupsAbove", async (_, group: number) =>
-        connectWrapper(({ db }) => {
-            History.flattenUndoGroupsAbove(db, group);
-            return { success: true, data: null };
-        }),
-    );
-
-    ipcMain.handle("history:getCurrentRedoGroup", async () =>
-        connectWrapper(({ db }) => {
-            const redoGroup = History.getCurrentRedoGroup(db);
-            return { success: true, data: redoGroup };
-        }),
-    );
-
-    ipcMain.handle("history:getCurrentUndoGroup", async () =>
-        connectWrapper(({ db }) => {
-            const undoGroup = History.getCurrentUndoGroup(db);
-            return { success: true, data: undoGroup };
-        }),
-    );
-
-    ipcMain.handle("history:getUndoStackLength", async () =>
-        connectWrapper(({ db }) => {
-            const undoLength = History.getUndoStackLength(db);
-            return { success: true, data: undoLength };
-        }),
-    );
-
-    ipcMain.handle("history:getRedoStackLength", async () =>
-        connectWrapper(({ db }) => {
-            const redoLength = History.getRedoStackLength(db);
-            return { success: true, data: redoLength };
-        }),
-    );
-
-    // for (const tableController of Object.values(ALL_TABLES)) {
-    //     tableController.ipcCrudHandlers();
-    // }
 }
 
 /* ======================= History Functions ======================= */
-/**
- * Retrieves the table name from an SQL statement.
- * Assumes the table name is surrounded by double quotes. E.g.`UPDATE "table_name"`
- *
- * @param sql The SQL statement to get the table name from
- * @returns The table name from the SQL statement
- */
-const tableNameFromSql = (sql: string): string => {
-    return sql.match(/"(.*?)"/)?.[0].replaceAll('"', "") || "";
-};
-
-/**
- * Get the action from an SQL statement used in the history table.
- * Only "UPDATE", "DELETE", or "INSERT" - "ERROR" if invalid
- *
- * @param sql The SQL statement to get the action from
- * @returns The action from the SQL statement.
- */
-const sqlActionFromSql = (
-    sql: string,
-): "UPDATE" | "DELETE" | "INSERT" | "ERROR" => {
-    const action = sql.split(" ")[0].toUpperCase();
-    if (action === "UPDATE" || action === "DELETE" || action === "INSERT")
-        return action;
-    return "ERROR";
-};
-
-const rowIdFromSql = (sql: string): number => {
-    return parseInt(sql.match(/WHERE rowid=(\d+)/)?.[0] || "-1");
-};
-
-/**
- *
- * @param type The type of history action to perform, either "undo" or "redo"
- * @param db The database connection to use, or undefined to create a new connection
- * @returns Response from the history action
- */
-export function performHistoryAction(
-    type: "undo" | "redo",
-    db?: Database.Database,
-): HistoryResponse {
-    const dbToUse = db || connect();
-    let response: History.HistoryResponse;
-
-    let marcherIds: number[] = [];
-    let pageId: number | undefined;
-
-    try {
-        if (type === "undo") response = History.performUndo(dbToUse);
-        else response = History.performRedo(dbToUse);
-
-        // Get the marcher ids and page id from the SQL statements
-        for (const sqlStatement of response.sqlStatements) {
-            // Do not record the pageId or marcherIds if it is a DELETE statement
-            if (sqlActionFromSql(sqlStatement) !== "DELETE") {
-                const tableName = tableNameFromSql(sqlStatement);
-                if (tableName === Constants.MarcherTableName) {
-                    const marcherId = rowIdFromSql(sqlStatement);
-                    marcherIds.push(marcherId);
-                } else if (tableName === Constants.PageTableName) {
-                    const newPageId = rowIdFromSql(sqlStatement);
-                    if (newPageId > (pageId || -1)) pageId = newPageId;
-                } else if (tableName === Constants.MarcherPageTableName) {
-                    // If it's a marcher page, get the marcher id and page id of that marcher page
-                    const marcherPageId = rowIdFromSql(sqlStatement);
-                    const marcherPage = dbToUse
-                        .prepare(
-                            `SELECT marcher_id, page_id FROM ${Constants.MarcherPageTableName} WHERE rowid = (?)`,
-                        )
-                        .get(marcherPageId) as
-                        | { marcher_id: number; page_id: number }
-                        | undefined;
-                    if (marcherPage) {
-                        marcherIds.push(marcherPage.marcher_id);
-                        if (marcherPage.page_id > (pageId || -1))
-                            pageId = marcherPage.page_id;
-                    }
-                }
-            }
-        }
-    } catch (error: any) {
-        response = {
-            success: false,
-            error: {
-                message: error?.message || "Could not get error message",
-                stack: error?.stack || "Could not get stack",
-            },
-            tableNames: new Set(),
-            sqlStatements: [],
-        };
-        console.error(error);
-    } finally {
-        if (!db) dbToUse.close();
-    }
-
-    return { ...response, marcherIds, pageId };
-}
-
 /* ============================ Audio Files ============================ */
 /**
  * Gets the information on the audio files in the database.
@@ -700,14 +314,6 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
-/**
- * Creates new measures in the database, completely replacing the old ABC string.
- * See documentation in createMeasureTable for how measures in OpenMarch are stored.
- * This also selects the newly created audio file.
- *
- * @param new_ABC_data The new ABC string to put into the database
- * @returns LegacyDatabaseResponse
- */
 export async function insertAudioFile(
     audioFile: AudioFile,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
@@ -843,8 +449,6 @@ async function updateAudioFiles(
 async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
     const db = connect();
     try {
-        History.incrementUndoGroup(db);
-
         const wasSelectedStmt = db.prepare(
             `SELECT selected FROM ${Constants.AudioFilesTableName} WHERE id = ?`,
         );
@@ -865,7 +469,6 @@ async function deleteAudioFile(audioFileId: number): Promise<AudioFile | null> {
         console.error(error);
         throw error;
     } finally {
-        History.incrementUndoGroup(db);
         db.close();
     }
 

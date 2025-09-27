@@ -257,7 +257,12 @@ export class StaticMarcherShape {
      * path commands and coordinates.
      * @returns The updated fabric.Path object representing the redrawn shape.
      */
-    recreatePath(pathArg: VanillaPoint[]) {
+    recreatePath(
+        pathArg: VanillaPoint[],
+        updateMarcherShapeFn?: (
+            marcherShape: StaticMarcherShape,
+        ) => Promise<unknown>,
+    ) {
         if (this._shapePath && this.canvas) {
             this.canvas.remove(this._shapePath);
         }
@@ -367,6 +372,7 @@ export class StaticMarcherShape {
      * @param svgPath - The SVG path along which the items will be distributed.
      * @returns An array of objects with `id`, `x`, and `y` properties, representing the coordinates where the items should be placed.
      */
+    // eslint-disable-next-line max-lines-per-function
     static distributeAlongPath({
         itemIds,
         svgPath,

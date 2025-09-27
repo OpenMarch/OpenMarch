@@ -1,4 +1,4 @@
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import Page from "@/global/classes/Page";
 
@@ -23,16 +23,14 @@ export function createMarcherPages(
         pages.forEach((page) => {
             marcherPages.push({
                 id: currentId,
-                id_for_html: "marcher_page_" + currentId,
                 marcher_id: marcher.id,
                 page_id: page.id,
                 x: defaultX,
                 y: defaultY,
                 path_data_id: null,
-                path_position: null,
-                path_data: null,
+                path_start_position: null,
+                path_end_position: null,
                 notes: null,
-                pathway_notes: null,
             });
             currentId++;
         });

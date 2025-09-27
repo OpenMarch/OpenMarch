@@ -29,7 +29,7 @@ When you encounter an existing `class` that should be refactored to the new stan
 
 1. **Convert Static Methods to Pure Functions:**
    - Move all `static` methods out of the class and declare them as standalone, `exported` functions.
-   - If a function modifies data (e.g., by making a database call), it should accept a callback function to trigger a data refetch (e.g., `fetchMarcherPages`). This decouples the function from the state management store.
+   - If a function modifies data (e.g., by making a database call), it should accept a callback function to trigger a data refetch (e.g., `invalidateQuery()`). This decouples the function from the state management store.
 
 1. **Replace Instantiations with Object Literals:**
    - Find all instances of `new ClassName()` and replace them with plain object literals that conform to the new interface.

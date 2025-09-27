@@ -1,6 +1,6 @@
 ---
 description: Guidelines for writing and running unit tests
-alwaysApply: true
+alwaysApply: false
 ---
 
 # Testing

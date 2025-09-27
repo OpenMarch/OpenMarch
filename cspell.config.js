@@ -132,6 +132,7 @@ module.exports = {
         "Catmull",
         "NURBS",
         "uuidv",
+        "mello",
     ],
     ignorePaths: [
         "node_modules/**",

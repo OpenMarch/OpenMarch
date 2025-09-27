@@ -2,7 +2,6 @@ import Marcher from "@/global/classes/Marcher";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import Page from "@/global/classes/Page";
-import { useMarcherVisualStore } from "@/stores/MarcherVisualStore";
 import { getCoordinatesAtTime, MarcherTimeline } from "@/utilities/Keyframes";
 
 const COLLISION_RADIUS = 10; // can probably be changed on the marcher level later on
@@ -63,6 +62,13 @@ const calculateMaxVelocity = (
             const startPos = getCoordinatesAtTime(pageStartTime, timeline);
             const endPos = getCoordinatesAtTime(pageEndTime, timeline);
 
+            if (!startPos || !endPos) {
+                console.warn(
+                    `Marcher ${timeline.pathMap.get(pageStartTime)?.x} has no position at ${pageStartTime} or ${pageEndTime}`,
+                );
+                continue;
+            }
+
             // Calculate distance traveled
             const distance = Math.sqrt(
                 Math.pow(endPos.x - startPos.x, 2) +
@@ -80,18 +86,22 @@ const calculateMaxVelocity = (
     return maxVelocity;
 };
 
-const getMarcherLabels = (id1: number, id2: number) => {
-    const marcherVisuals = useMarcherVisualStore.getState().marcherVisuals;
-    const vis1 = marcherVisuals[id1];
-    const vis2 = marcherVisuals[id2];
+const getMarcherLabels = (
+    id1: number,
+    id2: number,
+    drillNumberByMarcherId: Record<number, string>,
+) => {
+    const vis1 = drillNumberByMarcherId[id1];
+    const vis2 = drillNumberByMarcherId[id2];
     if (!vis1 || !vis2) return `${id1},${id2}`;
 
-    return `${vis1.getCanvasMarcher().textLabel.text}, ${vis2.getCanvasMarcher().textLabel.text}`;
+    return `${vis1}, ${vis2}`;
 };
 
 const sweepNPruneCollision = (
     page: Page,
     marcherTimelines: Map<number, MarcherTimeline>,
+    marchers: Marcher[],
 ) => {
     const collisionPairs = new Set<string>();
     const collisions: CollisionData[] = [];
@@ -116,6 +126,14 @@ const sweepNPruneCollision = (
     // Clamp the interval to reasonable bounds (10ms to 500ms)
     dynamicInterval = Math.max(50, Math.min(500, dynamicInterval));
 
+    const drillNumberByMarcherId = marchers.reduce(
+        (acc, marcher) => {
+            acc[marcher.id] = marcher.drill_number;
+            return acc;
+        },
+        {} as Record<number, string>,
+    );
+
     // pre calculate positions
     for (
         let time = pageStartTime;
@@ -133,6 +151,12 @@ const sweepNPruneCollision = (
 
             try {
                 const position = getCoordinatesAtTime(time, timeline);
+                if (!position) {
+                    console.warn(
+                        `Marcher ${marcherId} has no position at ${time}`,
+                    );
+                    continue;
+                }
                 marcherPositionsAtTime.push({
                     id: marcherId,
                     x: position.x,
@@ -168,7 +192,11 @@ const sweepNPruneCollision = (
                 const distance = Math.sqrt(Math.pow(dx, 2) + Math.pow(dy, 2));
                 if (distance <= COLLISION_RADIUS) {
                     collisionPairs.add(collisionStr);
-                    const label = getMarcherLabels(a.id, b.id);
+                    const label = getMarcherLabels(
+                        a.id,
+                        b.id,
+                        drillNumberByMarcherId,
+                    );
                     collisions.push({
                         distance: distance,
                         label,
@@ -233,7 +261,11 @@ const getPageCollisions = (
             // Recalculate collisions for this page AND the next page
             // Clear velocity cache when page data changes
             velocityCacheRef.delete(page.id);
-            const collisions = sweepNPruneCollision(page, marcherTimelines);
+            const collisions = sweepNPruneCollision(
+                page,
+                marcherTimelines,
+                marchers,
+            );
             collisionsMap.set(page.id, collisions);
 
             // Update cache
@@ -247,6 +279,7 @@ const getPageCollisions = (
                 const nextCollisions = sweepNPruneCollision(
                     nextPage,
                     marcherTimelines,
+                    marchers,
                 );
 
                 collisionCacheRef.set(nextPage.id, nextCollisions);

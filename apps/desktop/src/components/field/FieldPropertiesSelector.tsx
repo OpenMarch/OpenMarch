@@ -14,13 +14,20 @@ import {
 } from "@openmarch/ui";
 import { StaticFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
-import { useFieldProperties, useUpdateFieldProperties } from "@/hooks/queries";
+import {
+    fieldPropertiesQueryOptions,
+    updateFieldPropertiesMutationOptions,
+} from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export default function FieldPropertiesSelector() {
-    const { data: fieldProperties } = useFieldProperties();
-    const { mutate: setFieldProperties } = useUpdateFieldProperties();
+    const queryClient = useQueryClient();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { mutate: setFieldProperties } = useMutation(
+        updateFieldPropertiesMutationOptions(queryClient),
+    );
     const [currentTemplate, setCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);

@@ -256,7 +256,8 @@ describe("StepSize", () => {
         ] as MarcherPage[]);
         const stepSizes = StepSize.createStepSizesForMarchers({
             marchers: marchers,
-            marcherPages: marcherPageMap,
+            startingMarcherPages: marcherPageMap.marcherPagesByPage[4],
+            endingMarcherPages: marcherPageMap.marcherPagesByPage[5],
             page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -363,7 +364,8 @@ describe("StepSize", () => {
         ] as MarcherPage[]);
         const stepSizes = StepSize.getMinAndMaxStepSizesForMarchers({
             marchers: marchers,
-            marcherPages: marcherPageMap,
+            startingMarcherPages: marcherPageMap.marcherPagesByPage[4],
+            endingMarcherPages: marcherPageMap.marcherPagesByPage[5],
             page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -426,7 +428,8 @@ describe("StepSize", () => {
         ] as MarcherPage[]);
         const stepSizes = StepSize.getMinAndMaxStepSizesForMarchers({
             marchers: marchers,
-            marcherPages: marcherPageMap,
+            startingMarcherPages: marcherPageMap.marcherPagesByPage[5],
+            endingMarcherPages: {},
             page: page,
             fieldProperties: legacyMockNCAAFieldProperties,
         });

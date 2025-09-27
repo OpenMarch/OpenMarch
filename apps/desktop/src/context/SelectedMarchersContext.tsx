@@ -5,8 +5,9 @@ import {
     useEffect,
     useState,
 } from "react";
-import { Marcher } from "@/global/classes/Marcher";
-import { useMarchersWithVisuals } from "@/global/classes/MarcherVisualGroup";
+import Marcher from "@/global/classes/Marcher";
+import { useQuery } from "@tanstack/react-query";
+import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -23,20 +24,12 @@ export function SelectedMarchersProvider({
 }: {
     children: ReactNode;
 }) {
-    const { marchers, marcherVisuals } = useMarchersWithVisuals();
+    const { data: marchers } = useQuery(allMarchersQueryOptions());
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
-
-    // Send the selected marcher to the electron main process
-    useEffect(() => {
-        if (selectedMarchers)
-            window.electron.sendSelectedMarchers(
-                selectedMarchers.map((m) => m.id),
-            );
-    }, [selectedMarchers]);
 
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher
     useEffect(() => {
-        if (selectedMarchers) {
+        if (selectedMarchers && marchers) {
             const newSelectedMarchers = selectedMarchers.filter((marcher) =>
                 marchers.some((m) => m.id === marcher.id),
             );

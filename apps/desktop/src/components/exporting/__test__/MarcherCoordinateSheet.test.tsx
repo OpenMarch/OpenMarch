@@ -2,7 +2,7 @@ import { cleanup, render, screen } from "@testing-library/react";
 import { StaticMarcherCoordinateSheet } from "../MarcherCoordinateSheet";
 import * as globalMocks from "@/__mocks__/globalMocks";
 import { FieldProperties } from "@openmarch/core";
-import { Marcher } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
 import { describe, expect, it, afterEach, beforeAll } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";

@@ -1,17 +1,21 @@
 import Measure from "./Measure";
 import Beat from "./Beat";
-import type {
-    DatabasePage,
-    ModifiedPageArgs,
-    NewPageArgs,
-} from "../../../electron/database/tables/PageTable";
-import { FIRST_PAGE_ID } from "../../../electron/database/constants";
-import type { DatabaseResponse } from "../../../electron/database/DatabaseActions";
 import { toast } from "sonner";
 import { conToastError } from "@/utilities/utils";
+import {
+    DatabasePage,
+    FIRST_PAGE_ID,
+    ModifiedPageArgs,
+    NewPageArgs,
+} from "@/db-functions";
+import { ModifyPagesRequest } from "@/hooks/queries/usePages";
 
 interface Page {
-    /** The id of the page in the database */
+    /** The id of the page in the database
+     *
+     * Note, this ID is not the same as the order of the page in the show.
+     * Do not use ID to sort pages. Use order instead.
+     */
     readonly id: number;
     /** The name of the page. E.g. "2A" */
     readonly name: string;
@@ -56,113 +60,6 @@ interface Page {
     readonly timestamp: number;
 }
 export default Page;
-
-// interface CreatePagesRequest {
-//     newPagesArg: NewPageArgs[];
-//     lastPageCounts?: number;
-// }
-
-/**
- * Represents a request to modify multiple pages with optional last page count tracking.
- *
- * @param modifiedPagesArgs - An array of page modification arguments to be applied.
- * @param lastPageCounts - Optional number of counts for the last page, used for tracking page modifications.
- */
-export interface ModifyPagesRequest {
-    modifiedPagesArgs: ModifiedPageArgs[];
-    lastPageCounts?: number;
-}
-
-/**
- * Creates one or more new pages in the database and updates the store.
- *
- * @param newPagesArgs - The new pages to be created in order of how they should be created.
- * @param fetchPagesFunction - The function to call to fetch the pages from the database. This function updates the store.
- * @returns DatabaseResponse with the new pages.
- */
-export async function createPages(
-    newPagesArgs: NewPageArgs[],
-    fetchPagesFunction: () => Promise<void>,
-): Promise<DatabaseResponse<DatabasePage[]>> {
-    const createResponse = await window.electron.createPages(newPagesArgs);
-
-    if (createResponse.success) await fetchPagesFunction();
-    return createResponse;
-}
-
-/**
- * Update one or many pages with the provided arguments.
- *
- * @param modifiedPagesArgs - The objects to update the pages with.
- * @returns DatabaseResponse: { success: boolean; errorMessage?: string;}
- */
-export async function updatePages(
-    modifiedPagesArgs: ModifiedPageArgs[] | ModifyPagesRequest,
-    fetchPagesFunction: () => Promise<void>,
-) {
-    if (Array.isArray(modifiedPagesArgs)) {
-        const response = await window.electron.updatePages(modifiedPagesArgs);
-        // fetch the pages to update the store
-        if (response.success) await fetchPagesFunction();
-        return response;
-    } else {
-        // ModifyPagesRequest object was provided
-
-        // Check if any modifiedPages were provided
-        if (modifiedPagesArgs.modifiedPagesArgs.length > 0) {
-            const updatePagesResponse = await window.electron.updatePages(
-                modifiedPagesArgs.modifiedPagesArgs,
-            );
-            if (updatePagesResponse.success) {
-                // Check if lastPageCounts were provided
-                if (modifiedPagesArgs.lastPageCounts !== undefined) {
-                    updateLastPageCounts({
-                        counts: modifiedPagesArgs.lastPageCounts,
-                        useNextUndoGroup: false,
-                        // Do not fetch because we will fetch at the end of this function
-                        fetchPagesFunction: async () => {},
-                    });
-                }
-
-                // fetch the pages to update the store
-                fetchPagesFunction();
-            }
-            return updatePagesResponse;
-        } else if (modifiedPagesArgs.lastPageCounts !== undefined) {
-            // No modifiedPages were provided, but last page counts were
-
-            // Update the last page counts
-            updateLastPageCounts({
-                counts: modifiedPagesArgs.lastPageCounts,
-                useNextUndoGroup: true,
-                fetchPagesFunction,
-            });
-            return { success: true };
-        } else {
-            console.warn(
-                "No modified pages or last page counts provided. Doing nothing",
-            );
-            return { success: false };
-        }
-    }
-}
-
-/**
- * Deletes pages from the database.
- * CAUTION - this will delete all of the pagePages associated with the page.
- *
- * @param pageIds - The ids of the pages to delete.
- * @returns Response data from the server.
- */
-export async function deletePages(
-    pageIds: Set<number>,
-    fetchPagesFunction: () => Promise<void>,
-) {
-    const deleteResponse = await window.electron.deletePages(pageIds);
-    // fetch the pages to update the store
-    if (deleteResponse.success) fetchPagesFunction();
-    return deleteResponse;
-}
 
 /**
  * Sorts the pages by order.
@@ -600,98 +497,6 @@ export const getPreviousPage = (
         return null;
     }
     return prevPage;
-};
-
-/**
- * Creates a new page at the next available beat after the current last page.
- *
- * @param currentLastPage - The last page in the current sequence.
- * @param allBeats - The complete list of beats in the show.
- * @param counts - The number of counts for the new page.
- * @param fetchPagesFunction - Function to update the pages store after creation.
- * @returns A DatabaseResponse with the newly created page, or null if no more beats are available.
- */
-export async function createLastPage({
-    currentLastPage,
-    allBeats,
-    counts,
-    fetchPagesFunction,
-}: {
-    currentLastPage: Page;
-    allBeats: Beat[];
-    counts: number;
-    fetchPagesFunction: () => Promise<void>;
-}): Promise<DatabaseResponse<DatabasePage | undefined>> {
-    const lastPageLastBeat =
-        currentLastPage.beats[currentLastPage.beats.length - 1];
-
-    const nextBeat = allBeats.find(
-        (beat) => beat.position > lastPageLastBeat.position,
-    );
-
-    if (!nextBeat) {
-        const message =
-            "Cannot create a new last page! The show has no beats left";
-        console.log(message);
-        toast.warning(message);
-        return {
-            success: false,
-            error: { message },
-            data: undefined,
-        };
-    }
-
-    // Create the page
-    const createResponse = await createPages(
-        [
-            {
-                start_beat: nextBeat.id,
-                is_subset: false,
-            },
-        ],
-        fetchPagesFunction,
-    );
-
-    if (!createResponse.success) {
-        return { ...createResponse, data: undefined };
-    }
-
-    // Update the last page counts
-    const lastPageCountsResponse = await window.electron.updateUtilityRecord({
-        last_page_counts: counts,
-    });
-    if (!lastPageCountsResponse.success) {
-        console.error("Error updating last page counts:");
-        console.error(lastPageCountsResponse.error);
-    }
-    return { ...createResponse, data: createResponse.data[0] };
-}
-
-/**
- * Updates the last page counts in the utility record and triggers a page fetch.
- * @param counts The number of counts to update
- * @param fetchPagesFunction A function to fetch pages after updating the counts
- */
-export const updateLastPageCounts = async ({
-    counts,
-    useNextUndoGroup,
-    fetchPagesFunction,
-}: {
-    counts: number;
-    useNextUndoGroup: boolean;
-    fetchPagesFunction: () => Promise<void>;
-}) => {
-    const response = await window.electron.updateUtilityRecord(
-        {
-            last_page_counts: counts,
-        },
-        useNextUndoGroup,
-    );
-    if (!response.success) {
-        console.error("Error updating last page counts:");
-        console.error(response.error);
-    }
-    fetchPagesFunction();
 };
 
 // Function to update page duration in the database
