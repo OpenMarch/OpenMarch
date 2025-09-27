@@ -1,6 +1,6 @@
 import Database, { RunResult } from "better-sqlite3";
 import { getOrm, schema } from "../../db";
-import { DrizzleMigrationService } from "electron/database/services/DrizzleMigrationService";
+import { DrizzleMigrationService } from "@/../electron/database/services/DrizzleMigrationService";
 import { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
@@ -55,6 +55,6 @@ export const initTestDatabaseOrm = async (): Promise<DbConnection> => {
         duration: 0.5,
         position: i + 1,
     }));
-    orm.insert(schema.beats).values(beatValues).run();
+    void orm.insert(schema.beats).values(beatValues).run();
     return orm;
 };

@@ -10,10 +10,9 @@ import {
     preparePageUpdates,
     createNewBeatsForTempoChange,
 } from "../audio/EditableAudioPlayerUtils";
-import Beat from "@/global/classes/Beat";
-import Measure from "@/global/classes/Measure";
-import Page from "@/global/classes/Page";
-import { GroupFunction } from "@/utilities/ApiFunctions";
+import type Beat from "@/global/classes/Beat";
+import type Measure from "@/global/classes/Measure";
+import type Page from "@/global/classes/Page";
 import { DatabaseBeat } from "@/db-functions";
 
 describe("createNewTemporaryBeats", () => {
@@ -783,28 +782,23 @@ describe("getUpdatedBeatObjects", () => {
 });
 
 // Mock the necessary functions
-vi.mock("@/global/classes/Page", () => ({
-    updatePages: vi.fn().mockResolvedValue({ success: true }),
+vi.mock("@/db-functions/page", () => ({
+    updatePagesInTransaction: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-vi.mock("@/global/classes/Measure", () => ({
-    createMeasures: vi.fn().mockResolvedValue({ success: true }),
-    deleteMeasures: vi.fn().mockResolvedValue({ success: true }),
+vi.mock("@/db-functions/measures", () => ({
+    createMeasuresInTransaction: vi.fn().mockResolvedValue({ success: true }),
+    deleteMeasuresInTransaction: vi.fn().mockResolvedValue({ success: true }),
 }));
 
-vi.mock("@/global/classes/Beat", async () => {
-    const actual = await vi.importActual("@/global/classes/Beat");
-    return {
-        ...actual,
-        deleteBeats: vi.fn().mockResolvedValue({ success: true }),
-        createBeats: vi.fn().mockResolvedValue({ success: true }),
-    };
-});
+vi.mock("@/db-functions/beat", () => ({
+    createBeatsInTransaction: vi.fn().mockResolvedValue({ success: true }),
+    deleteBeatsInTransaction: vi.fn().mockResolvedValue({ success: true }),
+}));
 
-vi.mock("@/utilities/ApiFunctions", () => ({
-    GroupFunction: vi.fn().mockImplementation(({ functionsToExecute }) => {
-        functionsToExecute.forEach((fn: () => void) => fn());
-        return { success: true };
+vi.mock("@/db-functions", () => ({
+    transactionWithHistory: vi.fn().mockImplementation(async (db, name, fn) => {
+        return await fn({} as any);
     }),
 }));
 
@@ -840,8 +834,8 @@ describe("prepareBeatsForCreation", () => {
         const result = prepareBeatsForCreation(beats);
 
         expect(result).toEqual([
-            { duration: 2.5, include_in_measure: 1 },
-            { duration: 1.75, include_in_measure: 1 },
+            { duration: 2.5, include_in_measure: true },
+            { duration: 1.75, include_in_measure: true },
         ]);
     });
 
@@ -1019,9 +1013,8 @@ describe.skip("performDatabaseOperations", () => {
         const measuresToCreate = [{ start_beat: 101 }];
         const oldMeasures = [{ id: 1 } as Measure];
         const oldBeats = [createMockBeat(1, 0, 1, 1)];
-        const refreshFunction = vi.fn();
 
-        const result = await _performDatabaseOperations({
+        await _performDatabaseOperations({
             pagesToUpdate,
             measuresToCreate,
             oldMeasures,

@@ -20,7 +20,6 @@ This file contains important context and learnings for AI assistants working on 
 
 ### Database Layer
 
-- **SQLite with better-sqlite3**: Custom DatabaseActions layer for CRUD operations
 - **Undo/Redo system**: Uses `useNextUndoGroup` parameter to control transaction grouping
 - **Transaction pattern**: GroupFunction for multi-operation transactions with rollback
 - **Migration to shared SQL bridge**: Moving from IPC-based database calls to Drizzle remote SQLite driver for renderer process access (enables future in-browser version)

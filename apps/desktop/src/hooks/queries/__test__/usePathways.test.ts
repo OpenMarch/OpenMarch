@@ -147,7 +147,7 @@ describeDbTests("usePathways", (baseIt) => {
             pathwaysFixture: { existingPathways, db },
         }) => {
             const pathways = await _pathwayQueries.getByPageId(1, db);
-            expect(pathways).toEqual([]);
+            expect(pathways).toEqual({});
         });
 
         describe.each(expectedPages.map((p) => ({ pageId: p.id })))(
@@ -169,7 +169,10 @@ describeDbTests("usePathways", (baseIt) => {
                             pageId,
                             db,
                         );
-                        expect(pathways).toEqual(1);
+                        expect(Object.keys(pathways)).toHaveLength(1);
+                        expect(Object.values(pathways)[0].path_data).toEqual(
+                            existingPathways[0],
+                        );
                     },
                 );
 
@@ -226,12 +229,10 @@ describeDbTests("usePathways", (baseIt) => {
                         );
                         expect(
                             Object.entries(pathways).map(([id, p]) => [
-                                id,
+                                Number(id),
                                 p.path_data,
                             ]),
-                        ).toEqual(
-                            expectedPathways.map((p) => [p.id, p.toJson()]),
-                        );
+                        ).toEqual(expectedPathways.map((p) => [p.id, p]));
                     },
                 );
             },

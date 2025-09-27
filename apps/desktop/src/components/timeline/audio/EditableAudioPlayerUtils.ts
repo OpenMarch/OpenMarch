@@ -403,13 +403,13 @@ const useAudioPlayerMutation = <TArgs>(
         mutationFn,
         onSuccess: () => {
             // Invalidate all relevant queries
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: measureKeys.all(),
             });
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: beatKeys.all(),
             });
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: pageKeys.all(),
             });
 
@@ -514,54 +514,6 @@ export const createNewBeatsForTempoChange = ({
 
     return { newBeats, beatsToDelete };
 };
-
-// export const createNewBeatObjects = async ({
-//     newBeats,
-//     beatsToDelete,
-//     pages,
-//     measures,
-// }: {
-//     newBeats: Beat[];
-//     beatsToDelete: Beat[];
-//     pages: Page[];
-//     measures: Measure[];
-// }): Promise<{ success: boolean }> => {
-//     // Step 1: Prepare beats for creation
-//     const beatsToCreate = prepareBeatsForCreation(newBeats);
-
-//     // Step 2: Create beats in the database
-//     const createBeatsResponse = await GroupFunction({
-//         refreshFunction: () => {},
-//         functionsToExecute: [() => createBeats(beatsToCreate, async () => {})],
-//         useNextUndoGroup: true,
-//     });
-
-//     if (!createBeatsResponse.success) {
-//         conToastError("Error creating beats", createBeatsResponse);
-//         return { success: false };
-//     }
-//     try {
-//         // Step 3: Convert database beats to Beat objects
-//         const databaseBeats = (
-//             createBeatsResponse.responses[0] as {
-//                 success: boolean;
-//                 data: DatabaseBeat[];
-//             }
-//         ).data;
-//         const createdBeats = convertDatabaseBeatsToBeats(databaseBeats);
-
-//         // Step 4: Prepare page updates
-//         const { pagesToUpdate } = preparePageUpdates(
-//             pages,
-//             oldBeats,
-//             createdBeats,
-//         );
-//     } catch (error) {
-//         console.error("Error creating new beats", error);
-//         window.electron.undo();
-//         return { success: false };
-//     }
-// };
 
 /**
  * Creates new beat objects and updates associated pages
