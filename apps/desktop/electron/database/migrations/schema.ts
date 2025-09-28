@@ -181,6 +181,7 @@ export const marcher_pages = sqliteTable(
         path_end_position: real(),
         /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
+        rotation_degrees: real().notNull().default(0),
     },
     (table) => [
         check(

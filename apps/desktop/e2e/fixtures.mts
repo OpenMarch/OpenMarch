@@ -14,10 +14,8 @@ const __dirname = path.dirname(__filename);
 // Define paths similar to _codegen.mjs
 const distAssetsDir = path.resolve(__dirname, "../dist-electron/main");
 const mainFile = path.resolve(distAssetsDir, "index.js");
-const blankDatabaseFile = path.resolve(
-    __dirname,
-    "./mock-databases/blank.dots",
-);
+const dbPath = "../electron/database/migrations/_blank.dots";
+const blankDatabaseFile = path.resolve(__dirname, dbPath);
 
 // Ensure necessary directories and files exist (similar to _codegen.mjs checks)
 if (!fs.existsSync(distAssetsDir)) {
@@ -32,7 +30,7 @@ if (!fs.existsSync(mainFile)) {
 }
 if (!fs.existsSync(blankDatabaseFile)) {
     throw new Error(
-        "mock-databases/blank.dots file does not exist. Please provide a valid .dots file.",
+        `${dbPath} file does not exist. Please provide a valid .dots file.`,
     );
 }
 
