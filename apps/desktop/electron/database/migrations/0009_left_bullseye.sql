@@ -1,0 +1,1 @@
+ALTER TABLE `marcher_pages` ADD `rotation_degrees` real DEFAULT 0 NOT NULL;
