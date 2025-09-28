@@ -46,7 +46,7 @@ export const allDatabaseMeasuresQueryOptions = () => {
 };
 
 export const fetchMeasures = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
+    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
 };
 
 export const createMeasuresMutationOptions = (qc: QueryClient) => {
