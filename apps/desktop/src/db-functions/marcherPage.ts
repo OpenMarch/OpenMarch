@@ -149,6 +149,7 @@ export async function updateMarcherPagesInTransaction({
                 path_start_position: marcher_pages.path_start_position,
                 path_end_position: marcher_pages.path_end_position,
                 notes: marcher_pages.notes,
+                rotation_degrees: marcher_pages.rotation_degrees,
             })
             .get();
 
