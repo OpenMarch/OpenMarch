@@ -289,16 +289,15 @@ const describeDbTests = (
     ) => void,
 ) => {
     // Better-sqlite is disabled by default just to remove redundancy. It is run in CI.
-    // Feel free to enable it by setting the `VITEST_ENABLE_BETTER_SQLITE` environment variable to `true`.
-    const runBetterSqliteTests =
-        process.env.VITEST_ENABLE_BETTER_SQLITE === "true";
-    if (runBetterSqliteTests)
-        describe("better-sqlite3", () => {
-            tests(betterSqliteTest, "better-sqlite3");
-        });
-    describe("sql-js", () => {
-        tests(sqlJsTest, "sql-js");
+    // Feel free to enable it by setting the `VITEST_ENABLE_SQLJS` environment variable to `true`.
+    describe("better-sqlite3", () => {
+        tests(betterSqliteTest, "better-sqlite3");
     });
+    const runSqlJsTests = process.env.VITEST_ENABLE_SQLJS === "true";
+    if (runSqlJsTests)
+        describe("sql-js", () => {
+            tests(sqlJsTest, "sql-js");
+        });
 };
 
 export {

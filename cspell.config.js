@@ -94,6 +94,7 @@ module.exports = {
         "lightridge",
         "posthog",
         "vite",
+        "vitest",
         "clsx",
         "signup",
         "supabase",
@@ -133,6 +134,7 @@ module.exports = {
         "NURBS",
         "uuidv",
         "mello",
+        "sqljs",
     ],
     ignorePaths: [
         "node_modules/**",

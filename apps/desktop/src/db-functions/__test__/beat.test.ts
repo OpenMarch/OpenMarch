@@ -742,6 +742,9 @@ describeDbTests("beats", (it) => {
                         db,
                     });
 
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState(db);
+
                     // Attempt to update first beat should be filtered out
                     const updateResult = await updateBeats({
                         modifiedBeats: modifiedBeatsArgs,
@@ -751,7 +754,7 @@ describeDbTests("beats", (it) => {
                     // Should return empty array since first beat is filtered out
                     expect(updateResult.length).toBe(0);
 
-                    await expectNumberOfChanges.test(db, 0);
+                    await expectNumberOfChanges.test(db, 0, databaseState);
                 },
             );
         });
@@ -978,39 +981,35 @@ describeDbTests("beats", (it) => {
                 },
             );
             describe("deleteBeats with failure", () => {
-                testWithHistory(
-                    "Should fail to delete the first beat",
-                    async ({ db, expectNumberOfChanges }) => {
-                        // create the first beat
-                        await db.insert(schema.beats).values({
-                            id: FIRST_BEAT_ID,
-                            position: 0,
-                            duration: 0,
-                        });
+                // don't use testWithHistory here because we want to test the failure and nothing will change
+                it("Should fail to delete the first beat", async ({ db }) => {
+                    // create the first beat
+                    await db.insert(schema.beats).values({
+                        id: FIRST_BEAT_ID,
+                        position: 0,
+                        duration: 0,
+                    });
 
-                        const beatsBeforeDelete =
-                            await db.query.beats.findMany();
-                        const firstBeat = beatsBeforeDelete.find(
-                            (b) => b.id === FIRST_BEAT_ID,
-                        )!;
-                        expect(firstBeat).toBeDefined();
-                        const allBeatIds = new Set(
-                            beatsBeforeDelete.map((b) => b.id),
-                        );
+                    const beatsBeforeDelete = await db.query.beats.findMany();
+                    const firstBeat = beatsBeforeDelete.find(
+                        (b) => b.id === FIRST_BEAT_ID,
+                    )!;
+                    expect(firstBeat).toBeDefined();
+                    const allBeatIds = new Set(
+                        beatsBeforeDelete.map((b) => b.id),
+                    );
 
-                        await deleteBeats({
-                            beatIds: allBeatIds,
-                            db,
-                        });
+                    await deleteBeats({
+                        beatIds: allBeatIds,
+                        db,
+                    });
 
-                        const beatsAfterDelete =
-                            await db.query.beats.findMany();
+                    const beatsAfterDelete = await db.query.beats.findMany();
 
-                        // First beat should not have been deleted
-                        expect(beatsAfterDelete).toHaveLength(1);
-                        expect(beatsAfterDelete[0].id).toEqual(firstBeat.id);
-                    },
-                );
+                    // First beat should not have been deleted
+                    expect(beatsAfterDelete).toHaveLength(1);
+                    expect(beatsAfterDelete[0].id).toEqual(firstBeat.id);
+                });
 
                 testWithHistory.for([
                     {

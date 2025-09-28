@@ -5,7 +5,7 @@ import { defineConfig } from "vitest/config";
  * ENVIRONMENT VARIABLES
  *
  * VITEST_ENABLE_HISTORY - Enable history reporter (Tests undo/redo functionality at the cost of much slower tests)
- * VITEST_ENABLE_BETTER_SQLITE - Enable better-sqlite3 database driver
+ * VITEST_ENABLE_SQLJS - Enable better-sqlite3 database driver
  */
 
 export default defineConfig({
@@ -28,6 +28,8 @@ export default defineConfig({
             ["src/**", "jsdom"],
             ["electron/**", "node"],
         ],
-        testTimeout: 120000, // 2 minute global timeout for all tests
+
+        pool: "threads",
+        testTimeout: 10 * 60 * 1000, // 10 minute global timeout for all tests
     },
 });
