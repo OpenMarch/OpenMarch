@@ -51,7 +51,7 @@ export default function Playground({ component, variants }: PlaygroundProps) {
         }
 
         if (filename) {
-            loadComponent();
+            void loadComponent();
         }
     }, [filename]);
 

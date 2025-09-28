@@ -77,7 +77,7 @@ export default function GithubReleases() {
             }
         };
 
-        fetchReleases();
+        void fetchReleases();
     }, []);
 
     return (
