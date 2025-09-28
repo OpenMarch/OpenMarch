@@ -1,4 +1,7 @@
-import { databaseMarcherPagesToMarcherPages } from "../MarcherPage";
+import {
+    DatabaseMarcherPage,
+    databaseMarcherPagesToMarcherPages,
+} from "../MarcherPage";
 import { describe, expect, it } from "vitest";
 
 // Mock pages data for testing beat order functionality
@@ -59,21 +62,20 @@ const mockPages = [
 describe.skip("MarcherPage Functions", () => {
     it("should correctly find previous marcher page based on beat order", () => {
         // Create test data with marcher pages in non-sequential page order
-        const testMarcherPages = [
+        const testMarcherPages: DatabaseMarcherPage[] = [
             {
                 id: 1,
                 marcher_id: 1,
                 page_id: 2,
                 x: 100,
                 y: 100,
-                path_data: null,
                 path_data_id: null,
                 path_start_position: null,
                 path_end_position: null,
                 notes: null,
-                pathway_notes: null,
                 created_at: "",
                 updated_at: "",
+                rotation_degrees: 0,
             },
             {
                 id: 2,
@@ -81,14 +83,13 @@ describe.skip("MarcherPage Functions", () => {
                 page_id: 1,
                 x: 50,
                 y: 50,
-                path_data: null,
                 path_data_id: null,
                 path_start_position: null,
                 path_end_position: null,
                 notes: null,
-                pathway_notes: null,
                 created_at: "",
                 updated_at: "",
+                rotation_degrees: 0,
             },
             {
                 id: 3,
@@ -96,14 +97,13 @@ describe.skip("MarcherPage Functions", () => {
                 page_id: 3,
                 x: 150,
                 y: 150,
-                path_data: null,
                 path_data_id: null,
                 path_start_position: null,
                 path_end_position: null,
                 notes: null,
-                pathway_notes: null,
                 created_at: "",
                 updated_at: "",
+                rotation_degrees: 0,
             },
         ];
 
