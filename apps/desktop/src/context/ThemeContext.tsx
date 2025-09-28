@@ -25,7 +25,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const [theme, setTheme] = useState<string>("dark");
 
     useEffect(() => {
-        window.electron.getTheme().then((storedTheme: string | null) => {
+        void window.electron.getTheme().then((storedTheme: string | null) => {
             if (storedTheme) {
                 applyTheme(storedTheme);
             } else {
@@ -43,7 +43,7 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
 
     const applyTheme = (theme: string) => {
         setTheme(theme);
-        window.electron.setTheme(theme);
+        void window.electron.setTheme(theme);
         if (theme === "dark") {
             document.documentElement.classList.add("dark");
         } else {

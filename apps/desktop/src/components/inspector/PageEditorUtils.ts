@@ -52,16 +52,16 @@ const useSplitPageMutation = <TArgs>(
     const queryClient = useQueryClient();
     return useMutation({
         mutationFn,
-        onSuccess: () => {
+        onSuccess: async () => {
             // Invalidate all timing object queries
-            queryClient.invalidateQueries({
+            await queryClient.invalidateQueries({
+                queryKey: allDatabaseBeatsQueryOptions().queryKey,
+            });
+            void queryClient.invalidateQueries({
                 queryKey: allDatabasePagesQueryOptions().queryKey,
             });
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: allDatabaseMeasuresQueryOptions().queryKey,
-            });
-            queryClient.invalidateQueries({
-                queryKey: allDatabaseBeatsQueryOptions().queryKey,
             });
         },
         onError: (error) => {

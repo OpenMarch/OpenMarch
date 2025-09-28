@@ -11,6 +11,7 @@ import StyledMarkdown from "./StyledMarkdown";
 import { Skeleton } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 
+// eslint-disable-next-line max-lines-per-function
 export default function VersionChecker() {
     const { t } = useTolgee();
     const [isOpen, setIsOpen] = useState(false);
@@ -69,7 +70,7 @@ export default function VersionChecker() {
     }, [t]);
 
     useEffect(() => {
-        fetchLatestVersion(); // Fetch the latest
+        void fetchLatestVersion(); // Fetch the latest
     }, [fetchLatestVersion]);
 
     useEffect(() => {
@@ -126,6 +127,7 @@ export default function VersionChecker() {
         return false;
     }
 
+    // eslint-disable-next-line max-lines-per-function
     function SettingsModalContents() {
         return (
             <div className="bg flex flex-col gap-48">

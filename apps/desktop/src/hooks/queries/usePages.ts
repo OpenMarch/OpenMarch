@@ -165,10 +165,6 @@ export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
     });
 };
 
-export const fetchPages = () => {
-    queryClient.invalidateQueries({ queryKey: pageKeys.all() });
-};
-
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),

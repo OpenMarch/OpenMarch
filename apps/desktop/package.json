@@ -2,7 +2,7 @@
     "name": "@openmarch/desktop",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.12",
+    "version": "0.0.13",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "AGPL-3.0",
@@ -29,13 +29,14 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest run --silent",
+        "test:history": "VITEST_ENABLE_HISTORY=true VITEST_ENABLE_SQLJS=true vitest run --silent",
         "test:watch": "vitest",
         "test:prepare": "pnpm rebuild better-sqlite3",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",
         "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
-        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate && rimraf electron/database/migrations/_blank.dots && drizzle-kit push"
+        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate && tsx scripts/create-blank-db.ts"
     },
     "dependencies": {
         "@fontsource/dm-mono": "^5.2.6",
@@ -129,6 +130,7 @@
         "sql-formatter": "^15.6.6",
         "sql.js": "^1.13.0",
         "tailwindcss": "4.1.0",
+        "tsx": "^4.19.2",
         "typescript": "~5.3.3",
         "vite": "^4.5.14",
         "vite-plugin-electron": "^0.15.6",

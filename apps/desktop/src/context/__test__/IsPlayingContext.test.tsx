@@ -16,7 +16,7 @@ describe("IsPlayingContext", () => {
         });
 
         let expectedIsPlaying = true;
-        act(() => result.current?.setIsPlaying(expectedIsPlaying));
+        await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
     });
 
@@ -26,19 +26,19 @@ describe("IsPlayingContext", () => {
         });
 
         let expectedIsPlaying = true;
-        act(() => result.current?.setIsPlaying(expectedIsPlaying));
+        await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
 
         expectedIsPlaying = false;
-        act(() => result.current?.setIsPlaying(expectedIsPlaying));
+        await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
 
         expectedIsPlaying = true;
-        act(() => result.current?.setIsPlaying(expectedIsPlaying));
+        await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
 
         expectedIsPlaying = true;
-        act(() => result.current?.setIsPlaying(expectedIsPlaying));
+        await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
     });
 });

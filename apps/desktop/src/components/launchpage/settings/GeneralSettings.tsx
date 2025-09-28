@@ -17,6 +17,7 @@ const languages = [
     { code: "ja", name: "日本語" },
 ];
 
+// eslint-disable-next-line max-lines-per-function
 export default function GeneralSettings() {
     const { theme, setTheme } = useTheme();
     const tolgee = useTolgee();
@@ -34,7 +35,7 @@ export default function GeneralSettings() {
                 setCurrentLanguage(lang || "en");
             }
         };
-        loadLanguage();
+        void loadLanguage();
     }, [tolgee]);
 
     const handleLanguageChange = async (languageCode: string) => {

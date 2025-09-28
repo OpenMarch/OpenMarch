@@ -23,6 +23,7 @@ import {
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs } from "@/db-functions";
 
+// eslint-disable-next-line max-lines-per-function
 export default function MarcherList({
     hasHeader = false,
     isEditingStateProp = undefined,
@@ -36,12 +37,12 @@ export default function MarcherList({
         isEditingLocal,
         setIsEditingLocal,
     ];
-    const deleteMarchers = useMutation(
+    const { mutate: deleteMarchers } = useMutation(
         deleteMarchersMutationOptions(queryClient),
-    ).mutate;
-    const updateMarchers = useMutation(
+    );
+    const { mutate: updateMarchers } = useMutation(
         updateMarchersMutationOptions(queryClient),
-    ).mutate;
+    );
     const { t } = useTolgee();
     const [submitActivator, setSubmitActivator] = submitActivatorStateProp || [
         false,
@@ -122,7 +123,7 @@ export default function MarcherList({
     // Activate submit with an external activator (like a button in a parent component)
     useEffect(() => {
         if (submitActivator) {
-            handleSubmit();
+            void handleSubmit();
             setSubmitActivator && setSubmitActivator(false);
         }
         // eslint-disable-next-line
@@ -152,7 +153,7 @@ export default function MarcherList({
                 id={"marcherListForm"}
                 onSubmit={(event) => {
                     event.preventDefault();
-                    handleSubmit();
+                    void handleSubmit();
                 }}
                 className="text-body text-text flex flex-col gap-16 select-text"
             >
@@ -261,6 +262,7 @@ export default function MarcherList({
                                     </p>
                                 </div>
                             </div>
+                            {/* eslint-disable-next-line max-lines-per-function */}
                             {localMarchers.map((marcher) => (
                                 <div
                                     data-testid={`marcher row`}

@@ -4,7 +4,7 @@ import Page, {
     yankOrPushPagesAfterIndex,
 } from "../Page";
 import Measure from "../Measure";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import Beat from "../Beat";
 import { conToastError } from "@/utilities/utils";
 import { DatabasePage, FIRST_BEAT_ID, FIRST_PAGE_ID } from "@/db-functions";

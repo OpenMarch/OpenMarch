@@ -13,7 +13,7 @@ export const safelyInvalidateQueries = (
         validateQueryKey(queryKey, queryClient.getQueryCache()),
     );
     for (const queryKey of validQueryKeys) {
-        queryClient.invalidateQueries({ queryKey });
+        void queryClient.invalidateQueries({ queryKey });
     }
 };
 

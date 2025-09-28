@@ -23,7 +23,7 @@ Fixtures are a perfect solution to this.
 
 Each test is given the base `setupDb` fixture, which does the following:
 
-1. Find the `blank.dots` file and assert it exists
+1. Find the `_blank.dots` file and assert it exists
 1. Copy this file into a temporary directory that only that test has access to
 1. Waits for the test to finish
 1. Deletes the temporary `.dots` file

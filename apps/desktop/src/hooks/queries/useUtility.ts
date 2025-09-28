@@ -45,7 +45,7 @@ export const updateUtilityMutationOptions = () =>
         },
         onSuccess: () => {
             // Invalidate utility queries to refetch the updated data
-            queryClient.invalidateQueries({
+            void queryClient.invalidateQueries({
                 queryKey: utilityKeys.all(),
             });
         },

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { TestAPI } from "vitest";
 import { DbConnection, DbTestAPI } from "./base";
 import { getTableName, Table } from "drizzle-orm";
@@ -383,9 +384,13 @@ export const getTestWithHistory = <T extends DbTestAPI>(
                         ).toEqual(afterTestsData);
                     }
                 } else {
-                    expect(customData?.expectedData ?? initialData).toEqual(
-                        afterTestsData,
-                    );
+                    if (customData?.expectedData) {
+                        expect(customData?.expectedData).toEqual(
+                            afterTestsData,
+                        );
+                    } else {
+                        expect(initialData).toEqual(afterTestsData);
+                    }
 
                     // expect there to be nothing in the undo or redo stack
                     expect(

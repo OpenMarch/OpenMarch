@@ -76,10 +76,11 @@ if (!fs.existsSync(mainFile)) {
         "dist-electron/main/index.js file does not exist. Please run 'pnpm run build:electron' first.",
     );
 }
-const databaseFile = path.resolve(__dirname, "./mock-databases/blank.dots");
+const dbPath = "../electron/database/migrations/_blank.dots";
+const databaseFile = path.resolve(__dirname, dbPath);
 if (!fs.existsSync(databaseFile)) {
     throw new Error(
-        "mock-databases/blank.dots file does not exist. Please provide a valid .dots file.",
+        `${dbPath} file does not exist. Please provide a valid .dots file.`,
     );
 }
 

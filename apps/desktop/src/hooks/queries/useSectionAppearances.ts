@@ -86,10 +86,6 @@ export const sectionAppearancesBySectionQueryOptions = (section: string) => {
     });
 };
 
-export const fetchSectionAppearances = () => {
-    queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-};
-
 export const createSectionAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newItems: NewSectionAppearanceArgs[]) =>
