@@ -125,6 +125,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 2,
@@ -138,6 +139,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 3,
@@ -151,6 +153,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 4,
@@ -164,6 +167,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 5,
@@ -177,6 +181,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 6,
@@ -190,6 +195,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 1,
@@ -203,6 +209,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 2,
@@ -216,6 +223,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
     {
         id: 3,
@@ -229,6 +237,7 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
         path_data_id: null,
         path_start_position: null,
         path_end_position: null,
+        rotation_degrees: 0,
     },
 ] as const;
 

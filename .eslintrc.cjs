@@ -13,6 +13,7 @@ module.exports = {
         "**/build/*",
         "**/src/styles/**/*.css",
         ".eslintrc.cjs",
+        "**/astro.d.ts",
     ],
     parser: "@typescript-eslint/parser",
     parserOptions: {

@@ -81,7 +81,7 @@ export default function Community() {
                 setLoading(false);
             }
         }
-        loadGitHubData();
+        void loadGitHubData();
     }, []);
 
     return (
