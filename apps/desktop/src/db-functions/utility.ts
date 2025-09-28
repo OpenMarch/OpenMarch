@@ -21,6 +21,9 @@ export async function getUtility({
 }: {
     db: DbConnection;
 }): Promise<DatabaseUtility | undefined> {
+    // Initialize the utility record if it doesn't exist
+    await initializeUtility({ db });
+
     return await db.query.utility.findFirst();
 }
 
@@ -35,6 +38,9 @@ export async function updateUtility({
     db: DbConnection;
     args: ModifiedUtilityArgs;
 }): Promise<DatabaseUtility> {
+    // Initialize the utility record if it doesn't exist
+    await initializeUtility({ db });
+
     return await transactionWithHistory(
         db,
         "updateUtility",
@@ -57,32 +63,6 @@ export async function updateUtility({
 }
 
 /**
- * Updates the utility record in the database without transactions.
- * This is a simplified version for testing purposes.
- */
-export async function updateUtilitySimple({
-    db,
-    args,
-}: {
-    db: DbConnection;
-    args: ModifiedUtilityArgs;
-}): Promise<DatabaseUtility> {
-    await db
-        .update(schema.utility)
-        .set({
-            ...args,
-            updated_at: new Date().toISOString(),
-        })
-        .where(eq(schema.utility.id, 0));
-
-    const updatedUtility = await db.query.utility.findFirst();
-    if (!updatedUtility) {
-        throw new Error("Utility record not found after update");
-    }
-    return updatedUtility;
-}
-
-/**
  * Initializes the utility record if it doesn't exist.
  * This should be called during database setup/migration.
  */
@@ -92,7 +72,7 @@ export async function initializeUtility({
     db: DbConnection;
 }): Promise<DatabaseUtility> {
     // Check if utility record already exists
-    const existingUtility = await db.query.utility.findFirst();
+    const existingUtility = await db.select().from(schema.utility).get();
     if (existingUtility) {
         return existingUtility;
     }
@@ -103,7 +83,6 @@ export async function initializeUtility({
         .values({
             id: 0,
             last_page_counts: 8,
-            updated_at: new Date().toISOString(),
         })
         .returning();
 

@@ -29,6 +29,7 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest run --silent",
+        "test:history": "VITEST_ENABLE_HISTORY=true VITEST_ENABLE_SQLJS=true vitest run --silent",
         "test:watch": "vitest",
         "test:prepare": "pnpm rebuild better-sqlite3",
         "test:coverage": "pnpm test -- --coverage",

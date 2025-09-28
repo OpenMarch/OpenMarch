@@ -32,7 +32,7 @@
             "env": {
                 "NODE_ENV": "test",
                 "VITEST_ENABLE_HISTORY": "true",
-                "VITEST_ENABLE_BETTER_SQLITE": "false"
+                "VITEST_ENABLE_SQLJS": "false"
             },
             "console": "integratedTerminal",
             "internalConsoleOptions": "neverOpen",
