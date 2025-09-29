@@ -30,6 +30,7 @@ export default defineConfig({
         ],
 
         pool: "forks",
+        environment: "jsdom",
         testTimeout: 10 * 60 * 1000, // 10 minute global timeout for all tests
     },
 });
