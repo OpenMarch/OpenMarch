@@ -29,7 +29,7 @@ export default defineConfig({
             ["electron/**", "node"],
         ],
 
-        pool: "threads",
+        pool: "forks",
         testTimeout: 10 * 60 * 1000, // 10 minute global timeout for all tests
     },
 });
