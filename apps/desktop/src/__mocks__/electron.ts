@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 // Mock for Electron modules used in tests
 export const ipcMain = {
     handle: vi.fn(),
@@ -87,6 +89,7 @@ export const webContents = {
 };
 
 // Default export for when electron is imported as a module
+// eslint-disable-next-line import/no-anonymous-default-export
 export default {
     ipcMain,
     ipcRenderer,
