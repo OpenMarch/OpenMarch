@@ -163,10 +163,6 @@ const baseFixture = baseTest.extend<BaseApi>({
                 await fs.copyFile(blankDatabaseFile, tempDatabaseFile);
                 const { orm, db } = await getTempDb(task);
 
-                await db.exec(`
-                    INSERT INTO history_stats (id, cur_undo_group, cur_redo_group, group_limit) VALUES (1, 1, 1, 500);
-                `);
-
                 // create the undo triggers and save the database
                 await createAllUndoTriggers(orm as unknown as any);
                 const updatedDbBuffer = db.export();

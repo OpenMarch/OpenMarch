@@ -1,5 +1,6 @@
 import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
 import {
+    DatabaseMarcherPage,
     DbConnection,
     DbTransaction,
     ModifiedMarcherPageArgs,
@@ -172,49 +173,13 @@ export const updateLastPageCounts = async ({
     return response;
 };
 
-/**
- * Creates one or many new pages in the database as well as the marcher pages for each page.
- *
- * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
- *
- * @param newPages The new pages to create.
- * @param tx The database transaction.
- * @returns
- */
-const createPagesInTransaction = async ({
-    newPages,
+const _createMarcherPages = async ({
     tx,
+    sortedNewPages,
 }: {
-    newPages: NewPageArgs[];
     tx: DbTransaction;
-}): Promise<DatabasePage[]> => {
-    console.debug("new page args", newPages);
-    // Reverse the order of the new pages so that they are created in the correct order
-    const createdPages = await tx
-        .insert(schema.pages)
-        .values(newPages.map(newPageArgsToRealNewPageArgs))
-        .returning();
-    const pageBeatMap = new Map<number, typeof schema.beats.$inferSelect>();
-    for (const page of createdPages) {
-        const startBeat = await tx.query.beats.findFirst({
-            where: eq(schema.beats.id, page.start_beat),
-        });
-        // const startBeatResponse = getBeat({ db, beatId: page.start_beat });
-        if (!startBeat) {
-            console.error(
-                `Failed to get start beat ${page.start_beat.toString()}:`,
-            );
-            throw new Error(
-                "Failed to get start beat " + page.start_beat.toString(),
-            );
-        }
-        pageBeatMap.set(page.id, startBeat);
-    }
-    const sortedNewPages = createdPages.sort(
-        (a, b) =>
-            pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
-    );
-
+    sortedNewPages: RealDatabasePage[];
+}) => {
     // Create the marcher pages
     const allMarchers = await tx.query.marchers.findMany();
     if (allMarchers.length > 0) {
@@ -256,13 +221,64 @@ const createPagesInTransaction = async ({
                 }
             }
 
-            // Create the marcher pages
-            await tx
-                .insert(schema.marcher_pages)
-                .values(newMarcherPages)
-                .returning();
+            if (newMarcherPages.length > 0) {
+                // Create the marcher pages
+                await tx
+                    .insert(schema.marcher_pages)
+                    .values(newMarcherPages)
+                    .returning();
+            }
         }
     }
+};
+
+/**
+ * Creates one or many new pages in the database as well as the marcher pages for each page.
+ *
+ * THIS SHOULD ALWAYS BE CALLED RATHER THAN 'db.insert' DIRECTLY.
+ *
+ * @param newPages The new pages to create.
+ * @param tx The database transaction.
+ * @returns
+ */
+export const createPagesInTransaction = async ({
+    newPages,
+    tx,
+}: {
+    newPages: NewPageArgs[];
+    tx: DbTransaction;
+}): Promise<DatabasePage[]> => {
+    console.debug("new page args", newPages);
+    // Reverse the order of the new pages so that they are created in the correct order
+    const createdPages = await tx
+        .insert(schema.pages)
+        .values(newPages.map(newPageArgsToRealNewPageArgs))
+        .returning();
+    const pageBeatMap = new Map<number, typeof schema.beats.$inferSelect>();
+    for (const page of createdPages) {
+        const startBeat = await tx.query.beats.findFirst({
+            where: eq(schema.beats.id, page.start_beat),
+        });
+        // const startBeatResponse = getBeat({ db, beatId: page.start_beat });
+        if (!startBeat) {
+            console.error(
+                `Failed to get start beat ${page.start_beat.toString()}:`,
+            );
+            throw new Error(
+                "Failed to get start beat " + page.start_beat.toString(),
+            );
+        }
+        pageBeatMap.set(page.id, startBeat);
+    }
+    const sortedNewPages = createdPages.sort(
+        (a, b) =>
+            pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
+    );
+
+    await _createMarcherPages({
+        tx,
+        sortedNewPages,
+    });
 
     return createdPages.map(realDatabasePageToDatabasePage);
 };
