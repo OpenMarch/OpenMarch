@@ -135,7 +135,7 @@
         "vite": "^4.5.14",
         "vite-plugin-electron": "^0.15.6",
         "vite-plugin-electron-renderer": "^0.14.6",
-        "vitest": "^2.1.9"
+        "vitest": "^4.0.0-beta"
     },
     "engines": {
         "node": "22"
