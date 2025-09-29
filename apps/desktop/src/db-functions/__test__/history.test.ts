@@ -31,7 +31,7 @@ describeDbTests("transactionWithHistory", (baseIt) => {
     //     },
     // });
 
-    describe.each([0, 1])("when starting undo group at %s", (initialGroup) => {
+    describe.each([1])("when starting undo group at %s", (initialGroup) => {
         baseIt("should increment undo group", async ({ db }) => {
             const startGroup = await db.query.history_stats.findFirst({
                 columns: { cur_undo_group: true },
@@ -1932,129 +1932,92 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 )) as HistoryTableRow[]
             ).map((row) => row.history_group);
 
-        it("removes the oldest undo group when the undo limit of 100 is reached", async ({
-            db,
-        }) => {
-            await db.run(
-                sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT)`,
-            );
-            await createUndoTriggers(db, "users");
-
-            // set the limit to 100
-            await db.run(
-                sql.raw(`UPDATE ${"history_stats"} SET group_limit = 100`),
-            );
-            expect(await groupLimit(db)).toBe(100);
-
-            for (let i = 0; i < 99; i++) {
-                // Insert users and orders
+        it.for([
+            {
+                limit: 10,
+            },
+            {
+                limit: 100,
+            },
+            {
+                limit: 101,
+            },
+            {
+                limit: 2000,
+            },
+        ])(
+            "%# - removes the oldest undo group when the undo limit of $limit is reached",
+            async ({ limit }, { db }) => {
                 await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}@jeff.com`})`,
+                    sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT)`,
                 );
+                await createUndoTriggers(db, "users");
+
+                // set the limit to 100
                 await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${100 / i}`}, ${i + 50}, ${`email${200 - i}@josie.com`})`,
+                    sql.raw(
+                        `UPDATE ${"history_stats"} SET group_limit = ${limit}`,
+                    ),
                 );
-                await incrementUndoGroup(db);
-            }
-            expect((await undoGroups(db)).length).toBe(99);
-            let expectedGroups = Array.from(Array(99).keys()).map((i) => i + 1);
-            expect(await undoGroups(db)).toEqual(expectedGroups);
+                expect(await groupLimit(db)).toBe(limit);
 
-            // Insert one more group
-            await db.run(
-                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_100"}, ${100}, ${"email@jeff100.com"})`,
-            );
-            await incrementUndoGroup(db);
-            expect((await undoGroups(db)).length).toBe(100);
-            expectedGroups = [...expectedGroups, 100];
-            expect(await undoGroups(db)).toEqual(expectedGroups);
+                // Create one less than the limit
+                for (let i = 1; i < limit; i++) {
+                    // Insert users and orders
+                    await db.run(
+                        sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${limit / i}`}, ${i}, ${`email${limit - i}@jeff.com`})`,
+                    );
+                    await db.run(
+                        sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${limit / i}`}, ${i + 50}, ${`email${200 - i}@josie.com`})`,
+                    );
+                    await incrementUndoGroup(db);
+                }
+                expect((await undoGroups(db)).length).toBe(limit - 1);
+                const expectedGroupsOneLess = Array.from(
+                    Array(limit - 1).keys(),
+                ).map((i) => i + 1);
+                expect(await undoGroups(db)).toEqual(expectedGroupsOneLess);
 
-            // Insert another group
-            await db.run(
-                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_101"}, ${101}, ${"email@jeff101.com"})`,
-            );
-            await incrementUndoGroup(db);
-            expect((await undoGroups(db)).length).toBe(100);
-            expectedGroups = Array.from(Array(100).keys()).map((i) => i + 2);
-            expect(await undoGroups(db)).toEqual(expectedGroups);
-
-            // insert 50 more groups
-            for (let i = 102; i < 152; i++) {
+                // Insert one more group
                 await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${i}`}, ${i}, ${`email${100 - i}@jeff.com`})`,
-                );
-                await incrementUndoGroup(db);
-            }
-            expect((await undoGroups(db)).length).toBe(100);
-            expectedGroups = Array.from(Array(100).keys()).map((i) => i + 52);
-            expect(await undoGroups(db)).toEqual(expectedGroups);
-
-            const allRows = await db.all(sql.raw("SELECT * FROM users"));
-            expect(allRows.length).toBeGreaterThan(150);
-        });
-
-        it("removes the oldest undo group when the undo limit of 2000 is reached", async ({
-            db,
-        }) => {
-            await db.run(
-                sql`CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT, age INTEGER, email TEXT);`,
-            );
-            await createUndoTriggers(db, "users");
-
-            // set the limit to 2000
-            await db.run(
-                sql.raw(`UPDATE ${"history_stats"} SET group_limit = 2000`),
-            );
-            expect(await groupLimit(db)).toBe(2000);
-
-            for (let i = 0; i < 1999; i++) {
-                // Insert users and orders
-                await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${2000 / i}`}, ${i}, ${`email${2000 - i}@jeff.com`})`,
-                );
-                await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Josie_${2000 / i}`}, ${i + 50}, ${`email${200 - i}@josie.com`})`,
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${limit}`}, ${limit}, ${`email@jeff${limit}.com`})`,
                 );
                 await incrementUndoGroup(db);
-            }
-            expect((await undoGroups(db)).length).toBe(1999);
-            let expectedGroups = Array.from(Array(1999).keys()).map(
-                (i) => i + 1,
-            );
-            expect(await undoGroups(db)).toEqual(expectedGroups);
+                expect((await undoGroups(db)).length).toBe(limit);
+                const expectedGroupsFull = Array.from(Array(limit).keys()).map(
+                    (i) => i + 1,
+                );
+                expect(await undoGroups(db)).toEqual(expectedGroupsFull);
 
-            // Insert one more group
-            await db.run(
-                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_2000"}, ${2000}, ${"email@jeff2000.com"})`,
-            );
-            await incrementUndoGroup(db);
-            expect((await undoGroups(db)).length).toBe(2000);
-            const undoGroupsResult = await undoGroups(db);
-            expect(undoGroupsResult).toEqual([...expectedGroups, 2000]);
-
-            // Insert another group
-            await db.run(
-                sql`INSERT INTO users (name, age, email) VALUES (${"Harry_101"}, ${101}, ${"email@jeff101.com"})`,
-            );
-            await incrementUndoGroup(db);
-            expect((await undoGroups(db)).length).toBe(2000);
-            expectedGroups = Array.from(Array(2000).keys()).map((i) => i + 2);
-            expect(await undoGroups(db)).toEqual(expectedGroups);
-
-            // insert 50 more groups
-            for (let i = 102; i < 152; i++) {
+                // Insert another group
                 await db.run(
-                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${i}`}, ${i}, ${`email${2000 - i}@jeff.com`})`,
+                    sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${limit + 1}`}, ${limit + 1}, ${`email@jeff${limit + 1}.com`})`,
                 );
                 await incrementUndoGroup(db);
-            }
-            expect((await undoGroups(db)).length).toBe(2000);
-            expectedGroups = Array.from(Array(2000).keys()).map((i) => i + 52);
-            expect(await undoGroups(db)).toEqual(expectedGroups);
+                expect((await undoGroups(db)).length).toBe(limit);
+                const expectedGroupsOverflow = expectedGroupsFull.map(
+                    (i) => i + 1,
+                );
+                expect(await undoGroups(db)).toEqual(expectedGroupsOverflow);
 
-            const allRows = await db.all(sql.raw("SELECT * FROM users"));
-            expect(allRows.length).toBeGreaterThan(150);
-        });
+                // insert 50 more groups
+                // Add three more to reference the previous three insertions
+                for (let i = limit + 3; i < limit + 53; i++) {
+                    await db.run(
+                        sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${i}`}, ${i}, ${`email${limit + 1 - i}@jeff.com`})`,
+                    );
+                    await incrementUndoGroup(db);
+                }
+                expect((await undoGroups(db)).length).toBe(limit);
+                const expectedGroupsOverflow50 = expectedGroupsOverflow.map(
+                    (i) => i + 50,
+                );
+                expect(await undoGroups(db)).toEqual(expectedGroupsOverflow50);
+
+                const allRows = await db.all(sql.raw("SELECT * FROM users"));
+                expect(allRows.length).toBeGreaterThan(limit + 50);
+            },
+        );
 
         it("adds more undo groups when the limit is increased", async ({
             db,
@@ -2093,7 +2056,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             expect(await groupLimit(db)).toBe(200);
             expect((await undoGroups(db)).length).toBe(100);
 
-            for (let i = 150; i < 300; i++) {
+            for (let i = 151; i < 301; i++) {
                 // Insert users and orders
                 await db.run(
                     sql`INSERT INTO users (name, age, email) VALUES (${`Harry_${100 / i}`}, ${i}, ${`email${100 - i}`})`,

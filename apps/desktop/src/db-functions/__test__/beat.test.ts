@@ -6,6 +6,7 @@ import {
     shiftBeats,
     flattenOrder,
     FIRST_BEAT_ID,
+    DatabaseBeat,
 } from "../beat";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
@@ -13,6 +14,21 @@ import { inArray, eq } from "drizzle-orm";
 
 const includeInMeasureBooleanToInteger = (beat: any) => {
     return { ...beat, include_in_measure: beat.include_in_measure ? 1 : 0 };
+};
+
+const addFirstBeat = (
+    beats: DatabaseBeat[],
+): Omit<DatabaseBeat, "updated_at" | "created_at">[] => {
+    return [
+        {
+            id: FIRST_BEAT_ID,
+            position: 0,
+            duration: 0,
+            include_in_measure: 1 as any,
+            notes: null,
+        },
+        ...beats,
+    ];
 };
 
 describeDbTests("beats", (it) => {
@@ -126,13 +142,15 @@ describeDbTests("beats", (it) => {
                             const allBeats = await db.query.beats.findMany({
                                 orderBy: schema.beats.position,
                             });
-                            expect(allBeats.length).toEqual(
-                                expectedCreatedBeats.length,
+                            expect(allBeats).toHaveLength(
+                                expectedCreatedBeats.length + 1,
                             );
                             expect(new Set(allBeats)).toMatchObject(
                                 new Set(
-                                    expectedCreatedBeats.map(
-                                        includeInMeasureBooleanToInteger,
+                                    addFirstBeat(
+                                        expectedCreatedBeats.map(
+                                            includeInMeasureBooleanToInteger,
+                                        ),
                                     ),
                                 ),
                             );
@@ -161,13 +179,15 @@ describeDbTests("beats", (it) => {
                             const allBeats = await db.query.beats.findMany({
                                 orderBy: schema.beats.position,
                             });
-                            expect(allBeats.length).toEqual(
-                                expectedCreatedBeats.length,
+                            expect(allBeats).toHaveLength(
+                                expectedCreatedBeats.length + 1,
                             );
                             expect(new Set(allBeats)).toMatchObject(
                                 new Set(
-                                    expectedCreatedBeats.map(
-                                        includeInMeasureBooleanToInteger,
+                                    addFirstBeat(
+                                        expectedCreatedBeats.map(
+                                            includeInMeasureBooleanToInteger,
+                                        ),
                                     ),
                                 ),
                             );
@@ -397,9 +417,11 @@ describeDbTests("beats", (it) => {
                         b: { position: number },
                     ) => a.position - b.position;
                     expect(existingBeats.sort(sortByPosition)).toMatchObject(
-                        existingBeatsArgs
-                            .map(includeInMeasureBooleanToInteger)
-                            .sort(sortByPosition),
+                        addFirstBeat(
+                            existingBeatsArgs.map(
+                                includeInMeasureBooleanToInteger,
+                            ),
+                        ).sort(sortByPosition),
                     );
                     expect(new Set(createdExistingBeats)).toMatchObject(
                         new Set(existingBeatsArgs),
@@ -413,7 +435,10 @@ describeDbTests("beats", (it) => {
                         orderBy: schema.beats.position,
                     });
                     expect(allBeats.sort(sortByPosition)).toMatchObject(
-                        [...existingBeatsArgs, ...newBeatsArgs]
+                        addFirstBeat([
+                            ...existingBeatsArgs,
+                            ...newBeatsArgs,
+                        ] as DatabaseBeat[])
                             .map(includeInMeasureBooleanToInteger)
                             .sort(sortByPosition),
                     );
@@ -761,6 +786,39 @@ describeDbTests("beats", (it) => {
     });
 
     describe("deleteBeats", () => {
+        describe("deleteBeats with first beat", () => {
+            it("should fail to delete the first beat", async ({ db }) => {
+                const firstBeat = await db.query.beats.findFirst({
+                    where: eq(schema.beats.id, FIRST_BEAT_ID),
+                });
+                expect(firstBeat).toBeDefined();
+                // Should ignore the first beat
+                await deleteBeats({
+                    beatIds: new Set([FIRST_BEAT_ID]),
+                    db,
+                });
+                const allBeats = await db.query.beats.findMany();
+                expect(allBeats).toHaveLength(1);
+                expect(allBeats[0].id).toEqual(FIRST_BEAT_ID);
+            });
+
+            it("should delete other beats if they are provided", async ({
+                db,
+            }) => {
+                await createBeats({
+                    newBeats: [{ duration: 0.5, include_in_measure: true }],
+                    db,
+                });
+                await deleteBeats({
+                    beatIds: new Set([FIRST_BEAT_ID, 1]),
+                    db,
+                });
+                const allBeats = await db.query.beats.findMany();
+                expect(allBeats).toHaveLength(1);
+                expect(allBeats[0].id).toEqual(FIRST_BEAT_ID);
+            });
+        });
+
         describe("no existing data", () => {
             describe.each([
                 {
@@ -889,7 +947,7 @@ describeDbTests("beats", (it) => {
                             expect(
                                 beatsBeforeDelete.length,
                                 "Ensure all the beats are created",
-                            ).toBe(existingBeatsArgs.length);
+                            ).toBe(existingBeatsArgs.length + 1);
 
                             const databaseState =
                                 await expectNumberOfChanges.getDatabaseState(
@@ -910,7 +968,8 @@ describeDbTests("beats", (it) => {
                                 beatsAfterDelete.length,
                                 "Ensure all the beats are deleted",
                             ).toBe(
-                                existingBeatsArgs.length -
+                                existingBeatsArgs.length +
+                                    1 -
                                     beatIdsToDelete.length,
                             );
 
@@ -941,7 +1000,7 @@ describeDbTests("beats", (it) => {
                             expect(
                                 beatsBeforeDelete.length,
                                 "Ensure all the beats are created",
-                            ).toBe(existingBeatsArgs.length);
+                            ).toBe(existingBeatsArgs.length + 1);
 
                             const databaseState =
                                 await expectNumberOfChanges.getDatabaseState(
@@ -960,7 +1019,8 @@ describeDbTests("beats", (it) => {
                                 beatsAfterDelete.length,
                                 "Ensure all the beats are deleted",
                             ).toBe(
-                                existingBeatsArgs.length -
+                                existingBeatsArgs.length +
+                                    1 -
                                     beatIdsToDelete.length,
                             );
 
@@ -981,36 +1041,6 @@ describeDbTests("beats", (it) => {
                 },
             );
             describe("deleteBeats with failure", () => {
-                // don't use testWithHistory here because we want to test the failure and nothing will change
-                it("Should fail to delete the first beat", async ({ db }) => {
-                    // create the first beat
-                    await db.insert(schema.beats).values({
-                        id: FIRST_BEAT_ID,
-                        position: 0,
-                        duration: 0,
-                    });
-
-                    const beatsBeforeDelete = await db.query.beats.findMany();
-                    const firstBeat = beatsBeforeDelete.find(
-                        (b) => b.id === FIRST_BEAT_ID,
-                    )!;
-                    expect(firstBeat).toBeDefined();
-                    const allBeatIds = new Set(
-                        beatsBeforeDelete.map((b) => b.id),
-                    );
-
-                    await deleteBeats({
-                        beatIds: allBeatIds,
-                        db,
-                    });
-
-                    const beatsAfterDelete = await db.query.beats.findMany();
-
-                    // First beat should not have been deleted
-                    expect(beatsAfterDelete).toHaveLength(1);
-                    expect(beatsAfterDelete[0].id).toEqual(firstBeat.id);
-                });
-
                 testWithHistory.for([
                     {
                         description:
@@ -1083,13 +1113,6 @@ describeDbTests("beats", (it) => {
                 };
                 const expectedPositions = [0, 1, 4, 5]; // First beat at 0, then 1, then shifted beats at 4, 5
 
-                // create beat with start beat id
-                await db.insert(schema.beats).values({
-                    id: FIRST_BEAT_ID,
-                    position: 0,
-                    duration: 0,
-                });
-
                 await createBeats({
                     newBeats: existingBeatsArgs,
                     db,
@@ -1145,13 +1168,6 @@ describeDbTests("beats", (it) => {
                     shiftAmount: -1,
                 };
                 const expectedPositions = [0, 1, 2, 3, 4]; // Should shift third and fourth beats back
-
-                // create beat with start beat id
-                await db.insert(schema.beats).values({
-                    id: FIRST_BEAT_ID,
-                    position: 0,
-                    duration: 0,
-                });
 
                 await createBeats({
                     newBeats: existingBeatsArgs,
