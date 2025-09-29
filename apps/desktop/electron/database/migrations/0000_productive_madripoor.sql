@@ -156,7 +156,7 @@ INSERT INTO `utility` (`id`, `last_page_counts`) VALUES (0, 8);
 
 --> statement-breakpoint
 INSERT INTO `history_stats` (`id`, `cur_undo_group`, `cur_redo_group`, `group_limit`)
-VALUES (1, 0, 0, 500);
+VALUES (1, 1, 1, 500);
 
 
 -- TODO - seed with initial data
