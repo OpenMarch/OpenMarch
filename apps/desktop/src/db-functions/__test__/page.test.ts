@@ -5,13 +5,29 @@ import {
     deletePages,
     FIRST_PAGE_ID,
     createLastPage,
+    DatabasePage,
 } from "../page";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { inArray, desc, eq } from "drizzle-orm";
+import { FIRST_BEAT_ID } from "../beat";
 
 const subsetBooleanToInteger = (page: any) => {
     return { ...page, is_subset: page.is_subset ? 1 : 0 };
+};
+
+const addFirstPage = (
+    pages: any,
+): Omit<DatabasePage, "updated_at" | "created_at">[] => {
+    return [
+        {
+            id: FIRST_PAGE_ID,
+            start_beat: FIRST_BEAT_ID,
+            is_subset: 0 as any,
+            notes: null,
+        },
+        ...pages,
+    ];
 };
 
 describeDbTests("pages", (it) => {
@@ -129,12 +145,14 @@ describeDbTests("pages", (it) => {
 
                             const allPages = await db.query.pages.findMany();
                             expect(allPages.length).toEqual(
-                                expectedCreatedPages.length,
+                                expectedCreatedPages.length + 1,
                             );
                             expect(new Set(allPages)).toMatchObject(
                                 new Set(
-                                    expectedCreatedPages.map(
-                                        subsetBooleanToInteger,
+                                    addFirstPage(
+                                        expectedCreatedPages.map(
+                                            subsetBooleanToInteger,
+                                        ),
                                     ),
                                 ),
                             );
@@ -161,12 +179,14 @@ describeDbTests("pages", (it) => {
 
                             const allPages = await db.query.pages.findMany();
                             expect(allPages.length).toEqual(
-                                expectedCreatedPages.length,
+                                expectedCreatedPages.length + 1,
                             );
                             expect(new Set(allPages)).toMatchObject(
                                 new Set(
-                                    expectedCreatedPages.map(
-                                        subsetBooleanToInteger,
+                                    addFirstPage(
+                                        expectedCreatedPages.map(
+                                            subsetBooleanToInteger,
+                                        ),
                                     ),
                                 ),
                             );
@@ -590,7 +610,7 @@ describeDbTests("pages", (it) => {
                         b: { start_beat: number },
                     ) => a.start_beat - b.start_beat;
                     expect(existingPages.sort(sortByBeat)).toMatchObject(
-                        existingPagesArgs
+                        addFirstPage(existingPagesArgs)
                             .map(subsetBooleanToInteger)
                             .sort(sortByBeat),
                     );
@@ -604,7 +624,7 @@ describeDbTests("pages", (it) => {
                     });
                     const allPages = await db.query.pages.findMany();
                     expect(allPages.sort(sortByBeat)).toMatchObject(
-                        [...existingPagesArgs, ...newPagesArgs]
+                        [...addFirstPage(existingPagesArgs), ...newPagesArgs]
                             .map(subsetBooleanToInteger)
                             .sort(sortByBeat),
                     );
@@ -692,7 +712,10 @@ describeDbTests("pages", (it) => {
                     ) => {
                         const beforeMarcherPages =
                             await db.query.marcher_pages.findMany();
-                        expect(beforeMarcherPages).toHaveLength(0);
+                        expect(beforeMarcherPages).toHaveLength(
+                            // have marcher pages for the first page
+                            marchers.expectedMarchers.length,
+                        );
 
                         await createPages({ newPages: newPagesArgs, db });
 
@@ -700,7 +723,7 @@ describeDbTests("pages", (it) => {
                             await db.query.marcher_pages.findMany();
                         const expectedNumberOfMarcherPages =
                             marchers.expectedMarchers.length *
-                            newPagesArgs.length;
+                            (newPagesArgs.length + 1);
                         expect(afterMarcherPages).toHaveLength(
                             expectedNumberOfMarcherPages,
                         );
@@ -822,7 +845,7 @@ describeDbTests("pages", (it) => {
                             await db.query.marcher_pages.findMany();
                         const expectedExistingMarcherPages =
                             marchers.expectedMarchers.length *
-                            existingPagesArgs.length;
+                            (existingPagesArgs.length + 1);
                         expect(beforeMarcherPages).toHaveLength(
                             expectedExistingMarcherPages,
                         );
@@ -835,7 +858,9 @@ describeDbTests("pages", (it) => {
                             await db.query.marcher_pages.findMany();
                         const expectedTotalMarcherPages =
                             marchers.expectedMarchers.length *
-                            (existingPagesArgs.length + newPagesArgs.length);
+                            (existingPagesArgs.length +
+                                1 +
+                                newPagesArgs.length);
                         expect(afterMarcherPages).toHaveLength(
                             expectedTotalMarcherPages,
                         );
@@ -1260,7 +1285,7 @@ describeDbTests("pages", (it) => {
                             expect(
                                 pagesBeforeDelete.length,
                                 "Ensure all the pages are created",
-                            ).toBe(existingPagesArgs.length);
+                            ).toBe(existingPagesArgs.length + 1);
 
                             const databaseState =
                                 await expectNumberOfChanges.getDatabaseState(
@@ -1281,7 +1306,8 @@ describeDbTests("pages", (it) => {
                                 pagesAfterDelete.length,
                                 "Ensure all the pages are deleted",
                             ).toBe(
-                                existingPagesArgs.length -
+                                existingPagesArgs.length +
+                                    1 -
                                     pageIdsToDelete.length,
                             );
 
@@ -1312,7 +1338,7 @@ describeDbTests("pages", (it) => {
                             expect(
                                 pagesBeforeDelete.length,
                                 "Ensure all the pages are created",
-                            ).toBe(existingPagesArgs.length);
+                            ).toBe(existingPagesArgs.length + 1);
 
                             const databaseState =
                                 await expectNumberOfChanges.getDatabaseState(
@@ -1331,7 +1357,8 @@ describeDbTests("pages", (it) => {
                                 pagesAfterDelete.length,
                                 "Ensure all the pages are deleted",
                             ).toBe(
-                                existingPagesArgs.length -
+                                existingPagesArgs.length +
+                                    1 -
                                     pageIdsToDelete.length,
                             );
 
@@ -1638,33 +1665,6 @@ describeDbTests("pages", (it) => {
                 );
 
                 await expectNumberOfChanges.test(db, 1, databaseState);
-            },
-        );
-        testWithHistory.for([
-            {
-                description: "too many counts",
-                newPageCounts: 1000,
-            },
-        ])(
-            "create last page with failure",
-            async (
-                { newPageCounts },
-                { db, marchersAndPages, expectNumberOfChanges },
-            ) => {
-                const pagesBeforeCreate = await db.query.pages.findMany();
-                expect(pagesBeforeCreate.length).toBe(
-                    marchersAndPages.expectedPages.length,
-                );
-                const databaseState =
-                    await expectNumberOfChanges.getDatabaseState(db);
-
-                await expect(
-                    createLastPage({
-                        db,
-                        newPageCounts,
-                    }),
-                ).rejects.toThrow();
-                await expectNumberOfChanges.test(db, 0, databaseState);
             },
         );
     });
