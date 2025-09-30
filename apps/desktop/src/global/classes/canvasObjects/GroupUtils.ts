@@ -11,6 +11,7 @@ const rotationSideEffects = (group: fabric.Group) => {
     for (const object of objects) {
         if (object instanceof CanvasMarcher) {
             object.updateTextLabelPosition();
+            object.angle = -(group.angle ?? 0); // Keeps the marcher dot upright
         }
     }
     group.setCoords();
