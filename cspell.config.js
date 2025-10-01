@@ -132,6 +132,18 @@ module.exports = {
         "Catmull",
         "NURBS",
         "uuidv",
+        // importer words
+        "Pyware",
+        "pyware",
+        "tesseract",
+        "Tesseract",
+        "yardline",
+        "bbox",
+        "quantiles",
+        "Confs",
+        "hdrs",
+        "criticals",
+        "Criticals",
     ],
     ignorePaths: [
         "node_modules/**",

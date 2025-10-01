@@ -1,141 +1,288 @@
-import type { ParsedSheet, ParsedRow } from "./types";
-import { QuadrantSchema } from "./types";
+import type { ParsedSheet } from "./types";
+import {
+    bucketRows,
+    detectHeaderAndBands,
+    detectAllHeaders,
+    mapRowToColumns,
+    inferBandsFromData,
+    clusterBandsByTokens,
+    fallbackParseRowLeftToRight,
+    extractHeaderFromRows,
+} from "./columns";
+import { pywareProfile } from "./profile";
 import { getQuadrantRects, rectContains } from "./segment";
-
-// Lazy import to avoid bundler issues if not used
-async function loadPdf() {
-	const pdfjs = await import("pdfjs-dist");
-	return pdfjs;
-}
 
 type TextItem = { str: string; x: number; y: number; w: number; h: number };
 
 function toItems(textContent: any): TextItem[] {
-	const items = textContent.items as Array<{ str: string; transform: number[]; width: number; height?: number }>;
-	return items.map((it) => {
-		const [a, b, c, d, e, f] = it.transform;
-		return { str: it.str, x: e, y: f, w: it.width ?? 0, h: Math.abs(d) ?? 0 };
-	});
-}
-
-function hasHeader(arr: TextItem[]) {
-	const hay = arr.map((t) => t.str).join(" ").toLowerCase();
-	return hay.includes("performer:") || hay.includes("label:") || hay.includes("symbol:");
+    const items = textContent.items as Array<{
+        str: string;
+        transform: number[];
+        width: number;
+        height?: number;
+    }>;
+    return items.map((it) => {
+        const [, , , d, e, f] = it.transform;
+        return {
+            str: it.str,
+            x: e,
+            y: f,
+            w: it.width ?? 0,
+            h: Math.abs(d) ?? 0,
+        };
+    });
 }
 
 function extractHeader(arr: TextItem[]) {
-	const joined = arr.map((t) => t.str).join(" ");
-	const header: any = {};
-	const label = /Label\s*:\s*([A-Za-z]+\d+)/i.exec(joined)?.[1];
-	if (label) header.label = label.trim();
-	const symbol = /Symbol\s*:\s*([^\s]+)/i.exec(joined)?.[1];
-	if (symbol) header.symbol = symbol.trim();
-	const performer = /Performer\s*:\s*([^\n]+)/i.exec(joined)?.[1]?.trim();
-	if (performer) header.performer = performer.replace(/\s+Eastside.*$/i, "").trim();
-	return header;
-}
-
-function nearestBucket(items: TextItem[], epsilon = 2) {
-	// Group by y (rows)
-	const rows: TextItem[][] = [];
-	const sorted = [...items].sort((a, b) => b.y - a.y);
-	for (const it of sorted) {
-		let placed = false;
-		for (const row of rows) {
-			if (Math.abs(row[0].y - it.y) < epsilon) {
-				row.push(it);
-				placed = true;
-				break;
-			}
-		}
-		if (!placed) rows.push([it]);
-	}
-	return rows.map((r) => r.sort((a, b) => a.x - b.x));
-}
-
-function mapTableRows(rows: TextItem[][]): ParsedRow[] {
-	// Heuristic: find the header row containing column names
-	const headerIdx = rows.findIndex((r) => r.map((t) => t.str.toLowerCase()).join(" ").includes("front-back"));
-	if (headerIdx === -1) return [];
-	const dataRows = rows.slice(headerIdx + 1);
-
-	// Columns appear in order: Set | Measure | Counts | Side 1-Side 2 | Front-Back
-	const parsed: ParsedRow[] = [];
-	for (const r of dataRows) {
-		const text = r.map((t) => t.str);
-		if (text.length < 3) continue;
-		const joined = text.join(" ");
-		// Basic guards: first token looks like setId
-		const setId = text[0]?.trim();
-		if (!setId || !/^\d+[A-Z]?$/.test(setId)) continue;
-		// counts will be a number somewhere near third cell
-		const countsIdx = Math.min(2, text.length - 1);
-		const counts = parseInt(text[countsIdx].replace(/[^0-9]/g, ""), 10);
-		if (!Number.isFinite(counts)) continue;
-		// crude split for lateral/front-back by scanning for "hash" or "yd ln"
-		const lateralStart = countsIdx + 1;
-		const lateralText = text.slice(lateralStart).join(" ");
-		const fbMatch = /([\d\.]+\s+steps\s+(?:in front of|behind)|On)\s+(?:Front|Back)\s+Hash/i;
-		const fbIdx = r.findIndex((t) => /hash/i.test(t.str));
-		let fbText = "";
-		let lat = lateralText;
-		if (fbIdx >= 0) {
-			const fbSlice = text.slice(fbIdx - lateralStart);
-			fbText = fbSlice.join(" ");
-			lat = text.slice(lateralStart, fbIdx - lateralStart + lateralStart).join(" ");
-		}
-		parsed.push({
-			setId,
-			measureRange: text[1] || "",
-			counts: counts,
-			lateralText: lat.trim(),
-			fbText: (fbText || "").trim(),
-		});
-	}
-	return parsed;
+    const joined = arr.map((t) => t.str).join(" ");
+    const header: any = {};
+    const label = /Label\s*:\s*([A-Za-z]+\d*)/i.exec(joined)?.[1];
+    if (label) header.label = label.trim();
+    const symbol = /Symbol\s*:\s*([^\s]+)/i.exec(joined)?.[1];
+    if (symbol) header.symbol = symbol.trim();
+    const performer = /Performer\s*:\s*([^\n]+)/i.exec(joined)?.[1]?.trim();
+    if (performer) header.performer = performer.trim();
+    return header;
 }
 
 export async function extractSheetsFromPage(
-	pdf: any,
-	pageIndex: number,
+    pdf: any,
+    pageIndex: number,
 ): Promise<ParsedSheet[]> {
-	const page = await pdf.getPage(pageIndex + 1);
-	const viewport = page.getViewport({ scale: 1.0 });
-	const rects = getQuadrantRects(viewport.width, viewport.height);
-	const textContent = await page.getTextContent();
-	const allItems = toItems(textContent);
+    const page = await pdf.getPage(pageIndex + 1);
+    const textContent = await page.getTextContent();
+    const items = toItems(textContent);
+    if (items.length === 0) return [];
+    const viewport = page.getViewport({ scale: 1 });
+    const quads = getQuadrantRects(viewport.width, viewport.height, 8);
+    const quadOrder: Array<keyof typeof quads> = ["TL", "TR", "BL", "BR"];
+    const sheets: ParsedSheet[] = [];
+    // Process by quadrants first to avoid cross-sheet row mixing
+    for (let qi = 0; qi < quadOrder.length; qi++) {
+        const qk = quadOrder[qi];
+        const rect = quads[qk];
+        const qItems = items.filter((it) =>
+            rectContains(rect as any, it.x, it.y),
+        );
+        if (qItems.length < 10) continue;
+        const qRows = bucketRows(qItems, 2);
+        const qRegions = segmentRowsByAnchors(qRows);
+        if (qRegions.length === 0) {
+            // fallback to header-based segmentation in this quadrant
+            const headers = detectAllHeaders(qRows) || [];
+            const headerMeta = extractHeader(qItems);
+            if (headers.length === 0) {
+                const parsedRows = mapTableRows(qRows);
+                if (parsedRows.length > 0)
+                    sheets.push({
+                        pageIndex,
+                        quadrant: qk as any,
+                        header: headerMeta,
+                        rows: parsedRows,
+                        rawText: qItems.map((t) => t.str).join("\n"),
+                    });
+                continue;
+            }
+            const h = headers[0];
+            const start = h.headerIndex + 1;
+            const end = qRows.length;
+            const subRows = qRows.slice(start, end);
+            const parsedRows = mapTableRows([qRows[h.headerIndex], ...subRows]);
+            if (parsedRows.length > 0)
+                sheets.push({
+                    pageIndex,
+                    quadrant: qk as any,
+                    header: headerMeta,
+                    rows: parsedRows,
+                    rawText: qItems.map((t) => t.str).join("\n"),
+                });
+            continue;
+        }
+        // Use first region within quadrant
+        const { start, end } = qRegions[0];
+        const regionRows = qRows.slice(start, end);
+        const headerCut = detectHeaderAndBands(regionRows);
+        const headerRowsForMeta = headerCut
+            ? regionRows.slice(0, headerCut.headerIndex)
+            : regionRows.slice(0, 3);
+        const headerMeta = {
+            ...extractHeader(headerRowsForMeta.flat()),
+            ...extractHeaderFromRows(headerRowsForMeta),
+        } as any;
+        const header = detectHeaderAndBands(regionRows);
+        let dataRows = header
+            ? regionRows.slice(header.headerIndex + 1)
+            : regionRows;
+        let bands = header
+            ? header.bands
+            : clusterBandsByTokens(dataRows, 5) ||
+              inferBandsFromData(dataRows) ||
+              [];
+        const haveLateral = bands.some((b) => b.key === "lateralText");
+        const haveFB = bands.some((b) => b.key === "fbText");
+        if (!haveLateral || !haveFB) {
+            const clustered =
+                clusterBandsByTokens(dataRows, 5) ||
+                inferBandsFromData(dataRows);
+            if (clustered) bands = clustered;
+        }
+        const out: any[] = [];
+        for (const r of dataRows) {
+            let cols = mapRowToColumns(r, bands);
+            if (
+                !cols.setId ||
+                !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
+                !cols.counts ||
+                !/^\d+$/.test((cols.counts || "").trim())
+            ) {
+                const fallback = fallbackParseRowLeftToRight(r);
+                if (fallback) cols = { ...fallback } as any;
+            }
+            // Sanitize lateral prefix: drop a leading zero if present before 'Side'
+            if (
+                cols.lateralText &&
+                /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)
+            ) {
+                cols.lateralText = cols.lateralText.replace(
+                    /^\s*0+\s+(?=Side\b)/i,
+                    "",
+                );
+            }
+            const setId = cols.setId;
+            const countsRaw = cols.counts;
+            if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
+            const counts = parseInt(
+                (countsRaw || "").replace(/[^0-9]/g, ""),
+                10,
+            );
+            out.push({
+                setId: setId.trim(),
+                measureRange: (cols.measureRange || "").trim(),
+                counts: Number.isFinite(counts) ? counts : 0,
+                lateralText: (cols.lateralText || "").trim(),
+                fbText: (cols.fbText || "").trim(),
+                source: "text",
+            });
+        }
+        if (out.length > 0)
+            sheets.push({
+                pageIndex,
+                quadrant: qk as any,
+                header: headerMeta,
+                rows: out,
+                rawText: qItems.map((t) => t.str).join("\n"),
+            });
+    }
+    if (sheets.length > 0) return sheets;
+    // Fallback: original whole-page logic
+    const rows = bucketRows(items, 2);
+    const regions = segmentRowsByAnchors(rows);
+    if (regions.length === 0) return [];
+    const { start, end } = regions[0];
+    const parsed = mapTableRows(rows.slice(start, end));
+    if (parsed.length === 0) return [];
+    return [
+        {
+            pageIndex,
+            quadrant: "TL" as any,
+            header: extractHeader(items),
+            rows: parsed,
+            rawText: items.map((t) => t.str).join("\n"),
+        },
+    ];
+}
 
-	const buckets: Record<"TL" | "TR" | "BL" | "BR", TextItem[]> = {
-		TL: [],
-		TR: [],
-		BL: [],
-		BR: [],
-	};
+function mapTableRows(rows: TextItem[][]) {
+    const header = detectHeaderAndBands(rows);
+    let dataRows = header ? rows.slice(header.headerIndex + 1) : rows;
+    const out: any[] = [];
+    if (header) {
+        let bands = header.bands;
+        const haveLateral = bands.some((b) => b.key === "lateralText");
+        const haveFB = bands.some((b) => b.key === "fbText");
+        if (!haveLateral || !haveFB) {
+            const inferred = inferBandsFromData(dataRows);
+            if (inferred) bands = inferred;
+        }
+        for (const r of dataRows) {
+            let cols = mapRowToColumns(r, bands);
+            if (
+                !cols.setId ||
+                !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
+                !cols.counts ||
+                !/^\d+$/.test((cols.counts || "").trim())
+            ) {
+                const fallback = fallbackParseRowLeftToRight(r);
+                if (fallback) cols = { ...fallback } as any;
+            }
+            const setId = cols.setId;
+            const countsRaw = cols.counts;
+            if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
+            const counts = parseInt(
+                (countsRaw || "").replace(/[^0-9]/g, ""),
+                10,
+            );
+            out.push({
+                setId: setId.trim(),
+                measureRange: (cols.measureRange || "").trim(),
+                counts: Number.isFinite(counts) ? counts : 0,
+                lateralText: (cols.lateralText || "").trim(),
+                fbText: (cols.fbText || "").trim(),
+                source: "text",
+            });
+        }
+        return out;
+    }
+    for (const r of dataRows) {
+        const text = r.map((t) => t.str);
+        const [setId, measureRange, countsRaw, ...rest] = text;
+        if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
+        const counts = parseInt((countsRaw || "").replace(/[^0-9]/g, ""), 10);
+        const lateralText = rest.join(" ");
+        let fbText = "";
+        const fbIndex = rest.findIndex((s) => /hash/i.test(s));
+        if (fbIndex >= 0) fbText = rest.slice(fbIndex).join(" ");
+        out.push({
+            setId: setId?.trim(),
+            measureRange: (measureRange || "").trim(),
+            counts: Number.isFinite(counts) ? counts : 0,
+            lateralText: lateralText.trim(),
+            fbText: fbText.trim(),
+            source: "text",
+        });
+    }
+    return out;
+}
 
-	for (const it of allItems) {
-		for (const q of QuadrantSchema.options) {
-			const r = (rects as any)[q];
-			if (rectContains(r, it.x, it.y)) {
-				buckets[q].push(it);
-				break;
-			}
-		}
-	}
-
-	const results: ParsedSheet[] = [];
-	for (const quadrant of QuadrantSchema.options) {
-		const items = buckets[quadrant];
-		if (items.length === 0 || !hasHeader(items)) continue;
-		const rows = nearestBucket(items, 2);
-		const header = extractHeader(items);
-		const parsedRows = mapTableRows(rows);
-		results.push({
-			pageIndex,
-			quadrant: quadrant as any,
-			header,
-			rows: parsedRows,
-			rawText: items.map((t) => t.str).join("\n"),
-		});
-	}
-	return results;
+function segmentRowsByAnchors(
+    rows: TextItem[][],
+): Array<{ start: number; end: number }> {
+    const lc = (s: string) => s.toLowerCase();
+    const headerAnchors = pywareProfile.pageHeaderAnchors;
+    const footerAnchors = pywareProfile.footerAnchors;
+    const starts: number[] = [];
+    for (let i = 0; i < rows.length; i++) {
+        const text = lc(rows[i].map((t) => t.str).join(" "));
+        if (headerAnchors.some((a) => text.includes(a))) starts.push(i);
+    }
+    if (starts.length === 0) return [];
+    const ranges: Array<{ start: number; end: number }> = [];
+    for (let si = 0; si < starts.length; si++) {
+        const start = starts[si];
+        let end = rows.length;
+        for (let j = start + 1; j < rows.length; j++) {
+            const text = lc(rows[j].map((t) => t.str).join(" "));
+            if (headerAnchors.some((a) => text.includes(a))) {
+                end = j;
+                break;
+            }
+            if (footerAnchors.some((a) => text.includes(a))) {
+                end = j;
+                break;
+            }
+        }
+        ranges.push({ start, end });
+        if (ranges.length >= pywareProfile.maxSheetsPerPage) break;
+    }
+    return ranges;
 }

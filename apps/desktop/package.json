@@ -94,6 +94,7 @@
         "sonner": "^1.7.4",
         "svg-to-pdfkit": "^0.1.8",
         "tailwind-merge": "^2.6.0",
+        "tesseract.js": "^6.0.1",
         "uuid": "^11.1.0",
         "wavesurfer.js": "^7.9.9",
         "xml2abc": "file:external-packages/xml2abc.tgz",
