@@ -1,12 +1,9 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
-import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import {
     ArrowsInSimpleIcon,
     EyeIcon,
     EyeSlashIcon,
-    WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
 
@@ -25,16 +22,14 @@ function UiSettingsToolbar() {
     return (
         <>
             <ToolbarSection aria-label={t("toolbar.view.uiSettingsToolbar")}>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.togglePreviousPagePaths
-                    }
-                    instructionalString={
-                        uiSettings.previousPaths
-                            ? RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.togglePreviousPagePaths.getInstructionalStringToggleOn()
-                    }
-                    className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
+                <button
+                    onClick={() => {
+                        setUiSettings({
+                            ...uiSettings,
+                            previousPaths: !uiSettings.previousPaths,
+                        });
+                    }}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <T keyName="toolbar.view.previousPaths" />
                     {uiSettings.previousPaths ? (
@@ -42,17 +37,15 @@ function UiSettingsToolbar() {
                     ) : (
                         <EyeSlashIcon size={24} />
                     )}
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.toggleNextPagePaths
-                    }
-                    instructionalString={
-                        uiSettings.nextPaths
-                            ? RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.toggleNextPagePaths.getInstructionalStringToggleOn()
-                    }
-                    className={`hover:text-accent flex gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50`}
+                </button>
+                <button
+                    onClick={() => {
+                        setUiSettings({
+                            ...uiSettings,
+                            nextPaths: !uiSettings.nextPaths,
+                        });
+                    }}
+                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                 >
                     <T keyName="toolbar.view.nextPaths" />
                     {uiSettings.nextPaths ? (
@@ -60,7 +53,7 @@ function UiSettingsToolbar() {
                     ) : (
                         <EyeSlashIcon size={24} />
                     )}
-                </RegisteredActionButton>
+                </button>
             </ToolbarSection>
             <ToolbarSection>
                 <button

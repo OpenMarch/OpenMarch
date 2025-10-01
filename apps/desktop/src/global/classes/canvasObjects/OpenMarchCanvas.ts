@@ -1153,36 +1153,40 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
             // next pathway, midpoint, endpoint
             if (!nextPageIsEmpty && next && curr) {
-                // delete all of the existing fabric objects
-                for (const fabricObject of visual
-                    .getNextPathway()
-                    .getFabricObjects()) {
-                    this.remove(fabricObject);
-                }
+                // TODO: Uncomment when EditablePath is fully implemented
+                // // delete all of the existing fabric objects
+                // for (const fabricObject of visual
+                //     .getNextPathway()
+                //     .getFabricObjects()) {
+                //     this.remove(fabricObject);
+                // }
 
-                const nextPathway = visual.getNextPathway();
-                nextPathway.updatePathwayWithMarcherPages(curr, next);
-                for (const fabricObject of nextPathway.getFabricObjects()) {
-                    this.add(fabricObject);
-                }
+                // const nextPathway = visual.getNextPathway();
+                // nextPathway.updatePathwayWithMarcherPages(curr, next);
+                // for (const fabricObject of nextPathway.getFabricObjects()) {
+                //     this.add(fabricObject);
+                // }
 
-                // visual.getNextPathway().updateStartCoords(curr);
-                // visual.getNextPathway().updateEndCoords(next);
+                // Using simple pathway method (like previous paths) for now
+                visual.getNextPathway().show();
+                visual.getNextPathway().updateStartCoords(curr);
+                visual.getNextPathway().updateEndCoords(next);
 
-                // visual.getNextMidpoint().show();
-                // visual.getNextMidpoint().updateCoords({
-                //     x: (curr.x + next.x) / 2,
-                //     y: (curr.y + next.y) / 2,
-                // });
+                visual.getNextMidpoint().show();
+                visual.getNextMidpoint().updateCoords({
+                    x: (curr.x + next.x) / 2,
+                    y: (curr.y + next.y) / 2,
+                });
 
-                // visual.getNextEndpoint().show();
-                // visual.getNextEndpoint().updateCoords(next);
-                this.requestRenderAll();
+                visual.getNextEndpoint().show();
+                visual.getNextEndpoint().updateCoords(next);
             } else {
-                const nextPathway = visual.getNextPathway();
-                for (const fabricObject of nextPathway.getFabricObjects()) {
-                    this.remove(fabricObject);
-                }
+                // TODO: Uncomment when EditablePath is fully implemented
+                // const nextPathway = visual.getNextPathway();
+                // for (const fabricObject of nextPathway.getFabricObjects()) {
+                //     this.remove(fabricObject);
+                // }
+                visual.getNextPathway().hide();
                 visual.getNextMidpoint().hide();
                 visual.getNextEndpoint().hide();
             }
@@ -1203,10 +1207,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             visual.getPreviousPathway().hide();
             visual.getPreviousMidpoint().hide();
             visual.getPreviousEndpoint().hide();
-            const nextPathway = visual.getNextPathway();
-            for (const fabricObject of nextPathway.getFabricObjects()) {
-                this.remove(fabricObject);
-            }
+            // TODO: Uncomment when EditablePath is fully implemented
+            // const nextPathway = visual.getNextPathway();
+            // for (const fabricObject of nextPathway.getFabricObjects()) {
+            //     this.remove(fabricObject);
+            // }
+            // Using simple pathway method (like previous paths) for now
+            visual.getNextPathway().hide();
             visual.getNextMidpoint().hide();
             visual.getNextEndpoint().hide();
             this.requestRenderAll();
