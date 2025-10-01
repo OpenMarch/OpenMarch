@@ -145,6 +145,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
     private boundHandleKeyUp: ((event: KeyboardEvent) => void) | null = null;
 
+    // Window/observer handles for cleanup
+    private _onWindowResize: (() => void) | null = null;
+    private _viewportResizeObserver: ResizeObserver | null = null;
+    private _wrapperResizeObserver: ResizeObserver | null = null;
+    private _viewportEl: HTMLElement | null = null;
+
     /**
      * Constants for zoom limits
      */
@@ -168,7 +174,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         listeners,
     }: {
         canvasRef: HTMLCanvasElement | null;
-        fieldProperties: FieldProperties;
+        fieldProperties: any;
         uiSettings: UiSettings;
         currentPage?: Page;
         listeners?: CanvasListeners;
@@ -219,8 +225,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         // Set canvas size
         this.refreshCanvasSize();
-        // Update canvas size on window resize
-        window.addEventListener("resize", () => this.refreshCanvasSize());
+        // Update canvas size on window resize (store handler for cleanup)
+        this._onWindowResize = this.refreshCanvasSize.bind(this);
+        window.addEventListener("resize", this._onWindowResize);
 
         this._fieldProperties = fieldProperties;
 
@@ -441,7 +448,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }, 75);
     }
 
-    private checkCanvasBounds() {
+    public checkCanvasBounds() {
         if (!this.viewportTransform) return;
 
         const vpt = this.viewportTransform;
@@ -459,23 +466,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const visibleContentWidth = contentWidth * zoom;
         const visibleContentHeight = contentHeight * zoom;
 
-        // Compute min/max translate so content can be moved until its edge aligns with viewport edge.
-        // Fabric vpt[4]/vpt[5] are translation in pixels after zoom.
-        // We use a symmetric clamp around the two edge positions (0 and diff) with some leeway margin.
-        // Padding strategy: always allow overscroll padding on BOTH sides so the user
-        // sees space around the field regardless of fit.
-        // When content fits (diff >= 0): allow range [-outerPadding, diff + outerPadding]
-        // When content larger (diff < 0): allow range [diff - outerPadding, 0 + outerPadding]
-        const outerPadding = 96; // px overscroll on each side
+        // Clamp pan with symmetric overscroll.
+        // Overscroll = 1x viewport size (CSS px), constant across zoom.
+        const paddingX = viewportWidth * 1.0;
+        const paddingY = viewportHeight * 1.0;
 
         const diffX = viewportWidth - visibleContentWidth; // > 0 if content fits horizontally
         const diffY = viewportHeight - visibleContentHeight; // > 0 if content fits vertically
 
-        const minX = (diffX >= 0 ? 0 : diffX) - outerPadding;
-        const maxX = (diffX >= 0 ? diffX : 0) + outerPadding;
+        const minX = (diffX >= 0 ? 0 : diffX) - paddingX;
+        const maxX = (diffX >= 0 ? diffX : 0) + paddingX;
 
-        const minY = (diffY >= 0 ? 0 : diffY) - outerPadding;
-        const maxY = (diffY >= 0 ? diffY : 0) + outerPadding;
+        const minY = (diffY >= 0 ? 0 : diffY) - paddingY;
+        const maxY = (diffY >= 0 ? diffY : 0) + paddingY;
 
         let needsAdjustment = false;
 
@@ -714,18 +717,15 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     const viewportEl = this.cssZoomWrapper.parentElement
                         ? this.cssZoomWrapper.parentElement.parentElement
                         : null;
-                    // @ts-ignore
                     this._viewportEl = viewportEl || null;
                     if (typeof ResizeObserver !== "undefined") {
                         if (viewportEl) {
                             const ro = new ResizeObserver(() => refresh());
                             ro.observe(viewportEl);
-                            // @ts-ignore
                             this._viewportResizeObserver = ro;
                         } else {
                             const ro = new ResizeObserver(() => refresh());
                             ro.observe(this.cssZoomWrapper);
-                            // @ts-ignore
                             this._wrapperResizeObserver = ro;
                         }
                     }
@@ -760,6 +760,24 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             }
         }
         this.setupAdvancedEventListeners();
+    }
+
+    /** Clean up DOM listeners and observers; call when tearing down the canvas */
+    public dispose(): fabric.Canvas {
+        if (this._onWindowResize) {
+            window.removeEventListener("resize", this._onWindowResize);
+            this._onWindowResize = null;
+        }
+        if (this._viewportResizeObserver) {
+            this._viewportResizeObserver.disconnect();
+            this._viewportResizeObserver = null;
+        }
+        if (this._wrapperResizeObserver) {
+            this._wrapperResizeObserver.disconnect();
+            this._wrapperResizeObserver = null;
+        }
+        this.removeAdvancedEventListeners();
+        return super.dispose();
     }
 
     private updateSensitivitySettings() {
@@ -906,13 +924,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             ? viewportEl.getBoundingClientRect()
             : this.cssZoomWrapper
               ? this.cssZoomWrapper.getBoundingClientRect()
-              : ({ width: window.innerWidth, height: window.innerHeight } as any);
+              : ({
+                    width: window.innerWidth,
+                    height: window.innerHeight,
+                } as any);
 
         const width = Math.max(0, Math.floor(targetRect.width));
         const height = Math.max(0, Math.floor(targetRect.height));
 
         this.setWidth(width);
         this.setHeight(height);
+        this.requestRenderAll();
     }
 
     /**
@@ -938,6 +960,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const panX = (viewportWidth - fieldWidth * baseZoom) / 2;
         const panY = (viewportHeight - fieldHeight * baseZoom) / 2;
         this.setViewportTransform([baseZoom, 0, 0, baseZoom, panX, panY]);
+        this.checkCanvasBounds();
         this.requestRenderAll();
     }
 
@@ -1473,11 +1496,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         // Render the grid lines either from the first checkpoint, or the first visible checkpoint if i's not an integer amount of steps away from the front point
         // This is to address when the front of the field isn't exactly with the grid
         const sortedYCheckpoints = this.fieldProperties.yCheckpoints.sort(
-            (a, b) => b.stepsFromCenterFront - a.stepsFromCenterFront,
+            (a: any, b: any) => b.stepsFromCenterFront - a.stepsFromCenterFront,
         );
         const firstVisibleYCheckpoint =
             this.fieldProperties.yCheckpoints.reduce(
-                (prev, curr) => {
+                (prev: any, curr: any) => {
                     if (
                         curr.visible &&
                         curr.stepsFromCenterFront > prev.stepsFromCenterFront
@@ -2123,7 +2146,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     img.onload = () => resolve(img);
                     img.onerror = reject;
 
-                    const blob = new Blob([backgroundImage] as any);
+                    const blob = new Blob([
+                        (backgroundImage as any).buffer as ArrayBuffer,
+                    ]);
                     img.src = URL.createObjectURL(blob);
 
                     return img;
