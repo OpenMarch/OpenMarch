@@ -400,8 +400,7 @@ export default class DefaultListeners implements CanvasListeners {
     private checkCanvasBounds() {
         if (this._isZooming) return;
         // The canvas handles accurate content-aware clamping
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (this.canvas as any).checkCanvasBounds?.();
+        this.canvas.checkCanvasBounds();
     }
 
     // Lasso selection methods

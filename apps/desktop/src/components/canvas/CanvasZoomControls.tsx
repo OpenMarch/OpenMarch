@@ -20,7 +20,7 @@ export default function CanvasZoomControls({
 
         const updateZoom = () => {
             // Display relative to base zoom so base == 100%
-            const base = (canvas as any).getBaseZoom?.() ?? 1.0;
+            const base = canvas.getBaseZoom?.() ?? 1.0;
             const ratio = canvas.getZoom() / (base || 1);
             setCurrentZoom(Math.round(ratio * 100));
         };
@@ -110,8 +110,8 @@ export default function CanvasZoomControls({
         }
 
         // Center at base zoom (treated as 100%)
-        if (typeof (canvas as any).centerAtBaseZoom === "function") {
-            (canvas as any).centerAtBaseZoom();
+        if (typeof canvas.centerAtBaseZoom === "function") {
+            canvas.centerAtBaseZoom();
         }
 
         // Ensure any CSS transforms are reset if they were part of an older system.

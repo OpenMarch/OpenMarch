@@ -108,10 +108,12 @@ export default function Canvas({
             return;
 
         // The viewport element is the teal wrapper (parent of canvas-container's parent)
-        const viewportEl = containerRef.current.firstElementChild as HTMLElement | null;
+        const viewportEl = containerRef.current
+            .firstElementChild as HTMLElement | null;
         const rect = viewportEl?.getBoundingClientRect();
         const containerWidth = rect?.width ?? containerRef.current.clientWidth;
-        const containerHeight = rect?.height ?? containerRef.current.clientHeight;
+        const containerHeight =
+            rect?.height ?? containerRef.current.clientHeight;
 
         if (containerWidth <= 0 || containerHeight <= 0) return;
 
@@ -121,8 +123,8 @@ export default function Canvas({
         if (fieldWidth <= 0 || fieldHeight <= 0) return;
 
         // Use canvas base zoom (fit vertical <= 1.0) and center
-        if (typeof (canvas as any).centerAtBaseZoom === "function") {
-            (canvas as any).centerAtBaseZoom();
+        if (typeof canvas.centerAtBaseZoom === "function") {
+            canvas.centerAtBaseZoom();
         } else {
             const fitVerticalZoom = containerHeight / fieldHeight;
             const newZoom = fitVerticalZoom < 1 ? fitVerticalZoom : 1.0;
@@ -497,11 +499,9 @@ export default function Canvas({
         }
 
         // Ensure initial center at base zoom once the wrapper has laid out
-        setTimeout(() => {
-            if (typeof (newCanvasInstance as any).centerAtBaseZoom === "function") {
-                (newCanvasInstance as any).centerAtBaseZoom();
-            }
-        }, 0);
+        requestAnimationFrame(() => {
+            newCanvasInstance.centerAtBaseZoom?.();
+        });
     }, [
         selectedPage,
         fieldProperties,
@@ -514,9 +514,12 @@ export default function Canvas({
     // Cleanup canvas on unmount
     useEffect(() => {
         return () => {
+            if (canvas) {
+                canvas.dispose();
+            }
             setCanvasStore(null);
         };
-    }, []);
+    }, [canvas]);
 
     // Initiate listeners
     useEffect(() => {
@@ -741,7 +744,7 @@ export default function Canvas({
             // canvas.refreshBackgroundImage();
             canvas.fieldProperties = fieldProperties;
             // Recalculate zoom and position after field properties update
-            setTimeout(() => centerAndFitCanvas(), 100);
+            requestAnimationFrame(() => centerAndFitCanvas());
         }
     }, [canvas, fieldProperties, centerAndFitCanvas, isFullscreen]);
 
@@ -887,10 +890,7 @@ export default function Canvas({
                         justifyContent: "center",
                     }}
                 >
-                    <canvas
-                        ref={canvasRef}
-                        id="fieldCanvas"
-                    />
+                    <canvas ref={canvasRef} id="fieldCanvas" />
                 </div>
             ) : (
                 <div className="flex h-full w-full items-center justify-center">
