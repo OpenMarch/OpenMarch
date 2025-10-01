@@ -363,7 +363,7 @@ export const deleteShapePagesInTransaction = async ({
     if (shapesWithNoShapePages.length > 0) {
         console.debug(
             "Deleting shapes with no shape pages:",
-            shapesWithNoShapePages.map((s) => s.id),
+            shapesWithNoShapePages,
         );
         await deleteShapesInTransaction({
             itemIds: new Set(shapesWithNoShapePages.map((s) => s.id)),

@@ -1,9 +1,6 @@
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button } from "@openmarch/ui";
-import {
-    getUpdateMarcherShapeArgs,
-    MarcherShape,
-} from "@/global/classes/canvasObjects/MarcherShape";
+import { MarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 import { useCallback } from "react";
 import * as Form from "@radix-ui/react-form";
 import {
@@ -32,7 +29,16 @@ import { assert } from "@/utilities/utils";
 // eslint-disable-next-line max-lines-per-function
 export default function ShapeEditor() {
     const queryClient = useQueryClient();
-    const { selectedShapePageIds } = useSelectionStore()!;
+    const { selectedShapePageIds, setSelectedShapePageIds } =
+        useSelectionStore()!;
+    // const { data: shapePages } = useQuery({
+    //     ...allDatabaseShapePagesQueryOptions(),
+    //     queryKey: [shapePageKeys.all(), { selectedShapePageIds }],
+    //     select: (data) =>
+    //         data.filter((shapePage) =>
+    //             selectedShapePageIds.includes(shapePage.id),
+    //         ),
+    // });
     const { selectedPage } = useSelectedPage()!;
     const { mutate: copyShapePageToPage, isPending: isCopyingShapePageToPage } =
         useMutation(copyShapePageToPageMutationOptions(queryClient));
@@ -43,16 +49,17 @@ export default function ShapeEditor() {
         deleteShapePagesMutationOptions(queryClient),
     );
 
-    const getMarcherShapesByShapePageId: () => Record<number, MarcherShape> =
+    const getMarcherShapesByShapePageId: () => Map<number, MarcherShape> =
         useCallback(() => {
-            if (!canvas) return {};
-            return canvas.marcherShapes.reduce(
-                (acc, marcherShape) => {
-                    acc[marcherShape.shapePage.id] = marcherShape;
-                    return acc;
-                },
-                {} as Record<number, MarcherShape>,
-            );
+            const map = new Map<number, MarcherShape>();
+            if (!canvas) return map;
+            for (const marcherShape of canvas.marcherShapes) {
+                map.set(marcherShape.shapePage.id, marcherShape);
+            }
+            return map;
+            // Need to refetch
+            // TODO - stop relying on the canvas to get the marcher shapes
+            // eslint-disable-next-line react-hooks/exhaustive-deps
         }, [canvas]);
 
     // const [shapeIsOnNextPage, setShapeIsOnNextPage] = useState<
@@ -128,6 +135,7 @@ export default function ShapeEditor() {
     const handleDeleteShape = useCallback(
         (marcherShape: MarcherShape) => {
             deleteShapePage(new Set([marcherShape.shapePage.id]));
+            setSelectedShapePageIds([]);
         },
         [deleteShapePage],
     );
@@ -325,15 +333,24 @@ export default function ShapeEditor() {
                 title={"Shape"}
                 className="mt-12 flex flex-col gap-12 overflow-y-auto"
             >
-                {selectedShapePageIds.map((shapePageId) => {
-                    return (
-                        <div key={shapePageId} className="flex flex-col gap-12">
-                            {singleShapeEditor(
-                                marcherShapesByShapePageId[shapePageId],
-                            )}
-                        </div>
-                    );
-                })}
+                {selectedShapePageIds
+                    .filter((shapePageId) =>
+                        marcherShapesByShapePageId.has(shapePageId),
+                    )
+                    .map((shapePageId) => {
+                        return (
+                            <div
+                                key={shapePageId}
+                                className="flex flex-col gap-12"
+                            >
+                                {singleShapeEditor(
+                                    marcherShapesByShapePageId.get(
+                                        shapePageId,
+                                    )!,
+                                )}
+                            </div>
+                        );
+                    })}
             </InspectorCollapsible>
         )
     );

@@ -31,6 +31,9 @@ export function createMarcherPages(
                 path_start_position: null,
                 path_end_position: null,
                 notes: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+                rotation_degrees: 0,
             });
             currentId++;
         });
