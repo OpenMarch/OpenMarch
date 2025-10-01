@@ -6,7 +6,7 @@ import { fabric } from "fabric";
 import DefaultListeners from "@/components/canvas/listeners/DefaultListeners";
 import { ArrowClockwiseIcon } from "@phosphor-icons/react";
 
-function MarcherRotationInput() {
+function MarcherRotationInput({ disabled }: { disabled: boolean }) {
     const [rotationAngle, setRotationAngle] = useState<number>(0);
     const [activeGroup, setActiveGroup] = useState<fabric.Group | null>(null);
 
@@ -89,7 +89,7 @@ function MarcherRotationInput() {
                 icon={ArrowClockwiseIcon}
                 onBlur={handleRotationDragEnd}
                 onDragEnd={handleRotationDragEnd}
-                disabled={!activeGroup}
+                disabled={!activeGroup || disabled}
             />
         </div>
     );

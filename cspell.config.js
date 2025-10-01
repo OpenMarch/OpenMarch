@@ -135,6 +135,7 @@ module.exports = {
         "uuidv",
         "mello",
         "sqljs",
+        "Invalidators",
     ],
     ignorePaths: [
         "node_modules/**",

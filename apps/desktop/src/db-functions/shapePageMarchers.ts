@@ -3,6 +3,7 @@ import {
     DbConnection,
     DbTransaction,
     deleteShapePagesInTransaction,
+    marcherPageToKeyString,
     transactionWithHistory,
 } from "@/db-functions";
 import { db, schema } from "@/global/database/db";
@@ -78,7 +79,7 @@ export async function getSpmByMarcherPage({
     tx,
     marcherPage,
 }: {
-    tx: DbTransaction;
+    tx: DbTransaction | DbConnection;
     marcherPage: { marcher_id: number; page_id: number };
 }): Promise<ShapePageMarcher | null> {
     const response = await tx
@@ -492,10 +493,10 @@ export async function createShapePageMarchersInTransaction({
 
 export const createShapePageMarchers = async ({
     newItems,
-    tx,
+    db,
 }: {
     newItems: NewShapePageMarcherArgs[];
-    tx: DbTransaction;
+    db: DbConnection;
 }): Promise<DatabaseShapePageMarcher[]> => {
     const createdItems = await transactionWithHistory(
         db,
@@ -681,3 +682,58 @@ export const deleteShapePageMarchersInTransaction = async ({
         realDatabaseShapePageMarcherToDatabaseShapePageMarcher,
     );
 };
+
+/**
+ * Gets a map of all ShapePageMarchers by their marcher page key string.
+ * @param db The database instance
+ * @returns A map of ShapePageMarchers by their marcher page key string
+ */
+export async function getSpmMapAll({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<Map<string, ShapePageMarcher>> {
+    const result = await db.query.shape_page_marchers.findMany();
+    const shapePages = await db.query.shape_pages.findMany({
+        columns: {
+            id: true,
+            page_id: true,
+        },
+    });
+    const pageIdByShapePageId = new Map(
+        shapePages.map((sp) => [sp.id, sp.page_id]),
+    );
+    return new Map(
+        result.map((spm) => [
+            marcherPageToKeyString({
+                marcher_id: spm.marcher_id,
+                page_id: pageIdByShapePageId.get(spm.shape_page_id)!,
+            }),
+            spm,
+        ]),
+    );
+}
+
+export async function getSpmMapByPageId({
+    db,
+    pageId,
+}: {
+    db: DbConnection | DbTransaction;
+    pageId: number;
+}): Promise<Map<string, ShapePageMarcher>> {
+    const spmsForPage = await getShapePageMarchersByPage({
+        db,
+        pageId,
+    });
+
+    const spmsByMarcherPage = new Map(
+        spmsForPage.map((spm) => [
+            marcherPageToKeyString({
+                marcher_id: spm.marcher_id,
+                page_id: pageId,
+            }),
+            spm,
+        ]),
+    );
+    return spmsByMarcherPage;
+}

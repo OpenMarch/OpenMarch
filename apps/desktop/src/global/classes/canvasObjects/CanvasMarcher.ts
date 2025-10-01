@@ -33,6 +33,8 @@ export default class CanvasMarcher
 
     /** The object that represents the dot on the canvas */
     readonly dotObject: fabric.Object;
+    private _locked: boolean = false;
+    private _lockedReason: string = "";
 
     readonly objectToGloballySelect: Marcher;
 
@@ -49,6 +51,7 @@ export default class CanvasMarcher
      * @param dotRadius The radius of the dot
      * @param color The color of the dot
      */
+    // eslint-disable-next-line max-lines-per-function
     constructor({
         marcher,
         coordinate,
@@ -176,6 +179,16 @@ export default class CanvasMarcher
 
         // Add moving event listener for real-time coordinate snapping
         this.on("moving", this.handleMoving.bind(this));
+
+        this.refreshLockedStatus();
+    }
+
+    refreshLockedStatus() {
+        if (this.coordinate.page_id == null || this.marcherObj.id == null) {
+            return;
+        }
+        this._locked = this.coordinate.isLocked ?? false;
+        this._lockedReason = this.coordinate.lockedReason ?? "";
     }
 
     /**
@@ -391,10 +404,13 @@ export default class CanvasMarcher
         // This is needed for the canvas to register the change - http://fabricjs.com/fabric-gotchas
         this.getCanvas().bringToFront(this);
         this.setCoords();
+        this.refreshLockedStatus();
     }
 
     /**
      * Get the absolute coordinates of the dotObject (the marcher marker)
+     * Note, this does not include the grid offset or coordinate rounding. Use getMarcherCoords instead.
+     *
      * @returns {x: number, y: number}
      */
     getAbsoluteCoords() {
@@ -448,6 +464,18 @@ export default class CanvasMarcher
             x: databaseCoords.x - CanvasMarcher.gridOffset,
             y: databaseCoords.y - CanvasMarcher.gridOffset,
         };
+    }
+
+    /**
+     * Get the coordinates of the marcher on the database that should be stored in the database.
+     * This is the actual position of the center of the dot, not the position of the fabric group.
+     *
+     * Clone of getMarcherCoords
+     *
+     * @returns {x: number, y: number}
+     */
+    getDatabaseCoords(uiSettings?: UiSettings): { x: number; y: number } {
+        return this.getMarcherCoords(uiSettings);
     }
 
     /**
@@ -527,6 +555,14 @@ export default class CanvasMarcher
     scale(_value: number): this {
         // Prevent scaling
         return this;
+    }
+
+    get locked() {
+        return this._locked;
+    }
+
+    get lockedReason() {
+        return this._lockedReason;
     }
 }
 

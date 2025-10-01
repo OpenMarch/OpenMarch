@@ -1,6 +1,7 @@
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
 import type Page from "./Page";
+import { DbConnection, DbTransaction } from "@/db-functions/types";
 
 const { marcher_pages } = schema;
 
@@ -13,33 +14,9 @@ export type DatabaseMarcherPage = DatabaseMarcherPageBase;
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export default interface MarcherPage {
-    /** The id of the MarcherPage in the database */
-    readonly id: number;
-    /** The id of the Marcher the MarcherPage is associated with  */
-    readonly marcher_id: number;
-    /** The id of the Page the MarcherPage is associated with */
-    readonly page_id: number;
-    /** X coordinate of the MarcherPage */
-    readonly x: number;
-    /** Y coordinate of the MarcherPage */
-    readonly y: number;
-    /** The ID of the pathway data */
-    readonly path_data_id: number | null;
-    /**
-     * The position along the pathway (0-1).
-     * This is the position in the pathway the marcher starts at for this coordinate.
-     * If this is null, then it is assumed to be 0 (the start of the pathway).
-     */
-    readonly path_start_position: number | null;
-    /**
-     * The position along the pathway (0-1).
-     * This is the position in the pathway the marcher ends up at for this coordinate.
-     * If this is null, then it is assumed to be 1 (the end of the pathway).
-     */
-    readonly path_end_position: number | null;
-    /** Any notes about the MarcherPage. Optional - currently not implemented */
-    readonly notes: string | null;
+export default interface MarcherPage extends DatabaseMarcherPageBase {
+    readonly isLocked?: boolean;
+    readonly lockedReason?: string;
 }
 
 /**

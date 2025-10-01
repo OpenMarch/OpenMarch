@@ -3,20 +3,28 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useTimingObjects } from "@/hooks";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
+import { updateShapePagesMutationOptions } from "@/hooks/queries";
+import {
+    MarcherShape,
+    marcherShapeToShapePageArgs,
+} from "@/global/classes/canvasObjects/MarcherShape";
 
 /**
  * A component that initializes the state of the application.
  * @returns <> </>
  */
 function StateInitializer() {
+    const queryClient = useQueryClient();
     const { pages } = useTimingObjects();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
-    const queryClient = useQueryClient();
+    const { mutate: updateMarcherShape } = useMutation(
+        updateShapePagesMutationOptions(queryClient),
+    );
 
     if (selectedPage) {
         void queryClient.prefetchQuery(
@@ -62,6 +70,12 @@ function StateInitializer() {
     useEffect(() => {
         setSelectedShapePageIds([]);
     }, [selectedPage, setSelectedShapePageIds]);
+
+    useEffect(() => {
+        MarcherShape.updateMarcherShapeFn = async (
+            marcherShape: MarcherShape,
+        ) => updateMarcherShape([marcherShapeToShapePageArgs(marcherShape)]);
+    }, [updateMarcherShape]);
 
     return <></>; // Empty fragment
 }

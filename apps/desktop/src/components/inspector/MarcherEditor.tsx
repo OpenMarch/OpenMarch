@@ -301,7 +301,15 @@ function MarcherEditor() {
                                 )}
                             {/* Add rotation controls */}
                             <div className="w-full">
-                                <MarcherRotationInput />
+                                <MarcherRotationInput
+                                    disabled={
+                                        !marcherPagesLoaded ||
+                                        Object.values(marcherPages).some(
+                                            (marcherPage) =>
+                                                marcherPage.isLocked,
+                                        )
+                                    }
+                                />
                             </div>
                         </InspectorCollapsible>
                     ) : (

@@ -81,22 +81,29 @@ export default class DefaultListeners implements CanvasListeners {
             }
         }
 
-        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
-        this.canvas
-            .getActiveObjectsByType(CanvasMarcher)
-            .forEach((activeCanvasMarcher: CanvasMarcher) => {
-                // If the active object is not a marcher, return
-                if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
+        if (
+            // For the case of rotation
+            !fabricEvent ||
+            (fabricEvent?.target as any)?.classString === "Marcher" ||
+            _anyListHasMarcher((fabricEvent?.target as any)?._objects || [])
+        ) {
+            const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+            this.canvas
+                .getActiveObjectsByType(CanvasMarcher)
+                .forEach((activeCanvasMarcher: CanvasMarcher) => {
+                    // If the active object is not a marcher, return
+                    if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
 
-                const newCoords = activeCanvasMarcher.getMarcherCoords();
-                modifiedMarcherPages.push({
-                    marcher_id: activeCanvasMarcher.marcherObj.id,
-                    page_id: activeCanvasMarcher.coordinate.page_id,
-                    x: newCoords.x,
-                    y: newCoords.y,
+                    const newCoords = activeCanvasMarcher.getMarcherCoords();
+                    modifiedMarcherPages.push({
+                        marcher_id: activeCanvasMarcher.marcherObj.id,
+                        page_id: activeCanvasMarcher.coordinate.page_id,
+                        x: newCoords.x,
+                        y: newCoords.y,
+                    });
                 });
-            });
-        this.canvas.updateMarcherPagesFunction?.(modifiedMarcherPages);
+            this.canvas.updateMarcherPagesFunction?.(modifiedMarcherPages);
+        }
     }
 
     /**
@@ -627,3 +634,7 @@ export default class DefaultListeners implements CanvasListeners {
         return inside;
     }
 }
+
+export const _anyListHasMarcher = (list: any[]): boolean => {
+    return list.some((item) => item?.classString === "Marcher");
+};

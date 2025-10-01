@@ -1,7 +1,9 @@
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 
 export const tableNamesToQueryKeys = (tableNames: Set<string>): string[][] => {
-    const queryKeys = Array.from(tableNames).map(singleTableNameToQueryKey);
+    const queryKeys: string[][] = Array.from(tableNames)
+        .map(singleTableNameToQueryKey)
+        .flat();
     return queryKeys;
 };
 
@@ -34,6 +36,11 @@ export const validateQueryKey = (
     return true;
 };
 
-const singleTableNameToQueryKey = (tableName: string) => {
-    return [tableName];
+const singleTableNameToQueryKey = (tableName: string): string[][] => {
+    switch (tableName) {
+        case "shape_page_marchers":
+            return [["shape_pages"], ["marcher_pages"]];
+        default:
+            return [[tableName]];
+    }
 };
