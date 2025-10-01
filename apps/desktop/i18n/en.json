@@ -436,7 +436,7 @@
             "copyToPreviousPage": "Copy this shape to the previous page",
             "copyToPreviousPageButton": "Copy to prev page",
             "deleteLastSegmentTooltip": "Delete last segment",
-            "errorCopyingPage": "Error copying to page {pageName}. Are there marchers already assigned to shapes?",
+            "errorCopyingPage": "Error copying to page. Are there marchers already assigned to shapes?",
             "errorNoNextPage": "Cannot copy. There is no next page",
             "errorNoPreviousPage": "Cannot copy. There is no previous page.",
             "errorPageNotFound": "Page not found with id {pageId}",
@@ -446,7 +446,7 @@
             "segments": {
                 "title": "Segments"
             },
-            "successfullyCopied": "Shape successfully copied to page {pageName}",
+            "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
             "viewTab": "View"
