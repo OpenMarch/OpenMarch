@@ -380,11 +380,16 @@ export default function Canvas({
         frameRef.current = requestAnimationFrame(() => {
             if (!canvas || !selectedPage || !marcherPages) return;
 
+            // Render paths based on UI settings (pass empty objects for disabled paths)
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                previousMarcherPages: previousMarcherPages || {},
+                previousMarcherPages: uiSettings.previousPaths
+                    ? previousMarcherPages || {}
+                    : {},
                 currentMarcherPages: marcherPages,
-                nextMarcherPages: nextMarcherPages || {},
+                nextMarcherPages: uiSettings.nextPaths
+                    ? nextMarcherPages || {}
+                    : {},
                 marcherIds: selectedMarchers.map((m) => m.id),
             });
 
@@ -398,6 +403,8 @@ export default function Canvas({
         previousMarcherPages,
         selectedMarchers,
         selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
     ]);
 
     useEffect(() => {
@@ -587,18 +594,21 @@ export default function Canvas({
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
             canvas.add(visualGroup.getPreviousPathway());
-            visualGroup
-                .getNextPathway()
-                .getFabricObjects()
-                .forEach((fabricObject: fabric.Object) => {
-                    canvas.add(fabricObject);
-                });
+            // TODO: Uncomment when EditablePath is fully implemented
+            // visualGroup
+            //     .getNextPathway()
+            //     .getFabricObjects()
+            //     .forEach((fabricObject: fabric.Object) => {
+            //         canvas.add(fabricObject);
+            //     });
+            // Using simple pathway method (like previous paths) for now
+            canvas.add(visualGroup.getNextPathway());
             visualGroup
                 .getPreviousPathway()
                 .setColor(fieldProperties.theme.previousPath);
-            // visualGroup
-            //     .getNextPathway()
-            //     .setColor(fieldProperties.theme.nextPath);
+            visualGroup
+                .getNextPathway()
+                .setColor(fieldProperties.theme.nextPath);
 
             canvas.add(visualGroup.getPreviousMidpoint());
             canvas.add(visualGroup.getNextMidpoint());
@@ -666,24 +676,28 @@ export default function Canvas({
         if (!canvas || !selectedPage || !fieldProperties || !marcherPagesLoaded)
             return;
 
-        if (marchers && (uiSettings.nextPaths || uiSettings.previousPaths)) {
+        if (marchers) {
+            // Always call renderPathVisuals, but it will show/hide based on settings
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
                 currentMarcherPages: marcherPages,
-                previousMarcherPages: marcherPages,
-                nextMarcherPages: marcherPages,
+                previousMarcherPages: uiSettings.previousPaths
+                    ? previousMarcherPages || {}
+                    : {},
+                nextMarcherPages: uiSettings.nextPaths
+                    ? nextMarcherPages || {}
+                    : {},
 
                 marcherIds: marchers.map((m) => m.id),
             });
             canvas.sendCanvasMarchersToFront();
-        } else {
-            canvas.hideAllPathVisuals({ marcherVisuals: marcherVisuals });
-            canvas.requestRenderAll();
         }
     }, [
         canvas,
         fieldProperties,
         marcherPages,
+        previousMarcherPages,
+        nextMarcherPages,
         marchers,
         pages,
         selectedPage,

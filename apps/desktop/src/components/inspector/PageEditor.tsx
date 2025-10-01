@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { InspectorCollapsible } from "./InspectorCollapsible";
 import { Button, Switch, TextArea } from "@openmarch/ui";
-import { useTimingObjects } from "../../hooks";
 import { measureRangeString } from "../../global/classes/Page";
 import { T, useTranslate } from "@tolgee/react";
 import { updatePagesMutationOptions } from "../../hooks/queries";
@@ -14,12 +13,11 @@ function PageEditor() {
     const queryClient = useQueryClient();
     const { t } = useTranslate();
     const { selectedPage } = useSelectedPage()!;
-    const { pages } = useTimingObjects()!;
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
     const splitPage = useSplitPage().mutate;
-    const [isFirstPage, setIsFirstPage] = useState(false);
+    const isFirstPage = selectedPage?.previousPageId === null;
     const [notes, setNotes] = useState(selectedPage?.notes || "");
 
     const countsInputId = "page-counts";
@@ -57,13 +55,6 @@ function PageEditor() {
     useEffect(() => {
         if (selectedPage) resetForm();
     }, [selectedPage]);
-
-    useEffect(() => {
-        if (pages.length > 0) {
-            const firstPage = pages[0];
-            setIsFirstPage(selectedPage === firstPage);
-        }
-    }, [pages, selectedPage]);
 
     if (selectedPage)
         return (

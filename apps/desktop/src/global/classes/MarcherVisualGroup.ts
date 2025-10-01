@@ -7,7 +7,7 @@ import {
     getSectionAppearance,
     SectionAppearance,
 } from "@/global/classes/SectionAppearance";
-import EditablePath from "./canvasObjects/EditablePath";
+// import EditablePath from "./canvasObjects/EditablePath";
 import { FieldTheme } from "@openmarch/core";
 
 /**
@@ -23,7 +23,7 @@ export default class MarcherVisualGroup {
 
     /** Unselectable visual elements of pathways */
     previousPathway: Pathway;
-    nextPathway: EditablePath;
+    nextPathway: Pathway; // TODO: Change back to EditablePath when it's fully implemented
     previousMidpoint: Midpoint;
     nextMidpoint: Midpoint;
     previousEndPoint: Endpoint;
@@ -58,8 +58,13 @@ export default class MarcherVisualGroup {
             color: "black",
             strokeWidth: 2,
         });
-        this.nextPathway = new EditablePath({
-            fieldTheme,
+        // TODO: Change back to EditablePath when it's fully implemented
+        this.nextPathway = new Pathway({
+            marcherId: this.marcherId,
+            start: { x: 0, y: 0 },
+            end: { x: 0, y: 0 },
+            color: "green",
+            strokeWidth: 2,
         });
 
         this.previousMidpoint = new Midpoint({
