@@ -11,6 +11,9 @@ import {
     CaretDownIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
+import { ActionButton } from "@/ui/components/ActionButton";
+import { ActionId } from "@/actions/types";
+import { useActionSystem } from "@/context/ActionSystemContext";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
@@ -22,37 +25,35 @@ import EditablePath from "@/global/classes/canvasObjects/EditablePath";
 export default function AlignmentTab() {
     const { t } = useTolgee();
     const { uiSettings } = useUiSettingsStore();
+    const { registry, bus } = useActionSystem();
     return (
         <div className="flex w-full flex-wrap gap-8">
             <CoordinateRoundingSettings />
             <ToolbarSection
                 aria-label={t("toolbar.alignment.lockMarchersAriaLabel")}
             >
-                <RegisteredActionButton
-                    instructionalString={
-                        uiSettings.lockX
-                            ? RegisteredActionsObjects.lockX.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.lockX.getInstructionalStringToggleOn()
-                    }
-                    registeredAction={RegisteredActionsObjects.lockX}
+                <ActionButton
+                    id={ActionId.lockX}
+                    bus={bus}
+                    registry={registry}
                     className={clsx(
                         "flex gap-6",
                         uiSettings.lockX ? "text-accent" : "text-text",
                     )}
                 >
                     <ArrowsVerticalIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    instructionalString={
-                        uiSettings.lockY
-                            ? RegisteredActionsObjects.lockY.getInstructionalStringToggleOff()
-                            : RegisteredActionsObjects.lockY.getInstructionalStringToggleOn()
-                    }
-                    registeredAction={RegisteredActionsObjects.lockY}
-                    className={`flex gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
+                </ActionButton>
+                <ActionButton
+                    id={ActionId.lockY}
+                    bus={bus}
+                    registry={registry}
+                    className={clsx(
+                        "flex gap-6",
+                        uiSettings.lockY ? "text-accent" : "text-text",
+                    )}
                 >
                     <ArrowsHorizontalIcon size={24} />
-                </RegisteredActionButton>
+                </ActionButton>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.snapToNearestWhole

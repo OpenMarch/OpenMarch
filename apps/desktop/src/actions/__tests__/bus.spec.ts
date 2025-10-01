@@ -11,12 +11,49 @@ describe("ActionBus", () => {
     selection: {
       constraints: {},
       setConstraints: vi.fn(),
+      selectedMarchers: [],
+      setSelectedMarchers: vi.fn(),
+      getSelectedMarcherPages: vi.fn(() => []),
     },
-    history: {
-      push: vi.fn(),
-      undo: vi.fn(),
-      canUndo: vi.fn().mockResolvedValue(true),
+    page: {
+      selected: null,
+      setSelected: vi.fn(),
+      all: [],
+      getNext: vi.fn(),
+      getPrevious: vi.fn(),
     },
+    playback: {
+      isPlaying: false,
+      setIsPlaying: vi.fn(),
+      toggleMetronome: vi.fn(),
+    },
+    ui: {
+      settings: {},
+      setSettings: vi.fn(),
+    },
+    queries: {
+      marcherPages: {},
+      previousMarcherPages: {},
+      nextMarcherPages: {},
+      fieldProperties: {},
+      canUndo: false,
+      canRedo: false,
+    },
+    mutations: {
+      updateMarcherPages: vi.fn(),
+      swapMarchers: vi.fn(),
+      createMarcherShape: vi.fn(),
+      performHistoryAction: vi.fn(),
+    },
+    alignment: {
+      reset: vi.fn(),
+      setEvent: vi.fn(),
+      setMarchers: vi.fn(),
+      newMarcherPages: [],
+      marchers: [],
+    },
+    t: (key: string) => key,
+    toast: {},
   });
 
   it("should dispatch actions and call execute", async () => {
@@ -66,12 +103,10 @@ describe("ActionBus", () => {
     expect(executeSpy).not.toHaveBeenCalled();
   });
 
-  it("should push inverse to history when getInverse is defined", async () => {
+  it("should execute commands successfully", async () => {
     const registry = createActionRegistry();
     const ctx = createMockContext();
-    const inverseCommand: ActionCommand = {
-      execute: vi.fn().mockReturnValue({ ok: true }),
-    };
+    const executeSpy = vi.fn().mockReturnValue({ ok: true });
 
     const meta: ActionMeta = {
       id: ActionId.lockX,
@@ -80,14 +115,14 @@ describe("ActionBus", () => {
     };
 
     registry.register(meta, () => ({
-      execute: vi.fn().mockReturnValue({ ok: true }),
-      getInverse: vi.fn().mockResolvedValue(inverseCommand),
+      execute: executeSpy,
     }));
 
     const bus = createActionBus(registry, ctx);
-    await bus.dispatch(ActionId.lockX, undefined);
+    const result = await bus.dispatch(ActionId.lockX, undefined);
 
-    expect(ctx.history.push).toHaveBeenCalledWith(inverseCommand);
+    expect(result.ok).toBe(true);
+    expect(executeSpy).toHaveBeenCalledWith(ctx, undefined);
   });
 
   it("should return error when action not registered", async () => {

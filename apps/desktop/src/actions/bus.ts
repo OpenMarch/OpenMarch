@@ -24,10 +24,7 @@ export const createActionBus = (registry: ActionRegistry, ctx: ActionContext): A
     }
     try {
       const res = await cmd.execute(ctx, payload);
-      if (cmd.getInverse) {
-        const inverse = await cmd.getInverse(ctx, payload);
-        await ctx.history.push(inverse);
-      }
+      // Note: Undo/redo is handled by database triggers, not by pushing inverse commands
       return res;
     } catch (e) {
       return { ok: false, error: e };

@@ -2,12 +2,16 @@ import { ActionId, ActionMeta, ActionCommand, ActionContext } from "../types";
 import { ActionRegistry } from "../registry";
 
 class PerformUndoCommand implements ActionCommand<void> {
-  async canExecute(ctx: ActionContext) {
-    return await ctx.history.canUndo();
+  canExecute(ctx: ActionContext) {
+    if (!ctx.queries.canUndo) {
+      ctx.toast?.warning?.(ctx.t("actions.edit.noUndoAvailable"));
+      return false;
+    }
+    return true;
   }
-  async execute(ctx: ActionContext) {
+  execute(ctx: ActionContext) {
     try {
-      await ctx.history.undo();
+      ctx.mutations.performHistoryAction("undo");
       return { ok: true };
     } catch (e) {
       return { ok: false, error: e };

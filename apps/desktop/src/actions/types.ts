@@ -1,9 +1,57 @@
 export enum ActionId {
+  // Electron interactions
   launchLoadFileDialogue = "launchLoadFileDialogue",
+  launchSaveFileDialogue = "launchSaveFileDialogue",
+  launchNewFileDialogue = "launchNewFileDialogue",
+  launchInsertAudioFileDialogue = "launchInsertAudioFileDialogue",
+  launchImportMusicXmlFileDialogue = "launchImportMusicXmlFileDialogue",
   performUndo = "performUndo",
+  performRedo = "performRedo",
+
+  // Navigation and playback
   nextPage = "nextPage",
+  lastPage = "lastPage",
+  previousPage = "previousPage",
+  firstPage = "firstPage",
+  playPause = "playPause",
+  toggleMetronome = "toggleMetronome",
+
+  // Batch editing
+  setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
+  setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
+  setAllMarchersToNextPage = "setAllMarchersToNextPage",
+  setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
+
+  // Alignment
+  snapToNearestWhole = "snapToNearestWhole",
   lockX = "lockX",
-  // move remaining actions here incrementally
+  lockY = "lockY",
+  alignVertically = "alignVertically",
+  alignHorizontally = "alignHorizontally",
+  evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
+  evenlyDistributeVertically = "evenlyDistributeVertically",
+  swapMarchers = "swapMarchers",
+  moveSelectedMarchersUp = "moveSelectedMarchersUp",
+  moveSelectedMarchersDown = "moveSelectedMarchersDown",
+  moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
+  moveSelectedMarchersRight = "moveSelectedMarchersRight",
+
+  // UI settings
+  toggleNextPagePaths = "toggleNextPagePaths",
+  togglePreviousPagePaths = "togglePreviousPagePaths",
+  focusCanvas = "focusCanvas",
+  focusTimeline = "focusTimeline",
+
+  // Cursor Mode
+  applyQuickShape = "applyQuickShape",
+  createMarcherShape = "createMarcherShape",
+  deleteMarcherShape = "deleteMarcherShape",
+  cancelAlignmentUpdates = "cancelAlignmentUpdates",
+  alignmentEventDefault = "alignmentEventDefault",
+  alignmentEventLine = "alignmentEventLine",
+
+  // Select
+  selectAllMarchers = "selectAllMarchers",
 }
 
 export type KeyboardShortcut = {
@@ -24,21 +72,79 @@ export type ActionMeta = {
 };
 
 export type ActionContext = {
+  // Database and queries
   db: any;
   queryClient: any;
+  
+  // Canvas
   fabric: any;
+  
+  // Selection
   selection: {
-    constraints: { lockX?: boolean };
-    setConstraints: (c: Partial<{ lockX: boolean }>) => void;
-    // other selection services
+    constraints: { lockX?: boolean; lockY?: boolean };
+    setConstraints: (c: Partial<{ lockX?: boolean; lockY?: boolean }>) => void;
+    selectedMarchers: any[];
+    setSelectedMarchers: (marchers: any[]) => void;
+    getSelectedMarcherPages: () => any[];
   };
-  history: {
-    push: (cmd: ActionCommand<any>) => Promise<void> | void;
-    undo: () => Promise<void>;
-    canUndo: () => boolean | Promise<boolean>;
+  
+  // Page navigation
+  page: {
+    selected: any;
+    setSelected: (page: any) => void;
+    all: any[];
+    getNext: (current: any) => any | null;
+    getPrevious: (current: any) => any | null;
   };
+  
+  // Playback
+  playback: {
+    isPlaying: boolean;
+    setIsPlaying: (playing: boolean) => void;
+    toggleMetronome: () => void;
+  };
+  
+  // UI settings
+  ui: {
+    settings: any;
+    setSettings: (settings: any) => void;
+    focusCanvas?: () => void;
+    focusTimeline?: () => void;
+  };
+  
+  // Queries (for data fetching)
+  queries: {
+    marcherPages: any;
+    previousMarcherPages: any;
+    nextMarcherPages: any;
+    fieldProperties: any;
+    canUndo: boolean;
+    canRedo: boolean;
+  };
+  
+  // Mutations (for data modification)
+  mutations: {
+    updateMarcherPages: (changes: any[]) => void;
+    swapMarchers: (data: any) => void;
+    createMarcherShape: (data: any) => void;
+    performHistoryAction: (type: "undo" | "redo") => void;
+  };
+  
+  // Alignment events
+  alignment: {
+    reset: () => void;
+    setEvent: (event: any) => void;
+    setMarchers: (marchers: any[]) => void;
+    newMarcherPages: any[];
+    marchers: any[];
+  };
+  
+  // Electron API
   electron?: any;
-  // add other app services here; keep stable and mockable
+  
+  // Translation
+  t: (key: string, params?: any) => string;
+  toast: any;
 };
 
 export type ActionResult = { ok: true } | { ok: false; error: unknown };

@@ -11,12 +11,49 @@ describe("ToggleLockXCommand", () => {
     selection: {
       constraints: { lockX },
       setConstraints: vi.fn(),
+      selectedMarchers: [],
+      setSelectedMarchers: vi.fn(),
+      getSelectedMarcherPages: vi.fn(() => []),
     },
-    history: {
-      push: vi.fn(),
-      undo: vi.fn(),
-      canUndo: vi.fn().mockResolvedValue(true),
+    page: {
+      selected: null,
+      setSelected: vi.fn(),
+      all: [],
+      getNext: vi.fn(),
+      getPrevious: vi.fn(),
     },
+    playback: {
+      isPlaying: false,
+      setIsPlaying: vi.fn(),
+      toggleMetronome: vi.fn(),
+    },
+    ui: {
+      settings: {},
+      setSettings: vi.fn(),
+    },
+    queries: {
+      marcherPages: {},
+      previousMarcherPages: {},
+      nextMarcherPages: {},
+      fieldProperties: {},
+      canUndo: false,
+      canRedo: false,
+    },
+    mutations: {
+      updateMarcherPages: vi.fn(),
+      swapMarchers: vi.fn(),
+      createMarcherShape: vi.fn(),
+      performHistoryAction: vi.fn(),
+    },
+    alignment: {
+      reset: vi.fn(),
+      setEvent: vi.fn(),
+      setMarchers: vi.fn(),
+      newMarcherPages: [],
+      marchers: [],
+    },
+    t: (key: string) => key,
+    toast: {},
   });
 
   it("should be registered correctly", () => {

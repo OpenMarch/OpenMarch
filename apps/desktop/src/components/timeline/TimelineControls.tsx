@@ -13,6 +13,9 @@ import {
     MetronomeIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
+import { ActionButton } from "@/ui/components/ActionButton";
+import { ActionId } from "@/actions/types";
+import { useActionSystem } from "@/context/ActionSystemContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -77,11 +80,14 @@ export default function TimelineControls() {
 
 function TimelineMetronomeButton() {
     const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
-    const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
+    const { registry, bus } = useActionSystem();
 
     return (
         <div className="flex gap-10" id="zoomIcons">
-            <button
+            <ActionButton
+                id={ActionId.toggleMetronome}
+                bus={bus}
+                registry={registry}
                 className={clsx(
                     "outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50",
                     {
@@ -89,10 +95,9 @@ function TimelineMetronomeButton() {
                         "text-text enabled:hover:text-accent": !isMetronomeOn,
                     },
                 )}
-                onClick={toggleMetronome}
             >
                 <MetronomeIcon size={24} />
-            </button>
+            </ActionButton>
         </div>
     );
 }
@@ -129,70 +134,57 @@ function PlaybackControls() {
     const { isPlaying } = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
     const { t } = useTolgee();
+    const { registry, bus } = useActionSystem();
 
     return (
         <div
             className={clsx("flex gap-12")}
             aria-label={t("timeline.controls.label")}
         >
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.firstPage}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.previousPageId === null ||
-                    isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+            <ActionButton
+                id={ActionId.firstPage}
+                bus={bus}
+                registry={registry}
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 <RewindIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.previousPage}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.previousPageId === null ||
-                    isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+            <ActionButton
+                id={ActionId.previousPage}
+                bus={bus}
+                registry={registry}
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 <SkipBackIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.playPause}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+            <ActionButton
+                id={ActionId.playPause}
+                bus={bus}
+                registry={registry}
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.nextPage}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+            <ActionButton
+                id={ActionId.nextPage}
+                bus={bus}
+                registry={registry}
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 <SkipForwardIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
 
-            <RegisteredActionButton
-                registeredAction={RegisteredActionsObjects.lastPage}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    isPlaying ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+            <ActionButton
+                id={ActionId.lastPage}
+                bus={bus}
+                registry={registry}
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
             >
                 <FastForwardIcon size={24} />
-            </RegisteredActionButton>
+            </ActionButton>
         </div>
     );
 }
