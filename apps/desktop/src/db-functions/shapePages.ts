@@ -6,9 +6,8 @@ import {
     DbTransaction,
     deleteShapesInTransaction,
     getShapesWithNoShapePages,
-    marcherPageToKeyString,
+    marcherPagesByPageId,
     ModifiedMarcherPageArgs,
-    ShapePageMarcher,
     transactionWithHistory,
     updateMarcherPagesInTransaction,
 } from "@/db-functions";
@@ -252,7 +251,6 @@ export async function updateShapePages({
     db: DbConnection;
     modifiedItems: ModifiedShapePageArgs[];
 }): Promise<DatabaseShapePage[]> {
-    console.log("updateShapePages", modifiedItems);
     const transactionResult = await transactionWithHistory(
         db,
         "updateShapePages",
@@ -277,7 +275,6 @@ export const updateShapePagesInTransaction = async ({
         modifiedShapePageArgsToRealModifiedShapePageArgs,
     );
     const updatedShapePageIds = new Set<number>();
-    console.log("realModifiedItems", realModifiedItems);
 
     for (const updatedShapePage of realModifiedItems) {
         const { marcher_coordinates, ...updatedShapePageToUse } =
@@ -430,16 +427,30 @@ export const copyShapePageToPageInTransaction = async ({
         where: eq(schema.shape_page_marchers.shape_page_id, shapePageId),
     });
     const marcherIds = new Set(theseSpms.map((spm) => spm.marcher_id));
-    const marcherPagesToUse = await tx.query.marcher_pages.findMany({
-        where: and(
-            inArray(schema.marcher_pages.marcher_id, Array.from(marcherIds)),
-            eq(schema.marcher_pages.page_id, targetPageId),
-        ),
+    const marcherPagesForTargetPage = await marcherPagesByPageId({
+        db: tx,
+        pageId: targetPageId,
     });
+    const marcherPagesToUseFromTargetPage = marcherPagesForTargetPage.filter(
+        (mp) => marcherIds.has(mp.marcher_id),
+    );
+    if (marcherPagesToUseFromTargetPage.some((mp) => mp.isLocked)) {
+        throw new Error(
+            `Cannot copy shape page to page because it contains locked marchers. Reasons: ${marcherPagesToUseFromTargetPage
+                .map((mp) => `marcher_${mp.marcher_id}: ${mp.lockedReason}`)
+                .join("\n")}`,
+        );
+    }
     const positionOrderByMarcherId = new Map(
         theseSpms.map((spm) => [spm.marcher_id, spm.position_order]),
     );
-    const marcherCoordinates: MarcherCoordinates[] = marcherPagesToUse
+    const sourceMarcherPages = await tx.query.marcher_pages.findMany({
+        where: and(
+            eq(schema.marcher_pages.page_id, thisShapePage.page_id),
+            inArray(schema.marcher_pages.marcher_id, Array.from(marcherIds)),
+        ),
+    });
+    const marcherCoordinates: MarcherCoordinates[] = sourceMarcherPages
         .map((mp) => ({
             marcher_id: mp.marcher_id,
             x: mp.x,

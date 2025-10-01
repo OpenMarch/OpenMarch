@@ -146,18 +146,11 @@ export const copyShapePageToPageMutationOptions = (qc: QueryClient) => {
             });
             invalidateByPage(qc, new Set([variables.targetPageId]));
 
-            toast.success(
-                tolgee.t("inspector.shape.successfullyCopied", {
-                    pageId: variables.targetPageId,
-                }),
-            );
+            toast.success(tolgee.t("inspector.shape.successfullyCopied"));
         },
         onError: (e, variables) => {
-            toast.error(
-                tolgee.t("inspector.shape.errorCopyingPage", {
-                    pageId: variables.targetPageId,
-                }),
-            );
+            toast.error(tolgee.t("inspector.shape.errorCopyingPage"));
+            console.error(e, variables);
         },
     });
 };
