@@ -239,13 +239,14 @@ export async function getShapesWithNoShapePages({
 }: {
     tx: DbTransaction;
 }): Promise<DatabaseShape[]> {
-    const shapes = await tx
-        .select()
-        .from(schema.shapes)
-        .leftJoin(
-            schema.shape_pages,
-            eq(schema.shapes.id, schema.shape_pages.shape_id),
-        )
-        .where(isNull(schema.shape_pages.id));
-    return shapes.map((s) => s.shapes);
+    const shapes = await tx.select().from(schema.shapes).all();
+    const usedShapeIdsResult = await tx
+        .selectDistinct({ shape_id: schema.shape_pages.shape_id })
+        .from(schema.shape_pages)
+        .all();
+    const usedShapeIds = new Set(usedShapeIdsResult.map((s) => s.shape_id));
+    const shapesWithNoShapePages = shapes.filter(
+        (s) => !usedShapeIds.has(s.id),
+    );
+    return shapesWithNoShapePages;
 }

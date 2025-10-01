@@ -189,7 +189,7 @@ describeDbTests("marcherPage", (it) => {
             });
         },
     );
-    describe.only("Locked marcher pages", () => {
+    describe("Locked marcher pages", () => {
         it.for([
             ...Array(20)
                 .fill(null)

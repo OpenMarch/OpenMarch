@@ -188,6 +188,9 @@ export default function MarcherCoordinateSheetPreview({
                     path_start_position: null,
                     path_end_position: null,
                     notes: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    rotation_degrees: 0,
                 },
                 {
                     id: 2,
@@ -203,6 +206,9 @@ export default function MarcherCoordinateSheetPreview({
                     path_start_position: null,
                     path_end_position: null,
                     notes: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    rotation_degrees: 0,
                 },
                 {
                     id: 3,
@@ -220,6 +226,9 @@ export default function MarcherCoordinateSheetPreview({
                     path_start_position: null,
                     path_end_position: null,
                     notes: null,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString(),
+                    rotation_degrees: 0,
                 },
             ]);
         } else {
