@@ -2,7 +2,7 @@
     "name": "@openmarch/desktop",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.13",
+    "version": "0.0.13-alpha",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "AGPL-3.0",
@@ -101,6 +101,7 @@
     "devDependencies": {
         "@electron/notarize": "^3.0.1",
         "@electron/rebuild": "^3.7.2",
+        "@faker-js/faker": "^10.0.0",
         "@playwright/test": "^1.53.2",
         "@tailwindcss/vite": "4.1.0",
         "@testing-library/jest-dom": "^6.6.3",

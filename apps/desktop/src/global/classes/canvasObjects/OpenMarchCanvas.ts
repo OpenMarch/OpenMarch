@@ -251,7 +251,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (group && group instanceof fabric.Group) {
                 this._activeGroup = group;
                 setGroupAttributes(this._activeGroup);
-                console.log();
                 resetMarcherRotation(group);
             }
         } else {
@@ -263,7 +262,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 event.selected.length &&
                 event.selected[0] instanceof CanvasMarcher
             ) {
-                console.debug("SELECTED MARCHER", event.selected[0]);
                 event.selected[0].angle = 0;
             }
         }
@@ -784,7 +782,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         document.addEventListener("keydown", this.boundHandleKeyDown);
         document.addEventListener("keyup", this.boundHandleKeyUp);
-        console.log(`🔧 ✅ All advanced event listeners attached successfully`);
     }
 
     private removeAdvancedEventListeners() {
@@ -873,8 +870,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @return — thisArg
      */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
-        object.lockMovementX = this.uiSettings.lockX;
-        object.lockMovementY = this.uiSettings.lockY;
+        object.lockMovementX = this.uiSettings.lockX || (object as any).locked;
+        object.lockMovementY = this.uiSettings.lockY || (object as any).locked;
         return super.setActiveObject(object, e);
     }
 
@@ -1243,6 +1240,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             path_start_position: null,
             path_end_position: null,
             notes: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            rotation_degrees: 0,
         };
 
         const response = CoordinateActions.getRoundCoordinates({
@@ -1958,8 +1958,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const oldUiSettings = this._uiSettings;
         this._uiSettings = uiSettings;
         if (activeObject) {
-            activeObject.lockMovementX = uiSettings.lockX;
-            activeObject.lockMovementY = uiSettings.lockY;
+            activeObject.lockMovementX =
+                uiSettings.lockX || (activeObject as any).locked;
+            activeObject.lockMovementY =
+                uiSettings.lockY || (activeObject as any).locked;
         }
 
         if (
@@ -2020,7 +2022,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     img.onload = () => resolve(img);
                     img.onerror = reject;
 
-                    const blob = new Blob([backgroundImage]);
+                    const blob = new Blob([backgroundImage] as any);
                     img.src = URL.createObjectURL(blob);
 
                     return img;

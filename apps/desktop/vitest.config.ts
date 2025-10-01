@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import path from "node:path";
 import { defineConfig } from "vitest/config";
 
@@ -24,10 +25,7 @@ export default defineConfig({
             reporter: ["text", "json", "json-summary", "html"],
             reportOnFailure: true,
         },
-        environmentMatchGlobs: [
-            ["src/**", "jsdom"],
-            ["electron/**", "node"],
-        ],
+        slowTestThreshold: 1000 * 10, // 10 seconds
 
         pool: "forks",
         environment: "jsdom",

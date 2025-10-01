@@ -88,11 +88,26 @@ export const resetMarcherRotation = (group: fabric.Group) => {
 };
 
 export const setGroupAttributes = (group: fabric.Group) => {
-    group.hasControls = true;
+    const isLocked = anyObjectsAreLocked(group);
+    group.hasControls = !isLocked;
     group.hasBorders = true;
-    group.hasRotatingPoint = true;
-    group.lockRotation = false;
-    group.on("scaling", (e) => handleGroupScaling(e, group));
-    group.on("moving", (e) => handleGroupMoving(e, group));
+    group.hasRotatingPoint = !isLocked;
+    group.lockRotation = isLocked; // Lock rotation if locked
+    (group as any).locked = isLocked;
+
+    if (isLocked) {
+        group.evented = false;
+    } else {
+        group.on("scaling", (e) => handleGroupScaling(e, group));
+        group.on("moving", (e) => handleGroupMoving(e, group));
+    }
+
     // rotation is handled in handleObjectMoving in Canvas.tsx
+};
+
+const anyObjectsAreLocked = (group: fabric.Group): boolean => {
+    for (const obj of group._objects) {
+        if ((obj as any).locked) return true;
+    }
+    return false;
 };

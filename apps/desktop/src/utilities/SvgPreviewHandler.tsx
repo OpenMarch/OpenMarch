@@ -174,14 +174,14 @@ const SvgPreviewHandler: React.FC = () => {
                 currentMarchers,
             );
 
-            console.log(
+            console.debug(
                 "SVG generated successfully for first page on app close",
             );
             return svg;
         });
 
         handlerRegisteredRef.current = true;
-        console.log("SVG preview handler registered");
+        console.debug("SVG preview handler registered");
     }, [generateSvgPreview, pages]);
 
     return null;

@@ -269,7 +269,6 @@ export default function Canvas({
         }
 
         canvas.setActiveObjects(allObjectsToSelect);
-
         const selectObjectsGlobally = (
             selectableClass: Selectable.SelectableClasses,
         ) => {

@@ -1,5 +1,4 @@
-import { db, schema } from "@/global/database/db";
-import { eq, and } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
     queryOptions,
     QueryClient,
@@ -12,18 +11,19 @@ import {
 } from "@/global/classes/MarcherPageIndex";
 import { queryClient } from "@/App";
 import {
+    getAllMarcherPages,
+    marcherPagesByMarcherId,
+    marcherPagesByPageId,
     ModifiedMarcherPageArgs,
     swapMarchers,
     updateMarcherPages,
 } from "@/db-functions/marcherPage";
-import MarcherPage from "@/global/classes/MarcherPage";
 import { conToastError } from "@/utilities/utils";
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
-import { coordinateDataKeys } from "./useCoordinateData";
-
-const { marcher_pages } = schema;
+import { db, schema } from "@/global/database/db";
+import { invalidateByPage } from "./sharedInvalidators";
 
 const KEY_BASE = "marcher_pages";
 
@@ -37,67 +37,6 @@ export const marcherPageKeys = {
         [KEY_BASE, "marcher", marcherId, "page", pageId] as const,
     ],
 };
-
-const marcherPageQueries = {
-    getAll: async (
-        filters: MarcherPageQueryFilters,
-        suppressWarnings = false,
-    ): Promise<MarcherPage[]> => {
-        const conditions = [];
-        if (filters?.marcher_id !== undefined) {
-            conditions.push(eq(marcher_pages.marcher_id, filters.marcher_id));
-        }
-        if (filters?.page_id !== undefined) {
-            conditions.push(eq(marcher_pages.page_id, filters.page_id));
-        }
-
-        // Build the query with conditions
-        if (conditions.length > 0) {
-            return await db.query.marcher_pages.findMany({
-                where:
-                    conditions.length > 1 ? and(...conditions) : conditions[0],
-            });
-        } else {
-            // No conditions, return all rows
-            if (!suppressWarnings)
-                console.warn(
-                    "Returning all marcherPage rows. This should not happen as this fetches all of the coordinates for the entire show. You should probably use getByPage or getByMarcher",
-                );
-            return await db.query.marcher_pages.findMany();
-        }
-    },
-
-    getByPage: async (pageId: number): Promise<MarcherPage[]> => {
-        return marcherPageQueries.getAll({ page_id: pageId });
-    },
-
-    getByMarcher: async (marcherId: number): Promise<MarcherPage[]> => {
-        return marcherPageQueries.getAll({
-            marcher_id: marcherId,
-        });
-    },
-
-    getByMarcherAndPage: async (
-        marcherId: number,
-        pageId: number,
-    ): Promise<MarcherPage | undefined> => {
-        const result = await marcherPageQueries.getAll({
-            marcher_id: marcherId,
-            page_id: pageId,
-        });
-        return result[0];
-    },
-};
-
-/**
- * Filters for the marcherPageQueries.getAll function
- */
-type MarcherPageQueryFilters =
-    | {
-          marcher_id?: number;
-          page_id?: number;
-      }
-    | undefined;
 
 /**
  * Get all marcher pages for the entire show.
@@ -116,10 +55,10 @@ export const allMarcherPagesQueryOptions = ({
         // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: marcherPageKeys.all(),
         queryFn: async () => {
-            const mpResponse = await marcherPageQueries.getAll(
-                undefined,
+            const mpResponse = await getAllMarcherPages({
+                db,
                 pinkyPromiseThatYouKnowWhatYouAreDoing,
-            );
+            });
             return marcherPageMapFromArray(mpResponse);
         },
         staleTime: DEFAULT_STALE_TIME,
@@ -139,7 +78,10 @@ export const marcherPagesByPageQueryOptions = (
     return queryOptions({
         queryKey: marcherPageKeys.byPage(pageId!),
         queryFn: async () => {
-            const mpResponse = await marcherPageQueries.getByPage(pageId!);
+            const mpResponse = await marcherPagesByPageId({
+                db,
+                pageId: pageId!,
+            });
             return toMarcherPagesByMarcher(mpResponse);
         },
         enabled: pageId != null,
@@ -159,9 +101,10 @@ export const marcherPagesByMarcherQueryOptions = (
     return queryOptions({
         queryKey: marcherPageKeys.byMarcher(marcherId!),
         queryFn: async () => {
-            const mpResponse = await marcherPageQueries.getByMarcher(
-                marcherId!,
-            );
+            const mpResponse = await marcherPagesByMarcherId({
+                db,
+                marcherId: marcherId!,
+            });
             return toMarcherPagesByPage(mpResponse);
         },
         enabled: marcherId != null,
@@ -171,21 +114,6 @@ export const marcherPagesByMarcherQueryOptions = (
 
 export const fetchMarcherPages = () => {
     void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-};
-
-const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
-    // Invalidate marcherPage queries for each affected page
-    for (const pageId of pageIds) {
-        void queryClient
-            .invalidateQueries({
-                queryKey: marcherPageKeys.byPage(pageId),
-            })
-            .then(() => {
-                void queryClient.invalidateQueries({
-                    queryKey: coordinateDataKeys.byPageId(pageId),
-                });
-            });
-    }
 };
 
 // Mutation hooks

@@ -11,7 +11,11 @@ import { ModifiedMarcherPageArgs } from "@/db-functions";
 /**
  * Any type that contains an x and y coordinate, primarily used for MarcherPages
  */
-export type CoordinateLike = { x: number; y: number; [key: string]: any };
+export type CoordinateLike = {
+    x: number;
+    y: number;
+    [key: string]: any;
+};
 
 /**
  * A safety check to ensure that all the marcherPages are on the same page.

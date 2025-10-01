@@ -6,7 +6,9 @@ import {
     DbTransaction,
     deleteShapesInTransaction,
     getShapesWithNoShapePages,
+    marcherPageToKeyString,
     ModifiedMarcherPageArgs,
+    ShapePageMarcher,
     transactionWithHistory,
     updateMarcherPagesInTransaction,
 } from "@/db-functions";
@@ -250,6 +252,7 @@ export async function updateShapePages({
     db: DbConnection;
     modifiedItems: ModifiedShapePageArgs[];
 }): Promise<DatabaseShapePage[]> {
+    console.log("updateShapePages", modifiedItems);
     const transactionResult = await transactionWithHistory(
         db,
         "updateShapePages",
@@ -274,6 +277,7 @@ export const updateShapePagesInTransaction = async ({
         modifiedShapePageArgsToRealModifiedShapePageArgs,
     );
     const updatedShapePageIds = new Set<number>();
+    console.log("realModifiedItems", realModifiedItems);
 
     for (const updatedShapePage of realModifiedItems) {
         const { marcher_coordinates, ...updatedShapePageToUse } =
