@@ -1,6 +1,6 @@
 import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
-import { schema } from "@/global/database/db";
+import { schema, db } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
 import { assert } from "@/utilities/utils";
@@ -9,9 +9,13 @@ import {
     DatabaseShapePageMarcher,
     deleteShapePageMarchersInTransaction,
     getSpmByMarcherPage,
+    getSpmMapAll,
+    getSpmMapByPageId,
     NewShapePageMarcherArgs,
+    ShapePageMarcher,
     swapPositionOrderInTransaction,
 } from "./shapePageMarchers";
+import MarcherPage from "@/global/classes/MarcherPage";
 
 const { marcher_pages } = schema;
 
@@ -24,6 +28,16 @@ type MarcherPageIdentifier =
 
 // Define types from the existing schema - remove pathway fields from base type
 export type DatabaseMarcherPage = typeof schema.marcher_pages.$inferSelect;
+
+/**
+ * Filters for the marcherPageQueries.getAll function
+ */
+export type MarcherPageQueryFilters =
+    | {
+          marcher_id?: number;
+          page_id?: number;
+      }
+    | undefined;
 
 /**
  * Defines the editable fields of a MarcherPage.
@@ -45,10 +59,10 @@ export interface ModifiedMarcherPageArgs {
 }
 
 async function getMarcherPageByPosition(
-    tx: DbTransaction,
+    tx: DbTransaction | DbConnection,
     id: MarcherPageIdentifier,
     direction: "next" | "previous",
-): Promise<typeof schema.marcher_pages.$inferSelect | null> {
+): Promise<MarcherPage | null> {
     const idCheck = () =>
         "marcherId" in id
             ? eq(schema.marcher_pages.marcher_id, id.marcherId) &&
@@ -99,20 +113,34 @@ async function getMarcherPageByPosition(
         .orderBy(ordering)
         .limit(1);
 
-    return rows[0]?.mp ?? null;
+    const marcherPage = rows[0]?.mp ?? null;
+    if (marcherPage == null) return null;
+
+    const key = marcherPageToKeyString(rows[0].mp);
+    const spm = await getSpmByMarcherPage({
+        tx,
+        marcherPage: {
+            marcher_id: marcherPage.marcher_id,
+            page_id: marcherPage.page_id,
+        },
+    });
+    const map = spm ? new Map([[key, spm]]) : new Map();
+    // Ensure the marcher page is decorated with the locked status and locked reason.
+    // I.e. give a single entry map with the marcher page and the spm
+    return lockedDecorator([marcherPage], map)[0];
 }
 
 export async function getNextMarcherPage(
-    tx: DbTransaction,
+    tx: DbTransaction | DbConnection,
     id: MarcherPageIdentifier,
-): Promise<typeof schema.marcher_pages.$inferSelect | null> {
+): Promise<MarcherPage | null> {
     return getMarcherPageByPosition(tx, id, "next");
 }
 
 export async function getPreviousMarcherPage(
-    tx: DbTransaction,
+    tx: DbTransaction | DbConnection,
     id: MarcherPageIdentifier,
-): Promise<typeof schema.marcher_pages.$inferSelect | null> {
+): Promise<MarcherPage | null> {
     return getMarcherPageByPosition(tx, id, "previous");
 }
 
@@ -398,4 +426,106 @@ export const swapMarchersInTransaction = async ({
     });
 
     return updatedMarcherPages;
+};
+
+/**
+ * Decorates a list of marcher pages with locked status and locked reason.
+ *
+ * @param marcherPages
+ * @param spmsByPageAndMarcher
+ * @returns
+ */
+export const lockedDecorator = (
+    marcherPages: DatabaseMarcherPage[],
+    spmsByMarcherPage: Map<string, ShapePageMarcher>,
+): MarcherPage[] => {
+    return marcherPages.map((marcherPage) => {
+        let isLocked = false;
+        let lockedReason = "";
+        const spm = spmsByMarcherPage.get(marcherPageToKeyString(marcherPage));
+        if (spm) {
+            isLocked = true;
+            lockedReason += "Marcher is part of a shape\n";
+        }
+        return {
+            ...marcherPage,
+            isLocked,
+            lockedReason,
+        };
+    });
+};
+
+/**
+ * Converts a marcher page to a key string.
+ *
+ * E.g. marcher_1-page_2 for marcher 1 on page 2
+ *
+ * @param marcherPage The marcher page to convert
+ * @returns The key string
+ */
+export const marcherPageToKeyString = (marcherPage: {
+    marcher_id: number;
+    page_id: number;
+}) => {
+    return `marcher_${marcherPage.marcher_id}-page_${marcherPage.page_id}`;
+};
+
+export const getAllMarcherPages = async ({
+    db,
+    pinkyPromiseThatYouKnowWhatYouAreDoing = false,
+}: {
+    db: DbConnection | DbTransaction;
+    pinkyPromiseThatYouKnowWhatYouAreDoing?: boolean;
+}): Promise<MarcherPage[]> => {
+    // No conditions, return all rows
+    if (!pinkyPromiseThatYouKnowWhatYouAreDoing)
+        console.warn(
+            "Returning all marcherPage rows. This should not happen as this fetches all of the coordinates for the entire show. You should probably use getByPage or getByMarcher",
+        );
+    const marcherPagesResponse = await db
+        .select()
+        .from(schema.marcher_pages)
+        .all();
+    const spmsByMarcherPage = await getSpmMapAll({ db });
+    return lockedDecorator(marcherPagesResponse, spmsByMarcherPage);
+};
+
+export const marcherPagesByPageId = async ({
+    db,
+    pageId,
+}: {
+    db: DbConnection | DbTransaction;
+    pageId: number;
+}): Promise<MarcherPage[]> => {
+    const marcherPagesResponse = await db
+        .select()
+        .from(schema.marcher_pages)
+        .where(eq(schema.marcher_pages.page_id, pageId));
+
+    const spmsByMarcherPage = await getSpmMapByPageId({ db, pageId });
+
+    return lockedDecorator(marcherPagesResponse, spmsByMarcherPage);
+};
+
+/**
+ * Gets all marcher pages by marcher id.
+ *
+ * NOTE - this does not include the locked status or locked reason
+ *
+ * @param db The database instance
+ * @param marcherId The marcher id
+ * @returns
+ */
+export const marcherPagesByMarcherId = async ({
+    db,
+    marcherId,
+}: {
+    db: DbConnection | DbTransaction;
+    marcherId: number;
+}): Promise<DatabaseMarcherPage[]> => {
+    const marcherPagesResponse = await db
+        .select()
+        .from(schema.marcher_pages)
+        .where(eq(schema.marcher_pages.marcher_id, marcherId));
+    return marcherPagesResponse;
 };

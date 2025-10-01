@@ -16,6 +16,7 @@ import { db } from "@/global/database/db";
  * @param {Map<number, any>} params.beatRegions - Map of beat regions
  * @returns {ModifiedBeatArgs[] | undefined} Array of beat modifications or undefined if no changes
  */
+// eslint-disable-next-line max-lines-per-function
 export const getModifiedBeats = ({
     allBeats,
     beat,

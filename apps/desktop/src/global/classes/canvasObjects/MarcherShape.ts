@@ -11,7 +11,8 @@ import { SvgCommandEnum } from "./SvgCommand";
 import { shapePageKeys } from "@/hooks/queries";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/App";
-import { db, schema } from "@/global/database/db";
+import { db } from "@/global/database/db";
+import { invalidateByPage } from "@/hooks/queries/sharedInvalidators";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -23,6 +24,12 @@ export class MarcherShape extends StaticMarcherShape {
     name?: string;
     /** Notes about this shape. Optional */
     notes?: string;
+    /** The function to call when the shape is updated */
+    static updateMarcherShapeFn: (
+        marcherShape: MarcherShape,
+    ) => Promise<unknown> = async () => {
+        throw new Error("updateMarcherShapeFn is not defined");
+    };
 
     /**
      * Fetches all of the ShapePages from the database.
@@ -88,17 +95,14 @@ export class MarcherShape extends StaticMarcherShape {
         });
     }
 
-    recreatePath(
-        pathArg: VanillaPoint[],
-        updateMarcherShapeFn?: (marcherShape: MarcherShape) => Promise<unknown>,
-    ): ShapePath {
+    recreatePath(pathArg: VanillaPoint[]): ShapePath {
         // Disable control to prevent errors from non-existent control points
         const controlWasEnabled = this._controlEnabled;
         if (controlWasEnabled) this.disableControl();
 
         const newPath = super.recreatePath(pathArg);
         if (this.dirty) {
-            void updateMarcherShapeFn?.(this);
+            void MarcherShape.updateMarcherShapeFn(this);
             this.dirty = false;
         }
 
@@ -110,9 +114,7 @@ export class MarcherShape extends StaticMarcherShape {
     /**
      * Adds a new segment to the shape path, determining the direction of the new segment based on the existing path.
      */
-    async addSegment(
-        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
-    ) {
+    async addSegment() {
         // Figure out if its pointing left or right
         const lastPoint =
             this.shapePath.points[this.shapePath.points.length - 1];
@@ -151,7 +153,7 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints([...this.shapePath.points, newPoint]);
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        await updateMarcherShapeFn(this);
+        await MarcherShape.updateMarcherShapeFn(this);
     }
 
     /**
@@ -159,16 +161,13 @@ export class MarcherShape extends StaticMarcherShape {
      *
      * @param index - The index of the segment to delete.
      */
-    async deleteSegment(
-        index: number,
-        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
-    ) {
+    async deleteSegment(index: number) {
         this.setShapePathPoints(
             this.shapePath.points.filter((_, i) => i !== index),
         );
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        await updateMarcherShapeFn(this);
+        await MarcherShape.updateMarcherShapeFn(this);
     }
 
     /**
@@ -178,16 +177,13 @@ export class MarcherShape extends StaticMarcherShape {
      * @param newSvg - The new SVG command to apply to the segment.
      * @throws {Error} If the index is out of bounds or if the first point of the path is being edited.
      */
-    updateSegment(
-        {
-            index,
-            newSvg,
-        }: {
-            index: number;
-            newSvg: SvgCommandEnum;
-        },
-        updateMarcherShapeFn: (marcherShape: MarcherShape) => Promise<unknown>,
-    ) {
+    updateSegment({
+        index,
+        newSvg,
+    }: {
+        index: number;
+        newSvg: SvgCommandEnum;
+    }) {
         if (index >= this.shapePath.points.length)
             throw new Error(
                 `Index ${index} is out of bounds for path with length ${this.shapePath.points.length}`,
@@ -247,7 +243,7 @@ export class MarcherShape extends StaticMarcherShape {
         this.setShapePathPoints(newPoints);
         // set dirty to false so that the shape is not updated twice
         this.dirty = false;
-        void updateMarcherShapeFn(this);
+        void MarcherShape.updateMarcherShapeFn(this);
     }
 
     /**
@@ -265,10 +261,11 @@ export class MarcherShape extends StaticMarcherShape {
 export const useCreateMarcherShape = () => {
     return useMutation({
         mutationFn: _createMarcherShape,
-        onMutate: () => {
+        onSuccess: (_, { pageId }) => {
             void queryClient.invalidateQueries({
                 queryKey: shapePageKeys.all(),
             });
+            invalidateByPage(queryClient, new Set([pageId]));
         },
     });
 };
@@ -369,3 +366,16 @@ export function getUpdateMarcherShapeArgs(
         };
     }
 }
+
+export const marcherShapeToShapePageArgs = (
+    marcherShape: MarcherShape,
+): ModifiedShapePageArgs => {
+    return {
+        id: marcherShape.shapePage.id,
+        svg_path: marcherShape.shapePath.toString(),
+        marcher_coordinates: marcherShape.canvasMarchers.map((cm) => ({
+            marcher_id: cm.marcherObj.id,
+            ...cm.getDatabaseCoords(),
+        })),
+    };
+};

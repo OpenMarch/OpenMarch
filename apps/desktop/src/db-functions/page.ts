@@ -248,7 +248,6 @@ export const createPagesInTransaction = async ({
     newPages: NewPageArgs[];
     tx: DbTransaction;
 }): Promise<DatabasePage[]> => {
-    console.debug("new page args", newPages);
     // Reverse the order of the new pages so that they are created in the correct order
     const createdPages = await tx
         .insert(schema.pages)
@@ -491,11 +490,8 @@ export const createLastPageInTransaction = async ({
     tx: DbTransaction;
     newPageCounts: number;
 }) => {
-    console.debug("create last page in transaction");
-    console.debug("new page counts", newPageCounts);
     const lastPageCounts = (await tx.query.utility.findFirst())
         ?.last_page_counts;
-    console.debug("last page counts", lastPageCounts);
     assert(lastPageCounts != null, "Last page counts not found");
 
     const lastPage = await tx
@@ -507,10 +503,7 @@ export const createLastPageInTransaction = async ({
         .orderBy(desc(schema.beats.position))
         .limit(1)
         .get();
-    console.debug("last page", lastPage);
     assert(lastPage && lastPage.beat_id != null, "Last page not found");
-    const allBeats = await tx.query.beats.findMany();
-    console.debug("all beats", allBeats);
     const nextBeatToStartOn = await tx
         .select()
         .from(schema.beats)
@@ -519,7 +512,6 @@ export const createLastPageInTransaction = async ({
         .limit(1)
         .offset(lastPageCounts - 1)
         .get();
-    console.debug("next beat to start on", nextBeatToStartOn);
     if (!nextBeatToStartOn) throw new Error("No next beat to start on found");
 
     await createPagesInTransaction({

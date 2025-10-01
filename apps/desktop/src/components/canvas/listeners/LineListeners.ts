@@ -156,6 +156,7 @@ export default class LineListeners
     /**
      * Draws the new marcher paths for the active line
      */
+    // eslint-disable-next-line max-lines-per-function
     drawNewMarcherPaths() {
         if (!this._activeLine) return;
         if (this.canvas.eventMarchers.length < 2) {

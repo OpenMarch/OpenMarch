@@ -6,6 +6,8 @@ export interface ISelectable extends fabric.Object {
      * A string defining what class the object is. E.g. "MarcherLine" or "Marcher"
      */
     readonly classString: SelectableClasses;
+    readonly locked: boolean;
+    readonly lockedReason: string;
     /**
      * TODO - this only exists for the Marcher -> CanvasMarcher relationship.
      * Try to combine those classes and remove this maybe?

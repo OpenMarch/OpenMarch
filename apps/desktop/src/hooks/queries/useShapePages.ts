@@ -4,7 +4,6 @@ import {
     mutationOptions,
     QueryClient,
 } from "@tanstack/react-query";
-import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
 import {
     DbConnection,
@@ -22,6 +21,7 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
+import { invalidateByPage } from "./sharedInvalidators";
 
 const KEY_BASE = "shape_pages";
 
@@ -98,7 +98,7 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedItems: ModifiedShapePageArgs[]) =>
             updateShapePages({ db, modifiedItems }),
-        onSettled: (variables) => {
+        onSuccess: (result, variables) => {
             // if (!variables) return;
             // // Invalidate specific queries
             // const itemIds = new Set<number>();
@@ -107,6 +107,7 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
         },
         onError: (e, variables) => {
             conToastError(`Error updating shape pages`, e, variables);
@@ -117,11 +118,12 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
 export const deleteShapePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (itemIds: Set<number>) => deleteShapePages({ db, itemIds }),
-        onSettled: () => {
+        onSuccess: (result) => {
             // Invalidate all queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
         },
         onError: (e, variables) => {
             conToastError(`Error deleting shape pages`, e, variables);
@@ -138,12 +140,12 @@ export const copyShapePageToPageMutationOptions = (qc: QueryClient) => {
             shapePageId: number;
             targetPageId: number;
         }) => copyShapePageToPage({ db, shapePageId, targetPageId }),
-        onSettled: () => {
+        onSuccess: (_, variables) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-        },
-        onSuccess: (_, variables) => {
+            invalidateByPage(qc, new Set([variables.targetPageId]));
+
             toast.success(
                 tolgee.t("inspector.shape.successfullyCopied", {
                     pageId: variables.targetPageId,

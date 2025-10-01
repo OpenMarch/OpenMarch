@@ -73,9 +73,6 @@ export default class EditablePath {
         _pathObj: Path,
         _marcherPageId: number,
     ): unknown => {
-        db.transaction(async (_tx) => {
-            console.log("asdf");
-        });
         console.warn("createPathway unimplemented");
         return undefined;
     };

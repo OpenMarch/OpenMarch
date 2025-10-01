@@ -106,20 +106,6 @@ export default function ShapeEditor() {
     //     }
     // }, [pages, selectedMarcherShapes, selectedPage, shapePages]);
 
-    const pushUpdates = useCallback(
-        async (marcherShape: MarcherShape) => {
-            const updateArgs = getUpdateMarcherShapeArgs(marcherShape);
-            if (!updateArgs) {
-                console.debug(
-                    "No update args for marcher shape",
-                    marcherShape.shapePage.id,
-                );
-                return;
-            }
-            updateShapePage([updateArgs]);
-        },
-        [updateShapePage],
-    );
     const updateSegment = useCallback(
         ({
             shapePageId,
@@ -138,9 +124,9 @@ export default function ShapeEditor() {
                 console.error("Marcher shape not found with id", shapePageId);
                 return;
             }
-            marcherShape.updateSegment({ index, newSvg }, pushUpdates);
+            marcherShape.updateSegment({ index, newSvg });
         },
-        [canvas, pushUpdates],
+        [canvas],
     );
 
     const handleDeleteShape = useCallback(
@@ -284,7 +270,7 @@ export default function ShapeEditor() {
                     <div className="flex flex-wrap gap-8">
                         <Button
                             onClick={() => {
-                                marcherShape.addSegment(pushUpdates);
+                                marcherShape.addSegment();
                             }}
                             type="button"
                             size="compact"
@@ -299,7 +285,6 @@ export default function ShapeEditor() {
                             onClick={() => {
                                 marcherShape.deleteSegment(
                                     marcherShape.shapePath.points.length - 1,
-                                    pushUpdates,
                                 );
                             }}
                             className="min-h-0"
