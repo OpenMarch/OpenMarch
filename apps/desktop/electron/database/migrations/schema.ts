@@ -306,6 +306,7 @@ export const utility = sqliteTable(
     {
         id: integer().primaryKey(),
         last_page_counts: integer().notNull().default(8),
+        default_beat_duration: real().notNull().default(0.5), // 120 bpm
         updated_at: text()
             .default(sql`(CURRENT_TIMESTAMP)`)
             .notNull()
@@ -314,5 +315,9 @@ export const utility = sqliteTable(
     (_table) => [
         check("utility_last_page_counts_check", sql`last_page_counts > 0`),
         check("utility_id_check", sql`id = 0`),
+        check(
+            "utility_default_beat_duration_check",
+            sql`default_beat_duration > 0`,
+        ),
     ],
 );
