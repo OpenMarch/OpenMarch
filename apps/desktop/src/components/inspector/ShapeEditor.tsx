@@ -25,7 +25,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
     copyShapePageToPageMutationOptions,
     deleteShapePagesMutationOptions,
-    updateShapePagesMutationOptions,
 } from "@/hooks/queries";
 import { useCanvasStore } from "@/stores/CanvasStore";
 import { assert } from "@/utilities/utils";
@@ -40,9 +39,6 @@ export default function ShapeEditor() {
 
     const { t } = useTolgee();
     const { canvas } = useCanvasStore();
-    const { mutate: updateShapePage } = useMutation(
-        updateShapePagesMutationOptions(queryClient),
-    );
     const { mutate: deleteShapePage } = useMutation(
         deleteShapePagesMutationOptions(queryClient),
     );
