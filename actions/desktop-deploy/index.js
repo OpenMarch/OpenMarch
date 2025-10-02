@@ -86,6 +86,10 @@ const runAction = () => {
         setEnv("CSC_KEY_PASSWORD", getInput("windows_certs_password"));
     }
 
+    if (platform === "linux") {
+        runtimeArgs += "--x64 --arm64";
+    }
+    
     log(`Building${release ? " and releasing" : ""} the Electron app…`);
     const fullCmd = `node_modules/.bin/electron-builder  --${platform} ${
         release ? "--publish always" : "--publish=never"
