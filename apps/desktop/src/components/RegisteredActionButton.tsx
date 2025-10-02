@@ -79,46 +79,51 @@ export default function RegisteredActionButton({
         removeRegisteredAction,
     ]);
 
-    if (showTooltip)
-        return (
-            <RadixTooltip.Root>
-                <RadixTooltip.Trigger
-                    {...rest}
-                    ref={buttonRef}
-                    className={twMerge(
-                        clsx(
-                            "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-                            rest.className,
-                        ),
-                    )}
-                >
-                    {children}
-                </RadixTooltip.Trigger>
-                <RadixTooltip.Portal>
-                    <RadixTooltip.Content
-                        className={TooltipClassName}
-                        side={tooltipPosition}
-                    >
-                        {instructionalString
-                            ? instructionalString
-                            : registeredAction.getInstructionalString()}
-                    </RadixTooltip.Content>
-                </RadixTooltip.Portal>
-            </RadixTooltip.Root>
-        );
-    else
-        return (
-            <button
-                {...rest}
-                ref={buttonRef}
-                className={twMerge(
-                    clsx(
-                        "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
-                        rest.className,
-                    ),
-                )}
-            >
-                {children}
-            </button>
-        );
+    // if (showTooltip)
+    //     return (
+    //         <RadixTooltip.Root>
+    //             <RadixTooltip.Trigger
+    //                 {...rest}
+    //                 ref={buttonRef}
+    //                 className={twMerge(
+    //                     clsx(
+    //                         "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+    //                         rest.className,
+    //                     ),
+    //                 )}
+    //             >
+    //                 {children}
+    //             </RadixTooltip.Trigger>
+    //             <RadixTooltip.Portal>
+    //                 <RadixTooltip.Content
+    //                     className={TooltipClassName}
+    //                     side={tooltipPosition}
+    //                 >
+    //                     {instructionalString
+    //                         ? instructionalString
+    //                         : registeredAction.getInstructionalString()}
+    //                 </RadixTooltip.Content>
+    //             </RadixTooltip.Portal>
+    //         </RadixTooltip.Root>
+    //     );
+    // else
+    return (
+        <button
+            {...rest}
+            ref={buttonRef}
+            title={
+                instructionalString
+                    ? instructionalString
+                    : registeredAction.getInstructionalString()
+            }
+            className={twMerge(
+                clsx(
+                    "enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50",
+                    rest.className,
+                ),
+            )}
+        >
+            {children}
+        </button>
+    );
 }
