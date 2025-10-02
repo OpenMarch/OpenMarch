@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createActionRegistry } from "../../registry";
-import { registerPerformUndo } from "../../contrib/edit.undo";
+import { registerPerformUndo } from "../../contrib/edit/undo";
 import { ActionId, ActionContext } from "../../types";
 
 describe("PerformUndoCommand", () => {

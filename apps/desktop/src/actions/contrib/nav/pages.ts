@@ -1,5 +1,5 @@
-import { ActionId, ActionMeta, ActionCommand, ActionContext } from "../types";
-import { ActionRegistry } from "../registry";
+import { ActionId, ActionMeta, ActionCommand, ActionContext } from "../../types";
+import { ActionRegistry } from "../../registry";
 
 class NextPageCommand implements ActionCommand<void> {
   canExecute(ctx: ActionContext) {

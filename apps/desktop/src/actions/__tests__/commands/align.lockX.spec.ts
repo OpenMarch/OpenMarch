@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { createActionRegistry } from "../../registry";
-import { registerToggleLockX } from "../../contrib/align.lockX";
+import { registerToggleLockX } from "../../contrib/align/lockX";
 import { ActionId, ActionContext } from "../../types";
 
 describe("ToggleLockXCommand", () => {
