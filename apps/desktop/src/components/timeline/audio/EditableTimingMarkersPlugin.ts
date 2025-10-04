@@ -131,7 +131,7 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
         measures: Measure[],
         fetchTimingObjects: () => void,
     ) {
-        super(wsRegions, beats, measures);
+        super(wsRegions, beats, measures, 120);
         this.fetchTimingObjects = fetchTimingObjects;
     }
 

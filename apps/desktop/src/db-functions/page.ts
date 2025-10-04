@@ -1,6 +1,6 @@
 import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
 import {
-    DatabaseMarcherPage,
+    createBeatsInTransaction,
     DbConnection,
     DbTransaction,
     ModifiedMarcherPageArgs,
@@ -475,6 +475,185 @@ export const createLastPage = async ({
 };
 
 /**
+ * Fills the beats of the current last page and returns the last beat of the page.
+ *
+ * * Before:
+ * +-------------+-------------+
+ * |     pg 1    |     pg 2    |
+ * +-------------+-------------+
+ * | 1  2  3  4  | 5  6        |
+ * +-------------+-------------+
+ *
+ * After:
+ * +-------------+-------------+
+ * |     pg 1    |     pg 2    |
+ * +-------------+-------------+
+ * | 1  2  3  4  | 5  6  7  8  |
+ * +-------------+-------------+
+ *
+ * Returns:
+ * beat 8
+ *
+ * @param
+ * @returns
+ */
+const _fillBeatsOfCurrentLastPage = async ({
+    tx,
+    defaultDuration,
+    currentLastPageCounts,
+    lastPage,
+}: {
+    tx: DbTransaction;
+    defaultDuration: number;
+    currentLastPageCounts: number;
+    lastPage: { id: number; start_beat_id: number };
+}) => {
+    let lastBeatOfPage = null;
+    if (lastPage.id !== FIRST_PAGE_ID) {
+        const getLastBeatOfPage = async (startBeatId: number) =>
+            await tx
+                .select()
+                .from(schema.beats)
+                .where(gt(schema.beats.position, startBeatId))
+                .orderBy(asc(schema.beats.position))
+                .limit(1)
+                .offset(currentLastPageCounts - 2)
+                .get();
+        // Check if the last page is already filled
+        lastBeatOfPage = await getLastBeatOfPage(lastPage.start_beat_id);
+        if (!lastBeatOfPage) {
+            // There is not enough beats to fill the current last page. Fill the last page
+            for (let i = 0; i < currentLastPageCounts; i++) {
+                // Just filling with the lastPageCounts is a bit sloppy, but it's guaranteed to fill the last page
+                await createBeatsInTransaction({
+                    tx,
+                    newBeats: [
+                        {
+                            duration: defaultDuration,
+                            include_in_measure: true,
+                        },
+                    ],
+                });
+            }
+            lastBeatOfPage = await getLastBeatOfPage(lastPage.start_beat_id);
+        }
+    } else {
+        // If this is the first page, just return the start beat (since it is the start and end, as page 0 has no duration)
+        lastBeatOfPage = await tx
+            .select()
+            .from(schema.beats)
+            .where(eq(schema.beats.position, FIRST_PAGE_ID))
+            .get();
+    }
+
+    assert(
+        lastBeatOfPage != null,
+        "No last beat of page found. This should never happen.",
+    );
+
+    return lastBeatOfPage;
+};
+
+/**
+ * Fills the beats to ensure that at least the lastPage's start beat is filled,
+ * and then returns the beat to start on.
+ *
+ * Here is a visual example of what this function does:
+ *
+ *Last page counts: 8
+ *
+ * Before:
+ * +-------------+-------------+
+ * |     pg 1    |     pg 2    |
+ * +-------------+-------------+
+ * | 1  2  3  4  | 5  6        |
+ * +-------------+-------------+
+ *
+ * After adding beats:
+ * +-------------+-------------+-------------+
+ * |     pg 1    |     pg 2    |    pg 3     |
+ * +-------------+-------------+-------------+
+ * | 1  2  3  4  | 5  6  7  8  | 9  10 11 12 |
+ * +-------------+-------------+-------------+
+ *
+ * Notes:
+ * - pg 2 filled up (added 7, 8)
+ * - pg 3 created to fill the last page (9–12)
+ *
+ *
+ * @param
+ */
+export const _fillAndGetBeatToStartOn = async ({
+    tx,
+    lastPage,
+    currentLastPageCounts,
+    newLastPageCounts,
+}: {
+    tx: DbTransaction;
+    lastPage: { id: number; start_beat_id: number };
+    currentLastPageCounts: number;
+    newLastPageCounts: number;
+}) => {
+    // Fill the beats
+    const defaultDurationResult = await tx
+        .select({
+            duration: schema.utility.default_beat_duration,
+        })
+        .from(schema.utility)
+        .get();
+
+    if (defaultDurationResult == null)
+        console.warn("Default beat duration not found. Using 0.5 seconds.");
+    const defaultDuration = defaultDurationResult?.duration ?? 0.5;
+
+    const lastBeatOfCurrentLastPage = await _fillBeatsOfCurrentLastPage({
+        tx,
+        defaultDuration,
+        currentLastPageCounts,
+        lastPage,
+    });
+
+    // Check if there are enough beats to fill a page of newLastPageCounts
+    const beatsAfterLastPage = await tx
+        .select()
+        .from(schema.beats)
+        .where(gt(schema.beats.position, lastBeatOfCurrentLastPage.position))
+        .orderBy(asc(schema.beats.position))
+        .all();
+
+    const availableBeats = beatsAfterLastPage.length;
+    const neededBeats = newLastPageCounts;
+
+    if (availableBeats < neededBeats) {
+        // Create the missing beats
+        const beatsToCreate = neededBeats - availableBeats;
+        for (let i = 0; i < beatsToCreate; i++) {
+            await createBeatsInTransaction({
+                tx,
+                newBeats: [
+                    { duration: defaultDuration, include_in_measure: true },
+                ],
+            });
+        }
+    }
+
+    const beatToStartNewLastPageOn = await tx
+        .select()
+        .from(schema.beats)
+        .where(gt(schema.beats.position, lastBeatOfCurrentLastPage.id))
+        .orderBy(asc(schema.beats.position))
+        .limit(1)
+        .get();
+
+    assert(
+        beatToStartNewLastPageOn != null,
+        "No beat to start new last page on found. This should never happen.",
+    );
+
+    return beatToStartNewLastPageOn;
+};
+
+/**
  * Creates a new page at the next available beat after the current last page.
  *
  * Same as createLastPage, but not wrapped in a history transaction. Only use this inside of a transactionWithHistory.
@@ -494,25 +673,44 @@ export const createLastPageInTransaction = async ({
         ?.last_page_counts;
     assert(lastPageCounts != null, "Last page counts not found");
 
-    const lastPage = await tx
-        .select({
-            beat_id: schema.beats.id,
-        })
-        .from(schema.pages)
-        .leftJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
-        .orderBy(desc(schema.beats.position))
-        .limit(1)
-        .get();
-    assert(lastPage && lastPage.beat_id != null, "Last page not found");
-    const nextBeatToStartOn = await tx
-        .select()
-        .from(schema.beats)
-        .where(gt(schema.beats.position, lastPage.beat_id))
-        .orderBy(asc(schema.beats.position))
-        .limit(1)
-        .offset(lastPageCounts - 1)
-        .get();
-    if (!nextBeatToStartOn) throw new Error("No next beat to start on found");
+    const allPages = await tx.query.pages.findMany();
+    let lastPage: { id: number; start_beat_id: number } | undefined;
+    assert(allPages.length > 0, "No pages found");
+    if (allPages.length === 1) {
+        lastPage = {
+            id: allPages[0].id,
+            start_beat_id: allPages[0].start_beat,
+        };
+    } else {
+        const response = await tx
+            .select({
+                page_id: schema.pages.id,
+                beat_id: schema.beats.id,
+                jeff: schema.beats.position,
+            })
+            .from(schema.pages)
+            .leftJoin(
+                schema.beats,
+                eq(schema.beats.id, schema.pages.start_beat),
+            )
+            .orderBy(desc(schema.beats.position))
+            .limit(1)
+            .get();
+        assert(
+            response != null && response.beat_id != null,
+            "Last page not found",
+        );
+        lastPage = {
+            id: response.page_id,
+            start_beat_id: response.beat_id,
+        };
+    }
+    const nextBeatToStartOn = await _fillAndGetBeatToStartOn({
+        tx,
+        lastPage,
+        currentLastPageCounts: lastPageCounts,
+        newLastPageCounts: newPageCounts,
+    });
 
     await createPagesInTransaction({
         newPages: [

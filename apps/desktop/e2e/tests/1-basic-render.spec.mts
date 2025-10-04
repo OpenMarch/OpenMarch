@@ -116,6 +116,7 @@ test("Sidebars are visible", async ({ electronApp }) => {
     ).toBeVisible();
     await expect(page.locator("header")).toBeVisible();
 });
+// eslint-disable-next-line max-lines-per-function
 test("Field properties customizer tabs are visible", async ({
     electronApp,
 }) => {

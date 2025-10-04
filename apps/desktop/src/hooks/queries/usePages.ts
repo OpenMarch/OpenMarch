@@ -5,7 +5,6 @@ import {
     mutationOptions,
     QueryClient,
 } from "@tanstack/react-query";
-import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
 import {
     DbConnection,
@@ -27,6 +26,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
+import { beatKeys } from "./useBeats";
 
 const { pages } = schema;
 
@@ -43,6 +43,9 @@ export const pageKeys = {
 };
 
 const invalidateQueries = async (qc: QueryClient) => {
+    await qc.invalidateQueries({
+        queryKey: beatKeys.all(),
+    });
     await qc.invalidateQueries({
         queryKey: pageKeys.all(),
     });
@@ -172,7 +175,11 @@ export const createPagesMutationOptions = (qc: QueryClient) => {
             void invalidateQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(`Error creating pages`, e, variables);
+            conToastError(
+                tolgee.t("pages.createFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -185,7 +192,11 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
             void invalidateQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(`Error updating pages`, e, variables);
+            conToastError(
+                tolgee.t("pages.updateFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -199,7 +210,11 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
             void invalidateQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(tolgee.t("page.deletedFailed"), e, variables);
+            conToastError(
+                tolgee.t("pages.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -209,12 +224,15 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
         mutationFn: (newPageCounts: number) =>
             createLastPage({ db, newPageCounts }),
         onSuccess: (_, variables) => {
-            toast.success(tolgee.t("page.createdSuccessfully"));
             // Invalidate all page queries
             void invalidateQueries(qc);
         },
         onError: (e, variables) => {
-            conToastError(tolgee.t("page.cretePageFailed"), e, variables);
+            conToastError(
+                tolgee.t("pages.createLastPageFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };

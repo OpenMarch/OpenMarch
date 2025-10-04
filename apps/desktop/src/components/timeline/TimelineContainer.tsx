@@ -8,22 +8,19 @@ import AudioPlayer from "./audio/AudioPlayer";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import EditableAudioPlayer from "./audio/EditableAudioPlayer";
-import MusicModal from "../music/MusicModal";
 import TimelineControls from "./TimelineControls";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
-import { T, useTolgee } from "@tolgee/react";
+import { T } from "@tolgee/react";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
     const { measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
-    const { beats } = useTimingObjects()!;
     const { isFullscreen } = useFullscreenStore();
     const timelineRef = useRef<HTMLDivElement>(null);
-    const { t } = useTolgee();
 
     useEffect(() => {
         if (!selectedPage) return;
@@ -79,21 +76,14 @@ export default function TimelineContainer() {
                 className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
             >
                 <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
-                    {beats.length > 1 ? (
-                        <div className="flex h-fit items-center">
-                            <div>
-                                <p className="text-sub w-[4rem]">
-                                    <T keyName="timeline.pages" />
-                                </p>
-                            </div>
-                            <PageTimeline />
+                    <div className="flex h-fit items-center">
+                        <div>
+                            <p className="text-sub w-[4rem]">
+                                <T keyName="timeline.pages" />
+                            </p>
                         </div>
-                    ) : (
-                        <MusicModal
-                            label={t("timeline.music.add")}
-                            buttonClassName="bg-accent rounded-full text-text-invert hover:text-text-invert border border-stroke px-8 w-fit enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 duration-150 ease-out"
-                        />
-                    )}
+                        <PageTimeline />
+                    </div>
 
                     <div className={"flex items-center"}>
                         {!isFullscreen && (

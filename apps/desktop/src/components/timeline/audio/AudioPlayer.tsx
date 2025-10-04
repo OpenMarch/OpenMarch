@@ -1,7 +1,7 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
+import { useQuery } from "@tanstack/react-query";
+import { getUtilityQueryOptions } from "@/hooks/queries";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -70,6 +72,7 @@ export default function AudioPlayer() {
     const { isPlaying } = useIsPlaying()!;
     const { beats, measures } = useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
+    const { data: utilityData } = useQuery(getUtilityQueryOptions());
 
     // Metronome state management
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
@@ -275,6 +278,9 @@ export default function AudioPlayer() {
             setWaveSurfer(null);
         }
 
+        if (!utilityData || !utilityData.default_beat_duration)
+            console.warn("No default beat duration found, using 0.5");
+
         // Create WaveSurfer instance
         const ws = WaveSurfer.create({
             container: waveformRef.current,
@@ -300,6 +306,7 @@ export default function AudioPlayer() {
             regions,
             beats,
             measures,
+            utilityData?.default_beat_duration ?? 0.5,
         );
         timingMarkersPlugin.current = timelineMarkersPlugin;
 
