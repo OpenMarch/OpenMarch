@@ -26,7 +26,8 @@
                 "run",
                 "${file}",
                 "--reporter=verbose",
-                "--no-coverage"
+                "--no-coverage",
+                "--maxWorkers", "1"
             ],
             "cwd": "${workspaceFolder}/apps/desktop",
             "env": {

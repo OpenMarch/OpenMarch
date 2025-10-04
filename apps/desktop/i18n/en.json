@@ -716,6 +716,12 @@
             "label": "Perspective"
         }
     },
+    "pages": {
+        "createFailed": "Failed to create page - {error}",
+        "createLastPageFailed": "Failed to create last page - {error}",
+        "updateFailed": "Failed to update page - {error}",
+        "deleteFailed": "Failed to delete page - {error}"
+    },
     "titlebar": {
         "bugReport": "Submit bug or feedback",
         "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",

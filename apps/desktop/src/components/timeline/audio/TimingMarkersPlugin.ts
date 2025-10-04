@@ -1,5 +1,8 @@
 import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
+import { assert } from "@/utilities/utils";
+
+const FAKE_BEAT_NUM = 500;
 
 export class TimingMarkersPlugin {
     protected wsRegions: any;
@@ -7,11 +10,24 @@ export class TimingMarkersPlugin {
     protected measures: Measure[];
     protected measureRegions: Map<number, any> = new Map();
     protected beatRegions: Map<number, any> = new Map();
+    protected defaultDuration?: number;
 
-    constructor(wsRegions: any, beats: Beat[], measures: Measure[]) {
+    constructor(
+        wsRegions: any,
+        beats: Beat[],
+        measures: Measure[],
+        defaultDuration?: number,
+    ) {
         this.wsRegions = wsRegions;
         this.beats = beats;
         this.measures = measures;
+        this.defaultDuration = defaultDuration;
+
+        if (defaultDuration)
+            assert(
+                defaultDuration > 0,
+                "Default duration must be greater than 0",
+            );
     }
     /**
      * Creates timing markers for beats and measures on the waveform
@@ -21,6 +37,7 @@ export class TimingMarkersPlugin {
     createTimingMarkers = () => {
         this.clearTimingMarkers();
 
+        let lastBeatTimestamp = 0;
         // Counts
         this.beats.forEach((beat) => {
             const newRegion = this.wsRegions.addRegion({
@@ -30,7 +47,24 @@ export class TimingMarkersPlugin {
                 resize: false,
             });
             this.beatRegions.set(beat.id, newRegion);
+            if (beat.timestamp > lastBeatTimestamp)
+                lastBeatTimestamp = beat.timestamp;
         });
+
+        if (this.defaultDuration) {
+            // Pad the end of the timeline with fake to give the illusion of a full timeline
+            let curFillerTimestamp = lastBeatTimestamp + this.defaultDuration;
+            for (let i = -1; i > FAKE_BEAT_NUM * -1 - 1; i--) {
+                const newRegion = this.wsRegions.addRegion({
+                    id: `beat beat_${i}`,
+                    start: curFillerTimestamp,
+                    drag: false,
+                    resize: false,
+                });
+                this.beatRegions.set(i * -1, newRegion);
+                curFillerTimestamp += this.defaultDuration;
+            }
+        }
 
         // Measure lines, measure numbers & rehearsal Marks
         this.measures.forEach((measure) => {

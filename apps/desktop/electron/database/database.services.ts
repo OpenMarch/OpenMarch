@@ -122,6 +122,7 @@ async function handleSqlProxyWithDb(
         const result = db.prepare(sqlBody);
 
         let rows: any;
+
         switch (method) {
             case "all":
                 rows = result.all(...params);
@@ -141,6 +142,7 @@ async function handleSqlProxyWithDb(
                 };
             case "run":
                 rows = result.run(...params);
+
                 return {
                     rows: [], // no data returned for run
                 };
