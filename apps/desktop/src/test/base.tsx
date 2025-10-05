@@ -1,4 +1,4 @@
-import { it as baseTest, describe, TestAPI } from "vitest";
+import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { schema } from "@/../electron/database/db";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
@@ -13,6 +13,18 @@ import * as mockDataBeats from "./mock-data/beats.mjs";
 import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import { createAllUndoTriggers, dropAllUndoTriggers } from "@/db-functions";
+import {
+    handleSqlProxyWithDbBetterSqlite,
+    handleSqlProxyWithDbSqlJs,
+} from "./sqlProxyTestUtil";
+import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
+import { JSX } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { TooltipProvider } from "@radix-ui/react-tooltip";
+import { IsPlayingProvider } from "@/context/IsPlayingContext";
+import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
+import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
+import { SelectedPageProvider } from "@/context/SelectedPageContext";
 
 type DbConnection = BaseSQLiteDatabase<
     "async",
@@ -131,6 +143,10 @@ type marchers = {
 
 type BaseApi = {
     setupDb: void;
+    /**
+     * A wrapper function that provides the necessary context for React component tests.
+     */
+    wrapper: ({ children }: { children: React.ReactNode }) => JSX.Element;
     marchersAndPages: marchersAndPages;
     beats: beats;
     pages: pages;
@@ -183,6 +199,31 @@ const baseFixture = baseTest.extend<BaseApi>({
         },
         { auto: true },
     ],
+    // eslint-disable-next-line no-empty-pattern
+    wrapper: async ({}, use) => {
+        const queryClient = new QueryClient();
+        const wrapper = ({ children }: { children: React.ReactNode }) => {
+            return (
+                <QueryClientProvider client={queryClient}>
+                    <TooltipProvider
+                        delayDuration={500}
+                        skipDelayDuration={500}
+                    >
+                        <IsPlayingProvider>
+                            <SelectedPageProvider>
+                                <SelectedMarchersProvider>
+                                    <SelectedAudioFileProvider>
+                                        {children}
+                                    </SelectedAudioFileProvider>
+                                </SelectedMarchersProvider>
+                            </SelectedPageProvider>
+                        </IsPlayingProvider>
+                    </TooltipProvider>
+                </QueryClientProvider>
+            );
+        };
+        await use(wrapper);
+    },
     beats: async ({ task }, use) => {
         await loadSqlIntoDatabase(task, "beats.sql");
         await use(mockDataBeats);
@@ -210,6 +251,50 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
         const tempDatabaseFile = getTempDotsPath(task);
 
         const db = new SQL.Database(fs.readFileSync(tempDatabaseFile));
+
+        // Check if window.electron already exists, if so update it, otherwise create it
+        if (window.electron) {
+            window.electron.sqlProxy = (
+                sql: string,
+                params: any[],
+                method: "all" | "run" | "get" | "values",
+            ) => handleSqlProxyWithDbSqlJs(db, sql, params, method);
+        } else {
+            Object.defineProperty(window, "electron", {
+                value: {
+                    sqlProxy: (
+                        sql: string,
+                        params: any[],
+                        method: "all" | "run" | "get" | "values",
+                    ) => handleSqlProxyWithDbSqlJs(db, sql, params, method),
+                },
+                configurable: true,
+                writable: true,
+            });
+        }
+        vi.mock("@global/database/db", () => ({
+            db: drizzleSqliteProxy(
+                async (
+                    sql: string,
+                    params: any[],
+                    method: "all" | "run" | "get" | "values",
+                ) => {
+                    try {
+                        const result = await handleSqlProxyWithDbSqlJs(
+                            db,
+                            sql,
+                            params,
+                            method,
+                        );
+                        return result;
+                    } catch (error: any) {
+                        console.error("Error from SQLite proxy:", error);
+                        throw error;
+                    }
+                },
+                { schema, casing: "snake_case" },
+            ),
+        }));
         await use(
             sqlJsDrizzle(db, {
                 schema,
@@ -240,6 +325,55 @@ const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
 
         const db = new Database(tempDatabaseFile);
 
+        // Check if window.electron already exists, if so update it, otherwise create it
+        if (window.electron) {
+            window.electron.sqlProxy = (
+                sql: string,
+                params: any[],
+                method: "all" | "run" | "get" | "values",
+            ) => handleSqlProxyWithDbBetterSqlite(db, sql, params, method);
+        } else {
+            Object.defineProperty(window, "electron", {
+                value: {
+                    sqlProxy: (
+                        sql: string,
+                        params: any[],
+                        method: "all" | "run" | "get" | "values",
+                    ) =>
+                        handleSqlProxyWithDbBetterSqlite(
+                            db,
+                            sql,
+                            params,
+                            method,
+                        ),
+                },
+                configurable: true,
+                writable: true,
+            });
+        }
+        vi.mock("@global/database/db", () => ({
+            db: drizzleSqliteProxy(
+                async (
+                    sql: string,
+                    params: any[],
+                    method: "all" | "run" | "get" | "values",
+                ) => {
+                    try {
+                        const result = await handleSqlProxyWithDbBetterSqlite(
+                            db,
+                            sql,
+                            params,
+                            method,
+                        );
+                        return result;
+                    } catch (error: any) {
+                        console.error("Error from SQLite proxy:", error);
+                        throw error;
+                    }
+                },
+                { schema, casing: "snake_case" },
+            ),
+        }));
         await use(
             betterSqliteDrizzle(db, {
                 schema,

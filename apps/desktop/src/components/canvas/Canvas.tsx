@@ -890,7 +890,11 @@ export default function Canvas({
                         justifyContent: "center",
                     }}
                 >
-                    <canvas ref={canvasRef} id="fieldCanvas" />
+                    <canvas
+                        ref={canvasRef}
+                        id="fieldCanvas"
+                        data-testid="fieldCanvas"
+                    />
                 </div>
             ) : (
                 <div className="flex h-full w-full items-center justify-center">

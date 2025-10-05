@@ -264,5 +264,10 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setIsPlaying,
     ]);
 
-    return { setMarcherPositionsAtTime };
+    return {
+        setMarcherPositionsAtTime,
+        _selectedPage: selectedPage,
+        _isPlaying: isPlaying,
+        _setIsPlaying: setIsPlaying,
+    };
 };
