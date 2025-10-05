@@ -1,7 +1,7 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -121,15 +121,15 @@ export default function AudioPlayer() {
 
     // Populate metronome audio track when beats or measures change
     useEffect(() => {
-        if (!audioContext || !beats.length || !measures.length) return;
+        if (!audioContext || !beats.length) return;
 
         const float32Array = createMetronomeWav(
             measures,
+            beats,
             accentFirstBeat,
             firstBeatOnly,
             beatStyle,
         );
-
         const newBuffer = audioContext.createBuffer(
             1,
             float32Array.length,
