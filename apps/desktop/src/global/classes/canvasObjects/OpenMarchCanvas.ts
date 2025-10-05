@@ -174,7 +174,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         listeners,
     }: {
         canvasRef: HTMLCanvasElement | null;
-        fieldProperties: any;
+        fieldProperties: FieldProperties;
         uiSettings: UiSettings;
         currentPage?: Page;
         listeners?: CanvasListeners;
