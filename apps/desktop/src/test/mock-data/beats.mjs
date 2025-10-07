@@ -1,11 +1,18 @@
-const expectedBeats = Array.from({ length: 97 }, (_, i) => ({
-    id: i,
-    duration: 0.5,
-    beat_number: i,
-    measure_id: 1,
-    position: i,
-    include_in_measure: 1,
-    notes: null,
-}));
+const expectedBeats = [
+    {
+        id: 0,
+        duration: 0,
+        position: 0,
+        include_in_measure: 1,
+        notes: null,
+    },
+    ...Array.from({ length: 96 }, (_, i) => ({
+        id: i + 1,
+        duration: 0.5,
+        position: i + 1,
+        include_in_measure: 1,
+        notes: null,
+    })),
+];
 
 export { expectedBeats };

@@ -76,7 +76,8 @@ export default function PageTimeline() {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const { selectedPage, setSelectedPage, setPageToSelect } =
+        useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();
     const { pages, beats } = useTimingObjects()!;
@@ -290,6 +291,25 @@ export default function PageTimeline() {
         return nextPage.counts + (currPage.counts - currPageDrag || 0);
     }
 
+    const handleCreateLastPage = useCallback(() => {
+        createLastPage(8, {
+            onSuccess: (data) => {
+                setPageToSelect(data);
+            },
+        });
+    }, [createLastPage, setPageToSelect]);
+
+    const handleDeletePage = useCallback(
+        (page: Page) => {
+            deletePages(new Set([page.id]), {
+                onSuccess: () => {
+                    if (page.previousPageId != null)
+                        setSelectedPage({ id: page.previousPageId });
+                },
+            });
+        },
+        [deletePages, setSelectedPage],
+    );
     return (
         <div className="flex h-fit gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
@@ -473,9 +493,7 @@ export default function PageTimeline() {
                                         <T keyName="timeline.page.contextMenu.deletePage" />
                                     </label>
                                     <Button
-                                        onClick={() =>
-                                            deletePages(new Set([page.id]))
-                                        }
+                                        onClick={() => handleDeletePage(page)}
                                         size="compact"
                                         variant="red"
                                         content="icon"
@@ -491,7 +509,7 @@ export default function PageTimeline() {
             {!isFullscreen && (
                 <button
                     className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
-                    onClick={() => createLastPage(8)}
+                    onClick={handleCreateLastPage}
                 >
                     <PlusIcon size={20} />
                 </button>
