@@ -109,7 +109,7 @@ export function connect() {
  *
  * https://orm.drizzle.team/docs/connect-drizzle-proxy
  */
-async function handleSqlProxyWithDb(
+export async function handleSqlProxyWithDb(
     db: Database.Database,
     sql: string,
     params: any[],
@@ -124,22 +124,30 @@ async function handleSqlProxyWithDb(
         let rows: any;
 
         switch (method) {
-            case "all":
-                rows = result.all(...params);
-                return {
-                    rows: rows
-                        ? rows.map((row: { [key: string]: any }) =>
-                              Object.values(row),
-                          )
-                        : [],
+            case "all": {
+                // Drizzle's mapResultRow expects all results to be arrays
+                // Use raw() method to get the raw array values for all queries
+                const rawValues = result.raw().all(...params) as any[][];
+                // Return the raw arrays directly - Drizzle's mapResultRow expects arrays
+                rows = rawValues;
+
+                const resultObj = {
+                    rows: rows || [],
                 };
-            case "get":
-                rows = result.get(...params);
-                return {
-                    rows: rows
-                        ? Object.values(rows as Record<string, any>)
-                        : undefined,
+                return resultObj;
+            }
+            case "get": {
+                // Drizzle's mapResultRow expects all results to be arrays
+                // Use raw() method to get the raw array values for all queries
+                const rawValues = result.raw().get(...params) as any[];
+                // Return the raw array directly - Drizzle's mapResultRow expects an array
+                rows = rawValues;
+
+                const resultObj2 = {
+                    rows: rows || undefined,
                 };
+                return resultObj2;
+            }
             case "run":
                 rows = result.run(...params);
 

@@ -1,6 +1,8 @@
-import { describe, expect } from "vitest";
-import { describeDbTests, schema } from "@/test/base";
+import { afterEach, describe, expect } from "vitest";
+import { describeDbTests, schema, seedObj } from "@/test/base";
 import { eq } from "drizzle-orm";
+import { faker } from "@faker-js/faker";
+import { createLastPage } from "..";
 
 describeDbTests("Database connection", (it) => {
     it("Database should be defined", async ({ db }) => {
@@ -151,14 +153,14 @@ describeDbTests("Database connection", (it) => {
                 expect(resultNoAllPage?.beats).toMatchObject(expectedBeat!);
             }
         });
-        describe.only("inner join for one page and beats", () => {
+        describe("inner join for one page and beats", () => {
             it.for([
-                // { page_id: 0 },
-                // { page_id: 1 },
-                // { page_id: 2 },
-                // { page_id: 3 },
-                // { page_id: 4 },
-                // { page_id: 5 },
+                { page_id: 0 },
+                { page_id: 1 },
+                { page_id: 2 },
+                { page_id: 3 },
+                { page_id: 4 },
+                { page_id: 5 },
                 { page_id: 6 },
             ])("page_id: $page_id", async ({ page_id }, { db, pages }) => {
                 const result = await db
@@ -185,6 +187,115 @@ describeDbTests("Database connection", (it) => {
                 );
                 expect(expectedBeat).toBeDefined();
                 expect(result?.beats).toMatchObject(expectedBeat!);
+            });
+        });
+
+        describe("Create a random number of pages and beats", () => {
+            afterEach(async () => {
+                faker.seed();
+            });
+
+            describe("all()", () => {
+                it.for(seedObj)("seed: $seed", async ({ seed }, { db }) => {
+                    faker.seed(seed);
+
+                    const pagesToCreate = faker.number.int({ min: 1, max: 25 });
+
+                    for (let i = 0; i < pagesToCreate; i++) {
+                        const pageCounts = faker.number.int({
+                            min: 1,
+                            max: 128,
+                        });
+                        await createLastPage({ db, newPageCounts: pageCounts });
+                    }
+
+                    const pagesNoJoin = await db.select().from(schema.pages);
+                    expect(pagesNoJoin).toBeDefined();
+                    expect(pagesNoJoin).toHaveLength(pagesToCreate + 1);
+
+                    const beatsNoJoin = await db.select().from(schema.beats);
+                    expect(beatsNoJoin).toBeDefined();
+
+                    const pagesWithJoin = await db
+                        .select()
+                        .from(schema.pages)
+                        .innerJoin(
+                            schema.beats,
+                            eq(schema.pages.start_beat, schema.beats.id),
+                        )
+                        .all();
+                    expect(pagesWithJoin).toBeDefined();
+                    expect(pagesWithJoin).toHaveLength(pagesNoJoin.length);
+
+                    for (const page of pagesNoJoin) {
+                        const pageWithJoin = pagesWithJoin.find(
+                            (p) => p.pages.id === page.id,
+                        );
+                        expect(pageWithJoin).toBeDefined();
+                        expect(pageWithJoin?.pages).toMatchObject(page);
+
+                        const expectedBeat = beatsNoJoin.find(
+                            (b) => b.id === page.start_beat,
+                        );
+                        expect(pageWithJoin?.beats).toBeDefined();
+                        expect(pageWithJoin?.beats).toMatchObject(
+                            expectedBeat!,
+                        );
+                    }
+                });
+            });
+            describe("get()", () => {
+                it.for(seedObj)("seed: $seed", async ({ seed }, { db }) => {
+                    faker.seed(seed);
+
+                    const pagesToCreate = faker.number.int({
+                        min: 1,
+                        max: 25,
+                    });
+
+                    for (let i = 0; i < pagesToCreate; i++) {
+                        const pageCounts = faker.number.int({
+                            min: 1,
+                            max: 128,
+                        });
+                        await createLastPage({
+                            db,
+                            newPageCounts: pageCounts,
+                        });
+                    }
+
+                    const pagesNoJoin = await db
+                        .select()
+                        .from(schema.pages)
+                        .all();
+                    expect(pagesNoJoin).toBeDefined();
+                    expect(pagesNoJoin).toHaveLength(pagesToCreate + 1);
+
+                    const beatsNoJoin = await db.select().from(schema.beats);
+                    expect(beatsNoJoin).toBeDefined();
+
+                    for (const page of pagesNoJoin) {
+                        const pageWithJoin = await db
+                            .select()
+                            .from(schema.pages)
+                            .innerJoin(
+                                schema.beats,
+                                eq(schema.pages.start_beat, schema.beats.id),
+                            )
+                            .where(eq(schema.pages.id, page.id))
+                            .get();
+                        expect(pageWithJoin).toBeDefined();
+                        expect(pageWithJoin?.pages).toMatchObject(page);
+
+                        const expectedBeat = beatsNoJoin.find(
+                            (b) => b.id === page.start_beat,
+                        );
+                        expect(pageWithJoin?.beats).toBeDefined();
+                        expect(pageWithJoin?.beats).toMatchObject(
+                            expectedBeat!,
+                        );
+                    }
+                });
             });
         });
     });

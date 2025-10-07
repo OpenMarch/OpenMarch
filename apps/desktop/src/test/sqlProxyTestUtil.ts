@@ -18,7 +18,16 @@ export async function handleSqlProxyWithDbSqlJs(
             case "all":
                 result = db.exec(sql, params);
                 if (result.length > 0 && result[0]) {
-                    rows = result[0].values || [];
+                    // Convert array of arrays to array of objects using column names
+                    const columns = result[0].columns;
+                    const values = result[0].values || [];
+                    rows = values.map((row: any[]) => {
+                        const obj: { [key: string]: any } = {};
+                        columns.forEach((col: string, index: number) => {
+                            obj[col] = row[index];
+                        });
+                        return obj;
+                    });
                     return {
                         rows: rows,
                     };
@@ -32,7 +41,13 @@ export async function handleSqlProxyWithDbSqlJs(
                     result[0].values &&
                     result[0].values.length > 0
                 ) {
-                    rows = result[0].values[0];
+                    // Convert array to object using column names
+                    const columns = result[0].columns;
+                    const values = result[0].values[0];
+                    rows = {};
+                    columns.forEach((col: string, index: number) => {
+                        rows[col] = values[index];
+                    });
                     return {
                         rows: rows,
                     };
