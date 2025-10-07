@@ -30,6 +30,18 @@ import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { schema as electronSchema } from "@/../electron/database/db";
 export const schema = electronSchema;
 
+/**
+ * For seeded tests, the number of them to run.
+ *
+ * This will create seeds from 0 to SEED_AMOUNT - 1 with faker.js
+ */
+export const SEED_AMOUNT = process.env.VITEST_SEED_AMOUNT
+    ? parseInt(process.env.VITEST_SEED_AMOUNT)
+    : 10;
+export const seedObj = Array.from({ length: SEED_AMOUNT }, (_, i) => ({
+    seed: i,
+}));
+
 type DbConnection = BaseSQLiteDatabase<
     "async",
     RunResult | void | SqliteRemoteResult<unknown>,
