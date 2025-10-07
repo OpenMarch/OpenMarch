@@ -1,7 +1,7 @@
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
-import { schema } from "@/../electron/database/db";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
 import Database, { RunResult } from "better-sqlite3";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
@@ -25,6 +25,10 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
+
+// Needs to be here for an import error
+import { schema as electronSchema } from "@/../electron/database/db";
+export const schema = electronSchema;
 
 type DbConnection = BaseSQLiteDatabase<
     "async",
@@ -242,6 +246,63 @@ const baseFixture = baseTest.extend<BaseApi>({
     },
 });
 
+function setUpGlobalMocks<T>(
+    db: T,
+    dbFunction: (
+        db: T,
+        sql: string,
+        params: any[],
+        method: "all" | "run" | "get" | "values",
+    ) => Promise<{ rows: any[] }>,
+) {
+    // Check if window.electron already exists, if so update it, otherwise create it
+    if (window.electron) {
+        window.electron.sqlProxy = (
+            sql: string,
+            params: any[],
+            method: "all" | "run" | "get" | "values",
+        ) => dbFunction(db, sql, params, method);
+    } else {
+        Object.defineProperty(window, "electron", {
+            value: {
+                sqlProxy: (
+                    sql: string,
+                    params: any[],
+                    method: "all" | "run" | "get" | "values",
+                ) => dbFunction(db, sql, params, method),
+                log: (
+                    level: "log" | "info" | "warn" | "error",
+                    message: string,
+                    ...args: any[]
+                ) => {
+                    console[level]("[MainProcessFaker]: " + message, ...args);
+                },
+            },
+            configurable: true,
+            writable: true,
+        });
+    }
+    vi.mock("@global/database/db", () => ({
+        db: drizzleSqliteProxy(
+            async (
+                sql: string,
+                params: any[],
+                method: "all" | "run" | "get" | "values",
+            ) => {
+                try {
+                    const result = await dbFunction(db, sql, params, method);
+                    return result;
+                } catch (error: any) {
+                    console.error("Error from SQLite proxy:", error);
+                    throw error;
+                }
+            },
+            { schema, casing: "snake_case" },
+        ),
+        schema,
+    }));
+}
+
 const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
     db: async ({ task }, use) => {
         // setup the fixture before each test function
@@ -252,49 +313,7 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
 
         const db = new SQL.Database(fs.readFileSync(tempDatabaseFile));
 
-        // Check if window.electron already exists, if so update it, otherwise create it
-        if (window.electron) {
-            window.electron.sqlProxy = (
-                sql: string,
-                params: any[],
-                method: "all" | "run" | "get" | "values",
-            ) => handleSqlProxyWithDbSqlJs(db, sql, params, method);
-        } else {
-            Object.defineProperty(window, "electron", {
-                value: {
-                    sqlProxy: (
-                        sql: string,
-                        params: any[],
-                        method: "all" | "run" | "get" | "values",
-                    ) => handleSqlProxyWithDbSqlJs(db, sql, params, method),
-                },
-                configurable: true,
-                writable: true,
-            });
-        }
-        vi.mock("@global/database/db", () => ({
-            db: drizzleSqliteProxy(
-                async (
-                    sql: string,
-                    params: any[],
-                    method: "all" | "run" | "get" | "values",
-                ) => {
-                    try {
-                        const result = await handleSqlProxyWithDbSqlJs(
-                            db,
-                            sql,
-                            params,
-                            method,
-                        );
-                        return result;
-                    } catch (error: any) {
-                        console.error("Error from SQLite proxy:", error);
-                        throw error;
-                    }
-                },
-                { schema, casing: "snake_case" },
-            ),
-        }));
+        setUpGlobalMocks(db, handleSqlProxyWithDbSqlJs);
         await use(
             sqlJsDrizzle(db, {
                 schema,
@@ -306,7 +325,12 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
     },
 });
 
-const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
+/**
+ * Test fixture for better-sqlite3 database with proxy
+ *
+ * This is used with a proxy, rather than a direct database connection, as that is how it is used in the app.
+ */
+const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
     db: DbConnection;
 }>({
     db: async ({ task }, use) => {
@@ -325,55 +349,42 @@ const betterSqliteTest: TestAPI<DbTestAPI> = baseFixture.extend<{
 
         const db = new Database(tempDatabaseFile);
 
-        // Check if window.electron already exists, if so update it, otherwise create it
-        if (window.electron) {
-            window.electron.sqlProxy = (
-                sql: string,
-                params: any[],
-                method: "all" | "run" | "get" | "values",
-            ) => handleSqlProxyWithDbBetterSqlite(db, sql, params, method);
-        } else {
-            Object.defineProperty(window, "electron", {
-                value: {
-                    sqlProxy: (
-                        sql: string,
-                        params: any[],
-                        method: "all" | "run" | "get" | "values",
-                    ) =>
-                        handleSqlProxyWithDbBetterSqlite(
-                            db,
-                            sql,
-                            params,
-                            method,
-                        ),
+        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
+        await use(
+            sqliteProxyDrizzle(
+                async (sql, params, method) =>
+                    handleSqlProxyWithDbBetterSqlite(db, sql, params, method),
+                {
+                    schema,
+                    casing: "snake_case",
+                    logger: true,
                 },
-                configurable: true,
-                writable: true,
-            });
+            ) as unknown as DbConnection,
+        );
+        db.close();
+    },
+});
+
+const betterSqliteTestDirect: TestAPI<DbTestAPI> = baseFixture.extend<{
+    db: DbConnection;
+}>({
+    db: async ({ task }, use) => {
+        // setup the fixture before each test function
+        const tempDatabaseFile = getTempDotsPath(task);
+
+        try {
+            new Database(":memory:");
+        } catch (error) {
+            console.error(
+                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for Node by running 'pnpm run test:prepare'\n",
+                error,
+            );
+            throw error;
         }
-        vi.mock("@global/database/db", () => ({
-            db: drizzleSqliteProxy(
-                async (
-                    sql: string,
-                    params: any[],
-                    method: "all" | "run" | "get" | "values",
-                ) => {
-                    try {
-                        const result = await handleSqlProxyWithDbBetterSqlite(
-                            db,
-                            sql,
-                            params,
-                            method,
-                        );
-                        return result;
-                    } catch (error: any) {
-                        console.error("Error from SQLite proxy:", error);
-                        throw error;
-                    }
-                },
-                { schema, casing: "snake_case" },
-            ),
-        }));
+
+        const db = new Database(tempDatabaseFile);
+
+        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
         await use(
             betterSqliteDrizzle(db, {
                 schema,
@@ -418,25 +429,39 @@ const describeDbTests = (
         dbType: "sql-js" | "better-sqlite3",
     ) => void,
 ) => {
-    // Better-sqlite is disabled by default just to remove redundancy. It is run in CI.
+    // We test better-sqlite3 with a proxy, as that is how it is used in the app.
+    if (process.env.VITEST_DISABLE_BETTER_SQLITE_PROXY !== "true")
+        describe("better-sqlite3", () => {
+            tests(betterSqliteTestWithProxy, "better-sqlite3");
+        });
+    else
+        // specifically skip the better-sqlite3 tests so it's visible that they're disabled
+        describe.skip("better-sqlite3", () => {
+            tests(betterSqliteTestWithProxy, "better-sqlite3");
+        });
+
+    // SQL.js is disabled by default just to remove redundancy. It is run in CI.
     // Feel free to enable it by setting the `VITEST_ENABLE_SQLJS` environment variable to `true`.
-    describe("better-sqlite3", () => {
-        tests(betterSqliteTest, "better-sqlite3");
-    });
-    const runSqlJsTests = process.env.VITEST_ENABLE_SQLJS === "true";
-    if (runSqlJsTests)
+    // We test SQL.js as we're hoping that we'll use it in the future.
+    if (process.env.VITEST_ENABLE_SQLJS === "true")
         describe("sql-js", () => {
             tests(sqlJsTest, "sql-js");
+        });
+
+    // Not really needed, but keeping it here for reference
+    if (process.env.VITEST_ENABLE_BETTER_SQLITE_DIRECT === "true")
+        describe("better-sqlite3", () => {
+            tests(betterSqliteTestDirect, "better-sqlite3");
         });
 };
 
 export {
     sqlJsTest,
-    betterSqliteTest,
+    betterSqliteTestDirect,
+    betterSqliteTestWithProxy,
     describeDbTests,
     type DbTestsFunc,
     type DbTestAPI,
     transaction,
-    schema,
     type DbConnection,
 };

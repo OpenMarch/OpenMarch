@@ -8,6 +8,7 @@ import {
     DatabasePage,
     _fillAndGetBeatToStartOn,
     getPages,
+    getLastPage,
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
@@ -1581,6 +1582,67 @@ describeDbTests("pages", (it) => {
                 );
             });
         });
+
+        describe("delete last page", () => {
+            testWithHistory(
+                "Deleting last page should update last page counts",
+                async ({ db }) => {
+                    const getLastPageCounts = async () =>
+                        (await db.query.utility.findFirst())!.last_page_counts;
+
+                    const lastPage1 = await createLastPage({
+                        db,
+                        newPageCounts: 9,
+                    });
+                    expect(await getLastPageCounts()).toBe(9);
+                    const lastPage2 = await createLastPage({
+                        db,
+                        newPageCounts: 10,
+                    });
+                    expect(await getLastPageCounts()).toBe(10);
+                    const lastPage3 = await createLastPage({
+                        db,
+                        newPageCounts: 23,
+                    });
+                    expect(await getLastPageCounts()).toBe(23);
+
+                    expect(await getPages({ db })).toHaveLength(4);
+
+                    await deletePages({
+                        pageIds: new Set([lastPage3.id]),
+                        db,
+                    });
+                    expect(await getPages({ db })).toHaveLength(3);
+                    expect(
+                        await getLastPageCounts(),
+                        "Last page counts should be updated to the new last page's counts",
+                    ).toBe(10);
+
+                    await deletePages({
+                        pageIds: new Set([lastPage2.id]),
+                        db,
+                    });
+                    expect(await getPages({ db })).toHaveLength(2);
+                    expect(
+                        await getLastPageCounts(),
+                        "Last page counts should be updated to the new last page's counts",
+                    ).toBe(9);
+
+                    await deletePages({
+                        pageIds: new Set([lastPage1.id]),
+                        db,
+                    });
+                    expect(await getPages({ db })).toHaveLength(1);
+                    expect(
+                        await getLastPageCounts(),
+                        "Since only the first page is left, the last page counts should not change",
+                    ).toBe(9);
+                },
+            );
+            it.todo(
+                "Delete many pages at once and make sure the last page counts are updated correctly",
+            );
+        });
     });
 
     describe("createLastPage", () => {
@@ -2285,6 +2347,230 @@ describeDbTests("pages", (it) => {
                 newBeats.forEach((beat) => {
                     expect(beat.duration).toBe(1.0);
                 });
+            });
+        });
+    });
+
+    describe("getLastPage", () => {
+        it("should return the first page when only one page exists", async ({
+            db,
+        }) => {
+            await transaction(db, async (tx) => {
+                const result = await getLastPage({ tx });
+                expect(result).not.toBeNull();
+                expect(result!.pages.id).toBe(FIRST_PAGE_ID);
+                expect(result!.pages.start_beat).toBe(FIRST_BEAT_ID);
+                expect(result!.beats.id).toBe(FIRST_BEAT_ID);
+                expect(result!.beats.position).toBe(0);
+            });
+        });
+
+        it("should return the page with the highest beat position when multiple pages exist", async ({
+            db,
+        }) => {
+            await transaction(db, async (tx) => {
+                // Create additional beats and pages
+                const beat1 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 10,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                const beat2 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 20,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                await tx.insert(schema.pages).values({
+                    start_beat: beat1.id,
+                    is_subset: 0,
+                    notes: "Page 1",
+                });
+
+                const page2 = await tx
+                    .insert(schema.pages)
+                    .values({
+                        start_beat: beat2.id,
+                        is_subset: 0,
+                        notes: "Page 2",
+                    })
+                    .returning()
+                    .get();
+
+                const result = await getLastPage({ tx });
+
+                expect(result).not.toBeNull();
+                expect(result!.pages.id).toBe(page2.id);
+                expect(result!.pages.start_beat).toBe(beat2.id);
+                expect(result!.beats.id).toBe(beat2.id);
+                expect(result!.beats.position).toBe(20);
+            });
+        });
+
+        it("should handle pages with non-sequential beat positions correctly", async ({
+            db,
+        }) => {
+            await transaction(db, async (tx) => {
+                // Create beats with non-sequential positions
+                const beat1 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 100,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                const beat2 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 50,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                const beat3 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 75,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                await tx.insert(schema.pages).values({
+                    start_beat: beat1.id,
+                    is_subset: 0,
+                    notes: "Page at position 100",
+                });
+
+                await tx.insert(schema.pages).values({
+                    start_beat: beat2.id,
+                    is_subset: 0,
+                    notes: "Page at position 50",
+                });
+
+                await tx.insert(schema.pages).values({
+                    start_beat: beat3.id,
+                    is_subset: 0,
+                    notes: "Page at position 75",
+                });
+
+                const result = await getLastPage({ tx });
+
+                expect(result).not.toBeNull();
+                expect(result!.beats.position).toBe(100);
+            });
+        });
+
+        it("should return the correct page when multiple pages have the same beat position", async ({
+            db,
+        }) => {
+            await transaction(db, async (tx) => {
+                // Create two beats with the same position (edge case)
+                const beat1 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 10,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                const beat2 = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 1.0,
+                        position: 10,
+                        include_in_measure: 1,
+                    })
+                    .returning()
+                    .get();
+
+                const page1 = await tx
+                    .insert(schema.pages)
+                    .values({
+                        start_beat: beat1.id,
+                        is_subset: 0,
+                        notes: "Page 1",
+                    })
+                    .returning()
+                    .get();
+
+                const page2 = await tx
+                    .insert(schema.pages)
+                    .values({
+                        start_beat: beat2.id,
+                        is_subset: 0,
+                        notes: "Page 2",
+                    })
+                    .returning()
+                    .get();
+
+                const result = await getLastPage({ tx });
+
+                expect(result).not.toBeNull();
+                // Should return one of the pages with position 10
+                expect(result!.beats.position).toBe(10);
+                expect([page1.id, page2.id]).toContain(result!.pages.id);
+            });
+        });
+
+        it("should include both page and beat data in the result", async ({
+            db,
+        }) => {
+            await transaction(db, async (tx) => {
+                const beat = await tx
+                    .insert(schema.beats)
+                    .values({
+                        duration: 2.5,
+                        position: 15,
+                        include_in_measure: 1,
+                        notes: "Test beat",
+                    })
+                    .returning()
+                    .get();
+
+                const page = await tx
+                    .insert(schema.pages)
+                    .values({
+                        start_beat: beat.id,
+                        is_subset: 1,
+                        notes: "Test page",
+                    })
+                    .returning()
+                    .get();
+
+                const result = await getLastPage({ tx });
+
+                expect(result).not.toBeNull();
+
+                // Check page data
+                expect(result!.pages.id).toBe(page.id);
+                expect(result!.pages.start_beat).toBe(beat.id);
+                expect(result!.pages.is_subset).toBe(1);
+                expect(result!.pages.notes).toBe("Test page");
+
+                // Check beat data
+                expect(result!.beats.id).toBe(beat.id);
+                expect(result!.beats.duration).toBe(2.5);
+                expect(result!.beats.position).toBe(15);
+                expect(result!.beats.include_in_measure).toBe(1);
+                expect(result!.beats.notes).toBe("Test beat");
             });
         });
     });

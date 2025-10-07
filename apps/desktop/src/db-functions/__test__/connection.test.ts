@@ -1,4 +1,4 @@
-import { expect } from "vitest";
+import { describe, expect } from "vitest";
 import { describeDbTests, schema } from "@/test/base";
 import { eq } from "drizzle-orm";
 
@@ -98,5 +98,94 @@ describeDbTests("Database connection", (it) => {
         expect(postUpdateResult[0].section).toBe("Updated Section");
         expect(postUpdateResult[0].drill_prefix).toBe("C");
         expect(postUpdateResult[0].drill_order).toBe(2);
+    });
+
+    describe("handles joins", () => {
+        it("inner join for all pages and beats", async ({ db, pages }) => {
+            const result = await db
+                .select()
+                .from(schema.pages)
+                .innerJoin(
+                    schema.beats,
+                    eq(schema.pages.start_beat, schema.beats.id),
+                )
+                .all();
+            expect(result).toBeDefined();
+            expect(result).toHaveLength(pages.expectedPages.length);
+
+            // Assure the object's data is correct
+            for (const page of pages.expectedPages) {
+                const resultPage = result.find((r) => r.pages.id === page.id);
+                expect(resultPage?.pages).toBeDefined();
+                expect(resultPage?.pages).toMatchObject(page);
+
+                const expectedBeat = pages.expectedBeats.find(
+                    (b) => b.id === page.start_beat,
+                );
+                expect(resultPage?.beats).toBeDefined();
+                expect(resultPage?.beats).toMatchObject(expectedBeat!);
+            }
+
+            const resultNoAll = await db
+                .select()
+                .from(schema.pages)
+                .innerJoin(
+                    schema.beats,
+                    eq(schema.pages.start_beat, schema.beats.id),
+                );
+            expect(resultNoAll).toBeDefined();
+            expect(resultNoAll).toHaveLength(pages.expectedPages.length);
+
+            // Assure the object's data is correct
+            for (const page of pages.expectedPages) {
+                const resultNoAllPage = resultNoAll.find(
+                    (r) => r.pages.id === page.id,
+                );
+                expect(resultNoAllPage?.pages).toBeDefined();
+                expect(resultNoAllPage?.pages).toMatchObject(page);
+
+                const expectedBeat = pages.expectedBeats.find(
+                    (b) => b.id === page.start_beat,
+                );
+                expect(resultNoAllPage?.beats).toBeDefined();
+                expect(resultNoAllPage?.beats).toMatchObject(expectedBeat!);
+            }
+        });
+        describe.only("inner join for one page and beats", () => {
+            it.for([
+                // { page_id: 0 },
+                // { page_id: 1 },
+                // { page_id: 2 },
+                // { page_id: 3 },
+                // { page_id: 4 },
+                // { page_id: 5 },
+                { page_id: 6 },
+            ])("page_id: $page_id", async ({ page_id }, { db, pages }) => {
+                const result = await db
+                    .select()
+                    .from(schema.pages)
+                    .innerJoin(
+                        schema.beats,
+                        eq(schema.pages.start_beat, schema.beats.id),
+                    )
+                    .where(eq(schema.pages.id, page_id))
+                    .get();
+                expect(result).toBeDefined();
+
+                expect(result?.pages).toBeDefined();
+                const expectedPage = pages.expectedPages.find(
+                    (p) => p.id === page_id,
+                );
+                expect(expectedPage).toBeDefined();
+                expect(result?.pages).toMatchObject(expectedPage!);
+
+                expect(result?.beats).toBeDefined();
+                const expectedBeat = pages.expectedBeats.find(
+                    (b) => b.id === result?.pages.start_beat,
+                );
+                expect(expectedBeat).toBeDefined();
+                expect(result?.beats).toMatchObject(expectedBeat!);
+            });
+        });
     });
 });

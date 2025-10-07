@@ -1,14 +1,20 @@
 // Generate expected beats array (97 beats from 0 to 96)
-const expectedBeats = Array.from({ length: 97 }, (_, i) => ({
-    id: i,
-    duration: 0.5,
-    beat_number: i,
-    measure_id: 1,
-    position: i,
-    include_in_measure: 1,
-    notes: null,
-}));
-
+const expectedBeats = [
+    {
+        id: 0,
+        duration: 0,
+        position: 0,
+        include_in_measure: 1,
+        notes: null,
+    },
+    ...Array.from({ length: 96 }, (_, i) => ({
+        id: i + 1,
+        duration: 0.5,
+        position: i,
+        include_in_measure: 1,
+        notes: null,
+    })),
+];
 const numberOfMarchers = 76;
 const numberOfPages = 7;
 
@@ -49,7 +55,6 @@ const expectedPages = Array.from({ length: numberOfPages }, (_, i) => ({
     id: i,
     is_subset: i % 2 === 0 ? 0 : 1,
     start_beat: Math.floor((expectedBeats.length * i) / numberOfPages),
-    page_number: 0,
     notes: null,
 }));
 

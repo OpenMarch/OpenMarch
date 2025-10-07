@@ -401,6 +401,16 @@ const filterOutFirstPage = (pageIds: Set<number>): Set<number> => {
     return pageIds;
 };
 
+export const getLastPage = async ({ tx }: { tx: DbTransaction }) => {
+    return await tx
+        .select()
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(desc(schema.beats.position))
+        .limit(1)
+        .get();
+};
+
 export const deletePagesInTransaction = async ({
     pageIds,
     tx,
@@ -410,10 +420,65 @@ export const deletePagesInTransaction = async ({
 }): Promise<DatabasePage[]> => {
     pageIds = filterOutFirstPage(pageIds);
     if (pageIds.size === 0) return [];
+    const pagesBeforeDeletion = await tx
+        .select()
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(asc(schema.beats.position))
+        .all();
+
+    const lastPageBeforeDeletion = await getLastPage({ tx });
+    assert(
+        lastPageBeforeDeletion != null,
+        "Last page before deletion not found",
+    );
+
     const deletedPages = await tx
         .delete(schema.pages)
         .where(inArray(schema.pages.id, Array.from(pageIds)))
         .returning();
+
+    const lastPageAfterDeletion = await getLastPage({ tx });
+    assert(lastPageAfterDeletion != null, "Last page after deletion not found");
+
+    // If the last page has changed, we need to update the last page counts
+    if (
+        lastPageBeforeDeletion.pages.id !== lastPageAfterDeletion.pages.id &&
+        lastPageAfterDeletion.pages.id !== FIRST_PAGE_ID
+    ) {
+        // Find the new lat page's old next page
+        // This works because this list is sorted by the beat position
+        const newLastPagesOldNextPage = pagesBeforeDeletion.find(
+            (page) =>
+                page.beats.position > lastPageAfterDeletion.beats.position,
+        );
+        if (newLastPagesOldNextPage) {
+            const newCounts =
+                newLastPagesOldNextPage.beats.position -
+                lastPageAfterDeletion.beats.position;
+            if (newCounts > 0)
+                await updateLastPageCounts({
+                    tx,
+                    lastPageCounts: newCounts,
+                });
+            else
+                console.error(
+                    "New counts is less than 0. This should never happen.",
+                );
+        } else {
+            console.warn(
+                "Could not find new last page's old next page. This should never happen.",
+                "lastPageBeforeDeletion",
+                lastPageBeforeDeletion,
+                "lastPageAfterDeletion",
+                lastPageAfterDeletion,
+                "pagesBeforeDeletion",
+                pagesBeforeDeletion,
+                "deletedPages",
+            );
+        }
+    }
+
     return deletedPages.map(realDatabasePageToDatabasePage);
 };
 
@@ -712,7 +777,7 @@ export const createLastPageInTransaction = async ({
         newLastPageCounts: newPageCounts,
     });
 
-    await createPagesInTransaction({
+    const createdPages = await createPagesInTransaction({
         newPages: [
             {
                 start_beat: nextBeatToStartOn.id,
@@ -726,5 +791,5 @@ export const createLastPageInTransaction = async ({
         tx,
         lastPageCounts: newPageCounts,
     });
-    return true;
+    return createdPages[0];
 };
