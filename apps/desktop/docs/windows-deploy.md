@@ -29,11 +29,13 @@ cd apps/desktop
 
 pnpm i
 
-cd apps\desktop
-
 # Build for production
 pnpm run build
 
+# Switch to desktop dir
+cd apps\desktop
+
+# Release app
 $env:GH_TOKEN = gh auth token
 pnpm exec .\node_modules\.bin\electron-builder -w --publish=always
 
