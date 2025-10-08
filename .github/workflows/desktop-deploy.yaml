@@ -53,11 +53,11 @@ jobs:
       ############ LINUX ############
       - name: Install Snapcraft (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
-        run: sudo pack install snapcraft --classic
+        run: sudo snap install snapcraft --classic
       
       - name: Install Multipass (Ubuntu) # for arm build
         if: startsWith(matrix.os, 'ubuntu')
-        run: sudo pack install multipass
+        run: sudo snap install multipass
 
       - name: Validate Snapcraft credentials on Linux release
         if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
