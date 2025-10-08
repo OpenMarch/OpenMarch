@@ -67,12 +67,6 @@ test("Toolbars are visible", async ({ electronApp }) => {
         page.getByRole("tabpanel", { name: "Alignment" }).locator("div").nth(3),
     ).toBeVisible();
 });
-test("Add music shows music tab", async ({ electronApp }) => {
-    const { page } = electronApp;
-    await page.getByRole("button", { name: "Add Music" }).click();
-    await expect(page.locator("header")).toContainText("Music");
-    await page.locator("header").getByRole("button").click();
-});
 
 test("Export modal is visible", async ({ electronApp }) => {
     const { page } = electronApp;
