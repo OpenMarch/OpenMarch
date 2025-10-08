@@ -8,65 +8,66 @@ export async function handleSqlProxyWithDbSqlJs(
     sql: string,
     params: any[],
     method: "all" | "run" | "get" | "values",
-) {
+): Promise<{ rows: any[] }> {
     try {
-        // SQL.js uses exec() method for running queries
-        let rows: any;
-        let result: any;
+        // prevent multiple queries
+        const sqlBody = sql.replace(/;/g, "");
+
+        // Prepare the statement for proper parameter binding
+        const stmt = db.prepare(sqlBody);
 
         switch (method) {
-            case "all":
-                result = db.exec(sql, params);
-                if (result.length > 0 && result[0]) {
-                    // Convert array of arrays to array of objects using column names
-                    const columns = result[0].columns;
-                    const values = result[0].values || [];
-                    rows = values.map((row: any[]) => {
-                        const obj: { [key: string]: any } = {};
-                        columns.forEach((col: string, index: number) => {
-                            obj[col] = row[index];
-                        });
-                        return obj;
-                    });
-                    return {
-                        rows: rows,
-                    };
+            case "all": {
+                // Bind parameters and collect all rows
+                stmt.bind(params);
+                const allRows: any[][] = [];
+                while (stmt.step()) {
+                    const row = stmt.get();
+                    allRows.push(row);
                 }
-                return { rows: [] };
-            case "get":
-                result = db.exec(sql, params);
-                if (
-                    result.length > 0 &&
-                    result[0] &&
-                    result[0].values &&
-                    result[0].values.length > 0
-                ) {
-                    // Convert array to object using column names
-                    const columns = result[0].columns;
-                    const values = result[0].values[0];
-                    rows = {};
-                    columns.forEach((col: string, index: number) => {
-                        rows[col] = values[index];
-                    });
-                    return {
-                        rows: rows,
-                    };
+                stmt.free();
+
+                return {
+                    rows: allRows,
+                };
+            }
+            case "get": {
+                // Bind parameters and get single row
+                stmt.bind(params);
+                let singleRow: any[] | undefined;
+                if (stmt.step()) {
+                    singleRow = stmt.get();
                 }
-                return { rows: undefined };
-            case "run":
-                result = db.exec(sql, params);
+                stmt.free();
+
+                return {
+                    rows: singleRow || [],
+                };
+            }
+            case "run": {
+                // Bind parameters and execute
+                stmt.bind(params);
+                stmt.step();
+                stmt.free();
+
                 return {
                     rows: [], // no data returned for run
                 };
-            case "values":
-                result = db.exec(sql, params);
-                if (result.length > 0 && result[0]) {
-                    rows = result[0].values || [];
-                    return {
-                        rows: rows,
-                    };
+            }
+            case "values": {
+                // Bind parameters and collect all rows (same as all for SQL.js)
+                stmt.bind(params);
+                const allRows: any[][] = [];
+                while (stmt.step()) {
+                    const row = stmt.get();
+                    allRows.push(row);
                 }
-                return { rows: [] };
+                stmt.free();
+
+                return {
+                    rows: allRows,
+                };
+            }
             default:
                 throw new Error(`Unknown method: ${method}`);
         }
