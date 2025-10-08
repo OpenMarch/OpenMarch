@@ -22,7 +22,7 @@
         "postinstall": "electron-builder install-app-deps",
         "build": "pnpm run apply-styles && tsc && vite build",
         "build:electron": "pnpm run apply-styles && tsc && vite build && electron-builder --dir",
-        "clean": "rm -rf node_modules dist-electron release",
+        "clean": "rimraf node_modules dist-electron release",
         "apply-styles": "node src/styles/apply-tailwind-vars.cjs",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
