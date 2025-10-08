@@ -20,7 +20,7 @@ export default function EditableBeatAudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { isPlaying } = useIsPlaying()!;
-    const { beats, measures, fetchTimingObjects } = useTimingObjects();
+    const { beats, measures, utility, fetchTimingObjects } = useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -101,6 +101,7 @@ export default function EditableBeatAudioPlayer() {
                 beats,
                 measures,
                 fetchTimingObjects,
+                utility?.default_beat_duration ?? 0.5,
             );
             timingMarkersPlugin.current = editableMarkersPlugin;
 
