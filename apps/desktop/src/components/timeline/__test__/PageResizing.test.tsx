@@ -170,6 +170,7 @@ describe.todo("PageTimeline Resizing", () => {
         vi.mocked(useSelectedPage).mockReturnValue({
             selectedPage: mockPages[1],
             setSelectedPage: vi.fn(),
+            setPageToSelect: vi.fn(),
         });
 
         // Mock the useSelectedAudioFile hook

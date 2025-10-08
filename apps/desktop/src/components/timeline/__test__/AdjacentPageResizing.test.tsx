@@ -164,6 +164,7 @@ describe.todo("Adjacent Page Resizing", () => {
         vi.mocked(useSelectedPage).mockReturnValue({
             selectedPage: mockPages[1],
             setSelectedPage: vi.fn(),
+            setPageToSelect: vi.fn(),
         });
 
         // Mock the useSelectedAudioFile hook
