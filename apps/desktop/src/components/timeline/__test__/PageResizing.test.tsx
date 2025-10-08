@@ -27,6 +27,7 @@ import { TooltipProvider } from "@radix-ui/react-tooltip";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { faker } from "@faker-js/faker";
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
     <TolgeeProvider
@@ -147,6 +148,12 @@ describe.todo("PageTimeline Resizing", () => {
             pages: mockPages,
             beats: mockBeats,
             measures: [],
+            utility: {
+                last_page_counts: 0,
+                default_beat_duration: 0.5,
+                id: 1,
+                updated_at: faker.date.recent().toISOString(),
+            },
             fetchTimingObjects: vi.fn().mockResolvedValue(undefined),
             isLoading: false,
             hasError: false,

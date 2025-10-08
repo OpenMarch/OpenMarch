@@ -19,6 +19,7 @@ export type TimingObjects = {
     beats: Beat[];
     measures: Measure[];
     pages: Page[];
+    utility: DatabaseUtility | undefined;
     fetchTimingObjects: () => void;
     isLoading: boolean;
     hasError: boolean;
@@ -99,6 +100,7 @@ export const _combineTimingObjects = (
             pages: [],
             measures: [],
             beats: [],
+            utility: undefined,
             fetchTimingObjects,
             isLoading: true,
             hasError: false,
@@ -111,6 +113,7 @@ export const _combineTimingObjects = (
             pages: [],
             measures: [],
             beats: [],
+            utility: undefined,
             fetchTimingObjects,
             isLoading: false,
             hasError: true,
@@ -123,6 +126,7 @@ export const _combineTimingObjects = (
             pages: [],
             measures: [],
             beats: [],
+            utility: undefined,
             fetchTimingObjects,
             isLoading: false,
             hasError: false,
@@ -153,6 +157,7 @@ export const _combineTimingObjects = (
         pages: createdPages,
         measures: createdMeasures,
         beats: createdBeats,
+        utility,
         fetchTimingObjects,
         isLoading: false,
         hasError: false,

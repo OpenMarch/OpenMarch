@@ -10,7 +10,7 @@ const expectedBeats = [
     ...Array.from({ length: 96 }, (_, i) => ({
         id: i + 1,
         duration: 0.5,
-        position: i,
+        position: i + 1,
         include_in_measure: 1,
         notes: null,
     })),

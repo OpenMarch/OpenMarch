@@ -87,6 +87,7 @@ describe("EditableTimingMarkersPlugin", () => {
             mockBeats,
             mockMeasures,
             mockFetchTimingObjects,
+            0.5, // defaultDuration in seconds
         );
     });
 

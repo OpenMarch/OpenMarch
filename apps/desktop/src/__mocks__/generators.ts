@@ -288,6 +288,12 @@ export const generateTimingObjects = ({
         beats: processedBeats,
         measures: processedMeasures,
         pages: processedPages,
+        utility: {
+            last_page_counts: 0,
+            default_beat_duration: 0.5,
+            id: 1,
+            updated_at: faker.date.recent().toISOString(),
+        },
         fetchTimingObjects: () => {},
         isLoading: false,
         hasError: false,

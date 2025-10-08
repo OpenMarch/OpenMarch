@@ -45,7 +45,8 @@ export default function EditableAudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     // We'll use beats later for creating regions based on timing objects
-    const { beats, pages, measures, fetchTimingObjects } = useTimingObjects();
+    const { beats, pages, measures, utility, fetchTimingObjects } =
+        useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
@@ -127,6 +128,7 @@ export default function EditableAudioPlayer() {
                 beats,
                 measures,
                 fetchTimingObjects,
+                utility?.default_beat_duration ?? 0.5,
             );
             timingMarkersPlugin.current = timelineMarkersPlugin;
             // Create regions when the audio is decoded

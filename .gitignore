@@ -57,3 +57,4 @@ packages/metronome/
 .env
 
 *.tmp.dots
+*.tmp.dots-journal

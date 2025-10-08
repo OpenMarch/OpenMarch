@@ -130,8 +130,9 @@ export class EditableTimingMarkersPlugin extends TimingMarkersPlugin {
         beats: Beat[],
         measures: Measure[],
         fetchTimingObjects: () => void,
+        defaultDuration?: number,
     ) {
-        super(wsRegions, beats, measures, 120);
+        super(wsRegions, beats, measures, defaultDuration);
         this.fetchTimingObjects = fetchTimingObjects;
     }
 

@@ -575,15 +575,27 @@ const _fillBeatsOfCurrentLastPage = async ({
 }) => {
     let lastBeatOfPage = null;
     if (lastPage.id !== FIRST_PAGE_ID) {
-        const getLastBeatOfPage = async (startBeatId: number) =>
-            await tx
+        const getLastBeatOfPage = async (startBeatId: number) => {
+            // First get the position of the start beat
+            const startBeat = await tx
+                .select({ position: schema.beats.position })
+                .from(schema.beats)
+                .where(eq(schema.beats.id, startBeatId))
+                .get();
+
+            if (!startBeat) {
+                throw new Error(`Start beat with ID ${startBeatId} not found`);
+            }
+
+            return await tx
                 .select()
                 .from(schema.beats)
-                .where(gt(schema.beats.position, startBeatId))
+                .where(gt(schema.beats.position, startBeat.position))
                 .orderBy(asc(schema.beats.position))
                 .limit(1)
                 .offset(currentLastPageCounts - 2)
                 .get();
+        };
         // Check if the last page is already filled
         lastBeatOfPage = await getLastBeatOfPage(lastPage.start_beat_id);
         if (!lastBeatOfPage) {
@@ -705,7 +717,7 @@ export const _fillAndGetBeatToStartOn = async ({
     const beatToStartNewLastPageOn = await tx
         .select()
         .from(schema.beats)
-        .where(gt(schema.beats.position, lastBeatOfCurrentLastPage.id))
+        .where(gt(schema.beats.position, lastBeatOfCurrentLastPage.position))
         .orderBy(asc(schema.beats.position))
         .limit(1)
         .get();
