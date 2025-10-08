@@ -52,7 +52,7 @@ jobs:
 
       ############ LINUX ############
       - name: Install Snapcraft (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+        if: startsWith(matrix.os, 'ubuntu')
         run: sudo snap install snapcraft --classic
 
       - name: Validate Snapcraft credentials on Linux release
