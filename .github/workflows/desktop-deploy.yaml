@@ -54,10 +54,6 @@ jobs:
       - name: Install Snapcraft (Ubuntu)
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo snap install snapcraft --classic
-      
-      - name: Install Multipass (Ubuntu) # for arm build
-        if: startsWith(matrix.os, 'ubuntu')
-        run: sudo snap install multipass
 
       - name: Validate Snapcraft credentials on Linux release
         if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
@@ -119,3 +115,4 @@ jobs:
           # For releasing
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          SNAPCRAFT_BUILD_ENVIRONMENT: lxd
