@@ -55,6 +55,10 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo snap install snapcraft --classic
 
+      - name: Install Snapcraft (Ubuntu) 
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo snap install lxd # for arm build
+
       - name: Validate Snapcraft credentials on Linux release
         if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
         run: snapcraft whoami -q
