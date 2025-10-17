@@ -145,6 +145,16 @@ export class DrizzleMigrationService {
             ),
         });
 
+        // Initialize workspace settings with default values
+        await db.insert(schema.workspace_settings).values({
+            id: 1,
+            json_data: JSON.stringify({
+                defaultBeatsPerMeasure: 4,
+                defaultTempo: 120,
+                defaultNewPageCounts: 16,
+            }),
+        });
+
         // await createAllUndoTriggers(db);
         await createAllTriggers(db);
     }

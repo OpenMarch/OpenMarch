@@ -321,3 +321,13 @@ export const utility = sqliteTable(
         ),
     ],
 );
+
+export const workspace_settings = sqliteTable(
+    "workspace_settings",
+    {
+        id: integer().primaryKey(),
+        json_data: text().notNull(),
+        ...timestamps,
+    },
+    (_table) => [check("workspace_settings_id_check", sql`id = 1`)],
+);
