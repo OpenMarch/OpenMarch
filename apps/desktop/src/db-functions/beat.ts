@@ -129,6 +129,21 @@ export async function getBeat({
     return result ? realDatabaseBeatToDatabaseBeat(result) : undefined;
 }
 
+export async function getLastBeat({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<DatabaseBeat | null> {
+    return await getFirstOrLastBeat({ db, isFirstBeat: false });
+}
+export async function getFirstBeat({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<DatabaseBeat | null> {
+    return await getFirstOrLastBeat({ db, isFirstBeat: true });
+}
+
 /**
  * Gets the first or last beat from the database.
  *
@@ -310,11 +325,13 @@ export async function createBeats({
         db,
         "createBeats",
         async (tx) => {
-            return await createBeatsInTransaction({
+            const createdBeats = await createBeatsInTransaction({
                 tx,
                 newBeats,
                 startingPosition,
             });
+            await flattenOrderInTransaction({ tx });
+            return createdBeats;
         },
     );
     return transactionResult;
@@ -367,8 +384,14 @@ export const createBeatsInTransaction = async ({
         .insert(schema.beats)
         .values(realNewBeats)
         .returning();
+    const createdBeatsIds = createdBeats.map((beat) => beat.id);
 
-    return createdBeats.map(realDatabaseBeatToDatabaseBeat);
+    await flattenOrderInTransaction({ tx });
+    const actualCreatedBeats = await tx.query.beats.findMany({
+        where: inArray(schema.beats.id, createdBeatsIds),
+        orderBy: asc(schema.beats.position),
+    });
+    return actualCreatedBeats.map(realDatabaseBeatToDatabaseBeat);
 };
 
 /**

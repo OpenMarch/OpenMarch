@@ -3,11 +3,19 @@ import {
     createBeatsInTransaction,
     DbConnection,
     DbTransaction,
+    getLastBeat,
     ModifiedMarcherPageArgs,
+    realDatabaseBeatToDatabaseBeat,
     transactionWithHistory,
+    updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
+import { WorkspaceSettings } from "@/settings/workspaceSettings";
+import {
+    _createFromTempoGroupInTransaction,
+    tempoGroupFromWorkspaceSettings,
+} from "@/components/music/TempoGroup/TempoGroup";
 
 export const FIRST_PAGE_ID = 0;
 
@@ -401,7 +409,11 @@ const filterOutFirstPage = (pageIds: Set<number>): Set<number> => {
     return pageIds;
 };
 
-export const getLastPage = async ({ tx }: { tx: DbTransaction }) => {
+export const getLastPage = async ({
+    tx,
+}: {
+    tx: DbConnection | DbTransaction;
+}) => {
     return await tx
         .select()
         .from(schema.pages)
@@ -522,9 +534,11 @@ export async function deletePages({
 export const createLastPage = async ({
     db,
     newPageCounts,
+    createNewBeats = false,
 }: {
     db: DbConnection;
     newPageCounts: number;
+    createNewBeats?: boolean;
 }) => {
     const transactionResult = await transactionWithHistory(
         db,
@@ -533,6 +547,7 @@ export const createLastPage = async ({
             return await createLastPageInTransaction({
                 tx,
                 newPageCounts,
+                createNewBeats,
             });
         },
     );
@@ -730,6 +745,28 @@ export const _fillAndGetBeatToStartOn = async ({
     return beatToStartNewLastPageOn;
 };
 
+export const canCreateLastPage = async ({
+    tx,
+    newPageCounts,
+}: {
+    tx: DbConnection | DbTransaction;
+    newPageCounts: number;
+}) => {
+    const lastPage = await getLastPage({ tx });
+    const lastPageCounts = (await tx.query.utility.findFirst())
+        ?.last_page_counts;
+    assert(lastPageCounts != null, "Last page counts not found");
+    assert(lastPage != null, "Last page not found");
+    assert(lastPage.beats != null, "Last page beat not found");
+    const nextBeat = await tx.query.beats.findFirst({
+        where: (table, { gte }) =>
+            gte(table.position, lastPage.beats.position + lastPageCounts),
+        orderBy: (table, { asc }) => asc(table.position),
+        offset: newPageCounts,
+    });
+    return nextBeat != null;
+};
+
 /**
  * Creates a new page at the next available beat after the current last page.
  *
@@ -742,9 +779,11 @@ export const _fillAndGetBeatToStartOn = async ({
 export const createLastPageInTransaction = async ({
     tx,
     newPageCounts,
+    createNewBeats = false,
 }: {
     tx: DbTransaction;
     newPageCounts: number;
+    createNewBeats?: boolean;
 }) => {
     const lastPageCounts = (await tx.query.utility.findFirst())
         ?.last_page_counts;
@@ -782,12 +821,26 @@ export const createLastPageInTransaction = async ({
             start_beat_id: response.beat_id,
         };
     }
-    const nextBeatToStartOn = await _fillAndGetBeatToStartOn({
-        tx,
-        lastPage,
-        currentLastPageCounts: lastPageCounts,
-        newLastPageCounts: newPageCounts,
-    });
+    let nextBeatToStartOn: { id: number };
+    if (createNewBeats) {
+        const nextBeat = await _fillAndGetBeatToStartOn({
+            tx,
+            lastPage,
+            currentLastPageCounts: lastPageCounts,
+            newLastPageCounts: newPageCounts,
+        });
+        if (!nextBeat) throw new Error("Next beat not found");
+        nextBeatToStartOn = nextBeat;
+    } else {
+        const nextBeat = await tx.query.beats.findFirst({
+            where: (table, { gte }) =>
+                gte(table.position, lastPage.start_beat_id),
+            orderBy: (table, { asc }) => asc(table.position),
+            offset: newPageCounts,
+        });
+        if (!nextBeat) throw new Error("Not enough beats to create a new page");
+        nextBeatToStartOn = nextBeat;
+    }
 
     const createdPages = await createPagesInTransaction({
         newPages: [
@@ -804,4 +857,77 @@ export const createLastPageInTransaction = async ({
         lastPageCounts: newPageCounts,
     });
     return createdPages[0];
+};
+/**
+ * Gets the next beat a page should start on.
+ *
+ * This is done by
+ *
+ * 1. getting the last page's start beat
+ * 2. getting the last page's count (from the utility record)
+ * 3. Finding a beat that is offset by the last page's count from the last page's start beat
+ * 4. Returning that beat, or null if no beat is found
+ *
+ * @param db The database connection or transaction
+ * @returns
+ */
+export const getNextBeatToStartPageOn = async (
+    db: DbConnection | DbTransaction,
+) => {
+    const lastPage = await db
+        .select()
+        .from(schema.pages)
+        .leftJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(desc(schema.beats.position))
+        .get();
+    assert(lastPage != null, "No pages found");
+    const lastPageBeat = lastPage.beats;
+    assert(lastPageBeat != null, "Last page beat not found");
+    const utility = await db.query.utility.findFirst();
+    assert(utility != null, "Utility not found");
+    const lastPageCounts = utility.last_page_counts;
+    const nextBeat = await db.query.beats.findFirst({
+        where: (table, { gte }) => gte(table.position, lastPageBeat.position),
+        orderBy: (table, { asc }) => asc(table.position),
+        offset: lastPageCounts,
+    });
+    return nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+};
+
+export const createTempoGroupAndPageFromWorkspaceSettings = async ({
+    db,
+    workspaceSettings,
+}: {
+    db: DbConnection;
+    workspaceSettings: WorkspaceSettings;
+}) => {
+    const tempoGroup = tempoGroupFromWorkspaceSettings(workspaceSettings);
+
+    const result = await transactionWithHistory(
+        db,
+        "createDefaultTempoGroupAndPage",
+        async (tx) => {
+            const lastBeat = await getLastBeat({ db });
+            assert(lastBeat != null, "Last beat not found");
+            await _createFromTempoGroupInTransaction({
+                tx,
+                tempoGroup,
+                endTempo: undefined,
+                startingPosition: lastBeat.position + 1,
+            });
+            const nextBeat = await getNextBeatToStartPageOn(tx);
+            if (!nextBeat) throw new Error("Next beat not found");
+            await createPagesInTransaction({
+                tx,
+                newPages: [{ start_beat: nextBeat.id, is_subset: false }],
+            });
+            await updateUtilityInTransaction({
+                tx,
+                args: {
+                    last_page_counts: workspaceSettings.defaultNewPageCounts,
+                },
+            });
+        },
+    );
+    return result;
 };

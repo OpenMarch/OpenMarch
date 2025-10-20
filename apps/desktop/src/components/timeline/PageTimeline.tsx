@@ -13,13 +13,13 @@ import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
 import * as ToolTip from "@radix-ui/react-tooltip";
 import {
-    createLastPageMutationOptions,
     deletePagesMutationOptions,
     ModifyPagesRequest,
     updatePagesMutationOptions,
 } from "@/hooks/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
+import { useCreateLastPastOnTimeline } from "./PageTimeline.utils";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -76,16 +76,12 @@ export default function PageTimeline() {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
-    const { selectedPage, setSelectedPage, setPageToSelect } =
-        useSelectedPage()!;
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();
     const { pages, beats } = useTimingObjects()!;
     const { mutate: updatePages } = useMutation(
         updatePagesMutationOptions(queryClient),
-    );
-    const { mutate: createLastPage } = useMutation(
-        createLastPageMutationOptions(queryClient),
     );
     const { mutate: deletePages } = useMutation(
         deletePagesMutationOptions(queryClient),
@@ -101,6 +97,8 @@ export default function PageTimeline() {
     const startWidth = useRef(0);
     const availableOffsets = useRef<number[]>([]);
 
+    const { mutate: createDefaultTempoGroupAndPage } =
+        useCreateLastPastOnTimeline();
     const { t } = useTolgee();
 
     // Calculate the width of a page based on its duration
@@ -290,14 +288,6 @@ export default function PageTimeline() {
         if (!nextPage || !currPage) return 0;
         return nextPage.counts + (currPage.counts - currPageDrag || 0);
     }
-
-    const handleCreateLastPage = useCallback(() => {
-        createLastPage(8, {
-            onSuccess: (data) => {
-                setPageToSelect(data);
-            },
-        });
-    }, [createLastPage, setPageToSelect]);
 
     const handleDeletePage = useCallback(
         (page: Page) => {
@@ -509,7 +499,7 @@ export default function PageTimeline() {
             {!isFullscreen && (
                 <button
                     className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
-                    onClick={handleCreateLastPage}
+                    onClick={() => createDefaultTempoGroupAndPage()}
                 >
                     <PlusIcon size={20} />
                 </button>

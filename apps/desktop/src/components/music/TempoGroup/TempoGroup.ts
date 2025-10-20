@@ -10,6 +10,7 @@ import {
     createBeatsInTransaction,
     createMeasuresInTransaction,
     DatabaseBeat,
+    DbTransaction,
     ModifiedBeatArgs,
     NewBeatArgs,
     transactionWithHistory,
@@ -21,6 +22,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { measureKeys } from "@/hooks/queries/useMeasures";
 import { beatKeys } from "@/hooks/queries";
 import { conToastError } from "@/utilities/utils";
+import { WorkspaceSettings } from "@/settings/workspaceSettings";
 
 export type TempoGroup = {
     /**
@@ -450,6 +452,27 @@ export const _createFromTempoGroup = async ({
     endTempo?: number;
     startingPosition?: number;
 }) => {
+    await transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
+        await _createFromTempoGroupInTransaction({
+            tx,
+            tempoGroup,
+            endTempo,
+            startingPosition,
+        });
+    });
+};
+
+export const _createFromTempoGroupInTransaction = async ({
+    tx,
+    tempoGroup,
+    endTempo,
+    startingPosition,
+}: {
+    tx: DbTransaction;
+    tempoGroup: TempoGroup;
+    endTempo?: number;
+    startingPosition?: number;
+}) => {
     const beatsToCreate = newBeatsFromTempoGroup({
         tempo: tempoGroup.tempo,
         numRepeats: tempoGroup.numOfRepeats,
@@ -457,31 +480,30 @@ export const _createFromTempoGroup = async ({
         endTempo,
         strongBeatIndexes: tempoGroup.strongBeatIndexes,
     });
-
-    await transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
-        const createBeatsResponse = await createBeatsInTransaction({
-            tx,
-            newBeats: beatsToCreate,
-            startingPosition,
-        });
-
-        const databaseBeats = createBeatsResponse;
-        const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
-            (a, b) => a.position - b.position,
-        );
-
-        const newMeasures = getNewMeasuresFromCreatedBeats({
-            createdBeats,
-            numOfRepeats: tempoGroup.numOfRepeats,
-            bigBeatsPerMeasure: tempoGroup.bigBeatsPerMeasure,
-            rehearsalMark: tempoGroup.name,
-        });
-
-        await createMeasuresInTransaction({
-            tx,
-            newItems: newMeasures,
-        });
+    const createBeatsResponse = await createBeatsInTransaction({
+        tx,
+        newBeats: beatsToCreate,
+        startingPosition,
     });
+
+    const databaseBeats = createBeatsResponse;
+    const createdBeats = convertDatabaseBeatsToBeats(databaseBeats).sort(
+        (a, b) => a.position - b.position,
+    );
+
+    const newMeasures = getNewMeasuresFromCreatedBeats({
+        createdBeats,
+        numOfRepeats: tempoGroup.numOfRepeats,
+        bigBeatsPerMeasure: tempoGroup.bigBeatsPerMeasure,
+        rehearsalMark: tempoGroup.name,
+    });
+
+    const createdMeasures = await createMeasuresInTransaction({
+        tx,
+        newItems: newMeasures,
+    });
+
+    return { createdBeats, createdMeasures };
 };
 
 export const useUpdateTempoGroup = () => {
@@ -637,4 +659,28 @@ export const patternStringToLongBeatIndexes = (pattern: string) => {
         .map((val, index) => (val === "3" ? index : undefined))
         .filter((index): index is number => index !== undefined)
         .sort((a, b) => a - b);
+};
+
+/**
+ * Creates a new tempo group from the workspace settings.
+ * @param workspaceSettings - The workspace settings to create the tempo group from.
+ * @param name - The name of the tempo group.
+ * @returns The new tempo group.
+ */
+export const tempoGroupFromWorkspaceSettings = (
+    workspaceSettings: Pick<
+        WorkspaceSettings,
+        "defaultTempo" | "defaultBeatsPerMeasure" | "defaultNewPageCounts"
+    >,
+    name = "",
+): TempoGroup => {
+    return {
+        name,
+        tempo: workspaceSettings.defaultTempo,
+        bigBeatsPerMeasure: workspaceSettings.defaultBeatsPerMeasure,
+        numOfRepeats: Math.ceil(
+            workspaceSettings.defaultNewPageCounts /
+                workspaceSettings.defaultBeatsPerMeasure,
+        ),
+    };
 };

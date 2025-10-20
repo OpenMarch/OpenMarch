@@ -206,7 +206,11 @@ describeDbTests("Database connection", (it) => {
                             min: 1,
                             max: 128,
                         });
-                        await createLastPage({ db, newPageCounts: pageCounts });
+                        await createLastPage({
+                            db,
+                            newPageCounts: pageCounts,
+                            createNewBeats: true,
+                        });
                     }
 
                     const pagesNoJoin = await db.select().from(schema.pages);
@@ -261,6 +265,7 @@ describeDbTests("Database connection", (it) => {
                         await createLastPage({
                             db,
                             newPageCounts: pageCounts,
+                            createNewBeats: true,
                         });
                     }
 

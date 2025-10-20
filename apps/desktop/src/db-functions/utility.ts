@@ -28,6 +28,33 @@ export async function getUtility({
 }
 
 /**
+ * Updates the utility record within a transaction.
+ * Since there's only ever one utility record, this updates the record with id = 0.
+ * This function should be called from within an existing transaction.
+ */
+export async function updateUtilityInTransaction({
+    tx,
+    args,
+}: {
+    tx: DbTransaction;
+    args: ModifiedUtilityArgs;
+}): Promise<DatabaseUtility> {
+    await tx
+        .update(schema.utility)
+        .set({
+            ...args,
+            updated_at: new Date().toISOString(),
+        })
+        .where(eq(schema.utility.id, 0));
+
+    const updatedUtility = await tx.query.utility.findFirst();
+    if (!updatedUtility) {
+        throw new Error("Utility record not found after update");
+    }
+    return updatedUtility;
+}
+
+/**
  * Updates the utility record in the database.
  * Since there's only ever one utility record, this updates the record with id = 0.
  */
@@ -45,19 +72,10 @@ export async function updateUtility({
         db,
         "updateUtility",
         async (tx: DbTransaction) => {
-            await tx
-                .update(schema.utility)
-                .set({
-                    ...args,
-                    updated_at: new Date().toISOString(),
-                })
-                .where(eq(schema.utility.id, 0));
-
-            const updatedUtility = await tx.query.utility.findFirst();
-            if (!updatedUtility) {
-                throw new Error("Utility record not found after update");
-            }
-            return updatedUtility;
+            return await updateUtilityInTransaction({
+                tx,
+                args,
+            });
         },
     );
 }
