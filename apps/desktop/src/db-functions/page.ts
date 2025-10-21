@@ -1,6 +1,7 @@
-import { eq, gt, lt, asc, desc, inArray } from "drizzle-orm";
+import { eq, gt, lt, asc, desc, inArray, count } from "drizzle-orm";
 import {
     createBeatsInTransaction,
+    DatabaseBeat,
     DbConnection,
     DbTransaction,
     getLastBeat,
@@ -904,25 +905,44 @@ export const createLastPageInTransaction = async ({
  */
 export const getNextBeatToStartPageOn = async (
     db: DbConnection | DbTransaction,
-) => {
+): Promise<DatabaseBeat | null> => {
+    const pagesCount = await db
+        .select({
+            count: count(),
+        })
+        .from(schema.pages)
+        .get();
+    assert(pagesCount != null && pagesCount.count > 0, "No pages found");
+
+    let output: DatabaseBeat | null;
     const lastPage = await db
         .select()
         .from(schema.pages)
         .leftJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
         .orderBy(desc(schema.beats.position))
         .get();
-    assert(lastPage != null, "No pages found");
+    assert(lastPage != null, "Last page not found");
     const lastPageBeat = lastPage.beats;
     assert(lastPageBeat != null, "Last page beat not found");
-    const utility = await db.query.utility.findFirst();
-    assert(utility != null, "Utility not found");
-    const lastPageCounts = utility.last_page_counts;
-    const nextBeat = await db.query.beats.findFirst({
-        where: (table, { gte }) => gte(table.position, lastPageBeat.position),
-        orderBy: (table, { asc }) => asc(table.position),
-        offset: lastPageCounts,
-    });
-    return nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+    if (pagesCount.count === 1) {
+        const nextBeat = await db.query.beats.findFirst({
+            where: gt(schema.beats.position, lastPageBeat.position),
+            orderBy: (table, { asc }) => asc(table.position),
+        });
+        output = nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+    } else {
+        const utility = await db.query.utility.findFirst();
+        assert(utility != null, "Utility not found");
+        const lastPageCounts = utility.last_page_counts;
+        const nextBeat = await db.query.beats.findFirst({
+            where: (table, { gte }) =>
+                gte(table.position, lastPageBeat.position),
+            orderBy: (table, { asc }) => asc(table.position),
+            offset: lastPageCounts,
+        });
+        return nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+    }
+    return output;
 };
 
 export const createTempoGroupAndPageFromWorkspaceSettings = async ({

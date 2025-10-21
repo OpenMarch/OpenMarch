@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { getAvailableOffsets } from "../PageTimeline";
 import Beat from "@/global/classes/Beat";
 import Page from "@/global/classes/Page";
+import { getAvailableOffsets } from "../PageTimeline.utils";
 
 describe("getAvailableOffsets", () => {
     it("should return correct offsets for a single page with no next page", () => {

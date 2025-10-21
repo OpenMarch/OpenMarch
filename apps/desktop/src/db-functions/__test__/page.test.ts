@@ -2611,12 +2611,12 @@ describeDbTests("pages", (it) => {
             expect(result).toBeNull();
         });
 
-        it("should return the next beat when there is just one and the first page", async ({
+        it("should return beat ID 1 (position 1) when there is just one and the first page", async ({
             db,
         }) => {
             const utility = await db.query.utility.findFirst()!;
             expect(utility).toBeTruthy();
-            const createdBeats = await createBeats({
+            await createBeats({
                 db,
                 newBeats: Array.from({ length: utility!.last_page_counts }).map(
                     () => ({ duration: 1, include_in_measure: true }),
@@ -2624,7 +2624,8 @@ describeDbTests("pages", (it) => {
             });
             const result = await getNextBeatToStartPageOn(db);
             expect(result).not.toBeNull();
-            expect(result).toMatchObject(createdBeats[createdBeats.length - 1]);
+            expect(result!.id).toBe(1);
+            expect(result!.position).toBe(1);
         });
     });
     describe("createTempoGroupAndPageFromWorkspaceSettings", () => {
@@ -2669,7 +2670,6 @@ describeDbTests("pages", (it) => {
                 const pagesAfter = await getPages({ db });
                 const beatsAfter = await getBeats({ db });
                 const measuresAfter = await getMeasures({ db });
-
                 expect(
                     pagesAfter,
                     "Expect there to be one more page",
@@ -2689,6 +2689,10 @@ describeDbTests("pages", (it) => {
                     beatsAfter,
                     "Expect there to be the expected number of beats",
                 ).toHaveLength(beatsBefore.length + newBeatsExpectedNumber);
+
+                // These should always be true
+                expect(pagesAfter[0].start_beat).toBe(0);
+                expect(pagesAfter[1].start_beat).toBe(1);
             });
         });
         it("Create with existing pages", async ({ db }) => {
@@ -2766,6 +2770,10 @@ describeDbTests("pages", (it) => {
             ).toHaveLength(
                 beforeBeatsNewArgs.length + newBeatsExpectedNumber + 1, // + 1 for the first beat
             );
+
+            // These should always be true
+            expect(pagesAfter[0].start_beat).toBe(0);
+            expect(pagesAfter[1].start_beat).toBe(1);
 
             // Assert the next page has the correct start beat
             const expectedBeat = await db.query.beats.findFirst({

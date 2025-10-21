@@ -6,7 +6,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import Page, { updatePageCountRequest } from "@/global/classes/Page";
 import clsx from "clsx";
-import Beat, { durationToBeats } from "@/global/classes/Beat";
+import { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { Button, Switch, TooltipClassName } from "@openmarch/ui";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -19,57 +19,10 @@ import {
 } from "@/hooks/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import { useCreateLastPageOnTimeline } from "./PageTimeline.utils";
-
-export const getAvailableOffsets = ({
-    currentPage,
-    nextPage,
-    allBeats,
-}: {
-    currentPage: Page;
-    nextPage: Page | null;
-    allBeats: Beat[];
-}): number[] => {
-    if (!allBeats.length) return [];
-    const offsets: number[] = [];
-
-    // Get the current page's total duration
-    const currentPageDuration = currentPage.beats.reduce(
-        (acc, beat) => acc + beat.duration,
-        0,
-    );
-
-    // Add all possible negative offsets from the current page
-    let runningTime = -currentPageDuration + currentPage.beats[0].duration;
-    for (let i = 1; i < currentPage.beats.length; i++) {
-        offsets.push(runningTime);
-        runningTime += currentPage.beats[i].duration;
-    }
-
-    // Add 0 (current position)
-    offsets.push(0);
-
-    // If there's a next page, add all possible positive offsets
-    if (nextPage) {
-        runningTime = 0;
-        for (let i = 0; i < nextPage.beats.length - 1; i++) {
-            runningTime += nextPage.beats[i].duration;
-            offsets.push(runningTime);
-        }
-    } else {
-        // If there's no next page, use all of the following beats
-        runningTime = 0;
-        const lastBeat = currentPage.beats[currentPage.beats.length - 1];
-        for (const beat of allBeats) {
-            if (beat.position <= lastBeat.position) continue;
-            runningTime += beat.duration;
-            offsets.push(runningTime);
-        }
-    }
-
-    // Remove -0 if it exists
-    return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
-};
+import {
+    getAvailableOffsets,
+    useCreateLastPageOnTimeline,
+} from "./PageTimeline.utils";
 
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
