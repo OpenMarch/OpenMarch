@@ -17,7 +17,7 @@ import { invalidatePageQueries, measureKeys } from "@/hooks/queries";
  *
  * If there are enough beats to create a new page, create a new page at the next available beat.
  */
-export const useCreateLastPastOnTimeline = () => {
+export const useCreateLastPageOnTimeline = () => {
     const queryClient = useQueryClient();
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),

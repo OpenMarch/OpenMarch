@@ -19,7 +19,7 @@ import {
 } from "@/hooks/queries";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import { useCreateLastPastOnTimeline } from "./PageTimeline.utils";
+import { useCreateLastPageOnTimeline } from "./PageTimeline.utils";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -98,7 +98,7 @@ export default function PageTimeline() {
     const availableOffsets = useRef<number[]>([]);
 
     const { mutate: createDefaultTempoGroupAndPage } =
-        useCreateLastPastOnTimeline();
+        useCreateLastPageOnTimeline();
     const { t } = useTolgee();
 
     // Calculate the width of a page based on its duration
