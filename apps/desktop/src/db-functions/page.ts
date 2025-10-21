@@ -768,6 +768,49 @@ export const canCreateLastPage = async ({
 };
 
 /**
+ * Helper function to determine the next beat to start a new page on.
+ */
+const _getNextBeatToStartOn = async ({
+    tx,
+    lastPage,
+    lastPageCounts,
+    newPageCounts,
+    createNewBeats,
+}: {
+    tx: DbTransaction;
+    lastPage: { id: number; start_beat_id: number };
+    lastPageCounts: number;
+    newPageCounts: number;
+    createNewBeats: boolean;
+}): Promise<{ id: number }> => {
+    if (createNewBeats) {
+        const nextBeat = await _fillAndGetBeatToStartOn({
+            tx,
+            lastPage,
+            currentLastPageCounts: lastPageCounts,
+            newLastPageCounts: newPageCounts,
+        });
+        if (!nextBeat) throw new Error("Next beat not found");
+        return nextBeat;
+    } else {
+        // First get the beat object from the beat ID to access its position
+        const lastPageBeat = await tx.query.beats.findFirst({
+            where: eq(schema.beats.id, lastPage.start_beat_id),
+        });
+        if (!lastPageBeat) throw new Error("Last page beat not found");
+
+        const nextBeat = await tx.query.beats.findFirst({
+            where: (table, { gte }) =>
+                gte(table.position, lastPageBeat.position),
+            orderBy: (table, { asc }) => asc(table.position),
+            offset: newPageCounts,
+        });
+        if (!nextBeat) throw new Error("Not enough beats to create a new page");
+        return nextBeat;
+    }
+};
+
+/**
  * Creates a new page at the next available beat after the current last page.
  *
  * Same as createLastPage, but not wrapped in a history transaction. Only use this inside of a transactionWithHistory.
@@ -821,26 +864,14 @@ export const createLastPageInTransaction = async ({
             start_beat_id: response.beat_id,
         };
     }
-    let nextBeatToStartOn: { id: number };
-    if (createNewBeats) {
-        const nextBeat = await _fillAndGetBeatToStartOn({
-            tx,
-            lastPage,
-            currentLastPageCounts: lastPageCounts,
-            newLastPageCounts: newPageCounts,
-        });
-        if (!nextBeat) throw new Error("Next beat not found");
-        nextBeatToStartOn = nextBeat;
-    } else {
-        const nextBeat = await tx.query.beats.findFirst({
-            where: (table, { gte }) =>
-                gte(table.position, lastPage.start_beat_id),
-            orderBy: (table, { asc }) => asc(table.position),
-            offset: newPageCounts,
-        });
-        if (!nextBeat) throw new Error("Not enough beats to create a new page");
-        nextBeatToStartOn = nextBeat;
-    }
+
+    const nextBeatToStartOn = await _getNextBeatToStartOn({
+        tx,
+        lastPage,
+        lastPageCounts,
+        newPageCounts,
+        createNewBeats,
+    });
 
     const createdPages = await createPagesInTransaction({
         newPages: [
