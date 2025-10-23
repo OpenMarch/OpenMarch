@@ -26,7 +26,9 @@ export const getAvailableOffsets = ({
     const offsets: number[] = [];
 
     // Get the current page's total duration
-    const currentPageDuration = currentPage.duration;
+    const currentPageDuration =
+        currentPage.duration ??
+        currentPage.beats.reduce((acc, beat) => acc + beat.duration, 0);
 
     // Add all possible negative offsets from the current page
     let runningTime = -currentPageDuration + currentPage.beats[0].duration;
@@ -57,7 +59,11 @@ export const getAvailableOffsets = ({
     }
 
     // Remove -0 if it exists
-    return offsets.map((offset) => (Object.is(offset, -0) ? 0 : offset));
+    const output = offsets.map((offset) =>
+        Object.is(offset, -0) ? 0 : offset,
+    );
+    const filteredOutput = output.filter((offset) => !isNaN(offset));
+    return filteredOutput;
 };
 /**
  * If there are not enough beats to create a new page, use the WorkspaceSettings, create a new tempo group
