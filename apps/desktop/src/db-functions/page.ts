@@ -929,7 +929,10 @@ export const getNextBeatToStartPageOn = async (
             where: gt(schema.beats.position, lastPageBeat.position),
             orderBy: (table, { asc }) => asc(table.position),
         });
-        output = nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+        output =
+            nextBeat?.id != null
+                ? realDatabaseBeatToDatabaseBeat(nextBeat)
+                : null;
     } else {
         const utility = await db.query.utility.findFirst();
         assert(utility != null, "Utility not found");
@@ -940,7 +943,9 @@ export const getNextBeatToStartPageOn = async (
             orderBy: (table, { asc }) => asc(table.position),
             offset: lastPageCounts,
         });
-        return nextBeat ? realDatabaseBeatToDatabaseBeat(nextBeat) : null;
+        return nextBeat?.id != null
+            ? realDatabaseBeatToDatabaseBeat(nextBeat)
+            : null;
     }
     return output;
 };

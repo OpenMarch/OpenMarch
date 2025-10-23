@@ -2602,7 +2602,7 @@ describeDbTests("pages", (it) => {
         });
     });
 
-    describe("getNextBeatToStartPageOne", () => {
+    describe("getNextBeatToStartPageOn", () => {
         it("should return null if no next beat exists", async ({ db }) => {
             const utility = await db.query.utility.findFirst()!;
             expect(utility).toBeTruthy();
