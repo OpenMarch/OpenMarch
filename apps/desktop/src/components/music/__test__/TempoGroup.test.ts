@@ -5,6 +5,7 @@ import {
     TempoGroupsFromMeasures,
     getNewMeasuresFromCreatedBeats,
     getLastBeatOfTempoGroup,
+    tempoGroupFromWorkspaceSettings,
 } from "../TempoGroup/TempoGroup";
 import type Measure from "../../../global/classes/Measure";
 import { measureIsMixedMeter } from "../TempoGroup/TempoGroup";
@@ -12,6 +13,8 @@ import type Beat from "../../../global/classes/Beat";
 import { measureIsSameTempo } from "../TempoGroup/TempoGroup";
 import { measureHasOneTempo } from "../TempoGroup/TempoGroup";
 import { NewBeatArgs } from "@/db-functions";
+import { WorkspaceSettings } from "@/settings/workspaceSettings";
+import { fchmod } from "fs";
 
 describe("TempoGroupsFromMeasures", () => {
     // Helper function to create a mock beat
@@ -1602,5 +1605,81 @@ describe("getLastBeatOfTempoGroup", () => {
         const result = getLastBeatOfTempoGroup(tempoGroup);
         expect(result).toBeDefined();
         expect(result).toBe(beats[beats.length - 1]);
+    });
+});
+
+describe("tempoGroupFromWorkspaceSettings", () => {
+    type wsPick = Pick<
+        WorkspaceSettings,
+        "defaultTempo" | "defaultBeatsPerMeasure" | "defaultNewPageCounts"
+    >;
+    describe("Simple cases", () => {
+        it.for([
+            {
+                wsSettings: {
+                    defaultTempo: 120,
+                    defaultBeatsPerMeasure: 4,
+                    defaultNewPageCounts: 16,
+                },
+                expected: {
+                    name: "",
+                    tempo: 120,
+                    bigBeatsPerMeasure: 4,
+                    numOfRepeats: 4,
+                },
+            },
+            {
+                wsSettings: {
+                    defaultTempo: 120,
+                    defaultBeatsPerMeasure: 4,
+                    defaultNewPageCounts: 16,
+                },
+                expected: {
+                    name: "Test",
+                    tempo: 120,
+                    bigBeatsPerMeasure: 4,
+                    numOfRepeats: 4,
+                },
+                name: "Test",
+            },
+            // Case where there are not an exact number of beats per measure
+            {
+                wsSettings: {
+                    defaultTempo: 120,
+                    defaultBeatsPerMeasure: 4,
+                    defaultNewPageCounts: 17,
+                },
+                expected: {
+                    name: "",
+                    tempo: 120,
+                    bigBeatsPerMeasure: 4,
+                    numOfRepeats: 5,
+                },
+                name: "",
+            },
+            {
+                wsSettings: {
+                    defaultTempo: 120,
+                    defaultBeatsPerMeasure: 4,
+                    defaultNewPageCounts: 14,
+                },
+                expected: {
+                    name: "",
+                    tempo: 120,
+                    bigBeatsPerMeasure: 4,
+                    numOfRepeats: 4,
+                },
+                name: "",
+            },
+        ])(
+            "%# - {wsSettings: $wsSettings, name: $name}",
+            ({ wsSettings, expected, name }) => {
+                const result = tempoGroupFromWorkspaceSettings(
+                    wsSettings,
+                    name,
+                );
+                expect(result).toMatchObject(expected);
+            },
+        );
     });
 });

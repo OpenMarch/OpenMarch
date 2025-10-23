@@ -1,4 +1,4 @@
-import { describe, expect } from "vitest";
+import { assert, describe, expect } from "vitest";
 import {
     createPages,
     updatePages,
@@ -9,17 +9,25 @@ import {
     _fillAndGetBeatToStartOn,
     getPages,
     getLastPage,
+    getNextBeatToStartPageOn,
+    createTempoGroupAndPageFromWorkspaceSettings,
+    NewPageArgs,
+    updateLastPageCounts,
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import { inArray, desc, eq, and, gte, lte, asc } from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
+    NewBeatArgs,
     createBeats,
     createBeatsInTransaction,
     getBeats,
 } from "../beat";
 import { faker } from "@faker-js/faker";
+import { WorkspaceSettings } from "@/settings/workspaceSettings";
+import { getMeasures } from "../measures";
+import { DbTransaction } from "../types";
 
 const subsetBooleanToInteger = (page: any) => {
     return { ...page, is_subset: page.is_subset ? 1 : 0 };
@@ -1593,16 +1601,19 @@ describeDbTests("pages", (it) => {
                     const lastPage1 = await createLastPage({
                         db,
                         newPageCounts: 9,
+                        createNewBeats: true,
                     });
                     expect(await getLastPageCounts()).toBe(9);
                     const lastPage2 = await createLastPage({
                         db,
                         newPageCounts: 10,
+                        createNewBeats: true,
                     });
                     expect(await getLastPageCounts()).toBe(10);
                     const lastPage3 = await createLastPage({
                         db,
                         newPageCounts: 23,
+                        createNewBeats: true,
                     });
                     expect(await getLastPageCounts()).toBe(23);
 
@@ -1699,6 +1710,7 @@ describeDbTests("pages", (it) => {
                     await createLastPage({
                         db,
                         newPageCounts,
+                        createNewBeats: true,
                     });
 
                     // assert that the last page was created
@@ -1763,6 +1775,7 @@ describeDbTests("pages", (it) => {
                                 min: 1,
                                 max: 512,
                             }),
+                            createNewBeats: true,
                         });
                         expect(
                             await getPages({ db }),
@@ -1801,6 +1814,7 @@ describeDbTests("pages", (it) => {
                     await createLastPage({
                         db,
                         newPageCounts,
+                        createNewBeats: true,
                     });
 
                     const beatsAfterCreate = await db.query.beats.findMany();
@@ -1849,6 +1863,7 @@ describeDbTests("pages", (it) => {
                     await createLastPage({
                         db,
                         newPageCounts,
+                        createNewBeats: true,
                     });
 
                     const beatsAfterCreate = await db.query.beats.findMany();
@@ -1896,7 +1911,11 @@ describeDbTests("pages", (it) => {
                         db,
                     });
                     expect(await getPages({ db })).toHaveLength(1);
-                    await createLastPage({ db, newPageCounts });
+                    await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
                     expect(await getPages({ db })).toHaveLength(2);
                     expect(await getBeats({ db })).toHaveLength(
                         beatsBeforeDelete.length,
@@ -1935,7 +1954,11 @@ describeDbTests("pages", (it) => {
                     });
                     const pagesAfterDelete = await getPages({ db });
                     expect(pagesAfterDelete).toHaveLength(1 + numPagesToKeep);
-                    await createLastPage({ db, newPageCounts });
+                    await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
                     expect(await getPages({ db })).toHaveLength(
                         1 + numPagesToKeep + 1,
                     );
@@ -1964,7 +1987,11 @@ describeDbTests("pages", (it) => {
                     { db, expectNumberOfChanges, marchers },
                 ) => {
                     await expect(
-                        createLastPage({ db, newPageCounts }),
+                        createLastPage({
+                            db,
+                            newPageCounts,
+                            createNewBeats: true,
+                        }),
                     ).rejects.toThrow();
 
                     await expectNumberOfChanges.test(db, 0);
@@ -2572,6 +2599,196 @@ describeDbTests("pages", (it) => {
                 expect(result!.beats.include_in_measure).toBe(1);
                 expect(result!.beats.notes).toBe("Test beat");
             });
+        });
+    });
+
+    describe("getNextBeatToStartPageOn", () => {
+        it("should return null if no next beat exists", async ({ db }) => {
+            const utility = await db.query.utility.findFirst()!;
+            expect(utility).toBeTruthy();
+            expect(utility!.last_page_counts).toBeGreaterThan(0);
+            const result = await getNextBeatToStartPageOn(db);
+            expect(result).toBeNull();
+        });
+
+        it("should return beat ID 1 (position 1) when there is just one and the first page", async ({
+            db,
+        }) => {
+            const utility = await db.query.utility.findFirst()!;
+            expect(utility).toBeTruthy();
+            await createBeats({
+                db,
+                newBeats: Array.from({ length: utility!.last_page_counts }).map(
+                    () => ({ duration: 1, include_in_measure: true }),
+                ),
+            });
+            const result = await getNextBeatToStartPageOn(db);
+            expect(result).not.toBeNull();
+            expect(result!.id).toBe(1);
+            expect(result!.position).toBe(1);
+        });
+    });
+    describe("createTempoGroupAndPageFromWorkspaceSettings", () => {
+        describe("simple examples with no pages", () => {
+            it.for<{ workspaceSettings: WorkspaceSettings }>([
+                {
+                    workspaceSettings: {
+                        defaultBeatsPerMeasure: 4,
+                        defaultTempo: 120,
+                        defaultNewPageCounts: 16,
+                    },
+                },
+                {
+                    workspaceSettings: {
+                        defaultBeatsPerMeasure: 4,
+                        defaultTempo: 120,
+                        defaultNewPageCounts: 17,
+                    },
+                },
+                {
+                    workspaceSettings: {
+                        defaultBeatsPerMeasure: 4,
+                        defaultTempo: 73.1234643453,
+                        defaultNewPageCounts: 18,
+                    },
+                },
+                {
+                    workspaceSettings: {
+                        defaultBeatsPerMeasure: 3,
+                        defaultTempo: 200,
+                        defaultNewPageCounts: 9,
+                    },
+                },
+            ])("%#", async ({ workspaceSettings }, { db }) => {
+                const pagesBefore = await getPages({ db });
+                const beatsBefore = await getBeats({ db });
+                expect(await getMeasures({ db })).toHaveLength(0);
+                await createTempoGroupAndPageFromWorkspaceSettings({
+                    db,
+                    workspaceSettings,
+                });
+                const pagesAfter = await getPages({ db });
+                const beatsAfter = await getBeats({ db });
+                const measuresAfter = await getMeasures({ db });
+                expect(
+                    pagesAfter,
+                    "Expect there to be one more page",
+                ).toHaveLength(pagesBefore.length + 1);
+                const newMeasuresExpectedNumber = Math.ceil(
+                    workspaceSettings.defaultNewPageCounts /
+                        workspaceSettings.defaultBeatsPerMeasure,
+                );
+                expect(
+                    measuresAfter,
+                    "Expect there to be the expected number of measures",
+                ).toHaveLength(newMeasuresExpectedNumber);
+                const newBeatsExpectedNumber =
+                    newMeasuresExpectedNumber *
+                    workspaceSettings.defaultBeatsPerMeasure;
+                expect(
+                    beatsAfter,
+                    "Expect there to be the expected number of beats",
+                ).toHaveLength(beatsBefore.length + newBeatsExpectedNumber);
+
+                // These should always be true
+                expect(pagesAfter[0].start_beat).toBe(0);
+                expect(pagesAfter[1].start_beat).toBe(1);
+            });
+        });
+        it("Create with existing pages", async ({ db }) => {
+            // Setup existing beats
+            const beforeBeatsNewArgs: NewBeatArgs[] = Array.from({
+                length: 16,
+            }).map(() => ({
+                duration: 1,
+                include_in_measure: true,
+            }));
+            const createdBeats = (
+                await createBeats({
+                    db,
+                    newBeats: beforeBeatsNewArgs,
+                })
+            ).sort((a, b) => a.position - b.position);
+            await updateLastPageCounts({
+                tx: db as DbTransaction,
+                lastPageCounts: 8,
+            });
+            const page1StartBeat = createdBeats[0].id;
+            const page2StartBeat = createdBeats[8].id;
+            const beforePagesNewArgs: NewPageArgs[] = [
+                {
+                    start_beat: page1StartBeat,
+                    is_subset: false,
+                },
+                {
+                    start_beat: page2StartBeat,
+                    is_subset: false,
+                },
+            ];
+            await createPages({
+                db,
+                newPages: beforePagesNewArgs,
+            });
+            const expectedNextPosition =
+                (await db.query.beats.findFirst({
+                    orderBy: desc(schema.beats.position),
+                }))!.position + 1;
+
+            const workspaceSettings: WorkspaceSettings = {
+                defaultBeatsPerMeasure: 3,
+                defaultTempo: 200,
+                defaultNewPageCounts: 12,
+            };
+
+            // Create the tempo group and page
+            await createTempoGroupAndPageFromWorkspaceSettings({
+                db,
+                workspaceSettings,
+            });
+            // Assert the correct number of pages, beats, and measures were created
+            const pagesAfter = await getPages({ db });
+            const beatsAfter = await getBeats({ db });
+            const measuresAfter = await getMeasures({ db });
+
+            expect(pagesAfter, "Expect there to be one more page").toHaveLength(
+                beforePagesNewArgs.length + 1 + 1, // 1 for the first page, 1 for the new page,
+            );
+            const newMeasuresExpectedNumber = Math.ceil(
+                workspaceSettings.defaultNewPageCounts /
+                    workspaceSettings.defaultBeatsPerMeasure,
+            );
+            expect(
+                measuresAfter,
+                "Expect there to be the expected number of measures",
+            ).toHaveLength(newMeasuresExpectedNumber);
+            const newBeatsExpectedNumber =
+                newMeasuresExpectedNumber *
+                workspaceSettings.defaultBeatsPerMeasure;
+            expect(
+                beatsAfter,
+                "Expect there to be the expected number of beats",
+            ).toHaveLength(
+                beforeBeatsNewArgs.length + newBeatsExpectedNumber + 1, // + 1 for the first beat
+            );
+
+            // These should always be true
+            expect(pagesAfter[0].start_beat).toBe(0);
+            expect(pagesAfter[1].start_beat).toBe(1);
+
+            // Assert the next page has the correct start beat
+            const expectedBeat = await db.query.beats.findFirst({
+                where: eq(schema.beats.position, expectedNextPosition),
+            });
+            assert(expectedBeat != null, "Expected beat not found");
+            const allPages = await db.query.pages.findMany({
+                orderBy: asc(schema.pages.id),
+            });
+            // Not the best way to find last page, but should work in this case
+            const lastPage = allPages[allPages.length - 1];
+            expect(
+                lastPage.start_beat,
+                "Expect the last page to have the correct start beat",
+            ).toBe(expectedBeat.id);
         });
     });
 });

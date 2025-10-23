@@ -2,8 +2,6 @@ import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 import { assert } from "@/utilities/utils";
 
-const FAKE_BEAT_NUM = 500;
-
 export class TimingMarkersPlugin {
     protected wsRegions: any;
     protected beats: Beat[];
@@ -51,20 +49,20 @@ export class TimingMarkersPlugin {
                 lastBeatTimestamp = beat.timestamp;
         });
 
-        if (this.defaultDuration) {
-            // Pad the end of the timeline with fake to give the illusion of a full timeline
-            let curFillerTimestamp = lastBeatTimestamp + this.defaultDuration;
-            for (let i = -1; i > FAKE_BEAT_NUM * -1 - 1; i--) {
-                const newRegion = this.wsRegions.addRegion({
-                    id: `beat beat_${i}`,
-                    start: curFillerTimestamp,
-                    drag: false,
-                    resize: false,
-                });
-                this.beatRegions.set(i * -1, newRegion);
-                curFillerTimestamp += this.defaultDuration;
-            }
-        }
+        // if (this.defaultDuration) {
+        //     // Pad the end of the timeline with fake to give the illusion of a full timeline
+        //     let curFillerTimestamp = lastBeatTimestamp + this.defaultDuration;
+        //     for (let i = -1; i > FAKE_BEAT_NUM * -1 - 1; i--) {
+        //         const newRegion = this.wsRegions.addRegion({
+        //             id: `beat beat_${i}`,
+        //             start: curFillerTimestamp,
+        //             drag: false,
+        //             resize: false,
+        //         });
+        //         this.beatRegions.set(i * -1, newRegion);
+        //         curFillerTimestamp += this.defaultDuration;
+        //     }
+        // }
 
         // Measure lines, measure numbers & rehearsal Marks
         this.measures.forEach((measure) => {

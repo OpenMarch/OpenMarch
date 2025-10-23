@@ -42,7 +42,7 @@ export const pageKeys = {
     single: (pageId: number) => [KEY_BASE, "single", pageId] as const,
 };
 
-const invalidateQueries = async (qc: QueryClient) => {
+export const invalidatePageQueries = async (qc: QueryClient) => {
     await qc.invalidateQueries({
         queryKey: beatKeys.all(),
     });
@@ -171,8 +171,8 @@ export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
-        onSuccess: async (_, variables) => {
-            void invalidateQueries(qc);
+        onSuccess: async (_) => {
+            void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(
@@ -189,7 +189,7 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
         mutationFn: (modifiedPages: ModifyPagesRequest) =>
             updatePagesAndLastPageCounts({ db, modifiedPages }),
         onSuccess: async (_, variables) => {
-            void invalidateQueries(qc);
+            void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(
@@ -207,7 +207,7 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
         onSuccess: async (_, variables) => {
             toast.success(tolgee.t("page.deletedSuccessfully"));
             // Invalidate all page queries
-            void invalidateQueries(qc);
+            void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(
@@ -225,7 +225,7 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
             createLastPage({ db, newPageCounts }),
         onSuccess: (_, variables) => {
             // Invalidate all page queries
-            void invalidateQueries(qc);
+            void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(
