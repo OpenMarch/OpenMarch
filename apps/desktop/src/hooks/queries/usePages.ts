@@ -171,7 +171,7 @@ export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
-        onSuccess: async (_, variables) => {
+        onSuccess: async (_) => {
             void invalidatePageQueries(qc);
         },
         onError: (e, variables) => {

@@ -973,7 +973,7 @@ export const createTempoGroupAndPageFromWorkspaceSettings = async ({
             });
             const nextBeat = await getNextBeatToStartPageOn(tx);
             if (!nextBeat) throw new Error("Next beat not found");
-            await createPagesInTransaction({
+            const createdPages = await createPagesInTransaction({
                 tx,
                 newPages: [{ start_beat: nextBeat.id, is_subset: false }],
             });
@@ -983,6 +983,7 @@ export const createTempoGroupAndPageFromWorkspaceSettings = async ({
                     last_page_counts: workspaceSettings.defaultNewPageCounts,
                 },
             });
+            return createdPages[0];
         },
     );
     return result;

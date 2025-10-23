@@ -2,6 +2,7 @@ import {
     canCreateLastPage,
     createLastPage,
     createTempoGroupAndPageFromWorkspaceSettings,
+    DatabasePage,
 } from "@/db-functions";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import { conToastError } from "@/utilities/utils";
@@ -12,6 +13,7 @@ import { db } from "@/global/database/db";
 import { invalidatePageQueries, measureKeys } from "@/hooks/queries";
 import Page from "@/global/classes/Page";
 import Beat from "@/global/classes/Beat";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 
 export const getAvailableOffsets = ({
     currentPage,
@@ -77,8 +79,8 @@ export const useCreateLastPageOnTimeline = () => {
         workspaceSettingsQueryOptions(),
     );
     const tolgee = useTolgee();
-
-    const fn = useCallback(async () => {
+    const { setPageToSelect } = useSelectedPage()!;
+    const fn = useCallback(async (): Promise<DatabasePage> => {
         if (!workspaceSettings) {
             conToastError(
                 tolgee.t("pages.createFailed", {
@@ -91,22 +93,23 @@ export const useCreateLastPageOnTimeline = () => {
             tx: db,
             newPageCounts: workspaceSettings.defaultNewPageCounts,
         });
+        let result: DatabasePage;
         if (canCreate)
-            return await createLastPage({
+            result = await createLastPage({
                 db,
                 newPageCounts: workspaceSettings?.defaultNewPageCounts ?? 0,
             });
         else
-            return await createTempoGroupAndPageFromWorkspaceSettings({
+            result = await createTempoGroupAndPageFromWorkspaceSettings({
                 db,
                 workspaceSettings,
             });
-    }, [tolgee, workspaceSettings]);
+        setPageToSelect({ id: result.id });
+        return result;
+    }, [setPageToSelect, tolgee, workspaceSettings]);
 
     return useMutation({
-        mutationFn: async () => {
-            return await fn();
-        },
+        mutationFn: fn,
         onSuccess: async () => {
             await invalidatePageQueries(queryClient);
             await queryClient.invalidateQueries({
