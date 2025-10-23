@@ -2,7 +2,7 @@ import * as z from "zod";
 
 export const workspaceSettingsSchema = z.object({
     defaultBeatsPerMeasure: z.int().positive().default(4),
-    defaultTempo: z.int().positive().default(120),
+    defaultTempo: z.float32().positive().default(120),
     defaultNewPageCounts: z.int().positive().default(16),
 });
 
