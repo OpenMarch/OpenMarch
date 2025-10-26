@@ -878,7 +878,7 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false,
-                    "default": "'center'"
+                    "default": "'left'"
                 },
                 "origin_y": {
                     "name": "origin_y",
@@ -886,7 +886,7 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false,
-                    "default": "'center'"
+                    "default": "'bottom'"
                 },
                 "notes": {
                     "name": "notes",

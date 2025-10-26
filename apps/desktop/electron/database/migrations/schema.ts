@@ -356,8 +356,8 @@ export const prop_pages = sqliteTable(
         relative_points: text().notNull(),
         /** JSON string of properties for the prop page */
         properties: text().notNull().default("{}"),
-        origin_x: text().notNull().default("center"),
-        origin_y: text().notNull().default("center"),
+        origin_x: text().notNull().default("left"),
+        origin_y: text().notNull().default("bottom"),
         notes: text(),
         ...timestamps,
     },
