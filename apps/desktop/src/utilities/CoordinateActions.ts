@@ -477,3 +477,67 @@ export function moveMarchersXY({
 //     });
 //     return rotated;
 // };
+
+export const getBoundingBoxFromCoordinates = (
+    coordinates: { x: number; y: number }[],
+): { minX: number; maxX: number; minY: number; maxY: number } => {
+    const minX = Math.min(
+        ...coordinates.map((marcherPage) => marcherPage.x as number),
+    );
+    const maxX = Math.max(
+        ...coordinates.map((marcherPage) => marcherPage.x as number),
+    );
+    const minY = Math.min(
+        ...coordinates.map((marcherPage) => marcherPage.y as number),
+    );
+    const maxY = Math.max(
+        ...coordinates.map((marcherPage) => marcherPage.y as number),
+    );
+    return { minX, maxX, minY, maxY };
+};
+
+export const getCenterFromCoordinates = (
+    coordinates: { x: number; y: number }[],
+): { x: number; y: number } => {
+    const minX = Math.min(
+        ...coordinates.map((marcherPage) => marcherPage.x as number),
+    );
+    const maxX = Math.max(
+        ...coordinates.map((marcherPage) => marcherPage.x as number),
+    );
+    const minY = Math.min(
+        ...coordinates.map((marcherPage) => marcherPage.y as number),
+    );
+    const maxY = Math.max(
+        ...coordinates.map((marcherPage) => marcherPage.y as number),
+    );
+    return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
+};
+
+export const flipHorizontal = (
+    marcherPages: MarcherPage[],
+): ModifiedMarcherPageArgs[] => {
+    const center = getCenterFromCoordinates(marcherPages);
+
+    return marcherPages.map((marcherPage) => ({
+        marcher_id: marcherPage.marcher_id,
+        page_id: marcherPage.page_id,
+        x: center.x - (marcherPage.x - center.x),
+        y: marcherPage.y,
+        notes: marcherPage.notes || undefined,
+    }));
+};
+
+export const flipVertical = (
+    marcherPages: MarcherPage[],
+): ModifiedMarcherPageArgs[] => {
+    const center = getCenterFromCoordinates(marcherPages);
+
+    return marcherPages.map((marcherPage) => ({
+        marcher_id: marcherPage.marcher_id,
+        page_id: marcherPage.page_id,
+        x: marcherPage.x,
+        y: center.y - (marcherPage.y - center.y),
+        notes: marcherPage.notes || undefined,
+    }));
+};

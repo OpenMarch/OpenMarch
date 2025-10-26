@@ -23,6 +23,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
+import { FlipHorizontalIcon, FlipVerticalIcon } from "@phosphor-icons/react";
 
 // eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
@@ -41,6 +42,14 @@ function MarcherEditor() {
     const { data: spmsForThisPage } = useQuery(
         shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
     );
+    const editingDisabled = useMemo(() => {
+        return (
+            !marcherPagesLoaded ||
+            Object.values(marcherPages).some(
+                (marcherPage) => marcherPage.isLocked,
+            )
+        );
+    }, [marcherPagesLoaded, marcherPages]);
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -299,16 +308,46 @@ function MarcherEditor() {
                                         <T keyName="inspector.marcher.createLine" />
                                     </RegisteredActionButton>
                                 )}
+                            {/* Flip buttons */}
+                            <div className="flex gap-8">
+                                <RegisteredActionButton
+                                    registeredAction={
+                                        RegisteredActionsObjects.flipHorizontal
+                                    }
+                                    disabled={editingDisabled}
+                                    className={clsx(
+                                        getButtonClassName({
+                                            variant: "secondary",
+                                            size: "compact",
+                                        }),
+                                        "flex flex-1 items-center justify-center",
+                                    )}
+                                >
+                                    <FlipHorizontalIcon
+                                        size={16}
+                                        weight="bold"
+                                    />
+                                </RegisteredActionButton>
+                                <RegisteredActionButton
+                                    registeredAction={
+                                        RegisteredActionsObjects.flipVertical
+                                    }
+                                    disabled={editingDisabled}
+                                    className={clsx(
+                                        getButtonClassName({
+                                            variant: "secondary",
+                                            size: "compact",
+                                        }),
+                                        "flex flex-1 items-center justify-center",
+                                    )}
+                                >
+                                    <FlipVerticalIcon size={16} weight="bold" />
+                                </RegisteredActionButton>
+                            </div>
                             {/* Add rotation controls */}
                             <div className="w-full">
                                 <MarcherRotationInput
-                                    disabled={
-                                        !marcherPagesLoaded ||
-                                        Object.values(marcherPages).some(
-                                            (marcherPage) =>
-                                                marcherPage.isLocked,
-                                        )
-                                    }
+                                    disabled={editingDisabled}
                                 />
                             </div>
                         </InspectorCollapsible>

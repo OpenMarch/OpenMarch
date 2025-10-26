@@ -9,6 +9,8 @@ import {
     DotsThreeOutlineIcon,
     DotsThreeOutlineVerticalIcon,
     CaretDownIcon,
+    FlipHorizontal,
+    FlipVertical,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
@@ -91,6 +93,16 @@ export default function AlignmentTab() {
                     }
                 >
                     <DotsThreeOutlineIcon size={24} />
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.flipHorizontal}
+                >
+                    <FlipHorizontal size={24} />
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.flipVertical}
+                >
+                    <FlipVertical size={24} />
                 </RegisteredActionButton>
             </ToolbarSection>
             <SetMarcherPositionsDropdown />

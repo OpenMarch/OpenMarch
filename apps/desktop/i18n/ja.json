@@ -6,6 +6,8 @@
             "cancelUpdates": "マーチャー への アップデートをキャンセル",
             "distributeHorizontally": "行進者 を 横 に 均等 に 配置する",
             "distributeVertically": "行進者 を 縦 に 均等 に 配置する",
+            "flipHorizontal": "",
+            "flipVertical": "",
             "lockX": "X 軸 をロック",
             "lockXOff": "X 移動を有効にする",
             "lockXOn": "X の動きをロック",

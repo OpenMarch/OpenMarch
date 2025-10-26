@@ -6,6 +6,8 @@
             "cancelUpdates": "Cancel updates to marchers",
             "distributeHorizontally": "Evenly distribute marchers horizontally",
             "distributeVertically": "Evenly distribute marchers vertically",
+            "flipHorizontal": "Flip marchers horizontally",
+            "flipVertical": "Flip marchers vertically",
             "lockX": "Lock X axis",
             "lockXOff": "Enable X movement",
             "lockXOn": "Lock X movement",
