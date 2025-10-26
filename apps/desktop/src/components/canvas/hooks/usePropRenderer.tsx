@@ -17,9 +17,9 @@ export default function usePropRenderer({
     const { data: props, isSuccess: propsLoaded } = useQuery(
         allPropsQueryOptions(),
     );
-    const { data: propPages, isSuccess: propPagesLoaded } = useQuery(
-        propPagesByPageQueryOptions(selectedPageId),
-    );
+    const { data: propPagesOnSelectedPage, isSuccess: propPagesLoaded } =
+        useQuery(propPagesByPageQueryOptions(selectedPageId));
+
     const propManagersByPropId = useRef<Record<number, PropManager>>({});
 
     useEffect(() => {
@@ -27,18 +27,27 @@ export default function usePropRenderer({
             for (const propObj of props) {
                 const currentPropManager =
                     propManagersByPropId.current[propObj.id];
+
+                const propPageCurrent = propPagesOnSelectedPage?.find(
+                    (propPage) => propPage.prop_id === propObj.id,
+                );
+                if (!propPageCurrent) {
+                    console.warn(`prop page not found for prop ${propObj.id}`);
+                    continue;
+                }
+
                 if (currentPropManager) {
-                    console.warn("prop manager updating not yet implemented ");
-                } else {
-                    const propPageCurrent = propPages?.find(
-                        (propPage) => propPage.prop_id === propObj.id,
-                    );
-                    if (!propPageCurrent) {
-                        console.warn(
-                            `prop page not found for prop ${propObj.id}`,
+                    if (
+                        currentPropManager.propPageCurrent.page_id !==
+                        selectedPageId
+                    ) {
+                        // The prop manager is on a different page, so we need to update it to the current page
+                        currentPropManager.updatePropPageCurrent(
+                            propPageCurrent,
                         );
-                        continue;
                     }
+                } else {
+                    // The prop manager has not been created yet, so we need to create it
                     const propManager = new PropManager({
                         propObj,
                         propPageCurrent,
@@ -48,5 +57,12 @@ export default function usePropRenderer({
                 }
             }
         }
-    }, [propsLoaded, propPagesLoaded, props, propPages, canvas]);
+    }, [
+        propsLoaded,
+        propPagesLoaded,
+        props,
+        propPagesOnSelectedPage,
+        canvas,
+        selectedPageId,
+    ]);
 }

@@ -17,6 +17,7 @@ import {
     _createFromTempoGroupInTransaction,
     tempoGroupFromWorkspaceSettings,
 } from "@/components/music/TempoGroup/TempoGroup";
+import { ModifiedPropPageArgs } from "@/db-functions/propPage";
 
 export const FIRST_PAGE_ID = 0;
 
@@ -241,6 +242,93 @@ const _createMarcherPages = async ({
     }
 };
 
+const _createPropPages = async ({
+    tx,
+    sortedNewPages,
+}: {
+    tx: DbTransaction;
+    sortedNewPages: RealDatabasePage[];
+}) => {
+    // Create the prop pages
+    const allProps = await tx.query.props.findMany();
+    if (allProps.length > 0) {
+        for (const page of sortedNewPages) {
+            const newPropPages: ModifiedPropPageArgs[] = [];
+            const previousPage = await getAdjacentPage({
+                tx,
+                pageId: page.id,
+                direction: "previous",
+            });
+            if (previousPage) {
+                const previousPagePropPages =
+                    await tx.query.prop_pages.findMany({
+                        where: eq(schema.prop_pages.page_id, previousPage.id),
+                    });
+
+                for (const propPage of previousPagePropPages) {
+                    const relativePoints = JSON.parse(propPage.relative_points);
+                    newPropPages.push({
+                        prop_id: propPage.prop_id,
+                        page_id: page.id,
+                        x: propPage.x,
+                        y: propPage.y,
+                        relative_points: relativePoints,
+                        origin_x: propPage.origin_x as
+                            | "left"
+                            | "center"
+                            | "right",
+                        origin_y: propPage.origin_y as
+                            | "top"
+                            | "center"
+                            | "bottom",
+                        notes: propPage.notes,
+                    });
+                }
+            } else {
+                console.warn("No previous page found for page", page.id);
+                // Default values for new props with no previous page
+                const defaultRelativePoints: [number, number][] = [
+                    [0, 0],
+                    [100, 0],
+                    [100, 100],
+                    [0, 100],
+                ];
+                for (const prop of allProps) {
+                    newPropPages.push({
+                        prop_id: prop.id,
+                        page_id: page.id,
+                        x: 0,
+                        y: 0,
+                        relative_points: defaultRelativePoints,
+                        origin_x: "left",
+                        origin_y: "bottom",
+                    });
+                }
+            }
+
+            if (newPropPages.length > 0) {
+                // Convert to database format and create the prop pages
+                const dbPropPages = newPropPages.map((propPage) => ({
+                    prop_id: propPage.prop_id,
+                    page_id: propPage.page_id,
+                    x: propPage.x,
+                    y: propPage.y,
+                    relative_points: JSON.stringify(propPage.relative_points),
+                    origin_x: propPage.origin_x || "left",
+                    origin_y: propPage.origin_y || "bottom",
+                    notes: propPage.notes,
+                    properties: "{}",
+                }));
+
+                await tx
+                    .insert(schema.prop_pages)
+                    .values(dbPropPages)
+                    .returning();
+            }
+        }
+    }
+};
+
 /**
  * Creates one or many new pages in the database as well as the marcher pages for each page.
  *
@@ -284,6 +372,11 @@ export const createPagesInTransaction = async ({
     );
 
     await _createMarcherPages({
+        tx,
+        sortedNewPages,
+    });
+
+    await _createPropPages({
         tx,
         sortedNewPages,
     });
