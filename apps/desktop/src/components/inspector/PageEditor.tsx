@@ -135,7 +135,6 @@ function PageEditor() {
                             ) => setNotes(e.target.value)}
                             onBlur={handleNotesBlur}
                             placeholder={t("inspector.page.notesPlaceholder")}
-                            disabled={isFirstPage}
                         />
                     </div>
                     <Button
