@@ -30,6 +30,7 @@ import useEditablePath from "./hooks/editablePath";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
 import { useSelectionStore } from "@/stores/SelectionStore";
+import usePropRenderer from "./hooks/usePropRenderer";
 
 /**
  * The field/stage UI of OpenMarch
@@ -92,7 +93,10 @@ export default function Canvas({
     const containerRef = useRef<HTMLDivElement>(null);
     const frameRef = useRef<number | null>(null);
     const { currentCollisions } = useCollisionStore();
-
+    usePropRenderer({
+        selectedPageId: selectedPage?.id!,
+        canvas,
+    });
     useAnimation({
         canvas,
     });
@@ -196,6 +200,10 @@ export default function Canvas({
                     // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
+                case Selectable.SelectableClasses.PROP: {
+                    // Prop
+                    break;
+                }
                 default: {
                     unimplementedError(selectedClass);
                 }
@@ -259,6 +267,7 @@ export default function Canvas({
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
             [Selectable.SelectableClasses.MARCHER_SHAPE]: [],
+            [Selectable.SelectableClasses.PROP]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
