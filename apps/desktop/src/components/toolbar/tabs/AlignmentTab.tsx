@@ -4,10 +4,6 @@ import {
     ArrowsHorizontalIcon,
     ArrowsVerticalIcon,
     ArrowsInCardinalIcon,
-    AlignCenterHorizontalSimpleIcon,
-    AlignCenterVerticalSimpleIcon,
-    DotsThreeOutlineIcon,
-    DotsThreeOutlineVerticalIcon,
     CaretDownIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
@@ -16,8 +12,6 @@ import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
 import { T, useTolgee } from "@tolgee/react";
-import { Button } from "@openmarch/ui";
-import EditablePath from "@/global/classes/canvasObjects/EditablePath";
 
 export default function AlignmentTab() {
     const { t } = useTolgee();
@@ -63,41 +57,10 @@ export default function AlignmentTab() {
                 </RegisteredActionButton>
                 {/* -- */}
             </ToolbarSection>
-            <ToolbarSection
-                aria-label={t("toolbar.alignment.alignMarchersAriaLabel")}
-            >
-                <RegisteredActionButton
-                    registeredAction={RegisteredActionsObjects.alignVertically}
-                >
-                    <AlignCenterVerticalSimpleIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.alignHorizontally
-                    }
-                >
-                    <AlignCenterHorizontalSimpleIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.evenlyDistributeVertically
-                    }
-                >
-                    <DotsThreeOutlineVerticalIcon size={24} />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.evenlyDistributeHorizontally
-                    }
-                >
-                    <DotsThreeOutlineIcon size={24} />
-                </RegisteredActionButton>
-            </ToolbarSection>
             <SetMarcherPositionsDropdown />
         </div>
     );
 }
-
 function SetMarcherPositionsDropdown() {
     return (
         <ToolbarSection aria-label="Set marcher positions">
@@ -120,35 +83,6 @@ function SetMarcherPositionsDropdown() {
                         <RegisteredActionButton
                             registeredAction={
                                 RegisteredActionsObjects.setAllMarchersToNextPage
-                            }
-                            className="text-text px-6 py-4"
-                            tooltipPosition="left"
-                        >
-                            <T keyName="toolbar.alignment.toNextPagePositions" />
-                        </RegisteredActionButton>
-                    </Dropdown.Content>
-                </Dropdown.Portal>
-            </Dropdown.Root>
-
-            <Dropdown.Root>
-                <Dropdown.Trigger className="hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
-                    <CaretDownIcon size={18} />
-                </Dropdown.Trigger>
-                <Dropdown.Portal>
-                    <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.setSelectedMarchersToPreviousPage
-                            }
-                            className="text-text px-6 py-4"
-                            tooltipPosition="left"
-                        >
-                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                        </RegisteredActionButton>
-                        <RegisteredActionButton
-                            registeredAction={
-                                RegisteredActionsObjects.setSelectedMarchersToNextPage
                             }
                             className="text-text px-6 py-4"
                             tooltipPosition="left"

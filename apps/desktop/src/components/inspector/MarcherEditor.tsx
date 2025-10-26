@@ -23,10 +23,169 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
+import {
+    FlipHorizontalIcon,
+    FlipVerticalIcon,
+    AlignCenterHorizontalSimpleIcon,
+    AlignCenterVerticalSimpleIcon,
+    DotsThreeOutlineIcon,
+    DotsThreeOutlineVerticalIcon,
+    CaretDownIcon,
+} from "@phosphor-icons/react";
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
+
+/**
+ * Component that renders all alignment, distribution, and transformation buttons
+ * for multiple selected marchers
+ */
+interface AlignmentButtonsProps {
+    editingDisabled: boolean;
+}
+
+function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
+    return (
+        <>
+            {/* Align buttons */}
+            <div className="flex gap-8">
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.alignVertically}
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <AlignCenterVerticalSimpleIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={
+                        RegisteredActionsObjects.alignHorizontally
+                    }
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <AlignCenterHorizontalSimpleIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.flipHorizontal}
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <FlipHorizontalIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={RegisteredActionsObjects.flipVertical}
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <FlipVerticalIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+            </div>
+
+            {/* Flip buttons */}
+            <div className="flex gap-8">
+                <RegisteredActionButton
+                    registeredAction={
+                        RegisteredActionsObjects.evenlyDistributeHorizontally
+                    }
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <DotsThreeOutlineIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+                <RegisteredActionButton
+                    registeredAction={
+                        RegisteredActionsObjects.evenlyDistributeVertically
+                    }
+                    disabled={editingDisabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex flex-1 items-center justify-center",
+                    )}
+                >
+                    <DotsThreeOutlineVerticalIcon size={16} weight="bold" />
+                </RegisteredActionButton>
+            </div>
+
+            {/* Set Marcher Positions Dropdowns */}
+            <div className="flex flex-col gap-8">
+                <Dropdown.Root>
+                    <Dropdown.Trigger
+                        className={clsx(
+                            getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            }),
+                            "flex items-center justify-center gap-6",
+                        )}
+                    >
+                        <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
+                        <CaretDownIcon size={14} />
+                    </Dropdown.Trigger>
+                    <Dropdown.Portal>
+                        <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.setSelectedMarchersToPreviousPage
+                                }
+                                className="text-text px-6 py-4"
+                            >
+                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
+                            </RegisteredActionButton>
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.setSelectedMarchersToNextPage
+                                }
+                                className="text-text px-6 py-4"
+                            >
+                                <T keyName="toolbar.alignment.toNextPagePositions" />
+                            </RegisteredActionButton>
+                        </Dropdown.Content>
+                    </Dropdown.Portal>
+                </Dropdown.Root>
+            </div>
+        </>
+    );
+}
 
 // eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
+    const selectedMarcherIds = useMemo(
+        () => new Set(selectedMarchers.map((marcher) => marcher.id)),
+        [selectedMarchers],
+    );
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
@@ -41,6 +200,16 @@ function MarcherEditor() {
     const { data: spmsForThisPage } = useQuery(
         shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
     );
+    const editingDisabled = useMemo(() => {
+        return (
+            !marcherPagesLoaded ||
+            Object.values(marcherPages).some(
+                (marcherPage) =>
+                    marcherPage.isLocked &&
+                    selectedMarcherIds.has(marcherPage.marcher_id),
+            )
+        );
+    }, [marcherPagesLoaded, marcherPages, selectedMarcherIds]);
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
@@ -299,16 +468,16 @@ function MarcherEditor() {
                                         <T keyName="inspector.marcher.createLine" />
                                     </RegisteredActionButton>
                                 )}
+
+                            {/* Alignment, distribution, and transformation buttons */}
+                            <AlignmentButtons
+                                editingDisabled={editingDisabled}
+                            />
+
                             {/* Add rotation controls */}
                             <div className="w-full">
                                 <MarcherRotationInput
-                                    disabled={
-                                        !marcherPagesLoaded ||
-                                        Object.values(marcherPages).some(
-                                            (marcherPage) =>
-                                                marcherPage.isLocked,
-                                        )
-                                    }
+                                    disabled={editingDisabled}
                                 />
                             </div>
                         </InspectorCollapsible>

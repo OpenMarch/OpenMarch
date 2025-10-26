@@ -6,6 +6,8 @@
             "cancelUpdates": "Cancelar actualizaciones a marchadores",
             "distributeHorizontally": "Distribuir marchadores uniformemente horizontalmente",
             "distributeVertically": "Distribuir marchadores uniformemente verticalmente",
+            "flipHorizontal": "",
+            "flipVertical": "",
             "lockX": "Bloqueo del eje X",
             "lockXOff": "Habilitar movimiento en X",
             "lockXOn": "Bloquear movimiento X",

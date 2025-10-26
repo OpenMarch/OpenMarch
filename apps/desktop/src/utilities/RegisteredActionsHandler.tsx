@@ -65,6 +65,8 @@ export enum RegisteredActionsEnum {
     alignHorizontally = "alignHorizontally",
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
+    flipHorizontal = "flipHorizontal",
+    flipVertical = "flipVertical",
     swapMarchers = "swapMarchers",
     moveSelectedMarchersUp = "moveSelectedMarchersUp",
     moveSelectedMarchersDown = "moveSelectedMarchersDown",
@@ -412,6 +414,20 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
     }),
+    flipHorizontal: new RegisteredAction({
+        descKey: "actions.alignment.flipHorizontal",
+        keyboardShortcut: new KeyboardShortcut({ key: "f", alt: true }),
+        enumString: "flipHorizontal",
+    }),
+    flipVertical: new RegisteredAction({
+        descKey: "actions.alignment.flipVertical",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "f",
+            alt: true,
+            shift: true,
+        }),
+        enumString: "flipVertical",
+    }),
     swapMarchers: new RegisteredAction({
         descKey: "actions.swap.swap",
         keyboardShortcut: new KeyboardShortcut({ key: "s", control: true }),
@@ -673,7 +689,9 @@ function RegisteredActionsHandler() {
                         return;
                     }
 
-                    const changes = Object.values(previousMarcherPages).map(
+                    const previousMarcherPagesArray =
+                        Object.values(previousMarcherPages);
+                    const changes = previousMarcherPagesArray.map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
@@ -686,7 +704,7 @@ function RegisteredActionsHandler() {
 
                     toast.success(
                         t("actions.batchEdit.setAllToPreviousSuccess", {
-                            count: Object.keys(previousMarcherPages).length,
+                            count: previousMarcherPagesArray.length,
                             currentPage: selectedPage.name,
                             previousPage: previousPage.name,
                         }),
@@ -739,25 +757,22 @@ function RegisteredActionsHandler() {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
-
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
+                    const nextMarcherPagesArray =
+                        Object.values(nextMarcherPages);
+                    const changes = nextMarcherPagesArray.map(
+                        (marcherPage) => ({
+                            marcher_id: marcherPage.marcher_id,
+                            page_id: selectedPage.id,
+                            x: marcherPage.x as number,
+                            y: marcherPage.y as number,
+                            notes: marcherPage.notes || undefined,
+                        }),
                     );
-                    const nextPageMarcherPages = selectedMarcherIds
-                        .map((marcherId) => nextMarcherPages[marcherId])
-                        .filter(Boolean);
-                    const changes = nextPageMarcherPages.map((marcherPage) => ({
-                        marcher_id: marcherPage.marcher_id,
-                        page_id: selectedPage.id,
-                        x: marcherPage.x as number,
-                        y: marcherPage.y as number,
-                        notes: marcherPage.notes || undefined,
-                    }));
                     updateMarcherPages(changes);
 
                     toast.success(
                         t("actions.batchEdit.setAllToNextSuccess", {
-                            count: nextPageMarcherPages.length,
+                            count: nextMarcherPagesArray.length,
                             currentPage: selectedPage.name,
                             nextPage: nextPage.name,
                         }),
@@ -906,6 +921,20 @@ function RegisteredActionsHandler() {
                             fieldProperties,
                         });
                     updateMarcherPages(distributedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.flipHorizontal: {
+                    const flippedCoords = CoordinateActions.flipHorizontal(
+                        getSelectedMarcherPages(),
+                    );
+                    updateMarcherPages(flippedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.flipVertical: {
+                    const flippedCoords = CoordinateActions.flipVertical(
+                        getSelectedMarcherPages(),
+                    );
+                    updateMarcherPages(flippedCoords);
                     break;
                 }
                 case RegisteredActionsEnum.swapMarchers: {
