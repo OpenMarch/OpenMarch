@@ -59,8 +59,10 @@ export default function TimelineControls() {
                     <TimelineMetronomeButton />
 
                     <button
-                        className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={toggleFullscreen}
+                        aria-label="Toggle timeline fullscreen"
+                        aria-pressed={isFullscreen}
                         disabled={uiSettings.focussedComponent === "timeline"}
                     >
                         {isFullscreen ? (
@@ -161,8 +163,11 @@ function PlaybackControls() {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                className="focus-visible:translate-y-0"
-                disabled={!selectedPage || selectedPage.nextPageId === null}
+                className="focus-visible:outline-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                disabled={
+                    !selectedPage ||
+                    (!isPlaying && selectedPage.nextPageId === null)
+                }
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
             </RegisteredActionButton>
