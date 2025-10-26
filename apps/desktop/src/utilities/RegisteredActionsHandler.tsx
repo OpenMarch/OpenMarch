@@ -65,6 +65,8 @@ export enum RegisteredActionsEnum {
     alignHorizontally = "alignHorizontally",
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
     evenlyDistributeVertically = "evenlyDistributeVertically",
+    flipHorizontal = "flipHorizontal",
+    flipVertical = "flipVertical",
     swapMarchers = "swapMarchers",
     moveSelectedMarchersUp = "moveSelectedMarchersUp",
     moveSelectedMarchersDown = "moveSelectedMarchersDown",
@@ -411,6 +413,20 @@ export const RegisteredActionsObjects: {
         descKey: "actions.alignment.distributeHorizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
+    }),
+    flipHorizontal: new RegisteredAction({
+        descKey: "actions.alignment.flipHorizontal",
+        keyboardShortcut: new KeyboardShortcut({ key: "f", alt: true }),
+        enumString: "flipHorizontal",
+    }),
+    flipVertical: new RegisteredAction({
+        descKey: "actions.alignment.flipVertical",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "f",
+            alt: true,
+            shift: true,
+        }),
+        enumString: "flipVertical",
     }),
     swapMarchers: new RegisteredAction({
         descKey: "actions.swap.swap",
@@ -906,6 +922,20 @@ function RegisteredActionsHandler() {
                             fieldProperties,
                         });
                     updateMarcherPages(distributedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.flipHorizontal: {
+                    const flippedCoords = CoordinateActions.flipHorizontal(
+                        getSelectedMarcherPages(),
+                    );
+                    updateMarcherPages(flippedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.flipVertical: {
+                    const flippedCoords = CoordinateActions.flipVertical(
+                        getSelectedMarcherPages(),
+                    );
+                    updateMarcherPages(flippedCoords);
                     break;
                 }
                 case RegisteredActionsEnum.swapMarchers: {
