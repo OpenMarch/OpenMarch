@@ -59,7 +59,7 @@ export default function TimelineControls() {
                     <TimelineMetronomeButton />
 
                     <button
-                        className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                        className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={toggleFullscreen}
                         disabled={uiSettings.focussedComponent === "timeline"}
                     >
@@ -83,7 +83,7 @@ function TimelineMetronomeButton() {
         <div className="flex gap-10" id="zoomIcons">
             <button
                 className={clsx(
-                    "outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50",
+                    "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
                     {
                         "text-accent": isMetronomeOn,
                         "text-text enabled:hover:text-accent": !isMetronomeOn,
@@ -103,7 +103,7 @@ function ZoomControls() {
     return (
         <div className="flex gap-10" id="zoomIcons">
             <button
-                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() =>
                     setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 0.8)
                 }
@@ -112,7 +112,7 @@ function ZoomControls() {
                 <MagnifyingGlassMinusIcon size={24} />
             </button>
             <button
-                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
+                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
                 onClick={() =>
                     setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 1.2)
                 }
@@ -161,11 +161,8 @@ function PlaybackControls() {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                disabled={
-                    !selectedPage ||
-                    selectedPage.nextPageId === null ||
-                    uiSettings.focussedComponent === "timeline"
-                }
+                className="focus-visible:translate-y-0"
+                disabled={!selectedPage || selectedPage.nextPageId === null}
             >
                 {isPlaying ? <PauseIcon size={24} /> : <PlayIcon size={24} />}
             </RegisteredActionButton>
