@@ -27,6 +27,7 @@ import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
+import usePropRenderer from "./hooks/usePropRenderer";
 
 /**
  * The field/stage UI of OpenMarch
@@ -92,6 +93,10 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
+    usePropRenderer({
+        selectedPageId: selectedPage?.id!,
+        canvas,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {

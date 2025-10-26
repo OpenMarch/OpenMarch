@@ -331,3 +331,35 @@ export const workspace_settings = sqliteTable(
     },
     (_table) => [check("workspace_settings_id_check", sql`id = 1`)],
 );
+
+export const props = sqliteTable("props", {
+    id: integer().primaryKey(),
+    type: text().notNull().default("polygon"),
+    field_label: text(),
+    notes: text(),
+    ...timestamps,
+});
+
+export const prop_pages = sqliteTable(
+    "prop_pages",
+    {
+        id: integer().primaryKey(),
+        prop_id: integer()
+            .notNull()
+            .references(() => props.id, { onDelete: "cascade" }),
+        page_id: integer()
+            .notNull()
+            .references(() => pages.id, { onDelete: "cascade" }),
+        x: real().notNull(),
+        y: real().notNull(),
+        /** JSON string of relative points for the prop page. Should be [number, number][] */
+        relative_points: text().notNull(),
+        /** JSON string of properties for the prop page */
+        properties: text().notNull().default("{}"),
+        origin_x: text().notNull().default("center"),
+        origin_y: text().notNull().default("center"),
+        notes: text(),
+        ...timestamps,
+    },
+    (table) => [unique().on(table.prop_id, table.page_id)],
+);
