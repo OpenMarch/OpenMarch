@@ -54,14 +54,17 @@ class PropPolygon extends fabric.Polygon {
         super(
             points.map((point) => ({ x: point[0], y: point[1] })),
             {
-                fill: "#aaaaaa",
+                fill: rgbaToString(
+                    fieldTheme?.defaultPropFill ??
+                        DEFAULT_FIELD_THEME.defaultPropFill,
+                ),
                 strokeWidth: 2,
                 stroke: rgbaToString(
-                    fieldTheme?.shape ?? DEFAULT_FIELD_THEME.shape,
+                    fieldTheme?.defaultPropStroke ??
+                        DEFAULT_FIELD_THEME.defaultPropStroke,
                 ),
                 objectCaching: true,
                 hasControls: false,
-                borderColor: "#0d6efd",
                 borderScaleFactor: 2,
                 ...options,
                 left: coordinate.x,
