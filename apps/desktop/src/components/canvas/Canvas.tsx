@@ -27,6 +27,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import usePropRenderer from "./hooks/usePropRenderer";
 
 /**
  * The field/stage UI of OpenMarch
@@ -90,6 +91,10 @@ export default function Canvas({
     useMovementListeners({ canvas });
     useAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage });
+    usePropRenderer({
+        selectedPageId: selectedPage?.id!,
+        canvas,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {

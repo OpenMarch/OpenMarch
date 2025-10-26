@@ -8,6 +8,8 @@ import {
     shape_pages,
     shapes,
     shape_page_marchers,
+    props,
+    prop_pages,
 } from "./schema";
 
 export const measuresRelations = relations(measures, ({ one }) => ({
@@ -29,6 +31,7 @@ export const pagesRelations = relations(pages, ({ one, many }) => ({
     }),
     marcher_pages: many(marcher_pages),
     shape_pages: many(shape_pages),
+    prop_pages: many(prop_pages),
 }));
 
 export const marcher_pagesRelations = relations(marcher_pages, ({ one }) => ({
@@ -76,3 +79,18 @@ export const shape_page_marchersRelations = relations(
         }),
     }),
 );
+
+export const propsRelations = relations(props, ({ many }) => ({
+    prop_pages: many(prop_pages),
+}));
+
+export const prop_pagesRelations = relations(prop_pages, ({ one }) => ({
+    prop: one(props, {
+        fields: [prop_pages.prop_id],
+        references: [props.id],
+    }),
+    page: one(pages, {
+        fields: [prop_pages.page_id],
+        references: [pages.id],
+    }),
+}));

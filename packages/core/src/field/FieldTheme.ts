@@ -22,6 +22,8 @@ export interface FieldTheme {
     readonly shape: RgbaColor;
     readonly tempPath: RgbaColor;
     readonly defaultMarcher: MarcherColor;
+    readonly defaultPropFill: RgbaColor;
+    readonly defaultPropStroke: RgbaColor;
 }
 
 /** Factory function to create a FieldTheme */
@@ -43,6 +45,8 @@ export const createFieldTheme = (
         outline: { r: 0, g: 0, b: 0, a: 0 },
         label: { r: 0, g: 0, b: 0, a: 1 },
     },
+    defaultPropFill: { r: 255, g: 255, b: 255, a: 1 },
+    defaultPropStroke: { r: 0, g: 0, b: 0, a: 1 },
     ...overrides,
 });
 
