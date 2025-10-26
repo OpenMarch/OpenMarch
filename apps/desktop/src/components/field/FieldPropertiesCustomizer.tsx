@@ -4,11 +4,12 @@ import {
     MeasurementSystem,
     DEFAULT_FIELD_THEME,
     FieldTheme,
+    createFieldTheme,
 } from "@openmarch/core";
 import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { BooksIcon, CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
 import {
@@ -303,6 +304,11 @@ export default function FieldPropertiesCustomizer() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    /** Field theme with default values */
+    const fieldTheme = useMemo(
+        () => createFieldTheme(fieldProperties?.theme),
+        [fieldProperties],
+    );
     const { mutate: setFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
@@ -1695,9 +1701,7 @@ export default function FieldPropertiesCustomizer() {
                         </h4>
                         <ColorPicker
                             label={t("fieldProperties.labels.background")}
-                            initialColor={
-                                currentFieldProperties.theme.background
-                            }
+                            initialColor={fieldTheme.background}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.background as RgbaColor
                             }
@@ -1710,7 +1714,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             background: color,
                                         },
                                     }),
@@ -1719,9 +1723,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.primaryLines")}
-                            initialColor={
-                                currentFieldProperties.theme.primaryStroke
-                            }
+                            initialColor={fieldTheme.primaryStroke}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
                             }
@@ -1734,7 +1736,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             primaryStroke: color,
                                         },
                                     }),
@@ -1743,9 +1745,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.secondaryLines")}
-                            initialColor={
-                                currentFieldProperties.theme.secondaryStroke
-                            }
+                            initialColor={fieldTheme.secondaryStroke}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
                             }
@@ -1758,7 +1758,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             secondaryStroke: color,
                                         },
                                     }),
@@ -1767,9 +1767,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.gridLines")}
-                            initialColor={
-                                currentFieldProperties.theme.tertiaryStroke
-                            }
+                            initialColor={fieldTheme.tertiaryStroke}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
                             }
@@ -1782,7 +1780,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             tertiaryStroke: color,
                                         },
                                     }),
@@ -1791,9 +1789,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.fieldLabels")}
-                            initialColor={
-                                currentFieldProperties.theme.fieldLabel
-                            }
+                            initialColor={fieldTheme.fieldLabel}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.fieldLabel as RgbaColor
                             }
@@ -1806,7 +1802,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             fieldLabel: color,
                                         },
                                     }),
@@ -1815,9 +1811,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.externalLabels")}
-                            initialColor={
-                                currentFieldProperties.theme.externalLabel
-                            }
+                            initialColor={fieldTheme.externalLabel}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.externalLabel as RgbaColor
                             }
@@ -1830,7 +1824,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             externalLabel: color,
                                         },
                                     }),
@@ -1839,9 +1833,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.previousPath")}
-                            initialColor={
-                                currentFieldProperties.theme.previousPath
-                            }
+                            initialColor={fieldTheme.previousPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.previousPath as RgbaColor
                             }
@@ -1854,7 +1846,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             previousPath: color,
                                         },
                                     }),
@@ -1863,7 +1855,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.nextPath")}
-                            initialColor={currentFieldProperties.theme.nextPath}
+                            initialColor={fieldTheme.nextPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.nextPath as RgbaColor
                             }
@@ -1876,7 +1868,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             nextPath: color,
                                         },
                                     }),
@@ -1888,7 +1880,7 @@ export default function FieldPropertiesCustomizer() {
                         </div>
                         <ColorPicker
                             label={t("fieldProperties.labels.shapes")}
-                            initialColor={currentFieldProperties.theme.shape}
+                            initialColor={fieldTheme.shape}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.shape as RgbaColor
                             }
@@ -1901,7 +1893,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             shape: color,
                                         },
                                     }),
@@ -1910,7 +1902,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.temporaryPath")}
-                            initialColor={currentFieldProperties.theme.tempPath}
+                            initialColor={fieldTheme.tempPath}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.tempPath as RgbaColor
                             }
@@ -1923,7 +1915,7 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             tempPath: color,
                                         },
                                     }),
@@ -1932,9 +1924,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.marcherFill")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher.fill
-                            }
+                            initialColor={fieldTheme.defaultMarcher.fill}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.defaultMarcher.fill
                             }
@@ -1943,10 +1933,9 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
+                                                ...fieldTheme.defaultMarcher,
                                                 fill: color,
                                             },
                                         },
@@ -1956,10 +1945,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.marcherOutline")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher
-                                    .outline
-                            }
+                            initialColor={fieldTheme.defaultMarcher.outline}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.defaultMarcher.outline
                             }
@@ -1968,10 +1954,9 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
+                                                ...fieldTheme.defaultMarcher,
                                                 outline: color,
                                             },
                                         },
@@ -1981,10 +1966,7 @@ export default function FieldPropertiesCustomizer() {
                         />
                         <ColorPicker
                             label={t("fieldProperties.labels.marcherText")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher
-                                    .label
-                            }
+                            initialColor={fieldTheme.defaultMarcher.label}
                             defaultColor={
                                 DEFAULT_FIELD_THEME.defaultMarcher.label
                             }
@@ -1993,12 +1975,43 @@ export default function FieldPropertiesCustomizer() {
                                     new FieldProperties({
                                         ...currentFieldProperties,
                                         theme: {
-                                            ...currentFieldProperties.theme,
+                                            ...fieldTheme,
                                             defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
+                                                ...fieldTheme.defaultMarcher,
                                                 label: color,
                                             },
+                                        },
+                                    }),
+                                )
+                            }
+                        />
+                        <ColorPicker
+                            label={t("fieldProperties.labels.propFill")}
+                            initialColor={fieldTheme.defaultPropFill}
+                            defaultColor={DEFAULT_FIELD_THEME.defaultPropFill}
+                            onChange={(color: RgbaColor) =>
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        theme: {
+                                            ...fieldTheme,
+                                            defaultPropFill: color,
+                                        },
+                                    }),
+                                )
+                            }
+                        />
+                        <ColorPicker
+                            label={t("fieldProperties.labels.propStroke")}
+                            initialColor={fieldTheme.defaultPropStroke}
+                            defaultColor={DEFAULT_FIELD_THEME.defaultPropStroke}
+                            onChange={(color: RgbaColor) =>
+                                setFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        theme: {
+                                            ...fieldTheme,
+                                            defaultPropStroke: color,
                                         },
                                     }),
                                 )

@@ -313,6 +313,8 @@
             "marcherFill": "マーチャー フィル",
             "marcherOutline": "行進の輪郭",
             "marcherText": "マーチャー テキスト",
+            "propFill": "小道具の塗りつぶし",
+            "propStroke": "小道具のストローク",
             "measurementSystem": "測定システム",
             "nextPath": "次の パス",
             "previousPath": "前の パス",

@@ -45,7 +45,7 @@ export const createFieldTheme = (
         outline: { r: 0, g: 0, b: 0, a: 0 },
         label: { r: 0, g: 0, b: 0, a: 1 },
     },
-    defaultPropFill: { r: 255, g: 255, b: 255, a: 1 },
+    defaultPropFill: { r: 200, g: 200, b: 200, a: 1 },
     defaultPropStroke: { r: 0, g: 0, b: 0, a: 1 },
     ...overrides,
 });

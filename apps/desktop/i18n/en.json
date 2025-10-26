@@ -313,6 +313,8 @@
             "marcherFill": "Marcher Fill",
             "marcherOutline": "Marcher Outline",
             "marcherText": "Marcher Text",
+            "propFill": "Prop Fill",
+            "propStroke": "Prop Stroke",
             "measurementSystem": "Measurement System",
             "nextPath": "Next Path",
             "previousPath": "Previous Path",

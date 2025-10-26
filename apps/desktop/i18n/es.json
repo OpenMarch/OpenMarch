@@ -313,6 +313,8 @@
             "marcherFill": "Relleno de Marcha",
             "marcherOutline": "Contorno del Marchante",
             "marcherText": "Texto del Marchante",
+            "propFill": "Relleno de Utilería",
+            "propStroke": "Contorno de Utilería",
             "measurementSystem": "Sistema de medición",
             "nextPath": "Próxima Ruta",
             "previousPath": "Ruta Anterior",

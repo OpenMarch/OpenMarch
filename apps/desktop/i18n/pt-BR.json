@@ -313,6 +313,8 @@
             "marcherFill": "Preenchimento Marchar",
             "marcherOutline": "Contorno Marcha",
             "marcherText": "Texto de Marcha",
+            "propFill": "Preenchimento de Adereço",
+            "propStroke": "Contorno de Adereço",
             "measurementSystem": "Sistema de Medição",
             "nextPath": "Próximo Caminho",
             "previousPath": "Caminho Anterior",
