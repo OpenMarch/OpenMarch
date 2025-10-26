@@ -689,7 +689,9 @@ function RegisteredActionsHandler() {
                         return;
                     }
 
-                    const changes = Object.values(previousMarcherPages).map(
+                    const previousMarcherPagesArray =
+                        Object.values(previousMarcherPages);
+                    const changes = previousMarcherPagesArray.map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
@@ -702,7 +704,7 @@ function RegisteredActionsHandler() {
 
                     toast.success(
                         t("actions.batchEdit.setAllToPreviousSuccess", {
-                            count: Object.keys(previousMarcherPages).length,
+                            count: previousMarcherPagesArray.length,
                             currentPage: selectedPage.name,
                             previousPage: previousPage.name,
                         }),
@@ -755,25 +757,22 @@ function RegisteredActionsHandler() {
                         toast.error(t("actions.batchEdit.noNextPage"));
                         return;
                     }
-
-                    const selectedMarcherIds = selectedMarchers.map(
-                        (marcher) => marcher.id,
+                    const nextMarcherPagesArray =
+                        Object.values(nextMarcherPages);
+                    const changes = nextMarcherPagesArray.map(
+                        (marcherPage) => ({
+                            marcher_id: marcherPage.marcher_id,
+                            page_id: selectedPage.id,
+                            x: marcherPage.x as number,
+                            y: marcherPage.y as number,
+                            notes: marcherPage.notes || undefined,
+                        }),
                     );
-                    const nextPageMarcherPages = selectedMarcherIds
-                        .map((marcherId) => nextMarcherPages[marcherId])
-                        .filter(Boolean);
-                    const changes = nextPageMarcherPages.map((marcherPage) => ({
-                        marcher_id: marcherPage.marcher_id,
-                        page_id: selectedPage.id,
-                        x: marcherPage.x as number,
-                        y: marcherPage.y as number,
-                        notes: marcherPage.notes || undefined,
-                    }));
                     updateMarcherPages(changes);
 
                     toast.success(
                         t("actions.batchEdit.setAllToNextSuccess", {
-                            count: nextPageMarcherPages.length,
+                            count: nextMarcherPagesArray.length,
                             currentPage: selectedPage.name,
                             nextPage: nextPage.name,
                         }),
