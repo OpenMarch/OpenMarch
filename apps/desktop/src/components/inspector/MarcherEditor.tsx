@@ -28,6 +28,10 @@ import { FlipHorizontalIcon, FlipVerticalIcon } from "@phosphor-icons/react";
 // eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
     const { selectedMarchers } = useSelectedMarchers()!;
+    const selectedMarcherIds = useMemo(
+        () => new Set(selectedMarchers.map((marcher) => marcher.id)),
+        [selectedMarchers],
+    );
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
@@ -46,10 +50,12 @@ function MarcherEditor() {
         return (
             !marcherPagesLoaded ||
             Object.values(marcherPages).some(
-                (marcherPage) => marcherPage.isLocked,
+                (marcherPage) =>
+                    marcherPage.isLocked &&
+                    selectedMarcherIds.has(marcherPage.marcher_id),
             )
         );
-    }, [marcherPagesLoaded, marcherPages]);
+    }, [marcherPagesLoaded, marcherPages, selectedMarcherIds]);
 
     const coordsFormRef = useRef<HTMLFormElement>(null);
     const xInputRef = useRef<HTMLInputElement>(null);
