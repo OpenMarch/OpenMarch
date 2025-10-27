@@ -55,9 +55,9 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo snap install snapcraft --classic
 
-      - name: Install Snapcraft (Ubuntu ARM) 
+      - name: Install Snapcraft (Ubuntu ARM)
         if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd 
+        run: sudo snap install lxd
 
       - name: Setup LXD (Ubuntu ARM)
         if: matrix.os == 'ubuntu-24.04-arm'
@@ -124,3 +124,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
+
+  build-and-release-succeeded:
+    needs: build-and-release
+    runs-on: ubuntu-latest
+    if: always()
+    permissions:
+      contents: read
+    steps:
+      - name: Check build results
+        run: |
+          if [ "${{ needs.build-and-release.result }}" != "success" ]; then
+            echo "Build failed!"
+            exit 1
+          fi
+          echo "All builds completed successfully!"

@@ -49,15 +49,17 @@ jobs:
           path: apps/desktop/playwright-report/
           retention-days: 30
 
-  desktop-e2e-finished:
+  desktop-e2e-succeeded:
     needs: desktop-e2e
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
     steps:
       - name: Check test results
         run: |
           if [ "${{ needs.desktop-e2e.result }}" != "success" ]; then
-              echo "E2E tests failed!"
-              exit 1
+            echo "E2E tests failed!"
+            exit 1
           fi
           echo "All E2E tests passed!"

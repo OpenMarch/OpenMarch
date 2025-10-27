@@ -47,10 +47,12 @@ jobs:
       #       name: coverage-${{ matrix.artifact }}
       #       path: coverage
 
-  test-finished:
+  test-succeeded:
     needs: test
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
     steps:
       - name: Check test results
         run: |
