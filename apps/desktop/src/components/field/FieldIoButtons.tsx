@@ -1,6 +1,6 @@
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
     handleFileInputChange as handleFileInputChangeUtil,
     handleExport,
@@ -10,19 +10,31 @@ import {
 export default function FieldIoButtons() {
     const { t } = useTolgee();
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const [isExporting, setIsExporting] = useState(false);
 
     const handleImportClick = () => {
         handleImport(fileInputRef);
     };
 
-    const handleFileInputChange = (
+    const handleFileInputChange = async (
         event: React.ChangeEvent<HTMLInputElement>,
     ) => {
-        void handleFileInputChangeUtil(event, fileInputRef);
+        setIsImporting(true);
+        try {
+            await handleFileInputChangeUtil(event, fileInputRef);
+        } finally {
+            setIsImporting(false);
+        }
     };
 
-    const handleExportClick = () => {
-        void handleExport();
+    const handleExportClick = async () => {
+        setIsExporting(true);
+        try {
+            await handleExport();
+        } finally {
+            setIsExporting(false);
+        }
     };
 
     return (
@@ -41,6 +53,7 @@ export default function FieldIoButtons() {
                     variant="primary"
                     size="compact"
                     onClick={handleImportClick}
+                    disabled={isImporting || isExporting}
                 >
                     <T keyName="field.general.importField" />
                 </Button>
@@ -50,6 +63,7 @@ export default function FieldIoButtons() {
                     variant="secondary"
                     size="compact"
                     onClick={handleExportClick}
+                    disabled={isImporting || isExporting}
                 >
                     <T keyName="field.general.exportField" />
                 </Button>
