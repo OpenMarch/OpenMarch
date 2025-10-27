@@ -1,0 +1,27 @@
+name: Basic PR Checks
+
+on:
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: read
+
+jobs:
+  pr-checks:
+    strategy:
+      matrix:
+        pnpm-script:
+          - format:check
+          - lint
+          - spellcheck
+      fail-fast: false
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+      - name: Install project dependencies
+        run: pnpm install --no-frozen-lockfile
+      - name: Run check
+        run: pnpm run ${{ matrix.pnpm-script}}

@@ -40,6 +40,10 @@
             "outputs": [],
             "cache": false
         },
+        "format:check": {
+            "outputs": [],
+            "cache": false
+        },
         "lint": {
             "outputs": [],
             "cache": false
