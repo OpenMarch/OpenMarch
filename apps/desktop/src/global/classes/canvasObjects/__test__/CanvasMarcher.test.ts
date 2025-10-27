@@ -252,6 +252,7 @@ it.todo("CanvasMarcher tests - currently not working", () => {
 // }
 // function addMockMultiselectToMarcherCanvasAndGetOffset(
 //     canvasMarcher: CanvasMarcher,
+// cspell:disable-next-line
 //     excludeCanvasMarcher?: boolean,
 // ): {
 //     x: number;
@@ -274,6 +275,7 @@ it.todo("CanvasMarcher tests - currently not working", () => {
 //         [
 //             largeRectangleObject,
 //             smallCircle,
+// cspell:disable-next-line
 //             ...(excludeCanvasMarcher ? [] : [canvasMarcher]),
 //         ],
 //         {
