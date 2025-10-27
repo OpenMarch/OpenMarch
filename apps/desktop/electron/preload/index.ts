@@ -231,17 +231,6 @@ const APP_API = {
     getUndoStackLength: () => ipcRenderer.invoke("history:getUndoStackLength"),
     getRedoStackLength: () => ipcRenderer.invoke("history:getRedoStackLength"),
 
-    // FieldProperties
-    /** Update the FieldProperties associated with this file */
-    exportFieldPropertiesFile: () =>
-        ipcRenderer.invoke("field_properties:export"),
-    importFieldPropertiesFile: () =>
-        ipcRenderer.invoke("field_properties:import"),
-    onImportFieldPropertiesFile: (callback: () => void) =>
-        ipcRenderer.on("field_properties:onImport", (event) => callback()),
-    removeImportFieldPropertiesFileListener: () =>
-        ipcRenderer.removeAllListeners("field_properties:onImport"),
-
     // **** Timing Objects ****
 
     // Audio File
