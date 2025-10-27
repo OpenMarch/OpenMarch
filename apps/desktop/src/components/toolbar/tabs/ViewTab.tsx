@@ -1,10 +1,6 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import {
-    ArrowsInSimpleIcon,
-    EyeIcon,
-    EyeSlashIcon,
-} from "@phosphor-icons/react";
+import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
 
 export default function ViewTab() {
@@ -89,7 +85,7 @@ function UiSettingsToolbar() {
                     )}
                 </button>
             </ToolbarSection>
-            <ToolbarSection>
+            {/* <ToolbarSection>
                 <button
                     onClick={() => {
                         setUiSettings({
@@ -110,7 +106,7 @@ function UiSettingsToolbar() {
                         <ArrowsInSimpleIcon size={24} />
                     )}
                 </button>
-            </ToolbarSection>
+            </ToolbarSection> */}
         </>
     );
 }

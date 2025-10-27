@@ -49,7 +49,7 @@ export const defaultSettings: UiSettings = {
     lockY: false,
     previousPaths: false,
     nextPaths: false,
-    showCollisions: true,
+    showCollisions: false,
     gridLines: true,
     halfLines: true,
     timelinePixelsPerSecond: 40,
@@ -129,6 +129,9 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
             if (uiSettings.lockY && type === "lockY") {
                 uiSettings.lockX = false;
             }
+
+            // Disable collisions for now
+            uiSettings.showCollisions = false;
 
             set({ uiSettings: uiSettings });
             saveSettings(uiSettings);
