@@ -1,50 +1,42 @@
-name: Desktop E2E tets
+name: Desktop E2E tests
 
 on:
-    push:
-        branches: ["main"]
-    pull_request:
-        branches: ["main"]
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
 
 jobs:
-    desktop-e2e:
-        runs-on: macos-latest
-        # Test on both main's and PR's code
-        strategy:
-            matrix:
-                include:
-                    - branch: main
-                      artifact: main
-                    - branch: ${{ github.head_ref }}
-                      artifact: pull-request
+  desktop-e2e:
+    runs-on: macos-latest
 
-        permissions:
-            contents: read
+    permissions:
+      contents: read
 
-        steps:
-            - uses: actions/checkout@v4
-            - name: Install Node.js
-              uses: actions/setup-node@v1
-              with:
-                  node-version: 22
-            - name: Setup pnpm
-              uses: pnpm/action-setup@v4.1.0
-            - name: Install project dependencies
-              run: pnpm install
-            - name: Install Playwright Browsers
-              run: pnpm exec playwright install --with-deps
-            - name: Build monorepo
-              run: pnpm run build
-            - name: Run E2E tests
-              working-directory: apps/desktop
-              env:
-                  DISPLAY: :0
-              run: |
-                  Xvfb :0 -screen 0 1920x1080x24 &
-                  pnpm run e2e
-            - uses: actions/upload-artifact@v4
-              if: ${{ !cancelled() }}
-              with:
-                  name: desktop-playwright-report-${{ matrix.artifact }}-${{ github.run_number }}
-                  path: apps/desktop/playwright-report/
-                  retention-days: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+      - name: Install project dependencies
+        run: pnpm install
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Build monorepo
+        run: pnpm run build
+      - name: Run E2E tests
+        working-directory: apps/desktop
+        env:
+          DISPLAY: :0
+        run: |
+          Xvfb :0 -screen 0 1920x1080x24 &
+          pnpm run e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: desktop-playwright-report-${{ github.run_number }}
+          path: apps/desktop/playwright-report/
+          retention-days: 30

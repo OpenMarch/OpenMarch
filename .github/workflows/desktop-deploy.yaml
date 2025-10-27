@@ -55,9 +55,9 @@ jobs:
         if: startsWith(matrix.os, 'ubuntu')
         run: sudo snap install snapcraft --classic
 
-      - name: Install Snapcraft (Ubuntu ARM) 
+      - name: Install Snapcraft (Ubuntu ARM)
         if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd 
+        run: sudo snap install lxd
 
       - name: Setup LXD (Ubuntu ARM)
         if: matrix.os == 'ubuntu-24.04-arm'

@@ -135,6 +135,9 @@ module.exports = {
         "uuidv",
         "mello",
         "sqljs",
+        "idioma",
+        "Geral",
+        "Configuración",
         "Invalidators",
     ],
     ignorePaths: [

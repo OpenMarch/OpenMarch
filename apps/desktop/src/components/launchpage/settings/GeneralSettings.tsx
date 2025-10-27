@@ -54,7 +54,7 @@ export default function GeneralSettings() {
         "English";
 
     return (
-        <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-6 border p-12">
+        <div className="bg-fg-1 border-stroke rounded-6 flex h-[110%] flex-col gap-6 border p-12">
             <div className="flex h-[2.5rem] items-center justify-between px-8">
                 <p className="text-body text-text-subtitle">
                     <T keyName="settings.general.appearance" />

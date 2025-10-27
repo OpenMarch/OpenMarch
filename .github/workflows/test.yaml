@@ -7,13 +7,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - branch: main
-            artifact: main
-          - branch: ${{ github.head_ref }}
-            artifact: pull-request
 
     permissions:
       # Required to checkout the code
