@@ -39,18 +39,3 @@ jobs:
       #   with:
       #       name: coverage-${{ matrix.artifact }}
       #       path: coverage
-
-  test-succeeded:
-    needs: test
-    runs-on: ubuntu-latest
-    if: always()
-    permissions:
-      contents: read
-    steps:
-      - name: Check test results
-        run: |
-          if [ "${{ needs.test.result }}" != "success" ]; then
-            echo "Tests failed!"
-            exit 1
-          fi
-          echo "All tests passed!"
