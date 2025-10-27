@@ -1,41 +1,41 @@
 name: Run Tests
 
 on:
-  pull_request:
-    branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+    test:
+        runs-on: ubuntu-latest
 
-    permissions:
-      # Required to checkout the code
-      contents: read
+        permissions:
+            # Required to checkout the code
+            contents: read
 
-    steps:
-      - uses: actions/checkout@v4
+        steps:
+            - uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4.1.0
+            - name: Setup pnpm
+              uses: pnpm/action-setup@v4.1.0
 
-      - name: Install project dependencies
-        run: pnpm install
+            - name: Install project dependencies
+              run: pnpm install
 
-      - name: Build project
-        run: pnpm run build
+            - name: Build project
+              run: pnpm run build
 
-      - name: Test Prepare (for desktop)
-        run: pnpm desktop test:prepare
+            - name: Test Prepare (for desktop)
+              run: pnpm desktop test:prepare
 
-      - name: Test all packages
-        run: pnpm run test
+            - name: Test all packages
+              run: pnpm run test
 
-      - name: Test desktop with history
-        working-directory: apps/desktop
-        run: pnpm run test:history
+            - name: Test desktop with history
+              working-directory: apps/desktop
+              run: pnpm run test:history
 
-      # - name: "Upload Coverage"
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #       name: coverage-${{ matrix.artifact }}
-      #       path: coverage
+            # - name: "Upload Coverage"
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #       name: coverage-${{ matrix.artifact }}
+            #       path: coverage

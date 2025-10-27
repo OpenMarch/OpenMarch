@@ -32,7 +32,6 @@ To add a new MusicXML parsing test:
 
 4. **Update Variables in the Test File**  
    Open the test file and update the following:
-
    - Change the value of the `filename` variable to match your MusicXML file name.
    - Change the `testName` variable to describe your test case.
 
