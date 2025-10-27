@@ -15,7 +15,7 @@ describe("uiSettings Store", () => {
         lockY: false,
         previousPaths: true,
         nextPaths: true,
-        showCollisions: true,
+        showCollisions: false,
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
