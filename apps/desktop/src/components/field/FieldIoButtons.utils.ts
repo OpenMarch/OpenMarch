@@ -1,7 +1,7 @@
 import {
     getFieldPropertiesJSON,
     updateFieldsPropertiesJSON,
-} from "../../global/classes/FieldProperties";
+} from "@/global/classes/FieldProperties";
 import { FieldPropertiesSchema } from "./fieldPropertiesSchema";
 import type { ZodError } from "zod";
 

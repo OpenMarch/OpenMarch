@@ -7,9 +7,9 @@ import { DEFAULT_FIELD_THEME } from "@openmarch/core";
  * a: 0-1
  */
 export const RgbaColorSchema = z.object({
-    r: z.float64().min(0).max(255),
-    g: z.float64().min(0).max(255),
-    b: z.float64().min(0).max(255),
+    r: z.int().min(0).max(255),
+    g: z.int().min(0).max(255),
+    b: z.int().min(0).max(255),
     a: z.float64().min(0).max(1),
 });
 
