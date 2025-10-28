@@ -52,7 +52,10 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     await page.locator("#pages").getByRole("button").click();
     await page.locator("#pages").getByRole("button").click();
     for (const pageName of ["0", "1", "2"])
-        await expect(page.locator("#pages")).toContainText(pageName);
+        await expect(
+            page.locator("#pages"),
+            `Page ${pageName} should be visible`,
+        ).toContainText(pageName);
 
     // select page 1
     await page.locator("div").filter({ hasText: /^1$/ }).first().click();
@@ -95,19 +98,19 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     await page.locator("#pages").getByRole("button").click();
 
     // Turn them both into subsets
-    await page.getByRole("switch").click();
+    await page.getByRole("switch", { name: "Subset" }).click();
     await page.locator("html").click();
     await page.locator("div").filter({ hasText: /^1$/ }).first().click({
         button: "right",
     });
-    await page.getByRole("switch").click();
+    await page.getByRole("switch", { name: "Subset" }).click();
     for (const pageName of ["0", "0A", "0B", "0C", "0D"])
         await expect(page.locator("#pages")).toContainText(pageName);
     await page.locator("html").click();
 
     // Turn page 0A back into a page
     await page.locator("div").filter({ hasText: /^0A$/ }).first().click();
-    await page.getByRole("switch").click();
+    await page.getByRole("switch", { name: "Subset" }).click();
     for (const pageName of ["0", "1", "1A", "1B", "1C"])
         await expect(page.locator("#pages")).toContainText(pageName);
     await page.locator("html").click();
