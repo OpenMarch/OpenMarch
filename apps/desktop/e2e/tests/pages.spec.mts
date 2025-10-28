@@ -100,6 +100,7 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^1$/ }).first().click({
         button: "right",
     });
+    await expect(page.getByText("Page 1ASubsetDelete")).toBeVisible();
     await page.getByRole("switch").click();
     for (const pageName of ["0", "0A", "0B", "0C", "0D"])
         await expect(page.locator("#pages")).toContainText(pageName);

@@ -124,7 +124,6 @@ You can read [here](https://github.com/samuelmeuli/action-snapcraft) how you can
 If you've configured `electron-builder` to notarize your Electron Mac app [as described in this guide](https://samuelmeuli.com/blog/2019-12-28-notarizing-your-electron-app), you can use the following steps to let GitHub Actions perform the notarization for you:
 
 1. Define the following secrets in your repository's settings on GitHub:
-
    - `api_key`: Content of the API key file (with the `p8` file extension)
    - `api_key_id`: Key ID found on App Store Connect
    - `api_key_issuer_id`: Issuer ID found on App Store Connect

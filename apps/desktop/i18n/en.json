@@ -499,7 +499,7 @@
         "deleteButton": "Delete",
         "deleteDescription": "You are about to delete these section styles: {sections}. This can be undone with [Ctrl/Cmd+Z].",
         "deleteTitle": "Warning",
-        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with [Crtl/Cmd+Z].",
+        "deleteWarning": "You are about to delete these marchers: {marchers}. This can be undone with [Ctrl/Cmd+Z].",
         "drillOrder": "Drill Number",
         "drillOrderError": {
             "exists": "This drill number already exists"

@@ -24,9 +24,10 @@
         "path-utility": "turbo run --filter=@openmarch/path-utility",
         "test": "turbo run test",
         "lint": "turbo run lint",
-        "format": "turbo run format",
+        "format": "prettier --write .",
+        "format:check": "prettier --check .",
         "fix": "turbo run fix",
-        "spellcheck": "turbo run spellcheck",
+        "spellcheck": "turbo run spellcheck && cspell .",
         "prepare": "husky"
     },
     "devDependencies": {
