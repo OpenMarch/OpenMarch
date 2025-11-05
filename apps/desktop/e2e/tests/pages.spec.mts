@@ -1,5 +1,51 @@
 import { test } from "e2e/fixtures.mjs";
-import { expect } from "playwright/test";
+import { expect, Page } from "playwright/test";
+
+export const createNewPage = async (page: Page) => {
+    // Extract only the Pages section from the snapshot
+    const snapshotBefore = await page.locator("#timeline").ariaSnapshot();
+
+    // Find the Pages section (from "paragraph: Pages" to next "paragraph:" or end)
+    const pagesMatch = snapshotBefore.match(
+        /- paragraph: Pages(.*?)(?=- paragraph:|$)/s,
+    );
+    if (!pagesMatch) throw new Error("Pages section not found");
+
+    const pagesSection = pagesMatch[1];
+
+    // Pattern handles various formats:
+    // - text: "0 1 2" or - text: 0 1 2 (with newlines)
+    // Pages- text: 0 1- button (without newlines)
+    const pattern = /- text: "?([^"\n]+?)"?(?=\n|- |$)/g;
+    const textMatches = pagesSection.matchAll(pattern);
+    const pageNamesBefore: string[] = [];
+
+    for (const match of textMatches) {
+        const text = match[1].trim();
+        // If the text contains spaces, it's multiple pages in one string
+        if (text.includes(" ")) {
+            pageNamesBefore.push(...text.split(/\s+/));
+        } else {
+            // Single page name
+            pageNamesBefore.push(text);
+        }
+    }
+
+    if (pageNamesBefore.length === 0) throw new Error("No page names found");
+
+    const lastPageNameBefore = pageNamesBefore[pageNamesBefore.length - 1];
+    const lastPageNumber = parseInt(
+        lastPageNameBefore.match(/^\d+/)?.[0] ?? "",
+    );
+
+    // create new page
+    await page.locator("#pages").getByRole("button").click();
+
+    const expectedNewPageName = lastPageNumber + 1;
+    await expect(page.locator("#pages")).toContainText(
+        expectedNewPageName.toString(),
+    );
+};
 
 test("First page is visible", async ({ electronApp }) => {
     const { page } = electronApp;
@@ -12,12 +58,11 @@ test("Create new page with no new beats", async ({ electronApp }) => {
     const { page } = electronApp;
 
     await expect(page.locator("#pages")).not.toContainText("1");
-    await page.waitForTimeout(1000);
     await expect(page.locator("#pages")).toContainText("0");
     for (const pageName of ["1", "2"])
         await expect(page.locator("#pages")).not.toContainText(pageName);
 
-    await page.locator("#pages").getByRole("button").click();
+    await createNewPage(page);
     await expect(page.locator("#pages")).toContainText("1");
     await expect(
         page.locator("#app"),
@@ -26,7 +71,7 @@ test("Create new page with no new beats", async ({ electronApp }) => {
     for (const pageName of ["0", "1"])
         await expect(page.locator("#pages")).toContainText(pageName);
 
-    await page.locator("#pages").getByRole("button").click();
+    await createNewPage(page);
     await expect(page.locator("#pages")).toContainText("2");
     await expect(
         page.locator("#app"),
@@ -48,9 +93,8 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     const { page } = electronApp;
 
     // create 2 pages
-
-    await page.locator("#pages").getByRole("button").click();
-    await page.locator("#pages").getByRole("button").click();
+    await createNewPage(page);
+    await createNewPage(page);
     for (const pageName of ["0", "1", "2"])
         await expect(page.locator("#pages")).toContainText(pageName);
 
@@ -91,8 +135,8 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
         await expect(page.locator("#pages")).toContainText(pageName);
 
     // create 2 more pages
-    await page.locator("#pages").getByRole("button").click();
-    await page.locator("#pages").getByRole("button").click();
+    await createNewPage(page);
+    await createNewPage(page);
 
     // Turn them both into subsets
     await page.getByRole("switch").click();
@@ -100,6 +144,7 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^1$/ }).first().click({
         button: "right",
     });
+    // await expect(page.getByText("Page 1ASubsetDelete")).toBeVisible();
     await page.getByRole("switch").click();
     for (const pageName of ["0", "0A", "0B", "0C", "0D"])
         await expect(page.locator("#pages")).toContainText(pageName);
@@ -116,9 +161,9 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
 test("Delete page", async ({ electronApp }) => {
     const { page } = electronApp;
 
-    await page.locator("#pages").getByRole("button").click();
-    await page.locator("#pages").getByRole("button").click();
-    await page.locator("#pages").getByRole("button").click();
+    await createNewPage(page);
+    await createNewPage(page);
+    await createNewPage(page);
 
     for (const pageName of ["0", "1", "2", "3"])
         await expect(page.locator("#pages")).toContainText(pageName);
