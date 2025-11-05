@@ -15,7 +15,7 @@ describe("uiSettings Store", () => {
         lockY: false,
         previousPaths: true,
         nextPaths: true,
-        showCollisions: true,
+        showCollisions: false,
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
@@ -59,7 +59,8 @@ describe("uiSettings Store", () => {
         expect(result.current.uiSettings).toEqual(expectedSettings);
     });
 
-    it("uiSettingsStore - set showCollisions", async () => {
+    // TODO: Re-enable this test when collisions are re-enabled
+    it.todo("uiSettingsStore - set showCollisions", async () => {
         const { result } = renderHook(() => useUiSettingsStore());
 
         const expectedSettings = {
