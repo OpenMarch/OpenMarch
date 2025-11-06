@@ -1,4 +1,4 @@
-import { fabric } from "fabric";
+import { Circle, Line } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { StaticMarcherShape, VanillaPoint } from "./StaticMarcherShape";
 import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
@@ -10,7 +10,7 @@ import { rgbaToString } from "@openmarch/core";
  * It handles the movement and modification of the control point, and updates the corresponding
  * coordinates in the path.
  */
-export class ShapePointController extends fabric.Circle {
+export class ShapePointController extends Circle {
     /**
      * The path this control point is a part of
      */
@@ -31,7 +31,7 @@ export class ShapePointController extends fabric.Circle {
     /** The point directly after this one in the path */
     outgoingPoint: ShapePointController | null;
     /** A fabric line that leads to the outgoing point to visual the relationship */
-    outgoingLine: fabric.Line | null;
+    outgoingLine: Line | null;
 
     canvas?: OpenMarchCanvas;
     left: number;

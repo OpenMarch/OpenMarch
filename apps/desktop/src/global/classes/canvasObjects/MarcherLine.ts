@@ -1,4 +1,4 @@
-import { fabric } from "fabric";
+import { Line } from "fabric";
 import * as CanvasConstants from "@/components/canvas/CanvasConstants";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
@@ -11,8 +11,8 @@ import {
 /**
  * A MarcherLine is drawn by a user and marchers are evenly spaced along it.
  */
-export default class MarcherLine extends fabric.Line {
-    canvas?: OpenMarchCanvas;
+export default class MarcherLine extends Line {
+    declare canvas?: OpenMarchCanvas;
     /** The ID of the group that this MarcherLine belongs to */
     groupId?: number;
     /** The ID of the MarcherLine in the database. If the ID is -1, that means the line is not in the database */

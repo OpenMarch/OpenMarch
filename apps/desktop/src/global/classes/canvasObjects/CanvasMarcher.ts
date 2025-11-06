@@ -1,4 +1,14 @@
-import { fabric } from "fabric";
+import {
+    Group,
+    Rect,
+    FabricObject,
+    FabricText,
+    Canvas,
+    Triangle,
+    Circle,
+    Line,
+    FabricObjectProps,
+} from "fabric";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
 import { FieldProperties } from "@openmarch/core";
@@ -20,7 +30,7 @@ export const DEFAULT_DOT_RADIUS = 5;
  * It includes things such as the fabric objects and other canvas-specific properties.
  */
 export default class CanvasMarcher
-    extends fabric.Group
+    extends Group
     implements Selectable.ISelectable
 {
     // Styles
@@ -28,11 +38,11 @@ export default class CanvasMarcher
     private static readonly dotRadius = DEFAULT_DOT_RADIUS;
     private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
     readonly classString = Selectable.SelectableClasses.MARCHER;
-    backgroundRectangle: fabric.Rect;
-    textLabel: fabric.Text;
+    backgroundRectangle: Rect;
+    textLabel: FabricText;
 
     /** The object that represents the dot on the canvas */
-    readonly dotObject: fabric.Object;
+    readonly dotObject: FabricObject;
     private _locked: boolean = false;
     private _lockedReason: string = "";
 
@@ -81,9 +91,9 @@ export default class CanvasMarcher
         const shapeType = sectionAppearance?.shape_type || "circle";
 
         // Create the appropriate shape based on shapeType
-        let markerShape: fabric.Object;
+        let markerShape: FabricObject;
 
-        const commonShapeProps = {
+        const commonShapeProps: Partial<FabricObjectProps> = {
             left: coordinate.x,
             top: coordinate.y,
             originX: "center",
@@ -94,7 +104,7 @@ export default class CanvasMarcher
 
         if (shapeType === "square") {
             const sideLength = dotRadius * Math.sqrt(Math.PI);
-            markerShape = new fabric.Rect({
+            markerShape = new Rect({
                 ...commonShapeProps,
                 width: sideLength * 1.2,
                 height: sideLength * 1.2,
@@ -102,7 +112,7 @@ export default class CanvasMarcher
         } else if (shapeType === "triangle") {
             // Create an equilateral triangle
             const triangleRadius = dotRadius * 1.2; // Slightly larger to maintain visual weight
-            markerShape = new fabric.Triangle({
+            markerShape = new Triangle({
                 ...commonShapeProps,
                 width: triangleRadius * 2,
                 height: triangleRadius * Math.sqrt(3), // Height of equilateral triangle
@@ -110,20 +120,20 @@ export default class CanvasMarcher
         } else if (shapeType === "x") {
             // Create an X shape using two crossing lines
             const xSize = dotRadius * 1.2;
-            const line1 = new fabric.Line([-xSize, -xSize, xSize, xSize], {
+            const line1 = new Line([-xSize, -xSize, xSize, xSize], {
                 stroke: outlineColor,
                 strokeWidth: 2,
             });
-            const line2 = new fabric.Line([-xSize, xSize, xSize, -xSize], {
+            const line2 = new Line([-xSize, xSize, xSize, -xSize], {
                 stroke: outlineColor,
                 strokeWidth: 2,
             });
-            markerShape = new fabric.Group([line1, line2], {
+            markerShape = new Group([line1, line2], {
                 ...commonShapeProps,
             });
         } else {
             // Default to circle
-            markerShape = new fabric.Circle({
+            markerShape = new Circle({
                 ...commonShapeProps,
                 radius: dotRadius,
             });
@@ -140,7 +150,7 @@ export default class CanvasMarcher
         });
         this.dotObject = markerShape;
 
-        this.textLabel = new fabric.Text(marcher.drill_number, {
+        this.textLabel = new FabricText(marcher.drill_number, {
             left: coordinate.x,
             top: coordinate.y - CanvasMarcher.dotRadius * 2.2,
             originX: "center",
@@ -153,18 +163,20 @@ export default class CanvasMarcher
             hasControls: false,
             hasBorders: false,
         });
-
         // add a rectangle for stroke and fill
-        this.backgroundRectangle = new fabric.Rect({
+        this.backgroundRectangle = new Rect({
             left: this.left,
             top: this.top,
+            // Keep the origin properties for now, even though they are deprecated
+            // The default looks to eventually be center
+            // https://github.com/fabricjs/fabric.js/discussions/9736
             originX: this.originX,
             originY: this.originY,
             fill: "transparent",
             width: this.width,
             height: this.height,
         });
-        this.addWithUpdate(this.backgroundRectangle);
+        this.add(this.backgroundRectangle);
 
         this.id = marcher.id;
         this.objectToGloballySelect = marcher;
@@ -355,12 +367,12 @@ export default class CanvasMarcher
     }
 
     /******* PUBLIC METHODS *******/
-    static isCanvasMarcher(object: fabric.Object): object is CanvasMarcher {
+    static isCanvasMarcher(object: FabricObject): object is CanvasMarcher {
         return object instanceof CanvasMarcher;
     }
 
     static getCanvasMarcherForMarcher(
-        canvas: fabric.Canvas,
+        canvas: Canvas,
         marcher: Marcher,
     ): CanvasMarcher | undefined {
         return canvas
