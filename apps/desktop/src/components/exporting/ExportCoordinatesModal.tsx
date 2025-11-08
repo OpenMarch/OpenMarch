@@ -288,7 +288,7 @@ function CoordinateSheetExport() {
             setProgress(85);
 
             // Debug logging
-            console.log("Sending to export service:", {
+            console.debug("Sending to export service:", {
                 sheetCount: groupedSheets.length,
                 organizeBySection,
                 quarterPages,

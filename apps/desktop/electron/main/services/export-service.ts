@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { dialog, BrowserWindow, app, shell } from "electron";
 import * as path from "path";
 import * as fs from "fs";
@@ -332,29 +333,29 @@ export class PDFExportService {
                             `
                                     : ""
                             }
-                            
+
                             /* Allow tables to break across pages but keep headers */
                             table {
                               page-break-inside: auto;
                             }
-                            
+
                             /* Ensure table headers repeat on each page */
                             thead {
                               display: table-header-group;
                             }
-                            
+
                             /* Ensure performer header repeats on each page */
                             .sheetHeader {
                               display: table-header-group;
                               page-break-inside: avoid;
                               page-break-after: avoid;
                             }
-                            
+
                             /* Add some spacing between coordinate rows */
                             tbody tr {
                               page-break-inside: avoid;
                             }
-                            
+
                             /* For quarter pages, use different layout */
                             ${
                                 quarterPages
@@ -369,11 +370,11 @@ export class PDFExportService {
                                     : ""
                             }
                           }
-                          
+
                           @page {
                             margin: ${quarterPages ? "0.5in" : "0.5in"};
                           }
-                          
+
                           body {
                             margin: 0;
                             padding: 0;
@@ -948,6 +949,7 @@ export class PDFExportService {
      * @param exportDir
      * @param individualCharts
      */
+    // eslint-disable-next-line max-lines-per-function
     public static async generateDocForMarcher(
         svgPages: string[],
         drillNumber: string,

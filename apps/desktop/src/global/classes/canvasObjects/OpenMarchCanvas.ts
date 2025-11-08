@@ -172,12 +172,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         uiSettings,
         currentPage,
         listeners,
+        isGeneratingSVG = false,
     }: {
         canvasRef: HTMLCanvasElement | null;
         fieldProperties: FieldProperties;
         uiSettings: UiSettings;
         currentPage?: Page;
         listeners?: CanvasListeners;
+        isGeneratingSVG?: boolean;
     }) {
         super(canvasRef, {
             // TODO - why are these here from 4023b18
@@ -199,7 +201,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.off("mouse:wheel");
 
         // Init the DOM wrapper for the canvas if available
-        if (canvasRef) {
+        if (!isGeneratingSVG && canvasRef) {
             this.setupExternalPanZoomContainer(canvasRef);
         }
 
@@ -223,15 +225,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 timestamp: 0,
             };
 
+        // These both need to be here for the initial render
+        this._fieldProperties = fieldProperties;
+        this.fieldProperties = fieldProperties;
         // Set canvas size
         this.refreshCanvasSize();
         // Update canvas size on window resize (store handler for cleanup)
         this._onWindowResize = this.refreshCanvasSize.bind(this);
         window.addEventListener("resize", this._onWindowResize);
-
-        this._fieldProperties = fieldProperties;
-
-        this.fieldProperties = fieldProperties;
 
         // Set the UI settings
         this._uiSettings = uiSettings;
@@ -239,7 +240,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (listeners) this.setListeners(listeners);
 
         this._backgroundImage = null;
-        void this.refreshBackgroundImage();
+        if (!isGeneratingSVG) void this.refreshBackgroundImage();
 
         this.requestRenderAll();
 
@@ -1048,16 +1049,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      *
      * @param marcherVisuals The map of marcher visuals
      * @param marcherPages All of the marcher pages
-     * @param pageId The id of the page to render marchers for
      */
     renderMarchers = async ({
         marcherVisuals,
         marcherPages,
-        pageId,
     }: {
         marcherVisuals: MarcherVisualMap;
         marcherPages: MarcherPagesByMarcher;
-        pageId: number;
     }) => {
         CanvasMarcher.theme = this.fieldProperties.theme;
 
@@ -2126,54 +2124,64 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * If the image data is null, the background image is set to null.
      * Finally, the field grid is re-rendered to reflect the updated background image.
      */
-    async refreshBackgroundImage(renderFieldGrid: boolean = true) {
+    async refreshBackgroundImage(
+        renderFieldGrid: boolean = true,
+        imageElement?: HTMLImageElement | null,
+    ) {
         if (this._backgroundImage) {
             this.remove(this._backgroundImage);
             this._backgroundImage = null;
         }
 
         try {
-            const backgroundImage = await getFieldPropertiesImage();
+            if (imageElement !== null) {
+                let img: HTMLImageElement;
+                if (imageElement === undefined) {
+                    const backgroundImage = await getFieldPropertiesImage();
 
-            if (backgroundImage === null) {
-                this._backgroundImage = null;
-                return;
-            }
+                    if (backgroundImage === null) {
+                        this._backgroundImage = null;
+                        return;
+                    }
 
-            const loadImage = async (): Promise<HTMLImageElement> => {
-                return new Promise((resolve, reject) => {
-                    const img = new Image();
-                    img.onload = () => resolve(img);
-                    img.onerror = reject;
+                    const loadImage = async (): Promise<HTMLImageElement> => {
+                        return new Promise((resolve, reject) => {
+                            const img = new Image();
+                            img.onload = () => resolve(img);
+                            img.onerror = reject;
 
-                    const blob = new Blob([
-                        (backgroundImage as any).buffer as ArrayBuffer,
-                    ]);
-                    img.src = URL.createObjectURL(blob);
+                            const blob = new Blob([
+                                (backgroundImage as any).buffer as ArrayBuffer,
+                            ]);
+                            img.src = URL.createObjectURL(blob);
 
-                    return img;
+                            return img;
+                        });
+                    };
+
+                    img = await loadImage();
+                } else {
+                    img = imageElement ?? new Image();
+                }
+
+                FieldProperties.imageDimensions = {
+                    width: img.width,
+                    height: img.height,
+                };
+
+                this._backgroundImage = new fabric.Image(img, {
+                    height: img.height,
+                    width: img.width,
+                    left: 0,
+                    top: 0,
+                    selectable: false,
+                    hoverCursor: "default",
+                    evented: false,
                 });
-            };
 
-            const img = await loadImage();
-
-            FieldProperties.imageDimensions = {
-                width: img.width,
-                height: img.height,
-            };
-
-            this._backgroundImage = new fabric.Image(img, {
-                height: img.height,
-                width: img.width,
-                left: 0,
-                top: 0,
-                selectable: false,
-                hoverCursor: "default",
-                evented: false,
-            });
-
-            const imgAspectRatio = img.width / img.height;
-            this.refreshBackgroundImageValues(imgAspectRatio);
+                const imgAspectRatio = img.width / img.height;
+                this.refreshBackgroundImageValues(imgAspectRatio);
+            }
             renderFieldGrid && this.renderFieldGrid();
         } catch (error) {
             FieldProperties.imageDimensions = undefined;
