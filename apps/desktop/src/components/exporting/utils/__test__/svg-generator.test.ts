@@ -46,7 +46,7 @@ describe("PdfGenerator", () => {
             expect(output.coords).toBeNull();
         });
     });
-    describe.only("generateDrillChartExportSVGs - should generate individual SVGs for each page", () => {
+    describe("generateDrillChartExportSVGs - should generate individual SVGs for each page", () => {
         it.for(seedObj)("seed: $seed", async ({ seed }) => {
             const marchers = generateMarchers({ numberOfMarchers: 16, seed });
             const timingObjects = generateTimingObjects({
