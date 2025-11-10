@@ -43,7 +43,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
-import { generateDrillChartExportSVGs } from "./utils/pdf-generator";
+import { generateDrillChartExportSVGs } from "./utils/svg-generator";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {

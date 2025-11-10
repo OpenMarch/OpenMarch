@@ -6,7 +6,7 @@ import {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { pageToDatabasePage } from "@/global/classes/Page";
 import { describe, expect, it } from "vitest";
-import { generateDrillChartExportSVGs } from "../pdf-generator";
+import { generateDrillChartExportSVGs } from "../svg-generator";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import { seedObj } from "@/test/base";
 
