@@ -230,7 +230,7 @@ export class PDFExportService {
                     .join("");
             }
 
-            console.log("generateSinglePDF called with:", {
+            console.debug("generateSinglePDF called with:", {
                 pageCount: sheets.length,
                 quarterPages,
                 firstPageLength: sheets[0]?.length || 0,
@@ -386,9 +386,9 @@ export class PDFExportService {
                     </html>
                 `;
 
-            console.log("HTML content length:", htmlContent.length);
-            console.log("Combined HTML length:", combinedHtml.length);
-            console.log(
+            console.debug("HTML content length:", htmlContent.length);
+            console.debug("Combined HTML length:", combinedHtml.length);
+            console.debug(
                 "First 500 chars of HTML:",
                 htmlContent.substring(0, 500),
             );
@@ -966,7 +966,9 @@ export class PDFExportService {
         individualCharts: boolean,
     ) {
         // Debug: Confirm this is drill chart export
-        console.log("🎺 DRILL CHART EXPORT - generateDocForMarcher called");
+        console.debug(
+            `🎺 DRILL CHART EXPORT - generateDocForMarcher called - ${drillNumber}`,
+        );
 
         // For each marcher, create a PDF of their pages
         const pdfFileName = `${showName}-${drillNumber}.pdf`;

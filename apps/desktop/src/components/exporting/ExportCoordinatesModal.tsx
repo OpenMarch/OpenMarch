@@ -1,14 +1,11 @@
 /* eslint-disable no-control-regex */
 import { useCallback, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
-import { fabric } from "fabric";
-import { NoControls } from "@/components/canvas/CanvasConstants";
 import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import {
-    allDatabaseShapePagesQueryOptions,
     allMarcherPagesQueryOptions,
     allSectionAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
@@ -34,11 +31,7 @@ import {
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
-import { useMarchersWithVisuals, useTimingObjects } from "@/hooks";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { rgbaToString } from "@openmarch/core";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import { useTimingObjects } from "@/hooks";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
@@ -47,7 +40,6 @@ import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
