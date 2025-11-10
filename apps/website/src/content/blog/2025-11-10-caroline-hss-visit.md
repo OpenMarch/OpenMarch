@@ -1,0 +1,34 @@
+---
+title: "Caroline High School Marching Band Brings Their Show to Life with OpenMarch Free Drill Writing Software for Marching Bands"
+author: "Aleksi Saario"
+date: 2025-11-10
+image: "/blog/20251110/thumbnail.png"
+---
+
+On October 24th, Olivia and I made the trip to Caroline High School in Milford, Virginia to spotlight their marching band for designing their outdoor marching band show fully with OpenMarch, our Free Drill Design Software, for their Fall 2025 season.
+
+## Bringing a Vision to Life with Open March
+
+Caroline’s program is small, only 28 members this year, but what they have accomplished is huge! While they have competed in years prior, this is their first season performing as a competitive corps-style band after previously marching a bent-leg show-style. Under Carter King, things are changing in the best way possible.
+Carter took on the role of drill writer himself this season, using OpenMarch to design their entire show. As a first-year director, he wanted to stretch every dollar to make sure his students could compete, travel, and have the full marching band experience.
+“I wanted to make sure we had enough money to go throughout the year and stay financially stable,” he told me. “OpenMarch suited every need I had. It was easy to use, free to use, and powerful enough for my program.”
+
+## Making Drill Writing Accessible for Every Program
+
+During our visit, we filmed their show, made TikToks with the students, and got to hang out with the band. You could truly feel how proud and excited everyone was to perform something they built together. There was a real sense of ownership in what they were doing, and it all came from their own director sitting down, learning the software, and writing it himself.
+
+Carter’s story really hit home for me. Caroline represents exactly why OpenMarch exists: to make drill writing accessible for any program, no matter the size or budget. When small schools can save hundreds or even thousands by not needing to buy expensive software or hiring outside designers, that money can go back into things that matter, such as transportation, competitions, new equipment, or simply keeping the program alive.
+“Small bands don’t mean bad bands,” Carter said at the end of our interview. “The little guy only gets to be the big guy if the little guy is supported at some point.”
+
+## Why This Visit Meant So Much
+
+That line stuck with me. It is why this visit meant so much. Seeing a small school thrive because of a free tool we built reminded me how important it is that OpenMarch stays free and accessible. Not every band gets funding. Not every band has a staff of designers. But every band deserves the chance to create, perform, and grow.
+We will be doing more visits like this soon, and we will also be heading to events and conferences this year, including the Midwest Clinic in Chicago. I, along with the whole OpenMarch team, are excited to keep meeting directors and programs who are redefining what the marching arts can be!
+
+## Watch the Full Caroline High School Testimonial
+
+You can now watch Caroline High School's full video testimonial with Director Carter King on our Youtube. Carter shares his experience using OpenMarch, how it helped shape his program, and what it means for smaller bands everywhere.
+
+<iframe width="560" height="315" src="https://www.youtube.com/embed/b24Z3nw1Rso" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+
+Want OpenMarch to tell your story or visit your school? Reach out to us, we'd love to feature you next!
