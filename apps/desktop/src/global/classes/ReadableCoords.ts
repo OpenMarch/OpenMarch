@@ -92,7 +92,7 @@ export class ReadableCoords {
      * @returns A new ReadableCoords object created from a MarcherPage object.
      */
     static fromMarcherPage(
-        marcherPage: MarcherPage,
+        marcherPage: Pick<MarcherPage, "x" | "y">,
         roundingDenominator = 100,
     ) {
         return new ReadableCoords({

@@ -116,7 +116,7 @@ try {
         logoSvg.replace(/currentColor/g, "black"),
     ).toString("base64")}`;
 
-    console.log("Logo data URI created for HTML exports");
+    console.debug("Logo data URI created for HTML exports");
 } catch (error) {
     console.error("Error loading logo for PDF export:", error);
 }
@@ -644,9 +644,12 @@ export class PDFExportService {
                                 displayHeaderFooter: true,
                             })
                             .then(async (data) => {
-                                const blob = new Blob([data], {
-                                    type: "application/pdf",
-                                });
+                                const blob = new Blob(
+                                    [data as unknown as ArrayBuffer],
+                                    {
+                                        type: "application/pdf",
+                                    },
+                                );
                                 const arrayBuffer = await blob.arrayBuffer();
                                 await fs.promises.writeFile(
                                     filePath,
@@ -768,9 +771,12 @@ export class PDFExportService {
                                     displayHeaderFooter: true,
                                 })
                                 .then(async (data) => {
-                                    const blob = new Blob([data], {
-                                        type: "application/pdf",
-                                    });
+                                    const blob = new Blob(
+                                        [data as unknown as ArrayBuffer],
+                                        {
+                                            type: "application/pdf",
+                                        },
+                                    );
                                     const arrayBuffer =
                                         await blob.arrayBuffer();
                                     await fs.promises.writeFile(
