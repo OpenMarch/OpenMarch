@@ -18,10 +18,11 @@ import {
 } from "@/global/classes/canvasObjects/SvgCommand";
 import { T, useTolgee } from "@tolgee/react";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     copyShapePageToPageMutationOptions,
     deleteShapePagesMutationOptions,
+    shapePagesQueryByPageIdOptions,
 } from "@/hooks/queries";
 import { useCanvasStore } from "@/stores/CanvasStore";
 import { assert } from "@/utilities/utils";
@@ -42,6 +43,9 @@ export default function ShapeEditor() {
     const { selectedPage } = useSelectedPage()!;
     const { mutate: copyShapePageToPage, isPending: isCopyingShapePageToPage } =
         useMutation(copyShapePageToPageMutationOptions(queryClient));
+    const { data: shapePagesForThisPage } = useQuery(
+        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
+    );
 
     const { t } = useTolgee();
     const { canvas } = useCanvasStore();
@@ -141,189 +145,209 @@ export default function ShapeEditor() {
     );
 
     // eslint-disable-next-line max-lines-per-function
-    const singleShapeEditor = (marcherShape: MarcherShape) => {
-        return (
-            <Form.Root
-                id={`${marcherShape.shapePage.id}-shapeForm`}
-                className="flex flex-col gap-24"
-            >
-                <div className="flex flex-wrap gap-8">
-                    {selectedPage && (
-                        <>
-                            <Button
-                                disabled={
-                                    selectedPage.previousPageId == null ||
-                                    isCopyingShapePageToPage
-                                }
-                                onClick={() => {
-                                    copyShapePageToPage({
-                                        shapePageId: marcherShape.shapePage.id,
-                                        targetPageId:
-                                            selectedPage.previousPageId!,
-                                    });
-                                }}
-                                className="min-h-0 w-fit"
-                                type="button"
-                                size="compact"
-                                variant="secondary"
-                                tooltipSide="top"
-                                tooltipText={
-                                    selectedPage.previousPageId === null
-                                        ? t(
-                                              "inspector.shape.errorNoPreviousPage",
-                                          )
-                                        : t(
-                                              "inspector.shape.copyToPreviousPage",
-                                          )
-                                }
-                            >
-                                <T keyName="inspector.shape.copyToPreviousPageButton" />
-                            </Button>
-                            <Button
-                                disabled={
-                                    selectedPage.nextPageId === null ||
-                                    isCopyingShapePageToPage
-                                }
-                                onClick={() => {
-                                    copyShapePageToPage({
-                                        shapePageId: marcherShape.shapePage.id,
-                                        targetPageId: selectedPage.nextPageId!,
-                                    });
-                                }}
-                                className="min-h-0 w-fit"
-                                type="button"
-                                size="compact"
-                                variant="secondary"
-                                tooltipText={
-                                    selectedPage.nextPageId === null
-                                        ? t("inspector.shape.errorNoNextPage")
-                                        : t("inspector.shape.copyToNextPage")
-                                }
-                            >
-                                <T keyName="inspector.shape.copyToNextPageButton" />
-                            </Button>
-                        </>
-                    )}
-                    <Button
-                        onClick={() => {
-                            handleDeleteShape(marcherShape);
-                        }}
-                        className="min-h-0 w-fit"
-                        type="button"
-                        size="compact"
-                        variant="red"
-                        tooltipText={t("inspector.shape.ungroupShapeTooltip")}
-                    >
-                        <T keyName="inspector.shape.ungroupShapeButton" />
-                    </Button>
-                </div>
-                <div className="flex flex-col gap-16">
-                    <h5 className="text-h5">
-                        <T keyName="inspector.shape.segments.title" />
-                    </h5>
-                    {marcherShape.shapePath.points.map(
-                        (point, index) =>
-                            index > 0 && ( // do not render the first shape (move)
-                                <div
-                                    key={index}
-                                    className="flex items-center justify-between"
-                                >
-                                    <p className="text-body text-text/80">
-                                        {t("inspector.shape.segment", {
-                                            index: index,
-                                        })}
-                                    </p>
-                                    <Select
-                                        required
-                                        value={
-                                            SvgCommands[point.command].command
-                                        }
-                                        onValueChange={(
-                                            newSvg: SvgCommandEnum,
-                                        ) =>
-                                            updateSegment({
-                                                shapePageId:
-                                                    marcherShape.shapePage.id,
-                                                index,
-                                                newSvg,
-                                            })
-                                        }
-                                    >
-                                        <SelectTriggerCompact label={"Type"} />
-                                        <SelectContent>
-                                            {(index > 1
-                                                ? Object.values(SvgCommands)
-                                                : secondSegmentSvgCommands
-                                            ).map((cmd) => {
-                                                return (
-                                                    <SelectItem
-                                                        key={cmd.command}
-                                                        value={cmd.command}
-                                                    >
-                                                        {
-                                                            cmd.readableDescription
-                                                        }
-                                                    </SelectItem>
-                                                );
-                                            })}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                            ),
-                    )}
+    const singleShapeEditor = useCallback(
+        (marcherShape: MarcherShape) => {
+            return (
+                <Form.Root
+                    id={`${marcherShape.shapePage.id}-shapeForm`}
+                    className="flex flex-col gap-24"
+                >
                     <div className="flex flex-wrap gap-8">
+                        {selectedPage && (
+                            <>
+                                <Button
+                                    disabled={
+                                        selectedPage.previousPageId == null ||
+                                        isCopyingShapePageToPage
+                                    }
+                                    onClick={() => {
+                                        copyShapePageToPage({
+                                            shapePageId:
+                                                marcherShape.shapePage.id,
+                                            targetPageId:
+                                                selectedPage.previousPageId!,
+                                        });
+                                    }}
+                                    className="min-h-0 w-fit"
+                                    type="button"
+                                    size="compact"
+                                    variant="secondary"
+                                    tooltipSide="top"
+                                    tooltipText={
+                                        selectedPage.previousPageId === null
+                                            ? t(
+                                                  "inspector.shape.errorNoPreviousPage",
+                                              )
+                                            : t(
+                                                  "inspector.shape.copyToPreviousPage",
+                                              )
+                                    }
+                                >
+                                    <T keyName="inspector.shape.copyToPreviousPageButton" />
+                                </Button>
+                                <Button
+                                    disabled={
+                                        selectedPage.nextPageId === null ||
+                                        isCopyingShapePageToPage
+                                    }
+                                    onClick={() => {
+                                        copyShapePageToPage({
+                                            shapePageId:
+                                                marcherShape.shapePage.id,
+                                            targetPageId:
+                                                selectedPage.nextPageId!,
+                                        });
+                                    }}
+                                    className="min-h-0 w-fit"
+                                    type="button"
+                                    size="compact"
+                                    variant="secondary"
+                                    tooltipText={
+                                        selectedPage.nextPageId === null
+                                            ? t(
+                                                  "inspector.shape.errorNoNextPage",
+                                              )
+                                            : t(
+                                                  "inspector.shape.copyToNextPage",
+                                              )
+                                    }
+                                >
+                                    <T keyName="inspector.shape.copyToNextPageButton" />
+                                </Button>
+                            </>
+                        )}
                         <Button
                             onClick={() => {
-                                marcherShape.addSegment();
+                                handleDeleteShape(marcherShape);
                             }}
+                            className="min-h-0 w-fit"
                             type="button"
                             size="compact"
-                            variant="primary"
-                            tooltipText={t("inspector.shape.addSegmentTooltip")}
-                        >
-                            <PlusIcon size={20} />{" "}
-                            <T keyName="inspector.shape.addSegmentButton" />
-                        </Button>
-
-                        <Button
-                            onClick={() => {
-                                marcherShape.deleteSegment(
-                                    marcherShape.shapePath.points.length - 1,
-                                );
-                            }}
-                            className="min-h-0"
-                            type="button"
-                            size="compact"
-                            content="icon"
                             variant="red"
-                            disabled={
-                                marcherShape.shapePath.points.length === 2
-                            }
                             tooltipText={t(
-                                "inspector.shape.deleteLastSegmentTooltip",
+                                "inspector.shape.ungroupShapeTooltip",
                             )}
                         >
-                            <TrashIcon size={20} />
+                            <T keyName="inspector.shape.ungroupShapeButton" />
                         </Button>
                     </div>
-                </div>
-                <div className="flex flex-col gap-8">
-                    <h5 className="text-h5">
-                        {t("inspector.shape.marchersOnShape", {
-                            marchersCount: marcherShape.canvasMarchers.length,
-                        })}
-                    </h5>
-                    {marcherShape.canvasMarchers.length > 0 && (
-                        <p className="text-sub text-text/80 max-h-64 overflow-y-auto font-mono">
-                            {marcherShape.canvasMarchers
-                                .map((cm) => cm.marcherObj.drill_number)
-                                .join(", ")}
-                        </p>
-                    )}
-                </div>
-            </Form.Root>
-        );
-    };
+                    <div className="flex flex-col gap-16">
+                        <h5 className="text-h5">
+                            <T keyName="inspector.shape.segments.title" />
+                        </h5>
+                        {marcherShape.shapePath.points.map(
+                            (point, index) =>
+                                index > 0 && ( // do not render the first shape (move)
+                                    <div
+                                        key={index}
+                                        className="flex items-center justify-between"
+                                    >
+                                        <p className="text-body text-text/80">
+                                            {t("inspector.shape.segment", {
+                                                index: index,
+                                            })}
+                                        </p>
+                                        <Select
+                                            required
+                                            value={
+                                                SvgCommands[point.command]
+                                                    .command
+                                            }
+                                            onValueChange={(
+                                                newSvg: SvgCommandEnum,
+                                            ) =>
+                                                updateSegment({
+                                                    shapePageId:
+                                                        marcherShape.shapePage
+                                                            .id,
+                                                    index,
+                                                    newSvg,
+                                                })
+                                            }
+                                        >
+                                            <SelectTriggerCompact
+                                                label={"Type"}
+                                            />
+                                            <SelectContent>
+                                                {(index > 1
+                                                    ? Object.values(SvgCommands)
+                                                    : secondSegmentSvgCommands
+                                                ).map((cmd) => {
+                                                    return (
+                                                        <SelectItem
+                                                            key={cmd.command}
+                                                            value={cmd.command}
+                                                        >
+                                                            {
+                                                                cmd.readableDescription
+                                                            }
+                                                        </SelectItem>
+                                                    );
+                                                })}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                ),
+                        )}
+                        <div className="flex flex-wrap gap-8">
+                            <Button
+                                onClick={() => {
+                                    marcherShape.addSegment();
+                                }}
+                                type="button"
+                                size="compact"
+                                variant="primary"
+                                tooltipText={t(
+                                    "inspector.shape.addSegmentTooltip",
+                                )}
+                            >
+                                <PlusIcon size={20} />{" "}
+                                <T keyName="inspector.shape.addSegmentButton" />
+                            </Button>
+
+                            <Button
+                                onClick={() => {
+                                    marcherShape.deleteSegment(
+                                        marcherShape.shapePath.points.length -
+                                            1,
+                                    );
+                                }}
+                                className="min-h-0"
+                                type="button"
+                                size="compact"
+                                content="icon"
+                                variant="red"
+                                disabled={
+                                    marcherShape.shapePath.points.length === 2
+                                }
+                                tooltipText={t(
+                                    "inspector.shape.deleteLastSegmentTooltip",
+                                )}
+                            >
+                                <TrashIcon size={20} />
+                            </Button>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-8">
+                        <h5 className="text-h5">
+                            {t("inspector.shape.marchersOnShape", {
+                                marchersCount:
+                                    marcherShape.canvasMarchers.length,
+                            })}
+                        </h5>
+                        {marcherShape.canvasMarchers.length > 0 && (
+                            <p className="text-sub text-text/80 max-h-64 overflow-y-auto font-mono">
+                                {marcherShape.canvasMarchers
+                                    .map((cm) => cm.marcherObj.drill_number)
+                                    .join(", ")}
+                            </p>
+                        )}
+                    </div>
+                </Form.Root>
+            );
+        },
+        [shapePagesForThisPage],
+    );
 
     const marcherShapesByShapePageId = getMarcherShapesByShapePageId();
     return (

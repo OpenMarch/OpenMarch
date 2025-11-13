@@ -176,16 +176,6 @@ export default function Canvas({
         onCanvasReady,
     ]);
 
-    // Cleanup canvas on unmount
-    useEffect(() => {
-        return () => {
-            if (canvas) {
-                canvas.dispose();
-            }
-            setCanvasStore(null);
-        };
-    }, [canvas]);
-
     // Initiate listeners
     useEffect(() => {
         if (canvas) {

@@ -74,13 +74,14 @@ export const allDatabaseShapePagesQueryOptions = () => {
 /**
  * Query options for getting shape pages by page ID
  */
-export const shapePagesQueryByPageIdOptions = (pageId: number) => {
+export const shapePagesQueryByPageIdOptions = (pageId: number | null) => {
     return queryOptions<DatabaseShapePage[]>({
-        queryKey: shapePageKeys.byPageId(pageId),
+        queryKey: shapePageKeys.byPageId(pageId!),
         queryFn: async () => {
-            return await shapePageQueries.getByPageId(db, pageId);
+            return await shapePageQueries.getByPageId(db, pageId!);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled: pageId != null,
     });
 };
 
