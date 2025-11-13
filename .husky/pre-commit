@@ -7,5 +7,5 @@ echo "Running pre-commit checks. Check the output of this command for more infor
 nvm use 22
 
 # This should only print or be visible if the pre-commit hooks fail.
-pnpm dlx lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
+pnpm exec lint-staged || (echo "❌ Linting failed. Please fix the issues and try again." && exit 1)
 echo "✅ Pre-commit checks passed."
