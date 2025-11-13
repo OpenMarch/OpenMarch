@@ -257,12 +257,7 @@ export class StaticMarcherShape {
      * path commands and coordinates.
      * @returns The updated fabric.Path object representing the redrawn shape.
      */
-    recreatePath(
-        pathArg: VanillaPoint[],
-        updateMarcherShapeFn?: (
-            marcherShape: StaticMarcherShape,
-        ) => Promise<unknown>,
-    ) {
+    recreatePath(pathArg: VanillaPoint[]) {
         if (this._shapePath && this.canvas) {
             this.canvas.remove(this._shapePath);
         }

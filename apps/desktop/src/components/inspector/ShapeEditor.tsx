@@ -137,7 +137,7 @@ export default function ShapeEditor() {
             deleteShapePage(new Set([marcherShape.shapePage.id]));
             setSelectedShapePageIds([]);
         },
-        [deleteShapePage],
+        [deleteShapePage, setSelectedShapePageIds],
     );
 
     // eslint-disable-next-line max-lines-per-function
