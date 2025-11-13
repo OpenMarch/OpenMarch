@@ -20,6 +20,66 @@ CREATE TABLE `__new_history_undo` (
 	`sql` text NOT NULL
 );
 --> statement-breakpoint
+DROP TRIGGER IF EXISTS "marchers_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "marchers_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "marchers_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shapes_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shapes_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shapes_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_pages_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_pages_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_pages_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_page_marchers_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_page_marchers_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "shape_page_marchers_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "field_properties_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "field_properties_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "field_properties_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "section_appearances_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "section_appearances_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "section_appearances_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "pages_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "pages_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "pages_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "marcher_pages_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "marcher_pages_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "marcher_pages_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "measures_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "measures_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "measures_dt";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "beats_it";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "beats_ut";
+--> statement-breakpoint
+DROP TRIGGER IF EXISTS "beats_dt";
+--> statement-breakpoint
 INSERT INTO `__new_history_undo`("sequence", "history_group", "sql") SELECT "sequence", "history_group", "sql" FROM `history_undo`;--> statement-breakpoint
 DROP TABLE `history_undo`;--> statement-breakpoint
 ALTER TABLE `__new_history_undo` RENAME TO `history_undo`;--> statement-breakpoint
