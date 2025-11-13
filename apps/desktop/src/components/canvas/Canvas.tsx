@@ -72,8 +72,7 @@ export default function Canvas({
     const { data: shapePagesOnSelectedPage } = useQuery(
         shapePagesQueryByPageIdOptions(selectedPage?.id!),
     );
-    const { selectedShapePageIds, setSelectedShapePageIds } =
-        useSelectionStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore()!;
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
@@ -387,21 +386,6 @@ export default function Canvas({
             });
         }
     }, [canvas, selectedPage, shapePagesOnSelectedPage]);
-
-    // Update the control points on MarcherShapes when the selectedShapePages change
-    useEffect(() => {
-        if (canvas && selectedShapePageIds) {
-            // Disable control of all of the non-selected shape pages and enable control of selected ones
-            const selectedIdSet = new Set(selectedShapePageIds);
-            for (const marcherShape of canvas.marcherShapes) {
-                if (selectedIdSet.has(marcherShape.shapePage.id))
-                    marcherShape.enableControl();
-                else {
-                    marcherShape.disableControl();
-                }
-            }
-        }
-    }, [canvas, selectedShapePageIds]);
 
     // Update the canvas when the field properties change
     useEffect(() => {

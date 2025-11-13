@@ -15,8 +15,10 @@ export const useSelectionListeners = ({
 }: {
     canvas: OpenMarchCanvas | null;
 }) => {
+    const { selectedShapePageIds } = useSelectionStore()!;
     const { selectedPage } = useSelectedPage()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore();
+    const setSelectionState = useSelectionStore.setState;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const unimplementedError = (
         selectableClass: Selectable.SelectableClasses,
@@ -267,6 +269,21 @@ export const useSelectionListeners = ({
         getGlobalSelectedObjectClassIds,
         activeObjectsAreGloballySelected,
     ]);
+
+    // Update the control points on MarcherShapes when the selectedShapePages change
+    useEffect(() => {
+        if (canvas && selectedShapePageIds) {
+            // Disable control of all of the non-selected shape pages and enable control of selected ones
+            const selectedIdSet = new Set(selectedShapePageIds);
+            for (const marcherShape of canvas.marcherShapes) {
+                if (selectedIdSet.has(marcherShape.shapePage.id)) {
+                    marcherShape.enableControl();
+                } else {
+                    marcherShape.disableControl();
+                }
+            }
+        }
+    }, [canvas, selectedShapePageIds]);
 
     useEffect(() => {
         if (!canvas) return;
