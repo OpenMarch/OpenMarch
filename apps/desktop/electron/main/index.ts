@@ -252,29 +252,9 @@ function initGetters() {
     );
 
     // Export SVG pages to PDF
-    ipcMain.handle(
-        "export:generateSVGsForMarcher",
-        async (
-            _,
-            svgPages: string[],
-            drillNumber: string,
-            marcherCoordinates: string[],
-            pages: Page[],
-            showName: string,
-            exportDir: string,
-            individualCharts: boolean,
-        ) => {
-            return await PDFExportService.generateDocForMarcher(
-                svgPages,
-                drillNumber,
-                marcherCoordinates,
-                pages,
-                showName,
-                exportDir,
-                individualCharts,
-            );
-        },
-    );
+    ipcMain.handle("export:generateDocForMarcher", async (_, args) => {
+        return await PDFExportService.generateDocForMarcher(args);
+    });
 
     // Get current filename
     ipcMain.handle("get-current-filename", async () => {

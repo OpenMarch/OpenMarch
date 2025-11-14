@@ -956,15 +956,24 @@ export class PDFExportService {
      * @param individualCharts
      */
     // eslint-disable-next-line max-lines-per-function
-    public static async generateDocForMarcher(
-        svgPages: string[],
-        drillNumber: string,
-        marcherCoordinates: string[],
-        pages: Page[],
-        showName: string,
-        exportDir: string,
-        individualCharts: boolean,
-    ) {
+    public static async generateDocForMarcher(args: {
+        svgPages: string[];
+        drillNumber: string;
+        marcherCoordinates: string[];
+        pages: Page[];
+        showName: string;
+        exportDir: string;
+        individualCharts: boolean;
+    }) {
+        const {
+            svgPages,
+            drillNumber,
+            marcherCoordinates,
+            pages,
+            showName,
+            exportDir,
+            individualCharts,
+        } = args;
         // Debug: Confirm this is drill chart export
         console.debug(
             `🎺 DRILL CHART EXPORT - generateDocForMarcher called - ${drillNumber}`,

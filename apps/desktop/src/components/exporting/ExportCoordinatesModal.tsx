@@ -694,17 +694,17 @@ function DrillChartExport() {
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {
                 const result =
-                    await window.electron.export.generateDocForMarcher(
-                        svgPages[marcher],
-                        individualCharts
+                    await window.electron.export.generateDocForMarcher({
+                        svgPages: svgPages[marcher],
+                        drillNumber: individualCharts
                             ? marchers[marcher].drill_number
                             : "MAIN",
-                        readableCoords[marcher],
+                        marcherCoordinates: readableCoords[marcher],
                         pages,
-                        exportName,
+                        showName: exportName,
                         exportDir,
                         individualCharts,
-                    );
+                    });
 
                 if (!individualCharts) break; // just one PDF for MAIN
 
@@ -795,7 +795,6 @@ function DrillChartExport() {
             setCurrentStep(t("exportCoordinates.exportFailed"));
             isCancelled.current = true;
         }
-
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 

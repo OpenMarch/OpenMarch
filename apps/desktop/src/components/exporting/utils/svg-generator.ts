@@ -299,7 +299,7 @@ export const generateDrillChartExportSVGs = async (args: {
     gridLines?: boolean;
     halfLines?: boolean;
     individualCharts: boolean;
-}): Promise<{ SVGs: string[][]; coords: string[][] | null }> => {
+}): Promise<{ SVGs: string[][]; coords: string[][] }> => {
     const {
         fieldProperties,
         marchers,
@@ -309,9 +309,11 @@ export const generateDrillChartExportSVGs = async (args: {
     } = args;
     const outputSVGs: string[][] = [];
     // Readable coordinates storage for each marcher
-    let readableCoordsStrings: string[][] | null = individualCharts
+    let readableCoordsStrings: string[][] = individualCharts
         ? Array.from({ length: marchers.length }, () => [])
-        : null;
+        : Array.from({ length: marchers.length }, () =>
+              Array.from({ length: sortedPages.length }, () => ""),
+          );
 
     const { canvas, canvasMarchersById } =
         await initializeCanvasForRendering(args);

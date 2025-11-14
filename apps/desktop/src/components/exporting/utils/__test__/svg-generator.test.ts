@@ -10,7 +10,7 @@ import { generateDrillChartExportSVGs } from "../svg-generator";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import { seedObj } from "@/test/base";
 
-describe("PdfGenerator", () => {
+describe("svgGenerator", () => {
     describe("generateDrillChartExportSVGs - should generate SVGs for each page", () => {
         it.for(seedObj)("seed: $seed", async ({ seed }) => {
             const marchers = generateMarchers({ numberOfMarchers: 100, seed });
