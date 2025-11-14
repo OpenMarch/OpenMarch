@@ -146,6 +146,7 @@ module.exports = {
         "avenir",
         "canvas",
         "svgs",
+        "xlink",
     ],
     ignorePaths: [
         "node_modules/**",

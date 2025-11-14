@@ -10,6 +10,7 @@ import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
+import { db } from "@/global/database/db";
 
 const SectionAppearanceBySection = (
     sectionAppearances: SectionAppearance[] | undefined,
@@ -348,16 +349,56 @@ export const generateDrillChartExportSVGs = async (args: {
                     marcherPagesMap,
                     sortedPages,
                 });
-            marcherSvgs.forEach((svg, index) => outputSVGs[index].push(svg));
+            marcherSvgs.forEach((svg, index) =>
+                outputSVGs[index].push(replaceImageDataWithPlaceholder(svg)),
+            );
             marcherReadableCoordStrings.forEach((coord, index) =>
                 readableCoordsStrings![index].push(coord),
             );
         } else {
             if (outputSVGs.length === 0) outputSVGs.push([]);
             // Render the canvas and add the SVG to the output
-            outputSVGs[0].push(canvas.toSVG());
+            outputSVGs[0].push(replaceImageDataWithPlaceholder(canvas.toSVG()));
         }
     }
 
     return { SVGs: outputSVGs, coords: readableCoordsStrings };
+};
+
+export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {
+    const result = await db.query.field_properties.findFirst({
+        columns: { image: true },
+    });
+    return result?.image ?? null;
+}
+export const OPENMARCH_FIELD_IMAGE_PLACEHOLDER =
+    "OPENMARCH_FIELD_IMAGE_PLACEHOLDER";
+export const replaceImageDataWithPlaceholder = (svg: string): string => {
+    return svg.replace(
+        /(<image .* xlink:href=)"[^\s]*/g,
+        `$1"${OPENMARCH_FIELD_IMAGE_PLACEHOLDER}"`,
+    );
+};
+
+export const getFieldPropertiesImageElement = async (): Promise<
+    HTMLImageElement | undefined
+> => {
+    const backgroundImage = await getFieldPropertiesImage();
+
+    if (backgroundImage === null) {
+        return;
+    }
+    const base64 = btoa(
+        Array.from(backgroundImage)
+            .map((byte) => String.fromCharCode(byte))
+            .join(""),
+    );
+
+    const img = new Image();
+    // Determine the MIME type (assume PNG, but you could detect it from the file header)
+    // Common image formats: image/png, image/jpeg, image/gif
+    const mimeType = "image/png"; // Adjust if you know the actual format
+    img.src = `data:${mimeType};base64,${base64}`;
+
+    return img;
 };

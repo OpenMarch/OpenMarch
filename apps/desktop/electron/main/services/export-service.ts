@@ -9,6 +9,7 @@ import PDFDocument from "pdfkit";
 import SVGtoPDF from "svg-to-pdfkit";
 import Page from "@/global/classes/Page";
 import Store from "electron-store";
+import { getOrmConnection } from "../../database/database.services";
 
 const store = new Store();
 
@@ -206,6 +207,17 @@ interface ExportSheet {
 }
 
 export class PDFExportService {
+    // Cache for the field image to avoid repeated DB queries during bulk exports
+    private static fieldImageCache: string | null | undefined = undefined;
+
+    /**
+     * Clear the field image cache. Call this when starting a new export session
+     * or when the field image might have changed.
+     */
+    public static clearFieldImageCache() {
+        this.fieldImageCache = undefined;
+    }
+
     private static async generateSinglePDF(
         sheets: string[],
         quarterPages: boolean,
@@ -803,6 +815,9 @@ export class PDFExportService {
         organizeBySection: boolean,
         quarterPages: boolean,
     ) {
+        // Clear the field image cache at the start of a new export session
+        this.clearFieldImageCache();
+
         try {
             let result: Electron.SaveDialogReturnValue;
             if (organizeBySection) {
@@ -899,6 +914,9 @@ export class PDFExportService {
     public static async createExportDirectory(
         defaultName: string,
     ): Promise<{ exportName: string; exportDir: string }> {
+        // Clear the field image cache at the start of a new export session
+        this.clearFieldImageCache();
+
         // Generate default path similar to coordinate sheets but with "charts"
         const date = new Date().toISOString().split("T")[0];
         const currentFileName = defaultName || "untitled";
@@ -945,6 +963,44 @@ export class PDFExportService {
     }
 
     /**
+     * Helper function to get field image as base64 data URI from the database.
+     * This is cached to avoid repeated DB queries during bulk exports.
+     * The cache is cleared automatically when starting a new export session.
+     */
+    private static async getFieldImageDataUri(): Promise<string | null> {
+        // Return cached value if available (undefined means not yet fetched, null means no image)
+        if (this.fieldImageCache !== undefined) {
+            return this.fieldImageCache;
+        }
+
+        try {
+            // Access the database in the main process
+            const db = getOrmConnection();
+            const result = await db.query.field_properties.findFirst({
+                columns: { image: true },
+            });
+
+            if (!result?.image) {
+                this.fieldImageCache = null;
+                return null;
+            }
+
+            // Convert Uint8Array to base64
+            const base64 = Buffer.from(result.image).toString("base64");
+            const mimeType = "image/png"; // Adjust if you detect the actual format
+            const dataUri = `data:${mimeType};base64,${base64}`;
+
+            // Cache the result
+            this.fieldImageCache = dataUri;
+            return dataUri;
+        } catch (error) {
+            console.error("Error fetching field image:", error);
+            this.fieldImageCache = null;
+            return null;
+        }
+    }
+
+    /**
      * Generate a PDF for each marcher based on their SVG pages and coordinates
      * This will create a single PDF for each marcher with their respective pages.
      * @param svgPages
@@ -979,6 +1035,19 @@ export class PDFExportService {
             `🎺 DRILL CHART EXPORT - generateDocForMarcher called - ${drillNumber}`,
         );
 
+        // Fetch the field image once from the database in the main process
+        const fieldImageDataUri = await this.getFieldImageDataUri();
+
+        // Replace the placeholder in all SVG pages with the actual image data
+        const PLACEHOLDER = "OPENMARCH_FIELD_IMAGE_PLACEHOLDER";
+        // The placeholder might be resolved to an absolute URL by the browser (e.g., http://localhost:5173/PLACEHOLDER)
+        // so we need to match any URL that contains the placeholder
+        const processedSvgPages = svgPages.map((svg) => {
+            if (fieldImageDataUri && svg.includes(PLACEHOLDER)) {
+                return svg.replace(PLACEHOLDER, fieldImageDataUri);
+            }
+            return svg;
+        });
         // For each marcher, create a PDF of their pages
         const pdfFileName = `${showName}-${drillNumber}.pdf`;
         const pdfFilePath = path.join(exportDir, sanitize(pdfFileName));
@@ -1021,7 +1090,7 @@ export class PDFExportService {
         const topBarHeight = 34;
 
         // Loop through each SVG page and create a PDF page for it
-        for (let i = 0; i < svgPages.length; i++) {
+        for (let i = 0; i < processedSvgPages.length; i++) {
             if (i > 0) doc.addPage();
 
             // Data for each page
@@ -1065,7 +1134,7 @@ export class PDFExportService {
             const maxSVGHeight = 425;
             const maxSVGWidth = pageWidth - 2 * margin;
             try {
-                SVGtoPDF(doc, svgPages[i], margin, 65, {
+                SVGtoPDF(doc, processedSvgPages[i], margin, 65, {
                     height: maxSVGHeight,
                     width: maxSVGWidth,
                     preserveAspectRatio: "xMidYMid meet",

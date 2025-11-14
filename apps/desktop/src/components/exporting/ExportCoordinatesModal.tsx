@@ -43,7 +43,10 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
-import { generateDrillChartExportSVGs } from "./utils/svg-generator";
+import {
+    generateDrillChartExportSVGs,
+    getFieldPropertiesImageElement,
+} from "./utils/svg-generator";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -768,6 +771,7 @@ function DrillChartExport() {
             t("exportCoordinates.sectionAppearancesNotLoaded"),
         );
 
+        const backgroundImage = await getFieldPropertiesImageElement();
         // Generate SVGs from the canvas
         let SVGs: string[][] = [];
         let coords: string[][] | null = null;
@@ -778,7 +782,7 @@ function DrillChartExport() {
                 sortedPages: pages,
                 marcherPagesMap: marcherPages,
                 sectionAppearances: sectionAppearances,
-                backgroundImage: undefined,
+                backgroundImage,
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
                 individualCharts: individualCharts,
@@ -794,6 +798,7 @@ function DrillChartExport() {
             );
             setCurrentStep(t("exportCoordinates.exportFailed"));
             isCancelled.current = true;
+            setIsLoading(false);
         }
         // Error occurred during SVG generation
         if (isCancelled.current) return;
