@@ -147,6 +147,7 @@ module.exports = {
         "canvas",
         "svgs",
         "xlink",
+        "toks",
     ],
     ignorePaths: [
         "node_modules/**",
