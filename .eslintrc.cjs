@@ -31,6 +31,12 @@ module.exports = {
     },
     plugins: ["eslint-plugin-react"],
     rules: {
+        "no-console": [
+            "warn",
+            {
+                allow: ["error", "warn", "debug"],
+            },
+        ],
         "@typescript-eslint/no-var-requires": "off",
         "@typescript-eslint/no-floating-promises": "error",
         "react/prop-types": "warn",

@@ -361,7 +361,7 @@ export default class CanvasMarcher
 
     static getCanvasMarcherForMarcher(
         canvas: fabric.Canvas,
-        marcher: Marcher,
+        marcher: Pick<Marcher, "id">,
     ): CanvasMarcher | undefined {
         return canvas
             .getObjects()

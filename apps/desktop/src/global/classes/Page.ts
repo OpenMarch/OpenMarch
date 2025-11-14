@@ -293,7 +293,10 @@ export function fromDatabasePages({
             : startBeat.index + lastPageCounts > sortedBeats.length
               ? sortedBeats.length
               : startBeat.index + lastPageCounts;
-        const beats = sortedBeats.slice(startBeat.index, lastBeatIndex);
+        const beats: Beat[] =
+            startBeat.index < lastBeatIndex
+                ? sortedBeats.slice(startBeat.index, lastBeatIndex)
+                : [sortedBeats[startBeat.index]];
         const lastBeat = beats[beats.length - 1];
         const beatIdSet = new Set(beats.map((beat) => beat.id));
 
@@ -729,4 +732,12 @@ export const splitPage = (
     }
 
     return output;
+};
+
+export const pageToDatabasePage = (page: Page): DatabasePage => {
+    return {
+        ...page,
+        is_subset: page.isSubset,
+        start_beat: page.beats[0].id,
+    };
 };

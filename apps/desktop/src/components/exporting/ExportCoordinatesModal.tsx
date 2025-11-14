@@ -1,15 +1,13 @@
 /* eslint-disable no-control-regex */
 import { useCallback, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
-import { fabric } from "fabric";
-import { NoControls } from "@/components/canvas/CanvasConstants";
 import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
     StaticQuarterMarcherSheet,
 } from "./MarcherCoordinateSheet";
 import {
-    allDatabaseShapePagesQueryOptions,
     allMarcherPagesQueryOptions,
+    allSectionAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
@@ -33,11 +31,7 @@ import {
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
-import { useMarchersWithVisuals, useTimingObjects } from "@/hooks";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import { rgbaToString } from "@openmarch/core";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import { ReadableCoords } from "@/global/classes/ReadableCoords";
+import { useTimingObjects } from "@/hooks";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
@@ -46,10 +40,14 @@ import clsx from "clsx";
 import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
+import {
+    generateDrillChartExportSVGs,
+    getFieldPropertiesImageElement,
+} from "./utils/svg-generator";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -288,7 +286,7 @@ function CoordinateSheetExport() {
             setProgress(85);
 
             // Debug logging
-            console.log("Sending to export service:", {
+            console.debug("Sending to export service:", {
                 sheetCount: groupedSheets.length,
                 organizeBySection,
                 quarterPages,
@@ -662,12 +660,13 @@ function DrillChartExport() {
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const marcherVisuals = useMarchersWithVisuals();
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
-    const { setSelectedPage } = useSelectedPage()!;
-    const { data: shapePages } = useQuery(allDatabaseShapePagesQueryOptions());
+    const { data: sectionAppearances } = useQuery(
+        allSectionAppearancesQueryOptions(),
+    );
+    const { uiSettings } = useUiSettingsStore();
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -679,214 +678,6 @@ function DrillChartExport() {
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
-    const marginSVG = 40;
-
-    /**
-     * Generates SVGs for each marcher on each page, including pathways and coordinates.
-     * @param exportCanvas - The canvas to render the SVGs on.
-     * @return A promise that resolves to an object containing SVG strings and readable coordinates.
-     */
-    const generateExportSVGs = useCallback(
-        // eslint-disable-next-line max-lines-per-function
-        async (
-            exportCanvas: OpenMarchCanvas,
-        ): Promise<{
-            SVGs: string[][];
-            coords: string[][];
-        }> => {
-            if (!marcherPagesLoaded) {
-                throw new Error(t("exportCoordinates.marcherPagesNotLoaded"));
-            }
-            if (!marchersLoaded) {
-                throw new Error(t("exportCoordinates.marchersNotLoaded"));
-            }
-
-            // Setup export canvas for SVG generation
-            exportCanvas.setWidth(fieldProperties!.width + marginSVG * 2);
-            exportCanvas.setHeight(fieldProperties!.height + marginSVG * 2);
-            exportCanvas.viewportTransform = [1, 0, 0, 1, marginSVG, marginSVG];
-            exportCanvas.requestRenderAll();
-
-            // SVG storage setup
-            const svgPages: string[][] = Array.from(
-                { length: marchers.length },
-                () => [],
-            );
-
-            // Readable coordinates storage for each marcher
-            const readableCoords: string[][] = Array.from(
-                { length: marchers.length },
-                () => Array.from({ length: pages.length }, () => ""),
-            );
-
-            // Generate SVGs for each page
-            for (let p = 0; p < pages.length; p++) {
-                setCurrentStep(
-                    t("exportCoordinates.processingPage", {
-                        pageNumber: p + 1,
-                        totalPages: pages.length,
-                        pageName: exportCanvas.currentPage.name,
-                    }),
-                );
-
-                // Render marchers for this page
-                await exportCanvas.renderMarchers({
-                    marcherVisuals: marcherVisuals,
-                    marcherPages: marcherPages.marcherPagesByPage[pages[p].id],
-                    pageId: pages[p].id,
-                });
-
-                assert(shapePages != null, "Shape pages not loaded");
-                // Render previous, current, and next shapes
-                exportCanvas.renderMarcherShapes({
-                    shapePages: shapePages.filter(
-                        (sp) =>
-                            sp.page_id === pages[p].id ||
-                            sp.page_id === pages[p].previousPageId ||
-                            sp.page_id === pages[p].nextPageId,
-                    ),
-                });
-
-                // Render pathways for individual marchers
-                if (individualCharts) {
-                    for (let m = 0; m < marchers.length; m++) {
-                        const marcher =
-                            marcherPages.marcherPagesByMarcher[marchers[m].id][
-                                pages[p].id
-                            ];
-                        const prevMarcher =
-                            p > 0 && pages[p].previousPageId
-                                ? marcherPages.marcherPagesByMarcher[
-                                      marchers[m].id
-                                  ][pages[p].previousPageId!]
-                                : null;
-                        const nextMarcher =
-                            p < pages.length - 1 && pages[p].nextPageId
-                                ? marcherPages.marcherPagesByMarcher[
-                                      marchers[m].id
-                                  ][pages[p].nextPageId!]
-                                : null;
-
-                        // Store readable coordinates for this marcher
-                        readableCoords[m][p] =
-                            ReadableCoords.fromMarcherPage(marcher).toString();
-
-                        // Collect pathways to add/remove
-                        const objectsToRemove: fabric.Object[] = [];
-
-                        // Render previous pathway and midpoint
-                        if (p > 0) {
-                            objectsToRemove.push(
-                                ...exportCanvas.renderTemporaryPathVisuals({
-                                    start: prevMarcher!,
-                                    end: marcher,
-                                    marcherId: marcher.marcher_id,
-                                    color: rgbaToString(
-                                        fieldProperties!.theme.previousPath,
-                                    ),
-                                }),
-                            );
-                        }
-
-                        // Render next pathway and midpoint
-                        if (p < pages.length - 1) {
-                            objectsToRemove.push(
-                                ...exportCanvas.renderTemporaryPathVisuals({
-                                    start: marcher,
-                                    end: nextMarcher!,
-                                    marcherId: marcher.marcher_id,
-                                    color: rgbaToString(
-                                        fieldProperties!.theme.nextPath,
-                                    ),
-                                }),
-                            );
-                        }
-
-                        // Add box around prev coordinate
-                        if (p > 0) {
-                            const square = new fabric.Rect({
-                                left: prevMarcher!.x,
-                                top: prevMarcher!.y,
-                                width: 20,
-                                height: 20,
-                                fill: "transparent",
-                                stroke: "blue",
-                                strokeWidth: 3,
-                                originX: "center",
-                                originY: "center",
-                                ...NoControls,
-                            });
-                            exportCanvas.add(square);
-                            objectsToRemove.push(square);
-                        }
-
-                        // Add circle around next coordinate
-                        if (p < pages.length - 1) {
-                            const circle = new fabric.Circle({
-                                left: nextMarcher!.x,
-                                top: nextMarcher!.y,
-                                radius: 10,
-                                fill: "transparent",
-                                stroke: "hsl(281, 82%, 63%)",
-                                strokeWidth: 3,
-                                originX: "center",
-                                originY: "center",
-                                ...NoControls,
-                            });
-                            exportCanvas.add(circle);
-                            objectsToRemove.push(circle);
-                        }
-
-                        // Send marcher to the front
-                        exportCanvas.sendCanvasMarcherToFront(
-                            CanvasMarcher.getCanvasMarcherForMarcher(
-                                exportCanvas,
-                                marchers[m],
-                            )!,
-                        );
-
-                        // Convert to SVG after adding pathways
-                        exportCanvas.renderAll();
-                        svgPages[m].push(exportCanvas.toSVG());
-
-                        // Remove the pathways to keep the canvas clean for the next marcher
-                        objectsToRemove.forEach((object: fabric.Object) =>
-                            exportCanvas.remove(object),
-                        );
-                    }
-                } else {
-                    // No pathway rendering, just generate SVG
-                    exportCanvas.renderAll();
-                    svgPages[0].push(exportCanvas.toSVG());
-                }
-
-                // Update progress smoothly
-                setProgress(50 * ((p + 1) / pages.length));
-
-                // Update UI state
-                await new Promise((r) => setTimeout(r, 0));
-
-                if (isCancelled.current) {
-                    throw new Error(t("exportCoordinates.cancelledByUser"));
-                }
-            }
-
-            // Success
-            return { SVGs: svgPages, coords: readableCoords };
-        },
-        [
-            marcherPagesLoaded,
-            marchersLoaded,
-            fieldProperties,
-            marchers,
-            t,
-            pages,
-            marcherVisuals,
-            marcherPages,
-            shapePages,
-            individualCharts,
-        ],
-    );
 
     /**
      * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
@@ -906,17 +697,17 @@ function DrillChartExport() {
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {
                 const result =
-                    await window.electron.export.generateDocForMarcher(
-                        svgPages[marcher],
-                        individualCharts
+                    await window.electron.export.generateDocForMarcher({
+                        svgPages: svgPages[marcher],
+                        drillNumber: individualCharts
                             ? marchers[marcher].drill_number
                             : "MAIN",
-                        readableCoords[marcher],
+                        marcherCoordinates: readableCoords[marcher],
                         pages,
-                        exportName,
+                        showName: exportName,
                         exportDir,
                         individualCharts,
-                    );
+                    });
 
                 if (!individualCharts) break; // just one PDF for MAIN
 
@@ -966,19 +757,36 @@ function DrillChartExport() {
         setIsLoading(true);
         setProgress(0);
 
-        // Store original state of canvas for restoration
-        const exportCanvas: OpenMarchCanvas = window.canvas;
-        const originalWidth = exportCanvas.getWidth();
-        const originalHeight = exportCanvas.getHeight();
-        const originalViewportTransform =
-            exportCanvas.viewportTransform!.slice();
-        exportCanvas.hideAllPathVisuals({ marcherVisuals });
+        assert(
+            marcherPagesLoaded,
+            t("exportCoordinates.marcherPagesNotLoaded"),
+        );
+        assert(marchersLoaded, t("exportCoordinates.marchersNotLoaded"));
+        assert(
+            fieldProperties,
+            t("exportCoordinates.fieldPropertiesNotLoaded"),
+        );
+        assert(
+            sectionAppearances,
+            t("exportCoordinates.sectionAppearancesNotLoaded"),
+        );
 
+        const backgroundImage = await getFieldPropertiesImageElement();
         // Generate SVGs from the canvas
         let SVGs: string[][] = [];
-        let coords: string[][] = [];
+        let coords: string[][] | null = null;
         try {
-            ({ SVGs, coords } = await generateExportSVGs(exportCanvas));
+            ({ SVGs, coords } = await generateDrillChartExportSVGs({
+                fieldProperties,
+                marchers,
+                sortedPages: pages,
+                marcherPagesMap: marcherPages,
+                sectionAppearances: sectionAppearances,
+                backgroundImage,
+                gridLines: uiSettings.gridLines,
+                halfLines: uiSettings.halfLines,
+                individualCharts: individualCharts,
+            }));
         } catch (error) {
             toast.error(
                 t("exportCoordinates.svgGenerationFailed", {
@@ -990,21 +798,8 @@ function DrillChartExport() {
             );
             setCurrentStep(t("exportCoordinates.exportFailed"));
             isCancelled.current = true;
+            setIsLoading(false);
         }
-
-        // Restore canvas to original state at last page
-        exportCanvas.setWidth(originalWidth);
-        exportCanvas.setHeight(originalHeight);
-        exportCanvas.viewportTransform = originalViewportTransform;
-        setSelectedPage(pages[pages.length - 1]);
-        assert(shapePages != null, "Shape pages not loaded");
-        exportCanvas.renderMarcherShapes({
-            shapePages: shapePages.filter(
-                (sp) => sp.page_id === pages[pages.length - 1].id,
-            ),
-        });
-        exportCanvas.requestRenderAll();
-
         // Error occurred during SVG generation
         if (isCancelled.current) return;
 
@@ -1019,7 +814,7 @@ function DrillChartExport() {
             // Create documents for each marcher with smooth progress
             const exportPromise = exportMarcherSVGs(
                 SVGs,
-                coords,
+                coords ?? [],
                 exportName,
                 exportDir,
             );
@@ -1083,12 +878,17 @@ function DrillChartExport() {
             }, 1000);
         }
     }, [
-        marcherVisuals,
-        setSelectedPage,
-        pages,
-        shapePages,
-        generateExportSVGs,
+        marcherPagesLoaded,
         t,
+        marchersLoaded,
+        fieldProperties,
+        sectionAppearances,
+        pages,
+        marchers,
+        marcherPages,
+        uiSettings.gridLines,
+        uiSettings.halfLines,
+        individualCharts,
         exportMarcherSVGs,
     ]);
 

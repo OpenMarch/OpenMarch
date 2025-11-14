@@ -664,7 +664,6 @@ export default function Canvas({
             .renderMarchers({
                 marcherVisuals: marcherVisuals,
                 marcherPages: marcherPages,
-                pageId: selectedPage.id,
             })
             .catch((error) => {
                 console.error("Error rendering marchers", error);
@@ -807,7 +806,6 @@ export default function Canvas({
             canvas
                 .renderMarchers({
                     marcherPages: marcherPages,
-                    pageId: selectedPage.id,
                     marcherVisuals: marcherVisuals,
                 })
                 .catch((error) => {

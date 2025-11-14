@@ -326,7 +326,7 @@ const generatePathwayData = () => {
     // Ensure path_end_position is greater than path_start_position
     if (pathEndPosition <= pathStartPosition) {
         pathEndPosition = faker.number.float({
-            min: pathStartPosition + 0.001,
+            min: Math.min(1, pathStartPosition + 0.001),
             max: 1,
             fractionDigits: 3,
         });
@@ -404,13 +404,12 @@ const createMarcherPage = (
 const fieldPropertiesToBounds = (fieldProperties: FieldProperties) => {
     const centerFront = fieldProperties.centerFrontPoint;
     const halfWidth = fieldProperties.width / 2;
-    const halfHeight = fieldProperties.height / 2;
 
     return {
         minX: centerFront.xPixels - halfWidth,
         maxX: centerFront.xPixels + halfWidth,
-        minY: centerFront.yPixels - halfHeight,
-        maxY: centerFront.yPixels + halfHeight,
+        minY: 0,
+        maxY: centerFront.yPixels,
     };
 };
 

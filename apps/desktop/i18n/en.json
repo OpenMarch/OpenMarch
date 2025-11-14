@@ -199,6 +199,8 @@
         "marcher": "Marcher: {status}",
         "marchersNotLoaded": "Marchers not loaded",
         "marcherPagesNotLoaded": "Marcher pages not loaded",
+        "fieldPropertiesNotLoaded": "Field properties not loaded",
+        "sectionAppearancesNotLoaded": "Section appearances not loaded",
         "measuresHeader": "Measure",
         "noFieldProperties": "No field properties provided",
         "noMarcher": "No marcher provided",

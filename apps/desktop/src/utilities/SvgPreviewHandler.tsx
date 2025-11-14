@@ -123,7 +123,6 @@ const SvgPreviewHandler: React.FC = () => {
                 await svgCanvas.renderMarchers({
                     marcherVisuals: marcherVisuals,
                     marcherPages: marcherPages,
-                    pageId: page.id,
                 });
 
                 return svgCanvas.toSVG();

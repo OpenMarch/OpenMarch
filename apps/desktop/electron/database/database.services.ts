@@ -6,6 +6,7 @@ import * as History from "./database.history.legacy";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
+import { getOrm } from "./db";
 
 export class LegacyDatabaseResponse<T> {
     readonly success: boolean;
@@ -166,6 +167,11 @@ export async function handleSqlProxyWithDb(
 async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
     return await db.exec(sql);
 }
+
+export const getOrmConnection = () => {
+    if (!persistentConnection) throw new Error("Db is not open");
+    return getOrm(persistentConnection);
+};
 
 let persistentConnection: Database.Database | null = null;
 let persistentConnectionPath: string | null = null;

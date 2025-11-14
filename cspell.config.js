@@ -145,6 +145,9 @@ module.exports = {
         "umami",
         "avenir",
         "canvas",
+        "svgs",
+        "xlink",
+        "toks",
     ],
     ignorePaths: [
         "node_modules/**",

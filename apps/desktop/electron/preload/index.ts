@@ -186,25 +186,15 @@ const APP_API = {
         createExportDirectory: (defaultName: string) =>
             ipcRenderer.invoke("export:createExportDirectory", defaultName),
 
-        generateDocForMarcher: (
-            svgPages: string[],
-            drillNumber: string,
-            marcherCoordinates: string[],
-            pages: Page[],
-            showName: string,
-            exportDir: string,
-            individualCharts: boolean,
-        ) =>
-            ipcRenderer.invoke(
-                "export:generateSVGsForMarcher",
-                svgPages,
-                drillNumber,
-                marcherCoordinates,
-                pages,
-                showName,
-                exportDir,
-                individualCharts,
-            ),
+        generateDocForMarcher: (args: {
+            svgPages: string[];
+            drillNumber: string;
+            marcherCoordinates: string[];
+            pages: Page[];
+            showName: string;
+            exportDir: string;
+            individualCharts: boolean;
+        }) => ipcRenderer.invoke("export:generateDocForMarcher", args),
     },
 
     getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
