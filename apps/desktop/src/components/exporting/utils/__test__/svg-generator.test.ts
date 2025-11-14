@@ -45,9 +45,16 @@ describe("svgGenerator", () => {
                 individualCharts: false,
             });
 
+            const pagesLength = timingObjects.pages.length;
             expect(output.SVGs, "Should only have one array").toHaveLength(1);
-            expect(output.SVGs.flat()).toHaveLength(timingObjects.pages.length);
-            expect(output.coords).toBeNull();
+            expect(output.SVGs.flat()).toHaveLength(pagesLength);
+            expect(output.coords[0]).toHaveLength(pagesLength);
+            for (const coord of output.coords[0]) {
+                expect(
+                    coord,
+                    "expect each coordinate to be an empty string",
+                ).toEqual("");
+            }
         });
     });
     describe("generateDrillChartExportSVGs - should generate individual SVGs for each page", () => {
