@@ -294,7 +294,7 @@ export const generateTimingObjects = ({
             id: 1,
             updated_at: faker.date.recent().toISOString(),
         },
-        fetchTimingObjects: () => {},
+        fetchTimingObjects: async () => {},
         isLoading: false,
         hasError: false,
     };
