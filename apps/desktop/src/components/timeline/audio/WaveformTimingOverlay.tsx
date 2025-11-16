@@ -187,7 +187,7 @@ export default function WaveformTimingOverlay({
                             className="absolute -translate-x-1/2 rounded-full bg-[rgb(205,205,205)] dark:bg-[rgb(60,60,60)]"
                             style={{
                                 left: x,
-                                bottom: 0,
+                                top: 0,
                                 width: 1,
                                 height: beatMarkerHeight,
                             }}
