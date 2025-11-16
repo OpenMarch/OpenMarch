@@ -29,7 +29,7 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
         "test": "vitest run --silent",
-        "test:history": "VITEST_ENABLE_HISTORY=true VITEST_ENABLE_SQLJS=true vitest run --silent",
+        "test:history": "VITEST_ENABLE_HISTORY=true VITEST_ENABLE_SQLJS=true vitest run",
         "test:watch": "vitest",
         "test:prepare": "pnpm rebuild better-sqlite3",
         "test:coverage": "pnpm test -- --coverage",
@@ -140,7 +140,7 @@
         "vite": "^4.5.14",
         "vite-plugin-electron": "^0.15.6",
         "vite-plugin-electron-renderer": "^0.14.6",
-        "vitest": "^4.0.0-beta"
+        "vitest": "^4.0.0"
     },
     "engines": {
         "node": "22"

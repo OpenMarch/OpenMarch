@@ -32,7 +32,7 @@ jobs:
 
       - name: Test desktop with history
         working-directory: apps/desktop
-        run: pnpm run test:history
+        run: pnpm run test:history $(find . -type f -name "*.test.*" -exec grep -l "getTestWithHistory" {} +) --silent
 
       # - name: "Upload Coverage"
       #   uses: actions/upload-artifact@v4
