@@ -1,13 +1,18 @@
-import React, { useEffect, useRef, useCallback, useMemo } from "react";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
+import React, { useCallback, useEffect, useRef } from "react";
+import {
+    generateDrillChartExportSVGs,
+    getFieldPropertiesImageElement,
+} from "@/components/exporting/utils/svg-generator";
 import {
     allMarcherPagesQueryOptions,
     allMarchersQueryOptions,
     fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
-import { UiSettings } from "@/stores/UiSettingsStore";
-import { useMarchersWithVisuals, useTimingObjects } from "@/hooks";
+import type MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import { useTimingObjects } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
+
+const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
 
 /**
  * Handler for generating canvas preview SVGs on app close for launch page
@@ -18,18 +23,17 @@ const SvgPreviewHandler: React.FC = () => {
     // Get current values
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { pages = [] } = useTimingObjects() ?? {};
-    const { data: marcherPages = {} } = useQuery(
+    const { data: marcherPages } = useQuery(
         // This might be overkill
         allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
-    const marcherVisuals = useMarchersWithVisuals();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
 
     // Refs to store current values for use in the IPC handler
     const fieldPropertiesRef = useRef(fieldProperties);
-    const marcherPagesRef = useRef(marcherPages);
+    const marcherPagesRef = useRef<MarcherPageMap | undefined>(marcherPages);
     const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
     const pagesRef = useRef(pages);
 
@@ -50,57 +54,6 @@ const SvgPreviewHandler: React.FC = () => {
         pagesRef.current = Array.isArray(pages) ? pages : [];
     }, [pages]);
 
-    // Static default UI settings
-    const defaultUISettings: UiSettings = useMemo(
-        () => ({
-            isPlaying: false,
-            lockX: false,
-            lockY: false,
-            previousPaths: false,
-            nextPaths: false,
-            showCollisions: true,
-            gridLines: true,
-            halfLines: true,
-            timelinePixelsPerSecond: 40,
-            focussedComponent: "canvas" as const,
-            mouseSettings: {
-                trackpadMode: true,
-                trackpadPanSensitivity: 0.5,
-                zoomSensitivity: 0.03,
-                panSensitivity: 0.5,
-            },
-        }),
-        [],
-    );
-
-    /**
-     * Create a minimal canvas for SVG export
-     */
-    const createSvgCanvas = useCallback(
-        async (fieldProps: any, page: any) => {
-            if (!fieldProps) throw new Error("Field properties not loaded");
-
-            const canvasEl = document.createElement("canvas");
-            canvasEl.width = fieldProps.width;
-            canvasEl.height = fieldProps.height;
-
-            const svgCanvas = new OpenMarchCanvas({
-                canvasRef: canvasEl,
-                fieldProperties: fieldProps,
-                uiSettings: defaultUISettings,
-                currentPage: page,
-            });
-
-            svgCanvas.setWidth(fieldProps.width);
-            svgCanvas.setHeight(fieldProps.height);
-
-            svgCanvas.renderFieldGrid();
-
-            return svgCanvas;
-        },
-        [defaultUISettings],
-    );
-
     /**
      * Generate SVG preview for a page
      */
@@ -108,38 +61,47 @@ const SvgPreviewHandler: React.FC = () => {
         async (
             fieldProps: any,
             page: any,
-            marcherPages: any,
+            marcherPagesMap: MarcherPageMap | undefined,
             allMarchers: any[],
         ): Promise<string> => {
-            if (!fieldProps || !page) {
-                throw new Error("Missing field properties or page");
-            }
-
-            let svgCanvas: OpenMarchCanvas | null = null;
-
             try {
-                svgCanvas = await createSvgCanvas(fieldProps, page);
+                if (!fieldProps || !page) {
+                    throw new Error("Missing field properties or page");
+                }
 
-                await svgCanvas.renderMarchers({
-                    marcherVisuals: marcherVisuals,
-                    marcherPages: marcherPages,
+                if (!marcherPagesMap || allMarchers.length === 0) {
+                    throw new Error("Missing marcher data for SVG generation");
+                }
+
+                if (!marcherPagesMap.marcherPagesByPage?.[page.id]) {
+                    throw new Error(
+                        "No marcher page mapping available for the selected page",
+                    );
+                }
+
+                const backgroundImage = await getFieldPropertiesImageElement();
+                const { SVGs } = await generateDrillChartExportSVGs({
+                    fieldProperties: fieldProps,
+                    sortedPages: [page],
+                    marchers: allMarchers,
+                    marcherPagesMap,
+                    backgroundImage,
+                    gridLines: true,
+                    halfLines: true,
+                    individualCharts: false,
                 });
 
-                return svgCanvas.toSVG();
+                const svg = SVGs?.[0]?.[0];
+                if (!svg) {
+                    throw new Error("SVG output was empty");
+                }
+                return svg;
             } catch (err) {
                 console.error("Error generating SVG preview:", err);
-                return "ERROR: Failed to generate SVG";
-            } finally {
-                if (svgCanvas) {
-                    try {
-                        svgCanvas.dispose();
-                    } catch (e) {
-                        console.warn("Error disposing canvas:", e);
-                    }
-                }
+                return SVG_GENERATION_ERROR;
             }
         },
-        [createSvgCanvas, marcherVisuals],
+        [],
     );
 
     /**
@@ -164,6 +126,7 @@ const SvgPreviewHandler: React.FC = () => {
                 console.error(
                     "Missing required data for SVG generation. Field properties or first page not available.",
                 );
+                return SVG_GENERATION_ERROR;
             }
 
             const svg = await generateSvgPreview(

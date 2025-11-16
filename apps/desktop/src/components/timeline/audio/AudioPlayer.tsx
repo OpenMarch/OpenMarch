@@ -1,26 +1,23 @@
 import WaveSurfer from "wavesurfer.js";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
-// @ts-ignore
-import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
-import { TimingMarkersPlugin } from "./TimingMarkersPlugin";
 import { useTheme } from "@/context/ThemeContext";
 import { toast } from "sonner";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
-import { useQuery } from "@tanstack/react-query";
-import { getUtilityQueryOptions } from "@/hooks/queries";
+import WaveformTimingOverlay from "./WaveformTimingOverlay";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
 const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
+const WAVEFORM_HEIGHT = 60;
 
 // Helper function to adjust volume based on percentage
 function volumeAdjustment(volume: number): number {
@@ -68,12 +65,18 @@ export default function AudioPlayer() {
     const { t } = useTolgee();
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
-    const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
+    const selectedPageContext = useSelectedPage();
+    const isPlayingContext = useIsPlaying();
+    const selectedAudioFileContext = useSelectedAudioFile();
     const { beats, measures } = useTimingObjects();
-    const { selectedAudioFile } = useSelectedAudioFile()!;
-    const { data: utilityData } = useQuery(getUtilityQueryOptions());
-
+    const contextsReady =
+        !!selectedPageContext &&
+        !!isPlayingContext &&
+        !!selectedAudioFileContext;
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
+    const isPlaying = isPlayingContext?.isPlaying ?? false;
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
     // Metronome state management
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
         useMetronomeStore();
@@ -92,7 +95,6 @@ export default function AudioPlayer() {
 
     // Refs for WaveSurfer and timing markers
     const waveformRef = useRef<HTMLDivElement>(null);
-    const timingMarkersPlugin = useRef<TimingMarkersPlugin | null>(null);
     const [waveSurfer, setWaveSurfer] = useState<WaveSurfer | null>(null);
     const [waveformBuffer, setWaveformBuffer] = useState<ArrayBuffer | null>(
         null,
@@ -135,7 +137,13 @@ export default function AudioPlayer() {
             float32Array.length,
             audioContext.sampleRate,
         );
-        void newBuffer.copyToChannel(float32Array, 0);
+        // React Native typings expect `Float32Array<ArrayBuffer>` but our metronome util returns
+        // `Float32Array<ArrayBufferLike>`. Explicitly cast so TS understands we are providing the
+        // correct view.
+        void newBuffer.copyToChannel(
+            float32Array as Float32Array<ArrayBuffer>,
+            0,
+        );
 
         // Set the metronome buffer in state
         setMetronomeBuffer(newBuffer);
@@ -278,13 +286,10 @@ export default function AudioPlayer() {
             setWaveSurfer(null);
         }
 
-        if (!utilityData || !utilityData.default_beat_duration)
-            console.warn("No default beat duration found, using 0.5");
-
         // Create WaveSurfer instance
         const ws = WaveSurfer.create({
             container: waveformRef.current,
-            height: 60,
+            height: WAVEFORM_HEIGHT,
             barWidth: 2,
             barGap: 1,
             barRadius: 2,
@@ -300,31 +305,11 @@ export default function AudioPlayer() {
         const blob = new Blob([waveformBuffer], { type: "audio/wav" });
         void ws.loadBlob(blob);
 
-        // Initialize regions plugin
-        const regions = ws.registerPlugin(RegionsPlugin.create());
-        const timelineMarkersPlugin = new TimingMarkersPlugin(
-            regions,
-            beats,
-            measures,
-            utilityData?.default_beat_duration ?? 0.5,
-        );
-        timingMarkersPlugin.current = timelineMarkersPlugin;
-
-        // Create regions when the audio is decoded
-        ws.on("decode", () => {
-            timelineMarkersPlugin.createTimingMarkers();
-        });
-
         setWaveSurfer(ws);
 
         return () => {
-            if (timingMarkersPlugin.current) {
-                timingMarkersPlugin.current.clearTimingMarkers();
-                timingMarkersPlugin.current = null;
-            }
             ws.destroy();
             setWaveSurfer(null);
-            timingMarkersPlugin.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [waveformRef, waveformBuffer, theme]);
@@ -337,13 +322,6 @@ export default function AudioPlayer() {
                 : 0;
         }
     }, [isMetronomeOn, volume]);
-
-    // Update markers if beats/measures change
-    useEffect(() => {
-        if (timingMarkersPlugin.current) {
-            timingMarkersPlugin.current.updateTimingMarkers(beats, measures);
-        }
-    }, [beats, measures, audioDuration]);
 
     // Snap WaveSurfer to correct position when paused
     useEffect(() => {
@@ -381,19 +359,81 @@ export default function AudioPlayer() {
         };
     }, [waveSurfer, audioBuffer, audioDuration, isPlaying]);
 
+    const measuresDuration = useMemo(() => {
+        if (!measures.length) {
+            return 0;
+        }
+        const lastMeasure = measures[measures.length - 1];
+        return lastMeasure.timestamp + lastMeasure.duration;
+    }, [measures]);
+
+    const renderedDuration = Math.max(audioDuration, measuresDuration);
+
+    const audioWaveformWidth = useMemo(() => {
+        if (audioDuration <= 0) return 0;
+        return audioDuration * uiSettings.timelinePixelsPerSecond;
+    }, [audioDuration, uiSettings.timelinePixelsPerSecond]);
+
     // Update WaveSurfer style if duration or zoom changes
     useEffect(() => {
         if (waveSurfer) {
             waveSurfer.setOptions({
                 minPxPerSec: uiSettings.timelinePixelsPerSecond,
-                width: audioDuration * uiSettings.timelinePixelsPerSecond,
+                width: audioWaveformWidth,
             });
         }
-    }, [waveSurfer, audioDuration, uiSettings.timelinePixelsPerSecond]);
+    }, [waveSurfer, audioWaveformWidth, uiSettings.timelinePixelsPerSecond]);
+
+    const waveformWidth =
+        renderedDuration > 0
+            ? renderedDuration * uiSettings.timelinePixelsPerSecond
+            : 0;
+
+    if (!contextsReady) {
+        console.warn(
+            "AudioPlayer is waiting for context providers to mount; rendering skipped.",
+        );
+        return null;
+    }
 
     return (
         <div className="w-fit pl-[40px]">
-            <div id="waveform" ref={waveformRef}></div>
+            <div
+                className="relative pt-12"
+                style={{
+                    width: waveformWidth || undefined,
+                    height: WAVEFORM_HEIGHT,
+                }}
+            >
+                <div
+                    id="waveform"
+                    ref={waveformRef}
+                    className="-z-10 h-full"
+                    style={{
+                        width: audioWaveformWidth || undefined,
+                        height: WAVEFORM_HEIGHT,
+                    }}
+                ></div>
+                {waveformWidth > audioWaveformWidth && (
+                    <div
+                        className="bg-fg-1/40 dark:bg-bg-1/40 pointer-events-none absolute top-0 bottom-0"
+                        style={{
+                            left: audioWaveformWidth,
+                            width: waveformWidth - audioWaveformWidth,
+                        }}
+                    >
+                        <div className="border-stroke h-full border-l border-dashed opacity-60" />
+                    </div>
+                )}
+                <WaveformTimingOverlay
+                    beats={beats}
+                    measures={measures}
+                    duration={renderedDuration}
+                    pixelsPerSecond={uiSettings.timelinePixelsPerSecond}
+                    height={WAVEFORM_HEIGHT}
+                    width={waveformWidth}
+                />
+            </div>
         </div>
     );
 }
