@@ -588,18 +588,31 @@ export async function loadDatabaseFile() {
 function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
     return new Promise((resolve, reject) => {
         const requestId = `get-svg-${Date.now()}`;
+        const responseChannel = `get-svg-response-${requestId}`;
 
-        ipcMain.once(`get-svg-response-${requestId}`, (event, svg) => {
+        const cleanup = (
+            handler?: (event: Electron.IpcMainEvent, svg: string) => void,
+        ) => {
+            if (handler) {
+                ipcMain.removeListener(responseChannel, handler);
+            }
+            clearTimeout(timeoutId);
+        };
+
+        const handler = (event: Electron.IpcMainEvent, svg: string) => {
+            cleanup(handler);
             resolve(svg);
-        });
+        };
+
+        ipcMain.once(responseChannel, handler);
 
         win.webContents.send("get-svg-on-close", requestId);
 
         // Optional timeout to avoid hanging
-        setTimeout(
-            () => reject(new Error("Timeout waiting for SVG response")),
-            5000,
-        );
+        const timeoutId = setTimeout(() => {
+            cleanup(handler);
+            reject(new Error("Timeout waiting for SVG response"));
+        }, 5000);
     });
 }
 
