@@ -18,7 +18,6 @@ export const useSelectionListeners = ({
     const { selectedShapePageIds } = useSelectionStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore();
-    const setSelectionState = useSelectionStore.setState;
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const unimplementedError = (
         selectableClass: Selectable.SelectableClasses,
@@ -102,7 +101,6 @@ export const useSelectionListeners = ({
             if (Selectable.isSelectable(activeObject))
                 selectableObjects.push(activeObject);
         }
-        console.log({ selectableObjects });
 
         const activeObjectClassIds: Set<string> = new Set<string>(
             selectableObjects.map((selectableObject) =>

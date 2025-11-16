@@ -20,7 +20,7 @@ export type TimingObjects = {
     measures: Measure[];
     pages: Page[];
     utility: DatabaseUtility | undefined;
-    fetchTimingObjects: () => void;
+    fetchTimingObjects: () => Promise<void>;
     isLoading: boolean;
     hasError: boolean;
 };
@@ -73,13 +73,13 @@ export const _combineTimingObjects = (
         await queryClient.invalidateQueries({
             queryKey: allDatabaseBeatsQueryOptions().queryKey,
         });
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: getUtilityQueryOptions().queryKey,
         });
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: allDatabasePagesQueryOptions().queryKey,
         });
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: allDatabaseMeasuresQueryOptions().queryKey,
         });
     };

@@ -2,20 +2,13 @@ import { useRef } from "react";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
-import {
-    allDatabaseBeatsQueryOptions,
-    allDatabasePagesQueryOptions,
-} from "@/hooks/queries";
-import { useQuery } from "@tanstack/react-query";
 import { useTimingObjects } from "@/hooks";
 import { useImportMusicXml } from "./MusicXmlImport";
 
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { t } = useTolgee();
-    const { measures } = useTimingObjects();
-    const { data: allPages } = useQuery(allDatabasePagesQueryOptions());
-    const { data: allBeats } = useQuery(allDatabaseBeatsQueryOptions());
+    const { measures, pages: allPages, beats: allBeats } = useTimingObjects();
 
     const importMusicXmlMutation = useImportMusicXml();
 

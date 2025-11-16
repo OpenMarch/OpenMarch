@@ -57,6 +57,16 @@ export type ModifiedMeasureArgs = Partial<typeof measures.$inferInsert> & {
 /** A type that stores a beat with the index that it occurs in a list with all beats */
 type BeatWithIndex = Beat & { index: number };
 
+const tempBeat: Beat = {
+    id: -1,
+    duration: 0,
+    position: -1,
+    index: -1,
+    notes: null,
+    timestamp: 0,
+    includeInMeasure: true,
+};
+
 /**
  * Converts an array of `DatabaseMeasure` and `Beat` objects into an array of `Measure` objects.
  *
@@ -79,27 +89,17 @@ export const fromDatabaseMeasures = (args: {
     const sortedDbMeasures = args.databaseMeasures.sort((a, b) => {
         const aBeat = beatMap.get(a.start_beat);
         const bBeat = beatMap.get(b.start_beat);
-        if (!aBeat || !bBeat) {
-            console.log("aBeat", a.start_beat, aBeat);
-            console.log("bBeat", b.start_beat, bBeat);
-            throw new Error(
-                `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
-            );
-        }
+        if (!aBeat && !bBeat) return 0;
+        if (!aBeat) return 1;
+        if (!bBeat) return -1;
         return aBeat.position - bBeat.position;
     });
     const createdMeasures = sortedDbMeasures.map((measure, i) => {
-        const startBeat = beatMap.get(measure.start_beat);
-        if (!startBeat) {
-            throw new Error(`Beat not found: ${measure.start_beat}`);
-        }
+        const startBeat = beatMap.get(measure.start_beat) ?? tempBeat;
         const nextMeasure = sortedDbMeasures[i + 1] || null;
         const nextBeat = nextMeasure
-            ? beatMap.get(nextMeasure.start_beat)
+            ? (beatMap.get(nextMeasure.start_beat) ?? tempBeat)
             : null;
-        if (!nextBeat && nextMeasure) {
-            throw new Error(`Beat not found: ${nextMeasure.start_beat}`);
-        }
         const beats = nextBeat
             ? sortedBeats.slice(startBeat.index, nextBeat.index)
             : sortedBeats.slice(startBeat.index);
@@ -156,7 +156,7 @@ export const useCascadeDeleteMeasures = () => {
             void queryClient.invalidateQueries({ queryKey: pageKeys.all() });
             void queryClient.invalidateQueries({ queryKey: measureKeys.all() });
         },
-        onError: (error: Error, variables: Measure[]) => {
+        onError: () => {
             conToastError(tolgee.t("tempoGroup.deleteFailed"));
             return;
         },

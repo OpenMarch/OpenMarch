@@ -244,11 +244,9 @@ export function fromDatabasePages({
     const sortedDbPages = databasePages.sort((a, b) => {
         const aBeat = beatMap.get(a.start_beat);
         const bBeat = beatMap.get(b.start_beat);
-        if (!aBeat || !bBeat) {
-            throw new Error(
-                `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
-            );
-        }
+        if (!aBeat && !bBeat) return 0;
+        if (!aBeat) return 1;
+        if (!bBeat) return -1;
         return aBeat.position - bBeat.position;
     });
     const isSubsetArr = sortedDbPages.map((page) => page.is_subset);
@@ -602,7 +600,6 @@ export const areEnoughBeatsForPages = ({
     pages: { counts: number }[];
     beats: { id: number }[];
 }) => {
-    console.log(pages, beats);
     const totalCounts = pages.reduce((acc, page) => acc + page.counts, 0);
     const totalBeats = beats.length;
     return totalCounts <= totalBeats;
@@ -644,15 +641,8 @@ export const yankOrPushPagesAfterIndex = ({
         return;
     }
 
-    console.log("index", index);
-    console.log("offset", offset);
-    console.log("allPages", allPages);
-    console.log("allBeats", allBeats);
-
     const pagesToYankOrPush = allPages.slice(index + 1);
     const modifiedPagesArgs: ModifiedPageArgs[] = [];
-
-    console.log(pagesToYankOrPush);
 
     // validate that all pages have at least one beat
     for (const page of pagesToYankOrPush) {
