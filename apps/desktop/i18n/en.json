@@ -34,7 +34,9 @@
         },
         "edit": {
             "redo": "Perform redo",
-            "undo": "Perform undo"
+            "undo": "Perform undo",
+            "noUndoAvailable": "No action to undo",
+            "noRedoAvailable": "No action to redo"
         },
         "file": {
             "importMusicXml": "Import MusicXML file to get measures",

@@ -34,7 +34,9 @@
         },
         "edit": {
             "redo": "やり直し を実行",
-            "undo": "元に戻す を実行"
+            "undo": "元に戻す を実行",
+            "noUndoAvailable": "元に戻す操作はありません",
+            "noRedoAvailable": "やり直すアクションはありません"
         },
         "file": {
             "importMusicXml": "MusicXML ファイル をインポートして 小節 を取得",
