@@ -15,6 +15,7 @@ import { allMarchersQueryOptions } from "./useMarchers";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
+import { coordinateDataKeys } from "./useCoordinateData";
 
 const KEY_BASE = "history";
 
@@ -49,14 +50,20 @@ export const usePerformHistoryAction = () => {
 
     return useMutation({
         mutationFn: (type: "undo" | "redo") => performHistoryAction(type, db),
-        onSuccess: (response) => {
+        onSuccess: async (response) => {
+            // Invalidate history query
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
 
             if (response.queriesToInvalidate) {
-                safelyInvalidateQueries(response.queriesToInvalidate, qc);
+                await safelyInvalidateQueries(response.queriesToInvalidate, qc);
             }
+
+            // Greedily invalidate all coordinate data queries
+            // The better thing to do would be to check the pages that were modified
+            void qc.invalidateQueries({ queryKey: coordinateDataKeys.all });
+
             if (response.pageIdToGoTo && pages) {
                 setSelectedPage(
                     pages.find((page) => page.id === response.pageIdToGoTo)!,
