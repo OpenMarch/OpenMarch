@@ -514,7 +514,7 @@ export default function Canvas({
                 transformStyle: "preserve-3d",
             }}
         >
-            {pages.length > 0 ? (
+            {pages.length > 0 || canvas ? (
                 <div
                     style={{
                         transform: `rotateX(${perspective}deg)`,

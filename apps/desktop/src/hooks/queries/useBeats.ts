@@ -71,7 +71,7 @@ export const createBeatsMutationOptions = (qc: QueryClient) => {
             newBeats: NewBeatArgs[];
             startingPosition?: number;
         }) => createBeats({ db, ...args }),
-        onSuccess: (_, variables) => {
+        onSuccess: () => {
             // Invalidate all beat queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
@@ -105,7 +105,7 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
 export const deleteBeatsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (beatIds: Set<number>) => deleteBeats({ db, beatIds }),
-        onSuccess: (_, variables) => {
+        onSuccess: () => {
             // Invalidate all beat queries
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
@@ -120,7 +120,7 @@ export const deleteBeatsMutationOptions = (qc: QueryClient) => {
 export const shiftBeatsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (args: ShiftBeatsArgs) => shiftBeats({ db, ...args }),
-        onSuccess: (_, variables) => {
+        onSuccess: () => {
             // Invalidate all beat queries since positions may have changed
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],

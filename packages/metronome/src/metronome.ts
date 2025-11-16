@@ -23,13 +23,14 @@ export function createMetronomeWav(
     const allBeats = beats ?? measures.flatMap((m) => m.beats);
 
     if (allBeats.length === 0) throw new Error("No beats provided.");
-
     // Sort beats by timestamp to ensure order, find indexes of first-measure beats
     allBeats
         .filter((b) => b.duration > 0)
         .sort((a, b) => a.timestamp - b.timestamp);
     const firstBeatIndices = new Set<number>(
-        measures.map((m) => m.beats[0]!.index),
+        measures
+            .map((m) => m.beats[0]?.index ?? undefined)
+            .filter((b) => b != null) as number[],
     );
 
     // Get click sounds

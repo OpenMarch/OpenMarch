@@ -1,4 +1,4 @@
-import { transactionWithHistory } from "@/db-functions";
+import { FIRST_BEAT_ID, transactionWithHistory } from "@/db-functions";
 import {
     createBeatsInTransaction,
     deleteBeatsInTransaction,
@@ -9,10 +9,7 @@ import {
 } from "@/db-functions";
 import { updatePagesInTransaction } from "@/db-functions";
 import { db } from "@/global/database/db";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { measureKeys } from "@/hooks/queries/useMeasures";
-import { beatKeys } from "@/hooks/queries/useBeats";
-import { pageKeys } from "@/hooks/queries/usePages";
+import { useMutation } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import {
@@ -23,13 +20,17 @@ import {
 import { DatabaseBeat, NewBeatArgs } from "@/db-functions";
 import { NewMeasureArgs } from "@/db-functions";
 import { ModifiedPageArgs } from "@/db-functions";
+import Page from "@/global/classes/Page";
+import Measure from "@/global/classes/Measure";
+import Beat from "@/global/classes/Beat";
+import { useTimingObjects } from "@/hooks";
 
 // Types and interfaces
 export type MusicXmlImportData = {
     file: File;
-    allPages: any[];
-    measures: any[];
-    allBeats: any[];
+    allPages: Page[];
+    measures: Measure[];
+    allBeats: Beat[];
 };
 
 export type ImportResult = {
@@ -55,6 +56,7 @@ function generateStandardMeasures(count: number): ParserMeasure[] {
 }
 
 // Database operation functions (private, prefixed with _)
+// eslint-disable-next-line max-lines-per-function
 export const _importMusicXmlFile = async ({
     data,
 }: {
@@ -63,6 +65,7 @@ export const _importMusicXmlFile = async ({
     return await transactionWithHistory(
         db,
         "importMusicXmlFile",
+        // eslint-disable-next-line max-lines-per-function
         async (tx) => {
             const { file, allPages, measures, allBeats } = data;
 
@@ -153,12 +156,12 @@ export const _importMusicXmlFile = async ({
             // Delete old beats now that they are not referenced
             const newBeatIds = new Set(dbBeats.map((b: DatabaseBeat) => b.id));
             const unusedBeats = allBeats.filter(
-                (b: any) => !newBeatIds.has(b.id),
+                (b) => !newBeatIds.has(b.id) && b.id !== FIRST_BEAT_ID,
             );
             if (unusedBeats.length > 0) {
                 await deleteBeatsInTransaction({
                     tx,
-                    beatIds: new Set(unusedBeats.map((b: any) => b.id)),
+                    beatIds: new Set(unusedBeats.map((b) => b.id)),
                 });
             }
 
@@ -183,21 +186,13 @@ const useMusicXmlMutation = <TArgs>(
     errorKey: string,
     successKey?: string,
 ) => {
-    const queryClient = useQueryClient();
+    const { fetchTimingObjects } = useTimingObjects();
     return useMutation({
         mutationFn,
         onSuccess: async () => {
-            // Invalidate all of the relevant queries
-            await queryClient.invalidateQueries({
-                queryKey: pageKeys.all(),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: measureKeys.all(),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: beatKeys.all(),
-            });
-
+            // This happens twice to bypass the errors. There's likely a better solution
+            await fetchTimingObjects();
+            await fetchTimingObjects();
             if (successKey) {
                 tolgee.t(successKey);
             }

@@ -244,11 +244,9 @@ export function fromDatabasePages({
     const sortedDbPages = databasePages.sort((a, b) => {
         const aBeat = beatMap.get(a.start_beat);
         const bBeat = beatMap.get(b.start_beat);
-        if (!aBeat || !bBeat) {
-            throw new Error(
-                `Beat not found: ${a.start_beat} ${aBeat} - ${b.start_beat} ${bBeat}`,
-            );
-        }
+        if (!aBeat && !bBeat) return 0;
+        if (!aBeat) return 1;
+        if (!bBeat) return -1;
         return aBeat.position - bBeat.position;
     });
     const isSubsetArr = sortedDbPages.map((page) => page.is_subset);
@@ -256,90 +254,95 @@ export function fromDatabasePages({
     const sortedMeasures = allMeasures.sort((a, b) => a.number - b.number);
 
     let curTimestamp = 0;
-    const createdPages: Page[] = sortedDbPages.map((dbPage, i) => {
-        // Get the beats that belong to this page
-        const startBeat = beatMap.get(dbPage.start_beat);
+    const createdPages = (
+        sortedDbPages.map((dbPage, i) => {
+            // Get the beats that belong to this page
+            const startBeat = beatMap.get(dbPage.start_beat);
 
-        if (!startBeat)
-            throw new Error(`Start beat not found: ${dbPage.start_beat}`);
+            if (!startBeat) return undefined;
 
-        const isLastPage = i === sortedDbPages.length - 1;
-        const nextPage = isLastPage ? null : sortedDbPages[i + 1];
-        const nextPageBeat = nextPage ? beatMap.get(nextPage.start_beat) : null;
-        if (!nextPageBeat && nextPage)
-            throw new Error(`Next beat not found: ${nextPage.start_beat}`);
+            const isLastPage = i === sortedDbPages.length - 1;
+            const nextPage = isLastPage ? null : sortedDbPages[i + 1];
+            const nextPageBeat = nextPage
+                ? beatMap.get(nextPage.start_beat)
+                : null;
+            if (!nextPageBeat && nextPage) return undefined;
 
-        // If this is the first page, return that special case
-        if (dbPage.id === FIRST_PAGE_ID)
-            return {
+            // If this is the first page, return that special case
+            if (dbPage.id === FIRST_PAGE_ID)
+                return {
+                    id: dbPage.id,
+                    name: pageNames[i],
+                    counts: 0,
+                    notes: dbPage.notes,
+                    order: i,
+                    isSubset: dbPage.is_subset,
+                    duration: 0,
+                    beats: [startBeat],
+                    measures: null,
+                    measureBeatToStartOn: null,
+                    measureBeatToEndOn: null,
+                    timestamp: curTimestamp,
+                    previousPageId: null,
+                    nextPageId: nextPage ? nextPage.id : null,
+                };
+
+            const lastBeatIndex = nextPage
+                ? nextPageBeat!.index
+                : startBeat.index + lastPageCounts > sortedBeats.length
+                  ? sortedBeats.length
+                  : startBeat.index + lastPageCounts;
+            const beats: Beat[] =
+                startBeat.index < lastBeatIndex
+                    ? sortedBeats.slice(startBeat.index, lastBeatIndex)
+                    : [sortedBeats[startBeat.index]];
+            const lastBeat = beats[beats.length - 1];
+            const beatIdSet = new Set(beats.map((beat) => beat.id));
+
+            // Get the measures that belong to this page
+            const measures = sortedMeasures.filter(
+                (measure) =>
+                    // Check if the start beat of the measure is on or after the start beat of the page
+                    (measure.startBeat.position >= startBeat.position ||
+                        // Check that the start beat is on or before the last beat of the page
+                        measure.startBeat.position <= lastBeat.position) &&
+                    // If both are true, ensure that the beat is actually in the measure
+                    measure.beats.some((beat) => beatIdSet.has(beat.id)),
+            );
+            const duration = beats.reduce(
+                (acc, beat) => acc + beat.duration,
+                0,
+            );
+            const output = {
                 id: dbPage.id,
                 name: pageNames[i],
-                counts: 0,
-                notes: dbPage.notes,
+                counts: beats.length,
+                notes: dbPage.notes || null,
                 order: i,
                 isSubset: dbPage.is_subset,
-                duration: 0,
-                beats: [startBeat],
-                measures: null,
-                measureBeatToStartOn: null,
-                measureBeatToEndOn: null,
+                duration: duration,
+                beats,
+                measures: measures.length > 0 ? measures : null,
+                measureBeatToStartOn:
+                    measures.length > 0
+                        ? measures[0].beats.findIndex(
+                              (beat) => beat.id === startBeat.id,
+                          ) + 1
+                        : null,
+                measureBeatToEndOn:
+                    measures.length > 0
+                        ? measures[measures.length - 1].beats.findIndex(
+                              (beat) => beat.id === lastBeat.id,
+                          ) + 1
+                        : null,
                 timestamp: curTimestamp,
-                previousPageId: null,
+                previousPageId: i > 0 ? sortedDbPages[i - 1].id : null,
                 nextPageId: nextPage ? nextPage.id : null,
-            };
-
-        const lastBeatIndex = nextPage
-            ? nextPageBeat!.index
-            : startBeat.index + lastPageCounts > sortedBeats.length
-              ? sortedBeats.length
-              : startBeat.index + lastPageCounts;
-        const beats: Beat[] =
-            startBeat.index < lastBeatIndex
-                ? sortedBeats.slice(startBeat.index, lastBeatIndex)
-                : [sortedBeats[startBeat.index]];
-        const lastBeat = beats[beats.length - 1];
-        const beatIdSet = new Set(beats.map((beat) => beat.id));
-
-        // Get the measures that belong to this page
-        const measures = sortedMeasures.filter(
-            (measure) =>
-                // Check if the start beat of the measure is on or after the start beat of the page
-                (measure.startBeat.position >= startBeat.position ||
-                    // Check that the start beat is on or before the last beat of the page
-                    measure.startBeat.position <= lastBeat.position) &&
-                // If both are true, ensure that the beat is actually in the measure
-                measure.beats.some((beat) => beatIdSet.has(beat.id)),
-        );
-        const duration = beats.reduce((acc, beat) => acc + beat.duration, 0);
-        const output = {
-            id: dbPage.id,
-            name: pageNames[i],
-            counts: beats.length,
-            notes: dbPage.notes || null,
-            order: i,
-            isSubset: dbPage.is_subset,
-            duration: duration,
-            beats,
-            measures: measures.length > 0 ? measures : null,
-            measureBeatToStartOn:
-                measures.length > 0
-                    ? measures[0].beats.findIndex(
-                          (beat) => beat.id === startBeat.id,
-                      ) + 1
-                    : null,
-            measureBeatToEndOn:
-                measures.length > 0
-                    ? measures[measures.length - 1].beats.findIndex(
-                          (beat) => beat.id === lastBeat.id,
-                      ) + 1
-                    : null,
-            timestamp: curTimestamp,
-            previousPageId: i > 0 ? sortedDbPages[i - 1].id : null,
-            nextPageId: nextPage ? nextPage.id : null,
-        } satisfies Page;
-        curTimestamp += duration;
-        return output;
-    });
+            } satisfies Page;
+            curTimestamp += duration;
+            return output;
+        }) as Page[]
+    ).filter((p) => p != null);
 
     return createdPages;
 }
@@ -602,7 +605,6 @@ export const areEnoughBeatsForPages = ({
     pages: { counts: number }[];
     beats: { id: number }[];
 }) => {
-    console.log(pages, beats);
     const totalCounts = pages.reduce((acc, page) => acc + page.counts, 0);
     const totalBeats = beats.length;
     return totalCounts <= totalBeats;
@@ -644,15 +646,8 @@ export const yankOrPushPagesAfterIndex = ({
         return;
     }
 
-    console.log("index", index);
-    console.log("offset", offset);
-    console.log("allPages", allPages);
-    console.log("allBeats", allBeats);
-
     const pagesToYankOrPush = allPages.slice(index + 1);
     const modifiedPagesArgs: ModifiedPageArgs[] = [];
-
-    console.log(pagesToYankOrPush);
 
     // validate that all pages have at least one beat
     for (const page of pagesToYankOrPush) {
