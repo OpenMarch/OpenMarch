@@ -1,4 +1,4 @@
-import Beat, { beatsDuration, compareBeats } from "./Beat";
+import Beat, { beatsDuration, compareBeats, tempBeat } from "./Beat";
 import { db, schema } from "../database/db";
 import {
     allDatabasePagesQueryOptions,
@@ -56,16 +56,6 @@ export type ModifiedMeasureArgs = Partial<typeof measures.$inferInsert> & {
 
 /** A type that stores a beat with the index that it occurs in a list with all beats */
 type BeatWithIndex = Beat & { index: number };
-
-const tempBeat: Beat = {
-    id: -1,
-    duration: 0,
-    position: -1,
-    index: -1,
-    notes: null,
-    timestamp: 0,
-    includeInMeasure: true,
-};
 
 /**
  * Converts an array of `DatabaseMeasure` and `Beat` objects into an array of `Measure` objects.

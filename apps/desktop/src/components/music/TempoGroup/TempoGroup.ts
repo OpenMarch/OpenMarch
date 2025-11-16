@@ -186,7 +186,8 @@ export const getStrongBeatIndexes = (measure: Measure): number[] => {
 const getMeasureTempo = (measure: Measure) => {
     let output: number;
     if (measure.beats.length === 0) {
-        throw new Error("Measure has no beats");
+        console.debug("Measure has no beats");
+        return -1;
     }
 
     // When mixed meter always return the tempo of the shortest beat. Otherwise, return the tempo of the first beat.

@@ -1,5 +1,15 @@
 import type { DatabaseBeat } from "@/db-functions";
 
+export const tempBeat: Beat = {
+    id: -1,
+    duration: 0,
+    position: -1,
+    index: -1,
+    notes: null,
+    timestamp: 0,
+    includeInMeasure: true,
+};
+
 /**
  * A Beat represents a specific point in time in the show.
  * It has a duration until the next beat and can be included in measures.
