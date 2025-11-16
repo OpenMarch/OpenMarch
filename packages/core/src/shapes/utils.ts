@@ -134,3 +134,42 @@ export const computeOptimalCoordinateMapping = ({
 
     return result;
 };
+
+export const bboxFromCoordinates = (
+    coordinates: [number, number][],
+): { left: number; top: number; width: number; height: number } => {
+    if (coordinates.length === 0) {
+        return { left: 0, top: 0, width: 0, height: 0 };
+    }
+
+    let minX = Infinity;
+    let maxX = -Infinity;
+    let minY = Infinity;
+    let maxY = -Infinity;
+
+    for (const [x, y] of coordinates) {
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+    }
+
+    return {
+        left: minX,
+        top: minY,
+        width: maxX - minX,
+        height: maxY - minY,
+    };
+};
+
+export const coordinateObjectToArray = (coordinateObject: {
+    x: number;
+    y: number;
+}): [number, number] => [coordinateObject.x, coordinateObject.y];
+
+export const coordinateArrayToObject = (
+    coordinateArray: [number, number],
+): { x: number; y: number } => ({
+    x: coordinateArray[0],
+    y: coordinateArray[1],
+});

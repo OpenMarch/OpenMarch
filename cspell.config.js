@@ -148,6 +148,7 @@ module.exports = {
         "svgs",
         "xlink",
         "toks",
+        "bbox",
     ],
     ignorePaths: [
         "node_modules/**",

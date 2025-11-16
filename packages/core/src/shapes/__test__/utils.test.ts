@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import * as fc from "fast-check";
-import { hungarianAlgorithm, computeOptimalCoordinateMapping } from "../utils";
+import {
+    hungarianAlgorithm,
+    computeOptimalCoordinateMapping,
+    bboxFromCoordinates,
+} from "../utils";
 
 describe("hungarianAlgorithm", () => {
     describe("Example Tests - Small matrices", () => {
@@ -646,6 +650,323 @@ describe("computeOptimalCoordinateMapping", () => {
             // Total distance should be positive and finite
             expect(totalDistance).toBeGreaterThan(0);
             expect(totalDistance).toBeLessThan(Infinity);
+        });
+    });
+});
+
+describe("findBoundingBoxFromCoordinates", () => {
+    describe("Example Tests", () => {
+        it("should return zero-sized box for empty coordinates", () => {
+            const coordinates: [number, number][] = [];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+            });
+        });
+
+        it("should return zero-sized box for a single point", () => {
+            const coordinates: [number, number][] = [[5, 10]];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 5,
+                top: 10,
+                width: 0,
+                height: 0,
+            });
+        });
+
+        it("should calculate bounding box for two points", () => {
+            const coordinates: [number, number][] = [
+                [0, 0],
+                [10, 20],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 0,
+                top: 0,
+                width: 10,
+                height: 20,
+            });
+        });
+
+        it("should calculate bounding box for rectangle corners", () => {
+            const coordinates: [number, number][] = [
+                [10, 20],
+                [50, 20],
+                [10, 60],
+                [50, 60],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 10,
+                top: 20,
+                width: 40,
+                height: 40,
+            });
+        });
+
+        it("should calculate bounding box for points with negative coordinates", () => {
+            const coordinates: [number, number][] = [
+                [-10, -5],
+                [10, 15],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: -10,
+                top: -5,
+                width: 20,
+                height: 20,
+            });
+        });
+
+        it("should calculate bounding box for multiple points in various positions", () => {
+            const coordinates: [number, number][] = [
+                [5, 5],
+                [15, 10],
+                [10, 20],
+                [8, 12],
+                [12, 8],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 5,
+                top: 5,
+                width: 10,
+                height: 15,
+            });
+        });
+
+        it("should handle points all on the same horizontal line", () => {
+            const coordinates: [number, number][] = [
+                [0, 10],
+                [5, 10],
+                [10, 10],
+                [15, 10],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 0,
+                top: 10,
+                width: 15,
+                height: 0,
+            });
+        });
+
+        it("should handle points all on the same vertical line", () => {
+            const coordinates: [number, number][] = [
+                [5, 0],
+                [5, 10],
+                [5, 20],
+                [5, 30],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 5,
+                top: 0,
+                width: 0,
+                height: 30,
+            });
+        });
+
+        it("should handle circular arrangement of points", () => {
+            const radius = 10;
+            const coordinates: [number, number][] = [
+                [radius, 0],
+                [0, radius],
+                [-radius, 0],
+                [0, -radius],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: -10,
+                top: -10,
+                width: 20,
+                height: 20,
+            });
+        });
+
+        it("should handle points with decimal coordinates", () => {
+            const coordinates: [number, number][] = [
+                [1.5, 2.5],
+                [3.7, 8.9],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 1.5,
+                top: 2.5,
+                width: 2.2,
+                height: 6.4,
+            });
+        });
+    });
+
+    describe("Edge Cases", () => {
+        it("should handle very large coordinates", () => {
+            const coordinates: [number, number][] = [
+                [1e6, 1e6],
+                [2e6, 2e6],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 1e6,
+                top: 1e6,
+                width: 1e6,
+                height: 1e6,
+            });
+        });
+
+        it("should handle zero coordinates", () => {
+            const coordinates: [number, number][] = [
+                [0, 0],
+                [0, 0],
+                [0, 0],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: 0,
+                top: 0,
+                width: 0,
+                height: 0,
+            });
+        });
+
+        it("should handle mixed positive and negative coordinates", () => {
+            const coordinates: [number, number][] = [
+                [-100, -200],
+                [100, 200],
+                [-50, 150],
+                [75, -100],
+            ];
+            const result = bboxFromCoordinates(coordinates);
+
+            expect(result).toEqual({
+                left: -100,
+                top: -200,
+                width: 200,
+                height: 400,
+            });
+        });
+    });
+
+    describe("Property-based Tests", () => {
+        it("should always contain all input points", () => {
+            fc.assert(
+                fc.property(
+                    fc.array(
+                        fc.tuple(
+                            fc.integer({ min: -1000, max: 1000 }),
+                            fc.integer({ min: -1000, max: 1000 }),
+                        ),
+                        { minLength: 1, maxLength: 20 },
+                    ),
+                    (coordinates) => {
+                        const result = bboxFromCoordinates(
+                            coordinates as [number, number][],
+                        );
+
+                        // All points should be within or on the bounding box
+                        for (const [x, y] of coordinates) {
+                            expect(x).toBeGreaterThanOrEqual(result.left);
+                            expect(x).toBeLessThanOrEqual(
+                                result.left + result.width,
+                            );
+                            expect(y).toBeGreaterThanOrEqual(result.top);
+                            expect(y).toBeLessThanOrEqual(
+                                result.top + result.height,
+                            );
+                        }
+
+                        return true;
+                    },
+                ),
+                { numRuns: 50 },
+            );
+        });
+
+        it("should have non-negative width and height", () => {
+            fc.assert(
+                fc.property(
+                    fc.array(
+                        fc.tuple(
+                            fc.float({ min: -1e6, max: 1e6 }),
+                            fc.float({ min: -1e6, max: 1e6 }),
+                        ),
+                        { minLength: 0, maxLength: 50 },
+                    ),
+                    (coordinates) => {
+                        const result = bboxFromCoordinates(
+                            coordinates as [number, number][],
+                        );
+
+                        expect(result.width).toBeGreaterThanOrEqual(0);
+                        expect(result.height).toBeGreaterThanOrEqual(0);
+
+                        return true;
+                    },
+                ),
+                { numRuns: 50 },
+            );
+        });
+
+        it("should have at least one point on each edge of the bounding box", () => {
+            fc.assert(
+                fc.property(
+                    fc.array(
+                        fc.tuple(
+                            fc.integer({ min: -500, max: 500 }),
+                            fc.integer({ min: -500, max: 500 }),
+                        ),
+                        { minLength: 1, maxLength: 30 },
+                    ),
+                    (coordinates) => {
+                        const result = bboxFromCoordinates(
+                            coordinates as [number, number][],
+                        );
+
+                        // At least one point should have x = left
+                        const hasLeftPoint = coordinates.some(
+                            ([x]) => x === result.left,
+                        );
+                        expect(hasLeftPoint).toBe(true);
+
+                        // At least one point should have x = left + width (right edge)
+                        const hasRightPoint = coordinates.some(
+                            ([x]) => x === result.left + result.width,
+                        );
+                        expect(hasRightPoint).toBe(true);
+
+                        // At least one point should have y = top
+                        const hasTopPoint = coordinates.some(
+                            ([, y]) => y === result.top,
+                        );
+                        expect(hasTopPoint).toBe(true);
+
+                        // At least one point should have y = top + height (bottom edge)
+                        const hasBottomPoint = coordinates.some(
+                            ([, y]) => y === result.top + result.height,
+                        );
+                        expect(hasBottomPoint).toBe(true);
+
+                        return true;
+                    },
+                ),
+                { numRuns: 50 },
+            );
         });
     });
 });
