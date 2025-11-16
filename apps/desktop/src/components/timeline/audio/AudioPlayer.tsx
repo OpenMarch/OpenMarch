@@ -140,10 +140,7 @@ export default function AudioPlayer() {
         // React Native typings expect `Float32Array<ArrayBuffer>` but our metronome util returns
         // `Float32Array<ArrayBufferLike>`. Explicitly cast so TS understands we are providing the
         // correct view.
-        void newBuffer.copyToChannel(
-            float32Array as Float32Array<ArrayBuffer>,
-            0,
-        );
+        void newBuffer.copyToChannel(float32Array as Float32Array, 0);
 
         // Set the metronome buffer in state
         setMetronomeBuffer(newBuffer);
