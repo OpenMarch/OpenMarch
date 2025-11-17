@@ -69,7 +69,8 @@ export default function AnalyticsOptInModal({
     };
 
     return (
-        <Dialog open={isOpen}>
+        // modal is false to allow for PostHog interaction
+        <Dialog open={isOpen} modal={false}>
             <DialogContent
                 className="w-[40rem]"
                 aria-describedby="Analytics Opt-In"
