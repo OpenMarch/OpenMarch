@@ -148,8 +148,21 @@ export const durationToBeats = ({
     let cumulativeDuration = 0;
     let beatIndex = startBeat.index;
 
-    while (cumulativeDuration < newDuration && beatIndex < allBeats.length) {
-        cumulativeDuration += allBeats[beatIndex].duration;
+    while (beatIndex < allBeats.length) {
+        const nextBeatDuration = allBeats[beatIndex].duration;
+
+        // Check if adding this beat gets us closer to the target
+        const distanceWithoutBeat = Math.abs(newDuration - cumulativeDuration);
+        const distanceWithBeat = Math.abs(
+            newDuration - (cumulativeDuration + nextBeatDuration),
+        );
+
+        // If adding the beat makes us further from the target, stop
+        if (distanceWithBeat > distanceWithoutBeat) {
+            break;
+        }
+
+        cumulativeDuration += nextBeatDuration;
         beatIndex++;
     }
 
