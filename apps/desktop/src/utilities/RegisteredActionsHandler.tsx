@@ -642,12 +642,10 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.performUndo:
                     if (canUndo) performHistoryAction("undo");
                     else toast.warning(t("actions.edit.noUndoAvailable"));
-
                     break;
                 case RegisteredActionsEnum.performRedo:
                     if (canRedo) performHistoryAction("redo");
                     else toast.warning(t("actions.edit.noRedoAvailable"));
-
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {

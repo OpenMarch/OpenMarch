@@ -34,7 +34,9 @@
         },
         "edit": {
             "redo": "Refazer",
-            "undo": "Desfazer"
+            "undo": "Desfazer",
+            "noUndoAvailable": "Nenhuma ação para desfazer",
+            "noRedoAvailable": "Nenhuma ação para refazer"
         },
         "file": {
             "importMusicXml": "Importar arquivo MusicXML para obter compassos",

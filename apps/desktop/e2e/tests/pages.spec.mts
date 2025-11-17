@@ -13,12 +13,18 @@ export const createNewPage = async (page: Page) => {
 
     const pagesSection = pagesMatch[1];
 
+    const firstPageNamePattern = /"First page": "(\w*)"/;
+    const firstPageNameMatch = pagesSection.match(firstPageNamePattern);
+    const firstPageName = firstPageNameMatch ? firstPageNameMatch[1] : null;
+    if (!firstPageName) throw new Error("First page name not found");
+
+    const pageNamesBefore: string[] = [firstPageName];
+
     // Pattern handles various formats:
     // - text: "0 1 2" or - text: 0 1 2 (with newlines)
     // Pages- text: 0 1- button (without newlines)
-    const pattern = /- text: "?([^"\n]+?)"?(?=\n|- |$)/g;
-    const textMatches = pagesSection.matchAll(pattern);
-    const pageNamesBefore: string[] = [];
+    const allPageNamesPattern = /- text: "?([^"\n]+?)"?(?=\n|- |$)/g;
+    const textMatches = pagesSection.matchAll(allPageNamesPattern);
 
     for (const match of textMatches) {
         const text = match[1].trim();
@@ -30,8 +36,6 @@ export const createNewPage = async (page: Page) => {
             pageNamesBefore.push(text);
         }
     }
-
-    if (pageNamesBefore.length === 0) throw new Error("No page names found");
 
     const lastPageNameBefore = pageNamesBefore[pageNamesBefore.length - 1];
     const lastPageNumber = parseInt(
