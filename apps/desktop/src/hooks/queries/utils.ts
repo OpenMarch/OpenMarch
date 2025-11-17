@@ -7,7 +7,7 @@ export const tableNamesToQueryKeys = (tableNames: Set<string>): string[][] => {
     return queryKeys;
 };
 
-export const safelyInvalidateQueries = (
+export const safelyInvalidateQueries = async (
     queryKeys: string[][],
     queryClient: QueryClient,
 ) => {
@@ -15,7 +15,7 @@ export const safelyInvalidateQueries = (
         validateQueryKey(queryKey, queryClient.getQueryCache()),
     );
     for (const queryKey of validQueryKeys) {
-        void queryClient.invalidateQueries({ queryKey });
+        await queryClient.invalidateQueries({ queryKey });
     }
 };
 
