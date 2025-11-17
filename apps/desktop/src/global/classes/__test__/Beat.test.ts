@@ -383,6 +383,157 @@ describe("Beat", () => {
             // Should return an empty array
             expect(result).toHaveLength(0);
         });
+
+        describe("floating point precision", () => {
+            it("should handle floating point precision when duration exactly matches cumulative beats", () => {
+                // Arrange - Create beats that match the user's scenario
+                // Each beat is ~0.4545 seconds (typical for 132 BPM)
+                const beatDuration = 0.4545454545454546;
+                const floatingPointBeats: Beat[] = Array.from(
+                    { length: 10 },
+                    (_, i) => ({
+                        id: i + 1,
+                        position: i + 1,
+                        duration: beatDuration,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: i,
+                        timestamp: i * beatDuration,
+                    }),
+                );
+
+                const startBeat = floatingPointBeats[0];
+                // 8 beats * 0.4545454545454546 = 3.6363636363636368
+                const targetDuration = 3.6363636363636362;
+
+                // Act
+                const result = durationToBeats({
+                    newDuration: targetDuration,
+                    allBeats: floatingPointBeats,
+                    startBeat,
+                });
+
+                // Assert - Should return 8 beats (not 7 due to floating point, not 9 due to overshoot)
+                expect(result).toHaveLength(8);
+                expect(result[0].id).toBe(1);
+                expect(result[7].id).toBe(8);
+            });
+
+            it("should not overshoot when cumulative duration slightly exceeds target", () => {
+                // Arrange
+                const beatDuration = 0.4545454545454546;
+                const floatingPointBeats: Beat[] = Array.from(
+                    { length: 10 },
+                    (_, i) => ({
+                        id: i + 1,
+                        position: i + 1,
+                        duration: beatDuration,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: i,
+                        timestamp: i * beatDuration,
+                    }),
+                );
+
+                const startBeat = floatingPointBeats[0];
+                // A slightly smaller target that still should give us 8 beats
+                const targetDuration = 3.5;
+
+                // Act
+                const result = durationToBeats({
+                    newDuration: targetDuration,
+                    allBeats: floatingPointBeats,
+                    startBeat,
+                });
+
+                // Assert - Should return 8 beats
+                // 7 beats = 3.18, 8 beats = 3.636 (closer to 3.5)
+                expect(result).toHaveLength(8);
+            });
+
+            it("should include beat when it perfectly matches target (within floating point tolerance)", () => {
+                // Arrange
+                const floatingPointBeats: Beat[] = [
+                    {
+                        id: 1,
+                        position: 1,
+                        duration: 1.1,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: 0,
+                        timestamp: 0,
+                    },
+                    {
+                        id: 2,
+                        position: 2,
+                        duration: 2.2,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: 1,
+                        timestamp: 1.1,
+                    },
+                    {
+                        id: 3,
+                        position: 3,
+                        duration: 3.3,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: 2,
+                        timestamp: 3.3,
+                    },
+                ];
+
+                const startBeat = floatingPointBeats[0];
+                // 1.1 + 2.2 = 3.3 (but may be 3.3000000000000003 due to floating point)
+                const targetDuration = 3.3;
+
+                // Act
+                const result = durationToBeats({
+                    newDuration: targetDuration,
+                    allBeats: floatingPointBeats,
+                    startBeat,
+                });
+
+                // Assert - Should return 2 beats (not stop early due to floating point error)
+                expect(result).toHaveLength(2);
+                expect(result[0].id).toBe(1);
+                expect(result[1].id).toBe(2);
+            });
+
+            it("should stop before overshooting when next beat would significantly exceed target", () => {
+                // Arrange
+                const beatDuration = 0.4545454545454546;
+                const floatingPointBeats: Beat[] = Array.from(
+                    { length: 10 },
+                    (_, i) => ({
+                        id: i + 1,
+                        position: i + 1,
+                        duration: beatDuration,
+                        includeInMeasure: true,
+                        notes: null,
+                        index: i,
+                        timestamp: i * beatDuration,
+                    }),
+                );
+
+                const startBeat = floatingPointBeats[0];
+                // Target that should give exactly 7 beats (not 8)
+                // 7 beats = 3.18, 8 beats = 3.636
+                const targetDuration = 3.2;
+
+                // Act
+                const result = durationToBeats({
+                    newDuration: targetDuration,
+                    allBeats: floatingPointBeats,
+                    startBeat,
+                });
+
+                // Assert - Should return 7 beats (not overshoot to 8)
+                expect(result).toHaveLength(7);
+                expect(result[0].id).toBe(1);
+                expect(result[6].id).toBe(7);
+            });
+        });
     });
 
     describe("calculateTimestamps", () => {
