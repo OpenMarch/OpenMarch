@@ -65,8 +65,8 @@ export const DialogContent = ({
 }: RadixDialogContentProps) => {
     return (
         <RadixDialog.Portal>
-            <RadixDialog.Overlay className="bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[998]" />
-            <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[999] flex items-center justify-center">
+            <RadixDialog.Overlay className="bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[500]" />
+            <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[501] flex items-center justify-center">
                 <RadixDialog.Content
                     {...props}
                     className={clsx(

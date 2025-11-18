@@ -107,7 +107,7 @@ export const SelectContent = ({ children }: RadixSelectContentProps) => {
         <RadixSelect.Portal>
             <RadixSelect.Content
                 position="popper"
-                className="rounded-6 border-stroke bg-modal data-[state='open']:animate-scale-in relative z-50 mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden border px-22 font-sans backdrop-blur-3xl"
+                className="rounded-6 border-stroke bg-modal data-[state='open']:animate-scale-in relative z-50 z-[9999] mt-4 max-h-[512px] w-full max-w-[384px] overflow-hidden border px-22 font-sans backdrop-blur-3xl"
             >
                 <RadixSelect.ScrollUpButton className="border-stroke text-text flex h-fit cursor-default items-center justify-center border-b py-2">
                     <CaretUpIcon size={18} />
