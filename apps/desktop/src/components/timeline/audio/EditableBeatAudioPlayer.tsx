@@ -10,6 +10,7 @@ import { useTimingObjects } from "@/hooks";
 import RegionsPlugin from "wavesurfer.js/dist/plugins/regions.esm.js";
 import { EditableTimingMarkersPlugin } from "./EditableTimingMarkersPlugin";
 import { T } from "@tolgee/react";
+import { normalizeVolume } from "./volume";
 
 /**
  * An audio player with editable beat markers.
@@ -122,8 +123,9 @@ export default function EditableBeatAudioPlayer() {
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.muted = uiSettings.audioMuted;
+            audioRef.current.volume = normalizeVolume(uiSettings.audioVolume);
         }
-    }, [uiSettings.audioMuted]);
+    }, [uiSettings.audioMuted, uiSettings.audioVolume]);
 
     // Update measures and beats when they change
     useEffect(() => {

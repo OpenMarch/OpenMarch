@@ -19,6 +19,8 @@ export interface UiSettings {
     halfLines: boolean;
     /** The number of pixels per second in the timeline */
     timelinePixelsPerSecond: number;
+    /** The current audio volume percentage for timeline playback */
+    audioVolume: number;
     /** Whether all app audio is muted */
     audioMuted: boolean;
     /** The component that is currently focussed */
@@ -58,6 +60,7 @@ export const defaultSettings: UiSettings = {
     gridLines: true,
     halfLines: true,
     timelinePixelsPerSecond: 40,
+    audioVolume: 100,
     audioMuted: false,
     focussedComponent: "canvas",
     mouseSettings: {
@@ -108,6 +111,7 @@ interface UiSettingsStoreActions {
     setUiSettings: (uiSettings: UiSettings, type?: keyof UiSettings) => void;
     setPixelsPerSecond: (pixelsPerSecond: number) => void;
     toggleAudioMute: () => void;
+    setAudioVolume: (volume: number) => void;
 }
 interface UiSettingsStoreInterface
     extends UiSettingsStoreState,
@@ -158,6 +162,20 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
                 ...current,
                 audioMuted: !current.audioMuted,
             };
+            set({ uiSettings: newSettings });
+            saveSettings(newSettings);
+        },
+        setAudioVolume: (volume: number) => {
+            const clampedVolume = Math.min(100, Math.max(0, volume));
+            const current = get().uiSettings;
+            const newSettings = {
+                ...current,
+                audioVolume: clampedVolume,
+                audioMuted: clampedVolume === 0 ? true : current.audioMuted,
+            };
+            if (clampedVolume > 0 && current.audioMuted) {
+                newSettings.audioMuted = false;
+            }
             set({ uiSettings: newSettings });
             saveSettings(newSettings);
         },

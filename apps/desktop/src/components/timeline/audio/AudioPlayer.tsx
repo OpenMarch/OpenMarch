@@ -12,6 +12,7 @@ import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useTolgee } from "@tolgee/react";
 import { createMetronomeWav, SAMPLE_RATE } from "@openmarch/metronome";
 import WaveformTimingOverlay from "./WaveformTimingOverlay";
+import { calculateMasterVolume } from "./volume";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -66,6 +67,7 @@ export default function AudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
     const audioMuted = uiSettings.audioMuted;
+    const audioVolume = uiSettings.audioVolume;
     const selectedPageContext = useSelectedPage();
     const isPlayingContext = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
@@ -234,15 +236,21 @@ export default function AudioPlayer() {
             const audioSource = audioContext.createBufferSource();
             audioSource.buffer = audioBuffer;
             audioGainNode.current = audioContext.createGain();
-            audioGainNode.current.gain.value = audioMuted ? 0 : 1;
+            audioGainNode.current.gain.value = calculateMasterVolume(
+                audioVolume,
+                audioMuted,
+            );
             audioSource
                 .connect(audioGainNode.current)
                 .connect(audioContext.destination);
 
             const metroSource = audioContext.createBufferSource();
             metroGainNode.current = audioContext.createGain();
+            const masterVolume = calculateMasterVolume(audioVolume, audioMuted);
             metroGainNode.current.gain.value =
-                !audioMuted && isMetronomeOn ? volumeAdjustment(volume) : 0;
+                isMetronomeOn && masterVolume > 0
+                    ? volumeAdjustment(volume) * masterVolume
+                    : 0;
             metroSource.buffer = metronomeBuffer;
             metroSource
                 .connect(metroGainNode.current)
@@ -323,16 +331,22 @@ export default function AudioPlayer() {
     // Update metronome on/off state and volume
     useEffect(() => {
         if (metroGainNode.current) {
+            const masterVolume = calculateMasterVolume(audioVolume, audioMuted);
             metroGainNode.current.gain.value =
-                !audioMuted && isMetronomeOn ? volumeAdjustment(volume) : 0;
+                isMetronomeOn && masterVolume > 0
+                    ? volumeAdjustment(volume) * masterVolume
+                    : 0;
         }
-    }, [audioMuted, isMetronomeOn, volume]);
+    }, [audioMuted, audioVolume, isMetronomeOn, volume]);
 
     useEffect(() => {
         if (audioGainNode.current) {
-            audioGainNode.current.gain.value = audioMuted ? 0 : 1;
+            audioGainNode.current.gain.value = calculateMasterVolume(
+                audioVolume,
+                audioMuted,
+            );
         }
-    }, [audioMuted]);
+    }, [audioMuted, audioVolume]);
 
     // Snap WaveSurfer to correct position when paused
     useEffect(() => {

@@ -35,6 +35,7 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import Measure from "@/global/classes/Measure";
 import { T } from "@tolgee/react";
+import { normalizeVolume } from "./volume";
 
 /**
  * Editable version of the AudioPlayer component.
@@ -148,8 +149,9 @@ export default function EditableAudioPlayer() {
     useEffect(() => {
         if (audioRef.current) {
             audioRef.current.muted = uiSettings.audioMuted;
+            audioRef.current.volume = normalizeVolume(uiSettings.audioVolume);
         }
-    }, [uiSettings.audioMuted]);
+    }, [uiSettings.audioMuted, uiSettings.audioVolume]);
 
     // Then in the component:
     const handleKeyDown = useCallback(

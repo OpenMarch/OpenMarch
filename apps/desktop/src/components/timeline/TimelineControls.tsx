@@ -9,8 +9,9 @@ import {
     CornersOutIcon,
     CornersInIcon,
     MetronomeIcon,
-    SpeakerHighIcon,
-    SpeakerSlashIcon,
+    SpeakerSimpleHighIcon,
+    SpeakerSimpleLowIcon,
+    SpeakerSimpleXIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -21,6 +22,8 @@ import { clsx } from "clsx";
 import { AudioClock } from "./Clock";
 import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
+import * as Popover from "@radix-ui/react-popover";
+import { Slider } from "@openmarch/ui";
 
 export default function TimelineControls() {
     const { isFullscreen, toggleFullscreen } = useFullscreenStore();
@@ -74,29 +77,53 @@ export default function TimelineControls() {
 }
 
 function TimelineMuteButton() {
-    const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
-    const toggleAudioMute = useUiSettingsStore((s) => s.toggleAudioMute);
+    const audioVolume = useUiSettingsStore((s) => s.uiSettings.audioVolume);
+    const setAudioVolume = useUiSettingsStore((s) => s.setAudioVolume);
+
+    const handleSliderChange = (values: number[]) => {
+        const nextVolume = values[0] ?? 0;
+        setAudioVolume(nextVolume);
+    };
+
+    const sliderValue = audioVolume;
+    const VolumeIcon =
+        sliderValue === 0
+            ? SpeakerSimpleXIcon
+            : sliderValue < 50
+              ? SpeakerSimpleLowIcon
+              : SpeakerSimpleHighIcon;
 
     return (
-        <div className="flex gap-10" id="timelineAudioMute">
-            <button
-                className={clsx(
-                    "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
-                    {
-                        "text-text": audioMuted,
-                        "text-accent enabled:hover:text-text": !audioMuted,
-                    },
-                )}
-                onClick={toggleAudioMute}
-                aria-label={audioMuted ? "Unmute audio" : "Mute audio"}
-            >
-                {audioMuted ? (
-                    <SpeakerSlashIcon size={24} />
-                ) : (
-                    <SpeakerHighIcon size={24} />
-                )}
-            </button>
-        </div>
+        <Popover.Root>
+            <Popover.Trigger asChild>
+                <button
+                    className={clsx(
+                        { "text-red": sliderValue === 0 },
+                        { "text-text": sliderValue > 0 },
+                        "enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                    )}
+                    aria-label="Timeline volume"
+                >
+                    <VolumeIcon size={24} />
+                </button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex flex-col gap-6 border px-16 py-12 backdrop-blur-sm">
+                    <div className="flex items-center justify-between gap-6">
+                        <p className="text-body">Master Volume</p>
+                        <span className="text-body font-mono">{`${sliderValue}%`}</span>
+                    </div>
+                    <Slider
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[sliderValue]}
+                        onValueChange={handleSliderChange}
+                        aria-label="Timeline volume slider"
+                    />
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
     );
 }
 
