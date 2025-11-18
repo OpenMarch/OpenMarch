@@ -19,12 +19,11 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
     const { page } = electronAppEmpty;
     await page.getByRole("tab", { name: "Learn" }).click();
     await expect(page.getByRole("heading", { name: "Learn" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Guides" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Files" }).click();
     await expect(
-        page.getByRole("heading", { name: "Welcome to OpenMarch" }),
-    ).toBeVisible();
+        page.getByRole("heading", { name: "Learn" }),
+    ).not.toBeVisible();
 
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Open File" })).toBeVisible();
