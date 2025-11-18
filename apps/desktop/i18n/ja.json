@@ -767,5 +767,18 @@
     "welcome": {
         "description": "ファイルが見つかりません。 1 つ作成し、ガイドを確認してください。 設定でテーマとナビゲーションをカスタマイズしてください。",
         "title": "OpenMarch へようこそ"
+    },
+    "workspaceSettings": {
+        "audioOffsetSeconds": "オーディオオフセット秒",
+        "cancel": "キャンセル",
+        "defaultBeatsPerMeasure": "デフォルトの拍子数",
+        "defaultNewPageCounts": "デフォルトの新しいページカウント",
+        "defaultTempo": "デフォルトテンポ",
+        "loadingSettings": "ワークスペース設定を読み込み中...",
+        "noSettingsFound": "ワークスペース設定が見つかりません",
+        "resetToDefaults": "デフォルトにリセット",
+        "saveChanges": "変更を保存",
+        "title": "ワークスペース設定",
+        "unsavedChanges": "保存されていない変更があります"
     }
 }

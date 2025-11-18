@@ -767,5 +767,18 @@
     "welcome": {
         "description": "No se encontraron archivos. Cree uno, y asegúrese de consultar las guías. Personalice su tema y navegación en Configuración.",
         "title": "Bienvenido a OpenMarch"
+    },
+    "workspaceSettings": {
+        "audioOffsetSeconds": "Segundos de Compensación de Audio",
+        "cancel": "Cancelar",
+        "defaultBeatsPerMeasure": "Pulsos por Compás Predeterminados",
+        "defaultNewPageCounts": "Cuentas de Página Nuevas Predeterminadas",
+        "defaultTempo": "Tempo Predeterminado",
+        "loadingSettings": "Cargando configuración del espacio de trabajo...",
+        "noSettingsFound": "No se encontró configuración del espacio de trabajo",
+        "resetToDefaults": "Restablecer a Predeterminados",
+        "saveChanges": "Guardar Cambios",
+        "title": "Configuración del Espacio de Trabajo",
+        "unsavedChanges": "Tienes cambios sin guardar"
     }
 }

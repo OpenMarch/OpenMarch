@@ -10,7 +10,7 @@ import {
 } from "@/settings/workspaceSettings";
 import { Button, UnitInput } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
-import { SidebarModalLauncher } from "../sidebar/SidebarModal";
+import { SidebarModalLauncher } from "./SidebarModal";
 import FormField from "../ui/FormField";
 import { XIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
@@ -58,12 +58,15 @@ function WorkspaceSettingsModalContents() {
         useState<WorkspaceSettings | null>(null);
     const [inputValues, setInputValues] = useState<{
         defaultTempo: string;
+
         defaultBeatsPerMeasure: string;
         defaultNewPageCounts: string;
+        audioOffsetSeconds: string;
     }>({
         defaultTempo: "",
         defaultBeatsPerMeasure: "",
         defaultNewPageCounts: "",
+        audioOffsetSeconds: "",
     });
 
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
@@ -77,6 +80,7 @@ function WorkspaceSettingsModalContents() {
                 defaultBeatsPerMeasure:
                     settings.defaultBeatsPerMeasure.toString(),
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
+                audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
             });
         }
     }, [settings]);
@@ -106,6 +110,8 @@ function WorkspaceSettingsModalContents() {
                 defaultWorkspaceSettings.defaultBeatsPerMeasure.toString(),
             defaultNewPageCounts:
                 defaultWorkspaceSettings.defaultNewPageCounts.toString(),
+            audioOffsetSeconds:
+                defaultWorkspaceSettings.audioOffsetSeconds.toString(),
         });
         updateSettings(defaultWorkspaceSettings);
     }, [updateSettings]);
@@ -118,6 +124,7 @@ function WorkspaceSettingsModalContents() {
                 defaultBeatsPerMeasure:
                     settings.defaultBeatsPerMeasure.toString(),
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
+                audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
             });
         }
     }, [settings]);
@@ -143,25 +150,40 @@ function WorkspaceSettingsModalContents() {
         key: keyof WorkspaceSettings;
         label: string;
         value: string;
-        min: number;
+        min?: number;
+        pattern?: string;
+        unit?: string;
+        float?: boolean;
+        canBeNegative?: boolean;
     }> = [
         {
             key: "defaultTempo",
             label: "Default Tempo",
             value: inputValues.defaultTempo || "",
             min: 1,
+            unit: "BPM",
         },
         {
             key: "defaultBeatsPerMeasure",
             label: "Default Beats Per Measure",
             value: inputValues.defaultBeatsPerMeasure || "",
             min: 1,
+            unit: "beats",
         },
         {
             key: "defaultNewPageCounts",
             label: "Default New Page Counts",
             value: inputValues.defaultNewPageCounts || "",
             min: 1,
+            unit: "counts",
+        },
+        {
+            key: "audioOffsetSeconds",
+            label: "Audio Offset Seconds",
+            value: inputValues.audioOffsetSeconds || "",
+            unit: "seconds",
+            float: true,
+            canBeNegative: true,
         },
     ];
 
@@ -185,50 +207,82 @@ function WorkspaceSettingsModalContents() {
                     onSubmit={(e) => e.preventDefault()}
                     className="flex flex-col gap-12"
                 >
-                    {fieldConfigs.map(({ key, label, value, min }) => (
-                        <FormField key={key} label={label}>
-                            <UnitInput
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*"
-                                containerClassName={inputClassname}
-                                unit={
-                                    key === "defaultTempo"
-                                        ? "BPM"
-                                        : key === "defaultBeatsPerMeasure"
-                                          ? "beats"
-                                          : "counts"
-                                }
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    const parsedInt = parseInt(
-                                        e.target.value,
-                                        10,
-                                    );
-                                    if (!isNaN(parsedInt) && parsedInt >= min) {
-                                        handleFieldChange(key, parsedInt);
-                                    } else if (e.target.value === "") {
-                                        // If empty, set to minimum value
-                                        handleFieldChange(key, min);
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow only numbers and update input value immediately
-                                    const filtered = e.target.value.replace(
-                                        /[^\d]/g,
-                                        "",
-                                    );
-                                    setInputValues((prev) => ({
-                                        ...prev,
-                                        [key]: filtered,
-                                    }));
-                                }}
-                                onKeyDown={blurOnEnter}
-                                value={value}
-                                required
-                            />
-                        </FormField>
-                    ))}
+                    {fieldConfigs.map(
+                        ({
+                            key,
+                            label,
+                            value,
+                            min,
+                            pattern,
+                            unit,
+                            float,
+                            canBeNegative,
+                        }) => {
+                            // Generate pattern based on float and canBeNegative flags
+                            const inputPattern =
+                                pattern ??
+                                (float || canBeNegative
+                                    ? `${canBeNegative ? "-?" : ""}[0-9]*${float ? ".?[0-9]*" : ""}`
+                                    : "[0-9]*");
+
+                            // Generate regex for filtering input
+                            const filterRegex = new RegExp(
+                                `[^${canBeNegative ? "-" : ""}0-9${float ? "." : ""}]`,
+                                "g",
+                            );
+
+                            return (
+                                <FormField key={key} label={label}>
+                                    <UnitInput
+                                        type="text"
+                                        inputMode="numeric"
+                                        pattern={inputPattern}
+                                        containerClassName={inputClassname}
+                                        unit={unit ?? ""}
+                                        onBlur={(e) => {
+                                            e.preventDefault();
+                                            // Use parseFloat for float fields, parseInt for integers
+                                            const parsedValue = float
+                                                ? parseFloat(e.target.value)
+                                                : parseInt(e.target.value, 10);
+
+                                            if (
+                                                !isNaN(parsedValue) &&
+                                                (min === undefined ||
+                                                    parsedValue >= min)
+                                            ) {
+                                                handleFieldChange(
+                                                    key,
+                                                    parsedValue,
+                                                );
+                                            } else if (e.target.value === "") {
+                                                // If empty, set to minimum value
+                                                handleFieldChange(
+                                                    key,
+                                                    min ?? 0,
+                                                );
+                                            }
+                                        }}
+                                        onChange={(e) => {
+                                            // Filter input based on float and canBeNegative flags
+                                            const filtered =
+                                                e.target.value.replace(
+                                                    filterRegex,
+                                                    "",
+                                                );
+                                            setInputValues((prev) => ({
+                                                ...prev,
+                                                [key]: filtered,
+                                            }));
+                                        }}
+                                        onKeyDown={blurOnEnter}
+                                        value={value}
+                                        required
+                                    />
+                                </FormField>
+                            );
+                        },
+                    )}
                 </Form.Root>
 
                 <div className="flex flex-col gap-8">

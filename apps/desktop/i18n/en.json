@@ -775,5 +775,18 @@
     "welcome": {
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"
+    },
+    "workspaceSettings": {
+        "audioOffsetSeconds": "Audio Offset Seconds",
+        "cancel": "Cancel",
+        "defaultBeatsPerMeasure": "Default Beats Per Measure",
+        "defaultNewPageCounts": "Default New Page Counts",
+        "defaultTempo": "Default Tempo",
+        "loadingSettings": "Loading workspace settings...",
+        "noSettingsFound": "No workspace settings found",
+        "resetToDefaults": "Reset to Defaults",
+        "saveChanges": "Save Changes",
+        "title": "Workspace Settings",
+        "unsavedChanges": "You have unsaved changes"
     }
 }
