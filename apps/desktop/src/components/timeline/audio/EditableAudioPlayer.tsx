@@ -151,7 +151,7 @@ export default function EditableAudioPlayer() {
             audioRef.current.muted = uiSettings.audioMuted;
             audioRef.current.volume = normalizeVolume(uiSettings.audioVolume);
         }
-    }, [uiSettings.audioMuted, uiSettings.audioVolume]);
+    }, [audioFileUrl, uiSettings.audioMuted, uiSettings.audioVolume]);
 
     // Then in the component:
     const handleKeyDown = useCallback(
