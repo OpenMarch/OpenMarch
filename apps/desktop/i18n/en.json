@@ -707,6 +707,7 @@
             "label": "Playback Controls"
         },
         "label": "Timeline",
+        "masterVolume": "Master Volume",
         "music": {
             "add": "Add Music"
         },

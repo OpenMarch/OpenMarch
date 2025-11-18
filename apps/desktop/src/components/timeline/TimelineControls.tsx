@@ -110,7 +110,9 @@ function TimelineMuteButton() {
             <Popover.Portal>
                 <Popover.Content className="border-stroke bg-modal text-text shadow-modal rounded-8 z-50 flex flex-col gap-6 border px-16 py-12 backdrop-blur-sm">
                     <div className="flex items-center justify-between gap-6">
-                        <p className="text-body">Master Volume</p>
+                        <p className="text-body">
+                            <T keyName="timeline.masterVolume" />
+                        </p>
                         <span className="text-body font-mono">{`${sliderValue}%`}</span>
                     </div>
                     <Slider

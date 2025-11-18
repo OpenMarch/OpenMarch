@@ -705,6 +705,7 @@
             "label": "Controles de Reproducción"
         },
         "label": "Cronología",
+        "masterVolume": "Volumen Principal",
         "music": {
             "add": "Agregar Música"
         },

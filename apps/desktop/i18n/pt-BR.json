@@ -705,6 +705,7 @@
             "label": "Controles de Reprodução"
         },
         "label": "Linha do Tempo",
+        "masterVolume": "Volume Principal",
         "music": {
             "add": "Adicionar Música"
         },
