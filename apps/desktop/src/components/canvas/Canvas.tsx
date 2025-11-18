@@ -123,7 +123,7 @@ export default function Canvas({
 
         // Calculate translation to center the field within the container
         const panX = (containerWidth - fieldWidth * newZoom) / 2;
-        const panY = (containerHeight - fieldHeight * newZoom) / 12;
+        const panY = (containerHeight - fieldHeight * newZoom) / 10;
 
         // Apply the new viewport transform
         canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);

@@ -19,7 +19,7 @@ export default function SettingsModal() {
                     <T keyName={"toolbar.settings"} />
                 </DialogTrigger>
 
-                <DialogContent className="settings-modal max-h-[36rem] overflow-y-auto">
+                <DialogContent className="settings-modal overflow-y-auto">
                     <div className="flex w-full items-center justify-between">
                         <DialogTitle>
                             <T keyName="settings.title" />
