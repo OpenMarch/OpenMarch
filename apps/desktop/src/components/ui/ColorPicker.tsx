@@ -107,7 +107,11 @@ export default function ColorPicker({
                     <Popover.Portal>
                         <Popover.Content
                             align="start"
-                            className="rounded-6 shadow-modal animate-fade-in absolute z-50 mt-8 bg-white p-2"
+                            side="bottom"
+                            sideOffset={8}
+                            collisionPadding={20}
+                            avoidCollisions={true}
+                            className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
                         >
                             <div className="z-50 my-8 flex items-center justify-between px-12">
                                 <Popover.Close
