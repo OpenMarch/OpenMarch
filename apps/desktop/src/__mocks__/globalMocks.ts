@@ -343,7 +343,5 @@ export const mockNCAAFieldProperties: FieldProperties =
 export const legacyMockNCAAFieldProperties: FieldProperties =
     new FieldProperties({
         ...mockNCAAFieldProperties,
-        stepSizeInches:
-            mockNCAAFieldProperties.stepSizeInches *
-            (24 / mockNCAAFieldProperties.stepSizeInches),
+        stepSizeInches: 22.5,
     });

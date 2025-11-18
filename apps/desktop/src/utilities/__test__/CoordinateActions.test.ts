@@ -9,13 +9,19 @@ import {
     getRoundCoordinates2,
 } from "../CoordinateActions";
 import { describe, expect, it } from "vitest";
-import { legacyMockNCAAFieldProperties } from "@/__mocks__/globalMocks";
+import { mockNCAAFieldProperties } from "@/__mocks__/globalMocks";
 import { UiSettings } from "@/stores/UiSettingsStore";
+import { FieldProperties } from "@openmarch/core";
 
 describe("CoordinateActions", () => {
     // Convert the field properties to use the legacy PixelsPerStep (which was 24)
     // These tests can be written later
-    const fieldProperties = legacyMockNCAAFieldProperties;
+    const fieldProperties = new FieldProperties({
+        ...mockNCAAFieldProperties,
+        stepSizeInches:
+            mockNCAAFieldProperties.stepSizeInches *
+            (24 / mockNCAAFieldProperties.stepSizeInches),
+    });
 
     describe("checkMarcherPagesAreSamePage", () => {
         it("should return true if all marcherPages are on the same page", () => {

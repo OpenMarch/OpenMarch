@@ -44,6 +44,7 @@ export class StepSize {
             endingY,
             counts,
             pixelsPerStep: fieldProperties.pixelsPerStep,
+            stepSizeInches: fieldProperties.stepSizeInches,
         });
     }
 
@@ -54,6 +55,7 @@ export class StepSize {
         endingY,
         counts,
         pixelsPerStep,
+        stepSizeInches,
     }: {
         startingX: number;
         startingY: number;
@@ -61,6 +63,7 @@ export class StepSize {
         endingY: number;
         counts: number;
         pixelsPerStep: number;
+        stepSizeInches: number;
     }) {
         if (!counts) {
             return NaN; // don't divide by 0, indicate there is no actual number here
@@ -77,10 +80,10 @@ export class StepSize {
             return Infinity; // don't divide by 0, indicates a hold
         }
 
-        // convert to distance in 8 to 5 steps
-        const distanceIn8to5Steps = distanceInPixels / pixelsPerStep;
+        // convert to distance in steps relative to the FieldProperties step size
+        const distanceInSteps = distanceInPixels / pixelsPerStep;
         // convert to distance in inches
-        const distanceCoveredInInches = distanceIn8to5Steps * 22.5;
+        const distanceCoveredInInches = distanceInSteps * stepSizeInches;
         // determine the distance in inches per step
         const distanceInInchesPerStep = distanceCoveredInInches / counts;
 
