@@ -12,11 +12,11 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 1,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // on the 50, 8 in front of the front hash
-            endingX: 960,
-            endingY: 783.96,
+            endingX: 900,
+            endingY: 734.96,
             counts: 8,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -31,11 +31,11 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 2,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // Splitting the 45 and 50 on S1, on the front hash
-            endingX: 1008,
-            endingY: 687.96,
+            endingX: 945,
+            endingY: 644.96,
             counts: 8,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -48,11 +48,11 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // Splitting the 45 and 50 on S1, 3 behind the front hash
-            endingX: 1008,
-            endingY: 651.96,
+            endingX: 945,
+            endingY: 611.21,
             counts: 8,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -69,11 +69,11 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
-            // on the 50, 8 in front of the front hash (in 6 to 5 grid)
-            endingX: 960,
-            endingY: 807.96,
+            startingX: 900,
+            startingY: 644.96,
+            // on the 50, 8 in front of the front hash (in 8 to 5 spacing, which is 6 steps in 6 to 5 grid)
+            endingX: 900,
+            endingY: 734.96,
             counts: 8,
             fieldProperties: sixToFiveGrid,
         });
@@ -86,28 +86,28 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // one hundredth of a pixel away
-            endingX: 960,
-            endingY: 687.97,
+            endingX: 900,
+            endingY: 644.97,
             counts: 8,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
 
         expect(stepSize.displayString()).toBe("Tiny");
-        expect(stepSize.stepsPerFiveYards).toBe(76800.00000006985);
+        expect(stepSize.stepsPerFiveYards).toBe(72000.00000006548);
     });
 
     it("should handle when counts are 0", () => {
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // Splitting the 45 and 50 on S1, 3 behind the front hash
-            endingX: 1008,
-            endingY: 651.96,
+            endingX: 945,
+            endingY: 611.21,
             counts: 0,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -120,11 +120,11 @@ describe("StepSize", () => {
         const stepSize = new StepSize({
             marcher_id: 3,
             // on the 50, on the front hash
-            startingX: 960,
-            startingY: 687.96,
+            startingX: 900,
+            startingY: 644.96,
             // on the 50, on the front hash
-            endingX: 960,
-            endingY: 687.96,
+            endingX: 900,
+            endingY: 644.96,
             counts: 8,
             fieldProperties: legacyMockNCAAFieldProperties,
         });
@@ -137,14 +137,14 @@ describe("StepSize", () => {
         const startingPage = {
             marcher_id: 1,
             // on the 50, on the front hash
-            x: 960,
-            y: 687.96,
+            x: 900,
+            y: 644.96,
         } as MarcherPage;
         const endingPage = {
             marcher_id: 1,
             // on the 50, 8 in front of the front hash
-            x: 960,
-            y: 783.96,
+            x: 900,
+            y: 734.96,
         } as MarcherPage;
         const page = {
             counts: 16,
@@ -165,8 +165,8 @@ describe("StepSize", () => {
         const endingPage = {
             marcher_id: 1,
             // on the 50, 8 in front of the front hash
-            x: 960,
-            y: 783.96,
+            x: 900,
+            y: 734.96,
         } as MarcherPage;
         const page = {
             counts: 16,
@@ -204,53 +204,53 @@ describe("StepSize", () => {
             // Marcher 1 - 8 to 5
             {
                 marcher_id: 1,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 1,
-                x: 960,
-                y: 783.96,
+                x: 900,
+                y: 734.96,
                 page_id: 5,
             },
             // Marcher 2 - 16 to 5
             {
                 marcher_id: 2,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 2,
-                x: 1008,
-                y: 687.96,
+                x: 945,
+                y: 644.96,
                 page_id: 5,
             },
             // Marcher 3 - 12.8 to 5
             {
                 marcher_id: 3,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 3,
-                x: 1008,
-                y: 651.96,
+                x: 945,
+                y: 611.21,
                 page_id: 5,
             },
             // Marcher 4 - 8 to 5
             {
                 marcher_id: 4,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 4,
-                x: 960,
-                y: 783.96,
+                x: 900,
+                y: 734.96,
                 page_id: 5,
             },
         ] as MarcherPage[]);
@@ -312,53 +312,53 @@ describe("StepSize", () => {
             // Marcher 1 - 8 to 5
             {
                 marcher_id: 1,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 1,
-                x: 960,
-                y: 783.96,
+                x: 900,
+                y: 734.96,
                 page_id: 5,
             },
             // Marcher 2 - 16 to 5
             {
                 marcher_id: 2,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 2,
-                x: 1008,
-                y: 687.96,
+                x: 945,
+                y: 644.96,
                 page_id: 5,
             },
             // Marcher 3 - 12.8 to 5
             {
                 marcher_id: 3,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 3,
-                x: 1008,
-                y: 651.96,
+                x: 945,
+                y: 611.21,
                 page_id: 5,
             },
             // Marcher 4 - 4 to 5
             {
                 marcher_id: 4,
-                x: 960,
-                y: 687.96,
+                x: 900,
+                y: 644.96,
                 page_id: 4,
             },
             {
                 marcher_id: 4,
-                x: 960,
-                y: 495.96,
+                x: 900,
+                y: 464.96,
                 page_id: 5,
             },
         ] as MarcherPage[]);
@@ -403,26 +403,26 @@ describe("StepSize", () => {
         const marcherPageMap = marcherPageMapFromArray([
             {
                 marcher_id: 1,
-                x: 960,
-                y: 783.96,
+                x: 900,
+                y: 734.96,
                 page_id: 5,
             },
             {
                 marcher_id: 2,
-                x: 1008,
-                y: 687.96,
+                x: 945,
+                y: 644.96,
                 page_id: 5,
             },
             {
                 marcher_id: 3,
-                x: 1008,
-                y: 651.96,
+                x: 945,
+                y: 611.21,
                 page_id: 5,
             },
             {
                 marcher_id: 4,
-                x: 960,
-                y: 495.96,
+                x: 900,
+                y: 464.96,
                 page_id: 5,
             },
         ] as MarcherPage[]);
