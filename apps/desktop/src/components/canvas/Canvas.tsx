@@ -86,7 +86,6 @@ export default function Canvas({
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
@@ -124,7 +123,7 @@ export default function Canvas({
 
         // Calculate translation to center the field within the container
         const panX = (containerWidth - fieldWidth * newZoom) / 2;
-        const panY = (containerHeight - fieldHeight * newZoom) / 7.5;
+        const panY = (containerHeight - fieldHeight * newZoom) / 12;
 
         // Apply the new viewport transform
         canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);

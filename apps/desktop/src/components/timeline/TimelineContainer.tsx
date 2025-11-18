@@ -18,6 +18,7 @@ import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PerspectiveSlider from "./PerspectiveSlider";
 import PageTimeline from "./PageTimeline";
 import { T } from "@tolgee/react";
+import clsx from "clsx";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
@@ -143,6 +144,7 @@ const TIMELINE_BASE_PX_PER_SEC = defaultSettings.timelinePixelsPerSecond;
 
 function TimelineZoomControls() {
     const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
+    const { isFullscreen } = useFullscreenStore();
     const currentPixels = uiSettings.timelinePixelsPerSecond;
     const zoomPercent = Math.round(
         (currentPixels / TIMELINE_BASE_PX_PER_SEC) * 100,
@@ -172,7 +174,12 @@ function TimelineZoomControls() {
     };
 
     return (
-        <div className="border-stroke bg-modal fixed right-290 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
+        <div
+            className={clsx(
+                { "right-290": !isFullscreen },
+                "border-stroke bg-modal fixed right-16 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg",
+            )}
+        >
             <button
                 onClick={handleZoomOut}
                 className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
