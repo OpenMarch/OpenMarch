@@ -2630,7 +2630,14 @@ describeDbTests("pages", (it) => {
     });
     describe("createTempoGroupAndPageFromWorkspaceSettings", () => {
         describe("simple examples with no pages", () => {
-            it.for<{ workspaceSettings: WorkspaceSettings }>([
+            it.for<{
+                workspaceSettings: Pick<
+                    WorkspaceSettings,
+                    | "defaultBeatsPerMeasure"
+                    | "defaultTempo"
+                    | "defaultNewPageCounts"
+                >;
+            }>([
                 {
                     workspaceSettings: {
                         defaultBeatsPerMeasure: 4,
@@ -2734,7 +2741,12 @@ describeDbTests("pages", (it) => {
                     orderBy: desc(schema.beats.position),
                 }))!.position + 1;
 
-            const workspaceSettings: WorkspaceSettings = {
+            const workspaceSettings: Pick<
+                WorkspaceSettings,
+                | "defaultBeatsPerMeasure"
+                | "defaultTempo"
+                | "defaultNewPageCounts"
+            > = {
                 defaultBeatsPerMeasure: 3,
                 defaultTempo: 200,
                 defaultNewPageCounts: 12,
