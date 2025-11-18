@@ -955,7 +955,10 @@ export const createTempoGroupAndPageFromWorkspaceSettings = async ({
     workspaceSettings,
 }: {
     db: DbConnection;
-    workspaceSettings: WorkspaceSettings;
+    workspaceSettings: Pick<
+        WorkspaceSettings,
+        "defaultBeatsPerMeasure" | "defaultTempo" | "defaultNewPageCounts"
+    >;
 }) => {
     const tempoGroup = tempoGroupFromWorkspaceSettings(workspaceSettings);
 

@@ -7,13 +7,25 @@ import {
     getLastBeatOfTempoGroup,
     TempoGroupsFromMeasures,
 } from "@/components/music/TempoGroup/TempoGroup";
-import { Button } from "@openmarch/ui";
-import React, { useEffect, useMemo, useRef } from "react";
+import { Button, UnitInput } from "@openmarch/ui";
+import React, {
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    useCallback,
+} from "react";
 import { useTimingObjects } from "@/hooks";
 import TempoGroupCard from "./TempoGroup/TempoGroupCard";
 import NewTempoGroupForm from "./TempoGroup/NewTempoGroupForm";
 import { MusicNotesIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+    workspaceSettingsQueryOptions,
+    updateWorkspaceSettingsMutationOptions,
+} from "@/hooks/queries/useWorkspaceSettings";
+import { StaticFormField } from "../ui/FormField";
 
 export default function MusicModal({
     label = <MusicNotesIcon size={24} />,
@@ -88,6 +100,7 @@ function MusicModalContents() {
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
                 <div className="flex flex-col gap-16">
                     <AudioSelector />
+                    <AudioOffsetInput />
                 </div>
                 <div className="flex items-center gap-8">
                     <h4 className="text-h4 leading-none">
@@ -162,5 +175,77 @@ function MusicModalContents() {
                 </div>
             </div>
         </div>
+    );
+}
+
+function AudioOffsetInput() {
+    const queryClient = useQueryClient();
+    const { t } = useTolgee();
+    const { data: settings } = useQuery(workspaceSettingsQueryOptions());
+    const { mutate: updateSettings } = useMutation(
+        updateWorkspaceSettingsMutationOptions(queryClient),
+    );
+    const [audioOffsetValue, setAudioOffsetValue] = useState("");
+
+    // Update local state when settings change
+    useEffect(() => {
+        if (settings) {
+            setAudioOffsetValue(settings.audioOffsetSeconds.toString());
+        }
+    }, [settings]);
+
+    const handleBlur = useCallback(
+        (e: React.FocusEvent<HTMLInputElement>) => {
+            e.preventDefault();
+            const parsedValue = parseFloat(e.target.value);
+
+            if (!isNaN(parsedValue) && settings) {
+                updateSettings({
+                    ...settings,
+                    audioOffsetSeconds: parsedValue,
+                });
+            } else if (e.target.value === "" && settings) {
+                // If empty, set to 0
+                updateSettings({
+                    ...settings,
+                    audioOffsetSeconds: 0,
+                });
+            }
+        },
+        [settings, updateSettings],
+    );
+
+    const handleChange = useCallback(
+        (e: React.ChangeEvent<HTMLInputElement>) => {
+            // Filter input to allow negative numbers and decimals
+            const filtered = e.target.value.replace(/[^-0-9.]/g, "");
+            setAudioOffsetValue(filtered);
+        },
+        [],
+    );
+
+    const blurOnEnter = useCallback(
+        (e: React.KeyboardEvent<HTMLInputElement>) => {
+            if (e.key === "Enter") {
+                e.currentTarget.blur();
+            }
+        },
+        [],
+    );
+
+    return (
+        <StaticFormField label={t("workspaceSettings.audioOffsetSeconds")}>
+            <UnitInput
+                type="text"
+                inputMode="numeric"
+                pattern="-?[0-9]*.?[0-9]*"
+                containerClassName="col-span-6 self-center"
+                unit={t("workspaceSettings.units.seconds")}
+                onBlur={handleBlur}
+                onChange={handleChange}
+                onKeyDown={blurOnEnter}
+                value={audioOffsetValue}
+            />
+        </StaticFormField>
     );
 }

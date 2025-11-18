@@ -2,7 +2,7 @@ import MusicModal from "@/components/music/MusicModal";
 import FieldModal from "@/components/field/FieldModal";
 import MarchersModal from "@/components/marcher/MarchersModal";
 import MetronomeModal from "@/components/music/MetronomeModal";
-import WorkspaceSettingsModal from "@/components/examples/WorkspaceSettingsExample";
+import WorkspaceSettingsModal from "@/components/sidebar/WorkspaceSettingsModal";
 
 export default function Sidebar() {
     return (
