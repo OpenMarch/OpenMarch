@@ -86,6 +86,7 @@ export default function Canvas({
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const resizeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
@@ -93,7 +94,7 @@ export default function Canvas({
     useMovementListeners({ canvas });
     useAnimation({ canvas });
 
-    // Function to center the field at 100% zoom and fit vertically in viewport
+    // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
         if (
             !canvas ||
@@ -103,13 +104,8 @@ export default function Canvas({
         )
             return;
 
-        // The viewport element is the teal wrapper (parent of canvas-container's parent)
-        const viewportEl = containerRef.current
-            .firstElementChild as HTMLElement | null;
-        const rect = viewportEl?.getBoundingClientRect();
-        const containerWidth = rect?.width ?? containerRef.current.clientWidth;
-        const containerHeight =
-            rect?.height ?? containerRef.current.clientHeight;
+        const containerWidth = containerRef.current.clientWidth;
+        const containerHeight = containerRef.current.clientHeight;
 
         if (containerWidth <= 0 || containerHeight <= 0) return;
 
@@ -118,16 +114,20 @@ export default function Canvas({
 
         if (fieldWidth <= 0 || fieldHeight <= 0) return;
 
-        // Use canvas base zoom (fit vertical <= 1.0) and center
-        if (typeof canvas.centerAtBaseZoom === "function") {
-            canvas.centerAtBaseZoom();
-        } else {
-            const fitVerticalZoom = containerHeight / fieldHeight;
-            const newZoom = fitVerticalZoom < 1 ? fitVerticalZoom : 1.0;
-            const panX = (containerWidth - fieldWidth * newZoom) / 2;
-            const panY = (containerHeight - fieldHeight * newZoom) / 2;
-            canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);
-        }
+        // Calculate the zoom factor to fit the field in the container
+        // Apply a small margin (0.95) to ensure the field doesn't touch the edges
+        const horizontalZoom = (containerWidth / fieldWidth) * 0.87;
+        const verticalZoom = (containerHeight / fieldHeight) * 0.87;
+
+        // Use the smaller zoom factor to ensure the entire field fits
+        const newZoom = Math.min(horizontalZoom, verticalZoom);
+
+        // Calculate translation to center the field within the container
+        const panX = (containerWidth - fieldWidth * newZoom) / 2;
+        const panY = (containerHeight - fieldHeight * newZoom) / 7.5;
+
+        // Apply the new viewport transform
+        canvas.setViewportTransform([newZoom, 0, 0, newZoom, panX, panY]);
 
         // Reset any CSS transforms if that function exists
         if (typeof canvas.resetCSSTransform === "function") {

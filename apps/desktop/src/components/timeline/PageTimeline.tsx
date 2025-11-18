@@ -302,9 +302,10 @@ export default function PageTimeline() {
                         >
                             <ContextMenu.Trigger
                                 disabled={isPlaying || isFullscreen}
+                                className="group"
                             >
                                 <div
-                                    className="group relative h-full overflow-clip"
+                                    className="relative h-full overflow-clip"
                                     timeline-page-id={page.id}
                                     style={{ width: `${width}px` }}
                                 >
@@ -367,7 +368,7 @@ export default function PageTimeline() {
                                             <ToolTip.Trigger asChild>
                                                 <div
                                                     className={clsx(
-                                                        "rounded-r-6 absolute top-0 right-0 z-20 h-full w-24 cursor-ew-resize transition-colors",
+                                                        "absolute top-0 right-0 z-20 h-full w-16 cursor-ew-resize transition-colors",
                                                         resizingPage.current
                                                             ?.id === page.id
                                                             ? "bg-accent/50"

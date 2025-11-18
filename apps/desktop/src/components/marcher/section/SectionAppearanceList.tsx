@@ -50,13 +50,13 @@ export default function SectionAppearanceList() {
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );
-    const { mutate: createSectionAppearances } = useMutation(
+    const { mutateAsync: createSectionAppearances } = useMutation(
         createSectionAppearancesMutationOptions(queryClient),
     );
-    const { mutate: updateSectionAppearances } = useMutation(
+    const { mutateAsync: updateSectionAppearances } = useMutation(
         updateSectionAppearancesMutationOptions(queryClient),
     );
-    const { mutate: deleteSectionAppearances } = useMutation(
+    const { mutateAsync: deleteSectionAppearances } = useMutation(
         deleteSectionAppearancesMutationOptions(queryClient),
     );
     const [localAppearances, setLocalAppearances] = useState<
@@ -94,11 +94,11 @@ export default function SectionAppearanceList() {
         }
 
         if (modifiedAppearances.length > 0) {
-            updateSectionAppearances(modifiedAppearances);
+            await updateSectionAppearances(modifiedAppearances);
         }
 
         if (deletionsRef.current.length > 0) {
-            deleteSectionAppearances(new Set(deletionsRef.current));
+            await deleteSectionAppearances(new Set(deletionsRef.current));
         }
     }
 
@@ -252,6 +252,7 @@ export default function SectionAppearanceList() {
                     {localAppearances && hasPendingChanges && (
                         <div className="flex w-full justify-between gap-8">
                             <Button
+                                type="button"
                                 variant="secondary"
                                 size="compact"
                                 onClick={handleCancel}
@@ -261,7 +262,11 @@ export default function SectionAppearanceList() {
                             {deletionsRef.current.length > 0 ? (
                                 <AlertDialog>
                                     <AlertDialogTrigger>
-                                        <Button variant="red" size="compact">
+                                        <Button
+                                            type="button"
+                                            variant="red"
+                                            size="compact"
+                                        >
                                             <T keyName="marchers.list.saveChanges" />
                                         </Button>
                                     </AlertDialogTrigger>
@@ -278,6 +283,7 @@ export default function SectionAppearanceList() {
                                         <div className="flex w-full justify-end gap-8">
                                             <AlertDialogCancel>
                                                 <Button
+                                                    type="button"
                                                     variant="secondary"
                                                     size="compact"
                                                 >
@@ -286,6 +292,7 @@ export default function SectionAppearanceList() {
                                             </AlertDialogCancel>
                                             <AlertDialogAction>
                                                 <Button
+                                                    type="button"
                                                     variant="red"
                                                     size="compact"
                                                     onClick={handleSubmit}
@@ -298,9 +305,9 @@ export default function SectionAppearanceList() {
                                 </AlertDialog>
                             ) : hasPendingChanges ? (
                                 <Button
+                                    type="submit"
                                     variant="primary"
                                     size="compact"
-                                    onClick={handleSubmit}
                                 >
                                     <T keyName="marchers.list.saveChanges" />
                                 </Button>
@@ -325,6 +332,7 @@ export default function SectionAppearanceList() {
                                             )}
                                         </h4>
                                         <Button
+                                            type="button"
                                             variant="red"
                                             size="compact"
                                             content="icon"
