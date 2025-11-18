@@ -495,7 +495,7 @@
         "addMarchers": "マーチャーズ 追加",
         "cancelDeleteButton": "キャンセル",
         "createButton": "{quantity, plural, other { マーチャー を 作成 } }",
-        "createButtonWithSection": "{quantity, plural, other { {section} 行進者 を 作成 } }",
+        "createButtonWithSection": "{quantity, plural, other { {quantity} {section} 行進者 を 作成 } }",
         "created": "{count, plural, other {マーチャー {drillNumbers} のドリル番号が正常に作成されました}}",
         "createError": "{count, plural, other {行進者{drillNumbers}を作成するエラー}}",
         "createInfo": "新しい 行進者 は 更新 する まで 表示されない 可能性 が あります",

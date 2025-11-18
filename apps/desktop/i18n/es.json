@@ -495,7 +495,7 @@
         "addMarchers": "Añadir Marchadores",
         "cancelDeleteButton": "Cancelar",
         "createButton": "{quantity, plural, one {Crear Marchante} other {Crear Marchantes} }",
-        "createButtonWithSection": "{quantity, plural, one {Crear {section} Marcher} other {Crear {section} Marchers}}",
+        "createButtonWithSection": "{quantity, plural, one {Crear {section} Marcher} other {Crear {quantity} {section} Marchers}}",
         "created": "{count, plural, one {Marchante {drillNumbers} creado con éxito} other {Marchantes {drillNumbers} creados con éxito} }",
         "createError": "{count, plural, one {Error al crear marchante {drillNumbers}} other {Error al crear marchantes {drillNumbers}} }",
         "createInfo": "Los nuevos participantes pueden no aparecer hasta una actualización",

@@ -496,7 +496,7 @@
         "addMarchers": "Add Marchers",
         "cancelDeleteButton": "Cancel",
         "createButton": "{quantity, plural, one {Create Marcher} other {Create Marchers}}",
-        "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {section} Marchers}}",
+        "createButtonWithSection": "{quantity, plural, one {Create {section} Marcher} other {Create {quantity} {section} Marchers}}",
         "created": "{count, plural, one {Marcher {drillNumbers} created successfully} other {Marchers {drillNumbers} created successfully}}",
         "createError": "{count, plural, one {Error creating marcher {drillNumbers}} other {Error creating marchers {drillNumbers}}}",
         "createInfo": "New marchers may not show up until a refresh",
