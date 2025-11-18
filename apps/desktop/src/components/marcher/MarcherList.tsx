@@ -1,4 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type MutableRefObject,
+} from "react";
 import { ListFormProps } from "../../global/Interfaces";
 import Marcher from "@/global/classes/Marcher";
 import { SECTIONS, getTranslatedSectionName } from "@/global/classes/Sections";
@@ -22,6 +29,11 @@ import {
     updateMarchersMutationOptions,
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs } from "@/db-functions";
+
+type SectionOption = {
+    value: string;
+    label: string;
+};
 
 // eslint-disable-next-line max-lines-per-function
 export default function MarcherList({
@@ -109,6 +121,22 @@ export default function MarcherList({
         // record the change
         changesRef.current[marcherId][attribute] = value;
     };
+
+    const sectionOptions = useMemo<SectionOption[]>(() => {
+        return Object.values(SECTIONS).map((section) => ({
+            value: section.name,
+            label: getTranslatedSectionName(section.name, t) ?? section.name,
+        }));
+    }, [t]);
+
+    const sectionLabelMap = useMemo<Record<string, string>>(() => {
+        return sectionOptions.reduce<Record<string, string>>((acc, option) => {
+            acc[option.value] = option.label;
+            return acc;
+        }, {});
+    }, [sectionOptions]);
+
+    const selectPlaceholder = t("marchers.list.selectSection");
 
     // Update local marchers when marchers are fetched
     useEffect(() => {
@@ -262,132 +290,18 @@ export default function MarcherList({
                                     </p>
                                 </div>
                             </div>
-                            {/* eslint-disable-next-line max-lines-per-function */}
                             {localMarchers.map((marcher) => (
-                                <div
-                                    data-testid={`marcher row`}
-                                    id={`${marcher.drill_number} marcher row`}
+                                <MarcherRow
                                     key={marcher.id}
-                                    className="flex items-center gap-4"
-                                >
-                                    <div
-                                        className="w-[13%]"
-                                        data-testid="marcher-drill-number"
-                                    >
-                                        <p className="text-body text-text font-mono">
-                                            {marcher.drill_prefix +
-                                                marcher.drill_order}
-                                        </p>
-                                    </div>
-                                    <div
-                                        className="w-[45%]"
-                                        data-testid="marcher section"
-                                    >
-                                        {isEditing ? (
-                                            <Select
-                                                defaultValue={marcher.section}
-                                                aria-label="Marcher section input"
-                                                disabled={!isEditing}
-                                                onValueChange={(
-                                                    value: string,
-                                                ) =>
-                                                    handleChange(
-                                                        value,
-                                                        "section",
-                                                        marcher.id,
-                                                    )
-                                                }
-                                            >
-                                                <SelectTriggerText
-                                                    label={
-                                                        getTranslatedSectionName(
-                                                            marcher.section,
-                                                            t,
-                                                        ) ||
-                                                        t(
-                                                            "marchers.list.selectSection",
-                                                        )
-                                                    }
-                                                />
-                                                <SelectContent>
-                                                    {Object.values(
-                                                        SECTIONS,
-                                                    ).map((section) => {
-                                                        return (
-                                                            <SelectItem
-                                                                key={
-                                                                    section.name
-                                                                }
-                                                                value={
-                                                                    section.name
-                                                                }
-                                                            >
-                                                                {getTranslatedSectionName(
-                                                                    section.name,
-                                                                    t,
-                                                                )}
-                                                            </SelectItem>
-                                                        );
-                                                    })}
-                                                </SelectContent>
-                                            </Select>
-                                        ) : (
-                                            <p
-                                                className="text-body text-text"
-                                                data-testid="marcher-section"
-                                            >
-                                                {getTranslatedSectionName(
-                                                    marcher.section,
-                                                    t,
-                                                )}
-                                            </p>
-                                        )}
-                                    </div>
-                                    <div className="flex w-[45%] items-center gap-6">
-                                        {isEditing ? (
-                                            <Input
-                                                className="w-full"
-                                                type="text"
-                                                compact
-                                                aria-label="Marcher name input"
-                                                title="Marcher name input"
-                                                defaultValue={
-                                                    marcher.name ?? ""
-                                                }
-                                                disabled={!isEditing}
-                                                key={marcher.id}
-                                                onChange={(event) =>
-                                                    handleChange(
-                                                        event.target.value,
-                                                        "name",
-                                                        marcher.id,
-                                                    )
-                                                }
-                                            />
-                                        ) : (
-                                            <p
-                                                className="text-body text-text"
-                                                data-testid="marcher-name"
-                                            >
-                                                {marcher.name}
-                                            </p>
-                                        )}
-                                        {isEditing && (
-                                            <Button
-                                                variant="red"
-                                                size="compact"
-                                                content="icon"
-                                                onClick={() =>
-                                                    handleDeleteMarcher(
-                                                        marcher.id,
-                                                    )
-                                                }
-                                            >
-                                                <TrashIcon size={18} />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
+                                    marcher={marcher}
+                                    isEditing={isEditing}
+                                    onChange={handleChange}
+                                    onDelete={handleDeleteMarcher}
+                                    sectionOptions={sectionOptions}
+                                    sectionLabelMap={sectionLabelMap}
+                                    selectPlaceholder={selectPlaceholder}
+                                    changesRef={changesRef}
+                                />
                             ))}
                         </>
                     )}
@@ -401,4 +315,159 @@ export default function MarcherList({
             </p>
         </div>
     );
+}
+
+interface MarcherRowProps {
+    marcher: Marcher;
+    isEditing: boolean;
+    onChange: (value: string, attribute: string, marcherId: number) => void;
+    onDelete: (marcherId: number) => void;
+    sectionOptions: SectionOption[];
+    sectionLabelMap: Record<string, string>;
+    selectPlaceholder: string;
+    changesRef: MutableRefObject<{ [key: number | string]: unknown }>;
+}
+
+function MarcherRow({
+    marcher,
+    isEditing,
+    onChange,
+    onDelete,
+    sectionOptions,
+    sectionLabelMap,
+    selectPlaceholder,
+    changesRef,
+}: MarcherRowProps) {
+    const { ref, isVisible } = useVisibilityObserver();
+    const pendingChanges =
+        (changesRef.current[marcher.id] as Record<string, unknown>) || {};
+    const pendingSection =
+        (pendingChanges.section as string | undefined) ?? marcher.section;
+    const pendingName =
+        (pendingChanges.name as string | undefined) ?? marcher.name ?? "";
+
+    const shouldRenderInputs = isEditing && isVisible;
+    const sectionLabel =
+        (pendingSection && sectionLabelMap[pendingSection]) ||
+        sectionLabelMap[marcher.section] ||
+        selectPlaceholder;
+
+    return (
+        <div
+            data-testid={`marcher row`}
+            id={`${marcher.drill_number} marcher row`}
+            className="flex items-center gap-4"
+            ref={ref}
+        >
+            <div className="w-[13%]" data-testid="marcher-drill-number">
+                <p className="text-body text-text font-mono">
+                    {marcher.drill_prefix + marcher.drill_order}
+                </p>
+            </div>
+            <div className="w-[45%]" data-testid="marcher section">
+                {shouldRenderInputs ? (
+                    <Select
+                        defaultValue={pendingSection}
+                        aria-label="Marcher section input"
+                        disabled={!isEditing}
+                        onValueChange={(value: string) =>
+                            onChange(value, "section", marcher.id)
+                        }
+                    >
+                        <SelectTriggerText label={sectionLabel} />
+                        <SelectContent>
+                            {sectionOptions.map((section) => (
+                                <SelectItem
+                                    key={`${marcher.id}-${section.value}`}
+                                    value={section.value}
+                                >
+                                    {section.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                ) : (
+                    <p
+                        className="text-body text-text"
+                        data-testid="marcher-section"
+                    >
+                        {sectionLabel}
+                    </p>
+                )}
+            </div>
+            <div className="flex w-[45%] items-center gap-6">
+                {shouldRenderInputs ? (
+                    <Input
+                        className="w-full"
+                        type="text"
+                        compact
+                        aria-label="Marcher name input"
+                        title="Marcher name input"
+                        defaultValue={pendingName}
+                        disabled={!isEditing}
+                        key={marcher.id}
+                        onChange={(event) =>
+                            onChange(event.target.value, "name", marcher.id)
+                        }
+                    />
+                ) : (
+                    <p
+                        className="text-body text-text"
+                        data-testid="marcher-name"
+                    >
+                        {pendingName}
+                    </p>
+                )}
+                {shouldRenderInputs && (
+                    <Button
+                        variant="red"
+                        size="compact"
+                        content="icon"
+                        onClick={() => onDelete(marcher.id)}
+                    >
+                        <TrashIcon size={18} />
+                    </Button>
+                )}
+            </div>
+        </div>
+    );
+}
+
+function useVisibilityObserver(rootMargin = "300px 0px") {
+    const [node, setNode] = useState<Element | null>(null);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        if (!node) {
+            setIsVisible(false);
+            return;
+        }
+
+        if (
+            typeof window === "undefined" ||
+            !("IntersectionObserver" in window)
+        ) {
+            setIsVisible(true);
+            return;
+        }
+
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+            },
+            { rootMargin },
+        );
+
+        observer.observe(node);
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [node, rootMargin]);
+
+    const ref = useCallback((element: HTMLDivElement | null) => {
+        setNode(element);
+    }, []);
+
+    return { ref, isVisible };
 }

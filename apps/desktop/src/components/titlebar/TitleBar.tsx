@@ -14,10 +14,12 @@ import {
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
+    const { uiSettings } = useUiSettingsStore();
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -38,6 +40,13 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
 
         void fetchDbPath();
     }, []);
+
+    const displayDbPath = uiSettings.showFullDatabasePath
+        ? dbPath
+        : (dbPath
+              .split(/[/\\]/)
+              .filter((segment) => segment.length > 0)
+              .pop() ?? dbPath);
 
     return (
         <>
@@ -89,7 +98,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                     </div>
                 </div>
                 <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
-                    {dbPath}
+                    {displayDbPath}
                 </p>
                 <div
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}

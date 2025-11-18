@@ -429,7 +429,9 @@
                 "success": "ページ 分割 に 成功 しました"
             },
             "subset": "サブセット",
-            "title": "ページ {pageNumber}"
+            "title": "ページ {pageNumber}",
+            "deletedSuccessfully": "ページが正常に削除されました",
+            "deletedFailed": "ページ削除に失敗しました"
         },
         "shape": {
             "addSegmentButton": "追加",
@@ -472,6 +474,10 @@
             "guides": {
                 "title": "ガイド"
             },
+            "videoGuides": {
+                "title": "ビデオガイド",
+                "description": "OpenMarchの使い方を学ぶには動画ガイドをご覧ください。"
+            },
             "title": "学ぶ",
             "troubleshooting": {
                 "clearCache": "キャッシュをクリア",
@@ -493,7 +499,7 @@
         "addMarchers": "マーチャーズ 追加",
         "cancelDeleteButton": "キャンセル",
         "createButton": "{quantity, plural, other { マーチャー を 作成 } }",
-        "createButtonWithSection": "{quantity, plural, other { {section} 行進者 を 作成 } }",
+        "createButtonWithSection": "{quantity, plural, other { {quantity} {section} 行進者 を 作成 } }",
         "created": "{count, plural, other {マーチャー {drillNumbers} のドリル番号が正常に作成されました}}",
         "createError": "{count, plural, other {行進者{drillNumbers}を作成するエラー}}",
         "createInfo": "新しい 行進者 は 更新 する まで 表示されない 可能性 が あります",
@@ -644,6 +650,7 @@
         "general.appearance.dark": "ダーク",
         "general.appearance.light": "ライト",
         "general.language": "言語",
+        "general.showFullDatabasePath": "ファイルパス全体を表示する",
         "mouse": "マウス ＆ トラックパッド",
         "mouse.panSensitivity": "パン 感度",
         "mouse.trackpadMode": "トラックパッド モード （ macOS に推奨 ）",
@@ -698,6 +705,7 @@
             "label": "再生 コントロール"
         },
         "label": "タイムライン",
+        "masterVolume": "マスター音量",
         "music": {
             "add": "音楽を追加"
         },

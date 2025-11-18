@@ -300,6 +300,7 @@ export const generateDrillChartExportSVGs = async (args: {
     gridLines?: boolean;
     halfLines?: boolean;
     individualCharts: boolean;
+    useImagePlaceholder?: boolean;
 }): Promise<{ SVGs: string[][]; coords: string[][] }> => {
     const {
         fieldProperties,
@@ -307,6 +308,7 @@ export const generateDrillChartExportSVGs = async (args: {
         sortedPages,
         marcherPagesMap,
         individualCharts,
+        useImagePlaceholder = true,
     } = args;
     const outputSVGs: string[][] = [];
     // Readable coordinates storage for each marcher
@@ -349,16 +351,29 @@ export const generateDrillChartExportSVGs = async (args: {
                     marcherPagesMap,
                     sortedPages,
                 });
-            marcherSvgs.forEach((svg, index) =>
-                outputSVGs[index].push(replaceImageDataWithPlaceholder(svg)),
-            );
+            if (useImagePlaceholder)
+                marcherSvgs.forEach((svg, index) =>
+                    outputSVGs[index].push(
+                        replaceImageDataWithPlaceholder(svg),
+                    ),
+                );
+            else
+                marcherSvgs.forEach((svg, index) =>
+                    outputSVGs[index].push(svg),
+                );
+
             marcherReadableCoordStrings.forEach((coord, index) =>
                 readableCoordsStrings![index].push(coord),
             );
         } else {
             if (outputSVGs.length === 0) outputSVGs.push([]);
+
             // Render the canvas and add the SVG to the output
-            outputSVGs[0].push(replaceImageDataWithPlaceholder(canvas.toSVG()));
+            if (useImagePlaceholder)
+                outputSVGs[0].push(
+                    replaceImageDataWithPlaceholder(canvas.toSVG()),
+                );
+            else outputSVGs[0].push(canvas.toSVG());
         }
     }
 

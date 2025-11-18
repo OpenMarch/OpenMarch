@@ -89,6 +89,7 @@ const SvgPreviewHandler: React.FC = () => {
                     gridLines: true,
                     halfLines: true,
                     individualCharts: false,
+                    useImagePlaceholder: false,
                 });
 
                 const svg = SVGs?.[0]?.[0];

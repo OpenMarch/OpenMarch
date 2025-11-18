@@ -136,7 +136,7 @@ export default function CanvasZoomControls({
     // );
 
     return (
-        <div className="group border-stroke bg-bg-1 absolute right-6 bottom-6 z-10 flex w-256 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
+        <div className="group border-stroke bg-bg-1 absolute right-6 bottom-6 z-10 flex w-128 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
             {/* Hamburger Icon (placeholder for future menu) */}
             {/* <button
                 className="text-text hover:bg-fg-2 flex items-center justify-center p-2 transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50"
@@ -160,7 +160,7 @@ export default function CanvasZoomControls({
             {/* Zoom Percentage Display and Reset Button */}
             <button
                 onClick={handleResetZoomAndCenter}
-                className="border-stroke bg-fg-2 text-text flex h-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-stroke bg-fg-2 text-text flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas}
                 title="Reset Zoom and Center"
             >

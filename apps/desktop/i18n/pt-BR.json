@@ -429,7 +429,9 @@
                 "success": "Página dividida com sucesso"
             },
             "subset": "Subconjunto",
-            "title": "Página {pageNumber}"
+            "title": "Página {pageNumber}",
+            "deletedSuccessfully": "Página deletada com sucesso",
+            "deletedFailed": "Exclusão de página falhou"
         },
         "shape": {
             "addSegmentButton": "Adicionar",
@@ -472,6 +474,10 @@
             "guides": {
                 "title": "Guias"
             },
+            "videoGuides": {
+                "title": "Guias em Vídeo",
+                "description": "Assista a guias em vídeo para aprender a usar o OpenMarch."
+            },
             "title": "Aprender",
             "troubleshooting": {
                 "clearCache": "Limpar o cache",
@@ -493,7 +499,7 @@
         "addMarchers": "Adicionar Marchadores",
         "cancelDeleteButton": "Cancelar",
         "createButton": "{quantity, plural, one {Criar Marchador} other {Criar Marchadores}}",
-        "createButtonWithSection": "{quantity, plural, one {Criar {section} Marchador} other {Criar {section} Marchadores}}",
+        "createButtonWithSection": "{quantity, plural, one {Criar {section} Marchador} other {Criar {quantity} {section} Marchadores}}",
         "created": "{count, plural, one {Caminhante {drillNumbers} criado com sucesso} other {Caminhantes {drillNumbers} criados com sucesso} }",
         "createError": "{count, plural, one {Erro ao criar marchador {drillNumbers}} other {Erro ao criar marchadores {drillNumbers}} }",
         "createInfo": "Novos marchadores podem não aparecer até uma atualização",
@@ -644,6 +650,7 @@
         "general.appearance.dark": "Escuro",
         "general.appearance.light": "Claro",
         "general.language": "Idioma",
+        "general.showFullDatabasePath": "Mostrar caminho completo do arquivo",
         "mouse": "Mouse e Trackpad",
         "mouse.panSensitivity": "Sensibilidade de panorâmica",
         "mouse.trackpadMode": "Modo Trackpad (recomendado para macOS)",
@@ -698,6 +705,7 @@
             "label": "Controles de Reprodução"
         },
         "label": "Linha do Tempo",
+        "masterVolume": "Volume Principal",
         "music": {
             "add": "Adicionar Música"
         },

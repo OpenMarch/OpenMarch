@@ -1,14 +1,16 @@
 import * as ToggleGroup from "@radix-ui/react-toggle-group";
-import * as Select from "@radix-ui/react-select";
-import {
-    SunIcon,
-    MoonIcon,
-    CaretDownIcon,
-    CheckIcon,
-} from "@phosphor-icons/react";
+import { SunIcon, MoonIcon } from "@phosphor-icons/react";
 import { useTheme } from "@/context/ThemeContext";
 import { useTolgee, T } from "@tolgee/react";
 import { useState, useEffect } from "react";
+import {
+    Switch,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+} from "@openmarch/ui";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 const languages = [
     { code: "en", name: "English" },
@@ -22,6 +24,7 @@ export default function GeneralSettings() {
     const { theme, setTheme } = useTheme();
     const tolgee = useTolgee();
     const [currentLanguage, setCurrentLanguage] = useState("en");
+    const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     useEffect(() => {
         // Load saved language from electron store
@@ -90,44 +93,40 @@ export default function GeneralSettings() {
                     <T keyName="settings.general.language" />
                 </p>
 
-                <Select.Root
+                <Select
                     value={currentLanguage}
                     onValueChange={handleLanguageChange}
                 >
-                    <Select.Trigger className="text-text bg-fg-2 text-body border-stroke hover:border-accent flex min-w-[120px] items-center justify-between gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4">
-                        <Select.Value placeholder={currentLanguageName} />
-                        <Select.Icon>
-                            <CaretDownIcon size={16} />
-                        </Select.Icon>
-                    </Select.Trigger>
+                    <SelectTriggerButton
+                        label={currentLanguageName}
+                        className="min-w-[120px]"
+                    />
+                    <SelectContent>
+                        {languages.map((language) => (
+                            <SelectItem
+                                key={language.code}
+                                value={language.code}
+                            >
+                                {language.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
 
-                    <Select.Portal>
-                        <Select.Content
-                            className="bg-fg-1 border-stroke rounded-6 z-50 overflow-hidden border shadow-lg backdrop-blur-sm"
-                            position="popper"
-                            side="bottom"
-                            align="center"
-                            sideOffset={4}
-                        >
-                            <Select.Viewport className="p-4">
-                                {languages.map((language) => (
-                                    <Select.Item
-                                        key={language.code}
-                                        value={language.code}
-                                        className="text-text hover:bg-fg-2 rounded-4 focus:bg-fg-2 flex cursor-pointer items-center justify-between px-12 py-8 outline-hidden duration-150 ease-out"
-                                    >
-                                        <Select.ItemText>
-                                            {language.name}
-                                        </Select.ItemText>
-                                        <Select.ItemIndicator>
-                                            <CheckIcon size={16} />
-                                        </Select.ItemIndicator>
-                                    </Select.Item>
-                                ))}
-                            </Select.Viewport>
-                        </Select.Content>
-                    </Select.Portal>
-                </Select.Root>
+            <div className="flex h-[2.5rem] items-center justify-between px-8">
+                <p className="text-body text-text-subtitle">
+                    <T keyName="settings.general.showFullDatabasePath" />
+                </p>
+                <Switch
+                    checked={uiSettings.showFullDatabasePath}
+                    onCheckedChange={(checked) =>
+                        setUiSettings({
+                            ...uiSettings,
+                            showFullDatabasePath: checked,
+                        })
+                    }
+                />
             </div>
         </div>
     );

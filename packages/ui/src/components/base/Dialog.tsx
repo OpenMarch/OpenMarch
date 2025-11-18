@@ -65,18 +65,18 @@ export const DialogContent = ({
 }: RadixDialogContentProps) => {
     return (
         <RadixDialog.Portal>
-            <RadixDialog.Overlay className="data-[state=open]:animate-fade-in bg-modal-overlay fixed inset-0 z-[48]" />
-            <RadixDialog.Content
-                {...props}
-                className={twMerge(
-                    clsx(
+            <RadixDialog.Overlay className="bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[500]" />
+            <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[501] flex items-center justify-center">
+                <RadixDialog.Content
+                    {...props}
+                    className={clsx(
+                        "rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 flex h-fit max-h-[36rem] min-w-[18.75rem] flex-col gap-16 border p-20 font-sans",
                         className,
-                        "rounded-6 border-stroke bg-modal text-text shadow-modal data-[state=open]:animate-fade-in fixed top-1/2 left-1/2 z-[99] flex min-w-[18.75rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-16 border p-20 font-sans backdrop-blur-sm",
-                    ),
-                )}
-            >
-                {children}
-            </RadixDialog.Content>
+                    )}
+                >
+                    {children}
+                </RadixDialog.Content>
+            </div>
         </RadixDialog.Portal>
     );
 };
