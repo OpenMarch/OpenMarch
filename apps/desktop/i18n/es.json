@@ -779,6 +779,12 @@
         "resetToDefaults": "Restablecer a Predeterminados",
         "saveChanges": "Guardar Cambios",
         "title": "Configuración del Espacio de Trabajo",
-        "unsavedChanges": "Tienes cambios sin guardar"
+        "unsavedChanges": "Tienes cambios sin guardar",
+        "units": {
+            "bpm": "PPM",
+            "beats": "pulsos",
+            "counts": "cuentas",
+            "seconds": "segundos"
+        }
     }
 }

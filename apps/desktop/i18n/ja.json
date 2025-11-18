@@ -779,6 +779,12 @@
         "resetToDefaults": "デフォルトにリセット",
         "saveChanges": "変更を保存",
         "title": "ワークスペース設定",
-        "unsavedChanges": "保存されていない変更があります"
+        "unsavedChanges": "保存されていない変更があります",
+        "units": {
+            "bpm": "BPM",
+            "beats": "拍",
+            "counts": "カウント",
+            "seconds": "秒"
+        }
     }
 }

@@ -779,6 +779,12 @@
         "resetToDefaults": "Redefinir para Padrões",
         "saveChanges": "Salvar Alterações",
         "title": "Configurações do Espaço de Trabalho",
-        "unsavedChanges": "Você tem alterações não salvas"
+        "unsavedChanges": "Você tem alterações não salvas",
+        "units": {
+            "bpm": "BPM",
+            "beats": "batidas",
+            "counts": "contagens",
+            "seconds": "segundos"
+        }
     }
 }

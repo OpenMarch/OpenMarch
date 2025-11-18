@@ -15,6 +15,7 @@ import FormField from "../ui/FormField";
 import { XIcon, SlidersHorizontalIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
+import { T, useTolgee } from "@tolgee/react";
 
 const inputClassname = clsx("col-span-6 self-center");
 
@@ -47,6 +48,7 @@ export default function WorkspaceSettingsModal({
 function WorkspaceSettingsModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const queryClient = useQueryClient();
+    const { t } = useTolgee();
     const { data: settings, isLoading } = useQuery(
         workspaceSettingsQueryOptions(),
     );
@@ -132,7 +134,9 @@ function WorkspaceSettingsModalContents() {
     if (isLoading) {
         return (
             <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-                <div className="text-center">Loading workspace settings...</div>
+                <div className="text-center">
+                    <T keyName="workspaceSettings.loadingSettings" />
+                </div>
             </div>
         );
     }
@@ -140,7 +144,9 @@ function WorkspaceSettingsModalContents() {
     if (!settings || !localSettings) {
         return (
             <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-                <div className="text-center">No workspace settings found</div>
+                <div className="text-center">
+                    <T keyName="workspaceSettings.noSettingsFound" />
+                </div>
             </div>
         );
     }
@@ -158,30 +164,30 @@ function WorkspaceSettingsModalContents() {
     }> = [
         {
             key: "defaultTempo",
-            label: "Default Tempo",
+            label: t("workspaceSettings.defaultTempo"),
             value: inputValues.defaultTempo || "",
             min: 1,
-            unit: "BPM",
+            unit: t("workspaceSettings.units.bpm"),
         },
         {
             key: "defaultBeatsPerMeasure",
-            label: "Default Beats Per Measure",
+            label: t("workspaceSettings.defaultBeatsPerMeasure"),
             value: inputValues.defaultBeatsPerMeasure || "",
             min: 1,
-            unit: "beats",
+            unit: t("workspaceSettings.units.beats"),
         },
         {
             key: "defaultNewPageCounts",
-            label: "Default New Page Counts",
+            label: t("workspaceSettings.defaultNewPageCounts"),
             value: inputValues.defaultNewPageCounts || "",
             min: 1,
-            unit: "counts",
+            unit: t("workspaceSettings.units.counts"),
         },
         {
             key: "audioOffsetSeconds",
-            label: "Audio Offset Seconds",
+            label: t("workspaceSettings.audioOffsetSeconds"),
             value: inputValues.audioOffsetSeconds || "",
-            unit: "seconds",
+            unit: t("workspaceSettings.units.seconds"),
             float: true,
             canBeNegative: true,
         },
@@ -193,7 +199,9 @@ function WorkspaceSettingsModalContents() {
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Workspace Settings</h4>
+                <h4 className="text-h4 leading-none">
+                    <T keyName="workspaceSettings.title" />
+                </h4>
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
@@ -292,7 +300,7 @@ function WorkspaceSettingsModalContents() {
                             disabled={isPending || !hasChanges}
                             size="compact"
                         >
-                            Save Changes
+                            <T keyName="workspaceSettings.saveChanges" />
                         </Button>
 
                         <Button
@@ -301,7 +309,7 @@ function WorkspaceSettingsModalContents() {
                             variant="secondary"
                             size="compact"
                         >
-                            Cancel
+                            <T keyName="workspaceSettings.cancel" />
                         </Button>
 
                         <Button
@@ -310,13 +318,13 @@ function WorkspaceSettingsModalContents() {
                             variant="secondary"
                             size="compact"
                         >
-                            Reset to Defaults
+                            <T keyName="workspaceSettings.resetToDefaults" />
                         </Button>
                     </div>
 
                     {hasChanges && (
                         <div className="text-sm text-amber-600">
-                            You have unsaved changes
+                            <T keyName="workspaceSettings.unsavedChanges" />
                         </div>
                     )}
                 </div>

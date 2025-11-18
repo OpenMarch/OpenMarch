@@ -777,7 +777,7 @@
         "title": "Welcome to OpenMarch"
     },
     "workspaceSettings": {
-        "audioOffsetSeconds": "Audio Offset Seconds",
+        "audioOffsetSeconds": "Audio Offset",
         "cancel": "Cancel",
         "defaultBeatsPerMeasure": "Default Beats Per Measure",
         "defaultNewPageCounts": "Default New Page Counts",
@@ -787,6 +787,12 @@
         "resetToDefaults": "Reset to Defaults",
         "saveChanges": "Save Changes",
         "title": "Workspace Settings",
-        "unsavedChanges": "You have unsaved changes"
+        "unsavedChanges": "You have unsaved changes",
+        "units": {
+            "bpm": "BPM",
+            "beats": "beats",
+            "counts": "counts",
+            "seconds": "seconds"
+        }
     }
 }
