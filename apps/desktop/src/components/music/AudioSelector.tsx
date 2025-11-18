@@ -118,11 +118,9 @@ export default function AudioSelector() {
                         RegisteredActionsObjects.launchInsertAudioFileDialogue
                     }
                     showTooltip={false}
-                    className="text-text"
+                    className="text-body bg-fg-2 text-text border-stroke flex h-[1.625rem] min-h-0 w-fit items-center justify-center gap-4 rounded-full border px-8 py-[4px] duration-150 ease-out focus-visible:outline-none enabled:hover:-translate-y-[2px] enabled:focus-visible:-translate-y-[2px] enabled:active:translate-y-4 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                    <Button variant="primary" size="compact">
-                        <PlusIcon /> <T keyName="music.importAudioFile" />
-                    </Button>
+                    <PlusIcon /> <T keyName="music.importAudioFile" />
                 </RegisteredActionButton>
                 <AlertDialog>
                     <AlertDialogTrigger>

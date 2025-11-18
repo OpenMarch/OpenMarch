@@ -1,5 +1,9 @@
 import { renderHook, act } from "@testing-library/react";
-import { UiSettings, useUiSettingsStore } from "../UiSettingsStore";
+import {
+    UiSettings,
+    defaultSettings,
+    useUiSettingsStore,
+} from "../UiSettingsStore";
 import { ElectronApi } from "electron/preload";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
@@ -8,28 +12,45 @@ window.electron = {
     sendLockY: vi.fn(),
 } as Partial<ElectronApi> as ElectronApi;
 
+const createLocalStorageMock = () => {
+    let store: Record<string, string> = {};
+    return {
+        getItem: vi.fn((key: string) => store[key] ?? null),
+        setItem: vi.fn((key: string, value: string) => {
+            store[key] = value;
+        }),
+        removeItem: vi.fn((key: string) => {
+            delete store[key];
+        }),
+        clear: vi.fn(() => {
+            store = {};
+        }),
+    };
+};
+
+const localStorageMock = createLocalStorageMock();
+Object.defineProperty(window, "localStorage", {
+    configurable: true,
+    value: localStorageMock as unknown as Storage,
+});
+
 describe("uiSettings Store", () => {
-    const initialSettings = {
-        isPlaying: false,
-        lockX: false,
-        lockY: false,
+    const initialSettings: UiSettings = {
+        ...defaultSettings,
         previousPaths: true,
         nextPaths: true,
-        showCollisions: false,
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
-        audioMuted: false,
         focussedComponent: "canvas",
         mouseSettings: {
+            ...defaultSettings.mouseSettings,
             zoomSensitivity: 5,
-            panSensitivity: 0.5,
-            trackpadMode: true,
-            trackpadPanSensitivity: 0.5,
         },
-    } satisfies UiSettings;
+    };
 
     beforeEach(() => {
+        localStorageMock.clear();
         const { result } = renderHook(() => useUiSettingsStore());
         // Reset the settings to the initial state
         act(() => result.current.setUiSettings({ ...initialSettings }));
