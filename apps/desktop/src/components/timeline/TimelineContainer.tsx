@@ -172,7 +172,7 @@ function TimelineZoomControls() {
     };
 
     return (
-        <div className="border-stroke bg-modal absolute right-6 bottom-6 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
+        <div className="border-stroke bg-modal fixed right-290 bottom-16 z-50 flex w-96 items-stretch justify-between overflow-hidden rounded-lg border shadow-lg">
             <button
                 onClick={handleZoomOut}
                 className="border-stroke text-text flex w-full items-center justify-center border-l p-2 transition-colors duration-150 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
