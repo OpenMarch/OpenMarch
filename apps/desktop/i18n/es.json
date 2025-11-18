@@ -474,6 +474,10 @@
             "guides": {
                 "title": "Guías"
             },
+            "videoGuides": {
+                "title": "Guías en vídeo",
+                "description": "Mira guías en vídeo para aprender a usar OpenMarch."
+            },
             "title": "Aprender",
             "troubleshooting": {
                 "clearCache": "Borrar la caché",

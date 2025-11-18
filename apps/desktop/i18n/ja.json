@@ -474,6 +474,10 @@
             "guides": {
                 "title": "ガイド"
             },
+            "videoGuides": {
+                "title": "ビデオガイド",
+                "description": "OpenMarchの使い方を学ぶには動画ガイドをご覧ください。"
+            },
             "title": "学ぶ",
             "troubleshooting": {
                 "clearCache": "キャッシュをクリア",
