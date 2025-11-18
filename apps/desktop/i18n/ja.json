@@ -644,6 +644,7 @@
         "general.appearance.dark": "ダーク",
         "general.appearance.light": "ライト",
         "general.language": "言語",
+        "general.showFullDatabasePath": "ファイルパス全体を表示する",
         "mouse": "マウス ＆ トラックパッド",
         "mouse.panSensitivity": "パン 感度",
         "mouse.trackpadMode": "トラックパッド モード （ macOS に推奨 ）",

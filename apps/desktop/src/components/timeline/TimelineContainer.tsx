@@ -73,7 +73,7 @@ export default function TimelineContainer() {
             <div
                 ref={timelineRef}
                 id="timeline"
-                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto border p-8 transition-all duration-200"
+                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto overflow-y-hidden border p-8 transition-all duration-200"
             >
                 <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
                     <div className="flex h-fit items-center">

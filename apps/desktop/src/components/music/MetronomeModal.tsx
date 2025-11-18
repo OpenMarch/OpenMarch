@@ -75,7 +75,7 @@ function MetronomeModalContents() {
                     <h5 className="text-h5">
                         <T keyName="music.general" />
                     </h5>
-                    <div className="text-body text-text/80 flex w-full items-center justify-between">
+                    <div className="text-body text-text/80 flex w-full items-center justify-between px-12">
                         <span className="text-body">
                             <T keyName="music.onOff" />
                         </span>
@@ -84,7 +84,7 @@ function MetronomeModalContents() {
                             onCheckedChange={setMetronomeOn}
                         />
                     </div>
-                    <div className="text-body text-text/80 flex w-full items-center justify-between">
+                    <div className="text-body text-text/80 flex w-full items-center justify-between px-12">
                         <span className="text-body">
                             <T keyName="music.accent" />
                         </span>
@@ -94,7 +94,7 @@ function MetronomeModalContents() {
                             disabled={isPlaying}
                         />
                     </div>
-                    <div className="text-body text-text/80 flex w-full items-center justify-between">
+                    <div className="text-body text-text/80 flex w-full items-center justify-between px-12">
                         <span className="text-body">
                             <T keyName="music.onlyClickOnMeasure" />
                         </span>
@@ -108,9 +108,14 @@ function MetronomeModalContents() {
 
                 {/* Volume */}
                 <div className="flex flex-col gap-10">
-                    <h5 className="text-h5">
-                        <T keyName="music.volume" />
-                    </h5>
+                    <div className="flex items-center gap-8">
+                        <h5 className="text-h5">
+                            <T keyName="music.volume" />
+                        </h5>
+                        <span className="text-body text-right font-mono">
+                            {volume}%
+                        </span>
+                    </div>
                     <div className="flex items-center gap-6">
                         <Slider
                             value={[volume]}
@@ -119,9 +124,6 @@ function MetronomeModalContents() {
                             step={1}
                             onValueChange={([v]) => setVolume(v)}
                         />
-                        <span className="text-body w-10 text-right">
-                            {volume}
-                        </span>
                     </div>
                 </div>
 
@@ -130,7 +132,7 @@ function MetronomeModalContents() {
                     <h5 className="text-h5">
                         <T keyName="music.customization" />
                     </h5>
-                    <div className="text-body text-text/80 flex w-full items-center justify-between">
+                    <div className="text-body text-text/80 flex w-full items-center justify-between px-12">
                         <span className="text-body">
                             <T keyName="music.beatStyle" />
                         </span>

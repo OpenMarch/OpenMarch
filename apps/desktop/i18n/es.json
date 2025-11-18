@@ -644,6 +644,7 @@
         "general.appearance.dark": "Oscuro",
         "general.appearance.light": "Claro",
         "general.language": "Idioma",
+        "general.showFullDatabasePath": "Mostrar ruta completa del archivo",
         "mouse": "Ratón y Trackpad",
         "mouse.panSensitivity": "Sensibilidad de panorámica",
         "mouse.trackpadMode": "Modo trackpad (recomendado para macOS)",

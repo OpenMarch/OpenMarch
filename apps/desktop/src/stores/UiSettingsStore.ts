@@ -5,6 +5,8 @@ export interface UiSettings {
     lockX: boolean;
     lockY: boolean;
     isPlaying: boolean;
+    /** Whether to show the full database path in the title bar */
+    showFullDatabasePath: boolean;
     /** Boolean to view previous page's paths/dots */
     previousPaths: boolean;
     /** Boolean to view next page's paths/dots */
@@ -47,6 +49,7 @@ export const defaultSettings: UiSettings = {
     isPlaying: false,
     lockX: false,
     lockY: false,
+    showFullDatabasePath: false,
     previousPaths: false,
     nextPaths: false,
     showCollisions: false,
