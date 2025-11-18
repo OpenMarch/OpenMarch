@@ -429,7 +429,9 @@
                 "success": "ページ 分割 に 成功 しました"
             },
             "subset": "サブセット",
-            "title": "ページ {pageNumber}"
+            "title": "ページ {pageNumber}",
+            "deletedSuccessfully": "ページが正常に削除されました",
+            "deletedFailed": "ページ削除に失敗しました"
         },
         "shape": {
             "addSegmentButton": "追加",

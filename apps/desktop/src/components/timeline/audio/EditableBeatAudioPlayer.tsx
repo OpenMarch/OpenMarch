@@ -119,6 +119,12 @@ export default function EditableBeatAudioPlayer() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [audioRef, waveformRef, audioDuration]);
 
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.muted = uiSettings.audioMuted;
+        }
+    }, [uiSettings.audioMuted]);
+
     // Update measures and beats when they change
     useEffect(() => {
         if (timingMarkersPlugin.current == null) return;

@@ -19,6 +19,7 @@ describe("uiSettings Store", () => {
         gridLines: true,
         halfLines: true,
         timelinePixelsPerSecond: 16,
+        audioMuted: false,
         focussedComponent: "canvas",
         mouseSettings: {
             zoomSensitivity: 5,

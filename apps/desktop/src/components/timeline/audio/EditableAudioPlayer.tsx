@@ -145,6 +145,12 @@ export default function EditableAudioPlayer() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [audioRef, waveformRef, audioDuration]);
 
+    useEffect(() => {
+        if (audioRef.current) {
+            audioRef.current.muted = uiSettings.audioMuted;
+        }
+    }, [uiSettings.audioMuted]);
+
     // Then in the component:
     const handleKeyDown = useCallback(
         (event: KeyboardEvent) => {

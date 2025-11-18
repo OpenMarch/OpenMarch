@@ -6,11 +6,11 @@ import {
     PauseIcon,
     SkipForwardIcon,
     FastForwardIcon,
-    MagnifyingGlassPlusIcon,
-    MagnifyingGlassMinusIcon,
     CornersOutIcon,
     CornersInIcon,
     MetronomeIcon,
+    SpeakerHighIcon,
+    SpeakerSlashIcon,
 } from "@phosphor-icons/react";
 import RegisteredActionButton from "@/components/RegisteredActionButton";
 import { useSelectedPage } from "@/context/SelectedPageContext";
@@ -46,18 +46,14 @@ export default function TimelineControls() {
             >
                 <PlaybackControls />
                 <div
-                    className={clsx("flex gap-12", {
+                    className={clsx("flex items-center gap-12", {
                         "justify-between": !isFullscreen,
                     })}
                 >
-                    <ZoomControls />
-
-                    {!isFullscreen && <div className="flex-1" />}
-                    {!isFullscreen && <div className="flex-1" />}
-                    {!isFullscreen && <div className="flex-1" />}
-
-                    <TimelineMetronomeButton />
-
+                    <div className="flex items-center gap-12">
+                        <TimelineMuteButton />
+                        <TimelineMetronomeButton />
+                    </div>
                     <button
                         className="text-text enabled:hover:text-accent focus-visible:ring-accent duration-150 ease-out focus-visible:ring-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                         onClick={toggleFullscreen}
@@ -77,12 +73,39 @@ export default function TimelineControls() {
     );
 }
 
+function TimelineMuteButton() {
+    const audioMuted = useUiSettingsStore((s) => s.uiSettings.audioMuted);
+    const toggleAudioMute = useUiSettingsStore((s) => s.toggleAudioMute);
+
+    return (
+        <div className="flex gap-10" id="timelineAudioMute">
+            <button
+                className={clsx(
+                    "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
+                    {
+                        "text-text": audioMuted,
+                        "text-accent enabled:hover:text-text": !audioMuted,
+                    },
+                )}
+                onClick={toggleAudioMute}
+                aria-label={audioMuted ? "Unmute audio" : "Mute audio"}
+            >
+                {audioMuted ? (
+                    <SpeakerSlashIcon size={24} />
+                ) : (
+                    <SpeakerHighIcon size={24} />
+                )}
+            </button>
+        </div>
+    );
+}
+
 function TimelineMetronomeButton() {
     const isMetronomeOn = useMetronomeStore((s) => s.isMetronomeOn);
     const toggleMetronome = useMetronomeStore((s) => s.toggleMetronome);
 
     return (
-        <div className="flex gap-10" id="zoomIcons">
+        <div className="flex gap-10" id="timelineMetronome">
             <button
                 className={clsx(
                     "outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50",
@@ -94,33 +117,6 @@ function TimelineMetronomeButton() {
                 onClick={toggleMetronome}
             >
                 <MetronomeIcon size={24} />
-            </button>
-        </div>
-    );
-}
-
-function ZoomControls() {
-    const { uiSettings, setPixelsPerSecond } = useUiSettingsStore();
-
-    return (
-        <div className="flex gap-10" id="zoomIcons">
-            <button
-                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() =>
-                    setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 0.8)
-                }
-                disabled={uiSettings.timelinePixelsPerSecond <= 10}
-            >
-                <MagnifyingGlassMinusIcon size={24} />
-            </button>
-            <button
-                className="text-text enabled:hover:text-accent outline-hidden duration-150 ease-out disabled:cursor-not-allowed disabled:opacity-50"
-                onClick={() =>
-                    setPixelsPerSecond(uiSettings.timelinePixelsPerSecond * 1.2)
-                }
-                disabled={uiSettings.timelinePixelsPerSecond >= 200}
-            >
-                <MagnifyingGlassPlusIcon size={24} />
             </button>
         </div>
     );

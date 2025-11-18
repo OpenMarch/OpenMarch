@@ -429,7 +429,9 @@
                 "success": "Página dividida con éxito"
             },
             "subset": "Subconjunto",
-            "title": "Página {pageNumber}"
+            "title": "Página {pageNumber}",
+            "deletedSuccessfully": "Página eliminada con éxito",
+            "deletedFailed": "Fallido en la eliminación de páginas"
         },
         "shape": {
             "addSegmentButton": "Añadir",
