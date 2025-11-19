@@ -10,12 +10,18 @@ body:
       value: |
         Thank you for taking the time to file an OpenMarch bug report! Your feedback helps make OpenMarch better for everyone.
 
+  - type: markdown
+    attributes: 
+      value: |
+        If there is an existing bug report similar to the one you are about to create, please leave a thumbs up and comment on that report, rather than making a new one. 
+        Be sure to add additional details if the additional if you think it would help!
+        
   - type: checkboxes
     id: verified
     attributes:
-      label: Report hasn't been filed before.
+      label: Report hasn't been filed before
       options:
-        - label: I have verified that the bug I'm about to report hasn't been filed before. If it has, please go the existing issue and give it a thumbs up.
+        - label: I have verified that the bug I'm about to report hasn't been filed before
           required: true
 
   - type: input
@@ -28,15 +34,15 @@ body:
 
   - type: dropdown
     attributes:
-      label: Operating System
+      label: Operating system
       description: What operating system are you using?
       options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
         - Windows 11 (x64)
         - Windows 11 (arm64)
         - Windows 10 (x64)
         - Windows 10 (arm64)
-        - macOS (Apple Silicon)
-        - macOS (Intel)
         - Linux (x64)
         - Linux (arm64)
     validations:
@@ -46,24 +52,21 @@ body:
     id: description
     attributes:
       label: Describe the bug
-      description: Please enter the following information -
-        - What went wrong
-        - What did you expect to happen
-        - What steps could we take to reproduce the issue?
+      description: |
+        Please enter the following information:
+          - What went wrong?
+          - What did you expect to happen?
+          - What steps could we take to reproduce the issue?
+
+        If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!) 
     validations:
       required: true
 
   - type: textarea
-    id: screenshots
-    attributes:
-      label: Screenshots or screen recordings (optional)
-      description: If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!)
-
-  - type: textarea
     id: dotsfile
     attributes:
-      label: Upload you .dots file (optional)
+      label: Upload your .dots file (optional)
       description: |
-        Being able to debug with the file itself is very helpful
+        Being able to debug with the file itself is very helpful.
 
         Before uploading your `.dots` file here, change the extension to `.txt` so GitHub allows uploading.
