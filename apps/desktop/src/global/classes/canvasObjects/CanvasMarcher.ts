@@ -110,12 +110,19 @@ export default class CanvasMarcher
         } else if (shapeType === "x") {
             // Create an X shape using two crossing lines
             const xSize = dotRadius * 1.2;
+            // Use fillColor for X stroke to ensure visibility, since X has no fill area
+            // and outline color might be transparent
+            const xStrokeColor =
+                sectionAppearance?.outline_color &&
+                sectionAppearance.outline_color.a > 0.1
+                    ? outlineColor
+                    : fillColor;
             const line1 = new fabric.Line([-xSize, -xSize, xSize, xSize], {
-                stroke: outlineColor,
+                stroke: xStrokeColor,
                 strokeWidth: 2,
             });
             const line2 = new fabric.Line([-xSize, xSize, xSize, -xSize], {
-                stroke: outlineColor,
+                stroke: xStrokeColor,
                 strokeWidth: 2,
             });
             markerShape = new fabric.Group([line1, line2], {
