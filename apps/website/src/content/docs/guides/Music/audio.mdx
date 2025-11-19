@@ -10,6 +10,8 @@ import { YouTube } from "astro-embed";
 import { LinkCard, CardGrid, Aside } from "@astrojs/starlight/components";
 import { MusicNotesIcon } from "@phosphor-icons/react";
 
+## Add an audio file to your show
+
 OpenMarch supports importing `.mp3`, `.wav`, or `.ogg` audio files.
 
 To add an audio file to your show, follow these steps -
@@ -25,5 +27,21 @@ To add an audio file to your show, follow these steps -
 </Steps>
 
 ![Importing audio example](/docs/guides/music/import-audio.gif)
+
+## Apply offsets to your audio file
+
+To have precise tempo syncing, you can apply either a positive or negative offset to your audio file.
+This will pad or trim the audio file respectively.
+
+<Steps>
+
+1. Open the `Music` tab
+1. Enter your offset (either positive or negative) in the `Audio Offset` input
+1. Press `Enter` or click outside the input to apply the offset
+1. The audio file will be padded or trimmed accordingly
+
+</Steps>
+
+![Applying offsets to audio example](/docs/guides/music/apply-offsets.gif)
 
 Next step is to [set your tempo](/guides/music/tempo).
