@@ -1,0 +1,37 @@
+name: Feature Request
+description: Have an idea to make OpenMarch better? We’d love to hear it!
+title: "[FEATURE]: "
+labels: ["enhancement"]
+type: feature
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time to file an OpenMarch feature request! Your ideas are what make OpenMarch better for everyone.
+
+  - type: checkboxes
+    id: verified
+    attributes:
+      label: Feature request hasn't been filed before.
+      options:
+        - label: I have verified that the feature request I'm about to file hasn't been filed before. If it has, please go the existing issue and give it a thumbs up.
+          required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Describe the feature you want to see
+      description: |
+        Tell us what you were trying to do, and why it was frustrating or harder than it should be
+        Describe what you wish the app could do instead — even just in simple terms!
+    validations:
+      required: true
+
+  - type: textarea
+    id: mockups
+    attributes:
+      label: Ideas or mockups (optional)
+      description: |
+        Include a sketch, screenshot, or anything visual to help us picture your idea.
+        Also include anything else you would like to share.
