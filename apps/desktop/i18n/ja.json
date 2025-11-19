@@ -460,6 +460,11 @@
             "viewTab": "ビュー",
             "shapesTab": "形状"
         },
+        "shapes": {
+            "title": "形状",
+            "selectShape": "形状を選択",
+            "moreShapesComingSoon": "さらに多くの図形が近日公開予定！"
+        },
         "title": "インスペクター"
     },
     "launchpage": {

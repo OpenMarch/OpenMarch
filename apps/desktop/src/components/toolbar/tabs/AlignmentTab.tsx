@@ -12,7 +12,6 @@ import { clsx } from "clsx";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import CoordinateRoundingSettings from "@/components/field/CoordinateRoundingSettings";
 import { T, useTolgee } from "@tolgee/react";
-import ShapeTab from "./ShapeTab";
 
 export default function AlignmentTab() {
     const { t } = useTolgee();
@@ -59,7 +58,6 @@ export default function AlignmentTab() {
                 {/* -- */}
             </ToolbarSection>
             <SetMarcherPositionsDropdown />
-            <ShapeTab />
         </div>
     );
 }

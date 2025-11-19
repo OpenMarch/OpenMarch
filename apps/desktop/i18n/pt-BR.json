@@ -460,6 +460,11 @@
             "viewTab": "Visualizar",
             "shapesTab": "Formas"
         },
+        "shapes": {
+            "title": "Formas",
+            "selectShape": "Selecionar Forma",
+            "moreShapesComingSoon": "Mais formas em breve!"
+        },
         "title": "Inspetor"
     },
     "launchpage": {
