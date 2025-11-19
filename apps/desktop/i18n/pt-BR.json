@@ -108,6 +108,12 @@
                 "success": "Batidas salvas com sucesso"
             }
         },
+        "context": {
+            "error": "Falha ao inicializar contexto de áudio"
+        },
+        "decode": {
+            "error": "Falha ao decodificar arquivo de áudio"
+        },
         "editableBeatPlayer": {
             "description": "Arraste a borda direita de qualquer batida para ajustar sua duração"
         },
