@@ -10,12 +10,18 @@ body:
       value: |
         Thank you for taking the time to file an OpenMarch bug report! Your feedback helps make OpenMarch better for everyone.
 
+  - type: markdown
+    attributes: 
+      value: |
+        If there is an existing bug report similar to the one you are about to create, please leave a thumbs up and comment on that report, rather than making a new one. 
+        Be sure to add additional details if the additional if you think it would help!
+        
   - type: checkboxes
     id: verified
     attributes:
       label: Report hasn't been filed before.
       options:
-        - label: I have verified that the bug I'm about to report hasn't been filed before. If it has, please go the existing issue and give it a thumbs up.
+        - label: I have verified that the bug I'm about to report hasn't been filed before.
           required: true
 
   - type: input
@@ -56,7 +62,7 @@ body:
   - type: textarea
     id: screenshots
     attributes:
-      label: Screenshots or screen recordings (optional)
+      label: Screenshots, screen recordings, and dots
       description: If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!)
 
   - type: textarea
