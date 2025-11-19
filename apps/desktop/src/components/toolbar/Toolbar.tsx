@@ -10,6 +10,7 @@ import { T } from "@tolgee/react";
 import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
+import ShapeTab from "./tabs/ShapeTab";
 
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
@@ -63,6 +64,11 @@ export default function Topbar() {
                             <T keyName="inspector.shape.alignmentTab" />
                         </TabItem>
                     )}
+                    {!isFullscreen && (
+                        <TabItem value="shapes">
+                            <T keyName="inspector.shape.shapesTab" />
+                        </TabItem>
+                    )}
                     <TabItem value="view">
                         <T keyName="inspector.shape.viewTab" />
                     </TabItem>
@@ -88,6 +94,11 @@ export default function Topbar() {
                 {!isFullscreen && (
                     <TabContent value="alignment">
                         <AlignmentTab />
+                    </TabContent>
+                )}
+                {!isFullscreen && (
+                    <TabContent value="shapes">
+                        <ShapeTab />
                     </TabContent>
                 )}
 

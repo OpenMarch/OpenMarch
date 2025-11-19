@@ -68,7 +68,9 @@
         "shape": {
             "applyQuick": "編集可能なオブジェクトを作成せずに形状にスナップする",
             "create": "ページにまたがって編集可能な、線または曲線で構成された新しい形状を作成",
-            "delete": "選択されている形状を削除"
+            "createCircle": "円を作成",
+            "delete": "選択されている形状を削除",
+            "noMarchersSelected": "マーチャーが選択されていません"
         },
         "swap": {
             "error": "スワップできませんでした マーチャーズ {marcher1} と {marcher2}",
@@ -455,7 +457,8 @@
             "successfullyCopied": "ページ {pageName} に形状 が正常にコピーされました",
             "ungroupShapeButton": "グループ解除",
             "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません",
-            "viewTab": "ビュー"
+            "viewTab": "ビュー",
+            "shapesTab": "形状"
         },
         "title": "インスペクター"
     },
