@@ -19,9 +19,9 @@ body:
   - type: checkboxes
     id: verified
     attributes:
-      label: Report hasn't been filed before.
+      label: Report hasn't been filed before
       options:
-        - label: I have verified that the bug I'm about to report hasn't been filed before.
+        - label: I have verified that the bug I'm about to report hasn't been filed before
           required: true
 
   - type: input
