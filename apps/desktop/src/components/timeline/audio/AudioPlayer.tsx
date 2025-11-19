@@ -276,6 +276,7 @@ export default function AudioPlayer() {
                                 channelData,
                             },
                             offsetSeconds: audioOffsetSeconds,
+                            minimumDuration: minimumAudioDuration,
                         },
                         transferList,
                     );

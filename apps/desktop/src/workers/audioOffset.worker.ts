@@ -12,6 +12,7 @@ interface AudioOffsetMessage {
         channelData: Float32Array[];
     };
     offsetSeconds: number;
+    minimumDuration?: number;
 }
 
 interface AudioOffsetResponse {
@@ -78,6 +79,44 @@ function applyAudioOffset(
 }
 
 /**
+ * Helper function to pad the end of audio with silence if it's shorter than the minimum duration
+ * @param channelData - The audio channel data
+ * @param length - The length of the audio in samples
+ * @param numberOfChannels - Number of audio channels
+ * @param sampleRate - The sample rate of the audio
+ * @param minimumDuration - The minimum duration in seconds
+ * @returns Channel data for the new buffer with padding applied
+ */
+function padAudioToMinimumDuration(
+    channelData: Float32Array[],
+    length: number,
+    numberOfChannels: number,
+    sampleRate: number,
+    minimumDuration: number,
+): { newChannelData: Float32Array[]; newLength: number } {
+    const currentDuration = length / sampleRate;
+
+    // If audio is already longer than or equal to minimum, no padding needed
+    if (currentDuration >= minimumDuration) {
+        return { newChannelData: channelData, newLength: length };
+    }
+
+    // Calculate the minimum number of samples needed
+    const minimumSamples = Math.ceil(minimumDuration * sampleRate);
+
+    const newChannelData: Float32Array[] = [];
+    for (let channel = 0; channel < numberOfChannels; channel++) {
+        const newData = new Float32Array(minimumSamples);
+        // Copy original data
+        newData.set(channelData[channel], 0);
+        // The rest is already zeros (silence) by default
+        newChannelData.push(newData);
+    }
+
+    return { newChannelData, newLength: minimumSamples };
+}
+
+/**
  * Helper function to create a padded or trimmed ArrayBuffer for waveform visualization
  * @param offsetChannelData - The offset audio channel data
  * @param length - The length of the audio in samples
@@ -137,53 +176,44 @@ function createWaveformBuffer(
 // Listen for messages from the main thread
 onmessage = async (e: MessageEvent<AudioOffsetMessage>) => {
     try {
-        const { audioBuffer, offsetSeconds } = e.data;
+        const { audioBuffer, offsetSeconds, minimumDuration } = e.data;
         const { numberOfChannels, length, sampleRate, channelData } =
             audioBuffer;
 
-        // Early bailout: if offset is 0, skip processing to avoid unnecessary work
-        if (offsetSeconds === 0 || Math.abs(offsetSeconds) < 0.001) {
-            // Create waveform buffer using original data without modification
-            const waveformBuffer = createWaveformBuffer(
+        // Start with the original data
+        let processedChannelData = channelData;
+        let processedLength = length;
+
+        // Apply the offset if needed
+        if (offsetSeconds !== 0 && Math.abs(offsetSeconds) >= 0.001) {
+            const offsetResult = applyAudioOffset(
                 channelData,
                 length,
                 numberOfChannels,
                 sampleRate,
+                offsetSeconds,
             );
-
-            // Send the data back without modification
-            const response: AudioOffsetResponse = {
-                type: "audioProcessed",
-                audioBuffer: {
-                    numberOfChannels,
-                    length,
-                    sampleRate,
-                    channelData,
-                },
-                waveformBuffer,
-            };
-
-            // Transfer the buffers to avoid copying
-            const transferList: Transferable[] = [waveformBuffer];
-            channelData.forEach((data) => transferList.push(data.buffer));
-
-            postMessage(response, { transfer: transferList });
-            return;
+            processedChannelData = offsetResult.newChannelData;
+            processedLength = offsetResult.newLength;
         }
 
-        // Apply the offset
-        const { newChannelData, newLength } = applyAudioOffset(
-            channelData,
-            length,
-            numberOfChannels,
-            sampleRate,
-            offsetSeconds,
-        );
+        // Apply minimum duration padding if needed
+        if (minimumDuration !== undefined && minimumDuration > 0) {
+            const paddingResult = padAudioToMinimumDuration(
+                processedChannelData,
+                processedLength,
+                numberOfChannels,
+                sampleRate,
+                minimumDuration,
+            );
+            processedChannelData = paddingResult.newChannelData;
+            processedLength = paddingResult.newLength;
+        }
 
         // Create waveform buffer
         const waveformBuffer = createWaveformBuffer(
-            newChannelData,
-            newLength,
+            processedChannelData,
+            processedLength,
             numberOfChannels,
             sampleRate,
         );
@@ -193,16 +223,16 @@ onmessage = async (e: MessageEvent<AudioOffsetMessage>) => {
             type: "audioProcessed",
             audioBuffer: {
                 numberOfChannels,
-                length: newLength,
+                length: processedLength,
                 sampleRate,
-                channelData: newChannelData,
+                channelData: processedChannelData,
             },
             waveformBuffer,
         };
 
         // Transfer the buffers to avoid copying
         const transferList: Transferable[] = [waveformBuffer];
-        newChannelData.forEach((data) => transferList.push(data.buffer));
+        processedChannelData.forEach((data) => transferList.push(data.buffer));
 
         postMessage(response, { transfer: transferList });
     } catch (error) {
