@@ -130,6 +130,6 @@ jobs:
         if: always() # Upload even if previous steps fail
         with:
           name: ${{ matrix.os }}-artifacts
-          path: apps/desktop/dist/*
+          path: apps/desktop/release/*
           retention-days: 30
           if-no-files-found: warn
