@@ -70,9 +70,10 @@ type BeatWithIndex = Beat & { index: number };
 export const fromDatabaseMeasures = (args: {
     databaseMeasures: DatabaseMeasure[];
     allBeats: Beat[];
+    measurementNumberOffset?: number;
 }): Measure[] => {
     const sortedBeats = args.allBeats.sort(compareBeats);
-    let currentMeasureNumber = 1;
+    let currentMeasureNumber = args.measurementNumberOffset ?? 1;
     const beatMap = new Map<number, BeatWithIndex>(
         sortedBeats.map((beat, i) => [beat.id, { ...beat, index: i }]),
     );

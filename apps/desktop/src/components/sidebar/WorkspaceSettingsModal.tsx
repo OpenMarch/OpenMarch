@@ -60,15 +60,18 @@ function WorkspaceSettingsModalContents() {
         useState<WorkspaceSettings | null>(null);
     const [inputValues, setInputValues] = useState<{
         defaultTempo: string;
-
         defaultBeatsPerMeasure: string;
         defaultNewPageCounts: string;
         audioOffsetSeconds: string;
+        pageNumberOffset: string;
+        measurementOffset: string;
     }>({
         defaultTempo: "",
         defaultBeatsPerMeasure: "",
         defaultNewPageCounts: "",
         audioOffsetSeconds: "",
+        pageNumberOffset: "",
+        measurementOffset: "",
     });
 
     const blurOnEnter = useCallback(blurOnEnterFunc, []);
@@ -83,6 +86,8 @@ function WorkspaceSettingsModalContents() {
                     settings.defaultBeatsPerMeasure.toString(),
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
                 audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
+                pageNumberOffset: settings.pageNumberOffset.toString(),
+                measurementOffset: settings.measurementOffset.toString(),
             });
         }
     }, [settings]);
@@ -114,6 +119,10 @@ function WorkspaceSettingsModalContents() {
                 defaultWorkspaceSettings.defaultNewPageCounts.toString(),
             audioOffsetSeconds:
                 defaultWorkspaceSettings.audioOffsetSeconds.toString(),
+            pageNumberOffset:
+                defaultWorkspaceSettings.pageNumberOffset.toString(),
+            measurementOffset:
+                defaultWorkspaceSettings.measurementOffset.toString(),
         });
         updateSettings(defaultWorkspaceSettings);
     }, [updateSettings]);
@@ -127,6 +136,8 @@ function WorkspaceSettingsModalContents() {
                     settings.defaultBeatsPerMeasure.toString(),
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
                 audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
+                pageNumberOffset: settings.pageNumberOffset.toString(),
+                measurementOffset: settings.measurementOffset.toString(),
             });
         }
     }, [settings]);
@@ -189,6 +200,18 @@ function WorkspaceSettingsModalContents() {
             value: inputValues.audioOffsetSeconds || "",
             unit: t("workspaceSettings.units.seconds"),
             float: true,
+            canBeNegative: true,
+        },
+        {
+            key: "pageNumberOffset",
+            label: t("workspaceSettings.pageNumberOffset"),
+            value: inputValues.pageNumberOffset || "",
+            canBeNegative: true,
+        },
+        {
+            key: "measurementOffset",
+            label: t("workspaceSettings.measurementOffset"),
+            value: inputValues.measurementOffset || "",
             canBeNegative: true,
         },
     ];

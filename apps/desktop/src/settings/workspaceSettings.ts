@@ -5,6 +5,8 @@ export const workspaceSettingsSchema = z.object({
     defaultTempo: z.float64().positive().default(120),
     defaultNewPageCounts: z.int().positive().default(16),
     audioOffsetSeconds: z.float64().default(0),
+    pageNumberOffset: z.int().default(0),
+    measurementOffset: z.int().default(0),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -17,6 +19,8 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     defaultTempo: 120,
     defaultNewPageCounts: 16,
     audioOffsetSeconds: 0,
+    pageNumberOffset: 0,
+    measurementOffset: 0,
 };
 
 /**

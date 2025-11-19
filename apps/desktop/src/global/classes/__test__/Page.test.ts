@@ -16,14 +16,29 @@ describe("Page", () => {
             expect(result).toEqual(["0"]);
         });
 
+        it("should generate a list with offset value when input is empty with offset", () => {
+            const result = generatePageNames([], 5);
+            expect(result).toEqual(["5"]);
+        });
+
         it("should generate sequential page numbers for non-subset pages", () => {
             const result = generatePageNames([false, false, false, false]);
             expect(result).toEqual(["0", "1", "2", "3"]);
         });
 
+        it("should generate sequential page numbers with offset", () => {
+            const result = generatePageNames([false, false, false, false], 10);
+            expect(result).toEqual(["10", "11", "12", "13"]);
+        });
+
         it("should generate alphabetical subsets when encountering true values", () => {
             const result = generatePageNames([false, true, true, false]);
             expect(result).toEqual(["0", "0A", "0B", "1"]);
+        });
+
+        it("should generate alphabetical subsets with offset", () => {
+            const result = generatePageNames([false, true, true, false], 5);
+            expect(result).toEqual(["5", "5A", "5B", "6"]);
         });
 
         it("should handle example case from documentation", () => {
@@ -39,6 +54,14 @@ describe("Page", () => {
             expect(result).toEqual(["0", "1", "1A", "2", "2A", "2B", "3"]);
         });
 
+        it("should handle example case from documentation with offset", () => {
+            const result = generatePageNames(
+                [false, false, true, false, true, true, false],
+                3,
+            );
+            expect(result).toEqual(["3", "4", "4A", "5", "5A", "5B", "6"]);
+        });
+
         it("should handle case where first page is subset", () => {
             const result = generatePageNames([
                 true,
@@ -51,6 +74,15 @@ describe("Page", () => {
             ]);
             // First page always evaluate to false
             expect(result).toEqual(["0", "0A", "0B", "1", "1A", "1B", "2"]);
+        });
+
+        it("should handle case where first page is subset with offset", () => {
+            const result = generatePageNames(
+                [true, true, true, false, true, true, false],
+                7,
+            );
+            // First page starts at offset, but treats as non-subset
+            expect(result).toEqual(["7", "7A", "7B", "8", "8A", "8B", "9"]);
         });
 
         it("should handle multiple consecutive subset sequences", () => {
@@ -78,10 +110,43 @@ describe("Page", () => {
             ]);
         });
 
-        it('should ignore the first boolean and always start with "0"', () => {
+        it("should handle multiple consecutive subset sequences with offset", () => {
+            const result = generatePageNames(
+                [
+                    false, // 15
+                    true, // 15A
+                    true, // 15B
+                    false, // 16
+                    false, // 17
+                    true, // 17A
+                    true, // 17B
+                    true, // 17C
+                    false, // 18
+                ],
+                15,
+            );
+            expect(result).toEqual([
+                "15",
+                "15A",
+                "15B",
+                "16",
+                "17",
+                "17A",
+                "17B",
+                "17C",
+                "18",
+            ]);
+        });
+
+        it("should ignore the first boolean and treat first page as non-subset", () => {
             // Test documentation note: "the first page will always evaluate to false no matter what is provided"
             const result = generatePageNames([true, false, false]);
             expect(result).toEqual(["0", "1", "2"]);
+        });
+
+        it("should ignore the first boolean and treat first page as non-subset with offset", () => {
+            const result = generatePageNames([true, false, false], 20);
+            expect(result).toEqual(["20", "21", "22"]);
         });
 
         it("should handle many consecutive subsets with correct lettering", () => {
@@ -108,6 +173,30 @@ describe("Page", () => {
             ]);
         });
 
+        it("should handle many consecutive subsets with correct lettering and offset", () => {
+            const isSubsetArr = [
+                false, // 12
+                true, // 12A
+                true, // 12B
+                true, // 12C
+                true, // 12D
+                true, // 12E
+                true, // 12F
+                true, // 12G
+            ];
+            const result = generatePageNames(isSubsetArr, 12);
+            expect(result).toEqual([
+                "12",
+                "12A",
+                "12B",
+                "12C",
+                "12D",
+                "12E",
+                "12F",
+                "12G",
+            ]);
+        });
+
         it("should handle alphabetical rollover from Z to AA", () => {
             // Create an array with 27 true values to force rollover (A-Z then AA)
             const isSubsetArr = [false, ...Array(27).fill(true)];
@@ -118,6 +207,16 @@ describe("Page", () => {
             expect(result[0]).toBe("0");
             expect(result[26]).toBe("0Z");
             expect(result[27]).toBe("0AA");
+        });
+
+        it("should handle alphabetical rollover from Z to AA with offset", () => {
+            const isSubsetArr = [false, ...Array(27).fill(true)];
+            const result = generatePageNames(isSubsetArr, 8);
+
+            expect(result.length).toBe(28);
+            expect(result[0]).toBe("8");
+            expect(result[26]).toBe("8Z");
+            expect(result[27]).toBe("8AA");
         });
 
         it("should handle mixed sequences of pages and subsets", () => {
@@ -147,6 +246,36 @@ describe("Page", () => {
             ]);
         });
 
+        it("should handle mixed sequences of pages and subsets with offset", () => {
+            const result = generatePageNames(
+                [
+                    false, // 100
+                    false, // 101
+                    true, // 101A
+                    false, // 102
+                    true, // 102A
+                    false, // 103
+                    false, // 104
+                    true, // 104A
+                    true, // 104B
+                    true, // 104C
+                ],
+                100,
+            );
+            expect(result).toEqual([
+                "100",
+                "101",
+                "101A",
+                "102",
+                "102A",
+                "103",
+                "104",
+                "104A",
+                "104B",
+                "104C",
+            ]);
+        });
+
         it("should handle subset letters wrapping from Z to AA", () => {
             // Create array with many consecutive true values
             const isSubsetArr = Array(56).fill(true);
@@ -161,6 +290,30 @@ describe("Page", () => {
             expect(result[53]).toBe("0BA");
             expect(result[54]).toBe("0BB");
             expect(result[56]).toBe("1");
+        });
+
+        it("should handle subset letters wrapping from Z to AA with offset", () => {
+            const isSubsetArr = Array(56).fill(true);
+            isSubsetArr.push(false);
+            isSubsetArr[0] = false;
+
+            const result = generatePageNames(isSubsetArr, 25);
+
+            expect(result[26]).toBe("25Z");
+            expect(result[27]).toBe("25AA");
+            expect(result[53]).toBe("25BA");
+            expect(result[54]).toBe("25BB");
+            expect(result[56]).toBe("26");
+        });
+
+        it("should handle negative offset", () => {
+            const result = generatePageNames([false, false, true, false], -5);
+            expect(result).toEqual(["-5", "-4", "-4A", "-3"]);
+        });
+
+        it("should handle zero offset explicitly", () => {
+            const result = generatePageNames([false, false, true, false], 0);
+            expect(result).toEqual(["0", "1", "1A", "2"]);
         });
     });
 
