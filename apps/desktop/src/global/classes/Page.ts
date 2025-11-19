@@ -230,11 +230,13 @@ export function fromDatabasePages({
     allMeasures,
     allBeats,
     lastPageCounts,
+    pageNumberOffset = 0,
 }: {
     databasePages: DatabasePage[];
     allMeasures: Measure[];
     allBeats: Beat[];
     lastPageCounts: number;
+    pageNumberOffset?: number;
 }): Page[] {
     if (databasePages.length === 0) return [];
     const sortedBeats = allBeats.sort((a, b) => a.position - b.position);
@@ -250,7 +252,7 @@ export function fromDatabasePages({
         return aBeat.position - bBeat.position;
     });
     const isSubsetArr = sortedDbPages.map((page) => page.is_subset);
-    const pageNames = generatePageNames(isSubsetArr);
+    const pageNames = generatePageNames(isSubsetArr, pageNumberOffset);
     const sortedMeasures = allMeasures.sort((a, b) => a.number - b.number);
 
     let curTimestamp = 0;
@@ -357,9 +359,12 @@ export function fromDatabasePages({
  * @param pages boolean[] - A list to define if pages are subsets are not. Should align with the order of the pages.
  * @returns A list of page names in the order that the list of booleans was provided.
  */
-export const generatePageNames = (isSubsetArr: boolean[]) => {
-    const pageNames: string[] = ["0"];
-    let curPageNumber = 0;
+export const generatePageNames = (
+    isSubsetArr: boolean[],
+    pageNumberOffset: number = 0,
+) => {
+    const pageNames: string[] = [pageNumberOffset.toString()];
+    let curPageNumber = pageNumberOffset;
     let curSubsetLetter = "";
 
     /**

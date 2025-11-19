@@ -14,6 +14,8 @@ import Page, { fromDatabasePages } from "@/global/classes/Page";
 import { DatabaseUtility } from "@/db-functions/utility";
 import { DatabaseBeat, DatabaseMeasure, DatabasePage } from "@/db-functions";
 import { queryClient } from "@/App";
+import { WorkspaceSettings } from "@/settings/workspaceSettings";
+import { workspaceSettingsQueryOptions } from "./queries/useWorkspaceSettings";
 
 export type TimingObjects = {
     beats: Beat[];
@@ -32,6 +34,7 @@ export const _combineTimingObjects = (
         UseQueryResult<DatabaseMeasure[]>,
         UseQueryResult<DatabaseBeat[]>,
         UseQueryResult<DatabaseUtility | undefined>,
+        UseQueryResult<WorkspaceSettings | undefined>,
     ],
 ): TimingObjects => {
     const {
@@ -54,6 +57,11 @@ export const _combineTimingObjects = (
         isLoading: utilityLoading,
         isError: utilityError,
     } = results[3];
+    const {
+        data: workspaceSettings,
+        isLoading: workspaceSettingsLoading,
+        isError: workspaceSettingsError,
+    } = results[4];
 
     // Log any errors that occurred during data fetching
     if (pagesError) {
@@ -68,6 +76,14 @@ export const _combineTimingObjects = (
     if (utilityError) {
         console.error("Utility query error:", results[3]);
     }
+    const pageNumberOffset =
+        workspaceSettingsLoading || workspaceSettingsError
+            ? 0
+            : (workspaceSettings?.pageNumberOffset ?? 0);
+    const measurementNumberOffset =
+        workspaceSettingsLoading || workspaceSettingsError
+            ? 0
+            : (workspaceSettings?.measurementOffset ?? 0);
 
     const fetchTimingObjects = async () => {
         await queryClient.invalidateQueries({
@@ -75,6 +91,9 @@ export const _combineTimingObjects = (
         });
         await queryClient.invalidateQueries({
             queryKey: getUtilityQueryOptions().queryKey,
+        });
+        await queryClient.invalidateQueries({
+            queryKey: workspaceSettingsQueryOptions().queryKey,
         });
         await queryClient.invalidateQueries({
             queryKey: allDatabasePagesQueryOptions().queryKey,
@@ -142,6 +161,7 @@ export const _combineTimingObjects = (
     const createdMeasures = fromDatabaseMeasures({
         databaseMeasures: measures,
         allBeats: createdBeats,
+        measurementNumberOffset: measurementNumberOffset,
     });
 
     const lastPageCounts = utility.last_page_counts;
@@ -151,6 +171,7 @@ export const _combineTimingObjects = (
         allMeasures: createdMeasures,
         allBeats: createdBeats,
         lastPageCounts,
+        pageNumberOffset: pageNumberOffset,
     });
 
     const processedData = {
@@ -172,6 +193,7 @@ export const useTimingObjects = () => {
             allDatabaseMeasuresQueryOptions(),
             allDatabaseBeatsQueryOptions(),
             getUtilityQueryOptions(),
+            workspaceSettingsQueryOptions(),
         ],
         // This must not be a stable function, not an inline function, otherwise it will be called every time the component re-renders
         // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization
