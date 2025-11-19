@@ -76,6 +76,10 @@ export const useSelectionListeners = ({
                     // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
+                case Selectable.SelectableClasses.PROP: {
+                    // setSelectedProps(newSelectedObjects[Selectable.SelectableClasses.PROP]);
+                    break;
+                }
                 default: {
                     unimplementedError(selectedClass);
                 }
@@ -139,6 +143,7 @@ export const useSelectionListeners = ({
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
             [Selectable.SelectableClasses.MARCHER_SHAPE]: [],
+            [Selectable.SelectableClasses.PROP]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
