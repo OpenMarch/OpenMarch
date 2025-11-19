@@ -63,11 +63,6 @@ export default function Topbar() {
                             <T keyName="inspector.shape.alignmentTab" />
                         </TabItem>
                     )}
-                    {!isFullscreen && (
-                        <TabItem value="shapes">
-                            <T keyName="inspector.shape.shapesTab" />
-                        </TabItem>
-                    )}
                     <TabItem value="view">
                         <T keyName="inspector.shape.viewTab" />
                     </TabItem>
