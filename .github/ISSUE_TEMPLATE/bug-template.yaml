@@ -14,7 +14,7 @@ body:
     attributes: 
       value: |
         If there is an existing bug report similar to the one you are about to create, please leave a thumbs up and comment on that report, rather than making a new one. 
-        Be sure to add additional details if the additional if you think it would help!
+        Be sure to add additional details to that report if you think it would help!
         
   - type: checkboxes
     id: verified
