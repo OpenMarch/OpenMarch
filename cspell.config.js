@@ -149,6 +149,7 @@ module.exports = {
         "xlink",
         "toks",
         "bbox",
+        "localappdata",
     ],
     ignorePaths: [
         "node_modules/**",

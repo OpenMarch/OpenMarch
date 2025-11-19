@@ -76,7 +76,16 @@ export default function DownloadCards() {
                             download
                         >
                             <Button variant="secondary">
-                                Download AppImage
+                                Download AppImage (x64)
+                            </Button>
+                        </a>
+                        <a
+                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_arm64.AppImage`}
+                            onClick={handleDownloadClick}
+                            download
+                        >
+                            <Button variant="secondary">
+                                Download AppImage (ARM)
                             </Button>
                         </a>
                         <a href="https://snapcraft.io/openmarch">
