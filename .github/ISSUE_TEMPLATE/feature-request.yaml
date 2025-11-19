@@ -19,7 +19,7 @@ body:
           required: true
 
   - type: textarea
-    id: logs
+    id: description
     attributes:
       label: Describe the feature you want to see
       description: |

@@ -26,7 +26,7 @@ body:
     validations:
       required: true
 
-  - type: input
+  - type: dropdown
     attributes:
       label: Operating System
       description: What operating system are you using?
@@ -43,7 +43,7 @@ body:
       required: true
 
   - type: textarea
-    id: logs
+    id: description
     attributes:
       label: Describe the bug
       description: Please enter the following information -
