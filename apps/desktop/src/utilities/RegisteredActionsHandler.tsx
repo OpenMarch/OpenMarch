@@ -4,6 +4,7 @@ import {
     fieldPropertiesQueryOptions,
     swapMarchersMutationOptions,
 } from "@/hooks/queries";
+import { createCircle } from "@openmarch/core";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -89,6 +90,9 @@ export enum RegisteredActionsEnum {
 
     // Select
     selectAllMarchers = "selectAllMarchers",
+
+    // Shapes
+    createCircle = "createCircle",
 }
 
 /**
@@ -497,6 +501,13 @@ export const RegisteredActionsObjects: {
         descKey: "actions.select.selectAll",
         keyboardShortcut: new KeyboardShortcut({ key: "a", control: true }),
         enumString: "selectAllMarchers",
+    }),
+
+    // Shapes
+    createCircle: new RegisteredAction({
+        descKey: "actions.shape.createCircle",
+        keyboardShortcut: new KeyboardShortcut({ key: "o" }),
+        enumString: "createCircle",
     }),
 } as const;
 
@@ -1046,6 +1057,36 @@ function RegisteredActionsHandler() {
                     }
 
                     canvas.setActiveObjects(canvas.getCanvasMarchers());
+                    break;
+                }
+
+                /****************** Shapes ******************/
+                case RegisteredActionsEnum.createCircle: {
+                    const selectedMarcherPages = getSelectedMarcherPages();
+                    if (selectedMarcherPages.length === 0) {
+                        toast.warning(t("actions.shape.noMarchersSelected"));
+                        break;
+                    }
+                    const updatedCoordinates = createCircle(
+                        selectedMarcherPages.map((mp) => ({
+                            id: mp.marcher_id,
+                            x: mp.x,
+                            y: mp.y,
+                        })),
+                        {
+                            centerX: 0,
+                            centerY: 0,
+                            radius: 10,
+                        },
+                    );
+                    updateMarcherPages(
+                        updatedCoordinates.map((coordinate) => ({
+                            marcher_id: coordinate.id,
+                            page_id: selectedPage.id,
+                            x: coordinate.x,
+                            y: coordinate.y,
+                        })),
+                    );
                     break;
                 }
 

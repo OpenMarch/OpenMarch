@@ -68,7 +68,9 @@
         "shape": {
             "applyQuick": "Snaps marchers to shape without creating an editable object",
             "create": "Creates a new shape with lines or curves that can be edited across pages",
-            "delete": "Deletes the current selected shapes"
+            "createCircle": "Create circle",
+            "delete": "Deletes the current selected shapes",
+            "noMarchersSelected": "No marchers selected"
         },
         "swap": {
             "error": "Could not swap marchers {marcher1} and {marcher2}",
@@ -455,7 +457,13 @@
             "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
-            "viewTab": "View"
+            "viewTab": "View",
+            "shapesTab": "Shapes"
+        },
+        "shapes": {
+            "title": "Shapes",
+            "selectShape": "Select Shape",
+            "moreShapesComingSoon": "More shapes coming soon!"
         },
         "title": "Inspector"
     },

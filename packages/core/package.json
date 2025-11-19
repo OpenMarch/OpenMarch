@@ -29,6 +29,7 @@
     ],
     "devDependencies": {
         "@openmarch/config": "workspace:*",
+        "fast-check": "^4.3.0",
         "tsup": "^8.5.0",
         "typescript": "latest",
         "vitest": "^2.1.9"

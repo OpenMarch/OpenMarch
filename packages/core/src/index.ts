@@ -3,6 +3,7 @@
 
 // Field-related exports
 export * from "./field";
+export * from "./shapes";
 
 // Future core features can be added here:
 // export * from "./marching";

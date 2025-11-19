@@ -68,7 +68,9 @@
         "shape": {
             "applyQuick": "Alinha marchadores à forma sem criar um objeto editável",
             "create": "Cria uma nova forma com linhas ou curvas que podem ser editadas em várias páginas",
-            "delete": "Exclui as formas selecionadas atualmente"
+            "createCircle": "Criar círculo",
+            "delete": "Exclui as formas selecionadas atualmente",
+            "noMarchersSelected": "Nenhum marchador selecionado"
         },
         "swap": {
             "error": "Não foi possível trocar marchadores {marcher1} e {marcher2}",
@@ -455,7 +457,13 @@
             "successfullyCopied": "Forma copiada com sucesso para a página {pageName}",
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
-            "viewTab": "Visualizar"
+            "viewTab": "Visualizar",
+            "shapesTab": "Formas"
+        },
+        "shapes": {
+            "title": "Formas",
+            "selectShape": "Selecionar Forma",
+            "moreShapesComingSoon": "Mais formas em breve!"
         },
         "title": "Inspetor"
     },
