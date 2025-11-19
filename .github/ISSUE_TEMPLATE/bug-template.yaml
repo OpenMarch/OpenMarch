@@ -37,12 +37,12 @@ body:
       label: Operating System
       description: What operating system are you using?
       options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
         - Windows 11 (x64)
         - Windows 11 (arm64)
         - Windows 10 (x64)
         - Windows 10 (arm64)
-        - macOS (Apple Silicon)
-        - macOS (Intel)
         - Linux (x64)
         - Linux (arm64)
     validations:
@@ -65,8 +65,8 @@ body:
   - type: textarea
     id: dotsfile
     attributes:
-      label: Upload you .dots file (optional)
+      label: Upload your .dots file (optional)
       description: |
-        Being able to debug with the file itself is very helpful
+        Being able to debug with the file itself is very helpful.
 
         Before uploading your `.dots` file here, change the extension to `.txt` so GitHub allows uploading.
