@@ -16,7 +16,7 @@ import { calculateMasterVolume } from "./volume";
 import { useQuery } from "@tanstack/react-query";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
-import { SpinnerIcon } from "@phosphor-icons/react";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -551,8 +551,11 @@ export default function AudioPlayer() {
                 }}
             >
                 {isAudioProcessing && (
-                    <div className="bg-bg-1/80 dark:bg-bg-3/80 absolute inset-0 z-10 flex items-center justify-start pl-4">
-                        <SpinnerIcon size={16} className="animate-spin" />
+                    <div className="absolute inset-0 z-10 flex items-center justify-start pl-4">
+                        <CircleNotchIcon
+                            size={16}
+                            className="text-text animate-spin"
+                        />
                     </div>
                 )}
                 <div
