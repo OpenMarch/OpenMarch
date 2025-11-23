@@ -549,6 +549,7 @@ function RegisteredActionsHandler() {
     const { data: canRedo } = useQuery(canRedoQueryOptions);
     const { uiSettings, setUiSettings } = useUiSettingsStore()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
+    const isPerformingHistoryAction = useRef(false);
     const {
         resetAlignmentEvent,
         setAlignmentEvent,
@@ -556,7 +557,7 @@ function RegisteredActionsHandler() {
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
-    const { mutate: performHistoryAction } = usePerformHistoryAction();
+    const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
 
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
@@ -651,12 +652,24 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
                     break;
                 case RegisteredActionsEnum.performUndo:
-                    if (canUndo) performHistoryAction("undo");
-                    else toast.warning(t("actions.edit.noUndoAvailable"));
+                    if (canUndo) {
+                        if (!isPerformingHistoryAction.current) {
+                            isPerformingHistoryAction.current = true;
+                            void performHistoryAction("undo").finally(() => {
+                                isPerformingHistoryAction.current = false;
+                            });
+                        }
+                    } else toast.warning(t("actions.edit.noUndoAvailable"));
                     break;
                 case RegisteredActionsEnum.performRedo:
-                    if (canRedo) performHistoryAction("redo");
-                    else toast.warning(t("actions.edit.noRedoAvailable"));
+                    if (canRedo) {
+                        if (!isPerformingHistoryAction.current) {
+                            isPerformingHistoryAction.current = true;
+                            void performHistoryAction("redo").finally(() => {
+                                isPerformingHistoryAction.current = false;
+                            });
+                        }
+                    } else toast.warning(t("actions.edit.noRedoAvailable"));
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
