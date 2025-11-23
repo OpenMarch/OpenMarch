@@ -1,5 +1,5 @@
 import { describeDbTests, schema, transaction } from "@/test/base";
-import { afterEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
     DatabaseMarcherPage,
     getAllMarcherPages,
@@ -7,6 +7,7 @@ import {
     getPreviousMarcherPage,
     lockedDecorator,
     marcherPagesByPageId,
+    swapMarchers,
 } from "../marcherPage";
 import { and, eq, inArray } from "drizzle-orm";
 import {
@@ -17,6 +18,8 @@ import {
 } from "..";
 import { faker } from "@faker-js/faker";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { getTestWithHistory } from "@/test/history";
+import fc from "fast-check";
 
 const fakeMarcherId = () => faker.number.int({ min: 1, max: 76 });
 const fakePageId = () => faker.number.int({ min: 0, max: 5 });
@@ -637,6 +640,172 @@ describe("lockedDecorator", () => {
             ...marcherPages[0],
             isLocked: true,
             lockedReason: "Marcher is part of a shape\n",
+        });
+    });
+});
+
+describeDbTests("swapMarchers", (it) => {
+    const testWithHistory = getTestWithHistory(it, [
+        schema.marchers,
+        schema.marcher_pages,
+        schema.pages,
+        schema.beats,
+        schema.shape_page_marchers,
+        schema.shape_pages,
+        schema.shapes,
+    ]);
+    describe("no shapes", () => {
+        testWithHistory(
+            "swap single marcher",
+            async ({ db, marchersAndPages }) => {
+                const pageId = 0;
+                const marcher1Id = 1;
+                const marcher2Id = 2;
+                const marcherPage1Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.page_id, pageId),
+                            eq(schema.marcher_pages.marcher_id, marcher1Id),
+                        ),
+                    });
+                const marcherPage2Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.page_id, pageId),
+                            eq(schema.marcher_pages.marcher_id, marcher2Id),
+                        ),
+                    });
+
+                await swapMarchers({
+                    db,
+                    pageId,
+                    marcher1Id,
+                    marcher2Id,
+                });
+
+                const marcherPage1After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.page_id, pageId),
+                            eq(schema.marcher_pages.marcher_id, marcher1Id),
+                        ),
+                    });
+                const marcherPage2After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.page_id, pageId),
+                            eq(schema.marcher_pages.marcher_id, marcher2Id),
+                        ),
+                    });
+                expect({
+                    x: marcherPage1After?.x,
+                    y: marcherPage1After?.y,
+                }).toEqual({
+                    x: marcherPage2Before?.x,
+                    y: marcherPage2Before?.y,
+                });
+                expect({
+                    x: marcherPage2After?.x,
+                    y: marcherPage2After?.y,
+                }).toEqual({
+                    x: marcherPage1Before?.x,
+                    y: marcherPage1Before?.y,
+                });
+            },
+        );
+        it("should swap any two marchers", async ({ db, marchersAndPages }) => {
+            const marcherIds = (
+                await db.query.marchers.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((m) => m.id);
+            const pageIds = (
+                await db.query.pages.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((p) => p.id);
+
+            await fc.assert(
+                fc.asyncProperty(
+                    fc.record({
+                        marcherIds: fc.uniqueArray(
+                            fc.constantFrom(...marcherIds),
+                            { minLength: 2, maxLength: 2 },
+                        ),
+                        pageId: fc.constantFrom(...pageIds),
+                    }),
+                    async ({ marcherIds, pageId }) => {
+                        const marcherPage1Before =
+                            await db.query.marcher_pages.findFirst({
+                                where: and(
+                                    eq(schema.marcher_pages.page_id, pageId),
+                                    eq(
+                                        schema.marcher_pages.marcher_id,
+                                        marcherIds[0],
+                                    ),
+                                ),
+                            });
+                        const marcherPage2Before =
+                            await db.query.marcher_pages.findFirst({
+                                where: and(
+                                    eq(schema.marcher_pages.page_id, pageId),
+                                    eq(
+                                        schema.marcher_pages.marcher_id,
+                                        marcherIds[1],
+                                    ),
+                                ),
+                            });
+                        expect(marcherPage1Before).not.toBeNull();
+                        expect(marcherPage2Before).not.toBeNull();
+                        await swapMarchers({
+                            db,
+                            pageId,
+                            marcher1Id: marcherIds[0],
+                            marcher2Id: marcherIds[1],
+                        });
+                        const marcherPage1After =
+                            await db.query.marcher_pages.findFirst({
+                                where: and(
+                                    eq(schema.marcher_pages.page_id, pageId),
+                                    eq(
+                                        schema.marcher_pages.marcher_id,
+                                        marcherIds[0],
+                                    ),
+                                ),
+                            });
+                        const marcherPage2After =
+                            await db.query.marcher_pages.findFirst({
+                                where: and(
+                                    eq(schema.marcher_pages.page_id, pageId),
+                                    eq(
+                                        schema.marcher_pages.marcher_id,
+                                        marcherIds[1],
+                                    ),
+                                ),
+                            });
+                        expect(marcherPage1After).not.toBeNull();
+                        expect(marcherPage2After).not.toBeNull();
+                        expect({
+                            x: marcherPage1After!.x,
+                            y: marcherPage1After!.y,
+                        }).toEqual({
+                            x: marcherPage2Before!.x,
+                            y: marcherPage2Before!.y,
+                        });
+                        expect({
+                            x: marcherPage2After!.x,
+                            y: marcherPage2After!.y,
+                        }).toEqual({
+                            x: marcherPage1Before!.x,
+                            y: marcherPage1Before!.y,
+                        });
+                    },
+                ),
+            );
         });
     });
 });
