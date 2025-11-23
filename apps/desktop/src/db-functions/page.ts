@@ -804,7 +804,7 @@ const _getNextBeatToStartOn = async ({
             where: (table, { gte }) =>
                 gte(table.position, lastPageBeat.position),
             orderBy: (table, { asc }) => asc(table.position),
-            offset: newPageCounts,
+            offset: lastPageCounts,
         });
         if (!nextBeat) throw new Error("Not enough beats to create a new page");
         return nextBeat;
