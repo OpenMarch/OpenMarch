@@ -115,7 +115,7 @@ export class ShapePointController extends fabric.Circle {
             console.error("The parent path does not have a path");
             return;
         }
-        if (!this.left || !this.top) {
+        if (this.left == null || this.top == null) {
             console.error("The control point does not have coordinates");
             return;
         }
@@ -185,7 +185,11 @@ export class ShapePointController extends fabric.Circle {
     moveHandler(event: fabric.IEvent<MouseEvent>) {
         roundCoordinatesHandler(this, event);
         this.marcherShape.shapePath.objectCaching = false;
-        if (this.marcherShape.shapePath.path && this.left && this.top) {
+        if (
+            this.marcherShape.shapePath.path &&
+            this.left != null &&
+            this.top != null
+        ) {
             this.refreshParentPathCoordinates();
             this.marcherShape.distributeMarchers();
             this.marcherShape.bringControlPointsToFront();
@@ -245,7 +249,7 @@ export class ShapePointController extends fabric.Circle {
             // There is no outgoing point, return null
             return null;
         }
-        if (!this.outgoingPoint.left || !this.outgoingPoint.top) {
+        if (this.outgoingPoint.left == null || this.outgoingPoint.top == null) {
             console.error("The outgoing point has no coordinates");
             return null;
         }

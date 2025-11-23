@@ -121,7 +121,7 @@ export const pathwaysByPageQueryOptions = (pageId: number) => {
     return queryOptions<PathwaysById>({
         queryKey: pathwayKeys.byPageId(pageId),
         queryFn: () => pathwayQueries.getByPageId(pageId, db),
-        enabled: !!pageId,
+        enabled: pageId != null,
         staleTime: DEFAULT_STALE_TIME,
     });
 };
