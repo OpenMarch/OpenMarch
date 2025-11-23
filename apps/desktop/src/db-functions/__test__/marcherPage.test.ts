@@ -1064,7 +1064,7 @@ describeDbTests("swapMarchers", (it) => {
                                 `SPM1 before should exist`,
                             ).toBeTruthy();
                             expect(
-                                spm2Before,
+                                spm2Before?.id,
                                 `SPM2 before should not exist`,
                             ).toBeFalsy();
                             expect(
@@ -1141,7 +1141,7 @@ describeDbTests("swapMarchers", (it) => {
                                 });
 
                             expect(
-                                spm1After,
+                                spm1After?.id,
                                 `SPM1 after should not exist`,
                             ).toBeFalsy();
                             expect(
