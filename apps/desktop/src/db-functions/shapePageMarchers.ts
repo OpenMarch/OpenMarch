@@ -221,7 +221,7 @@ async function _incrementPositionOrder({
             .update(schema.shape_page_marchers)
             .set(spm)
             .where(eq(schema.shape_page_marchers.id, spm.id))
-            .get();
+            .run();
     }
 }
 
@@ -297,7 +297,8 @@ export async function swapPositionOrderInTransaction({
         .set({
             position_order: tempPositionOrder,
         })
-        .where(eq(schema.shape_page_marchers.id, spmId1));
+        .where(eq(schema.shape_page_marchers.id, spmId1))
+        .run();
     // Set spm2 to the original spm1 position order
     const updatedSmp2 = await tx
         .update(schema.shape_page_marchers)
@@ -369,7 +370,7 @@ async function _flattenOrder({
             .update(schema.shape_page_marchers)
             .set(spm)
             .where(eq(schema.shape_page_marchers.id, spm.id))
-            .get();
+            .run();
     }
 }
 
@@ -663,6 +664,7 @@ export const deleteShapePageMarchersInTransaction = async ({
         .delete(schema.shape_page_marchers)
         .where(inArray(schema.shape_page_marchers.id, Array.from(itemIds)))
         .returning();
+    console.log({ deletedItems });
 
     if (deletedItems && deletedItems.length > 0) {
         // flatten the order of the shape page marchers
@@ -677,6 +679,7 @@ export const deleteShapePageMarchersInTransaction = async ({
                 shapePageId: itemId,
             });
     }
+    console.log({ deletedItems2: deletedItems });
 
     return deletedItems.map(
         realDatabaseShapePageMarcherToDatabaseShapePageMarcher,

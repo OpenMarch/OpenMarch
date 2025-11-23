@@ -1013,6 +1013,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
         );
+        console.log({ existingMarcherShapeMap });
         const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
         const removedShapeIds = new Set();
         for (const existingMarcherShape of existingMarcherShapeMap) {

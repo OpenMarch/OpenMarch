@@ -20,6 +20,7 @@ import { faker } from "@faker-js/faker";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { getTestWithHistory } from "@/test/history";
 import fc from "fast-check";
+import { _createMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
 
 const fakeMarcherId = () => faker.number.int({ min: 1, max: 76 });
 const fakePageId = () => faker.number.int({ min: 0, max: 5 });
@@ -805,6 +806,761 @@ describeDbTests("swapMarchers", (it) => {
                         });
                     },
                 ),
+            );
+        });
+    });
+
+    describe("One shape", () => {
+        testWithHistory(
+            "should swap two marchers with one belonging to a shape",
+            async ({ db, marchersAndPages }) => {
+                const marcherIds = (
+                    await db.query.marchers.findMany({
+                        columns: {
+                            id: true,
+                        },
+                    })
+                ).map((m) => m.id);
+
+                const pageId = 0;
+                const shapeMarcherIds = marcherIds.slice(
+                    0,
+                    marcherIds.length / 2,
+                );
+                const nonShapeMarcherIds = marcherIds.slice(
+                    marcherIds.length / 2,
+                );
+
+                const [createdShapePage] = await _createMarcherShape({
+                    pageId,
+                    marcherIds: shapeMarcherIds,
+                    start: { x: 0, y: 0 },
+                    end: { x: 100, y: 100 },
+                });
+
+                const marcherId1 = shapeMarcherIds[0];
+                const marcherId2 = nonShapeMarcherIds[0];
+
+                const spm1Before = await db.query.shape_page_marchers.findFirst(
+                    {
+                        where: and(
+                            eq(
+                                schema.shape_page_marchers.marcher_id,
+                                marcherId1,
+                            ),
+                            eq(
+                                schema.shape_page_marchers.shape_page_id,
+                                createdShapePage.id,
+                            ),
+                        ),
+                    },
+                );
+                const marcherPage1Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId1),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+                const spm2Before = await db.query.shape_page_marchers.findFirst(
+                    {
+                        where: and(
+                            eq(
+                                schema.shape_page_marchers.marcher_id,
+                                marcherId2,
+                            ),
+                            eq(
+                                schema.shape_page_marchers.shape_page_id,
+                                createdShapePage.id,
+                            ),
+                        ),
+                    },
+                );
+                const marcherPage2Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId2),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+
+                expect(spm1Before, `SPM1 before should exist`).toBeTruthy();
+                expect(spm2Before, `SPM2 before should not exist`).toBeFalsy();
+                expect(
+                    marcherPage1Before,
+                    `Marcher page 1 before should exist`,
+                ).toBeTruthy();
+                expect(
+                    marcherPage2Before,
+                    `Marcher page 2 before should exist`,
+                ).toBeTruthy();
+
+                await swapMarchers({
+                    db,
+                    pageId,
+                    marcher1Id: marcherId1,
+                    marcher2Id: marcherId2,
+                });
+
+                const spm1After = await db.query.shape_page_marchers.findFirst({
+                    where: and(
+                        eq(schema.shape_page_marchers.marcher_id, marcherId1),
+                        eq(
+                            schema.shape_page_marchers.shape_page_id,
+                            createdShapePage.id,
+                        ),
+                    ),
+                });
+                const spm2After = await db.query.shape_page_marchers.findFirst({
+                    where: and(
+                        eq(schema.shape_page_marchers.marcher_id, marcherId2),
+                        eq(
+                            schema.shape_page_marchers.shape_page_id,
+                            createdShapePage.id,
+                        ),
+                    ),
+                });
+                const marcherPage1After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId1),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+                const marcherPage2After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId2),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+
+                expect(spm1After, `SPM1 after should not exist`).toBeFalsy();
+                expect(spm2After, `SPM2 after should exist`).toBeTruthy();
+                expect(
+                    marcherPage1After,
+                    `Marcher page 1 after should exist`,
+                ).toBeTruthy();
+                expect(
+                    marcherPage2After,
+                    `Marcher page 2 after should exist`,
+                ).toBeTruthy();
+
+                expect({
+                    x: marcherPage1After!.x,
+                    y: marcherPage1After!.y,
+                }).toEqual({
+                    x: marcherPage2Before!.x,
+                    y: marcherPage2Before!.y,
+                });
+                expect({
+                    x: marcherPage2After!.x,
+                    y: marcherPage2After!.y,
+                }).toEqual({
+                    x: marcherPage1Before!.x,
+                    y: marcherPage1Before!.y,
+                });
+            },
+        );
+
+        it("should swap any two marchers with one belonging to a shape and the other not", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const marcherIds = (
+                await db.query.marchers.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((m) => m.id);
+            const pageIds = (
+                await db.query.pages.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((p) => p.id);
+
+            const shapeMarcherIds = marcherIds.slice(0, marcherIds.length / 2);
+            const nonShapeMarcherIds = marcherIds.slice(marcherIds.length / 2);
+
+            await fc.assert(
+                fc
+                    .asyncProperty(
+                        fc.record({
+                            marcherId1: fc.constantFrom(...shapeMarcherIds),
+                            marcherId2: fc.constantFrom(...nonShapeMarcherIds),
+                            pageId: fc.constantFrom(...pageIds),
+                        }),
+                        async ({ marcherId1, marcherId2, pageId }) => {
+                            const [createdShapePage] =
+                                await _createMarcherShape({
+                                    pageId,
+                                    marcherIds: shapeMarcherIds,
+                                    start: { x: 0, y: 0 },
+                                    end: { x: 100, y: 100 },
+                                });
+
+                            const spm1Before =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage.id,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage1Before =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+                            const spm2Before =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage.id,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage2Before =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+
+                            expect(
+                                spm1Before,
+                                `SPM1 before should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                spm2Before,
+                                `SPM2 before should not exist`,
+                            ).toBeFalsy();
+                            expect(
+                                marcherPage1Before,
+                                `Marcher page 1 before should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                marcherPage2Before,
+                                `Marcher page 2 before should exist`,
+                            ).toBeTruthy();
+
+                            await swapMarchers({
+                                db,
+                                pageId,
+                                marcher1Id: marcherId1,
+                                marcher2Id: marcherId2,
+                            });
+
+                            const spm1After =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage.id,
+                                        ),
+                                    ),
+                                });
+                            const spm2After =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage.id,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage1After =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage2After =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+
+                            expect(
+                                spm1After,
+                                `SPM1 after should not exist`,
+                            ).toBeFalsy();
+                            expect(
+                                spm2After,
+                                `SPM2 after should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                marcherPage1After,
+                                `Marcher page 1 after should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                marcherPage2After,
+                                `Marcher page 2 after should exist`,
+                            ).toBeTruthy();
+
+                            expect({
+                                x: marcherPage1After!.x,
+                                y: marcherPage1After!.y,
+                            }).toEqual({
+                                x: marcherPage2Before!.x,
+                                y: marcherPage2Before!.y,
+                            });
+                            expect({
+                                x: marcherPage2After!.x,
+                                y: marcherPage2After!.y,
+                            }).toEqual({
+                                x: marcherPage1Before!.x,
+                                y: marcherPage1Before!.y,
+                            });
+                        },
+                    )
+                    .afterEach(async () => {
+                        await db.delete(schema.shape_pages).run();
+                        await db.delete(schema.shape_page_marchers).run();
+                        await db.delete(schema.shapes).run();
+                    }),
+            );
+        });
+    });
+
+    describe("two shapes", () => {
+        testWithHistory(
+            "should swap two marchers with both belonging to a shape",
+            async ({ db, marchersAndPages }) => {
+                const marcherIds = (
+                    await db.query.marchers.findMany({
+                        columns: {
+                            id: true,
+                        },
+                    })
+                ).map((m) => m.id);
+
+                const pageId = 0;
+                const shape1MarcherIds = marcherIds.slice(
+                    0,
+                    marcherIds.length / 2,
+                );
+                const shape2MarcherIds = marcherIds.slice(
+                    marcherIds.length / 2,
+                );
+
+                const [createdShapePage1] = await _createMarcherShape({
+                    pageId,
+                    marcherIds: shape1MarcherIds,
+                    start: { x: 0, y: 0 },
+                    end: { x: 100, y: 100 },
+                });
+                const [createdShapePage2] = await _createMarcherShape({
+                    pageId,
+                    marcherIds: shape2MarcherIds,
+                    start: { x: 0, y: 0 },
+                    end: { x: 200, y: 200 },
+                });
+
+                const marcherId1 = shape1MarcherIds[0];
+                const marcherId2 = shape2MarcherIds[0];
+
+                const spm1Before = await db.query.shape_page_marchers.findFirst(
+                    {
+                        where: and(
+                            eq(
+                                schema.shape_page_marchers.marcher_id,
+                                marcherId1,
+                            ),
+                            eq(
+                                schema.shape_page_marchers.shape_page_id,
+                                createdShapePage1.id,
+                            ),
+                        ),
+                    },
+                );
+                const marcherPage1Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId1),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+                const spm2Before = await db.query.shape_page_marchers.findFirst(
+                    {
+                        where: and(
+                            eq(
+                                schema.shape_page_marchers.marcher_id,
+                                marcherId2,
+                            ),
+                            eq(
+                                schema.shape_page_marchers.shape_page_id,
+                                createdShapePage2.id,
+                            ),
+                        ),
+                    },
+                );
+                const marcherPage2Before =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId2),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+
+                expect(spm1Before, `SPM1 before should exist`).toBeTruthy();
+                expect(spm1Before!.marcher_id).toEqual(marcherId1);
+                expect(spm2Before, `SPM2 before should exist`).toBeTruthy();
+                expect(spm2Before!.marcher_id).toEqual(marcherId2);
+                expect(
+                    marcherPage1Before,
+                    `Marcher page 1 before should exist`,
+                ).toBeTruthy();
+                expect(
+                    marcherPage2Before,
+                    `Marcher page 2 before should exist`,
+                ).toBeTruthy();
+
+                await swapMarchers({
+                    db,
+                    pageId,
+                    marcher1Id: marcherId1,
+                    marcher2Id: marcherId2,
+                });
+
+                const spm1After = await db.query.shape_page_marchers.findFirst({
+                    where: eq(schema.shape_page_marchers.id, spm1Before!.id),
+                });
+                const spm2After = await db.query.shape_page_marchers.findFirst({
+                    where: eq(schema.shape_page_marchers.id, spm2Before!.id),
+                });
+                const marcherPage1After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId1),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+                const marcherPage2After =
+                    await db.query.marcher_pages.findFirst({
+                        where: and(
+                            eq(schema.marcher_pages.marcher_id, marcherId2),
+                            eq(schema.marcher_pages.page_id, pageId),
+                        ),
+                    });
+
+                expect(spm1After, `SPM1 after should exist`).toBeTruthy();
+                expect(spm1After!.marcher_id).toEqual(marcherId2);
+                expect(spm1After!.shape_page_id).toEqual(
+                    spm1Before!.shape_page_id,
+                );
+                expect(spm2After, `SPM2 after should exist`).toBeTruthy();
+                expect(spm2After!.marcher_id).toEqual(marcherId1);
+                expect(spm2After!.shape_page_id).toEqual(
+                    spm2Before!.shape_page_id,
+                );
+                expect(
+                    marcherPage1After,
+                    `Marcher page 1 after should exist`,
+                ).toBeTruthy();
+                expect(
+                    marcherPage2After,
+                    `Marcher page 2 after should exist`,
+                ).toBeTruthy();
+
+                expect({
+                    x: marcherPage1After!.x,
+                    y: marcherPage1After!.y,
+                }).toEqual({
+                    x: marcherPage2Before!.x,
+                    y: marcherPage2Before!.y,
+                });
+                expect({
+                    x: marcherPage2After!.x,
+                    y: marcherPage2After!.y,
+                }).toEqual({
+                    x: marcherPage1Before!.x,
+                    y: marcherPage1Before!.y,
+                });
+            },
+        );
+
+        it("should swap any two marchers with both belonging to a shape", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const marcherIds = (
+                await db.query.marchers.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((m) => m.id);
+            const pageIds = (
+                await db.query.pages.findMany({
+                    columns: {
+                        id: true,
+                    },
+                })
+            ).map((p) => p.id);
+
+            const shape1MarcherIds = marcherIds.slice(0, marcherIds.length / 2);
+            const shape2MarcherIds = marcherIds.slice(marcherIds.length / 2);
+
+            await fc.assert(
+                fc
+                    .asyncProperty(
+                        fc.record({
+                            marcherId1: fc.constantFrom(...shape1MarcherIds),
+                            marcherId2: fc.constantFrom(...shape2MarcherIds),
+                            pageId: fc.constantFrom(...pageIds),
+                        }),
+                        async ({ marcherId1, marcherId2, pageId }) => {
+                            const [createdShapePage1] =
+                                await _createMarcherShape({
+                                    pageId,
+                                    marcherIds: shape1MarcherIds,
+                                    start: { x: 0, y: 0 },
+                                    end: { x: 100, y: 100 },
+                                });
+                            const [createdShapePage2] =
+                                await _createMarcherShape({
+                                    pageId,
+                                    marcherIds: shape2MarcherIds,
+                                    start: { x: 300, y: 300 },
+                                    end: { x: 200, y: 200 },
+                                });
+
+                            const spm1Before =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage1.id,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage1Before =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+                            const spm2Before =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.shape_page_marchers
+                                                .shape_page_id,
+                                            createdShapePage2.id,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage2Before =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+
+                            expect(
+                                spm1Before,
+                                `SPM1 before should exist`,
+                            ).toBeTruthy();
+                            expect(spm1Before!.marcher_id).toEqual(marcherId1);
+                            expect(spm1Before!.shape_page_id).toEqual(
+                                createdShapePage1.id,
+                            );
+                            expect(
+                                spm2Before,
+                                `SPM2 before should exist`,
+                            ).toBeTruthy();
+                            expect(spm2Before!.marcher_id).toEqual(marcherId2);
+                            expect(spm2Before!.shape_page_id).toEqual(
+                                createdShapePage2.id,
+                            );
+                            expect(
+                                marcherPage1Before,
+                                `Marcher page 1 before should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                marcherPage2Before,
+                                `Marcher page 2 before should exist`,
+                            ).toBeTruthy();
+
+                            await swapMarchers({
+                                db,
+                                pageId,
+                                marcher1Id: marcherId1,
+                                marcher2Id: marcherId2,
+                            });
+
+                            const spm1After =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: eq(
+                                        schema.shape_page_marchers.id,
+                                        spm1Before!.id,
+                                    ),
+                                });
+                            const spm2After =
+                                await db.query.shape_page_marchers.findFirst({
+                                    where: eq(
+                                        schema.shape_page_marchers.id,
+                                        spm2Before!.id,
+                                    ),
+                                });
+                            const marcherPage1After =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId1,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+                            const marcherPage2After =
+                                await db.query.marcher_pages.findFirst({
+                                    where: and(
+                                        eq(
+                                            schema.marcher_pages.marcher_id,
+                                            marcherId2,
+                                        ),
+                                        eq(
+                                            schema.marcher_pages.page_id,
+                                            pageId,
+                                        ),
+                                    ),
+                                });
+
+                            expect(
+                                spm1After,
+                                `SPM1 after should exist`,
+                            ).toBeTruthy();
+                            expect(spm1After!.marcher_id).toEqual(marcherId2);
+                            expect(spm1After!.shape_page_id).toEqual(
+                                createdShapePage1.id,
+                            );
+                            expect(
+                                spm2After,
+                                `SPM2 after should exist`,
+                            ).toBeTruthy();
+                            expect(spm2After!.marcher_id).toEqual(marcherId1);
+                            expect(spm2After!.shape_page_id).toEqual(
+                                createdShapePage2.id,
+                            );
+                            expect(
+                                marcherPage1After,
+                                `Marcher page 1 after should exist`,
+                            ).toBeTruthy();
+                            expect(
+                                marcherPage2After,
+                                `Marcher page 2 after should exist`,
+                            ).toBeTruthy();
+
+                            expect({
+                                x: marcherPage1After!.x,
+                                y: marcherPage1After!.y,
+                            }).toEqual({
+                                x: marcherPage2Before!.x,
+                                y: marcherPage2Before!.y,
+                            });
+                            expect({
+                                x: marcherPage2After!.x,
+                                y: marcherPage2After!.y,
+                            }).toEqual({
+                                x: marcherPage1Before!.x,
+                                y: marcherPage1Before!.y,
+                            });
+                        },
+                    )
+                    .afterEach(async () => {
+                        await db.delete(schema.shape_pages).run();
+                        await db.delete(schema.shape_page_marchers).run();
+                        await db.delete(schema.shapes).run();
+                    }),
             );
         });
     });

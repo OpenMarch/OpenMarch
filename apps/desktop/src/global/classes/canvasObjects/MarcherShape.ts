@@ -282,7 +282,7 @@ export const useCreateMarcherShape = () => {
  * @param end - The ending point of the shape, represented as an object with `x` and `y` properties.
  * @returns A Promise that resolves when the shape has been successfully created.
  */
-async function _createMarcherShape({
+export async function _createMarcherShape({
     pageId,
     marcherIds,
     start,
@@ -314,7 +314,7 @@ async function _createMarcherShape({
             y: marcherCoordinate.y,
         };
     });
-    await createShapePages({
+    return await createShapePages({
         db,
         newItems: [
             {
