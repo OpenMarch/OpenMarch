@@ -7,6 +7,7 @@ import { Coordinate, SvgCommandEnum } from "./SvgCommand";
 import { ShapePath } from "./ShapePath";
 import { ShapePointController } from "./ShapePointController";
 import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
+import { Path } from "@openmarch/path-utility";
 
 /**
  * An SVG point in the StaticMarcherShape path.
@@ -408,14 +409,11 @@ export class StaticMarcherShape {
         }
         // Calculate the length of each segment of the SVG path
         const svgSegmentLengths: number[] = [];
-        const svgPathObjects: SVGPathElement[] = [];
-        const svgNamespace = "http://www.w3.org/2000/svg";
+        const svgPathObjects: Path[] = [];
         for (const pathString of separatePaths) {
-            const tempSvgPath = document.createElementNS(svgNamespace, "path");
-            svgPathObjects.push(tempSvgPath);
-            tempSvgPath.setAttribute("d", pathString.toString());
-
-            svgSegmentLengths.push(tempSvgPath.getTotalLength());
+            const pathObj = Path.fromSvgString(pathString);
+            svgPathObjects.push(pathObj);
+            svgSegmentLengths.push(pathObj.getTotalLength());
         }
 
         // The itemIds check is just to prevent printing on initial creation

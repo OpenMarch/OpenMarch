@@ -1,19 +1,15 @@
-import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
+import { asc, gt, eq, lt, desc, and, sql } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
-import { schema, db } from "@/global/database/db";
+import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
 import { assert } from "@/utilities/utils";
 import {
-    createShapePageMarchersInTransaction,
     DatabaseShapePageMarcher,
-    deleteShapePageMarchersInTransaction,
     getSpmByMarcherPage,
     getSpmMapAll,
     getSpmMapByPageId,
-    NewShapePageMarcherArgs,
     ShapePageMarcher,
-    swapPositionOrderInTransaction,
 } from "./shapePageMarchers";
 import MarcherPage from "@/global/classes/MarcherPage";
 
@@ -239,96 +235,40 @@ export async function updateMarcherPages({
 export const _swapSpms = async ({
     tx,
     spm1,
+    marcherPage1,
     spm2,
+    marcherPage2,
 }: {
     tx: DbTransaction;
     spm1: DatabaseShapePageMarcher | null;
+    marcherPage1: { marcher_id: number; page_id: number };
     spm2: DatabaseShapePageMarcher | null;
+    marcherPage2: { marcher_id: number; page_id: number };
 }) => {
+    // turn off foreign key checks temporarily
     if (spm1 && spm2) {
-        // Both SPMs exist. Swap the position order of the SPMs
-        if (spm1.shape_page_id === spm2.shape_page_id) {
-            const updateSpmsResponse = swapPositionOrderInTransaction({
-                tx,
-                spmId1: spm1.id,
-                spmId2: spm2.id,
-            });
-            assert(updateSpmsResponse, `Could not update shape page marchers`);
-        } else {
-            // Swap the shape_page that these SPMs are in
-            // Ensure both position_order values are not null
-            assert(
-                spm1.position_order !== null &&
-                    spm1.position_order !== undefined,
-                `ShapePageMarcher ${spm1.id} has null or undefined position_order`,
-            );
-            assert(
-                spm2.position_order !== null &&
-                    spm2.position_order !== undefined,
-                `ShapePageMarcher ${spm2.id} has null or undefined position_order`,
-            );
-
-            const deleteSpmsResponse =
-                await deleteShapePageMarchersInTransaction({
-                    tx,
-                    itemIds: new Set([spm1.id, spm2.id]),
-                });
-            assert(deleteSpmsResponse, `Could not delete shape page marchers`);
-
-            const newSpms: NewShapePageMarcherArgs[] = [
-                {
-                    marcher_id: spm1.marcher_id,
-                    shape_page_id: spm2.shape_page_id,
-                    position_order: spm2.position_order,
-                    notes: spm2.notes,
-                },
-                {
-                    marcher_id: spm2.marcher_id,
-                    shape_page_id: spm1.shape_page_id,
-                    position_order: spm1.position_order,
-                    notes: spm1.notes,
-                },
-            ];
-
-            const createSpmsResponse = createShapePageMarchersInTransaction({
-                tx,
-                newItems: newSpms,
-            });
-            assert(createSpmsResponse, `Could not create shape page marchers`);
-        }
+        // Delete the first SPM to avoid a unique constraint violation
+        await tx
+            .delete(schema.shape_page_marchers)
+            .where(eq(schema.shape_page_marchers.id, spm1.id));
+        await tx
+            .update(schema.shape_page_marchers)
+            .set({ marcher_id: marcherPage1.marcher_id })
+            .where(eq(schema.shape_page_marchers.id, spm2.id));
+        await tx
+            .insert(schema.shape_page_marchers)
+            .values({ ...spm1, marcher_id: marcherPage2.marcher_id });
     } else {
-        // Only one SPM exists. Delete one of them and create a new one
-        const spm = spm1 || spm2;
-        assert(spm, `Could not find spm`);
-        const marcherPageWithoutSpm = spm1 ? spm2 : spm1;
-        assert(
-            marcherPageWithoutSpm,
-            `Could not find marcher page without spm`,
-        );
-
-        // Ensure position_order is not null
-        assert(
-            spm.position_order !== null && spm.position_order !== undefined,
-            `ShapePageMarcher ${spm.id} has null or undefined position_order`,
-        );
-
-        const newSpm: NewShapePageMarcherArgs = {
-            marcher_id: marcherPageWithoutSpm.marcher_id,
-            shape_page_id: spm.shape_page_id,
-            position_order: spm.position_order,
-            notes: spm.notes,
-        };
-        const deleteSpmResponse = deleteShapePageMarchersInTransaction({
-            tx,
-            itemIds: new Set([spm.id]),
-        });
-        assert(deleteSpmResponse, `Could not delete shape page marchers`);
-
-        const createSpmResponse = createShapePageMarchersInTransaction({
-            tx,
-            newItems: [newSpm],
-        });
-        assert(createSpmResponse, `Could not create shape page marchers`);
+        if (spm1 != null)
+            await tx
+                .update(schema.shape_page_marchers)
+                .set({ marcher_id: marcherPage2.marcher_id })
+                .where(eq(schema.shape_page_marchers.id, spm1.id));
+        if (spm2 != null)
+            await tx
+                .update(schema.shape_page_marchers)
+                .set({ marcher_id: marcherPage1.marcher_id })
+                .where(eq(schema.shape_page_marchers.id, spm2.id));
     }
 };
 
@@ -401,7 +341,9 @@ export const swapMarchersInTransaction = async ({
         await _swapSpms({
             tx,
             spm1,
+            marcherPage1,
             spm2,
+            marcherPage2,
         });
     }
 
