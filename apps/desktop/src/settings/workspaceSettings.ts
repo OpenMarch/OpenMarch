@@ -6,7 +6,7 @@ export const workspaceSettingsSchema = z.object({
     defaultNewPageCounts: z.int().positive().default(16),
     audioOffsetSeconds: z.float64().default(0),
     pageNumberOffset: z.int().default(0),
-    measurementOffset: z.int().default(0),
+    measurementOffset: z.int().default(1),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;

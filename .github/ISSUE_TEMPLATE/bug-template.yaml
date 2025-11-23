@@ -11,11 +11,11 @@ body:
         Thank you for taking the time to file an OpenMarch bug report! Your feedback helps make OpenMarch better for everyone.
 
   - type: markdown
-    attributes: 
+    attributes:
       value: |
         If there is an existing bug report similar to the one you are about to create, please leave a thumbs up and comment on that report, rather than making a new one. 
         Be sure to add additional details to that report if you think it would help!
-        
+
   - type: checkboxes
     id: verified
     attributes:
@@ -58,7 +58,7 @@ body:
           - What did you expect to happen?
           - What steps could we take to reproduce the issue?
 
-        If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!) 
+        If it helps show what went wrong, feel free to include a screenshot or recording (GIFs are great too!)
     validations:
       required: true
 

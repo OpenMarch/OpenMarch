@@ -82,8 +82,8 @@ export const _combineTimingObjects = (
             : (workspaceSettings?.pageNumberOffset ?? 0);
     const measurementNumberOffset =
         workspaceSettingsLoading || workspaceSettingsError
-            ? 0
-            : (workspaceSettings?.measurementOffset ?? 0);
+            ? 1
+            : (workspaceSettings?.measurementOffset ?? 1);
 
     const fetchTimingObjects = async () => {
         await queryClient.invalidateQueries({
