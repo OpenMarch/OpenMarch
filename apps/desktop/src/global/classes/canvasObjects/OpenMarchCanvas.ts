@@ -1009,11 +1009,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
     }
 
-    renderMarcherShapes({ shapePages }: { shapePages: ShapePage[] }) {
+    renderMarcherShapes = async ({
+        shapePages,
+    }: {
+        shapePages: ShapePage[];
+    }) => {
         const existingMarcherShapeMap = new Map(
             this.marcherShapes.map((mp) => [mp.shapePage.shape_id, mp]),
         );
-        console.log({ existingMarcherShapeMap });
         const newShapeIds = new Set(shapePages.map((sp) => sp.shape_id));
         const removedShapeIds = new Set();
         for (const existingMarcherShape of existingMarcherShapeMap) {
@@ -1033,7 +1036,13 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             );
             if (existingMarcherShape) {
                 existingMarcherShape.setShapePage(shapePage);
-                void existingMarcherShape.refreshMarchers();
+                await existingMarcherShape.refreshMarchers();
+                const index = this.marcherShapes.findIndex(
+                    (ms) => ms.shapePage.shape_id === shapePage.shape_id,
+                );
+                if (index !== -1) {
+                    this.marcherShapes[index] = existingMarcherShape;
+                }
             } else {
                 this.marcherShapes.push(
                     new MarcherShape({
@@ -1043,7 +1052,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 );
             }
         }
-    }
+    };
 
     /**
      * Render the given marcherPages on the canvas

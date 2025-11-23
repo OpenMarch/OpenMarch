@@ -7,7 +7,6 @@ import {
     updateMarcherPagesMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
-    shapePagesQueryByPageIdOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -27,6 +26,7 @@ import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
+import { useRenderMarcherShapes } from "./hooks/shapes";
 
 /**
  * The field/stage UI of OpenMarch
@@ -69,9 +69,6 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const { data: shapePagesOnSelectedPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id!),
-    );
     const { setSelectedShapePageIds } = useSelectionStore()!;
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -92,6 +89,7 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
+    useRenderMarcherShapes({ canvas, selectedPage });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -366,15 +364,6 @@ export default function Canvas({
         marcherVisuals,
         marcherPagesLoaded,
     ]);
-
-    // Update/render the MarcherShapes when the selected page or the ShapePages change
-    useEffect(() => {
-        if (canvas && shapePagesOnSelectedPage) {
-            canvas.renderMarcherShapes({
-                shapePages: shapePagesOnSelectedPage,
-            });
-        }
-    }, [canvas, selectedPage, shapePagesOnSelectedPage]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
