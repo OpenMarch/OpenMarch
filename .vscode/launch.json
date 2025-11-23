@@ -21,6 +21,8 @@
             "name": "Debug Current Vitest Test File - desktop",
             "type": "node",
             "request": "launch",
+            "runtimeExecutable": "/usr/bin/env",
+            "runtimeArgs": ["node"],
             "program": "${workspaceFolder}/apps/desktop/node_modules/vitest/vitest.mjs",
             "args": [
                 "run",

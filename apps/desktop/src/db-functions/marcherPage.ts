@@ -245,9 +245,20 @@ export const _swapSpms = async ({
     spm2: DatabaseShapePageMarcher | null;
     marcherPage2: { marcher_id: number; page_id: number };
 }) => {
-    try {
-        // turn off foreign key checks temporarily
-        await tx.run(sql`PRAGMA foreign_keys = OFF;`);
+    // turn off foreign key checks temporarily
+    if (spm1 && spm2) {
+        // Delete the first SPM to avoid a unique constraint violation
+        await tx
+            .delete(schema.shape_page_marchers)
+            .where(eq(schema.shape_page_marchers.id, spm1.id));
+        await tx
+            .update(schema.shape_page_marchers)
+            .set({ marcher_id: marcherPage1.marcher_id })
+            .where(eq(schema.shape_page_marchers.id, spm2.id));
+        await tx
+            .insert(schema.shape_page_marchers)
+            .values({ ...spm1, marcher_id: marcherPage2.marcher_id });
+    } else {
         if (spm1 != null)
             await tx
                 .update(schema.shape_page_marchers)
@@ -258,8 +269,6 @@ export const _swapSpms = async ({
                 .update(schema.shape_page_marchers)
                 .set({ marcher_id: marcherPage1.marcher_id })
                 .where(eq(schema.shape_page_marchers.id, spm2.id));
-    } finally {
-        await tx.run(sql`PRAGMA foreign_keys = ON;`);
     }
 };
 
