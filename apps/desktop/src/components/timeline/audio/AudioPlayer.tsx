@@ -15,6 +15,8 @@ import WaveformTimingOverlay from "./WaveformTimingOverlay";
 import { calculateMasterVolume } from "./volume";
 import { useQuery } from "@tanstack/react-query";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -25,146 +27,6 @@ const WAVEFORM_HEIGHT = 60;
 // Helper function to adjust volume based on percentage
 function volumeAdjustment(volume: number): number {
     return (volume * 2.0) / 100.0;
-}
-
-/**
- * Helper function to apply audio offset by padding or trimming the audio buffer
- * @param originalBuffer - The original decoded audio buffer
- * @param offsetSeconds - The offset in seconds (positive = pad start, negative = trim start)
- * @param audioContext - The audio context to create the new buffer
- * @returns A new AudioBuffer with the offset applied
- */
-function applyAudioOffset(
-    originalBuffer: AudioBuffer,
-    offsetSeconds: number,
-    audioContext: AudioContext,
-): AudioBuffer {
-    const sampleRate = originalBuffer.sampleRate;
-    const offsetSamples = Math.floor(Math.abs(offsetSeconds) * sampleRate);
-
-    if (offsetSeconds > 0) {
-        // Positive offset: pad silence at the start
-        const newLength = originalBuffer.length + offsetSamples;
-        const newBuffer = audioContext.createBuffer(
-            originalBuffer.numberOfChannels,
-            newLength,
-            sampleRate,
-        );
-
-        // Copy each channel, starting from offsetSamples position
-        for (
-            let channel = 0;
-            channel < originalBuffer.numberOfChannels;
-            channel++
-        ) {
-            const originalData = originalBuffer.getChannelData(channel);
-            const newData = newBuffer.getChannelData(channel);
-            // Leave the first offsetSamples as silence (0), then copy original data
-            newData.set(originalData, offsetSamples);
-        }
-
-        return newBuffer;
-    } else if (offsetSeconds < 0) {
-        // Negative offset: trim from the start
-        const newLength = Math.max(0, originalBuffer.length - offsetSamples);
-        const newBuffer = audioContext.createBuffer(
-            originalBuffer.numberOfChannels,
-            newLength,
-            sampleRate,
-        );
-
-        // Copy each channel, starting from offsetSamples in the original
-        for (
-            let channel = 0;
-            channel < originalBuffer.numberOfChannels;
-            channel++
-        ) {
-            const originalData = originalBuffer.getChannelData(channel);
-            const newData = newBuffer.getChannelData(channel);
-            // Copy from offsetSamples to the end
-            newData.set(
-                originalData.subarray(offsetSamples, originalBuffer.length),
-            );
-        }
-
-        return newBuffer;
-    }
-
-    // No offset, return original
-    return originalBuffer;
-}
-
-/**
- * Helper function to create a padded or trimmed ArrayBuffer for waveform visualization
- * @param originalArrayBuffer - The original audio file data
- * @param offsetSeconds - The offset in seconds
- * @param sampleRate - The sample rate of the audio
- * @returns A new ArrayBuffer with padding or trimming applied
- */
-async function applyWaveformOffset(
-    originalArrayBuffer: ArrayBuffer,
-    offsetSeconds: number,
-    audioContext: AudioContext,
-): Promise<ArrayBuffer> {
-    // Decode the original buffer first to get audio data
-    const decodedBuffer = await audioContext.decodeAudioData(
-        originalArrayBuffer.slice(0),
-    );
-
-    // Apply the offset to get a new AudioBuffer
-    const offsetBuffer = applyAudioOffset(
-        decodedBuffer,
-        offsetSeconds,
-        audioContext,
-    );
-
-    // Convert the AudioBuffer back to a WAV ArrayBuffer for wavesurfer
-    // We'll create a simple WAV file with the modified audio data
-    const numberOfChannels = offsetBuffer.numberOfChannels;
-    const length = offsetBuffer.length;
-    const sampleRate = offsetBuffer.sampleRate;
-
-    // WAV file header size
-    const headerSize = 44;
-    const bytesPerSample = 2; // 16-bit audio
-    const dataSize = length * numberOfChannels * bytesPerSample;
-    const buffer = new ArrayBuffer(headerSize + dataSize);
-    const view = new DataView(buffer);
-
-    // Write WAV header
-    const writeString = (offset: number, string: string) => {
-        for (let i = 0; i < string.length; i++) {
-            view.setUint8(offset + i, string.charCodeAt(i));
-        }
-    };
-
-    writeString(0, "RIFF");
-    view.setUint32(4, 36 + dataSize, true);
-    writeString(8, "WAVE");
-    writeString(12, "fmt ");
-    view.setUint32(16, 16, true); // Sub-chunk 1 Size
-    view.setUint16(20, 1, true); // AudioFormat (1 = PCM)
-    view.setUint16(22, numberOfChannels, true);
-    view.setUint32(24, sampleRate, true);
-    view.setUint32(28, sampleRate * numberOfChannels * bytesPerSample, true); // ByteRate
-    view.setUint16(32, numberOfChannels * bytesPerSample, true); // BlockAlign
-    view.setUint16(34, 16, true); // BitsPerSample
-    writeString(36, "data");
-    view.setUint32(40, dataSize, true);
-
-    // Write audio data
-    let offset = headerSize;
-    for (let i = 0; i < length; i++) {
-        for (let channel = 0; channel < numberOfChannels; channel++) {
-            const sample = offsetBuffer.getChannelData(channel)[i];
-            // Convert float sample to 16-bit PCM
-            const s = Math.max(-1, Math.min(1, sample));
-            view.setInt16(offset, s < 0 ? s * 0x8000 : s * 0x7fff, true);
-            offset += 2;
-        }
-    }
-
-    return buffer;
 }
 
 // Playback start info interface
@@ -213,7 +75,7 @@ export default function AudioPlayer() {
     const selectedPageContext = useSelectedPage();
     const isPlayingContext = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
-    const { beats, measures } = useTimingObjects();
+    const { beats, measures, pages } = useTimingObjects();
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
@@ -235,6 +97,7 @@ export default function AudioPlayer() {
     const audioNode = useRef<AudioBufferSourceNode | null>(null);
     const audioGainNode = useRef<GainNode | null>(null);
     const [audioDuration, setAudioDuration] = useState<number>(0);
+    const [isAudioProcessing, setIsAudioProcessing] = useState<boolean>(false);
 
     // Metronome playback state management
     const [metronomeBuffer, setMetronomeBuffer] = useState<AudioBuffer | null>(
@@ -303,54 +166,143 @@ export default function AudioPlayer() {
         accentFirstBeat,
     ]);
 
+    const largestMinimumDuration = useRef(0);
+    const minimumAudioDuration = useMemo(() => {
+        const calculatedMinimumDuration =
+            pages.length > 0
+                ? pages[pages.length - 1].timestamp +
+                  pages[pages.length - 1].duration +
+                  10
+                : 10;
+        if (calculatedMinimumDuration > largestMinimumDuration.current)
+            largestMinimumDuration.current = calculatedMinimumDuration;
+        return largestMinimumDuration.current;
+    }, [pages]);
+
     // Populate audio data when selectedAudioFile changes
     useEffect(() => {
         if (!audioContext || !selectedAudioFile) return;
         let isCancelled = false;
+        let worker: Worker | null = null;
 
-        AudioFile.getSelectedAudioFile().then(async (audioFile) => {
-            if (!audioFile || !audioFile.data || isCancelled) return;
+        AudioFile.getSelectedAudioFile(minimumAudioDuration).then(
+            async (audioFile) => {
+                if (!audioFile || !audioFile.data || isCancelled) return;
 
-            try {
-                // Decode the original audio
-                const originalBuffer = await audioContext.decodeAudioData(
-                    audioFile.data.slice(0),
-                );
+                try {
+                    setIsAudioProcessing(true);
 
-                if (isCancelled) return;
+                    // Decode audio in the main thread (AudioContext is available here)
+                    const decodedBuffer = await audioContext.decodeAudioData(
+                        audioFile.data.slice(0),
+                    );
 
-                // Apply offset to audio buffer (pad or trim)
-                const offsetAudioBuffer = applyAudioOffset(
-                    originalBuffer,
-                    audioOffsetSeconds,
-                    audioContext,
-                );
+                    if (isCancelled) return;
 
-                // Apply offset to waveform buffer
-                const offsetWaveformBuffer = await applyWaveformOffset(
-                    audioFile.data,
-                    audioOffsetSeconds,
-                    audioContext,
-                );
+                    // Extract channel data to send to worker
+                    const channelData: Float32Array[] = [];
+                    for (let i = 0; i < decodedBuffer.numberOfChannels; i++) {
+                        channelData.push(decodedBuffer.getChannelData(i));
+                    }
 
-                if (isCancelled) return;
+                    // Create a new worker instance
+                    worker = new AudioOffsetWorker();
 
-                setAudioBuffer(offsetAudioBuffer);
-                setAudioDuration(offsetAudioBuffer.duration);
-                setWaveformBuffer(offsetWaveformBuffer);
-            } catch (error) {
-                if (!isCancelled) {
-                    toast.error(t("audio.decode.error"));
-                    console.error("Audio decode error", error);
+                    // Set up worker message handler
+                    worker.onmessage = (e: MessageEvent) => {
+                        if (isCancelled) return;
+
+                        if (e.data.type === "audioProcessed") {
+                            // Reconstruct the AudioBuffer from the worker's response
+                            const { audioBuffer: bufferData, waveformBuffer } =
+                                e.data;
+
+                            const newBuffer = audioContext.createBuffer(
+                                bufferData.numberOfChannels,
+                                bufferData.length,
+                                bufferData.sampleRate,
+                            );
+
+                            // Copy channel data back into the AudioBuffer
+                            for (
+                                let i = 0;
+                                i < bufferData.numberOfChannels;
+                                i++
+                            ) {
+                                newBuffer.copyToChannel(
+                                    bufferData.channelData[i],
+                                    i,
+                                );
+                            }
+
+                            setAudioBuffer(newBuffer);
+                            setAudioDuration(newBuffer.duration);
+                            setWaveformBuffer(waveformBuffer);
+                            setIsAudioProcessing(false);
+
+                            // Clean up worker
+                            worker?.terminate();
+                        } else if (e.data.type === "error") {
+                            console.error("Worker error:", e.data.message);
+                            toast.error(t("audio.decode.error"));
+                            setIsAudioProcessing(false);
+                            worker?.terminate();
+                        }
+                    };
+
+                    worker.onerror = (error) => {
+                        if (!isCancelled) {
+                            console.error("Worker error:", error);
+                            toast.error(t("audio.decode.error"));
+                            setIsAudioProcessing(false);
+                        }
+                        worker?.terminate();
+                    };
+
+                    // Send the decoded audio buffer data to the worker for offset processing
+                    const transferList: Transferable[] = [];
+                    channelData.forEach((data) =>
+                        transferList.push(data.buffer as ArrayBuffer),
+                    );
+
+                    worker.postMessage(
+                        {
+                            type: "processAudio",
+                            audioBuffer: {
+                                numberOfChannels:
+                                    decodedBuffer.numberOfChannels,
+                                length: decodedBuffer.length,
+                                sampleRate: decodedBuffer.sampleRate,
+                                channelData,
+                            },
+                            offsetSeconds: audioOffsetSeconds,
+                            minimumDuration: minimumAudioDuration,
+                        },
+                        transferList,
+                    );
+                } catch (error) {
+                    if (!isCancelled) {
+                        toast.error(t("audio.decode.error"));
+                        console.error("Audio decode error", error);
+                        setIsAudioProcessing(false);
+                    }
                 }
-            }
-        });
+            },
+        );
 
         // Cleanup
         return () => {
             isCancelled = true;
+            worker?.terminate();
+            setIsAudioProcessing(false);
         };
-    }, [audioContext, selectedAudioFile, audioOffsetSeconds, t]);
+    }, [
+        audioContext,
+        selectedAudioFile,
+        audioOffsetSeconds,
+        minimumAudioDuration,
+        t,
+    ]);
 
     // Sync audio and store playback position with the selected page
     useEffect(() => {
@@ -361,7 +313,13 @@ export default function AudioPlayer() {
 
     // Play/pause audio when isPlaying changes
     useEffect(() => {
-        if (!audioContext || !audioBuffer || !metronomeBuffer) return;
+        if (
+            !audioContext ||
+            !audioBuffer ||
+            !metronomeBuffer ||
+            isAudioProcessing
+        )
+            return;
 
         // Helper to stop playback
         const stopPlayback = () => {
@@ -450,7 +408,7 @@ export default function AudioPlayer() {
             playbackStartInfoRef.current = null;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isPlaying, audioBuffer, audioContext]);
+    }, [isPlaying, audioBuffer, audioContext, isAudioProcessing]);
 
     // Initialize WaveSurfer and load waveform data
     useEffect(() => {
@@ -592,6 +550,14 @@ export default function AudioPlayer() {
                     height: WAVEFORM_HEIGHT,
                 }}
             >
+                {isAudioProcessing && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-start pl-4">
+                        <CircleNotchIcon
+                            size={16}
+                            className="text-text animate-spin"
+                        />
+                    </div>
+                )}
                 <div
                     id="waveform"
                     ref={waveformRef}

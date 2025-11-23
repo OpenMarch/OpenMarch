@@ -82,10 +82,15 @@ export default class AudioFile {
     /**
      * @returns The currently selected audio file in the database including the audio data
      */
-    public static async getSelectedAudioFile(): Promise<AudioFile> {
+    public static async getSelectedAudioFile(
+        minDuration?: number,
+    ): Promise<AudioFile> {
         let response = await window.electron.getSelectedAudioFile();
         if (!response) {
-            const silentAudio = createSilentAudio();
+            // Create silent audio with at least the requested duration
+            // Default to 10 seconds for initial load, but allow extension
+            const duration = Math.max(10, minDuration ?? 10);
+            const silentAudio = createSilentAudio(duration);
             const silentAudioFile = new AudioFile({
                 id: -1,
                 data: silentAudio,
@@ -127,10 +132,11 @@ export interface ModifiedAudioFileArgs {
 
 /**
  * Creates a silent audio file of the specified duration.
- * @param duration Duration in seconds. By default, 1 hour.
+ * @param duration Duration in seconds. By default, 10 seconds to minimize startup lag.
+ *                 This is just a placeholder until the user adds real audio.
  * @returns A buffer containing the silent audio file
  */
-function createSilentAudio(duration: number = 60 * 10): ArrayBuffer {
+function createSilentAudio(duration: number = 10): ArrayBuffer {
     // Audio context setup
     const sampleRate = 44100;
     const numberOfChannels = 2;

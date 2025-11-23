@@ -108,6 +108,12 @@
                 "success": "Beats saved successfully"
             }
         },
+        "context": {
+            "error": "Failed to initialize audio context"
+        },
+        "decode": {
+            "error": "Failed to decode audio file"
+        },
         "editableBeatPlayer": {
             "description": "Drag the right edge of any beat to adjust its duration"
         },
