@@ -709,10 +709,12 @@ function DrillChartExport() {
                 let inlineNotes = limitedLines.join("\n");
 
                 if (inlineNotes.length > Constants.PageNotesExportCharLimit) {
-                    inlineNotes = inlineNotes.slice(
-                        0,
-                        Constants.PageNotesExportCharLimit,
-                    );
+                    // Truncate at character limit and add ellipsis to indicate truncation
+                    inlineNotes =
+                        inlineNotes.slice(
+                            0,
+                            Constants.PageNotesExportCharLimit,
+                        ) + "...";
                 }
 
                 return {

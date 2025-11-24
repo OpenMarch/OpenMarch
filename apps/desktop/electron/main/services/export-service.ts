@@ -1269,16 +1269,25 @@ export class PDFExportService {
         const htmlToMarkdownForAppendix = (html: string): string => {
             if (!html) return "";
 
-            // Strip control characters that can confuse PDF text rendering.
-            let text = html.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+            // Strip control characters that can confuse PDF text rendering (excluding \n, \r, \t).
+            let text = html.replace(
+                /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+                "",
+            );
 
-            // Decode a few common HTML entities so punctuation looks as typed.
-            text = text
-                .replace(/&amp;/g, "&")
-                .replace(/&lt;/g, "<")
-                .replace(/&gt;/g, ">")
-                .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, "'");
+            // Decode common HTML entities in a single pass to prevent double-unescaping.
+            const entityMap: Record<string, string> = {
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+                "&apos;": "'",
+            };
+            text = text.replace(
+                /&(?:amp|lt|gt|quot|#39|apos);/g,
+                (match) => entityMap[match] || match,
+            );
 
             // Headings -> markdown-style prefixes
             text = text.replace(/<h1[^>]*>/gi, "# ");
@@ -1306,13 +1315,12 @@ export class PDFExportService {
             // Line breaks
             text = text.replace(/<br\s*\/?>/gi, "\n");
 
-            // Strip remaining tags
-            // Repeatedly strip any remaining tags until none are left.
-            let prev;
-            do {
-                prev = text;
-                text = text.replace(/<[^>]+>/g, "");
-            } while (text !== prev);
+            // Strip remaining tags more aggressively (including across newlines and script tags).
+            text = text.replace(
+                /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+                "",
+            );
+            text = text.replace(/<[^>]+>/gs, "");
 
             // Collapse excessive blank lines
             text = text.replace(/\n{3,}/g, "\n\n");

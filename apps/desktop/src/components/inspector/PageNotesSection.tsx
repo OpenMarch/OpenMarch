@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { T, useTranslate } from "@tolgee/react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ export function PageNotesSection() {
     );
 
     const [notes, setNotes] = useState(selectedPage?.notes || "");
+    const editingPageIdRef = useRef<string | null>(null);
 
     // Keep local notes in sync with the currently selected page
     useEffect(() => {
@@ -23,7 +24,17 @@ export function PageNotesSection() {
     }, [selectedPage]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
-        if (!selectedPage) return;
+        const editingPageId = editingPageIdRef.current;
+        const currentSelectedPageId = selectedPage?.id;
+
+        // If we never captured which page was being edited, do nothing.
+        if (!editingPageId) return;
+
+        // If the selection has changed since the editor was focused, avoid
+        // writing notes to the newly selected page.
+        if (!currentSelectedPageId || currentSelectedPageId !== editingPageId) {
+            return;
+        }
 
         const currentNotes = nextNotesHtml || "";
         const originalNotes = selectedPage.notes || "";
@@ -35,7 +46,7 @@ export function PageNotesSection() {
         updatePagesMutation.mutate({
             modifiedPagesArgs: [
                 {
-                    id: selectedPage.id,
+                    id: editingPageId,
                     notes: currentNotes || null,
                 },
             ],
@@ -56,6 +67,11 @@ export function PageNotesSection() {
                             value={notes}
                             onChange={setNotes}
                             onBlur={handleNotesBlur}
+                            onEditorFocus={() => {
+                                if (selectedPage) {
+                                    editingPageIdRef.current = selectedPage.id;
+                                }
+                            }}
                         />
                     </div>
                 </div>

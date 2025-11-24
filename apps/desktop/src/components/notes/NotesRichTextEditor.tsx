@@ -10,6 +10,8 @@ type NotesRichTextEditorProps = {
     onChange?: (next: string) => void;
     /** Receives the latest HTML when the editor loses focus. */
     onBlur?: (next: string) => void;
+    /** Called when the editor element receives focus. */
+    onEditorFocus?: () => void;
     className?: string;
 };
 
@@ -24,6 +26,7 @@ export function NotesRichTextEditor({
     value,
     onChange,
     onBlur,
+    onEditorFocus,
     className,
 }: NotesRichTextEditorProps) {
     const editor = useEditor({
@@ -82,5 +85,5 @@ export function NotesRichTextEditor({
         }
     }, [editor, value]);
 
-    return <EditorContent editor={editor} />;
+    return <EditorContent editor={editor} onFocus={onEditorFocus} />;
 }
