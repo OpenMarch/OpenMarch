@@ -1020,6 +1020,7 @@ export class PDFExportService {
         showName: string;
         exportDir: string;
         individualCharts: boolean;
+        notesAppendixPages?: { pageName: string; notes: string }[];
     }) {
         const {
             svgPages,
@@ -1029,6 +1030,7 @@ export class PDFExportService {
             showName,
             exportDir,
             individualCharts,
+            notesAppendixPages = [],
         } = args;
         // Debug: Confirm this is drill chart export
         console.debug(
@@ -1261,6 +1263,185 @@ export class PDFExportService {
                 width: pageWidth * 0.3,
                 align: "center",
             });
+        }
+
+        // Helper: convert rich-text HTML notes into a markdown-like string for the appendix.
+        const htmlToMarkdownForAppendix = (html: string): string => {
+            if (!html) return "";
+
+            // Strip control characters that can confuse PDF text rendering.
+            let text = html.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+
+            // Decode a few common HTML entities so punctuation looks as typed.
+            text = text
+                .replace(/&amp;/g, "&")
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&quot;/g, '"')
+                .replace(/&#39;/g, "'");
+
+            // Headings -> markdown-style prefixes
+            text = text.replace(/<h1[^>]*>/gi, "# ");
+            text = text.replace(/<h2[^>]*>/gi, "## ");
+            text = text.replace(/<h3[^>]*>/gi, "### ");
+            text = text.replace(/<h4[^>]*>/gi, "#### ");
+            text = text.replace(/<h5[^>]*>/gi, "##### ");
+            text = text.replace(/<h6[^>]*>/gi, "###### ");
+
+            // Strong / bold -> **text**
+            text = text.replace(/<(strong|b)[^>]*>/gi, "**");
+            text = text.replace(/<\/(strong|b)>/gi, "**");
+
+            // Emphasis / italics -> *text*
+            text = text.replace(/<(em|i)[^>]*>/gi, "*");
+            text = text.replace(/<\/(em|i)>/gi, "*");
+
+            // List items -> "- text"
+            text = text.replace(/<li[^>]*>/gi, "- ");
+            text = text.replace(/<\/li>/gi, "\n");
+
+            // Close block elements -> newlines
+            text = text.replace(/<\/(p|div|h[1-6])>/gi, "\n");
+
+            // Line breaks
+            text = text.replace(/<br\s*\/?>/gi, "\n");
+
+            // Strip remaining tags
+            text = text.replace(/<[^>]+>/g, "");
+
+            // Collapse excessive blank lines
+            text = text.replace(/\n{3,}/g, "\n\n");
+
+            return text.trim();
+        };
+
+        // Notes appendix pages (portrait), with markdown-like text derived from rich notes.
+        const appendixEntries = notesAppendixPages
+            .map((entry) => ({
+                pageName: entry.pageName,
+                notes: htmlToMarkdownForAppendix(entry.notes ?? ""),
+            }))
+            .filter((entry) => entry.notes.trim().length > 0);
+
+        if (appendixEntries.length > 0) {
+            const renderAppendixHeader = () => {
+                doc.addPage({
+                    size: "LETTER",
+                    layout: "portrait",
+                    margins: { top: 0, bottom: 0, left: 0, right: 0 },
+                });
+
+                const pageWidth = doc.page.width;
+                const pageHeight = doc.page.height;
+
+                // Top bar with drill number, show name, and "Notes" label
+                doc.rect(
+                    margin,
+                    margin,
+                    pageWidth - 2 * margin,
+                    topBarHeight,
+                ).fill("#ddd");
+                const titleBarY = margin + topBarHeight / 2 - 6;
+
+                doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
+                doc.text(`${drillNumber}`, margin + 10, titleBarY, {
+                    width: pageWidth * 0.2,
+                    align: "left",
+                });
+                doc.text(showName, pageWidth * 0.2, titleBarY, {
+                    width: pageWidth * 0.6,
+                    align: "center",
+                });
+                doc.text("Notes", pageWidth * 0.8, titleBarY, {
+                    width: pageWidth * 0.2,
+                    align: "center",
+                });
+
+                return {
+                    pageWidth,
+                    pageHeight,
+                    startY: margin + topBarHeight + 20,
+                };
+            };
+
+            const renderFooter = (pageWidth: number, pageHeight: number) => {
+                const footerY = pageHeight - 25;
+                doc.fillColor("#666666").fontSize(8).font("Helvetica");
+                doc.text(
+                    `Exported ${new Date().toLocaleDateString()}`,
+                    margin + 10,
+                    footerY + 6,
+                    {
+                        width: pageWidth * 0.3,
+                        align: "left",
+                    },
+                );
+                doc.text("Made with OpenMarch", pageWidth * 0.35, footerY + 6, {
+                    width: pageWidth * 0.3,
+                    align: "center",
+                });
+            };
+
+            const writeNotesEntry = (entry: {
+                pageName: string;
+                notes: string;
+            }) => {
+                // Split notes into lines so we can manually paginate and avoid PDFKit
+                // auto-adding pages without headers.
+                const lines = entry.notes.split(/\r?\n/);
+                let remainingLines = lines.slice();
+
+                while (remainingLines.length > 0) {
+                    const { pageWidth, pageHeight, startY } =
+                        renderAppendixHeader();
+                    const contentWidth = pageWidth - 2 * margin;
+                    const maxContentBottom = pageHeight - 60;
+
+                    // Title for this set on this page
+                    const title = `Set ${entry.pageName}`;
+                    doc.fillColor("black").fontSize(12).font("Helvetica-Bold");
+                    doc.text(title, margin, startY, {
+                        width: contentWidth,
+                    });
+                    let cursorY = doc.y + 4;
+
+                    // Accumulate as many lines as will fit on this page
+                    let chunk = "";
+                    let usedLines = 0;
+                    for (let i = 0; i < remainingLines.length; i++) {
+                        const candidate =
+                            chunk.length > 0
+                                ? `${chunk}\n${remainingLines[i]}`
+                                : remainingLines[i];
+                        const height = doc.heightOfString(candidate, {
+                            width: contentWidth,
+                        });
+                        if (cursorY + height > maxContentBottom) {
+                            break;
+                        }
+                        chunk = candidate;
+                        usedLines = i + 1;
+                    }
+
+                    if (!chunk && remainingLines.length > 0) {
+                        chunk = remainingLines[0];
+                        usedLines = 1;
+                    }
+
+                    doc.fontSize(10).font("Helvetica");
+                    doc.text(chunk, margin, cursorY, {
+                        width: contentWidth,
+                    });
+
+                    renderFooter(pageWidth, pageHeight);
+
+                    remainingLines = remainingLines.slice(usedLines);
+                }
+            };
+
+            for (const entry of appendixEntries) {
+                writeNotesEntry(entry);
+            }
         }
 
         doc.end();

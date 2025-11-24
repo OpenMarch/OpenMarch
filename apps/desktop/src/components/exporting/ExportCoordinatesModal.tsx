@@ -48,6 +48,8 @@ import {
     getFieldPropertiesImageElement,
 } from "./utils/svg-generator";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { notesHtmlToPlainText } from "@/utilities/notesText";
+import Constants from "@/global/Constants";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -189,13 +191,15 @@ function CoordinateSheetExport() {
             if (quarterPages) {
                 // Create quarter sheets for each marcher, organized by performer number
                 groupedSheets = processedMarchers.flatMap((marcher) => {
-                    const marcherPagesForMarcher = Object.values(
+                    const marcherPagesForMarcher = Object.entries(
                         marcherPages.marcherPagesByMarcher[marcher.id],
-                    ).sort((a, b) => {
-                        return (
-                            pageOrderById[a.page_id] - pageOrderById[b.page_id]
-                        );
-                    });
+                    )
+                        .sort(
+                            ([pageIdA], [pageIdB]) =>
+                                (pageOrderById[Number(pageIdA)] ?? 0) -
+                                (pageOrderById[Number(pageIdB)] ?? 0),
+                        )
+                        .map(([, mp]) => mp);
 
                     const rowChunks = chunkArray(
                         marcherPagesForMarcher,
@@ -408,7 +412,7 @@ function CoordinateSheetExport() {
     ]);
 
     return (
-        <div className="flex flex-col gap-20">
+        <div className="flex flex-col gap-16">
             <Form.Root className="grid grid-cols-2 gap-y-24">
                 <Form.Field
                     name="includeMeasures"
@@ -555,16 +559,14 @@ function CoordinateSheetExport() {
                         <T keyName="exportCoordinates.preview" />
                     </h5>
                 </div>
-                <div>
-                    <div className="mx-2 bg-white text-black">
-                        <MarcherCoordinateSheetPreview
-                            example={true}
-                            terse={isTerse}
-                            includeMeasures={includeMeasures}
-                            useXY={useXY}
-                            roundingDenominator={roundingDenominator || 4}
-                        />
-                    </div>
+                <div className="mx-2 max-h-[28vh] overflow-auto rounded-md border border-gray-200 bg-white text-black">
+                    <MarcherCoordinateSheetPreview
+                        example={true}
+                        terse={isTerse}
+                        includeMeasures={includeMeasures}
+                        useXY={useXY}
+                        roundingDenominator={roundingDenominator || 4}
+                    />
                 </div>
             </div>
 
@@ -678,6 +680,7 @@ function DrillChartExport() {
 
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
+    const [includeNotesAppendix, setIncludeNotesAppendix] = useState(true);
 
     /**
      * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
@@ -694,6 +697,45 @@ function DrillChartExport() {
             if (!marchersLoaded) {
                 throw new Error(t("exportCoordinates.marchersNotLoaded"));
             }
+            const exportPages = pages.map((page) => {
+                if (!page.notes) return page;
+
+                const plainNotes = notesHtmlToPlainText(page.notes);
+                const lines = plainNotes.split(/\r?\n/);
+                const limitedLines = lines.slice(
+                    0,
+                    Constants.PageNotesExportMaxLines,
+                );
+                let inlineNotes = limitedLines.join("\n");
+
+                if (inlineNotes.length > Constants.PageNotesExportCharLimit) {
+                    inlineNotes = inlineNotes.slice(
+                        0,
+                        Constants.PageNotesExportCharLimit,
+                    );
+                }
+
+                return {
+                    ...page,
+                    notes: inlineNotes,
+                };
+            });
+
+            const notesAppendixPages = includeNotesAppendix
+                ? pages
+                      .filter(
+                          (page) =>
+                              notesHtmlToPlainText(page.notes ?? "").trim()
+                                  .length > 0,
+                      )
+                      .map((page) => ({
+                          pageName: page.name,
+                          // Preserve rich-text HTML so the main process can
+                          // convert it to markdown-like text for the appendix.
+                          notes: page.notes ?? "",
+                      }))
+                : [];
+
             // Generate PDFs for each marcher or MAIN if individual charts are not selected
             for (let marcher = 0; marcher < svgPages.length; marcher++) {
                 const result =
@@ -703,7 +745,11 @@ function DrillChartExport() {
                             ? marchers[marcher].drill_number
                             : "MAIN",
                         marcherCoordinates: readableCoords[marcher],
-                        pages,
+                        pages: exportPages,
+                        notesAppendixPages:
+                            includeNotesAppendix && notesAppendixPages.length
+                                ? notesAppendixPages
+                                : undefined,
                         showName: exportName,
                         exportDir,
                         individualCharts,
@@ -737,7 +783,14 @@ function DrillChartExport() {
                 }
             }
         },
-        [individualCharts, marchers, marchersLoaded, pages, t],
+        [
+            includeNotesAppendix,
+            individualCharts,
+            marchers,
+            marchersLoaded,
+            pages,
+            t,
+        ],
     );
 
     // Check if we have the minimum requirements for export
@@ -893,44 +946,94 @@ function DrillChartExport() {
     ]);
 
     return (
-        <div className="flex flex-col gap-20">
+        <div className="flex flex-col gap-16">
             {/* Export Options */}
             <Form.Root className="flex flex-col gap-y-24">
-                <Form.Field
-                    name="includeTitle"
-                    className="flex w-full items-center gap-12"
-                >
-                    <Form.Control asChild>
-                        <Checkbox
-                            checked={individualCharts}
-                            onCheckedChange={(checked: boolean) =>
-                                setIndividualCharts(checked)
-                            }
-                        />
-                    </Form.Control>
-                    <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.individualCharts" />
-                    </Form.Label>
-                    <Tooltip.TooltipProvider>
-                        <Tooltip.Root>
-                            <Tooltip.Trigger type="button">
-                                <InfoIcon size={18} className="text-text/60" />
-                            </Tooltip.Trigger>
-                            <Tooltip.Portal>
-                                <Tooltip.Content
-                                    className={clsx(TooltipClassName, "p-16")}
-                                >
-                                    <div>
-                                        <T keyName="exportCoordinates.individualChartsTooltip" />
-                                    </div>
-                                    <div>
-                                        <T keyName="exportCoordinates.individualChartsTooltipDescription" />
-                                    </div>
-                                </Tooltip.Content>
-                            </Tooltip.Portal>
-                        </Tooltip.Root>
-                    </Tooltip.TooltipProvider>
-                </Form.Field>
+                <div className="grid grid-cols-2 gap-24">
+                    <Form.Field
+                        name="includeTitle"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={individualCharts}
+                                onCheckedChange={(checked: boolean) =>
+                                    setIndividualCharts(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.individualCharts" />
+                        </Form.Label>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
+                                </Tooltip.Trigger>
+                                <Tooltip.Portal>
+                                    <Tooltip.Content
+                                        className={clsx(
+                                            TooltipClassName,
+                                            "z-[100000] p-16",
+                                        )}
+                                    >
+                                        <div>
+                                            <T keyName="exportCoordinates.individualChartsTooltip" />
+                                        </div>
+                                        <div>
+                                            <T keyName="exportCoordinates.individualChartsTooltipDescription" />
+                                        </div>
+                                    </Tooltip.Content>
+                                </Tooltip.Portal>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+
+                    <Form.Field
+                        name="includeNotesAppendix"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={includeNotesAppendix}
+                                onCheckedChange={(checked: boolean) =>
+                                    setIncludeNotesAppendix(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.includeNotesAppendix" />
+                        </Form.Label>
+                        <Tooltip.TooltipProvider>
+                            <Tooltip.Root>
+                                <Tooltip.Trigger type="button">
+                                    <InfoIcon
+                                        size={18}
+                                        className="text-text/60"
+                                    />
+                                </Tooltip.Trigger>
+                                <Tooltip.Portal>
+                                    <Tooltip.Content
+                                        className={clsx(
+                                            TooltipClassName,
+                                            "z-[100000] p-16",
+                                        )}
+                                    >
+                                        <div>
+                                            <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
+                                        </div>
+                                        <div>
+                                            <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
+                                        </div>
+                                    </Tooltip.Content>
+                                </Tooltip.Portal>
+                            </Tooltip.Root>
+                        </Tooltip.TooltipProvider>
+                    </Form.Field>
+                </div>
             </Form.Root>
 
             {/* Preview Section */}
@@ -944,7 +1047,7 @@ function DrillChartExport() {
                 {/* Show Demo SVGs or Error if Export Requirement Not Met */}
                 {canExport ? (
                     <div className="flex flex-col items-center gap-8">
-                        <div className="mx-auto w-full max-w-full bg-white text-black">
+                        <div className="max-h-[20rem] w-full max-w-[20rem] rounded-md border border-gray-200 bg-white px-8 py-4 text-black">
                             <img
                                 src={
                                     individualCharts
@@ -952,10 +1055,10 @@ function DrillChartExport() {
                                         : overviewDemoSVG
                                 }
                                 alt="Drill Chart Preview"
-                                className="h-auto w-full max-w-full"
+                                className="block w-full"
                                 style={{
-                                    border: "1px solid #eee",
-                                    borderRadius: "4px",
+                                    maxHeight: "20rem",
+                                    objectFit: "contain",
                                 }}
                             />
                         </div>
@@ -1058,7 +1161,7 @@ function DrillChartExport() {
 
 function ExportModalContents() {
     return (
-        <Tabs defaultValue="coordinate-sheets">
+        <Tabs defaultValue="coordinate-sheets" className="gap-12">
             <TabsList>
                 <TabItem value="coordinate-sheets">
                     <T keyName="exportCoordinates.coordinateSheets" />
@@ -1096,7 +1199,7 @@ export default function ExportCoordinatesModal() {
                 </DialogTrigger>
 
                 {/* Dialog Setup */}
-                <DialogContent className="export-coordinates-dialog w-[48rem]">
+                <DialogContent className="export-coordinates-dialog max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
                         <T keyName="exportCoordinates.title" />
                     </DialogTitle>

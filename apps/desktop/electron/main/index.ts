@@ -1,4 +1,12 @@
-import { app, BrowserWindow, shell, ipcMain, Menu, dialog } from "electron";
+import {
+    app,
+    BrowserWindow,
+    shell,
+    ipcMain,
+    Menu,
+    dialog,
+    MenuItemConstructorOptions,
+} from "electron";
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
@@ -108,6 +116,7 @@ async function createWindow(title?: string) {
             // Read more on https://www.electronjs.org/docs/latest/tutorial/context-isolation
             nodeIntegration: false, // is default value after Electron v5
             contextIsolation: true, // protect against prototype pollution
+            spellcheck: true,
         },
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
@@ -169,6 +178,43 @@ async function createWindow(title?: string) {
     win.webContents.setWindowOpenHandler(({ url }) => {
         if (url.startsWith("https:")) void shell.openExternal(url);
         return { action: "deny" };
+    });
+
+    // Context menu with spellcheck suggestions and basic edit actions
+    win.webContents.on("context-menu", (event, params) => {
+        const template: MenuItemConstructorOptions[] = [];
+
+        if (params.misspelledWord && params.dictionarySuggestions.length > 0) {
+            template.push(
+                ...params.dictionarySuggestions.map((suggestion) => ({
+                    label: suggestion,
+                    click: () => {
+                        win?.webContents.replaceMisspelling(suggestion);
+                    },
+                })),
+                { type: "separator" },
+            );
+        }
+
+        if (params.isEditable) {
+            template.push(
+                { role: "undo" },
+                { role: "redo" },
+                { type: "separator" },
+                { role: "cut" },
+                { role: "copy" },
+                { role: "paste" },
+                { type: "separator" },
+                { role: "selectAll" },
+            );
+        } else if (params.selectionText && params.selectionText.trim()) {
+            template.push({ role: "copy" }, { role: "selectAll" });
+        }
+
+        if (!template.length) return;
+
+        const menu = Menu.buildFromTemplate(template);
+        menu.popup({ window: win! });
     });
 
     // Apply electron-updater

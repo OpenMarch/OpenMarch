@@ -89,6 +89,8 @@
         "react-icons": "^4.12.0",
         "react-json-view": "^1.21.3",
         "react-markdown": "^10.1.0",
+        "@tiptap/react": "^2.6.6",
+        "@tiptap/starter-kit": "^2.6.6",
         "react-toastify": "^10.0.6",
         "sonner": "^1.7.4",
         "svg-to-pdfkit": "^0.1.8",
