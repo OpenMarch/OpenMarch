@@ -1307,7 +1307,12 @@ export class PDFExportService {
             text = text.replace(/<br\s*\/?>/gi, "\n");
 
             // Strip remaining tags
-            text = text.replace(/<[^>]+>/g, "");
+            // Repeatedly strip any remaining tags until none are left.
+            let prev;
+            do {
+                prev = text;
+                text = text.replace(/<[^>]+>/g, "");
+            } while (text !== prev);
 
             // Collapse excessive blank lines
             text = text.replace(/\n{3,}/g, "\n\n");
