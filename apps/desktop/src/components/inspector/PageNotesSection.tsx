@@ -14,7 +14,7 @@ export function PageNotesSection() {
     );
 
     const [notes, setNotes] = useState(selectedPage?.notes || "");
-    const editingPageIdRef = useRef<string | null>(null);
+    const editingPageIdRef = useRef<number | null>(null);
 
     // Keep local notes in sync with the currently selected page
     useEffect(() => {
