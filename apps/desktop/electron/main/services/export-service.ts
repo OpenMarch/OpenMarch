@@ -1274,11 +1274,11 @@ export class PDFExportService {
 
             // Decode a few common HTML entities so punctuation looks as typed.
             text = text
-                .replace(/&amp;/g, "&")
                 .replace(/&lt;/g, "<")
                 .replace(/&gt;/g, ">")
                 .replace(/&quot;/g, '"')
-                .replace(/&#39;/g, "'");
+                .replace(/&#39;/g, "'")
+                .replace(/&amp;/g, "&");
 
             // Headings -> markdown-style prefixes
             text = text.replace(/<h1[^>]*>/gi, "# ");
