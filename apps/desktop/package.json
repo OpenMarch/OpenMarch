@@ -81,7 +81,6 @@
         "electron-store": "^8.2.0",
         "electron-updater": "^6.6.2",
         "fabric": "^5.5.2",
-        "html-to-text": "^9.0.5",
         "jquery": "^3.7.1",
         "jszip": "^3.10.1",
         "lodash": "^4.17.21",

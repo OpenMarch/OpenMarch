@@ -1598,7 +1598,7 @@ export class PDFExportService {
         }
 
         // Notes appendix pages
-        const appendixEntries = notesAppendixPages
+        const appendixEntries = (notesAppendixPages ?? [])
             .map((entry) => ({
                 pageName: entry.pageName,
                 notesHtml: entry.notes ?? "",

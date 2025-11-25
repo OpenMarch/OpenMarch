@@ -681,13 +681,13 @@ export async function closeCurrentFile(isAppQuitting = false) {
     }
 
     // Close the current file
-    // DatabaseServices.setDbPath("", false);
-    // store.set("databasePath", "");
+    DatabaseServices.setDbPath("", false);
+    store.set("databasePath", "");
 
     // Only reload if we're NOT quitting the app
-    // if (!isAppQuitting) {
-    //     win.webContents.reload();
-    // }
+    if (!isAppQuitting) {
+        win.webContents.reload();
+    }
 
     return 200;
 }
