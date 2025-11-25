@@ -20,24 +20,28 @@ export function PageNotesSection() {
     useEffect(() => {
         if (selectedPage) {
             setNotes(selectedPage.notes || "");
+            // Reset the editing ref when page changes to ensure we can save on the new page
+            editingPageIdRef.current = selectedPage.id;
         }
     }, [selectedPage]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
-        const editingPageId = editingPageIdRef.current;
         const currentSelectedPageId = selectedPage?.id;
 
-        // If we never captured which page was being edited, do nothing.
-        if (!editingPageId) return;
-
-        // If the selection has changed since the editor was focused, avoid
-        // writing notes to the newly selected page.
-        if (!currentSelectedPageId || currentSelectedPageId !== editingPageId) {
+        // If no page is selected, do nothing
+        if (
+            currentSelectedPageId === null ||
+            currentSelectedPageId === undefined
+        ) {
             return;
         }
 
+        // Use the current selected page ID (which should match editingPageIdRef if user didn't switch pages)
+        // This ensures we save to the correct page even if the ref wasn't updated
+        const pageIdToSave = currentSelectedPageId;
+
         const currentNotes = nextNotesHtml || "";
-        const originalNotes = selectedPage.notes || "";
+        const originalNotes = selectedPage?.notes || "";
 
         if (currentNotes === originalNotes) return;
 
@@ -46,7 +50,7 @@ export function PageNotesSection() {
         updatePagesMutation.mutate({
             modifiedPagesArgs: [
                 {
-                    id: editingPageId,
+                    id: pageIdToSave,
                     notes: currentNotes || null,
                 },
             ],

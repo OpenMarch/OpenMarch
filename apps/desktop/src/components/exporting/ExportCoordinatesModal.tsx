@@ -48,7 +48,7 @@ import {
     getFieldPropertiesImageElement,
 } from "./utils/svg-generator";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { notesHtmlToPlainText } from "@/utilities/notesText";
+import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -700,26 +700,16 @@ function DrillChartExport() {
             const exportPages = pages.map((page) => {
                 if (!page.notes) return page;
 
-                const plainNotes = notesHtmlToPlainText(page.notes);
-                const lines = plainNotes.split(/\r?\n/);
-                const limitedLines = lines.slice(
-                    0,
+                // Truncate HTML while preserving formatting tags
+                const truncatedHtml = truncateHtmlNotes(
+                    page.notes,
                     Constants.PageNotesExportMaxLines,
+                    Constants.PageNotesExportCharLimit,
                 );
-                let inlineNotes = limitedLines.join("\n");
-
-                if (inlineNotes.length > Constants.PageNotesExportCharLimit) {
-                    // Truncate at character limit and add ellipsis to indicate truncation
-                    inlineNotes =
-                        inlineNotes.slice(
-                            0,
-                            Constants.PageNotesExportCharLimit,
-                        ) + "...";
-                }
 
                 return {
                     ...page,
-                    notes: inlineNotes,
+                    notes: truncatedHtml,
                 };
             });
 

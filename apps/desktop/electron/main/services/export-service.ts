@@ -1087,6 +1087,376 @@ export class PDFExportService {
             return afterY + 2;
         }
 
+        const renderHtmlText = (
+            doc: PDFKit.PDFDocument,
+            html: string,
+            x: number,
+            y: number,
+            width: number,
+            baseFontSize: number = 10,
+            maxY?: number,
+        ): number => {
+            if (!html) return y;
+
+            // Decode HTML entities first
+            const entityMap: Record<string, string> = {
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+                "&apos;": "'",
+            };
+            let text = html.replace(
+                /&(?:amp|lt|gt|quot|#39|apos);/g,
+                (match) => entityMap[match] || match,
+            );
+            text = text.replace(/&#(\d{1,6});/g, (match, num) => {
+                const code = parseInt(num, 10);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+            text = text.replace(/&#x([0-9a-fA-F]{1,6});/g, (match, hex) => {
+                const code = parseInt(hex, 16);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+
+            // Remove script and style tags for security
+            let previousLength: number;
+            let iterations = 0;
+            do {
+                previousLength = text.length;
+                text = text.replace(
+                    /<script[^>]{0,1000}>[\s\S]*?<\/script\s*[^>]*>/gi,
+                    "",
+                );
+                text = text.replace(
+                    /<style[^>]{0,1000}>[\s\S]*?<\/style\s*[^>]*>/gi,
+                    "",
+                );
+                iterations++;
+                if (iterations >= 100) break;
+            } while (text.length !== previousLength);
+
+            text = text.replace(/<li[^>]*>/gi, "• ");
+            text = text.replace(/<\/li>/gi, "\n");
+            text = text.replace(/<\/?(ul|ol)[^>]*>/gi, "\n");
+            text = text.replace(/<(p|div)[^>]*>/gi, "\n");
+
+            let currentY = y;
+
+            // Extract and replace headings with placeholders to preserve them during splitting
+            const headingPlaceholders: Array<{
+                placeholder: string;
+                type: "h1" | "h2" | "h3";
+                content: string;
+            }> = [];
+            let placeholderCounter = 0;
+
+            text = text.replace(
+                /<h1[^>]*>([\s\S]*?)<\/h1>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H1_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h1",
+                        content: content.replace(/<[^>]+>/g, "").trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            text = text.replace(
+                /<h2[^>]*>([\s\S]*?)<\/h2>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H2_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h2",
+                        content: content.replace(/<[^>]+>/g, "").trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            text = text.replace(
+                /<h3[^>]*>([\s\S]*?)<\/h3>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H3_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h3",
+                        content: content.replace(/<[^>]+>/g, "").trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            const blockSplitRegex = /(?:<br\s*\/?>|<\/(?:p|div)\s*>)/gi;
+            const blocks = text.split(blockSplitRegex);
+
+            if (
+                blocks.length === 0 ||
+                (blocks.length === 1 && !blocks[0].trim())
+            ) {
+                blocks.length = 0;
+                blocks.push(text);
+            }
+
+            for (const block of blocks) {
+                const trimmedBlock = block.trim();
+                if (!trimmedBlock) {
+                    currentY += baseFontSize * 0.5;
+                    continue;
+                }
+
+                // Check for heading placeholders
+                const h1Placeholder = trimmedBlock.match(/__HEADING_H1_\d+__/);
+                const h2Placeholder = trimmedBlock.match(/__HEADING_H2_\d+__/);
+                const h3Placeholder = trimmedBlock.match(/__HEADING_H3_\d+__/);
+
+                if (h1Placeholder) {
+                    const placeholder = h1Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.5).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                } else if (h2Placeholder) {
+                    const placeholder = h2Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.3).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                } else if (h3Placeholder) {
+                    const placeholder = h3Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.1).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                }
+
+                // Remove heading placeholders from block before processing
+                const blockWithoutPlaceholders = trimmedBlock
+                    .replace(/__HEADING_H[1-3]_\d+__/g, "")
+                    .trim();
+                if (!blockWithoutPlaceholders) {
+                    currentY += baseFontSize * 0.5;
+                    continue;
+                }
+
+                const formatTagsRegex =
+                    /<(strong|b|em|i)(?:\s[^>]*)?>|<\/(strong|b|em|i)>/gi;
+                const parts: Array<{
+                    text: string;
+                    bold: boolean;
+                    italic: boolean;
+                }> = [];
+                let inBold = false;
+                let inItalic = false;
+                let lastIndex = 0;
+                let match;
+
+                formatTagsRegex.lastIndex = 0;
+
+                while (
+                    (match = formatTagsRegex.exec(blockWithoutPlaceholders)) !==
+                    null
+                ) {
+                    if (match.index > lastIndex) {
+                        const textBefore = blockWithoutPlaceholders.substring(
+                            lastIndex,
+                            match.index,
+                        );
+                        const cleanText = textBefore
+                            .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, "")
+                            .trim();
+                        if (cleanText) {
+                            parts.push({
+                                text: cleanText,
+                                bold: inBold,
+                                italic: inItalic,
+                            });
+                        }
+                    }
+
+                    const tag = match[1] || match[2];
+                    if (tag === "strong" || tag === "b") {
+                        inBold = !inBold;
+                    } else if (tag === "em" || tag === "i") {
+                        inItalic = !inItalic;
+                    }
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                if (lastIndex < blockWithoutPlaceholders.length) {
+                    const textAfter =
+                        blockWithoutPlaceholders.substring(lastIndex);
+                    const cleanText = textAfter
+                        .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, "")
+                        .trim();
+                    if (cleanText) {
+                        parts.push({
+                            text: cleanText,
+                            bold: inBold,
+                            italic: inItalic,
+                        });
+                    }
+                }
+
+                if (parts.length === 0) {
+                    const plainText = blockWithoutPlaceholders
+                        .replace(/<[^>]+>/g, "")
+                        .trim();
+                    if (plainText) {
+                        doc.fontSize(baseFontSize).font("Helvetica");
+                        doc.text(plainText, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.2;
+                    }
+                } else {
+                    doc.fontSize(baseFontSize);
+                    let isFirst = true;
+                    let startX = x;
+
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        if (!part.text) continue;
+
+                        let font = "Helvetica";
+                        if (part.bold && part.italic) {
+                            font = "Helvetica-BoldOblique";
+                        } else if (part.bold) {
+                            font = "Helvetica-Bold";
+                        } else if (part.italic) {
+                            font = "Helvetica-Oblique";
+                        }
+
+                        doc.font(font);
+                        doc.text(
+                            part.text,
+                            isFirst ? x : startX,
+                            isFirst ? currentY : doc.y,
+                            {
+                                width,
+                                continued: i < parts.length - 1,
+                            },
+                        );
+
+                        if (isFirst) {
+                            isFirst = false;
+                            startX = doc.x;
+                        }
+                    }
+
+                    currentY = doc.y + baseFontSize * 0.2;
+                }
+            }
+
+            return currentY;
+        };
+
+        const htmlToPlainText = (html: string): string => {
+            if (!html) return "";
+
+            let text = html.replace(
+                /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
+                "",
+            );
+            const entityMap: Record<string, string> = {
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+                "&apos;": "'",
+            };
+            text = text.replace(
+                /&(?:amp|lt|gt|quot|#39|apos);/g,
+                (match) => entityMap[match] || match,
+            );
+            text = text.replace(/&#(\d{1,6});/g, (match, num) => {
+                const code = parseInt(num, 10);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+            text = text.replace(/&#x([0-9a-fA-F]{1,6});/g, (match, hex) => {
+                const code = parseInt(hex, 16);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+
+            text = text
+                .replace(/<\/(p|div|li|h[1-6])\s*>/gi, "\n")
+                .replace(/<br\s*\/?>/gi, "\n");
+            let previousLength: number;
+            let iterations = 0;
+            const maxIterations = 100;
+            do {
+                previousLength = text.length;
+                text = text.replace(
+                    /<script[^>]{0,1000}>[\s\S]*?<\/script\s*[^>]*>/gi,
+                    "",
+                );
+                text = text.replace(
+                    /<style[^>]{0,1000}>[\s\S]*?<\/style\s*[^>]*>/gi,
+                    "",
+                );
+                text = text.replace(/<[^>]{0,1000}>/g, "");
+                text = text.replace(/<[a-zA-Z\/!][^>]{0,999}(?!>)/g, "");
+                iterations++;
+                if (iterations >= maxIterations) {
+                    break;
+                }
+            } while (text.length !== previousLength);
+
+            text = text.replace(/[<>]/g, "");
+
+            // Collapse excessive blank lines
+            text = text.replace(/\n{3,}/g, "\n\n");
+
+            return text.trim();
+        };
+
         // Set up margins and top bar height
         const margin = 20;
         const topBarHeight = 34;
@@ -1103,7 +1473,7 @@ export class PDFExportService {
             const prevCoord = marcherCoordinates[i - 1] ?? "N/A";
             const currCoord = marcherCoordinates[i] ?? "N/A";
             const nextCoord = marcherCoordinates[i + 1] ?? "N/A";
-            const notes = page?.notes ?? "";
+            const notesHtml = page?.notes ?? "";
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
 
@@ -1236,14 +1606,24 @@ export class PDFExportService {
             }
 
             // Right column (Notes)
-            yMid = drawLabelValue(
-                doc,
-                "Notes:",
-                notes,
-                rightX,
-                yRight,
-                rightColWidth,
-            );
+            doc.fontSize(11).font("Helvetica-Bold");
+            doc.text("Notes:", rightX, yRight, {
+                width: rightColWidth,
+            });
+            const notesStartY = doc.y + 2;
+            if (notesHtml) {
+                renderHtmlText(
+                    doc,
+                    notesHtml,
+                    rightX,
+                    notesStartY,
+                    rightColWidth,
+                    10,
+                );
+                yMid = doc.y;
+            } else {
+                yMid = notesStartY;
+            }
 
             // Add footer at the bottom of the page
             const footerY = pageHeight - 25;
@@ -1265,104 +1645,13 @@ export class PDFExportService {
             });
         }
 
-        // Helper: convert rich-text HTML notes into a markdown-like string for the appendix.
-        const htmlToMarkdownForAppendix = (html: string): string => {
-            if (!html) return "";
-
-            // Strip control characters that can confuse PDF text rendering (excluding \n, \r, \t).
-            let text = html.replace(
-                /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-                "",
-            );
-
-            // Decode common HTML entities in a single pass to prevent double-unescaping.
-            const entityMap: Record<string, string> = {
-                "&amp;": "&",
-                "&lt;": "<",
-                "&gt;": ">",
-                "&quot;": '"',
-                "&#39;": "'",
-                "&apos;": "'",
-            };
-            // Replace named entities first
-            text = text.replace(
-                /&(?:amp|lt|gt|quot|#39|apos);/g,
-                (match) => entityMap[match] || match,
-            );
-            // Replace numeric entities (decimal and hexadecimal) - limit to reasonable ranges
-            // Use fromCodePoint for proper Unicode support (handles code points > 0xFFFF)
-            text = text.replace(/&#(\d{1,6});/g, (match, num) => {
-                const code = parseInt(num, 10);
-                if (code >= 0 && code <= 0x10ffff) {
-                    try {
-                        return String.fromCodePoint(code);
-                    } catch {
-                        // Invalid code point, return original match
-                        return match;
-                    }
-                }
-                return match;
-            });
-            text = text.replace(/&#x([0-9a-fA-F]{1,6});/g, (match, hex) => {
-                const code = parseInt(hex, 16);
-                if (code >= 0 && code <= 0x10ffff) {
-                    try {
-                        return String.fromCodePoint(code);
-                    } catch {
-                        // Invalid code point, return original match
-                        return match;
-                    }
-                }
-                return match;
-            });
-
-            // Headings -> markdown-style prefixes
-            text = text.replace(/<h1[^>]*>/gi, "# ");
-            text = text.replace(/<h2[^>]*>/gi, "## ");
-            text = text.replace(/<h3[^>]*>/gi, "### ");
-            text = text.replace(/<h4[^>]*>/gi, "#### ");
-            text = text.replace(/<h5[^>]*>/gi, "##### ");
-            text = text.replace(/<h6[^>]*>/gi, "###### ");
-
-            // Strong / bold -> **text**
-            text = text.replace(/<(strong|b)[^>]*>/gi, "**");
-            text = text.replace(/<\/(strong|b)>/gi, "**");
-
-            // Emphasis / italics -> *text*
-            text = text.replace(/<(em|i)[^>]*>/gi, "*");
-            text = text.replace(/<\/(em|i)>/gi, "*");
-
-            // List items -> "- text"
-            text = text.replace(/<li[^>]*>/gi, "- ");
-            text = text.replace(/<\/li>/gi, "\n");
-
-            // Close block elements -> newlines
-            text = text.replace(/<\/(p|div|h[1-6])>/gi, "\n");
-
-            // Line breaks
-            text = text.replace(/<br\s*\/?>/gi, "\n");
-
-            // Strip script and style tags first (including across newlines)
-            // Use non-greedy matching (*?) which is safe from ReDoS
-            // Limit tag attribute length to prevent excessive backtracking
-            text = text.replace(/<script[^>]{0,1000}>[\s\S]*?<\/script>/gi, "");
-            text = text.replace(/<style[^>]{0,1000}>[\s\S]*?<\/style>/gi, "");
-            // Strip all remaining HTML tags (bounded attribute length to prevent ReDoS)
-            text = text.replace(/<[^>]{0,1000}>/g, "");
-
-            // Collapse excessive blank lines
-            text = text.replace(/\n{3,}/g, "\n\n");
-
-            return text.trim();
-        };
-
-        // Notes appendix pages (portrait), with markdown-like text derived from rich notes.
+        // Notes appendix pages
         const appendixEntries = notesAppendixPages
             .map((entry) => ({
                 pageName: entry.pageName,
-                notes: htmlToMarkdownForAppendix(entry.notes ?? ""),
+                notesHtml: entry.notes ?? "",
             }))
-            .filter((entry) => entry.notes.trim().length > 0);
+            .filter((entry) => entry.notesHtml.trim().length > 0);
 
         if (appendixEntries.length > 0) {
             const renderAppendixHeader = () => {
@@ -1375,7 +1664,6 @@ export class PDFExportService {
                 const pageWidth = doc.page.width;
                 const pageHeight = doc.page.height;
 
-                // Top bar with drill number, show name, and "Notes" label
                 doc.rect(
                     margin,
                     margin,
@@ -1425,58 +1713,54 @@ export class PDFExportService {
 
             const writeNotesEntry = (entry: {
                 pageName: string;
-                notes: string;
+                notesHtml: string;
             }) => {
-                // Split notes into lines so we can manually paginate and avoid PDFKit
-                // auto-adding pages without headers.
-                const lines = entry.notes.split(/\r?\n/);
-                let remainingLines = lines.slice();
+                if (!entry.notesHtml) return;
 
-                while (remainingLines.length > 0) {
-                    const { pageWidth, pageHeight, startY } =
-                        renderAppendixHeader();
-                    const contentWidth = pageWidth - 2 * margin;
-                    const maxContentBottom = pageHeight - 60;
+                const { pageWidth, pageHeight, startY } =
+                    renderAppendixHeader();
+                const contentWidth = pageWidth - 2 * margin;
+                const maxContentBottom = pageHeight - 60;
 
-                    // Title for this set on this page
-                    const title = `Set ${entry.pageName}`;
-                    doc.fillColor("black").fontSize(12).font("Helvetica-Bold");
-                    doc.text(title, margin, startY, {
-                        width: contentWidth,
-                    });
-                    let cursorY = doc.y + 4;
+                const title = `Set ${entry.pageName}`;
+                doc.fillColor("black").fontSize(12).font("Helvetica-Bold");
+                doc.text(title, margin, startY, {
+                    width: contentWidth,
+                });
+                const notesStartY = doc.y + 4;
 
-                    // Accumulate as many lines as will fit on this page
-                    let chunk = "";
-                    let usedLines = 0;
-                    for (let i = 0; i < remainingLines.length; i++) {
-                        const candidate =
-                            chunk.length > 0
-                                ? `${chunk}\n${remainingLines[i]}`
-                                : remainingLines[i];
-                        const height = doc.heightOfString(candidate, {
-                            width: contentWidth,
-                        });
-                        if (cursorY + height > maxContentBottom) {
-                            break;
-                        }
-                        chunk = candidate;
-                        usedLines = i + 1;
+                const startPageIndex = doc.bufferedPageRange().start;
+
+                renderHtmlText(
+                    doc,
+                    entry.notesHtml,
+                    margin,
+                    notesStartY,
+                    contentWidth,
+                    10,
+                );
+
+                const totalPages = doc.bufferedPageRange().count;
+                const endPageIndex = startPageIndex + totalPages - 1;
+
+                for (
+                    let pageIdx = startPageIndex;
+                    pageIdx <= endPageIndex;
+                    pageIdx++
+                ) {
+                    doc.switchToPage(pageIdx);
+                    const currentPageWidth = doc.page.width;
+                    const currentPageHeight = doc.page.height;
+
+                    if (pageIdx === startPageIndex) {
+                        renderFooter(currentPageWidth, currentPageHeight);
+                    } else {
+                        const {
+                            pageWidth: headerPageWidth,
+                            pageHeight: headerPageHeight,
+                        } = renderAppendixHeader();
+                        renderFooter(headerPageWidth, headerPageHeight);
                     }
-
-                    if (!chunk && remainingLines.length > 0) {
-                        chunk = remainingLines[0];
-                        usedLines = 1;
-                    }
-
-                    doc.fontSize(10).font("Helvetica");
-                    doc.text(chunk, margin, cursorY, {
-                        width: contentWidth,
-                    });
-
-                    renderFooter(pageWidth, pageHeight);
-
-                    remainingLines = remainingLines.slice(usedLines);
                 }
             };
 

@@ -1,0 +1,15 @@
+/* Custom styling for bold text in notes editor */
+.ProseMirror strong,
+.ProseMirror b {
+    font-weight: 700 !important;
+    font-size: 0.9375rem !important;
+    letter-spacing: 0.04em !important;
+    color: rgb(0, 0, 0) !important;
+}
+
+.dark .ProseMirror strong,
+.dark .ProseMirror b {
+    color: rgb(255, 255, 255) !important;
+    text-shadow: 0 0 1px rgba(255, 255, 255, 0.5) !important;
+}
+

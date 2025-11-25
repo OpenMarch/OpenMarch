@@ -1,8 +1,9 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { EditorContent, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import HardBreak from "@tiptap/extension-hard-break";
 import clsx from "clsx";
+import "./NotesRichTextEditor.css";
 
 type NotesRichTextEditorProps = {
     value: string;
@@ -29,11 +30,18 @@ export function NotesRichTextEditor({
     onEditorFocus,
     className,
 }: NotesRichTextEditorProps) {
+    const onChangeRef = useRef(onChange);
+    const onBlurRef = useRef(onBlur);
+
+    useEffect(() => {
+        onChangeRef.current = onChange;
+        onBlurRef.current = onBlur;
+    }, [onChange, onBlur]);
+
     const editor = useEditor({
         extensions: [
             StarterKit.configure({
-                // Keep the set small to speed up parsing/rendering for long notes.
-                history: false,
+                // History is enabled by default for undo/redo support (Cmd+Z / Cmd+Shift+Z)
                 codeBlock: false,
                 blockquote: false,
                 // We handle Enter as a hard break ourselves to avoid extra paragraph spacing.
@@ -62,10 +70,13 @@ export function NotesRichTextEditor({
                 autocomplete: "off",
             },
         },
+        onUpdate({ editor }) {
+            const html = editor.getHTML();
+            onChangeRef.current?.(html);
+        },
         onBlur({ editor }) {
             const html = editor.getHTML();
-            onChange?.(html);
-            onBlur?.(html);
+            onBlurRef.current?.(html);
         },
     });
 
