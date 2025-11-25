@@ -1059,6 +1059,7 @@ export class PDFExportService {
             size: "LETTER",
             layout: "landscape",
             margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            bufferPages: true,
         });
         const stream = fs.createWriteStream(pdfFilePath);
         doc.pipe(stream);
@@ -1096,7 +1097,6 @@ export class PDFExportService {
             y: number,
             width: number,
             baseFontSize: number = 10,
-            maxY?: number,
         ): number => {
             if (!html) return y;
 
@@ -1318,9 +1318,10 @@ export class PDFExportService {
                             lastIndex,
                             match.index,
                         );
-                        const cleanText = textBefore
-                            .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, "")
-                            .trim();
+                        const cleanText = sanitizeHtml(textBefore, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim();
                         if (cleanText) {
                             parts.push({
                                 text: cleanText,
@@ -1343,9 +1344,12 @@ export class PDFExportService {
                 if (lastIndex < blockWithoutPlaceholders.length) {
                     const textAfter =
                         blockWithoutPlaceholders.substring(lastIndex);
-                    const cleanText = textAfter
-                        .replace(/<(?!\/?(?:strong|b|em|i)\b)[^>]+>/gi, "")
-                        .trim();
+                    // Strip all HTML tags completely to prevent injection vulnerabilities
+                    // We handle formatting separately via the regex parsing above
+                    const cleanText = sanitizeHtml(textAfter, {
+                        allowedTags: [],
+                        allowedAttributes: {},
+                    }).trim();
                     if (cleanText) {
                         parts.push({
                             text: cleanText,
@@ -1564,7 +1568,7 @@ export class PDFExportService {
             });
             const notesStartY = doc.y + 2;
             if (notesHtml) {
-                renderHtmlText(
+                yRight = renderHtmlText(
                     doc,
                     notesHtml,
                     rightX,
@@ -1572,9 +1576,8 @@ export class PDFExportService {
                     rightColWidth,
                     10,
                 );
-                yMid = doc.y;
             } else {
-                yMid = notesStartY;
+                yRight = notesStartY;
             }
 
             // Add footer at the bottom of the page
