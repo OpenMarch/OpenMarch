@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
@@ -43,6 +43,8 @@ interface AlignmentButtonsProps {
 }
 
 function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
+    const [horizontalStepInterval, setHorizontalStepInterval] = useState(2);
+    const [verticalStepInterval, setVerticalStepInterval] = useState(2);
     return (
         <>
             {/* Align buttons */}
@@ -138,6 +140,74 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                 </RegisteredActionButton>
             </div>
 
+            {/* Distribute by step interval buttons */}
+            <div className="flex gap-8">
+                <div className="flex flex-1 items-center justify-center gap-4">
+                    <RegisteredActionButton
+                        registeredAction={
+                            RegisteredActionsObjects.distributeHorizontallyByStepInterval
+                        }
+                        disabled={editingDisabled}
+                        className={clsx(
+                            getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            }),
+                            "flex flex-1 items-center justify-center",
+                        )}
+                        // actionArgs={{ intervalSteps: horizontalStepInterval }}
+                    >
+                        <DotsThreeOutlineIcon size={16} weight="bold" />
+                    </RegisteredActionButton>
+                    <div className="flex flex-col items-center gap-1">
+                        <Input
+                            type="number"
+                            min={1}
+                            value={horizontalStepInterval}
+                            onChange={(e) =>
+                                setHorizontalStepInterval(
+                                    Math.max(1, Number(e.target.value)),
+                                )
+                            }
+                            className="w-8 rounded border text-center text-xs"
+                            disabled={editingDisabled}
+                        />
+                    </div>
+                </div>
+                <div className="flex flex-1 items-center justify-center gap-4">
+                    <RegisteredActionButton
+                        registeredAction={
+                            RegisteredActionsObjects.distributeVerticallyByStepInterval
+                        }
+                        disabled={editingDisabled}
+                        className={clsx(
+                            getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            }),
+                            "flex flex-1 items-center justify-center",
+                        )}
+                        // actionArgs={{ intervalSteps: verticalStepInterval }}
+                    >
+                        <DotsThreeOutlineVerticalIcon size={16} weight="bold" />
+                    </RegisteredActionButton>
+                    <div className="flex flex-col items-center gap-1">
+                        <Input
+                            type="number"
+                            min={1}
+                            value={verticalStepInterval}
+                            onChange={(e) =>
+                                setVerticalStepInterval(
+                                    Math.max(1, Number(e.target.value)),
+                                )
+                            }
+                            className="w-8 rounded border text-center text-xs"
+                            disabled={editingDisabled}
+                        />
+                    </div>
+                </div>
+            </div>
+
             {/* Set Marcher Positions Dropdowns */}
             <div className="flex flex-col gap-8">
                 <Dropdown.Root>
@@ -162,6 +232,14 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                                 className="text-text px-6 py-4"
                             >
                                 <T keyName="toolbar.alignment.toPreviousPagePositions" />
+                            </RegisteredActionButton>
+                            <RegisteredActionButton
+                                registeredAction={
+                                    RegisteredActionsObjects.setSelectedMarchersToNextPage
+                                }
+                                className="text-text px-6 py-4"
+                            >
+                                <T keyName="toolbar.alignment.toNextPagePositions" />
                             </RegisteredActionButton>
                             <RegisteredActionButton
                                 registeredAction={

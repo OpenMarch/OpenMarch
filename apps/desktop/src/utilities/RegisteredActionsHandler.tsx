@@ -66,7 +66,9 @@ export enum RegisteredActionsEnum {
     alignVertically = "alignVertically",
     alignHorizontally = "alignHorizontally",
     evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
+    distributeHorizontallyByStepInterval = "distributeHorizontallyByStepInterval",
     evenlyDistributeVertically = "evenlyDistributeVertically",
+    distributeVerticallyByStepInterval = "distributeVerticallyByStepInterval",
     flipHorizontal = "flipHorizontal",
     flipVertical = "flipVertical",
     swapMarchers = "swapMarchers",
@@ -414,10 +416,28 @@ export const RegisteredActionsObjects: {
         keyboardShortcut: new KeyboardShortcut({ key: "v", shift: true }),
         enumString: "evenlyDistributeVertically",
     }),
+    distributeVerticallyByStepInterval: new RegisteredAction({
+        descKey: "actions.alignment.distributeVerticallyByStepInterval",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "v",
+            alt: true,
+            shift: true,
+        }),
+        enumString: "distributeVerticallyByStepInterval",
+    }),
     evenlyDistributeHorizontally: new RegisteredAction({
         descKey: "actions.alignment.distributeHorizontally",
         keyboardShortcut: new KeyboardShortcut({ key: "h", shift: true }),
         enumString: "evenlyDistributeHorizontally",
+    }),
+    distributeHorizontallyByStepInterval: new RegisteredAction({
+        descKey: "actions.alignment.distributeHorizontallyByStepInterval",
+        keyboardShortcut: new KeyboardShortcut({
+            key: "h",
+            alt: true,
+            shift: true,
+        }),
+        enumString: "distributeHorizontallyByStepInterval",
     }),
     flipHorizontal: new RegisteredAction({
         descKey: "actions.alignment.flipHorizontal",
@@ -965,10 +985,30 @@ function RegisteredActionsHandler() {
                     updateMarcherPages(distributedCoords);
                     break;
                 }
+                case RegisteredActionsEnum.distributeVerticallyByStepInterval: {
+                    const distributedCoords =
+                        CoordinateActions.distributeVerticallyByStepInterval({
+                            marcherPages: getSelectedMarcherPages(),
+                            intervalSteps: 2,
+                            fieldProperties,
+                        });
+                    updateMarcherPages(distributedCoords);
+                    break;
+                }
                 case RegisteredActionsEnum.evenlyDistributeHorizontally: {
                     const distributedCoords =
                         CoordinateActions.evenlyDistributeHorizontally({
                             marcherPages: getSelectedMarcherPages(),
+                            fieldProperties,
+                        });
+                    updateMarcherPages(distributedCoords);
+                    break;
+                }
+                case RegisteredActionsEnum.distributeHorizontallyByStepInterval: {
+                    const distributedCoords =
+                        CoordinateActions.distributeHorizontallyByStepInterval({
+                            marcherPages: getSelectedMarcherPages(),
+                            intervalSteps: 2,
                             fieldProperties,
                         });
                     updateMarcherPages(distributedCoords);
