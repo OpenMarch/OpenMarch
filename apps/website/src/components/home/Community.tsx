@@ -109,8 +109,6 @@ export default function Community() {
                 >
                     <Button variant="primary">Fork the repo</Button>
                 </a>
-
-                <div className="bg-accent -top-1/5 left-1/2 -z-50 size-[250px] -translate-x-1/2 rounded-full opacity-40 blur-[9vmin] max-[850px]:top-[70%] max-[850px]:size-[150px] max-[850px]:blur-[15vmin]"></div>
             </div>
 
             <div className="bg-fg-1 border-stroke rounded-6 flex flex-col gap-12 border p-12">
