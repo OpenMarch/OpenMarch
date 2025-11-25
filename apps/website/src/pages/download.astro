@@ -11,10 +11,10 @@ import editorLight from "@/assets/home/editor-light.png";
 <Layout title="Download">
     <section
         id="download"
-        class="relative flex h-[65rem] w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
+        class="relative flex h-1040 w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
     >
         <div
-            class="bg-accent absolute -top-1/5 left-1/2 -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-25 blur-[20vmin]"
+            class="bg-accent motion-preset-fade-lg absolute -top-1/5 left-1/2 -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-25 blur-[20vmin]"
         >
         </div>
 
@@ -22,11 +22,13 @@ import editorLight from "@/assets/home/editor-light.png";
             class="flex h-full w-full gap-16 items-center justify-center max-[1024px]:flex-col max-[1024px]:gap-32"
         >
             <div class="w-[512px] flex flex-col gap-16 max-[600px]:w-full">
-                <p class="font-mono text-accent text-lg">
+                <p class="font-mono text-accent text-lg motion-preset-fade-lg">
                     <span class="font-bold" id="download-count">9,000+</span>
                     downloads & counting!
                 </p>
-                <h1 class="text-h2">Download the Modern Drill Writing App</h1>
+                <h1 class="text-h2 motion-preset-slide-up-md">
+                    Download the Modern Drill Writing App
+                </h1>
                 <WarningNote>
                     Keep in mind, OpenMarch is still in development, and you may
                     encounter issues and missing features.
@@ -39,7 +41,7 @@ import editorLight from "@/assets/home/editor-light.png";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="hidden dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+                class="hidden motion-preset-fade-lg dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
             />
             <Image
                 src={editorLight}
@@ -48,7 +50,7 @@ import editorLight from "@/assets/home/editor-light.png";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="block dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+                class="block motion-preset-fade-lg dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
             />
         </div>
 
