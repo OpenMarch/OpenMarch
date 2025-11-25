@@ -1,7 +1,7 @@
 {
-  "name": "openmarch-website",
-  "compatibility_date": "2025-11-25", // Update to the day you deploy
-  "assets": {
-    "directory": "./dist",
-  }
+    "name": "openmarch-website",
+    "compatibility_date": "2025-11-25",
+    "assets": {
+        "directory": "./dist",
+    },
 }
