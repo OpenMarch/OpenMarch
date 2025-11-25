@@ -4,6 +4,7 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import sanitize from "sanitize-filename";
+import { htmlToText } from "html-to-text";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
@@ -1385,76 +1386,7 @@ export class PDFExportService {
 
         const htmlToPlainText = (html: string): string => {
             if (!html) return "";
-
-            let text = html.replace(
-                /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-                "",
-            );
-            const entityMap: Record<string, string> = {
-                "&amp;": "&",
-                "&lt;": "<",
-                "&gt;": ">",
-                "&quot;": '"',
-                "&#39;": "'",
-                "&apos;": "'",
-            };
-            text = text.replace(
-                /&(?:amp|lt|gt|quot|#39|apos);/g,
-                (match) => entityMap[match] || match,
-            );
-            text = text.replace(/&#(\d{1,6});/g, (match, num) => {
-                const code = parseInt(num, 10);
-                if (code >= 0 && code <= 0x10ffff) {
-                    try {
-                        return String.fromCodePoint(code);
-                    } catch {
-                        return match;
-                    }
-                }
-                return match;
-            });
-            text = text.replace(/&#x([0-9a-fA-F]{1,6});/g, (match, hex) => {
-                const code = parseInt(hex, 16);
-                if (code >= 0 && code <= 0x10ffff) {
-                    try {
-                        return String.fromCodePoint(code);
-                    } catch {
-                        return match;
-                    }
-                }
-                return match;
-            });
-
-            text = text
-                .replace(/<\/(p|div|li|h[1-6])\s*>/gi, "\n")
-                .replace(/<br\s*\/?>/gi, "\n");
-            let previousLength: number;
-            let iterations = 0;
-            const maxIterations = 100;
-            do {
-                previousLength = text.length;
-                text = text.replace(
-                    /<script[^>]{0,1000}>[\s\S]*?<\/script\s*[^>]*>/gi,
-                    "",
-                );
-                text = text.replace(
-                    /<style[^>]{0,1000}>[\s\S]*?<\/style\s*[^>]*>/gi,
-                    "",
-                );
-                text = text.replace(/<[^>]{0,1000}>/g, "");
-                text = text.replace(/<[a-zA-Z\/!][^>]{0,999}(?!>)/g, "");
-                iterations++;
-                if (iterations >= maxIterations) {
-                    break;
-                }
-            } while (text.length !== previousLength);
-
-            text = text.replace(/[<>]/g, "");
-
-            // Collapse excessive blank lines
-            text = text.replace(/\n{3,}/g, "\n\n");
-
-            return text.trim();
+            return htmlToText(html, { wordwrap: false, preserveNewlines: true }).trim();
         };
 
         // Set up margins and top bar height
