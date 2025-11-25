@@ -12,6 +12,15 @@ import {
 } from "@phosphor-icons/react";
 import { Badge } from "@openmarch/ui";
 import { LogoTolgee } from "@/components/Logos";
+import shapesDark from "@/assets/home/shapes-dark.png";
+import shapesLight from "@/assets/home/shapes-light.png";
+import musicDark from "@/assets/home/music-dark.png";
+import musicLight from "@/assets/home/music-light.png";
+import customFieldDark from "@/assets/home/custom-field-dark.png";
+import customFieldLight from "@/assets/home/custom-field-light.png";
+import drillChart from "@/assets/home/drill-chart.png";
+import translationDark from "@/assets/home/translation-dark.png";
+import translationLight from "@/assets/home/translation-light.png";
 ---
 
 <section id="features" class="relative flex h-fit flex-col gap-32">
@@ -47,7 +56,7 @@ import { LogoTolgee } from "@/components/Logos";
                 </div>
             </div>
             <Image
-                src={"/home/shapes-dark.png"}
+                src={shapesDark}
                 alt="Shapes Screenshot"
                 width={1920}
                 height={1080}
@@ -56,7 +65,7 @@ import { LogoTolgee } from "@/components/Logos";
                 class="hidden dark:block border border-stroke h-full w-full rounded-6 intersect:motion-preset-fade-lg col-span-2 object-center object-cover"
             />
             <Image
-                src={"/home/shapes-light.png"}
+                src={shapesLight}
                 alt="Shapes Screenshot"
                 width={1920}
                 height={1080}
@@ -73,7 +82,7 @@ import { LogoTolgee } from "@/components/Logos";
             class="grid grid-cols-4 grid-rows-1 max-[850px]:grid-rows-2 max-[850px]:grid-cols-2 gap-8"
         >
             <Image
-                src={"/home/music-dark.png"}
+                src={musicDark}
                 alt="Music Screenshot"
                 width={1920}
                 height={1080}
@@ -82,7 +91,7 @@ import { LogoTolgee } from "@/components/Logos";
                 class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/music-light.png"}
+                src={musicLight}
                 alt="Music Screenshot"
                 width={1920}
                 height={1080}
@@ -153,7 +162,7 @@ import { LogoTolgee } from "@/components/Logos";
                 </div>
             </div>
             <Image
-                src={"/home/custom-field-dark.png"}
+                src={customFieldDark}
                 alt="Custom Field Screenshot"
                 width={1920}
                 height={1080}
@@ -162,7 +171,7 @@ import { LogoTolgee } from "@/components/Logos";
                 class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/custom-field-light.png"}
+                src={customFieldLight}
                 alt="Custom Field Screenshot"
                 width={1920}
                 height={1080}
@@ -179,7 +188,7 @@ import { LogoTolgee } from "@/components/Logos";
             class="grid grid-cols-4 grid-rows-1 max-[850px]:grid-rows-2 max-[850px]:grid-cols-2 gap-8"
         >
             <Image
-                src={"/home/drill-chart.png"}
+                src={drillChart}
                 alt="Drill chart Screenshot"
                 width={1920}
                 height={1080}
@@ -229,12 +238,11 @@ import { LogoTolgee } from "@/components/Logos";
                 <div
                     class="bg-fg-1 border border-stroke justify-center h-full rounded-6 p-12 flex flex-col gap-8"
                 >
-                    <Badge>Coming soon</Badge>
                     <h4 class="text-h4">Localization & translation</h4>
                     <p class="text-body leading-[180%]">
-                        We're adding support for more languages across the app,
-                        and soon the website too. This will make drill design
-                        even more accessible to the world.
+                        We support English, Spanish, Japanese, and Portuguese in
+                        the desktop app, making drill design more accessible for
+                        the more of the world.
                         <a
                             href="https://tolgee.io"
                             class="text-body leading-[100%] hover:text-accent underline duration-150 inline"
@@ -246,7 +254,7 @@ import { LogoTolgee } from "@/components/Logos";
                 </div>
             </div>
             <Image
-                src={"/home/translation-dark.png"}
+                src={translationDark}
                 alt="Desktop app in spanish"
                 width={1920}
                 height={1080}
@@ -255,7 +263,7 @@ import { LogoTolgee } from "@/components/Logos";
                 class="hidden dark:block border border-stroke rounded-6 intersect:motion-preset-fade-lg col-span-2 row-span-2 object-left object-cover"
             />
             <Image
-                src={"/home/translation-light.png"}
+                src={translationLight}
                 alt="Desktop app in spanish"
                 width={1920}
                 height={1080}

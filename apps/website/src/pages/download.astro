@@ -4,6 +4,8 @@ import { Image } from "astro:assets";
 import { WarningNote } from "@openmarch/ui";
 import GithubReleases from "@/components/download/GithubReleases.tsx";
 import DownloadCards from "@/components/download/DownloadCards.tsx";
+import editorDark from "@/assets/home/editor-dark.png";
+import editorLight from "@/assets/home/editor-light.png";
 ---
 
 <Layout title="Download">
@@ -31,7 +33,7 @@ import DownloadCards from "@/components/download/DownloadCards.tsx";
                 </WarningNote>
             </div>
             <Image
-                src="/home/editor-dark.png"
+                src={editorDark}
                 alt="Editor image"
                 width={1920}
                 height={1080}
@@ -40,7 +42,7 @@ import DownloadCards from "@/components/download/DownloadCards.tsx";
                 class="hidden dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
             />
             <Image
-                src="/home/editor-light.png"
+                src={editorLight}
                 alt="Editor image"
                 width={1920}
                 height={1080}

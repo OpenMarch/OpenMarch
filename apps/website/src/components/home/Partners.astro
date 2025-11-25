@@ -1,5 +1,9 @@
 ---
 import { Image } from "astro:assets";
+import silentCommandDark from "@/assets/partners/SilentCommandDark.png";
+import silentCommandLight from "@/assets/partners/SilentCommandLight.png";
+import corpsClashDark from "@/assets/partners/CorpsClash-dark.svg";
+import corpsClashLight from "@/assets/partners/CorpsClash-light.svg";
 ---
 
 <div class="flex flex-col w-full items-center gap-12">
@@ -9,14 +13,14 @@ import { Image } from "astro:assets";
     >
         <a href="https://silentcommand.org" target="_blank">
             <Image
-                src="/partners/SilentCommandDark.png"
+                src={silentCommandDark}
                 alt="Silent Command"
                 width={175}
                 height={128}
                 class="block dark:hidden"
             />
             <Image
-                src="/partners/SilentCommandLight.png"
+                src={silentCommandLight}
                 alt="Silent Command"
                 width={175}
                 height={128}
@@ -25,14 +29,14 @@ import { Image } from "astro:assets";
         </a>
         <a href="https://corpsclash.com" target="_blank">
             <Image
-                src="/partners/CorpsClash-dark.svg"
+                src={corpsClashDark}
                 alt="Corps Clash"
                 width={96}
                 height={96}
                 class="block dark:hidden"
             />
             <Image
-                src="/partners/CorpsClash-light.svg"
+                src={corpsClashLight}
                 alt="Corps Clash"
                 width={96}
                 height={96}

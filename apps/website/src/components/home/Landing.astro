@@ -2,6 +2,10 @@
 import { Image } from "astro:assets";
 import { Button } from "@openmarch/ui";
 import { CURRENT_VERSION } from "@/constants";
+import fullscreenDark from "@/assets/home/fullscreen-dark.png";
+import fullscreenLight from "@/assets/home/fullscreen-light.png";
+import editorDark from "@/assets/home/editor-dark.png";
+import editorLight from "@/assets/home/editor-light.png";
 ---
 
 <section
@@ -36,7 +40,7 @@ import { CURRENT_VERSION } from "@/constants";
 
     <div class="flex flex-col items-center">
         <Image
-            src={"/home/fullscreen-dark.png"}
+            src={fullscreenDark}
             alt="Fullscreen Screenshot"
             width={1920}
             height={1080}
@@ -45,7 +49,7 @@ import { CURRENT_VERSION } from "@/constants";
             class="hidden dark:block border border-stroke rounded-6 aspect-video h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
         />
         <Image
-            src={"/home/fullscreen-light.png"}
+            src={fullscreenLight}
             alt="Fullscreen Screenshot"
             width={1920}
             height={1080}
@@ -55,7 +59,7 @@ import { CURRENT_VERSION } from "@/constants";
         />
 
         <Image
-            src={"/home/editor-dark.png"}
+            src={editorDark}
             alt="Editor Screenshot"
             width={1920}
             height={1080}
@@ -64,7 +68,7 @@ import { CURRENT_VERSION } from "@/constants";
             class="hidden dark:block border border-stroke rounded-6 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
         />
         <Image
-            src={"/home/editor-light.png"}
+            src={editorLight}
             alt="Editor Screenshot"
             width={1920}
             height={1080}
