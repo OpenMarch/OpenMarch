@@ -1127,8 +1127,6 @@ export class PDFExportService {
                 });
             } catch (error) {
                 console.error("Error sanitizing HTML:", error);
-                // Fallback to basic stripping if sanitization fails
-                text = html.replace(/<[^>]*>?/gm, "");
             }
 
             // Decode HTML entities
