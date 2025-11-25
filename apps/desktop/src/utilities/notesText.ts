@@ -1,3 +1,5 @@
+import DOMPurify from "dompurify";
+
 /**
  * Truncates HTML content while preserving formatting tags.
  * Limits by both line count and character count (of plain text).
@@ -8,6 +10,29 @@ export function truncateHtmlNotes(
     maxChars: number,
 ): string {
     if (!html) return "";
+
+    // Sanitize HTML first to remove unsafe tags like script/style
+    html = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [
+            "h1",
+            "h2",
+            "h3",
+            "h4",
+            "h5",
+            "h6",
+            "p",
+            "div",
+            "br",
+            "strong",
+            "b",
+            "em",
+            "i",
+            "ul",
+            "ol",
+            "li",
+        ],
+        ALLOWED_ATTR: [],
+    });
 
     const plainText = notesHtmlToPlainText(html);
     const lines = plainText.split(/\r?\n/);
@@ -67,14 +92,13 @@ export function truncateHtmlNotes(
                 entityBuffer += char;
                 if (char === ";") {
                     inEntity = false;
-                    // Decode entity to count as single character
                     const decoded = entityBuffer
-                        .replace(/&amp;/g, "&")
                         .replace(/&lt;/g, "<")
                         .replace(/&gt;/g, ">")
                         .replace(/&quot;/g, '"')
                         .replace(/&#39;/g, "'")
                         .replace(/&apos;/g, "'")
+                        .replace(/&amp;/g, "&")
                         .replace(/&#(\d{1,6});/g, (match, num) => {
                             const code = parseInt(num, 10);
                             return code >= 0 && code <= 0x10ffff
@@ -210,20 +234,25 @@ export function truncateHtmlNotes(
 export function notesHtmlToPlainText(html: string): string {
     if (!html) return "";
 
-    let text = html.replace(
-        /[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g,
-        "",
-    );
+    // Sanitize HTML to remove unsafe tags and get text
+    // We strip all tags here to get plain text
+    let text = DOMPurify.sanitize(html, {
+        ALLOWED_TAGS: [],
+        ALLOWED_ATTR: [],
+    });
+
+    // Decode HTML entities
     const entityMap: Record<string, string> = {
-        "&amp;": "&",
         "&lt;": "<",
         "&gt;": ">",
         "&quot;": '"',
         "&#39;": "'",
         "&apos;": "'",
+        "&amp;": "&",
     };
+    // Decode entities - handling &amp; last to avoid double-unescaping
     text = text.replace(
-        /&(?:amp|lt|gt|quot|#39|apos);/g,
+        /&(?:lt|gt|quot|#39|apos|amp);/g,
         (match) => entityMap[match] || match,
     );
     text = text.replace(/&#(\d{1,6});/g, (match, num) => {
@@ -248,32 +277,6 @@ export function notesHtmlToPlainText(html: string): string {
         }
         return match;
     });
-
-    text = text
-        .replace(/<\/(p|div|li|h[1-6])\s*>/gi, "\n")
-        .replace(/<br\s*\/?>/gi, "\n");
-    let previousLength: number;
-    let iterations = 0;
-    const maxIterations = 100;
-    do {
-        previousLength = text.length;
-        text = text.replace(
-            /<script[^>]{0,1000}>[\s\S]*?<\/script\s*[^>]*>/gi,
-            "",
-        );
-        text = text.replace(
-            /<style[^>]{0,1000}>[\s\S]*?<\/style\s*[^>]*>/gi,
-            "",
-        );
-        text = text.replace(/<[^>]{0,1000}>/g, "");
-        text = text.replace(/<[a-zA-Z\/!][^>]{0,999}(?!>)/g, "");
-        iterations++;
-        if (iterations >= maxIterations) {
-            break;
-        }
-    } while (text.length !== previousLength);
-
-    text = text.replace(/[<>]/g, "");
 
     return text.replace(/\n{3,}/g, "\n\n").trim();
 }

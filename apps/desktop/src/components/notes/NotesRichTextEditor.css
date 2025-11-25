@@ -1,14 +1,20 @@
 /* Custom styling for bold text in notes editor */
+:root {
+    --notes-bold-color-light: #000000;
+    --notes-bold-color-dark: #ffffff;
+    --notes-bold-shadow-dark: rgba(255, 255, 255, 0.5);
+}
+
 .ProseMirror strong,
 .ProseMirror b {
     font-weight: 700 !important;
     font-size: 0.9375rem !important;
     letter-spacing: 0.04em !important;
-    color: rgb(0, 0, 0) !important;
+    color: var(--notes-bold-color-light) !important;
 }
 
 .dark .ProseMirror strong,
 .dark .ProseMirror b {
-    color: rgb(255, 255, 255) !important;
-    text-shadow: 0 0 1px rgba(255, 255, 255, 0.5) !important;
+    color: var(--notes-bold-color-dark) !important;
+    text-shadow: 0 0 1px var(--notes-bold-shadow-dark) !important;
 }

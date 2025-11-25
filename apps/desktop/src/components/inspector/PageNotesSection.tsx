@@ -36,9 +36,13 @@ export function PageNotesSection() {
             return;
         }
 
-        // Use the current selected page ID (which should match editingPageIdRef if user didn't switch pages)
-        // This ensures we save to the correct page even if the ref wasn't updated
-        const pageIdToSave = currentSelectedPageId;
+        // Guard against saving to wrong page if selection changed during editing
+        if (editingPageIdRef.current !== currentSelectedPageId) {
+            console.warn("Page changed during editing, skipping save");
+            return;
+        }
+
+        const pageIdToSave = editingPageIdRef.current;
 
         const currentNotes = nextNotesHtml || "";
         const originalNotes = selectedPage?.notes || "";

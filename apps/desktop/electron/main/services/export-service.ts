@@ -4,11 +4,12 @@ import * as path from "path";
 import * as fs from "fs";
 import * as os from "os";
 import sanitize from "sanitize-filename";
-import { htmlToText } from "html-to-text";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
 import Page from "@/global/classes/Page";
+import sanitizeHtml from "sanitize-html";
+
 import Store from "electron-store";
 import { getOrmConnection } from "../../database/database.services";
 
@@ -1064,7 +1065,7 @@ export class PDFExportService {
 
         // Helper to draw bold header and value with proper wrapping and y advancement
         function drawLabelValue(
-            doc: PDFKit.PDFDocument,
+            doc: InstanceType<typeof PDFDocument>,
             label: string,
             value: string,
             x: number,
@@ -1089,7 +1090,7 @@ export class PDFExportService {
         }
 
         const renderHtmlText = (
-            doc: PDFKit.PDFDocument,
+            doc: InstanceType<typeof PDFDocument>,
             html: string,
             x: number,
             y: number,
@@ -1099,7 +1100,38 @@ export class PDFExportService {
         ): number => {
             if (!html) return y;
 
-            // Decode HTML entities first
+            // Sanitize HTML using sanitize-html library to prevent XSS and CodeQL warnings
+            // Allow only tags we explicitly handle for formatting
+            let text = "";
+            try {
+                text = sanitizeHtml(html, {
+                    allowedTags: [
+                        "h1",
+                        "h2",
+                        "h3",
+                        "h4",
+                        "h5",
+                        "h6",
+                        "p",
+                        "div",
+                        "br",
+                        "strong",
+                        "b",
+                        "em",
+                        "i",
+                        "ul",
+                        "ol",
+                        "li",
+                    ],
+                    allowedAttributes: {}, // No attributes allowed
+                });
+            } catch (error) {
+                console.error("Error sanitizing HTML:", error);
+                // Fallback to basic stripping if sanitization fails
+                text = html.replace(/<[^>]*>?/gm, "");
+            }
+
+            // Decode HTML entities
             const entityMap: Record<string, string> = {
                 "&amp;": "&",
                 "&lt;": "<",
@@ -1108,7 +1140,7 @@ export class PDFExportService {
                 "&#39;": "'",
                 "&apos;": "'",
             };
-            let text = html.replace(
+            text = text.replace(
                 /&(?:amp|lt|gt|quot|#39|apos);/g,
                 (match) => entityMap[match] || match,
             );
@@ -1135,23 +1167,6 @@ export class PDFExportService {
                 return match;
             });
 
-            // Remove script and style tags for security
-            let previousLength: number;
-            let iterations = 0;
-            do {
-                previousLength = text.length;
-                text = text.replace(
-                    /<script[^>]{0,1000}>[\s\S]*?<\/script\s*[^>]*>/gi,
-                    "",
-                );
-                text = text.replace(
-                    /<style[^>]{0,1000}>[\s\S]*?<\/style\s*[^>]*>/gi,
-                    "",
-                );
-                iterations++;
-                if (iterations >= 100) break;
-            } while (text.length !== previousLength);
-
             text = text.replace(/<li[^>]*>/gi, "• ");
             text = text.replace(/<\/li>/gi, "\n");
             text = text.replace(/<\/?(ul|ol)[^>]*>/gi, "\n");
@@ -1174,7 +1189,10 @@ export class PDFExportService {
                     headingPlaceholders.push({
                         placeholder,
                         type: "h1",
-                        content: content.replace(/<[^>]+>/g, "").trim(),
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
                     });
                     return placeholder;
                 },
@@ -1187,7 +1205,10 @@ export class PDFExportService {
                     headingPlaceholders.push({
                         placeholder,
                         type: "h2",
-                        content: content.replace(/<[^>]+>/g, "").trim(),
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
                     });
                     return placeholder;
                 },
@@ -1200,7 +1221,10 @@ export class PDFExportService {
                     headingPlaceholders.push({
                         placeholder,
                         type: "h3",
-                        content: content.replace(/<[^>]+>/g, "").trim(),
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
                     });
                     return placeholder;
                 },
@@ -1334,9 +1358,12 @@ export class PDFExportService {
                 }
 
                 if (parts.length === 0) {
-                    const plainText = blockWithoutPlaceholders
-                        .replace(/<[^>]+>/g, "")
-                        .trim();
+                    // Use sanitizeHtml to strip tags instead of regex
+                    const plainText = sanitizeHtml(blockWithoutPlaceholders, {
+                        allowedTags: [],
+                        allowedAttributes: {},
+                    }).trim();
+
                     if (plainText) {
                         doc.fontSize(baseFontSize).font("Helvetica");
                         doc.text(plainText, x, currentY, { width });
@@ -1382,11 +1409,6 @@ export class PDFExportService {
             }
 
             return currentY;
-        };
-
-        const htmlToPlainText = (html: string): string => {
-            if (!html) return "";
-            return htmlToText(html, { wordwrap: false, preserveNewlines: true }).trim();
         };
 
         // Set up margins and top bar height
@@ -1586,13 +1608,7 @@ export class PDFExportService {
             .filter((entry) => entry.notesHtml.trim().length > 0);
 
         if (appendixEntries.length > 0) {
-            const renderAppendixHeader = () => {
-                doc.addPage({
-                    size: "LETTER",
-                    layout: "portrait",
-                    margins: { top: 0, bottom: 0, left: 0, right: 0 },
-                });
-
+            const drawAppendixHeaderOnCurrentPage = () => {
                 const pageWidth = doc.page.width;
                 const pageHeight = doc.page.height;
 
@@ -1625,7 +1641,26 @@ export class PDFExportService {
                 };
             };
 
+            const renderAppendixHeader = () => {
+                doc.addPage({
+                    size: "LETTER",
+                    layout: "portrait",
+                    margins: {
+                        top: margin + topBarHeight + 20,
+                        bottom: 60,
+                        left: 0,
+                        right: 0,
+                    },
+                });
+                return drawAppendixHeaderOnCurrentPage();
+            };
+
             const renderFooter = (pageWidth: number, pageHeight: number) => {
+                // Save current margins
+                const oldMargins = doc.page.margins;
+                // Temporarily remove bottom margin to allow drawing footer
+                doc.page.margins = { ...oldMargins, bottom: 0 };
+
                 const footerY = pageHeight - 25;
                 doc.fillColor("#666666").fontSize(8).font("Helvetica");
                 doc.text(
@@ -1641,6 +1676,9 @@ export class PDFExportService {
                     width: pageWidth * 0.3,
                     align: "center",
                 });
+
+                // Restore margins
+                doc.page.margins = oldMargins;
             };
 
             const writeNotesEntry = (entry: {
@@ -1652,7 +1690,10 @@ export class PDFExportService {
                 const { pageWidth, pageHeight, startY } =
                     renderAppendixHeader();
                 const contentWidth = pageWidth - 2 * margin;
-                const maxContentBottom = pageHeight - 60;
+
+                // Capture the start page index (the page we just added)
+                const rangeStart = doc.bufferedPageRange();
+                const startPageIndex = rangeStart.start + rangeStart.count - 1;
 
                 const title = `Set ${entry.pageName}`;
                 doc.fillColor("black").fontSize(12).font("Helvetica-Bold");
@@ -1660,8 +1701,6 @@ export class PDFExportService {
                     width: contentWidth,
                 });
                 const notesStartY = doc.y + 4;
-
-                const startPageIndex = doc.bufferedPageRange().start;
 
                 renderHtmlText(
                     doc,
@@ -1672,8 +1711,8 @@ export class PDFExportService {
                     10,
                 );
 
-                const totalPages = doc.bufferedPageRange().count;
-                const endPageIndex = startPageIndex + totalPages - 1;
+                const rangeEnd = doc.bufferedPageRange();
+                const endPageIndex = rangeEnd.start + rangeEnd.count - 1;
 
                 for (
                     let pageIdx = startPageIndex;
@@ -1684,14 +1723,12 @@ export class PDFExportService {
                     const currentPageWidth = doc.page.width;
                     const currentPageHeight = doc.page.height;
 
-                    if (pageIdx === startPageIndex) {
-                        renderFooter(currentPageWidth, currentPageHeight);
-                    } else {
-                        const {
-                            pageWidth: headerPageWidth,
-                            pageHeight: headerPageHeight,
-                        } = renderAppendixHeader();
-                        renderFooter(headerPageWidth, headerPageHeight);
+                    // Render footer on every page
+                    renderFooter(currentPageWidth, currentPageHeight);
+
+                    // For subsequent pages, we need to draw the header (it wasn't drawn by renderAppendixHeader)
+                    if (pageIdx > startPageIndex) {
+                        drawAppendixHeaderOnCurrentPage();
                     }
                 }
             };
