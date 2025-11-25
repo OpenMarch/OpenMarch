@@ -16,6 +16,7 @@
     "dependencies": {
         "@ascorbic/csv-loader": "^2.0.3",
         "@astrojs/check": "^0.9.4",
+        "@astrojs/cloudflare": "^12.6.11",
         "@astrojs/mdx": "^4.3.0",
         "@astrojs/react": "^4.3.0",
         "@astrojs/sitemap": "^3.4.1",
