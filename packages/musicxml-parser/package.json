@@ -27,6 +27,9 @@
         "README.md",
         "LICENSE"
     ],
+    "dependencies": {
+        "jszip": "^3.10.1"
+    },
     "peerDependencies": {
         "typescript": "^5"
     },
