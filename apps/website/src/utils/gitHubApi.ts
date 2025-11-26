@@ -3,6 +3,25 @@ interface CacheEntry<T> {
     timestamp: number;
 }
 
+export class GitHubPendingError extends Error {
+    endpoint: string;
+    status: number;
+
+    constructor(endpoint: string) {
+        super(
+            `GitHub API request for ${endpoint} is still processing (202 Accepted).`,
+        );
+        this.name = "GitHubPendingError";
+        this.endpoint = endpoint;
+        this.status = 202;
+    }
+}
+
+interface FetchFromGitHubOptions<T> {
+    skipCache?: boolean;
+    shouldCache?: (data: T) => boolean;
+}
+
 // Simple in-memory cache
 const cache = new Map<string, CacheEntry<any>>();
 
@@ -15,13 +34,15 @@ const cache = new Map<string, CacheEntry<any>>();
 export async function fetchFromGitHub<T = any>(
     endpoint: string,
     cacheTimeSeconds: number = 300,
+    options: FetchFromGitHubOptions<T> = {},
 ): Promise<T> {
     const cacheTime = cacheTimeSeconds * 1000; // Convert to milliseconds
     const cacheKey = endpoint;
+    const { skipCache = false, shouldCache } = options;
 
     // Check cache first
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < cacheTime) {
+    const cached = cache.get(cacheKey) as CacheEntry<T> | undefined;
+    if (!skipCache && cached && Date.now() - cached.timestamp < cacheTime) {
         return cached.data;
     }
 
@@ -39,24 +60,30 @@ export async function fetchFromGitHub<T = any>(
             },
         });
 
+        if (response.status === 202) {
+            throw new GitHubPendingError(endpoint);
+        }
+
         if (!response.ok) {
             throw new Error(
                 `GitHub API request failed: ${response.status} ${response.statusText}`,
             );
         }
 
-        const data = await response.json();
+        const data = (await response.json()) as T;
 
         // Cache the result
-        cache.set(cacheKey, {
-            data,
-            timestamp: Date.now(),
-        });
+        if (!skipCache && (shouldCache ? shouldCache(data) : true)) {
+            cache.set(cacheKey, {
+                data,
+                timestamp: Date.now(),
+            });
+        }
 
-        return data as T;
+        return data;
     } catch (error) {
         // If we have cached data and request fails, return cached data
-        if (cached) {
+        if (!skipCache && cached) {
             console.warn(
                 "GitHub API request failed, returning cached data:",
                 error,

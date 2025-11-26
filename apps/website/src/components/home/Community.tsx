@@ -1,14 +1,68 @@
 import { Button } from "@openmarch/ui";
 import { useEffect, useState } from "react";
-import { fetchFromGitHub } from "@/utils/gitHubApi.js";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import patreonMembers from "@/content/patreonMembers.json";
+import { fetchFromGitHub, GitHubPendingError } from "@/utils/gitHubApi";
 
 interface GitHubStats {
     contributors: Array<{ login: string; id: number }>;
     contributorsCount: number;
     pullRequestsCount: number;
     commitsCount: number;
+}
+
+const GITHUB_REPO = "OpenMarch/OpenMarch";
+const CONTRIBUTORS_ENDPOINT = `/repos/${GITHUB_REPO}/contributors?per_page=100`;
+const COMMIT_ACTIVITY_ENDPOINT = `/repos/${GITHUB_REPO}/stats/commit_activity`;
+const MERGED_PR_ENDPOINT = `/search/issues?q=${encodeURIComponent(
+    `repo:${GITHUB_REPO} is:pr is:merged`,
+)}&per_page=1`;
+
+function wait(ms: number) {
+    return new Promise<void>((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
+async function fetchMergedPullRequestCount(): Promise<number> {
+    const response = await fetchFromGitHub<{ total_count: number }>(
+        MERGED_PR_ENDPOINT,
+        600,
+    );
+
+    return response?.total_count ?? 0;
+}
+
+async function fetchCommitCountWithRetry(
+    retries = 5,
+    delayMs = 1000,
+): Promise<number> {
+    for (let attempt = 0; attempt < retries; attempt++) {
+        try {
+            const activity = await fetchFromGitHub<Array<{ total: number }>>(
+                COMMIT_ACTIVITY_ENDPOINT,
+                900,
+                {
+                    shouldCache: (data) =>
+                        Array.isArray(data) && data.length > 0,
+                },
+            );
+
+            if (Array.isArray(activity) && activity.length > 0) {
+                return activity.reduce((sum, week) => sum + week.total, 0);
+            }
+        } catch (error) {
+            if (error instanceof GitHubPendingError && attempt < retries - 1) {
+                await wait(delayMs * (attempt + 1));
+                continue;
+            }
+            throw error;
+        }
+
+        await wait(delayMs * (attempt + 1));
+    }
+
+    throw new Error("Unable to fetch commit stats from GitHub.");
 }
 
 export default function Community() {
@@ -20,68 +74,81 @@ export default function Community() {
     });
     const [loading, setLoading] = useState(true);
 
-    async function getMergedPRCount() {
-        let mergedCount = 0;
-        let page = 1;
-        let hasMore = true;
-
-        while (hasMore) {
-            const prs = await fetchFromGitHub(
-                `/repos/OpenMarch/OpenMarch/pulls?state=closed&per_page=100&page=${page}`,
-                600,
-            );
-            // console.log("raw Pull request count:", prs);
-
-            if (!prs.length) break;
-
-            mergedCount += prs.filter((pr: any) => pr.merged_at).length;
-
-            if (prs.length < 100) {
-                hasMore = false;
-            } else {
-                page++;
-            }
-        }
-
-        return mergedCount;
-    }
-
     useEffect(() => {
+        let isMounted = true;
+
         async function loadGitHubData() {
             try {
-                const contributors = await fetchFromGitHub(
-                    "/repos/OpenMarch/OpenMarch/contributors?per_page=100",
-                    600,
-                );
-                // console.log("Contributors:", contributors);
-                const commitCount = await fetchFromGitHub(
-                    "/repos/OpenMarch/OpenMarch/stats/commit_activity",
-                    900,
-                );
-                console.log("Commit count:", commitCount);
-                const totalCommits = commitCount.reduce(
-                    (sum: number, week: { total: number }) => sum + week.total,
-                    0,
-                );
-                const pullRequestCount = await getMergedPRCount();
-                // console.log(" Pull request count:", pullRequestCount);
+                const [
+                    contributorsResult,
+                    commitCountResult,
+                    pullRequestCountResult,
+                ] = await Promise.allSettled([
+                    fetchFromGitHub<Array<{ login: string; id: number }>>(
+                        CONTRIBUTORS_ENDPOINT,
+                        600,
+                    ),
+                    fetchCommitCountWithRetry(),
+                    fetchMergedPullRequestCount(),
+                ]);
 
-                setStats({
-                    contributors: contributors.map((contributor: any) => ({
-                        login: contributor.login,
-                        id: contributor.id,
-                    })),
-                    contributorsCount: contributors.length,
-                    pullRequestsCount: pullRequestCount,
-                    commitsCount: totalCommits,
-                });
+                const contributors =
+                    contributorsResult.status === "fulfilled"
+                        ? contributorsResult.value
+                        : [];
+                if (contributorsResult.status === "rejected") {
+                    console.error(
+                        "Error fetching contributors:",
+                        contributorsResult.reason,
+                    );
+                }
+
+                const commitsCount =
+                    commitCountResult.status === "fulfilled"
+                        ? commitCountResult.value
+                        : 0;
+                if (commitCountResult.status === "rejected") {
+                    console.error(
+                        "Error fetching commit stats:",
+                        commitCountResult.reason,
+                    );
+                }
+
+                const pullRequestCount =
+                    pullRequestCountResult.status === "fulfilled"
+                        ? pullRequestCountResult.value
+                        : 0;
+                if (pullRequestCountResult.status === "rejected") {
+                    console.error(
+                        "Error fetching merged PR count:",
+                        pullRequestCountResult.reason,
+                    );
+                }
+
+                if (isMounted) {
+                    setStats({
+                        contributors: contributors.map((contributor) => ({
+                            login: contributor.login,
+                            id: contributor.id,
+                        })),
+                        contributorsCount: contributors.length,
+                        pullRequestsCount: pullRequestCount,
+                        commitsCount,
+                    });
+                }
             } catch (error) {
                 console.error("Error fetching GitHub data:", error);
             } finally {
-                setLoading(false);
+                if (isMounted) {
+                    setLoading(false);
+                }
             }
         }
         void loadGitHubData();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     return (
