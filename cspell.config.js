@@ -22,6 +22,7 @@ module.exports = {
         "Sunbright",
         "Cinnaminson",
         "ehlert",
+        "oklch",
         "aleksi",
         "Tolgee",
         "saario",
