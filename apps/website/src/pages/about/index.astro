@@ -16,16 +16,19 @@ import Team from "@/components/about/Team.astro";
     <Team />
 
     <div
-        class="bg-accent absolute top-[10vh] -left-[0%] -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-15 blur-[20vmin]"
+        class="absolute top-[10vh] -left-[0%] motion-preset-fade-lg motion-delay-300 -z-50 size-[850px] max-[640px]:size-[450px] -translate-x-1/2"
+        style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
     >
     </div>
 
     <div
-        class="bg-accent absolute top-[100vh] -right-[40%] -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-15 blur-[20vmin]"
+        class="absolute top-[100vh] -right-[40%] motion-preset-fade-lg motion-delay-300 -z-50 size-[850px] max-[640px]:hidden -translate-x-1/2"
+        style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
     >
     </div>
     <div
-        class="bg-accent absolute top-[200vh] left-[0%] -z-50 size-[700px] -translate-x-1/2 rounded-full opacity-15 blur-[20vmin]"
+        class="absolute top-[200vh] left-[0%] motion-preset-fade-lg motion-delay-300 -z-50 size-[850px] max-[640px]:hidden -translate-x-1/2"
+        style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
     >
     </div>
 </Layout>
