@@ -224,9 +224,26 @@ export const useUpdateSelectedMarchers = (
                 return;
             }
 
-            const currentCoordinates = selectedMarchers.map(
-                (marcher) => marcherPages[marcher.id],
-            );
+            const currentCoordinates = selectedMarchers
+                .map((marcher) => marcherPages[marcher.id])
+                .filter((coord) => coord != null);
+
+            if (currentCoordinates.length !== selectedMarchers.length) {
+                console.warn(
+                    "Some selected marchers were not found on the current page. This should never happen.",
+                );
+                const allIds = new Set(
+                    selectedMarchers.map((marcher) => marcher.id),
+                );
+                const currentIds = new Set(
+                    currentCoordinates.map((coord) => coord.marcher_id),
+                );
+                const missingIds = Array.from(allIds).filter(
+                    (id) => !currentIds.has(id),
+                );
+                console.warn("Missing IDs: ", missingIds);
+            }
+
             const newCoordinates = transformFunction(currentCoordinates);
             const modifiedMarcherPages: ModifiedMarcherPageArgs[] =
                 newCoordinates.map((coordinate) => {
@@ -261,7 +278,6 @@ export const useUpdateSelectedMarchers = (
  *
  * This hook takes care of updating the coordinates in the database and re-fetching the required data.
  *
- * @param pageId - The ID of the page to update the selected marchers on.
  * @returns A mutation function that takes a marcher transform function and updates the selected marchers on the selected page.
  */
 export const useUpdateSelectedMarchersOnSelectedPage = () => {
