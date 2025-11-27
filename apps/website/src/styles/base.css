@@ -3,7 +3,6 @@
 
 @plugin "@tailwindcss/typography";
 @plugin "tailwindcss-motion";
-@plugin "tailwindcss-intersect";
 
 @theme {
     --text-body: 1rem;

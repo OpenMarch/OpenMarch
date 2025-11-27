@@ -1,5 +1,5 @@
 import { Button } from "@openmarch/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
     ArrowLineDownIcon,
     DiscordLogoIcon,
@@ -22,9 +22,38 @@ import clsx from "clsx";
 
 export default function Nav({ pathname }: { pathname: string }) {
     const [isOpen, setIsOpen] = useState<boolean>(false);
+    const [interactionsReady, setInteractionsReady] = useState(false);
+
+    useEffect(() => {
+        if (typeof window === "undefined") {
+            return;
+        }
+
+        const enableInteractions = () => setInteractionsReady(true);
+        let idleId: number | null = null;
+        let timeoutId: number | null = null;
+
+        if (typeof window.requestIdleCallback === "function") {
+            idleId = window.requestIdleCallback(enableInteractions);
+        } else {
+            timeoutId = window.setTimeout(enableInteractions, 0);
+        }
+
+        return () => {
+            if (
+                idleId !== null &&
+                typeof window.cancelIdleCallback === "function"
+            ) {
+                window.cancelIdleCallback(idleId);
+            }
+            if (timeoutId !== null) {
+                window.clearTimeout(timeoutId);
+            }
+        };
+    }, []);
 
     return (
-        <nav className="sticky top-8 z-[99] flex h-[3.5rem] w-full flex-col gap-8">
+        <nav className="sticky top-8 z-99 flex h-56 w-full flex-col gap-8">
             <nav className="border-stroke bg-modal shadow-modal relative flex w-full items-center justify-between rounded-full border px-32 py-12 backdrop-blur-md max-[750px]:px-24">
                 <a href="/">
                     <LogoOpenMarchText />
@@ -34,7 +63,7 @@ export default function Nav({ pathname }: { pathname: string }) {
                         href="/"
                         className={clsx(
                             "text-body text-text hover:text-accent duration-150 ease-out",
-                            { "!text-accent": pathname === "/" },
+                            { "text-accent!": pathname === "/" },
                         )}
                     >
                         Home
@@ -70,51 +99,58 @@ export default function Nav({ pathname }: { pathname: string }) {
                             Download
                         </Button>
                     </a>
-                    <Popover.Root>
+                    <Popover.Root open={interactionsReady ? undefined : false}>
                         <Popover.Trigger asChild>
-                            <Button variant="secondary" size="compact">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                disabled={!interactionsReady}
+                                aria-disabled={!interactionsReady}
+                            >
                                 Donate
                             </Button>
                         </Popover.Trigger>
-                        <Popover.Portal>
-                            <Popover.Content
-                                className="rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 z-[99] w-80 border p-16"
-                                sideOffset={8}
-                            >
-                                <div className="flex flex-col gap-12">
-                                    <div className="flex items-center gap-8">
-                                        <HeartIcon
-                                            size={20}
-                                            className="text-red"
-                                        />
-                                        <h3 className="text-h5">
-                                            Support OpenMarch
-                                        </h3>
-                                    </div>
-                                    <p className="text-body text-text-subtitle">
-                                        Help us continue building the best drill
-                                        writing software.
-                                    </p>
-                                    <div className="flex flex-col gap-8">
-                                        <a
-                                            href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="w-full"
-                                        >
-                                            <Button
-                                                variant="primary"
-                                                size="compact"
+                        {interactionsReady && (
+                            <Popover.Portal>
+                                <Popover.Content
+                                    className="rounded-6 border-stroke bg-modal text-text shadow-modal backdrop-blur-32 z-99 w-3xs border p-16"
+                                    sideOffset={8}
+                                >
+                                    <div className="flex flex-col gap-12">
+                                        <div className="flex items-center gap-8">
+                                            <HeartIcon
+                                                size={20}
+                                                className="text-red"
+                                            />
+                                            <h3 className="text-h5">
+                                                Support OpenMarch
+                                            </h3>
+                                        </div>
+                                        <p className="text-body text-text-subtitle">
+                                            Help us continue building the best
+                                            drill writing software.
+                                        </p>
+                                        <div className="flex flex-col gap-8">
+                                            <a
+                                                href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
                                                 className="w-full"
                                             >
-                                                Leave a Donation
-                                            </Button>
-                                        </a>
+                                                <Button
+                                                    variant="primary"
+                                                    size="compact"
+                                                    className="w-full"
+                                                >
+                                                    Leave a Donation
+                                                </Button>
+                                            </a>
+                                        </div>
                                     </div>
-                                </div>
-                                <Popover.Arrow className="fill-modal" />
-                            </Popover.Content>
-                        </Popover.Portal>
+                                    <Popover.Arrow className="fill-modal" />
+                                </Popover.Content>
+                            </Popover.Portal>
+                        )}
                     </Popover.Root>
                 </div>
                 <div className="flex items-center gap-16 max-[850px]:hidden">
@@ -174,44 +210,54 @@ export default function Nav({ pathname }: { pathname: string }) {
                 <a href="/about" className="text-h4 text-text">
                     About
                 </a>
-                <Dialog>
-                    <DialogTrigger className="text-h4 text-text flex items-center gap-8">
-                        Donate
-                        <HeartIcon size={24} />
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogTitle>
-                            <HeartIcon size={24} className="text-red" />
-                            Support OpenMarch
-                        </DialogTitle>
-                        <div className="text-body text-text">
-                            <div className="flex flex-col gap-16">
-                                <p>
-                                    OpenMarch is a free, open-source project
-                                    built by passionate developers. Your support
-                                    helps us continue improving the app and
-                                    adding new features.
-                                </p>
-                                <div className="flex flex-col gap-12">
-                                    <a
-                                        href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="w-full"
-                                    >
-                                        <Button
-                                            variant="primary"
-                                            className="flex w-full items-center gap-8"
+                {interactionsReady ? (
+                    <Dialog>
+                        <DialogTrigger className="text-h4 text-text flex items-center gap-8">
+                            Donate
+                            <HeartIcon size={24} />
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogTitle>
+                                <HeartIcon size={24} className="text-red" />
+                                Support OpenMarch
+                            </DialogTitle>
+                            <div className="text-body text-text">
+                                <div className="flex flex-col gap-16">
+                                    <p>
+                                        OpenMarch is a free, open-source project
+                                        built by passionate developers. Your
+                                        support helps us continue improving the
+                                        app and adding new features.
+                                    </p>
+                                    <div className="flex flex-col gap-12">
+                                        <a
+                                            href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="w-full"
                                         >
-                                            <HeartIcon size={16} />
-                                            Leave a Donation
-                                        </Button>
-                                    </a>
+                                            <Button
+                                                variant="primary"
+                                                className="flex w-full items-center gap-8"
+                                            >
+                                                <HeartIcon size={16} />
+                                                Leave a Donation
+                                            </Button>
+                                        </a>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </DialogContent>
-                </Dialog>
+                        </DialogContent>
+                    </Dialog>
+                ) : (
+                    <div
+                        className="text-h4 text-text flex items-center gap-8 opacity-70"
+                        aria-disabled="true"
+                    >
+                        Donate
+                        <HeartIcon size={24} />
+                    </div>
+                )}
                 <a
                     href="/download"
                     className="text-h4 text-text flex items-center gap-8"

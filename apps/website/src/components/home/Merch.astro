@@ -1,6 +1,7 @@
 ---
 import { Button } from "@openmarch/ui";
 import { Image } from "astro:assets";
+import merchImage from "@/assets/home/merch.png";
 ---
 
 <div
@@ -19,17 +20,18 @@ import { Image } from "astro:assets";
             <Button>Shop now</Button>
         </a>
         <div
-            class="bg-accent intersect:motion-preset-fade-lg absolute -bottom-[140%] left-1/2 -z-50 size-[250px] -translate-x-1/2 rounded-full opacity-40 blur-[9vmin]"
+            class="absolute top-0 left-1/2 -translate-x-1/2 -z-50 size-[900px] max-[640px]:size-[300px]"
+            style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
         >
         </div>
     </div>
     <Image
-        src="/home/merch.png"
+        src={merchImage}
         alt="OpenMarch Merch"
         width={1920}
         height={1111}
         format="webp"
         quality={80}
-        class="rounded-6 border border-stroke col-span-2 aspect-video object-cover object-center w-full h-auto intersect:motion-preset-fade-lg"
+        class="rounded-6 border border-stroke col-span-2 aspect-video object-cover object-center w-full h-auto"
     />
 </div>
