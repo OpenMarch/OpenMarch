@@ -60,6 +60,7 @@ ipcMain.handle("env:get", () => {
     return {
         isCodegen: isCodegen,
         isCI: !!process.env.CI,
+        isPlaywrightSession: !!process.env.PLAYWRIGHT_SESSION,
     };
 });
 
