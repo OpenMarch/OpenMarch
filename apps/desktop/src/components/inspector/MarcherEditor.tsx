@@ -141,7 +141,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             </div>
 
             {/* Distribute by step interval buttons */}
-            <div className="flex gap-8">
+            <div className="flex flex-col gap-8">
                 <div className="flex flex-1 items-center justify-center gap-4">
                     <RegisteredActionButton
                         registeredAction={
@@ -155,24 +155,21 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             }),
                             "flex flex-1 items-center justify-center",
                         )}
-                        // actionArgs={{ intervalSteps: horizontalStepInterval }}
                     >
-                        <DotsThreeOutlineIcon size={16} weight="bold" />
+                        <DotsThreeOutlineIcon size={16} weight="light" />
                     </RegisteredActionButton>
-                    <div className="flex flex-col items-center gap-1">
-                        <Input
-                            type="number"
-                            min={1}
-                            value={horizontalStepInterval}
-                            onChange={(e) =>
-                                setHorizontalStepInterval(
-                                    Math.max(1, Number(e.target.value)),
-                                )
-                            }
-                            className="w-8 rounded border text-center text-xs"
-                            disabled={editingDisabled}
-                        />
-                    </div>
+                    <Input
+                        type="number"
+                        min={1}
+                        value={horizontalStepInterval}
+                        onChange={(e) =>
+                            setHorizontalStepInterval(
+                                Math.max(1, Number(e.target.value)),
+                            )
+                        }
+                        className="w-8 flex-1 rounded border text-center text-xs"
+                        disabled={editingDisabled}
+                    />
                 </div>
                 <div className="flex flex-1 items-center justify-center gap-4">
                     <RegisteredActionButton
@@ -187,24 +184,24 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             }),
                             "flex flex-1 items-center justify-center",
                         )}
-                        // actionArgs={{ intervalSteps: verticalStepInterval }}
                     >
-                        <DotsThreeOutlineVerticalIcon size={16} weight="bold" />
-                    </RegisteredActionButton>
-                    <div className="flex flex-col items-center gap-1">
-                        <Input
-                            type="number"
-                            min={1}
-                            value={verticalStepInterval}
-                            onChange={(e) =>
-                                setVerticalStepInterval(
-                                    Math.max(1, Number(e.target.value)),
-                                )
-                            }
-                            className="w-8 rounded border text-center text-xs"
-                            disabled={editingDisabled}
+                        <DotsThreeOutlineVerticalIcon
+                            size={16}
+                            weight="light"
                         />
-                    </div>
+                    </RegisteredActionButton>
+                    <Input
+                        type="number"
+                        min={1}
+                        value={verticalStepInterval}
+                        onChange={(e) =>
+                            setVerticalStepInterval(
+                                Math.max(1, Number(e.target.value)),
+                            )
+                        }
+                        className="w-8 flex-1 rounded border text-center text-xs"
+                        disabled={editingDisabled}
+                    />
                 </div>
             </div>
 
