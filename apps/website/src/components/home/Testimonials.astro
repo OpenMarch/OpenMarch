@@ -1,11 +1,14 @@
 ---
 import { Button } from "@openmarch/ui";
+import { ArrowRightIcon } from "@phosphor-icons/react";
+import { Image } from "astro:assets";
+import carolineHs from "@/assets/testimonials/caroline.jpg";
 ---
 
 <section id="testimonials" class="flex flex-col gap-8 items-center">
     <h1 class="text-h3">Changing how ensembles design and perform</h1>
     <div
-        class="grid grid-cols-2 grid-rows-2 max-[850px]:grid-rows-3 max-[850px]:grid-cols-1 gap-8"
+        class="grid grid-cols-2 grid-rows-2 max-[920px]:grid-rows-3 max-[920px]:grid-cols-1 gap-8"
     >
         <div
             class="bg-fg-1 border border-stroke justify-center row-span-2 rounded-6 p-12 flex flex-col gap-6"
@@ -30,6 +33,30 @@ import { Button } from "@openmarch/ui";
                 it’s a miracle for small, early-stage programs like ours.
             </p>
         </div>
+
+        <a
+            href="/blog/2025-11-10-caroline-hss-visit"
+            class="bg-fg-1 border border-accent justify-center items-center rounded-20 p-12 flex max-[510px]:flex-col max-[510px]:items-start hover:brightness-110 duration-150 active:scale-95 ease-out"
+        >
+            <Image
+                src={carolineHs}
+                alt="Caroline HS"
+                class="object-cover rounded-8"
+                width={256}
+                height={128}
+            />
+            <div class="flex flex-col gap-6 p-12">
+                <h2 class="text-h4">Caroline HS</h2>
+                <p class="text-body font-medium">Carter King, Outdoor</p>
+                <p class="text-body leading-[165%] text-text-subtitle">
+                    Read this article on how OpenMarch helped the Caroline High
+                    School marching band in the 2025 season.
+                </p>
+                <div class="flex items-center gap-6">
+                    Read more <ArrowRightIcon size={24} />
+                </div>
+            </div>
+        </a>
         <div
             class="bg-fg-1 border border-stroke justify-center rounded-6 p-12 flex flex-col gap-6"
         >
@@ -43,17 +70,6 @@ import { Button } from "@openmarch/ui";
                 watching the drill on the big screen! I would absolutely
                 recommend it, especially for smaller ensembles and new drill
                 writers.
-            </p>
-        </div>
-        <div
-            class="bg-fg-1 border border-stroke justify-center rounded-6 p-12 flex flex-col gap-6"
-        >
-            <h2 class="text-h4">Downriver Indoor Percussion</h2>
-            <p class="text-body font-medium">Chris Vilag, Indoor</p>
-            <p class="text-body leading-[165%] text-text-subtitle">
-                Downriver used OpenMarch in the 2025 indoor season, ending as
-                Percussion Regional A champions competing in the Michigan
-                Alliance for Performing Arts.
             </p>
         </div>
     </div>

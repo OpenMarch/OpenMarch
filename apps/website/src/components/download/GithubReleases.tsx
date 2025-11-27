@@ -241,14 +241,18 @@ export default function GithubReleases() {
                                                                   )
                                                                 ? "Intel Mac"
                                                                 : asset.name.includes(
-                                                                        "linux",
+                                                                        "linux_x86_64",
                                                                     )
-                                                                  ? "Linux .AppImage"
+                                                                  ? "Linux x64 .AppImage"
                                                                   : asset.name.includes(
-                                                                          ".exe",
+                                                                          "linux_arm64",
                                                                       )
-                                                                    ? "Windows .exe"
-                                                                    : asset.name}
+                                                                    ? "Linux ARM .AppImage"
+                                                                    : asset.name.includes(
+                                                                            ".exe",
+                                                                        )
+                                                                      ? "Windows .exe"
+                                                                      : asset.name}
                                                       </Button>
                                                   </a>
                                               ))}

@@ -2,30 +2,29 @@
 import { Image } from "astro:assets";
 import { Button } from "@openmarch/ui";
 import { CURRENT_VERSION } from "@/constants";
+import fullscreenDark from "@/assets/home/fullscreen-dark.png";
+import fullscreenLight from "@/assets/home/fullscreen-light.png";
+import editorDark from "@/assets/home/editor-dark.png";
+import editorLight from "@/assets/home/editor-light.png";
 ---
 
 <section
     id="landing"
     class="relative flex h-fit flex-col min-w-0 w-full items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-[14px]"
 >
-    <code
-        class="font-mono text-[1.25rem] text-accent intersect:motion-preset-fade-lg motion-delay-100"
+    <code class="font-mono text-[1.25rem] text-accent motion-delay-100"
         >{CURRENT_VERSION}</code
     >
     <h1
-        class="text-h1 leading-[130%] max-[580px]:text-h2 max-[580px]:w-full w-[512px] tracking-tighter text-center intersect:motion-preset-slide-up motion-delay-150"
+        class="text-h1 leading-[130%] max-[580px]:text-h2 max-[580px]:w-full w-[512px] tracking-tighter text-center motion-preset-slide-up motion-delay-150"
     >
         Free & open-source drill writing software
     </h1>
-    <p
-        class="text-body intersect:motion-preset-fade-lg text-center motion-delay-250"
-    >
+    <p class="text-body text-center motion-delay-250">
         OpenMarch is a free, open-source & intuitive drill writing app for the
         marching arts.
     </p>
-    <div
-        class="flex flex-wrap gap-8 intersect:motion-preset-fade-lg motion-delay-250"
-    >
+    <div class="flex flex-wrap gap-8 motion-delay-250">
         <a href="/download">
             <Button>Download</Button>
         </a>
@@ -36,7 +35,7 @@ import { CURRENT_VERSION } from "@/constants";
 
     <div class="flex flex-col items-center">
         <Image
-            src={"/home/fullscreen-dark.png"}
+            src={fullscreenDark}
             alt="Fullscreen Screenshot"
             width={1920}
             height={1080}
@@ -45,7 +44,7 @@ import { CURRENT_VERSION } from "@/constants";
             class="hidden dark:block border border-stroke rounded-6 aspect-video h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
         />
         <Image
-            src={"/home/fullscreen-light.png"}
+            src={fullscreenLight}
             alt="Fullscreen Screenshot"
             width={1920}
             height={1080}
@@ -55,7 +54,7 @@ import { CURRENT_VERSION } from "@/constants";
         />
 
         <Image
-            src={"/home/editor-dark.png"}
+            src={editorDark}
             alt="Editor Screenshot"
             width={1920}
             height={1080}
@@ -64,7 +63,7 @@ import { CURRENT_VERSION } from "@/constants";
             class="hidden dark:block border border-stroke rounded-6 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
         />
         <Image
-            src={"/home/editor-light.png"}
+            src={editorLight}
             alt="Editor Screenshot"
             width={1920}
             height={1080}
@@ -74,7 +73,8 @@ import { CURRENT_VERSION } from "@/constants";
         />
     </div>
     <div
-        class="absolute top-1/5 left-1/2 -translate-x-1/2 -z-50 size-[900px] max-[640px]:size-[300px] rounded-full bg-accent opacity-40 blur-[20vmin] intersect:motion-preset-fade-lg"
+        class="absolute top-0 motion-preset-fade-lg motion-delay-300 left-1/2 -translate-x-1/2 -z-50 size-[900px] max-[640px]:size-[300px]"
+        style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
     >
     </div>
 </section>

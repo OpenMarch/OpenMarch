@@ -118,6 +118,7 @@ const APP_API = {
     // Environment
     getEnv: () => ipcRenderer.invoke("env:get"),
     isCodegen: !!process.env.PLAYWRIGHT_CODEGEN,
+    isPlaywrightSession: !!process.env.PLAYWRIGHT_SESSION,
     codegen: {
         clearMouseActions: () =>
             ipcRenderer.invoke("codegen:clear-mouse-actions"),

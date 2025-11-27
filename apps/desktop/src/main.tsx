@@ -11,7 +11,10 @@ import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
-const isPlaywrightSession = import.meta.env.VITE_PUBLIC_PLAYWRIGHT_SESSION;
+// Check for Playwright session from either build-time or runtime environment
+const isPlaywrightSession =
+    import.meta.env.VITE_PUBLIC_PLAYWRIGHT_SESSION ||
+    window.electron?.isPlaywrightSession;
 
 const options: Partial<PostHogConfig> = {
     api_host: import.meta.env.VITE_PUBLIC_POSTHOG_HOST,

@@ -31,7 +31,8 @@ const { Content } = await render(post);
             class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
         />
         <div
-            class="bg-accent intersect:motion-preset-fade-lg absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2 rounded-full opacity-30 blur-[15vmin]"
+            class="absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2"
+            style="background: radial-gradient(ellipse, oklch(from var(--color-accent) l c h / 0.3) 0%, transparent 70%);"
         >
         </div>
         <h1 class="text-h3 text-center">{post.data.title}</h1>
