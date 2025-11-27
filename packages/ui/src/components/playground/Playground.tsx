@@ -8,6 +8,11 @@ interface PlaygroundProps {
     variants?: VariantOption[];
 }
 
+// Use Vite's glob import to bundle all preview files at build time
+const previewModules = import.meta.glob<{
+    default: ComponentType<Record<string, unknown>>;
+}>("../../previews/**/*.{tsx,jsx,mdx}", { eager: false });
+
 export default function Playground({ component, variants }: PlaygroundProps) {
     const [Component, setComponent] = useState<ComponentType<
         Record<string, unknown>
@@ -33,10 +38,19 @@ export default function Playground({ component, variants }: PlaygroundProps) {
                 setComponent(null);
                 setError(null);
 
-                // Dynamically import the component
-                const importedModule = await import(
-                    /* @vite-ignore */ `../../previews/${filename}`
+                // Find the module by matching the filename
+                const modulePath = Object.keys(previewModules).find((path) =>
+                    path.endsWith(`/${filename}`),
                 );
+
+                if (!modulePath) {
+                    throw new Error(
+                        `Preview module not found: ${filename}. Available modules: ${Object.keys(previewModules).join(", ")}`,
+                    );
+                }
+
+                // Dynamically import the component using the found path
+                const importedModule = await previewModules[modulePath]();
                 const LoadedComponent = importedModule.default;
 
                 if (!LoadedComponent) {
