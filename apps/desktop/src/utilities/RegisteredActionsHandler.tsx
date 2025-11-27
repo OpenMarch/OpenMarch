@@ -559,8 +559,10 @@ function RegisteredActionsHandler() {
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
-    const { mutate: updateSelectedMarchers } =
-        useUpdateSelectedMarchersOnSelectedPage();
+    const {
+        mutate: updateSelectedMarchers,
+        mutateAsync: updateSelectedMarchersAsync,
+    } = useUpdateSelectedMarchersOnSelectedPage();
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
     }>({});
@@ -585,6 +587,7 @@ function RegisteredActionsHandler() {
     }, [marcherPages, marcherPagesLoaded, selectedMarchers, selectedPage]);
 
     // Arrow movement defaults
+    const isUpdatingDirection = useRef(false);
     const snap = useRef(true);
     const distance = useRef(1);
 
@@ -841,6 +844,8 @@ function RegisteredActionsHandler() {
 
                 /******************* Marcher Movement ******************/
                 case RegisteredActionsEnum.moveSelectedMarchersUp: {
+                    if (isUpdatingDirection.current) return;
+                    isUpdatingDirection.current = true;
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "up",
@@ -849,10 +854,16 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateMarcherPages(updatedPagesArray);
+                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
+                        () => {
+                            isUpdatingDirection.current = false;
+                        },
+                    );
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersDown: {
+                    if (isUpdatingDirection.current) return;
+                    isUpdatingDirection.current = true;
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "down",
@@ -861,10 +872,16 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateMarcherPages(updatedPagesArray);
+                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
+                        () => {
+                            isUpdatingDirection.current = false;
+                        },
+                    );
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersLeft: {
+                    if (isUpdatingDirection.current) return;
+                    isUpdatingDirection.current = true;
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "left",
@@ -873,10 +890,16 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateMarcherPages(updatedPagesArray);
+                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
+                        () => {
+                            isUpdatingDirection.current = false;
+                        },
+                    );
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersRight: {
+                    if (isUpdatingDirection.current) return;
+                    isUpdatingDirection.current = true;
                     const updatedPagesArray = CoordinateActions.moveMarchersXY({
                         marcherPages: getSelectedMarcherPages(),
                         direction: "right",
@@ -885,7 +908,11 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateMarcherPages(updatedPagesArray);
+                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
+                        () => {
+                            isUpdatingDirection.current = false;
+                        },
+                    );
                     break;
                 }
 
@@ -1126,6 +1153,7 @@ function RegisteredActionsHandler() {
             selectedMarchers,
             nextMarcherPages,
             getSelectedMarcherPages,
+            updateSelectedMarchersAsync,
             swapMarchers,
             alignmentEventMarchers,
             setSelectedMarchers,
