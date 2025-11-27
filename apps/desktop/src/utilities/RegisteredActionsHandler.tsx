@@ -3,6 +3,7 @@ import {
     updateMarcherPagesMutationOptions,
     fieldPropertiesQueryOptions,
     swapMarchersMutationOptions,
+    useUpdateSelectedMarchersOnSelectedPage,
 } from "@/hooks/queries";
 import { createCircle } from "@openmarch/core";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -558,7 +559,8 @@ function RegisteredActionsHandler() {
         alignmentEventMarchers,
     } = useAlignmentEventStore()!;
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
-
+    const { mutate: updateSelectedMarchers } =
+        useUpdateSelectedMarchersOnSelectedPage();
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
     }>({});
@@ -1075,31 +1077,26 @@ function RegisteredActionsHandler() {
 
                 /****************** Shapes ******************/
                 case RegisteredActionsEnum.createCircle: {
-                    const selectedMarcherPages = getSelectedMarcherPages();
-                    if (selectedMarcherPages.length === 0) {
-                        toast.warning(t("actions.shape.noMarchersSelected"));
-                        break;
-                    }
-                    const updatedCoordinates = createCircle(
-                        selectedMarcherPages.map((mp) => ({
-                            id: mp.marcher_id,
-                            x: mp.x,
-                            y: mp.y,
-                        })),
-                        {
-                            centerX: 0,
-                            centerY: 0,
-                            radius: 10,
-                        },
-                    );
-                    updateMarcherPages(
-                        updatedCoordinates.map((coordinate) => ({
+                    updateSelectedMarchers((currentCoordinates) => {
+                        const updatedCoordinates = createCircle(
+                            currentCoordinates.map((mp) => ({
+                                id: mp.marcher_id,
+                                x: mp.x,
+                                y: mp.y,
+                            })),
+                            {
+                                centerX: 0,
+                                centerY: 0,
+                                radius: 10,
+                            },
+                        );
+
+                        return updatedCoordinates.map((coordinate) => ({
                             marcher_id: coordinate.id,
-                            page_id: selectedPage.id,
                             x: coordinate.x,
                             y: coordinate.y,
-                        })),
-                    );
+                        }));
+                    });
                     break;
                 }
 
@@ -1114,11 +1111,11 @@ function RegisteredActionsHandler() {
             marcherPagesLoaded,
             setSelectedAudioFile,
             canUndo,
-            performHistoryAction,
             t,
             canRedo,
             setUiSettings,
             uiSettings,
+            performHistoryAction,
             pages,
             isPlaying,
             setSelectedPage,
@@ -1138,6 +1135,7 @@ function RegisteredActionsHandler() {
             createMarcherShape,
             setAlignmentEvent,
             setAlignmentEventMarchers,
+            updateSelectedMarchers,
         ],
     );
 
