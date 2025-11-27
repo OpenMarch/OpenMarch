@@ -137,12 +137,13 @@ export default function DummyButton() {
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
     // Load the field properties so we know how many pixels a "step" is
-    const { data: fieldProperties, isSuccess: isFieldPropertiesLoading } =
+    const { data: fieldProperties, isSuccess: isFieldPropertiesLoaded } =
         useQuery(fieldPropertiesQueryOptions());
 
     const onClick = () => {
-        // the field properties load on app startup, but it's good to double check that they are indeed loaded
-        if (!isFieldPropertiesLoading) {
+        // the field properties load on app startup
+        // but, it's good to double check that they are indeed loaded
+        if (!isFieldPropertiesLoaded) {
             conToastError("Field properties not loaded");
             return;
         }
