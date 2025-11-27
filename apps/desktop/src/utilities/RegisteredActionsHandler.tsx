@@ -1104,7 +1104,7 @@ function RegisteredActionsHandler() {
 
                 /****************** Shapes ******************/
                 case RegisteredActionsEnum.createCircle: {
-                    updateSelectedMarchers((currentCoordinates) => {
+                    updateSelectedMarchers(({ currentCoordinates }) => {
                         const updatedCoordinates = createCircle(
                             currentCoordinates.map((mp) => ({
                                 id: mp.marcher_id,

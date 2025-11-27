@@ -1,5 +1,5 @@
 ---
-title: "Creating a feature to move marchers"
+title: "Create a simple feature to move marchers"
 description: "How to create a new feature to move marchers around"
 ---
 
@@ -23,7 +23,7 @@ export default function DummyButton() {
 
     // the actual calculation of the new coordinates
     const onClick = () => {
-        updateSelectedMarchers((currentCoordinates) => {
+        updateSelectedMarchers(({ currentCoordinates }) => {
             const newCoordinates = currentCoordinates.map((coordinate) => ({
                 marcher_id: coordinate.marcher_id,
                 x: coordinate.x + 10,
@@ -49,7 +49,7 @@ Put simply - _Given the current coordinates of marchers, modify those coordinate
 This function, as you saw above, moves the marchers to the right by 10 pixels -
 
 ```typescript
-updateSelectedMarchers((currentCoordinates) => {
+updateSelectedMarchers(({ currentCoordinates }) => {
   return currentCoordinates.map((coordinate) => ({
     marcher_id: coordinate.marcher_id,
     x: coordinate.x + 10,
@@ -65,7 +65,7 @@ updateSelectedMarchers((currentCoordinates) => {
 This function spaces the marchers out vertically by 12.5 pixels -
 
 ```typescript
-updateSelectedMarchers((currentCoordinates) => {
+updateSelectedMarchers(({ currentCoordinates }) => {
   const topY = 100;
   return currentCoordinates.map((coordinate, index) => ({
     marcher_id: coordinate.marcher_id,
@@ -88,7 +88,7 @@ Not very usable at all...
 To make this better, we want to _sort_ the coordinates that we are setting based on the marcher's current position -
 
 ```typescript
-updateSelectedMarchers((currentCoordinates) => {
+updateSelectedMarchers(({ currentCoordinates }) => {
   const topY = 100;
 
   const sortedCoordinates = currentCoordinates.sort((a, b) => {
@@ -125,29 +125,16 @@ Lastly -
 This is also very simple to do -
 
 ```typescript
-import {
-    fieldPropertiesQueryOptions, // added this as an import
-    useUpdateSelectedMarchersOnSelectedPage,
-} from "@/hooks/queries";
-import { conToastError } from "@/utilities/utils";  // Prints a toast error that the user sees, and a console error
+import { useUpdateSelectedMarchersOnSelectedPage } from "@/hooks/queries";
 import { Button } from "@openmarch/ui";
-import { useQuery } from "@tanstack/react-query";
 
 export default function DummyButton() {
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
-    // Load the field properties so we know how many pixels a "step" is
-    const { data: fieldProperties, isSuccess: isFieldPropertiesLoaded } =
-        useQuery(fieldPropertiesQueryOptions());
 
     const onClick = () => {
-        // the field properties load on app startup
-        // but, it's good to double check that they are indeed loaded
-        if (!isFieldPropertiesLoaded) {
-            conToastError("Field properties not loaded");
-            return;
-        }
-        updateSelectedMarchers((currentCoordinates) => {
+        // Load the field properties so we know how many pixels a "step" is
+        updateSelectedMarchers(({ currentCoordinates, fieldProperties }) => {
             // 2 step interval
             const spacing = fieldProperties.pixelsPerStep * 2;
 
@@ -191,8 +178,8 @@ We can also see that the marchers end up at a 2-step interval! Granted, they are
 
 ![Screenshot showing marchers arranged in a vertical line with 2-step intervals between them](/docs/developers/adding-a-feature/interval.png)
 
-Fun fact, a simpler version of this is how our "Align Horizontally" and "Align Vertically" buttons function.
-
 ## Your turn
 
-With this, it should be _much_ easier to add your own forms to OpenMarch. Put letters, your school logo, or even some crazy 3D cube! We're still in the process of figuring out where all of these buttons should go, but don't let that stop you. Reach out on [Discord](discord.openmarch.com) if you need any help or have any questions.
+With this, it should be _much_ easier to add your own forms to OpenMarch. Put letters, your school logo, or even some crazy 3D cube! We're still in the process of figuring out where all of these buttons should go, but don't let that stop you.
+
+Reach out on [Discord](discord.openmarch.com) if you need any help or have any questions.
