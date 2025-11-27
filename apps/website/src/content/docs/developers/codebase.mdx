@@ -30,7 +30,11 @@ Feel free to ask questions on the Discord if you have problems with anything.
   - pnpm
   - Prettier, ESLint, CSpell
 - Desktop app
-  - Electron, Fabric.js, Vitest, React
+  - Electron
+  - **Frontend** - Fabric.js, React
+  - **State** - Zustand, Tanstack Query
+  - **Database** - SQLite, Drizzle ORM
+  - **Testing** - Vitest, Playwright
 - Websites
   - Astro, React
 - Design system
@@ -43,6 +47,7 @@ Feel free to ask questions on the Discord if you have problems with anything.
 1. Download & install [Node.js 22 (LTS)](https://nodejs.org/en) (also make sure to have `pnpm`)
 2. Clone/fork the repo (https://github.com/OpenMarch/OpenMarch)
 3. Install dependencies: `pnpm install`
+   - Note there are some known issues developing on Ubuntu. Please reach out to us on [Discord](discord.openmarch.com) and help us complete this guide :)
 
 </Steps>
 
@@ -56,9 +61,11 @@ This is the structure of our monorepo.
 .
 ├── apps/
 │   ├── desktop - The main desktop app
-│   └── website - Our website
+│   └── website - Our website (and the one you're looking at right now)
 ├── packages/
-│   └── ui - Our design system & playground
+│   ├── core - Utilities and tools for the codebase
+│   ├── ui - Our design system & playground
+│   └── * - A handful of other packages we use for various utilities
 └── package.json
 ```
 
@@ -70,9 +77,9 @@ Tasks are our main commands in the codebase.
 # Install packages
 pnpm install
 
-# Prepare electron app
+# Prepare electron app (this only needs to be run after test:prepare)
 pnpm desktop app:prepare
-# Run electron & vite
+# Run the desktop app dev server
 pnpm desktop dev
 
 # Run the website's astro dev server
@@ -80,7 +87,11 @@ pnpm site dev
 
 # Run the design system playground
 pnpm ui dev
+```
 
+#### Utilities
+
+```bash
 # Fix
 pnpm fix
 # or individually:
@@ -90,4 +101,24 @@ pnpm spellcheck
 
 # can also run tasks in specific packages
 pnpm desktop lint
+```
+
+#### Testing
+
+```bash
+# Run all unit tests in the monorepo
+pnpm test
+
+# Test a specific file in the desktop app
+cd apps/desktop
+pnpm exec vitest path/to/the/file.test.ts
+
+# Run end-to-end tests in the desktop app
+cd apps/desktop
+pnpm run e2e
+
+# Generate more e2e test code
+# See apps/desktop/e2e/README.md for more information
+cd apps/desktop
+pnpm run e2e:codegen
 ```
