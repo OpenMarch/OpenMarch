@@ -7,12 +7,12 @@ import mdx from "@astrojs/mdx";
 
 // https://astro.build/config
 export default defineConfig({
-    output: 'static',
+    output: "static",
     integrations: [react(), mdx()],
 
     // Configure for Cloudflare Pages deployment
     build: {
-        inlineStylesheets: 'auto',
+        inlineStylesheets: "auto",
     },
 
     vite: {
