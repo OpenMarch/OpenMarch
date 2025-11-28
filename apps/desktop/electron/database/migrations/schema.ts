@@ -301,6 +301,53 @@ export const section_appearances = sqliteTable("section_appearances", {
     ...timestamps,
 });
 
+export const tags = sqliteTable("tags", {
+    id: integer().primaryKey(),
+    name: text(),
+    description: text(),
+    ...timestamps,
+});
+
+/**
+ * What a tag looks like on a page and onward.
+ */
+export const tag_appearances = sqliteTable(
+    "tag_appearances",
+    {
+        id: integer().primaryKey(),
+        tag_id: integer()
+            .notNull()
+            .references(() => tags.id, { onDelete: "cascade" }),
+        start_page_id: integer()
+            .notNull()
+            // Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
+            .references(() => pages.id, { onDelete: "restrict" }),
+        fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
+        outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
+        shape_type: text().default("circle").notNull(),
+        visible: integer().default(1).notNull(),
+        label_visible: integer().default(1).notNull(),
+        priority: integer().default(0).notNull(),
+        ...timestamps,
+    },
+    (table) => [unique().on(table.tag_id, table.start_page_id)],
+);
+
+export const marcher_tags = sqliteTable(
+    "marcher_tags",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        tag_id: integer()
+            .notNull()
+            .references(() => tags.id, { onDelete: "cascade" }),
+        ...timestamps,
+    },
+    (table) => [unique().on(table.marcher_id, table.tag_id)],
+);
+
 export const utility = sqliteTable(
     "utility",
     {

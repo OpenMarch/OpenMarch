@@ -10,4 +10,7 @@ export * from "./useUtility";
 export * from "./useMarchers";
 export * from "./useSectionAppearances";
 export * from "./useShapePages";
+export * from "./useTags";
+export * from "./useTagAppearances";
+export * from "./useMarcherTags";
 export * from "./constants";
