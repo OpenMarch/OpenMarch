@@ -3,12 +3,14 @@ import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
     shapePageMarchersQueryByPageIdOptions,
+    useUpdateSelectedMarchersOnSelectedPage,
 } from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
+    Button,
     getButtonClassName,
     Input,
     Select,
@@ -45,6 +47,10 @@ interface AlignmentButtonsProps {
 function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
     const [horizontalStepInterval, setHorizontalStepInterval] = useState(2);
     const [verticalStepInterval, setVerticalStepInterval] = useState(2);
+    const { mutate: updateSelectedMarchers } =
+        useUpdateSelectedMarchersOnSelectedPage();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+
     return (
         <>
             {/* Align buttons */}
@@ -143,10 +149,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             {/* Distribute by step interval buttons */}
             <div className="flex flex-col gap-8">
                 <div className="flex flex-1 items-center justify-center gap-4">
-                    <RegisteredActionButton
-                        registeredAction={
-                            RegisteredActionsObjects.distributeHorizontallyByStepInterval
-                        }
+                    <Button
                         disabled={editingDisabled}
                         className={clsx(
                             getButtonClassName({
@@ -155,9 +158,31 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             }),
                             "flex flex-1 items-center justify-center",
                         )}
+                        onClick={useCallback(() => {
+                            updateSelectedMarchers((currentCoordinates) => {
+                                const pixelsPerStep =
+                                    fieldProperties?.pixelsPerStep ?? 0;
+                                const interval =
+                                    horizontalStepInterval * pixelsPerStep;
+                                const newCoordinates = currentCoordinates.map(
+                                    (coordinate, index) => ({
+                                        marcher_id: coordinate.marcher_id,
+                                        x:
+                                            currentCoordinates[0].x +
+                                            index * interval,
+                                        y: coordinate.y,
+                                    }),
+                                );
+                                return newCoordinates;
+                            });
+                        }, [
+                            fieldProperties?.pixelsPerStep,
+                            horizontalStepInterval,
+                            updateSelectedMarchers,
+                        ])}
                     >
                         <DotsThreeOutlineIcon size={16} weight="light" />
-                    </RegisteredActionButton>
+                    </Button>
                     <Input
                         type="number"
                         min={1}
@@ -172,10 +197,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                     />
                 </div>
                 <div className="flex flex-1 items-center justify-center gap-4">
-                    <RegisteredActionButton
-                        registeredAction={
-                            RegisteredActionsObjects.distributeVerticallyByStepInterval
-                        }
+                    <Button
                         disabled={editingDisabled}
                         className={clsx(
                             getButtonClassName({
@@ -184,12 +206,39 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             }),
                             "flex flex-1 items-center justify-center",
                         )}
+                        onClick={useCallback(() => {
+                            updateSelectedMarchers((currentCoordinates) => {
+                                const pixelsPerStep =
+                                    fieldProperties?.pixelsPerStep ?? 0;
+                                const interval =
+                                    verticalStepInterval * pixelsPerStep;
+                                const avgX =
+                                    currentCoordinates.reduce(
+                                        (sum, m) => sum + (m.x as number),
+                                        0,
+                                    ) / currentCoordinates.length;
+                                const newCoordinates = currentCoordinates.map(
+                                    (coordinate, index) => ({
+                                        marcher_id: coordinate.marcher_id,
+                                        x: avgX,
+                                        y:
+                                            currentCoordinates[0].y +
+                                            index * interval,
+                                    }),
+                                );
+                                return newCoordinates;
+                            });
+                        }, [
+                            fieldProperties?.pixelsPerStep,
+                            verticalStepInterval,
+                            updateSelectedMarchers,
+                        ])}
                     >
                         <DotsThreeOutlineVerticalIcon
                             size={16}
                             weight="light"
                         />
-                    </RegisteredActionButton>
+                    </Button>
                     <Input
                         type="number"
                         min={1}
