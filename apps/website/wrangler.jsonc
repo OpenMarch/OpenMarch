@@ -1,7 +1,25 @@
 {
     "name": "openmarch-website",
     "compatibility_date": "2025-11-25",
+    "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+    "main": "./src/worker.ts",
     "assets": {
+        "binding": "ASSETS",
         "directory": "./dist",
+    },
+    "r2_buckets": [
+        {
+            "binding": "DOWNLOADS_BUCKET",
+            "bucket_name": "public-downloads",
+            "preview_bucket_name": "public-downloads",
+        },
+        {
+            "binding": "IMAGES_BUCKET",
+            "bucket_name": "public-images",
+            "preview_bucket_name": "public-images",
+        },
+    ],
+    "observability": {
+        "enabled": true,
     },
 }
