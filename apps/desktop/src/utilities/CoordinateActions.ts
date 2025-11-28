@@ -372,7 +372,6 @@ export function evenlyDistributeVertically({
 
     return changes;
 }
-
 /**
  * Moves the given marcherPages in the specified direction by the specified distance.
  * If snap is true, the coordinates will be snapped to the grid.
