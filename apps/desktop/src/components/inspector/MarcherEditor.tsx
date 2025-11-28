@@ -287,14 +287,6 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             >
                                 <T keyName="toolbar.alignment.toNextPagePositions" />
                             </RegisteredActionButton>
-                            <RegisteredActionButton
-                                registeredAction={
-                                    RegisteredActionsObjects.setSelectedMarchersToNextPage
-                                }
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toNextPagePositions" />
-                            </RegisteredActionButton>
                         </Dropdown.Content>
                     </Dropdown.Portal>
                 </Dropdown.Root>
