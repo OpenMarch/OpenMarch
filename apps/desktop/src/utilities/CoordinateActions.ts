@@ -306,43 +306,6 @@ export function evenlyDistributeHorizontally({
 }
 
 /**
- * Distributes the given marcherPages horizontally with a fixed interval in steps.
- * @param marcherPages - The marcherPages to distribute.
- * @param intervalSteps - The horizontal distance between each marcher (in steps).
- * @param fieldProperties - Field properties (for pixelsPerStep).
- * @returns - The changes to be made to the marcherPages to distribute them at the given interval in steps.
- *            Pass these changes to updateMarcherPages(changes) to apply the changes.
- */
-export function distributeHorizontallyByStepInterval({
-    marcherPages,
-    intervalSteps,
-    fieldProperties,
-}: {
-    marcherPages: MarcherPage[];
-    intervalSteps: number;
-    fieldProperties: FieldProperties;
-}): ModifiedMarcherPageArgs[] {
-    if (marcherPages.length <= 1) return [];
-    const changes: ModifiedMarcherPageArgs[] = [];
-    const interval = intervalSteps * fieldProperties.pixelsPerStep;
-    // Sort by X coordinate
-    const sortedMarcherPages = [...marcherPages].sort(
-        (a, b) => (a.x as number) - (b.x as number),
-    );
-    const firstX = sortedMarcherPages[0].x as number;
-    changes.push(
-        ...sortedMarcherPages.map((marcherPage, index) => ({
-            marcher_id: marcherPage.marcher_id,
-            page_id: marcherPage.page_id,
-            x: firstX + index * interval,
-            y: marcherPage.y as number,
-            notes: marcherPage.notes || undefined,
-        })),
-    );
-    return changes;
-}
-
-/**
  * Evenly distributes the given marcherPages vertically.
  *
  * @param marcherPages - The marcherPages to evenly distribute vertically.
@@ -407,39 +370,6 @@ export function evenlyDistributeVertically({
         })),
     );
 
-    return changes;
-}
-
-export function distributeVerticallyByStepInterval({
-    marcherPages,
-    intervalSteps,
-    fieldProperties,
-}: {
-    marcherPages: MarcherPage[];
-    intervalSteps: number;
-    fieldProperties: FieldProperties;
-}): ModifiedMarcherPageArgs[] {
-    if (marcherPages.length <= 1) return [];
-    const changes: ModifiedMarcherPageArgs[] = [];
-    const interval = intervalSteps * fieldProperties.pixelsPerStep;
-    // Sort by Y coordinate
-    const sortedMarcherPages = [...marcherPages].sort(
-        (a, b) => (a.y as number) - (b.y as number),
-    );
-    // Align all X to the average X
-    const avgX =
-        sortedMarcherPages.reduce((sum, m) => sum + (m.x as number), 0) /
-        sortedMarcherPages.length;
-    const firstY = sortedMarcherPages[0].y as number;
-    changes.push(
-        ...sortedMarcherPages.map((marcherPage, index) => ({
-            marcher_id: marcherPage.marcher_id,
-            page_id: marcherPage.page_id,
-            x: avgX,
-            y: firstY + index * interval,
-            notes: marcherPage.notes || undefined,
-        })),
-    );
     return changes;
 }
 
