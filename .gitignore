@@ -17,6 +17,12 @@ dist-electron
 release
 *.local
 
+# Vite cache and build artifacts
+.timestamp-*
+*.timestamp-*.mjs
+.vite
+node_modules/.vite
+
 # Editor directories and files
 .vscode/.debug.env
 .idea

@@ -17,6 +17,8 @@ export type DatabaseMarcherPage = DatabaseMarcherPageBase;
 export default interface MarcherPage extends DatabaseMarcherPageBase {
     readonly isLocked?: boolean;
     readonly lockedReason?: string;
+    readonly marcher_id: number;
+    readonly page_id: number;
 }
 
 /**

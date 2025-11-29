@@ -195,6 +195,7 @@ const APP_API = {
             showName: string;
             exportDir: string;
             individualCharts: boolean;
+            notesAppendixPages?: { pageName: string; notes: string }[];
         }) => ipcRenderer.invoke("export:generateDocForMarcher", args),
     },
 

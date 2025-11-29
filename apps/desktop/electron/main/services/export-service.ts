@@ -8,6 +8,8 @@ import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
 import Page from "@/global/classes/Page";
+import sanitizeHtml from "sanitize-html";
+
 import Store from "electron-store";
 import { getOrmConnection } from "../../database/database.services";
 
@@ -1020,6 +1022,7 @@ export class PDFExportService {
         showName: string;
         exportDir: string;
         individualCharts: boolean;
+        notesAppendixPages?: { pageName: string; notes: string }[];
     }) {
         const {
             svgPages,
@@ -1029,6 +1032,7 @@ export class PDFExportService {
             showName,
             exportDir,
             individualCharts,
+            notesAppendixPages = [],
         } = args;
         // Debug: Confirm this is drill chart export
         console.debug(
@@ -1055,13 +1059,14 @@ export class PDFExportService {
             size: "LETTER",
             layout: "landscape",
             margins: { top: 0, bottom: 0, left: 0, right: 0 },
+            bufferPages: true,
         });
         const stream = fs.createWriteStream(pdfFilePath);
         doc.pipe(stream);
 
         // Helper to draw bold header and value with proper wrapping and y advancement
         function drawLabelValue(
-            doc: PDFKit.PDFDocument,
+            doc: InstanceType<typeof PDFDocument>,
             label: string,
             value: string,
             x: number,
@@ -1085,6 +1090,329 @@ export class PDFExportService {
             return afterY + 2;
         }
 
+        const renderHtmlText = (
+            doc: InstanceType<typeof PDFDocument>,
+            html: string,
+            x: number,
+            y: number,
+            width: number,
+            baseFontSize: number = 10,
+        ): number => {
+            if (!html) return y;
+
+            // Sanitize HTML using sanitize-html library to prevent XSS and CodeQL warnings
+            // Allow only tags we explicitly handle for formatting
+            let text = "";
+            try {
+                text = sanitizeHtml(html, {
+                    allowedTags: [
+                        "h1",
+                        "h2",
+                        "h3",
+                        "h4",
+                        "h5",
+                        "h6",
+                        "p",
+                        "div",
+                        "br",
+                        "strong",
+                        "b",
+                        "em",
+                        "i",
+                        "ul",
+                        "ol",
+                        "li",
+                    ],
+                    allowedAttributes: {}, // No attributes allowed
+                });
+            } catch (error) {
+                console.error("Error sanitizing HTML:", error);
+            }
+
+            // Decode HTML entities
+            const entityMap: Record<string, string> = {
+                "&amp;": "&",
+                "&lt;": "<",
+                "&gt;": ">",
+                "&quot;": '"',
+                "&#39;": "'",
+                "&apos;": "'",
+            };
+            text = text.replace(
+                /&(?:amp|lt|gt|quot|#39|apos);/g,
+                (match) => entityMap[match] || match,
+            );
+            text = text.replace(/&#(\d{1,6});/g, (match, num) => {
+                const code = parseInt(num, 10);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+            text = text.replace(/&#x([0-9a-fA-F]{1,6});/g, (match, hex) => {
+                const code = parseInt(hex, 16);
+                if (code >= 0 && code <= 0x10ffff) {
+                    try {
+                        return String.fromCodePoint(code);
+                    } catch {
+                        return match;
+                    }
+                }
+                return match;
+            });
+
+            text = text.replace(/<li[^>]*>/gi, "• ");
+            text = text.replace(/<\/li>/gi, "\n");
+            text = text.replace(/<\/?(ul|ol)[^>]*>/gi, "\n");
+            text = text.replace(/<(p|div)[^>]*>/gi, "\n");
+
+            let currentY = y;
+
+            // Extract and replace headings with placeholders to preserve them during splitting
+            const headingPlaceholders: Array<{
+                placeholder: string;
+                type: "h1" | "h2" | "h3";
+                content: string;
+            }> = [];
+            let placeholderCounter = 0;
+
+            text = text.replace(
+                /<h1[^>]*>([\s\S]*?)<\/h1>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H1_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h1",
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            text = text.replace(
+                /<h2[^>]*>([\s\S]*?)<\/h2>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H2_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h2",
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            text = text.replace(
+                /<h3[^>]*>([\s\S]*?)<\/h3>/gi,
+                (match, content) => {
+                    const placeholder = `__HEADING_H3_${placeholderCounter++}__`;
+                    headingPlaceholders.push({
+                        placeholder,
+                        type: "h3",
+                        content: sanitizeHtml(content, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim(),
+                    });
+                    return placeholder;
+                },
+            );
+
+            const blockSplitRegex = /(?:<br\s*\/?>|<\/(?:p|div)\s*>)/gi;
+            const blocks = text.split(blockSplitRegex);
+
+            if (
+                blocks.length === 0 ||
+                (blocks.length === 1 && !blocks[0].trim())
+            ) {
+                blocks.length = 0;
+                blocks.push(text);
+            }
+
+            for (const block of blocks) {
+                const trimmedBlock = block.trim();
+                if (!trimmedBlock) {
+                    currentY += baseFontSize * 0.5;
+                    continue;
+                }
+
+                // Check for heading placeholders
+                const h1Placeholder = trimmedBlock.match(/__HEADING_H1_\d+__/);
+                const h2Placeholder = trimmedBlock.match(/__HEADING_H2_\d+__/);
+                const h3Placeholder = trimmedBlock.match(/__HEADING_H3_\d+__/);
+
+                if (h1Placeholder) {
+                    const placeholder = h1Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.5).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                } else if (h2Placeholder) {
+                    const placeholder = h2Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.3).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                } else if (h3Placeholder) {
+                    const placeholder = h3Placeholder[0];
+                    const heading = headingPlaceholders.find(
+                        (h) => h.placeholder === placeholder,
+                    );
+                    if (heading && heading.content) {
+                        doc.fontSize(baseFontSize * 1.1).font("Helvetica-Bold");
+                        doc.text(heading.content, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.3;
+                    }
+                    continue;
+                }
+
+                // Remove heading placeholders from block before processing
+                const blockWithoutPlaceholders = trimmedBlock
+                    .replace(/__HEADING_H[1-3]_\d+__/g, "")
+                    .trim();
+                if (!blockWithoutPlaceholders) {
+                    currentY += baseFontSize * 0.5;
+                    continue;
+                }
+
+                const formatTagsRegex =
+                    /<(strong|b|em|i)(?:\s[^>]*)?>|<\/(strong|b|em|i)>/gi;
+                const parts: Array<{
+                    text: string;
+                    bold: boolean;
+                    italic: boolean;
+                }> = [];
+                let inBold = false;
+                let inItalic = false;
+                let lastIndex = 0;
+                let match;
+
+                formatTagsRegex.lastIndex = 0;
+
+                while (
+                    (match = formatTagsRegex.exec(blockWithoutPlaceholders)) !==
+                    null
+                ) {
+                    if (match.index > lastIndex) {
+                        const textBefore = blockWithoutPlaceholders.substring(
+                            lastIndex,
+                            match.index,
+                        );
+                        const cleanText = sanitizeHtml(textBefore, {
+                            allowedTags: [],
+                            allowedAttributes: {},
+                        }).trim();
+                        if (cleanText) {
+                            parts.push({
+                                text: cleanText,
+                                bold: inBold,
+                                italic: inItalic,
+                            });
+                        }
+                    }
+
+                    const tag = match[1] || match[2];
+                    if (tag === "strong" || tag === "b") {
+                        inBold = !inBold;
+                    } else if (tag === "em" || tag === "i") {
+                        inItalic = !inItalic;
+                    }
+
+                    lastIndex = match.index + match[0].length;
+                }
+
+                if (lastIndex < blockWithoutPlaceholders.length) {
+                    const textAfter =
+                        blockWithoutPlaceholders.substring(lastIndex);
+                    // Strip all HTML tags completely to prevent injection vulnerabilities
+                    // We handle formatting separately via the regex parsing above
+                    const cleanText = sanitizeHtml(textAfter, {
+                        allowedTags: [],
+                        allowedAttributes: {},
+                    }).trim();
+                    if (cleanText) {
+                        parts.push({
+                            text: cleanText,
+                            bold: inBold,
+                            italic: inItalic,
+                        });
+                    }
+                }
+
+                if (parts.length === 0) {
+                    // Use sanitizeHtml to strip tags instead of regex
+                    const plainText = sanitizeHtml(blockWithoutPlaceholders, {
+                        allowedTags: [],
+                        allowedAttributes: {},
+                    }).trim();
+
+                    if (plainText) {
+                        doc.fontSize(baseFontSize).font("Helvetica");
+                        doc.text(plainText, x, currentY, { width });
+                        currentY = doc.y + baseFontSize * 0.2;
+                    }
+                } else {
+                    doc.fontSize(baseFontSize);
+                    let isFirst = true;
+                    let startX = x;
+
+                    for (let i = 0; i < parts.length; i++) {
+                        const part = parts[i];
+                        if (!part.text) continue;
+
+                        let font = "Helvetica";
+                        if (part.bold && part.italic) {
+                            font = "Helvetica-BoldOblique";
+                        } else if (part.bold) {
+                            font = "Helvetica-Bold";
+                        } else if (part.italic) {
+                            font = "Helvetica-Oblique";
+                        }
+
+                        doc.font(font);
+                        doc.text(
+                            part.text,
+                            isFirst ? x : startX,
+                            isFirst ? currentY : doc.y,
+                            {
+                                width,
+                                continued: i < parts.length - 1,
+                            },
+                        );
+
+                        if (isFirst) {
+                            isFirst = false;
+                            startX = doc.x;
+                        }
+                    }
+
+                    currentY = doc.y + baseFontSize * 0.2;
+                }
+            }
+
+            return currentY;
+        };
+
         // Set up margins and top bar height
         const margin = 20;
         const topBarHeight = 34;
@@ -1101,7 +1429,7 @@ export class PDFExportService {
             const prevCoord = marcherCoordinates[i - 1] ?? "N/A";
             const currCoord = marcherCoordinates[i] ?? "N/A";
             const nextCoord = marcherCoordinates[i + 1] ?? "N/A";
-            const notes = page?.notes ?? "";
+            const notesHtml = page?.notes ?? "";
             const pageWidth = doc.page.width;
             const pageHeight = doc.page.height;
 
@@ -1234,14 +1562,23 @@ export class PDFExportService {
             }
 
             // Right column (Notes)
-            yMid = drawLabelValue(
-                doc,
-                "Notes:",
-                notes,
-                rightX,
-                yRight,
-                rightColWidth,
-            );
+            doc.fontSize(11).font("Helvetica-Bold");
+            doc.text("Notes:", rightX, yRight, {
+                width: rightColWidth,
+            });
+            const notesStartY = doc.y + 2;
+            if (notesHtml) {
+                yRight = renderHtmlText(
+                    doc,
+                    notesHtml,
+                    rightX,
+                    notesStartY,
+                    rightColWidth,
+                    10,
+                );
+            } else {
+                yRight = notesStartY;
+            }
 
             // Add footer at the bottom of the page
             const footerY = pageHeight - 25;
@@ -1261,6 +1598,145 @@ export class PDFExportService {
                 width: pageWidth * 0.3,
                 align: "center",
             });
+        }
+
+        // Notes appendix pages
+        const appendixEntries = (notesAppendixPages ?? [])
+            .map((entry) => ({
+                pageName: entry.pageName,
+                notesHtml: entry.notes ?? "",
+            }))
+            .filter((entry) => entry.notesHtml.trim().length > 0);
+
+        if (appendixEntries.length > 0) {
+            const drawAppendixHeaderOnCurrentPage = () => {
+                const pageWidth = doc.page.width;
+                const pageHeight = doc.page.height;
+
+                doc.rect(
+                    margin,
+                    margin,
+                    pageWidth - 2 * margin,
+                    topBarHeight,
+                ).fill("#ddd");
+                const titleBarY = margin + topBarHeight / 2 - 6;
+
+                doc.fillColor("black").fontSize(16).font("Helvetica-Bold");
+                doc.text(`${drillNumber}`, margin + 10, titleBarY, {
+                    width: pageWidth * 0.2,
+                    align: "left",
+                });
+                doc.text(showName, pageWidth * 0.2, titleBarY, {
+                    width: pageWidth * 0.6,
+                    align: "center",
+                });
+                doc.text("Notes", pageWidth * 0.8, titleBarY, {
+                    width: pageWidth * 0.2,
+                    align: "center",
+                });
+
+                return {
+                    pageWidth,
+                    pageHeight,
+                    startY: margin + topBarHeight + 20,
+                };
+            };
+
+            const renderAppendixHeader = () => {
+                doc.addPage({
+                    size: "LETTER",
+                    layout: "portrait",
+                    margins: {
+                        top: margin + topBarHeight + 20,
+                        bottom: 60,
+                        left: 0,
+                        right: 0,
+                    },
+                });
+                return drawAppendixHeaderOnCurrentPage();
+            };
+
+            const renderFooter = (pageWidth: number, pageHeight: number) => {
+                // Save current margins
+                const oldMargins = doc.page.margins;
+                // Temporarily remove bottom margin to allow drawing footer
+                doc.page.margins = { ...oldMargins, bottom: 0 };
+
+                const footerY = pageHeight - 25;
+                doc.fillColor("#666666").fontSize(8).font("Helvetica");
+                doc.text(
+                    `Exported ${new Date().toLocaleDateString()}`,
+                    margin + 10,
+                    footerY + 6,
+                    {
+                        width: pageWidth * 0.3,
+                        align: "left",
+                    },
+                );
+                doc.text("Made with OpenMarch", pageWidth * 0.35, footerY + 6, {
+                    width: pageWidth * 0.3,
+                    align: "center",
+                });
+
+                // Restore margins
+                doc.page.margins = oldMargins;
+            };
+
+            const writeNotesEntry = (entry: {
+                pageName: string;
+                notesHtml: string;
+            }) => {
+                if (!entry.notesHtml) return;
+
+                const { pageWidth, pageHeight, startY } =
+                    renderAppendixHeader();
+                const contentWidth = pageWidth - 2 * margin;
+
+                // Capture the start page index (the page we just added)
+                const rangeStart = doc.bufferedPageRange();
+                const startPageIndex = rangeStart.start + rangeStart.count - 1;
+
+                const title = `Set ${entry.pageName}`;
+                doc.fillColor("black").fontSize(12).font("Helvetica-Bold");
+                doc.text(title, margin, startY, {
+                    width: contentWidth,
+                });
+                const notesStartY = doc.y + 4;
+
+                renderHtmlText(
+                    doc,
+                    entry.notesHtml,
+                    margin,
+                    notesStartY,
+                    contentWidth,
+                    10,
+                );
+
+                const rangeEnd = doc.bufferedPageRange();
+                const endPageIndex = rangeEnd.start + rangeEnd.count - 1;
+
+                for (
+                    let pageIdx = startPageIndex;
+                    pageIdx <= endPageIndex;
+                    pageIdx++
+                ) {
+                    doc.switchToPage(pageIdx);
+                    const currentPageWidth = doc.page.width;
+                    const currentPageHeight = doc.page.height;
+
+                    // Render footer on every page
+                    renderFooter(currentPageWidth, currentPageHeight);
+
+                    // For subsequent pages, we need to draw the header (it wasn't drawn by renderAppendixHeader)
+                    if (pageIdx > startPageIndex) {
+                        drawAppendixHeaderOnCurrentPage();
+                    }
+                }
+            };
+
+            for (const entry of appendixEntries) {
+                writeNotesEntry(entry);
+            }
         }
 
         doc.end();
