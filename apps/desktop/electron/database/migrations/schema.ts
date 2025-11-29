@@ -322,9 +322,9 @@ export const tag_appearances = sqliteTable(
             .notNull()
             // Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
             .references(() => pages.id, { onDelete: "restrict" }),
-        fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-        outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-        shape_type: text().default("circle").notNull(),
+        fill_color: text(),
+        outline_color: text(),
+        shape_type: text(),
         visible: integer().default(1).notNull(),
         label_visible: integer().default(1).notNull(),
         priority: integer().default(0).notNull(),

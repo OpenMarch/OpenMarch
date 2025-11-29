@@ -305,7 +305,7 @@ export async function createPages({
     db: DbConnection;
 }): Promise<DatabasePage[]> {
     if (newPages.length === 0) {
-        console.log("No new pages to create");
+        console.warn("No new pages to create");
         return [];
     }
     const transactionResult = await transactionWithHistory(
@@ -422,6 +422,28 @@ export const getLastPage = async ({
         .orderBy(desc(schema.beats.position))
         .limit(1)
         .get();
+};
+
+export type DatabasePageWithBeat = DatabasePage & { beatObject: DatabaseBeat };
+
+/**
+ * Returns in ascending order by the beat position.
+ */
+export const getPagesInOrder = async ({
+    tx,
+}: {
+    tx: DbConnection | DbTransaction;
+}): Promise<DatabasePageWithBeat[]> => {
+    const response = await tx
+        .select()
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(asc(schema.beats.position))
+        .all();
+    return response.map(({ pages, beats }) => ({
+        ...realDatabasePageToDatabasePage(pages),
+        beatObject: realDatabaseBeatToDatabaseBeat(beats),
+    }));
 };
 
 export const deletePagesInTransaction = async ({

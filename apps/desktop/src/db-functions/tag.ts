@@ -1,5 +1,6 @@
 import { eq, inArray } from "drizzle-orm";
 import {
+    DatabasePage,
     DbConnection,
     DbTransaction,
     transactionWithHistory,
@@ -32,7 +33,7 @@ export interface ModifiedTagArgs {
 export async function getTags({
     db,
 }: {
-    db: DbConnection;
+    db: DbConnection | DbTransaction;
 }): Promise<DatabaseTag[]> {
     const result = await db.query.tags.findMany();
     return result;
@@ -45,7 +46,7 @@ export async function getTagById({
     db,
     id,
 }: {
-    db: DbConnection;
+    db: DbConnection | DbTransaction;
     id: number;
 }): Promise<DatabaseTag | undefined> {
     const result = await db.query.tags.findFirst({
@@ -54,35 +55,24 @@ export async function getTagById({
     return result;
 }
 
-/**
- * Creates new tags in the database.
- */
-export async function createTags({
+export const createTags = async ({
     newTags,
     db,
 }: {
     newTags: NewTagArgs[];
     db: DbConnection;
-}): Promise<DatabaseTag[]> {
-    if (newTags.length === 0) {
-        console.log("No new tags to create");
-        return [];
-    }
-
+}): Promise<DatabaseTag[]> => {
     const transactionResult = await transactionWithHistory(
         db,
         "createTags",
         async (tx) => {
-            return await createTagsInTransaction({
-                newTags,
-                tx,
-            });
+            return await _createTagsInTransaction({ newTags, tx });
         },
     );
     return transactionResult;
-}
+};
 
-const createTagsInTransaction = async ({
+export const _createTagsInTransaction = async ({
     newTags,
     tx,
 }: {
@@ -96,29 +86,6 @@ const createTagsInTransaction = async ({
 
     return createdTags;
 };
-
-/**
- * Updates existing tags in the database.
- */
-export async function updateTags({
-    db,
-    modifiedTags,
-}: {
-    db: DbConnection;
-    modifiedTags: ModifiedTagArgs[];
-}): Promise<DatabaseTag[]> {
-    const transactionResult = await transactionWithHistory(
-        db,
-        "updateTags",
-        async (tx) => {
-            return await updateTagsInTransaction({
-                modifiedTags,
-                tx,
-            });
-        },
-    );
-    return transactionResult;
-}
 
 export const updateTagsInTransaction = async ({
     modifiedTags,
@@ -143,33 +110,7 @@ export const updateTagsInTransaction = async ({
     return updatedTags;
 };
 
-/**
- * Deletes tags from the database.
- * CAUTION - This will cascade delete all tag_appearances and marcher_tags associated with these tags.
- */
-export async function deleteTags({
-    tagIds,
-    db,
-}: {
-    tagIds: Set<number>;
-    db: DbConnection;
-}): Promise<DatabaseTag[]> {
-    if (tagIds.size === 0) return [];
-
-    const response = await transactionWithHistory(
-        db,
-        "deleteTags",
-        async (tx) => {
-            return await deleteTagsInTransaction({
-                tagIds,
-                tx,
-            });
-        },
-    );
-    return response;
-}
-
-const deleteTagsInTransaction = async ({
+export const deleteTagsInTransaction = async ({
     tagIds,
     tx,
 }: {
@@ -193,9 +134,9 @@ export interface DatabaseTagAppearance {
     id: number;
     tag_id: number;
     start_page_id: number;
-    fill_color: RgbaColor;
-    outline_color: RgbaColor;
-    shape_type: string;
+    fill_color: RgbaColor | null;
+    outline_color: RgbaColor | null;
+    shape_type: string | null;
     visible: boolean;
     label_visible: boolean;
     priority: number;
@@ -230,9 +171,11 @@ export const realDatabaseTagAppearanceToDatabaseTagAppearance = (
         id: item.id,
         tag_id: item.tag_id,
         start_page_id: item.start_page_id,
-        fill_color: parseColor(item.fill_color),
-        outline_color: parseColor(item.outline_color),
-        shape_type: item.shape_type,
+        fill_color: item.fill_color ? parseColor(item.fill_color) : null,
+        outline_color: item.outline_color
+            ? parseColor(item.outline_color)
+            : null,
+        shape_type: item.shape_type ?? null,
         visible: item.visible === 1,
         label_visible: item.label_visible === 1,
         priority: item.priority,
@@ -297,9 +240,9 @@ export interface ModifiedTagAppearanceArgs {
     id: number;
     tag_id?: number;
     start_page_id?: number;
-    fill_color?: RgbaColor;
-    outline_color?: RgbaColor;
-    shape_type?: string;
+    fill_color?: RgbaColor | null;
+    outline_color?: RgbaColor | null;
+    shape_type?: string | null;
     visible?: boolean;
     label_visible?: boolean;
     priority?: number;
@@ -309,9 +252,9 @@ interface RealModifiedTagAppearanceArgs {
     id: number;
     tag_id?: number;
     start_page_id?: number;
-    fill_color?: string;
-    outline_color?: string;
-    shape_type?: string;
+    fill_color?: string | null;
+    outline_color?: string | null;
+    shape_type?: string | null;
     visible?: number;
     label_visible?: number;
     priority?: number;
@@ -331,10 +274,14 @@ const modifiedTagAppearanceArgsToRealModifiedTagAppearanceArgs = (
         result.start_page_id = args.start_page_id;
     }
     if (args.fill_color !== undefined) {
-        result.fill_color = rgbaToString(args.fill_color);
+        result.fill_color = args.fill_color
+            ? rgbaToString(args.fill_color)
+            : null;
     }
     if (args.outline_color !== undefined) {
-        result.outline_color = rgbaToString(args.outline_color);
+        result.outline_color = args.outline_color
+            ? rgbaToString(args.outline_color)
+            : null;
     }
     if (args.shape_type !== undefined) {
         result.shape_type = args.shape_type;
@@ -352,6 +299,81 @@ const modifiedTagAppearanceArgsToRealModifiedTagAppearanceArgs = (
     return result;
 };
 
+export type TagAppearanceIdsByPageId = Map<number, Set<number>>;
+/**
+ * Calculate the tag_appearance ID for every page.
+ */
+export const _calculateMapAllTagAppearanceIdsByPageId = ({
+    tagAppearances,
+    pagesInOrder,
+}: {
+    tagAppearances: Pick<
+        DatabaseTagAppearance,
+        "id" | "tag_id" | "start_page_id"
+    >[];
+    pagesInOrder: Pick<DatabasePage, "id">[];
+}): TagAppearanceIdsByPageId => {
+    const output: TagAppearanceIdsByPageId = new Map();
+
+    const pageIdToOrder: Record<number, number> = {};
+    pagesInOrder.forEach((page, index) => {
+        pageIdToOrder[page.id] = index;
+    });
+
+    // Initialize the map with empty sets for each page
+    for (const page of pagesInOrder) output.set(page.id, new Set<number>());
+
+    // Group tag appearances by tag_id
+    const appearancesByTagId: Record<number, typeof tagAppearances> = {};
+    for (const appearance of tagAppearances) {
+        if (!appearancesByTagId[appearance.tag_id])
+            appearancesByTagId[appearance.tag_id] = [];
+        appearancesByTagId[appearance.tag_id].push(appearance);
+    }
+
+    // For each tag, sort its appearances by page order and determine which pages they apply to
+    for (const appearances of Object.values(appearancesByTagId)) {
+        // Sort appearances by the order of their start_page_id
+        const sortedAppearances = [...appearances].sort((a, b) => {
+            const orderA = pageIdToOrder[a.start_page_id] ?? -1;
+            const orderB = pageIdToOrder[b.start_page_id] ?? -1;
+            return orderA - orderB;
+        });
+
+        // For each appearance, determine which pages it applies to
+        for (let i = 0; i < sortedAppearances.length; i++) {
+            const currentAppearance = sortedAppearances[i];
+            const nextAppearance = sortedAppearances[i + 1];
+
+            const startPageOrder =
+                pageIdToOrder[currentAppearance.start_page_id];
+            if (startPageOrder === undefined) continue;
+
+            // Determine the end page order (exclusive)
+            const endPageOrder = nextAppearance
+                ? pageIdToOrder[nextAppearance.start_page_id]
+                : pagesInOrder.length;
+
+            if (endPageOrder === undefined) continue;
+
+            // Add this appearance to all pages from start to end (exclusive)
+            for (
+                let pageOrder = startPageOrder;
+                pageOrder < endPageOrder;
+                pageOrder++
+            ) {
+                const page = pagesInOrder[pageOrder];
+                const pageAppearances = output.get(page.id);
+                if (pageAppearances) {
+                    pageAppearances.add(currentAppearance.id);
+                }
+            }
+        }
+    }
+
+    return output;
+};
+
 /**
  * Gets all tag appearances from the database.
  */
@@ -365,51 +387,29 @@ export async function getTagAppearances({
 }
 
 /**
- * Gets a single tag appearance by ID.
- */
-export async function getTagAppearanceById({
-    db,
-    id,
-}: {
-    db: DbConnection;
-    id: number;
-}): Promise<DatabaseTagAppearance | undefined> {
-    const result = await db.query.tag_appearances.findFirst({
-        where: eq(schema.tag_appearances.id, id),
-    });
-    return result
-        ? realDatabaseTagAppearanceToDatabaseTagAppearance(result)
-        : undefined;
-}
-
-/**
- * Gets tag appearances by tag ID.
- */
-export async function getTagAppearancesByTagId({
-    db,
-    tagId,
-}: {
-    db: DbConnection;
-    tagId: number;
-}): Promise<DatabaseTagAppearance[]> {
-    const result = await db.query.tag_appearances.findMany({
-        where: eq(schema.tag_appearances.tag_id, tagId),
-    });
-    return result.map(realDatabaseTagAppearanceToDatabaseTagAppearance);
-}
-
-/**
  * Gets tag appearances by page ID.
+ *
+ * Note, you must provide the tag appearance IDs by page ID map.
+ * This is because we only store the starting page ID of the tag appearance.
  */
 export async function getTagAppearancesByPageId({
     db,
     pageId,
+    tagAppearanceIdsByPageId,
 }: {
     db: DbConnection;
     pageId: number;
+    tagAppearanceIdsByPageId: TagAppearanceIdsByPageId;
 }): Promise<DatabaseTagAppearance[]> {
+    const tagAppearanceIds = tagAppearanceIdsByPageId.get(pageId);
+    if (!tagAppearanceIds) {
+        console.error(
+            `No tag appearance IDs found for page ID ${pageId}. This should never happen.`,
+        );
+        return [];
+    }
     const result = await db.query.tag_appearances.findMany({
-        where: eq(schema.tag_appearances.start_page_id, pageId),
+        where: inArray(schema.tag_appearances.id, Array.from(tagAppearanceIds)),
     });
     return result.map(realDatabaseTagAppearanceToDatabaseTagAppearance);
 }
@@ -425,7 +425,7 @@ export async function createTagAppearances({
     db: DbConnection;
 }): Promise<DatabaseTagAppearance[]> {
     if (newItems.length === 0) {
-        console.log("No new tag appearances to create");
+        console.warn("No new tag appearances to create");
         return [];
     }
 
@@ -578,52 +578,57 @@ export async function getMarcherTags({
     return result;
 }
 
-/**
- * Gets a single marcher_tag by ID.
- */
-export async function getMarcherTagById({
-    db,
-    id,
-}: {
-    db: DbConnection;
-    id: number;
-}): Promise<DatabaseMarcherTag | undefined> {
-    const result = await db.query.marcher_tags.findFirst({
-        where: eq(schema.marcher_tags.id, id),
-    });
-    return result;
-}
+/** Map<tag_id, Array<marcher_id>> */
+export type MarcherIdsByTagId = Map<number, Array<number>>;
 
 /**
- * Gets marcher_tags by marcher ID.
+ * Gets a map of all marcher_ids by tag_id.
+ *
+ * ```typescript
+ * {
+ *     tag_id: [marcher_id, marcher_id, ...],
+ *     tag_id: [marcher_id, marcher_id, ...],
+ *     ...
+ * }
+ * ```
+ *
+ * @param db The database connection
+ * @returns A map of tag_id to an array of marcher_ids that have that tag
  */
-export async function getMarcherTagsByMarcherId({
+export async function getMarcherIdsByTagIdMap({
     db,
-    marcherId,
 }: {
-    db: DbConnection;
-    marcherId: number;
-}): Promise<DatabaseMarcherTag[]> {
-    const result = await db.query.marcher_tags.findMany({
-        where: eq(schema.marcher_tags.marcher_id, marcherId),
+    db: DbConnection | DbTransaction;
+}): Promise<MarcherIdsByTagId> {
+    const allTagIds = await db.query.tags.findMany({
+        columns: {
+            id: true,
+        },
     });
-    return result;
-}
+    const output: MarcherIdsByTagId = new Map();
 
-/**
- * Gets marcher_tags by tag ID.
- */
-export async function getMarcherTagsByTagId({
-    db,
-    tagId,
-}: {
-    db: DbConnection;
-    tagId: number;
-}): Promise<DatabaseMarcherTag[]> {
-    const result = await db.query.marcher_tags.findMany({
-        where: eq(schema.marcher_tags.tag_id, tagId),
+    // Initialize the map with empty arrays for each tag_id
+    for (const { id: tagId } of allTagIds) output.set(tagId, []);
+
+    const allMarcherTags = await db.query.marcher_tags.findMany({
+        columns: {
+            tag_id: true,
+            marcher_id: true,
+        },
     });
-    return result;
+
+    for (const { tag_id, marcher_id } of allMarcherTags) {
+        const arr = output.get(tag_id);
+        if (!arr) {
+            console.error(
+                `Tag ID ${tag_id} not found in output map. This should never happen.`,
+            );
+            continue;
+        }
+        arr.push(marcher_id);
+    }
+
+    return output;
 }
 
 /**
@@ -637,7 +642,7 @@ export async function createMarcherTags({
     db: DbConnection;
 }): Promise<DatabaseMarcherTag[]> {
     if (newMarcherTags.length === 0) {
-        console.log("No new marcher_tags to create");
+        console.warn("No new marcher_tags to create");
         return [];
     }
 
@@ -645,7 +650,7 @@ export async function createMarcherTags({
         db,
         "createMarcherTags",
         async (tx) => {
-            return await createMarcherTagsInTransaction({
+            return await _createMarcherTagsInTransaction({
                 newMarcherTags,
                 tx,
             });
@@ -654,7 +659,7 @@ export async function createMarcherTags({
     return transactionResult;
 }
 
-export const createMarcherTagsInTransaction = async ({
+export const _createMarcherTagsInTransaction = async ({
     newMarcherTags,
     tx,
 }: {
@@ -683,7 +688,7 @@ export async function updateMarcherTags({
         db,
         "updateMarcherTags",
         async (tx) => {
-            return await updateMarcherTagsInTransaction({
+            return await _updateMarcherTagsInTransaction({
                 modifiedMarcherTags,
                 tx,
             });
@@ -692,7 +697,7 @@ export async function updateMarcherTags({
     return transactionResult;
 }
 
-export const updateMarcherTagsInTransaction = async ({
+export const _updateMarcherTagsInTransaction = async ({
     modifiedMarcherTags,
     tx,
 }: {
@@ -731,7 +736,7 @@ export async function deleteMarcherTags({
         db,
         "deleteMarcherTags",
         async (tx) => {
-            return await deleteMarcherTagsInTransaction({
+            return await _deleteMarcherTagsInTransaction({
                 marcherTagIds,
                 tx,
             });
@@ -740,7 +745,7 @@ export async function deleteMarcherTags({
     return response;
 }
 
-const deleteMarcherTagsInTransaction = async ({
+const _deleteMarcherTagsInTransaction = async ({
     marcherTagIds,
     tx,
 }: {
