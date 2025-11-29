@@ -1,3 +1,5 @@
+@source "../../styles/index.css";
+
 /* Custom styling for bold text in notes editor */
 :root {
     --notes-bold-color-light: #000000;
@@ -17,4 +19,12 @@
 .dark .ProseMirror b {
     color: var(--notes-bold-color-dark) !important;
     text-shadow: 0 0 1px var(--notes-bold-shadow-dark) !important;
+}
+
+.input-group {
+    overflow-y: scroll;
+    background-image: var(--background-image-fg-2);
+    border: 1px solid var(--color-stroke);
+    border-radius: var(--radius-6);
+    max-height: 14rem;
 }

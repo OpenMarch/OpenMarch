@@ -62,7 +62,7 @@ export function NotesRichTextEditor({
             attributes: {
                 class: clsx(
                     // Typography and spacing only; container handles borders/height.
-                    "prose max-w-none w-full px-8 py-6 text-body text-text focus-visible:outline-none",
+                    "prose max-w-none w-full px-8 py-6 text-body text-text focus-visible:outline-none h-[12rem]",
                     className,
                 ),
                 spellcheck: "true",

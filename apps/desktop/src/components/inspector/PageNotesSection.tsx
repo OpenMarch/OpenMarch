@@ -65,23 +65,21 @@ export function PageNotesSection() {
 
     return (
         <section aria-label={t("inspector.page.notes")}>
-            <div className="border-border border-t pt-12">
+            <div className="border-stroke border-t pt-12">
                 <h3 className="text-h5 text-text mb-8">
                     <T keyName="inspector.page.notes" />
                 </h3>
                 <div className="input-group">
-                    <div className="rounded-6 border-border bg-bg h-[12rem] overflow-y-auto border">
-                        <NotesRichTextEditor
-                            value={notes}
-                            onChange={setNotes}
-                            onBlur={handleNotesBlur}
-                            onEditorFocus={() => {
-                                if (selectedPage) {
-                                    editingPageIdRef.current = selectedPage.id;
-                                }
-                            }}
-                        />
-                    </div>
+                    <NotesRichTextEditor
+                        value={notes}
+                        onChange={setNotes}
+                        onBlur={handleNotesBlur}
+                        onEditorFocus={() => {
+                            if (selectedPage) {
+                                editingPageIdRef.current = selectedPage.id;
+                            }
+                        }}
+                    />
                 </div>
             </div>
         </section>
