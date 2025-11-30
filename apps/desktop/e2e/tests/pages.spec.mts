@@ -86,10 +86,12 @@ test("Create new page with no new beats", async ({ electronApp }) => {
 
     // Switch back and forth between pages
     await page.getByLabel("First page").click();
-    await expect(page.getByRole('button', { name: 'Page 0' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Page 1' })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 0" })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Page 1" }),
+    ).not.toBeVisible();
     await page.locator("div").filter({ hasText: /^1$/ }).first().click();
-    await expect(page.getByRole('button', { name: 'Page 1' })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 1" })).toBeVisible();
     await expect(page.locator("#app")).not.toContainText("Page 0");
 });
 
@@ -105,26 +107,32 @@ test("Create page and turn into a subset", async ({ electronApp }) => {
     // select page 1
     await page.locator("div").filter({ hasText: /^1$/ }).first().click();
 
-    await expect(page.getByRole('button', { name: 'Page 1' })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 1" })).toBeVisible();
     await page.getByRole("switch", { name: "Subset" }).click();
-    await expect(page.getByRole('button', { name: 'Page 0A' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Page 1' })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 0A" })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Page 1" }),
+    ).not.toBeVisible();
     for (const pageName of ["0", "0A", "1"])
         await expect(page.locator("#pages")).toContainText(pageName);
 
     // turn back into a page
     await page.getByRole("switch", { name: "Subset" }).click();
-    await expect(page.getByRole('button', { name: 'Page 1' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Page 0A' })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 1" })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Page 0A" }),
+    ).not.toBeVisible();
     for (const pageName of ["0", "1", "2"])
         await expect(page.locator("#pages")).toContainText(pageName);
 
     // select page 2
     await page.locator("div").filter({ hasText: /^2$/ }).first().click();
-    await expect(page.getByRole('button', { name: 'Page 2' })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 2" })).toBeVisible();
     await page.getByRole("switch", { name: "Subset" }).click();
-    await expect(page.getByRole('button', { name: 'Page 1A' })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Page 2' })).not.toBeVisible();
+    await expect(page.getByRole("button", { name: "Page 1A" })).toBeVisible();
+    await expect(
+        page.getByRole("button", { name: "Page 2" }),
+    ).not.toBeVisible();
 
     for (const pageName of ["0", "1", "1A"])
         await expect(page.locator("#pages")).toContainText(pageName);
