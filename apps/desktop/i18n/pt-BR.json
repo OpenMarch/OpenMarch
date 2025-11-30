@@ -464,7 +464,8 @@
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
             "viewTab": "Visualizar",
-            "shapesTab": "Formas"
+            "shapesTab": "Formas",
+            "selectTab": "Selecionar"
         },
         "shapes": {
             "title": "Formas",

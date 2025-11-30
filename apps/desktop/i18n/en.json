@@ -464,7 +464,8 @@
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
             "viewTab": "View",
-            "shapesTab": "Shapes"
+            "shapesTab": "Shapes",
+            "selectTab": "Select"
         },
         "shapes": {
             "title": "Shapes",

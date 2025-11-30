@@ -464,7 +464,8 @@
             "ungroupShapeButton": "グループ解除",
             "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません",
             "viewTab": "ビュー",
-            "shapesTab": "形状"
+            "shapesTab": "形状",
+            "selectTab": "選択"
         },
         "shapes": {
             "title": "形状",
