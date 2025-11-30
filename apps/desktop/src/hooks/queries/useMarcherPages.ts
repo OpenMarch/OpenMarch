@@ -30,6 +30,8 @@ import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useTolgee } from "@tolgee/react";
+import { FieldProperties } from "@openmarch/core";
+import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 
 const KEY_BASE = "marcher_pages";
 
@@ -192,10 +194,17 @@ export type MarcherCoordinate = Pick<MarcherPage, "marcher_id" | "x" | "y">;
 /**
  * A function that takes an array of marcher coordinates representing the current position of the selected marchers
  * and returns a new array of marcher coordinates which is the new position of the selected marchers.
+ *
+ * @param currentCoordinates - The current coordinates of the selected marchers.
+ * @param fieldProperties - The field properties of the show.
+ * @param pageId - The ID of the page the marchers are on.
+ * @returns The new coordinates of the selected marchers.
  */
-export type MarcherTransformFunction = (
-    currentCoordinates: MarcherCoordinate[],
-) => MarcherCoordinate[];
+export type MarcherTransformFunction = (args: {
+    currentCoordinates: MarcherCoordinate[];
+    fieldProperties: FieldProperties;
+    pageId: number;
+}) => MarcherCoordinate[];
 
 /**
  * A hook that updates the selected marchers on the selected page.
@@ -211,6 +220,8 @@ export const useUpdateSelectedMarchers = (
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(pageId),
     );
+    const { data: fieldProperties, isSuccess: fieldPropertiesLoaded } =
+        useQuery(fieldPropertiesQueryOptions());
     const { selectedMarchers } = useSelectedMarchers()!;
     const { t } = useTolgee();
 
@@ -219,6 +230,8 @@ export const useUpdateSelectedMarchers = (
             if (pageId == null) throw new Error("No page ID provided");
             if (!marcherPagesLoaded)
                 throw new Error("Marcher pages not loaded");
+            if (!fieldPropertiesLoaded)
+                throw new Error("Field properties not loaded");
             if (selectedMarchers.length === 0) {
                 toast.warning(t("actions.shape.noMarchersSelected"));
                 return;
@@ -244,7 +257,11 @@ export const useUpdateSelectedMarchers = (
                 console.warn("Missing IDs: ", missingIds);
             }
 
-            const newCoordinates = transformFunction(currentCoordinates);
+            const newCoordinates = transformFunction({
+                currentCoordinates,
+                fieldProperties,
+                pageId,
+            });
             const modifiedMarcherPages: ModifiedMarcherPageArgs[] =
                 newCoordinates.map((coordinate) => {
                     return {
