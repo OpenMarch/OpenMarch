@@ -6,14 +6,14 @@ import {
     getPagesInOrder,
     getTagAppearancesByPageId,
     DatabaseTagAppearance,
-    NewTagAppearanceArgs,
+    DatabaseTag,
+    getTags,
+    getTagById,
+    DatabaseMarcherTag,
+    getMarcherTags,
+    getTagAppearances,
 } from "@/db-functions";
-import {
-    mutationOptions,
-    QueryClient,
-    queryOptions,
-    useQuery,
-} from "@tanstack/react-query";
+import { QueryClient, queryOptions, useQuery } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
 import { useCallback } from "react";
@@ -21,17 +21,38 @@ import { useCallback } from "react";
 const KEY_BASE = "tags";
 
 export const tagKeys = {
-    all: () => [KEY_BASE] as const,
+    allTags: () => [KEY_BASE] as const,
+    byId: (id: number) => [KEY_BASE, "id", id] as const,
     byPageId: (page_id: number) => [KEY_BASE, { page_id }] as const,
     marcherIdsByTagIdMap: () =>
         [KEY_BASE, "marcher_ids_by_tag_id_map"] as const,
     tagAppearanceIdsByPageIdMap: () =>
         [KEY_BASE, "tag_appearance_ids_by_page_id_map"] as const,
+    allTagAppearances: () => [KEY_BASE, "tag_appearances"] as const,
+    allMarcherTags: () => [KEY_BASE, "marcher_tags"] as const,
+};
+
+export const invalidateTagQueries = (qc: QueryClient) => {
+    void qc.invalidateQueries({
+        queryKey: tagKeys.allTags(),
+    });
+    void qc.invalidateQueries({
+        queryKey: tagKeys.tagAppearanceIdsByPageIdMap(),
+    });
+    void qc.invalidateQueries({
+        queryKey: tagKeys.marcherIdsByTagIdMap(),
+    });
+    void qc.invalidateQueries({
+        queryKey: tagKeys.allTagAppearances(),
+    });
+    void qc.invalidateQueries({
+        queryKey: tagKeys.allMarcherTags(),
+    });
 };
 
 export const invalidateTagQueriesByPage = (qc: QueryClient, pageId: number) => {
     void qc.invalidateQueries({
-        queryKey: tagKeys.all(),
+        queryKey: tagKeys.allTags(),
     });
     void qc.invalidateQueries({
         queryKey: tagKeys.byPageId(pageId),
@@ -131,6 +152,70 @@ export const tagAppearancesForPageQueryOptions = (
             return outputMap;
         },
         enabled: pageId != null,
+        staleTime: DEFAULT_STALE_TIME,
+    });
+};
+
+// ============================================================================
+// TAGS QUERIES
+// ============================================================================
+
+/**
+ * Query options for getting all tags
+ */
+export const allTagsQueryOptions = () => {
+    return queryOptions<DatabaseTag[]>({
+        queryKey: tagKeys.allTags(),
+        queryFn: async () => {
+            return await getTags({ db });
+        },
+        staleTime: DEFAULT_STALE_TIME,
+    });
+};
+
+/**
+ * Query options for getting a single tag by ID
+ */
+export const tagQueryByIdOptions = (id: number) => {
+    return queryOptions<DatabaseTag | undefined>({
+        queryKey: tagKeys.byId(id),
+        queryFn: async () => {
+            return await getTagById({ db, id });
+        },
+        staleTime: DEFAULT_STALE_TIME,
+    });
+};
+
+// ============================================================================
+// TAG APPEARANCES QUERIES
+// ============================================================================
+
+/**
+ * Query options for getting all tag appearances
+ */
+export const allTagAppearancesQueryOptions = () => {
+    return queryOptions<DatabaseTagAppearance[]>({
+        queryKey: tagKeys.allTagAppearances(),
+        queryFn: async () => {
+            return await getTagAppearances({ db });
+        },
+        staleTime: DEFAULT_STALE_TIME,
+    });
+};
+
+// ============================================================================
+// MARCHER TAGS QUERIES
+// ============================================================================
+
+/**
+ * Query options for getting all marcher tags
+ */
+export const allMarcherTagsQueryOptions = () => {
+    return queryOptions<DatabaseMarcherTag[]>({
+        queryKey: tagKeys.allMarcherTags(),
+        queryFn: async () => {
+            return await getMarcherTags({ db });
+        },
         staleTime: DEFAULT_STALE_TIME,
     });
 };

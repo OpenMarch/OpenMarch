@@ -619,6 +619,14 @@
     },
     "section": {
         "drumMajor": "Drum Major",
+        "family": {
+            "woodwind": "Woodwind",
+            "brass": "Brass",
+            "battery": "Battery",
+            "guard": "Guard",
+            "other": "Other",
+            "pit": "Pit"
+        },
         "guard": {
             "colorGuard": "Color Guard",
             "dancer": "Dancer",
@@ -772,6 +780,18 @@
             "nextPaths": "Next paths",
             "previousPaths": "Previous paths",
             "uiSettingsToolbar": "Ui Settings Toolbar"
+        },
+        "select": {
+            "selectByText": "Select by",
+            "selectBy": {
+                "section": "Section",
+                "drillPrefix": "Drill Prefix",
+                "family": "Family",
+                "tag": "Tag"
+            },
+            "noSectionsToSelect": "No sections to select found",
+            "noTagsToSelect": "No tags to select found",
+            "noDrillPrefixesToSelect": "No drill prefixes to select found"
         }
     },
     "versionCheck": {

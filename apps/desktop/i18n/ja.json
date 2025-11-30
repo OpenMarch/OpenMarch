@@ -618,6 +618,14 @@
     },
     "section": {
         "drumMajor": "ドラム メジャー",
+        "family": {
+            "woodwind": "木管楽器",
+            "brass": "金管楽器",
+            "battery": "バッテリー",
+            "guard": "ガード",
+            "other": "その他",
+            "pit": "ピット"
+        },
         "guard": {
             "colorGuard": "カラー ガード",
             "dancer": "ダンサー",
@@ -764,6 +772,18 @@
             "nextPaths": "次の パス",
             "previousPaths": "前の パス",
             "uiSettingsToolbar": "UI 設定 ツールバー"
+        },
+        "select": {
+            "selectByText": "選択方法",
+            "selectBy": {
+                "section": "セクション",
+                "drillPrefix": "ドリル プレフィックス",
+                "family": "ファミリー",
+                "tag": "タグ"
+            },
+            "noSectionsToSelect": "選択できるセクションが見つかりません",
+            "noTagsToSelect": "選択できるタグが見つかりません",
+            "noDrillPrefixesToSelect": "選択できるドリルプレフィックスが見つかりません"
         }
     },
     "versionCheck": {

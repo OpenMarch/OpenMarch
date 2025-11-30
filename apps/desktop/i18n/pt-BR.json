@@ -618,6 +618,14 @@
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
+        "family": {
+            "woodwind": "Madeiras",
+            "brass": "Metais",
+            "battery": "Bateria",
+            "guard": "Guarda",
+            "other": "Outro",
+            "pit": "Fosso"
+        },
         "guard": {
             "colorGuard": "Guarda de Cor",
             "dancer": "Dançarino",
@@ -764,6 +772,18 @@
             "nextPaths": "Próximos Caminhos",
             "previousPaths": "Caminhos Anteriores",
             "uiSettingsToolbar": "Barra de Ferramentas de Configurações da UI"
+        },
+        "select": {
+            "selectByText": "Selecionar por",
+            "selectBy": {
+                "section": "Seção",
+                "drillPrefix": "Prefixo de Ordem",
+                "family": "Família",
+                "tag": "Etiqueta"
+            },
+            "noSectionsToSelect": "Nenhuma seção encontrada para selecionar",
+            "noTagsToSelect": "Nenhuma etiqueta encontrada para selecionar",
+            "noDrillPrefixesToSelect": "Nenhum prefixo de ordem encontrado para selecionar"
         }
     },
     "versionCheck": {

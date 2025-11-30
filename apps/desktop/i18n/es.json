@@ -618,6 +618,14 @@
     },
     "section": {
         "drumMajor": "Director de Percusión",
+        "family": {
+            "woodwind": "Maderas",
+            "brass": "Metales",
+            "battery": "Batería",
+            "guard": "Guardia",
+            "other": "Otro",
+            "pit": "Foso"
+        },
         "guard": {
             "colorGuard": "Guardia de color",
             "dancer": "Bailarín",
@@ -764,6 +772,18 @@
             "nextPaths": "Próximas Rutas",
             "previousPaths": "Rutas anteriores",
             "uiSettingsToolbar": "Barra de herramientas de configuración"
+        },
+        "select": {
+            "selectByText": "Seleccionar por",
+            "selectBy": {
+                "section": "Sección",
+                "drillPrefix": "Prefijo de Instrucción",
+                "family": "Familia",
+                "tag": "Etiqueta"
+            },
+            "noSectionsToSelect": "No se encontraron secciones para seleccionar",
+            "noTagsToSelect": "No se encontraron etiquetas para seleccionar",
+            "noDrillPrefixesToSelect": "No se encontraron prefijos de instrucción para seleccionar"
         }
     },
     "versionCheck": {

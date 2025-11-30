@@ -320,8 +320,8 @@ export const tag_appearances = sqliteTable(
             .references(() => tags.id, { onDelete: "cascade" }),
         start_page_id: integer()
             .notNull()
-            // Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
-            .references(() => pages.id, { onDelete: "restrict" }),
+            // TODO: Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
+            .references(() => pages.id, { onDelete: "cascade" }),
         fill_color: text(),
         outline_color: text(),
         shape_type: text(),
