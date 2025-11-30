@@ -6,7 +6,7 @@ import {
     marcherPageToKeyString,
     transactionWithHistory,
 } from "@/db-functions";
-import { schema } from "@/global/database/db";
+import { db, schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
 
 /** How a shape page marcher is represented in the database */

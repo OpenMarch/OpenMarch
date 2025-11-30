@@ -445,7 +445,7 @@ export const ensureSecondBeatHasPage = async ({
     tx,
 }: {
     tx: DbTransaction;
-}) => {
+}): Promise<void> => {
     const timing_objects = schema.timing_objects;
     const timingObjectOnSecondBeat = await tx
         .select({
@@ -460,7 +460,7 @@ export const ensureSecondBeatHasPage = async ({
 
     if (!timingObjectOnSecondBeat) {
         console.debug(`No timing object found at second beat`);
-        return false;
+        return;
     }
 
     // There is a page on the second beat, so return
