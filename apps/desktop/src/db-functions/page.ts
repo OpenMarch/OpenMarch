@@ -560,8 +560,6 @@ export const deletePagesInTransaction = async ({
         }
     }
 
-    await ensureSecondBeatHasPage({ tx });
-
     return deletedPages.map(realDatabasePageToDatabasePage);
 };
 
@@ -586,10 +584,12 @@ export async function deletePages({
         db,
         "deletePages",
         async (tx) => {
-            return await deletePagesInTransaction({
+            const response = await deletePagesInTransaction({
                 pageIds,
                 tx,
             });
+            await ensureSecondBeatHasPage({ tx });
+            return response;
         },
     );
     return response;
