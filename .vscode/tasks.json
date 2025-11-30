@@ -12,7 +12,6 @@
                 "owner": "typescript",
                 "fileLocation": "relative",
                 "pattern": {
-                    // TODO: correct "regexp"
                     "regexp": "^([a-zA-Z]\\:/?([\\w\\-]/?)+\\.\\w+):(\\d+):(\\d+): (ERROR|WARNING)\\: (.*)$",
                     "file": 1,
                     "line": 3,
@@ -26,6 +25,12 @@
                     "endsPattern": "^.*\\[startup\\] Electron App.*$"
                 }
             }
+        },
+        {
+            "label": "format-prettier",
+            "type": "shell",
+            "command": "pnpm exec prettier ${file} --write",
+            "problemMatcher": []
         }
     ]
 }

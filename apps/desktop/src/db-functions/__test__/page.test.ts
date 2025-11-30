@@ -16,7 +16,7 @@ import {
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { inArray, desc, eq, and, gte, lte, asc } from "drizzle-orm";
+import { inArray, desc, eq, and, gte, lte, asc, isNotNull } from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
     NewBeatArgs,
@@ -1471,6 +1471,7 @@ describeDbTests("pages", (it) => {
                 );
             });
         });
+
         describe("with existing data", () => {
             describe.each([
                 {
@@ -1652,6 +1653,74 @@ describeDbTests("pages", (it) => {
             );
             it.todo(
                 "Delete many pages at once and make sure the last page counts are updated correctly",
+            );
+        });
+
+        describe("delete second page", () => {
+            testWithHistory(
+                "moves the third page to the second page's starting beat",
+                async ({ db }) => {
+                    const newPageCounts = 16;
+                    // Create a bunch of pages
+                    for (let i = 0; i < 10; i++)
+                        await createLastPage({
+                            db,
+                            newPageCounts,
+                            createNewBeats: true,
+                        });
+
+                    const pages = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pages.entries()) {
+                        if (index === 0) continue;
+                        expect(page.position).toBe(
+                            (index - 1) * newPageCounts + 1,
+                        );
+                    }
+
+                    // delete the second page
+                    await deletePages({
+                        pageIds: new Set([pages[1].page_id!]),
+                        db,
+                    });
+
+                    const pagesAfterDelete = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pagesAfterDelete.entries()) {
+                        if (index === 0) continue;
+                        if (index === 1) expect(page.position).toBe(1);
+                        else
+                            expect(page.position).toBe(
+                                index * newPageCounts + 1,
+                            );
+                    }
+
+                    // delete the second page again
+                    await deletePages({
+                        pageIds: new Set([pages[2].page_id!]),
+                        db,
+                    });
+
+                    const pagesAfterDelete2 = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pagesAfterDelete2.entries()) {
+                        if (index === 0) continue;
+                        if (index === 1) expect(page.position).toBe(1);
+                        else
+                            expect(page.position).toBe(
+                                (index + 1) * newPageCounts + 1,
+                            );
+                    }
+                },
             );
         });
     });

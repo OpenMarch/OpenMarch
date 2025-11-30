@@ -15,6 +15,7 @@ jobs:
           - format:check
           - lint
           - spellcheck
+          - build
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
