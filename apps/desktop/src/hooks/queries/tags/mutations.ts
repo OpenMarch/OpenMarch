@@ -15,6 +15,7 @@ import {
     updateMarcherTags,
     deleteMarcherTags,
     transactionWithHistory,
+    createNewTagFromMarcherIds,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
 import { QueryClient, mutationOptions } from "@tanstack/react-query";
@@ -137,6 +138,25 @@ export const deleteTagAppearancesMutationOptions = (qc: QueryClient) => {
 // ============================================================================
 // MARCHER TAGS MUTATIONS
 // ============================================================================
+
+export const createNewTagFromMarcherIdsMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (args: {
+            marcherIds: Set<number>;
+            tagName: string | null;
+        }) => createNewTagFromMarcherIds({ db, ...args }),
+        onSuccess: async (_) => {
+            invalidateTagQueries(qc);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error creating new tag from marcher ids",
+                e,
+                variables,
+            );
+        },
+    });
+};
 
 /**
  * Mutation options for creating marcher tags

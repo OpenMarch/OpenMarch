@@ -8,6 +8,7 @@ import {
 import { schema } from "@/global/database/db";
 import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "@openmarch/core";
+import { assert } from "@/utilities/utils";
 
 // ============================================================================
 // TAGS
@@ -629,6 +630,44 @@ export async function getMarcherIdsByTagIdMap({
     }
 
     return output;
+}
+
+export async function createNewTagFromMarcherIds({
+    marcherIds,
+    tagName,
+    db,
+}: {
+    marcherIds: Set<number>;
+    tagName: string | null;
+    db: DbConnection;
+}): Promise<{
+    newTag: DatabaseTag;
+    newMarcherTags: DatabaseMarcherTag[];
+} | void> {
+    if (marcherIds.size === 0) {
+        console.warn("No new marcher_tags to create");
+        return;
+    }
+
+    const transactionResult = await transactionWithHistory(
+        db,
+        "createMarcherTags",
+        async (tx) => {
+            const newTag = await _createTagsInTransaction({
+                newTags: [{ name: tagName }],
+                tx,
+            });
+            const newMarcherTags = await _createMarcherTagsInTransaction({
+                newMarcherTags: Array.from(marcherIds).map((marcherId) => ({
+                    marcher_id: marcherId,
+                    tag_id: newTag[0].id,
+                })),
+                tx,
+            });
+            return { newTag: newTag[0], newMarcherTags };
+        },
+    );
+    return transactionResult;
 }
 
 /**

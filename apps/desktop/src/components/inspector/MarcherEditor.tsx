@@ -9,6 +9,7 @@ import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsibl
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
+    Button,
     getButtonClassName,
     Input,
     Select,
@@ -17,7 +18,7 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import { StepSize } from "@/global/classes/StepSize";
-import MarcherRotationInput from "./MarcherRotationInput";
+import MarcherRotationInput from "./marcher/MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
@@ -31,8 +32,15 @@ import {
     DotsThreeOutlineIcon,
     DotsThreeOutlineVerticalIcon,
     CaretDownIcon,
+    TagIcon,
+    SparkleIcon,
+    PlusIcon,
+    MinusIcon,
+    TrashIcon,
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
+import { twMerge } from "tailwind-merge";
+import { TagButtons } from "./marcher/TagEditor";
 
 /**
  * Component that renders all alignment, distribution, and transformation buttons
@@ -480,6 +488,16 @@ function MarcherEditor() {
                                     disabled={editingDisabled}
                                 />
                             </div>
+
+                            <TagButtons
+                                selectedMarcherIds={
+                                    new Set(
+                                        selectedMarchers.map(
+                                            (marcher) => marcher.id,
+                                        ),
+                                    )
+                                }
+                            />
                         </InspectorCollapsible>
                     ) : (
                         // One marcher selected
@@ -768,6 +786,11 @@ function MarcherEditor() {
                                         />
                                     </span>
                                 </div>
+                                <TagButtons
+                                    selectedMarcherIds={
+                                        new Set([selectedMarchers[0].id])
+                                    }
+                                />
                                 {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
                                 <button
                                     type="submit"
