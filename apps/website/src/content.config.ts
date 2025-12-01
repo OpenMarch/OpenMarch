@@ -5,13 +5,14 @@ import { glob } from "astro/loaders";
 
 export const collections = {
     blog: defineCollection({
-        loader: glob({ pattern: "**/*.md", base: "./src/content/blog" }),
-        schema: z.object({
-            title: z.string(),
-            author: z.string(),
-            date: z.date(),
-            image: z.string(),
-        }),
+        loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/blog" }),
+        schema: ({ image }) =>
+            z.object({
+                title: z.string(),
+                author: z.string(),
+                date: z.date(),
+                image: image(),
+            }),
     }),
     docs: defineCollection({
         loader: docsLoader(),
