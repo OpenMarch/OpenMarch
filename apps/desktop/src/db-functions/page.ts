@@ -1,4 +1,15 @@
-import { eq, gt, lt, asc, desc, inArray, count } from "drizzle-orm";
+import {
+    eq,
+    gt,
+    lt,
+    asc,
+    desc,
+    inArray,
+    count,
+    and,
+    ne,
+    isNotNull,
+} from "drizzle-orm";
 import {
     createBeatsInTransaction,
     DatabaseBeat,
@@ -305,7 +316,7 @@ export async function createPages({
     db: DbConnection;
 }): Promise<DatabasePage[]> {
     if (newPages.length === 0) {
-        console.warn("No new pages to create");
+        console.debug("No new pages to create");
         return [];
     }
     const transactionResult = await transactionWithHistory(
@@ -446,6 +457,63 @@ export const getPagesInOrder = async ({
     }));
 };
 
+/**
+ * Ensure that the second beat of the show has a page associated with it.
+ * This is crucial to run when deleting pages or beats to make sure beats aren't lost.
+ *
+ * @param tx - database transaction
+ */
+export const ensureSecondBeatHasPage = async ({
+    tx,
+}: {
+    tx: DbTransaction;
+}): Promise<void> => {
+    const timing_objects = schema.timing_objects;
+    const timingObjectOnSecondBeat = await tx
+        .select({
+            page_id: timing_objects.page_id,
+            beat_id: timing_objects.beat_id,
+        })
+        .from(timing_objects)
+        .orderBy(timing_objects.position)
+        .limit(1)
+        .offset(1)
+        .get();
+
+    if (!timingObjectOnSecondBeat) {
+        console.debug(`No timing object found at second beat`);
+        return;
+    }
+
+    // There is a page on the second beat, so return
+    if (timingObjectOnSecondBeat.page_id != null) return;
+
+    // Check that there are any pages after the first one
+    const nextPage = await tx
+        .select({
+            page_id: timing_objects.page_id,
+        })
+        .from(timing_objects)
+        .where(
+            and(
+                isNotNull(timing_objects.page_id),
+                ne(timing_objects.page_id, FIRST_PAGE_ID),
+            ),
+        )
+        .get();
+
+    // There is no next page, so no need to update the pages
+    if (nextPage == null) return;
+
+    // Otherwise update the next page to start on the second beat
+    await tx
+        .update(schema.pages)
+        .set({
+            start_beat: timingObjectOnSecondBeat.beat_id,
+        })
+        .where(eq(schema.pages.id, nextPage.page_id!));
+};
+
 export const deletePagesInTransaction = async ({
     pageIds,
     tx,
@@ -538,10 +606,12 @@ export async function deletePages({
         db,
         "deletePages",
         async (tx) => {
-            return await deletePagesInTransaction({
+            const response = await deletePagesInTransaction({
                 pageIds,
                 tx,
             });
+            await ensureSecondBeatHasPage({ tx });
+            return response;
         },
     );
     return response;
@@ -552,6 +622,7 @@ export async function deletePages({
  *
  * @param tx The database transaction.
  * @param newPageCounts The number of counts for the new page.
+ * @param createNewBeats Whether to create new beats to fill the last page - (default: false)
  * @returns True if the new page was created, false if no more beats are available.
  */
 export const createLastPage = async ({

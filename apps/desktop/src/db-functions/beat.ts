@@ -2,6 +2,7 @@ import { eq, gt, asc, desc, inArray } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
+    ensureSecondBeatHasPage,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -317,7 +318,7 @@ export async function createBeats({
     startingPosition?: number;
 }): Promise<DatabaseBeat[]> {
     if (newBeats.length === 0) {
-        console.log("No new beats to create");
+        console.debug("No new beats to create");
         return [];
     }
 
@@ -331,6 +332,7 @@ export async function createBeats({
                 startingPosition,
             });
             await flattenOrderInTransaction({ tx });
+            await ensureSecondBeatHasPage({ tx });
             return createdBeats;
         },
     );
@@ -391,6 +393,7 @@ export const createBeatsInTransaction = async ({
         where: inArray(schema.beats.id, createdBeatsIds),
         orderBy: asc(schema.beats.position),
     });
+
     return actualCreatedBeats.map(realDatabaseBeatToDatabaseBeat);
 };
 
@@ -414,7 +417,7 @@ export async function updateBeats({
     );
 
     if (filteredBeats.length === 0) {
-        console.log("No beats to update (first beat filtered out)");
+        console.debug("No beats to update (first beat filtered out)");
         return [];
     }
 
@@ -478,7 +481,7 @@ export async function deleteBeats({
     beatIds.delete(FIRST_BEAT_ID);
 
     if (beatIds.size === 0) {
-        console.log("No beats to delete (first beat filtered out)");
+        console.debug("No beats to delete (first beat filtered out)");
         return [];
     }
 
@@ -486,10 +489,12 @@ export async function deleteBeats({
         db,
         "deleteBeats",
         async (tx) => {
-            return await deleteBeatsInTransaction({
+            const response = await deleteBeatsInTransaction({
                 tx,
                 beatIds,
             });
+            await ensureSecondBeatHasPage({ tx });
+            return response;
         },
     );
     return transactionResult;
@@ -497,6 +502,8 @@ export async function deleteBeats({
 
 /**
  * Deletes beats within a transaction and flattens positions.
+ *
+ * Also deletes the page associated with the beat.
  */
 export const deleteBeatsInTransaction = async ({
     tx,
