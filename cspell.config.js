@@ -151,6 +151,7 @@ module.exports = {
         "toks",
         "bbox",
         "localappdata",
+        "drei",
     ],
     ignorePaths: [
         "node_modules/**",
