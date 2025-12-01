@@ -6,10 +6,17 @@ import {
     TrashIcon,
 } from "@phosphor-icons/react";
 import { twMerge } from "tailwind-merge";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import * as Popover from "@radix-ui/react-popover";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createNewTagFromMarcherIdsMutationOptions } from "@/hooks/queries";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    allMarcherTagsQueryOptions,
+    allTagsQueryOptions,
+    createMarcherTagsMutationOptions,
+    createNewTagFromMarcherIdsMutationOptions,
+    deleteMarcherTagsMutationOptions,
+} from "@/hooks/queries";
+import { DatabaseTag, NewMarcherTagArgs } from "@/db-functions";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -18,27 +25,22 @@ export const TagButtons = ({
 }: {
     selectedMarcherIds: Set<number>;
 }) => {
+    const { data: allTags, isSuccess: tagsLoaded } = useQuery(
+        allTagsQueryOptions(),
+    );
+
+    if (!tagsLoaded) return null;
     return (
         <div className="grid w-full grid-cols-3 gap-8">
             <NewTagButton selectedMarcherIds={selectedMarcherIds} />
-            <Button
-                tooltipText="Add selected marchers to existing tag"
-                size="compact"
-                variant="secondary"
-                className={buttonClassName}
-            >
-                <TagIcon size={16} />
-                <PlusIcon size={16} />
-            </Button>
-            <Button
-                tooltipText="Remove selected marchers from tag"
-                size="compact"
-                variant="secondary"
-                className={buttonClassName}
-            >
-                <TagIcon size={16} />
-                <TrashIcon size={16} />
-            </Button>
+            <AddToTagButton
+                selectedMarcherIds={selectedMarcherIds}
+                allTags={allTags}
+            />
+            <DeleteFromTagButton
+                selectedMarcherIds={selectedMarcherIds}
+                allTags={allTags}
+            />
         </div>
     );
 };
@@ -92,6 +94,7 @@ const NewTagButton = ({
                 <Button
                     tooltipText="Create new tag with selected marchers"
                     size="compact"
+                    variant="secondary"
                     className={buttonClassName}
                     disabled={isPending}
                 >
@@ -143,6 +146,176 @@ const NewTagButton = ({
                         >
                             Create Tag
                         </Button>
+                    </div>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
+    );
+};
+
+const AddToTagButton = ({
+    selectedMarcherIds,
+    allTags,
+}: {
+    selectedMarcherIds: Set<number>;
+    allTags: DatabaseTag[];
+}) => {
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const queryClient = useQueryClient();
+    const { mutate: createMarcherTags, isPending } = useMutation(
+        createMarcherTagsMutationOptions(queryClient),
+    );
+
+    const handleCreateTag = useCallback(
+        (tagId: number) => {
+            const newMarcherTags: NewMarcherTagArgs[] = Array.from(
+                selectedMarcherIds,
+            ).map((marcherId) => ({
+                marcher_id: marcherId,
+                tag_id: tagId,
+            }));
+            createMarcherTags(newMarcherTags);
+            setPopoverOpen(false);
+        },
+        [createMarcherTags, selectedMarcherIds],
+    );
+
+    return (
+        <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <Popover.Trigger asChild>
+                <Button
+                    tooltipText="Add selected marchers to tag"
+                    size="compact"
+                    variant="secondary"
+                    className={buttonClassName}
+                    disabled={isPending}
+                >
+                    <TagIcon size={16} />
+                    <PlusIcon size={16} />
+                </Button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content
+                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    sideOffset={8}
+                    align="center"
+                    onCloseAutoFocus={(e) => {
+                        // Prevent focus from returning to trigger button to avoid tooltip
+                        e.preventDefault();
+                    }}
+                >
+                    <div className="flex flex-col gap-4">
+                        <div className="text-text-subtitle text-sm">
+                            Add selected marchers to tag
+                        </div>
+                        {allTags.map((tag) => (
+                            <div
+                                key={tag.id}
+                                className="text-text hover:text-accent cursor-pointer"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    handleCreateTag(tag.id);
+                                    setPopoverOpen(false);
+                                }}
+                            >
+                                {tag.name}
+                            </div>
+                        ))}
+                    </div>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
+    );
+};
+
+const DeleteFromTagButton = ({
+    selectedMarcherIds,
+    allTags,
+}: {
+    selectedMarcherIds: Set<number>;
+    allTags: DatabaseTag[];
+}) => {
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const { data: allMarcherTags, isSuccess: marcherTagsLoaded } = useQuery(
+        allMarcherTagsQueryOptions(),
+    );
+    const queryClient = useQueryClient();
+    const { mutate: deleteMarcherTags, isPending } = useMutation(
+        deleteMarcherTagsMutationOptions(queryClient),
+    );
+    const tagsInSelectedMarcherIds = useMemo(() => {
+        return Array.from(
+            new Set(
+                allMarcherTags
+                    ?.filter((mt) => selectedMarcherIds.has(mt.marcher_id))
+                    .map((mt) => mt.tag_id),
+            ),
+        );
+    }, [allMarcherTags, selectedMarcherIds]);
+
+    const handleDeleteFromTag = useCallback(
+        (tagId: number) => {
+            if (!allMarcherTags) {
+                console.error("No marcher tags found");
+                return;
+            }
+            const marcherTagIds = allMarcherTags
+                .filter((mt) => mt.tag_id === tagId)
+                .map((mt) => mt.id);
+            if (marcherTagIds) {
+                deleteMarcherTags(new Set(marcherTagIds));
+            }
+        },
+        [allMarcherTags, deleteMarcherTags],
+    );
+    if (!marcherTagsLoaded) return null;
+    return (
+        <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <Popover.Trigger asChild>
+                <Button
+                    tooltipText="Remove selected marchers from tag"
+                    size="compact"
+                    variant="secondary"
+                    className={buttonClassName}
+                    disabled={
+                        isPending || tagsInSelectedMarcherIds.length === 0
+                    }
+                >
+                    <TagIcon size={16} />
+                    <TrashIcon size={16} />
+                </Button>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content
+                    className="bg-modal rounded-6 shadow-modal border-stroke z-10 flex flex-col gap-8 border p-12 outline-none"
+                    sideOffset={8}
+                    align="center"
+                    onCloseAutoFocus={(e) => {
+                        // Prevent focus from returning to trigger button to avoid tooltip
+                        e.preventDefault();
+                    }}
+                >
+                    <div className="text-text-subtitle text-sm">
+                        Remove selected marchers from tag
+                    </div>
+                    <div className="flex flex-col gap-4">
+                        {allTags
+                            .filter((tag) =>
+                                tagsInSelectedMarcherIds.includes(tag.id),
+                            )
+                            .map((tag) => (
+                                <div
+                                    key={tag.id}
+                                    className="text-text hover:text-accent cursor-pointer"
+                                    onClick={(e) => {
+                                        e.preventDefault();
+                                        handleDeleteFromTag(tag.id);
+                                        setPopoverOpen(false);
+                                    }}
+                                >
+                                    {tag.name}
+                                </div>
+                            ))}
                     </div>
                 </Popover.Content>
             </Popover.Portal>

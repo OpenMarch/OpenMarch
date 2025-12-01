@@ -306,6 +306,8 @@ export const tags = sqliteTable("tags", {
     id: integer().primaryKey(),
     name: text(),
     description: text(),
+    icon: text(),
+    color_hex: text(),
     ...timestamps,
 });
 

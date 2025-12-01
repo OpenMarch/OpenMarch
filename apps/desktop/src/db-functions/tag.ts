@@ -8,7 +8,6 @@ import {
 import { schema } from "@/global/database/db";
 import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "@openmarch/core";
-import { assert } from "@/utilities/utils";
 
 // ============================================================================
 // TAGS

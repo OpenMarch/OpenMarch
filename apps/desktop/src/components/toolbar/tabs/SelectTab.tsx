@@ -6,7 +6,6 @@ import {
 } from "@/global/classes/Sections";
 import {
     allMarchersQueryOptions,
-    allMarcherTagsQueryOptions,
     allTagsQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
 } from "@/hooks/queries";

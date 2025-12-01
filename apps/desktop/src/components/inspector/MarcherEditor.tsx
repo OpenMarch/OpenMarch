@@ -9,7 +9,6 @@ import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsibl
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
-    Button,
     getButtonClassName,
     Input,
     Select,
@@ -32,14 +31,8 @@ import {
     DotsThreeOutlineIcon,
     DotsThreeOutlineVerticalIcon,
     CaretDownIcon,
-    TagIcon,
-    SparkleIcon,
-    PlusIcon,
-    MinusIcon,
-    TrashIcon,
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { twMerge } from "tailwind-merge";
 import { TagButtons } from "./marcher/TagEditor";
 
 /**
