@@ -1,0 +1,125 @@
+---
+title: "November 2024 Update"
+author: "Alex Dumouchelle"
+date: 2024-10-31
+image: "./thumbnail.jpg"
+---
+
+### New UI and Database
+
+#### Try it out - [Install 0.0.4](https://github.com/OpenMarch/OpenMarch/releases/tag/v0.0.4)
+
+<iframe
+  width="560"
+  height="315"
+  src="https://www.youtube.com/embed/CfrTJT9D_BQ?si=iOnlXj2bFFBHwj4I"
+  title="YouTube video player"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  referrerpolicy="strict-origin-when-cross-origin"
+  allowfullscreen
+></iframe>
+
+<br />
+
+### Collaboration
+
+For the first time in OpenMarch history (about one year), we have someone who's made a significant contribution to the project!
+
+First off, we have a logo now!
+
+![New logo](/openmarch.svg)
+
+This also comes in an app icon version as well as some other reduced versions.
+This is all thanks to [Ben Moulse](https://www.behance.net/Moulse) and his amazing work/flexibility.
+
+We also have a brand new UI brought to you by [dukc](https://github.com/dukcc) which you can see in the update video (or install it yourself).
+
+It has been such a relief to delegate a lot of these crucial tasks to some more capable hands.
+I truly believe the future of OpenMarch relies on dedicated people putting their own flare into the project.
+Thank you so much both [dukc](https://github.com/dukcc) and [Ben Moulse](https://www.behance.net/Moulse) for the work you've put in so far!
+
+### What I did
+
+I was also very busy this month.
+In fact, I reimplemented the entire database 🙃.
+I didn't _mean_ to do it and was really just trying to created a more flexible way to add database actions to the history stack.
+One thing lead to another and I basically gutted the old database monolith file that I was using before.
+Now, the database relies on generic function calls that standardize interactions and will make creating new tables much easier.
+
+As far as the history stack, now everything is based on a trigger system that was inspired by [this post](https://www.sqlite.org/undoredo.html) on the official SQLite page.
+Now, all a developer needs to do to add undo/redo history capabilities to a table is call a function called `createUndoTriggers()`.
+
+> Just an aside, if you haven't listened to the [Co-Recursive episode where they talk to Richard Hipp, the creator of SQLite](https://corecursive.com/066-sqlite-with-richard-hipp/), you need to.
+
+In addition (wait for it), everything about these history functions and generic database functions are _tested_.
+Wow!
+That's a big victory because previously, none of the database had any tests written for it.
+Better late than never I suppose, but it's crazy I was flying blind for that long.
+
+## Changelog 0.0.4 - New UI and Database
+
+### Features
+
+#### New UI
+
+Thanks to the hard work of [dukc](https://github.com/dukcc), the UI has a new modern look.
+The new interface also brings the following:
+
+- Dark and light mode
+- Turning popup windows into side lists (so the user can still edit the canvas)
+- Ability to collapse the sidebar inspectors
+- A measure/page timeline that is actually readable
+- An overall better place to spend your time
+
+#### Undo and Redo
+
+Essentially everything that modifies the database can be undone and restored.
+Before, only the editing of Marchers, Pages, and MarcherPages were part of the history stack.
+Now you can do the following:
+
+- Undo and redo the creation, modification, and deletion of rows in every table
+  - Marchers
+  - Pages
+  - MarcherPages
+  - FieldProperties
+  - Audio
+  - Measures
+- There is now a limit to how many actions are saved so the file doesn't take up infinite storage
+  - Default is 500 actions
+
+#### Quality of life
+
+- The first page now always exists and cannot be deleted
+  - There was no reason for a user to make a 0-count page, as page 1 will always exist
+- The canvas shows up immediately on launch (thanks to the implementation of the permanent page 1)
+- There is now an app icon!
+
+### Developer Info
+
+#### UI Standards
+
+- Standard components using [Radix](https://www.radix-ui.com/)
+- Unified variables with tailwind
+
+#### Database
+
+- `DatabaseActions.ts` - Standard database interactions
+  - Rather than trying to force `TableController` objects, I've made a collection of functions in a file called `DatabaseActions` which standardize interactions with the database.
+  - The decision to go functional as opposed to object-oriented was due to the hyper-customization each table needed in its own case.
+- History triggers
+  - All actions performed on the database are automatically recorded using triggers at the SQLite level
+  - To add a table to the history stack, call `createUndoTriggers(db, tableName)` from `database.history.ts`
+
+## Plans for December Update
+
+NOW I'm ready to focus on UX stuff (I say that every month).
+I don't think I ever stick to these goals.
+
+- Add curves
+- Ability to add measures manually
+- Indoor fields (at least a couple of them)
+- Create a roadmap for spring release
+  - What else needs to be done?
+
+Remember, you can always check the [GitHub](https://github.com/OpenMarch/OpenMarch) project to see what current issues are in the queue.
