@@ -151,6 +151,7 @@ module.exports = {
         "toks",
         "bbox",
         "localappdata",
+        "VMEA",
     ],
     ignorePaths: [
         "node_modules/**",
