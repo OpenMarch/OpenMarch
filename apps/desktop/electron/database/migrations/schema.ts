@@ -12,6 +12,8 @@ import {
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
+/*************** COMMON COLUMNS ***************/
+
 const timestamps = {
     created_at: text()
         .notNull()
@@ -21,6 +23,19 @@ const timestamps = {
         .default(sql`(CURRENT_TIMESTAMP)`)
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 };
+
+/** Columns that define how a marcher looks */
+const appearance_columns = {
+    fill_color: text(),
+    outline_color: text(),
+    shape_type: text(),
+    visible: integer().default(1).notNull(),
+    label_visible: integer().default(1).notNull(),
+    equipment_name: text(),
+    equipment_state: text(),
+};
+
+/*************** TABLES ***************/
 
 // Drizzle defaults to using Buffer for "blob", which does not exist in the browser
 // Uint8Array is available on both Node and the browser
@@ -296,9 +311,7 @@ export const shape_page_marchers = sqliteTable(
 export const section_appearances = sqliteTable("section_appearances", {
     id: integer().primaryKey(),
     section: text().notNull(),
-    fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-    outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-    shape_type: text().default("circle").notNull(),
+    ...appearance_columns,
     ...timestamps,
 });
 
@@ -325,12 +338,8 @@ export const tag_appearances = sqliteTable(
             .notNull()
             // TODO: Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
             .references(() => pages.id, { onDelete: "cascade" }),
-        fill_color: text(),
-        outline_color: text(),
-        shape_type: text(),
-        visible: integer().default(1).notNull(),
-        label_visible: integer().default(1).notNull(),
         priority: integer().default(0).notNull(),
+        ...appearance_columns,
         ...timestamps,
     },
     (table) => [unique().on(table.tag_id, table.start_page_id)],
