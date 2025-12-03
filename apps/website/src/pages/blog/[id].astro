@@ -2,6 +2,7 @@
 import { getCollection, render, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
+import type { ImageMetadata } from "astro";
 import { ProseClass } from "@/components/ProseClass";
 
 export async function getStaticPaths() {
@@ -24,7 +25,7 @@ const { Content } = await render(post);
         class="flex relative max-w-[50rem] w-full flex-col items-center gap-16"
     >
         <Image
-            src={post.data.image}
+            src={post.data.image as ImageMetadata}
             width={1280}
             height={720}
             alt={post.data.title}
