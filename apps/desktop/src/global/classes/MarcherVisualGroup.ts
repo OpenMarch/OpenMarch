@@ -3,18 +3,8 @@ import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import Marcher from "@/global/classes/Marcher";
-// import EditablePath from "./canvasObjects/EditablePath";
 import { FieldTheme } from "@openmarch/core";
-import { SectionAppearance } from "@/db-functions";
-
-const getSectionAppearance = (
-    section: string,
-    sectionAppearances: SectionAppearance[],
-) => {
-    return sectionAppearances.find(
-        (appearance) => appearance.section === section,
-    );
-};
+import { AppearanceModelOptional } from "electron/database/migrations/schema";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -38,15 +28,15 @@ export default class MarcherVisualGroup {
     /**
      * Creates a new MarcherVisualGroup instance.
      * @param marcher the marcher this visual group is associated with
-     * @param sectionAppearance section appearances to apply to the visuals
+     * @param appearances section appearances to apply to the visuals
      */
     constructor({
         marcher,
-        sectionAppearance,
+        appearances,
         fieldTheme,
     }: {
         marcher: Marcher;
-        sectionAppearance?: SectionAppearance;
+        appearances?: AppearanceModelOptional | AppearanceModelOptional[];
         fieldTheme: FieldTheme;
     }) {
         this.marcherId = marcher.id;
@@ -54,7 +44,7 @@ export default class MarcherVisualGroup {
         this.canvasMarcher = new CanvasMarcher({
             marcher: marcher,
             coordinate: { x: 0, y: 0 },
-            appearance: sectionAppearance,
+            appearances,
         });
 
         this.previousPathway = new Pathway({
@@ -124,31 +114,4 @@ export default class MarcherVisualGroup {
     getNextEndpoint() {
         return this.nextEndPoint;
     }
-}
-
-/**
- * Creates a MarcherVisualGroup for each marcher in the receivedMarchers array.
- * Updates existing visuals or creates new ones as needed.
- */
-export function marcherVisualsFromMarchers({
-    receivedMarchers,
-    sectionAppearances,
-    fieldTheme,
-}: {
-    receivedMarchers: Marcher[];
-    sectionAppearances?: SectionAppearance[];
-    fieldTheme: FieldTheme;
-}): Record<number, MarcherVisualGroup> {
-    const newVisuals: Record<number, MarcherVisualGroup> = {};
-    for (const marcher of receivedMarchers) {
-        const appearance = sectionAppearances
-            ? getSectionAppearance(marcher.section, sectionAppearances)
-            : undefined;
-        newVisuals[marcher.id] = new MarcherVisualGroup({
-            marcher,
-            sectionAppearance: appearance,
-            fieldTheme,
-        });
-    }
-    return newVisuals;
 }

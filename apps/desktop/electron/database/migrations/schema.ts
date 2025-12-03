@@ -25,6 +25,8 @@ const timestamps = {
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 };
 
+// APPEARANCE
+
 /** Columns that define how a marcher looks */
 const appearance_columns = {
     fill_color: text(),
@@ -41,14 +43,26 @@ const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
     ...appearance_columns,
 });
 
-export type AppearanceModel = InferSelectModel<typeof fakeAppearanceTable>;
-export type AppearanceModelParsed = Omit<
-    AppearanceModel,
-    "fill_color" | "outline_color"
+/** Definition of a marcher appearance exactly as it is stored in the database. */
+export type AppearanceModelRaw = InferSelectModel<typeof fakeAppearanceTable>;
+
+/** Definition of a marcher appearance. The colors are parsed and integers are converted to booleans. */
+export type AppearanceModel = Omit<
+    AppearanceModelRaw,
+    "fill_color" | "outline_color" | "visible" | "label_visible"
 > & {
     fill_color: RgbaColor | null;
     outline_color: RgbaColor | null;
+    visible: boolean;
+    label_visible: boolean;
 };
+
+/** Definition of a marcher appearance, with all of the non-required fields optional */
+export type AppearanceModelOptional = Pick<
+    AppearanceModel,
+    "visible" | "label_visible"
+> &
+    Partial<AppearanceModel>;
 
 /*************** TABLES ***************/
 

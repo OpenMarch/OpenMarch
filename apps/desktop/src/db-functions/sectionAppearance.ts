@@ -9,8 +9,7 @@ import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "@openmarch/core";
 
 /** How a section appearance is represented in the database */
-export interface DatabaseSectionAppearance
-    extends schema.AppearanceModelParsed {
+export interface DatabaseSectionAppearance extends schema.AppearanceModel {
     id: number;
     section: string;
     created_at: string;
@@ -50,6 +49,8 @@ export const realDatabaseSectionAppearanceToDatabaseSectionAppearance = (
         outline_color: item.outline_color
             ? parseColor(item.outline_color)
             : null,
+        visible: item.visible === 1,
+        label_visible: item.label_visible === 1,
     };
 };
 

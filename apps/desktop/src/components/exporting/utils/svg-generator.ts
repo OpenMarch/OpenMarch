@@ -207,7 +207,7 @@ const initializeCanvasForRendering = async (args: {
         const canvasMarcher = new CanvasMarcher({
             marcher,
             coordinate: { x: 0, y: 0 }, // dummy coordinate, will be set later
-            appearance: sectionAppearance,
+            appearances: sectionAppearance,
         });
         canvasMarchersById[marcher.id] = canvasMarcher;
         // Add the marcher to the canvas

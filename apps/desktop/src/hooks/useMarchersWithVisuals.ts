@@ -42,7 +42,7 @@ export const _combineMarcherVisualGroups = (
             : undefined;
         newVisuals[marcher.id] = new MarcherVisualGroup({
             marcher,
-            sectionAppearance: appearance,
+            appearances: appearance,
             fieldTheme: fieldProperties.theme,
         });
     }

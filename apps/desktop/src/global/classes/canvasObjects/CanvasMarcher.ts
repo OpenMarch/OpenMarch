@@ -11,8 +11,10 @@ import {
     CoordinateLike,
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
-import { SectionAppearance } from "@/db-functions";
-import { AppearanceModelParsed } from "electron/database/migrations/schema";
+import {
+    AppearanceModel,
+    AppearanceModelOptional,
+} from "electron/database/migrations/schema";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -33,7 +35,7 @@ export default class CanvasMarcher
     textLabel: fabric.Text;
 
     /** The object that represents the dot on the canvas */
-    readonly dotObject: fabric.Object;
+    dotObject: fabric.Object;
     private _locked: boolean = false;
     private _lockedReason: string = "";
 
@@ -46,39 +48,38 @@ export default class CanvasMarcher
     /** The coordinate object that this canvasMarcher is associated with */
     coordinate: CoordinateLike;
 
+    /** The appearances that are applied to the marcher in order of priority (highest priority first) */
+    appearances: AppearanceModelOptional[] = [];
     /**
-     * @param marcher The marcher object to create the canvas object from
-     * @param marcherPage The MarcherPage object to set the initial coordinates from
-     * @param dotRadius The radius of the dot
-     * @param sectionAppearance The section appearance to use for the dot
+     * The current values of the appearance that are applied to the marcher.
+     * This was derived from the appearances array ordered by priority.
+     *
+     * If null, the default theme values from the canvas are used.
      */
-    // eslint-disable-next-line max-lines-per-function
-    constructor({
-        marcher,
+    currentAppearanceValues: AppearanceModelOptional = {
+        visible: true,
+        label_visible: true,
+    };
+
+    /**
+     * Creates a marker shape based on the given parameters.
+     * This is used by both the constructor and setAppearance for shape creation/updates.
+     */
+    private static createMarkerShape({
+        shapeType,
+        fillColor,
+        outlineColor,
+        outlineColorValue,
         coordinate,
-        dotRadius = CanvasMarcher.dotRadius,
-        appearance,
+        dotRadius,
     }: {
-        marcher: Marcher;
-        coordinate: CoordinateLike;
-        dotRadius?: number;
-        appearance?: AppearanceModelParsed;
-    }) {
-        // Use section-specific colors if available
-        const fillColor = rgbaToString(
-            appearance?.fill_color || CanvasMarcher.theme.defaultMarcher.fill,
-        );
-        const outlineColor = rgbaToString(
-            appearance?.outline_color ||
-                CanvasMarcher.theme.defaultMarcher.outline,
-        );
-
-        // Determine shape type from section appearance
-        const shapeType = appearance?.shape_type || "circle";
-
-        // Create the appropriate shape based on shapeType
-        let markerShape: fabric.Object;
-
+        shapeType: string;
+        fillColor: string;
+        outlineColor: string;
+        outlineColorValue: { a: number } | null;
+        coordinate: { x: number; y: number };
+        dotRadius: number;
+    }): fabric.Object {
         const commonShapeProps = {
             left: coordinate.x,
             top: coordinate.y,
@@ -90,7 +91,7 @@ export default class CanvasMarcher
 
         if (shapeType === "square") {
             const sideLength = dotRadius * Math.sqrt(Math.PI);
-            markerShape = new fabric.Rect({
+            return new fabric.Rect({
                 ...commonShapeProps,
                 width: sideLength * 1.2,
                 height: sideLength * 1.2,
@@ -98,7 +99,7 @@ export default class CanvasMarcher
         } else if (shapeType === "triangle") {
             // Create an equilateral triangle
             const triangleRadius = dotRadius * 1.2; // Slightly larger to maintain visual weight
-            markerShape = new fabric.Triangle({
+            return new fabric.Triangle({
                 ...commonShapeProps,
                 width: triangleRadius * 2,
                 height: triangleRadius * Math.sqrt(3), // Height of equilateral triangle
@@ -109,7 +110,7 @@ export default class CanvasMarcher
             // Use fillColor for X stroke to ensure visibility, since X has no fill area
             // and outline color might be transparent
             const xStrokeColor =
-                appearance?.outline_color && appearance.outline_color.a > 0.1
+                outlineColorValue && outlineColorValue.a > 0.1
                     ? outlineColor
                     : fillColor;
             const line1 = new fabric.Line([-xSize, -xSize, xSize, xSize], {
@@ -120,16 +121,69 @@ export default class CanvasMarcher
                 stroke: xStrokeColor,
                 strokeWidth: 2,
             });
-            markerShape = new fabric.Group([line1, line2], {
+            return new fabric.Group([line1, line2], {
                 ...commonShapeProps,
             });
         } else {
             // Default to circle
-            markerShape = new fabric.Circle({
+            return new fabric.Circle({
                 ...commonShapeProps,
                 radius: dotRadius,
             });
         }
+    }
+
+    /**
+     * @param marcher The marcher object to create the canvas object from
+     * @param marcherPage The MarcherPage object to set the initial coordinates from
+     * @param dotRadius The radius of the dot
+     * @param appearances The appearances to apply to the marcher in priority order
+     */
+    // eslint-disable-next-line max-lines-per-function
+    constructor({
+        marcher,
+        coordinate,
+        dotRadius = CanvasMarcher.dotRadius,
+        appearances: appearancesInput,
+    }: {
+        marcher: Marcher;
+        coordinate: CoordinateLike;
+        dotRadius?: number;
+        /** A single appearance or array of appearances in priority order (highest priority first) */
+        appearances?: AppearanceModelOptional | AppearanceModelOptional[];
+    }) {
+        // Normalize to array
+        const appearances = appearancesInput
+            ? Array.isArray(appearancesInput)
+                ? appearancesInput
+                : [appearancesInput]
+            : [];
+
+        // Get first non-null values from appearances
+        const fillColorValue =
+            appearances.find((a) => a.fill_color != null)?.fill_color ?? null;
+        const outlineColorValue =
+            appearances.find((a) => a.outline_color != null)?.outline_color ??
+            null;
+        const shapeType =
+            appearances.find((a) => a.shape_type != null)?.shape_type ??
+            "circle";
+
+        const fillColor = rgbaToString(
+            fillColorValue || CanvasMarcher.theme.defaultMarcher.fill,
+        );
+        const outlineColor = rgbaToString(
+            outlineColorValue || CanvasMarcher.theme.defaultMarcher.outline,
+        );
+
+        const markerShape = CanvasMarcher.createMarkerShape({
+            shapeType,
+            fillColor,
+            outlineColor,
+            outlineColorValue,
+            coordinate,
+            dotRadius,
+        });
 
         super([markerShape], {
             hasControls: false,
@@ -141,6 +195,29 @@ export default class CanvasMarcher
             ...ActiveObjectArgs,
         });
         this.dotObject = markerShape;
+        this.appearances = appearances ?? [];
+
+        // Get visibility values from appearances
+        const visible = appearances.length > 0 ? appearances[0].visible : true;
+        const labelVisible =
+            appearances.length > 0 ? appearances[0].label_visible : true;
+        const equipmentName =
+            appearances.find((a) => a.equipment_name != null)?.equipment_name ??
+            null;
+        const equipmentState =
+            appearances.find((a) => a.equipment_state != null)
+                ?.equipment_state ?? null;
+
+        // Initialize currentAppearanceValues with the values used in construction
+        this.currentAppearanceValues = {
+            fill_color: fillColorValue,
+            outline_color: outlineColorValue,
+            shape_type: shapeType,
+            visible,
+            label_visible: labelVisible,
+            equipment_name: equipmentName,
+            equipment_state: equipmentState,
+        };
 
         this.textLabel = new fabric.Text(marcher.drill_number, {
             left: coordinate.x,
@@ -154,7 +231,13 @@ export default class CanvasMarcher
             selectable: false,
             hasControls: false,
             hasBorders: false,
+            visible: labelVisible === true,
         });
+
+        // Apply visibility to the marcher
+        const isVisible = visible === true;
+        this.set({ visible: isVisible } as Partial<this>);
+        this.dotObject.set({ visible: isVisible });
 
         // add a rectangle for stroke and fill
         this.backgroundRectangle = new fabric.Rect({
@@ -183,6 +266,122 @@ export default class CanvasMarcher
         this.on("moving", this.handleMoving.bind(this));
 
         this.refreshLockedStatus();
+    }
+
+    /**
+     * Sets the appearance of the marcher by cascading through a list of appearances in priority order.
+     * For each attribute, the first non-null value is used, falling back to the canvas default theme.
+     *
+     * @param appearancesInput A single appearance or array of appearances in priority order (highest priority first)
+     */
+    setAppearance(appearancesInput: AppearanceModel | AppearanceModel[]) {
+        // Normalize to array
+        const appearances = Array.isArray(appearancesInput)
+            ? appearancesInput
+            : [appearancesInput];
+
+        // Helper to get first non-null/non-undefined value from appearances for a given key
+        const getFirstValue = <K extends keyof AppearanceModel>(
+            key: K,
+        ): AppearanceModel[K] | null => {
+            for (const appearance of appearances) {
+                if (appearance[key] != null) {
+                    return appearance[key];
+                }
+            }
+            return null;
+        };
+
+        // Cascade through appearances to get first non-null value for each attribute
+        const fillColorValue = getFirstValue("fill_color");
+        const outlineColorValue = getFirstValue("outline_color");
+        const shapeType = getFirstValue("shape_type") ?? "circle";
+        const equipmentName = getFirstValue("equipment_name");
+        const equipmentState = getFirstValue("equipment_state");
+
+        // Visibility is always defined
+        const visible = appearances.length > 0 ? appearances[0].visible : true;
+        const labelVisible =
+            appearances.length > 0 ? appearances[0].label_visible : true;
+
+        // Store the appearances list
+        this.appearances = appearances;
+
+        // Apply fill and outline colors with theme fallback
+        const fillColor = rgbaToString(
+            fillColorValue || CanvasMarcher.theme.defaultMarcher.fill,
+        );
+        const outlineColor = rgbaToString(
+            outlineColorValue || CanvasMarcher.theme.defaultMarcher.outline,
+        );
+
+        // Check if shape type has changed and needs to be recreated
+        const currentShapeType =
+            this.currentAppearanceValues.shape_type ?? "circle";
+        if (shapeType !== currentShapeType) {
+            // Remove the old shape from the group
+            this.remove(this.dotObject);
+
+            // Create the new shape at the current position
+            const absoluteCoords = this.getAbsoluteCoords();
+            const newShape = CanvasMarcher.createMarkerShape({
+                shapeType,
+                fillColor,
+                outlineColor,
+                outlineColorValue,
+                coordinate: absoluteCoords,
+                dotRadius: CanvasMarcher.dotRadius,
+            });
+
+            // Add the new shape and update the reference
+            this.add(newShape);
+            this.dotObject = newShape;
+
+            // Re-add background rectangle to ensure proper layering
+            this.remove(this.backgroundRectangle);
+            this.add(this.backgroundRectangle);
+        } else {
+            // Just update colors on the existing shape
+            // Handle X shape specially since it's a group with lines
+            if (shapeType === "x" && this.dotObject instanceof fabric.Group) {
+                const xStrokeColor =
+                    outlineColorValue && outlineColorValue.a > 0.1
+                        ? outlineColor
+                        : fillColor;
+                this.dotObject.getObjects().forEach((line) => {
+                    line.set({ stroke: xStrokeColor });
+                });
+            } else {
+                this.dotObject.set({
+                    fill: fillColor,
+                    stroke: outlineColor,
+                });
+            }
+        }
+
+        // Update visibility of the marcher marker
+        const isVisible = visible === true;
+        this.set({ visible: isVisible } as Partial<this>);
+        this.dotObject.set({ visible: isVisible });
+
+        // Update label visibility
+        const isLabelVisible = labelVisible === true;
+        this.textLabel.set({ visible: isLabelVisible });
+
+        this.currentAppearanceValues = {
+            fill_color: fillColorValue,
+            outline_color: outlineColorValue,
+            shape_type: shapeType,
+            visible,
+            label_visible: labelVisible,
+            equipment_name: equipmentName,
+            equipment_state: equipmentState,
+        };
+
+        // Request canvas re-render if canvas exists
+        if (this.canvas) {
+            this.canvas.requestRenderAll();
+        }
     }
 
     refreshLockedStatus() {
