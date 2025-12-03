@@ -180,7 +180,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
     }, []);
 
     const handleHorizontalDistribute = useCallback(() => {
-        updateSelectedMarchers((currentCoordinates) => {
+        updateSelectedMarchers(({ currentCoordinates }) => {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(horizontalStepInterval);
 
@@ -209,7 +209,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
     ]);
 
     const handleVerticalDistribute = useCallback(() => {
-        updateSelectedMarchers((currentCoordinates) => {
+        updateSelectedMarchers(({ currentCoordinates }) => {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(verticalStepInterval);
 
