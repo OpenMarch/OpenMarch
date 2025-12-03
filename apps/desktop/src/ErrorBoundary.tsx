@@ -10,11 +10,11 @@ import React from "react";
 
 export default class ErrorBoundary extends React.Component<
     { children: React.ReactNode },
-    { hasError: boolean; error: Error | null }
+    { hasError: boolean; error: Error | null; copied: boolean }
 > {
     constructor(props: { children: React.ReactNode }) {
         super(props);
-        this.state = { hasError: false, error: null };
+        this.state = { hasError: false, error: null, copied: false };
     }
 
     static getDerivedStateFromError(error: Error) {
@@ -50,18 +50,37 @@ export default class ErrorBoundary extends React.Component<
                                     {this.state.error?.message}
                                 </div>
                                 <button
-                                    onClick={() =>
-                                        navigator.clipboard.writeText(
+                                    onClick={() => {
+                                        void navigator.clipboard.writeText(
                                             this.state.error?.message || "",
-                                        )
-                                    }
-                                    className="opacity-0 transition-opacity group-hover:opacity-100"
+                                        );
+                                        this.setState({ copied: true });
+                                        setTimeout(
+                                            () =>
+                                                this.setState({
+                                                    copied: false,
+                                                }),
+                                            2000,
+                                        );
+                                    }}
+                                    className={`flex items-center gap-4 rounded px-4 transition-opacity ${
+                                        this.state.copied
+                                            ? "opacity-100"
+                                            : "opacity-0 group-hover:opacity-100"
+                                    }`}
                                     title="Copy error message"
                                 >
-                                    <ClipboardIcon
-                                        size={16}
-                                        className="text-text-subtitle hover:text-text"
-                                    />
+                                    <>
+                                        <ClipboardIcon
+                                            size={16}
+                                            className="text-text-subtitle hover:text-text"
+                                        />
+                                        {this.state.copied && (
+                                            <span className="text-green bg-bg-1 absolute right-0 mr-8 rounded p-2 text-xs">
+                                                Error copied
+                                            </span>
+                                        )}
+                                    </>
                                 </button>
                             </div>
 
