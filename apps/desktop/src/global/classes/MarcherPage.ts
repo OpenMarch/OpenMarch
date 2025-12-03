@@ -1,7 +1,7 @@
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
 import {
-    AppearanceModel,
+    AppearanceComponent,
     appearanceModelRawToParsed,
 } from "@/entity-components/appearance";
 
@@ -15,7 +15,7 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export default interface MarcherPage extends AppearanceModel {
+export default interface MarcherPage extends AppearanceComponent {
     readonly id: number;
     readonly isLocked?: boolean;
     readonly lockedReason?: string;

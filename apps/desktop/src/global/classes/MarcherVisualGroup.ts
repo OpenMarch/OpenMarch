@@ -3,7 +3,7 @@ import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import Marcher from "@/global/classes/Marcher";
-import { AppearanceModelOptional } from "@/entity-components/appearance";
+import { AppearanceComponentOptional } from "@/entity-components/appearance";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -34,7 +34,9 @@ export default class MarcherVisualGroup {
         appearances,
     }: {
         marcher: Marcher;
-        appearances?: AppearanceModelOptional | AppearanceModelOptional[];
+        appearances?:
+            | AppearanceComponentOptional
+            | AppearanceComponentOptional[];
     }) {
         this.marcherId = marcher.id;
 

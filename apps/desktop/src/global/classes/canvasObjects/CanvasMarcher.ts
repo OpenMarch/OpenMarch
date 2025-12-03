@@ -12,8 +12,8 @@ import {
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
 import {
-    AppearanceModelOptional,
-    AppearanceModel,
+    AppearanceComponentOptional,
+    AppearanceComponent,
 } from "@/entity-components/appearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
@@ -49,14 +49,14 @@ export default class CanvasMarcher
     coordinate: CoordinateLike;
 
     /** The appearances that are applied to the marcher in order of priority (highest priority first) */
-    appearances: AppearanceModelOptional[] = [];
+    appearances: AppearanceComponentOptional[] = [];
     /**
      * The current values of the appearance that are applied to the marcher.
      * This was derived from the appearances array ordered by priority.
      *
      * If null, the default theme values from the canvas are used.
      */
-    currentAppearanceValues: AppearanceModelOptional = {
+    currentAppearanceValues: AppearanceComponentOptional = {
         visible: true,
         label_visible: true,
     };
@@ -150,7 +150,9 @@ export default class CanvasMarcher
         coordinate: CoordinateLike;
         dotRadius?: number;
         /** A single appearance or array of appearances in priority order (highest priority first) */
-        appearances?: AppearanceModelOptional | AppearanceModelOptional[];
+        appearances?:
+            | AppearanceComponentOptional
+            | AppearanceComponentOptional[];
     }) {
         // Normalize to array
         const appearances = appearancesInput
@@ -274,16 +276,18 @@ export default class CanvasMarcher
      *
      * @param appearancesInput A single appearance or array of appearances in priority order (highest priority first)
      */
-    setAppearance(appearancesInput: AppearanceModel | AppearanceModel[]) {
+    setAppearance(
+        appearancesInput: AppearanceComponent | AppearanceComponent[],
+    ) {
         // Normalize to array
         const appearances = Array.isArray(appearancesInput)
             ? appearancesInput
             : [appearancesInput];
 
         // Helper to get first non-null/non-undefined value from appearances for a given key
-        const getFirstValue = <K extends keyof AppearanceModel>(
+        const getFirstValue = <K extends keyof AppearanceComponent>(
             key: K,
-        ): AppearanceModel[K] | null => {
+        ): AppearanceComponent[K] | null => {
             for (const appearance of appearances) {
                 if (appearance[key] != null) {
                     return appearance[key];

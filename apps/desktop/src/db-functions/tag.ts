@@ -7,11 +7,11 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import {
-    AppearanceModel,
-    AppearanceModelOptional,
+    AppearanceComponent,
+    AppearanceComponentOptional,
     appearanceModelParsedToRawOptional,
-    AppearanceModelRaw,
-    AppearanceModelRawOptional,
+    AppearanceComponentRaw,
+    AppearanceComponentRawOptional,
     appearanceModelRawToParsed,
 } from "@/entity-components/appearance";
 
@@ -136,7 +136,7 @@ export const deleteTagsInTransaction = async ({
 // ============================================================================
 
 /** How a tag appearance is represented in the database */
-export interface TagAppearance extends AppearanceModel {
+export interface TagAppearance extends AppearanceComponent {
     id: number;
     tag_id: number;
     start_page_id: number;
@@ -156,13 +156,13 @@ export const realDatabaseTagAppearanceToDatabaseTagAppearance = (
     };
 };
 
-export interface NewTagAppearanceArgs extends Partial<AppearanceModel> {
+export interface NewTagAppearanceArgs extends Partial<AppearanceComponent> {
     tag_id: number;
     start_page_id: number;
     priority?: number;
 }
 
-interface RealNewTagAppearanceArgs extends Partial<AppearanceModelRaw> {
+interface RealNewTagAppearanceArgs extends Partial<AppearanceComponentRaw> {
     tag_id: number;
     start_page_id: number;
     priority?: number;
@@ -182,14 +182,14 @@ const newTagAppearanceArgsToRealNewTagAppearanceArgs = (
     };
 };
 
-export interface ModifiedTagAppearanceArgs extends AppearanceModelOptional {
+export interface ModifiedTagAppearanceArgs extends AppearanceComponentOptional {
     id: number;
     tag_id?: number;
     start_page_id?: number;
     priority?: number;
 }
 
-interface RealModifiedTagAppearanceArgs extends AppearanceModelRawOptional {
+interface RealModifiedTagAppearanceArgs extends AppearanceComponentRawOptional {
     id: number;
     tag_id?: number;
     start_page_id?: number;

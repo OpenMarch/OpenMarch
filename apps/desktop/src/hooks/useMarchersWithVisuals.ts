@@ -18,7 +18,7 @@ import {
     MarcherIdsByTagId,
 } from "@/db-functions";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { AppearanceModelOptional } from "@/entity-components/appearance";
+import { AppearanceComponentOptional } from "@/entity-components/appearance";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 
 export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
@@ -111,7 +111,7 @@ export const _combineMarcherVisualGroups = (
 
     const newVisuals: Record<number, MarcherVisualGroup> = {};
     for (const marcher of marchers) {
-        const appearances: AppearanceModelOptional[] = [];
+        const appearances: AppearanceComponentOptional[] = [];
 
         const marcherPage = marcherPages?.[marcher.id];
         if (marcherPage) {

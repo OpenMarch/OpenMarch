@@ -6,15 +6,15 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import {
-    AppearanceModel,
-    AppearanceModelOptional,
+    AppearanceComponent,
+    AppearanceComponentOptional,
     appearanceModelParsedToRawOptional,
-    AppearanceModelRawOptional,
+    AppearanceComponentRawOptional,
     appearanceModelRawToParsed,
 } from "@/entity-components/appearance";
 
 /** How a section appearance is represented in the database */
-export interface DatabaseSectionAppearance extends AppearanceModel {
+export interface DatabaseSectionAppearance extends AppearanceComponent {
     id: number;
     section: string;
     created_at: string;
@@ -36,11 +36,11 @@ export const realDatabaseSectionAppearanceToDatabaseSectionAppearance = (
     };
 };
 
-export interface NewSectionAppearanceArgs extends AppearanceModelOptional {
+export interface NewSectionAppearanceArgs extends AppearanceComponentOptional {
     section: string;
 }
 
-interface RealNewSectionAppearanceArgs extends AppearanceModelRawOptional {
+interface RealNewSectionAppearanceArgs extends AppearanceComponentRawOptional {
     section: string;
 }
 
@@ -57,12 +57,12 @@ const newSectionAppearanceArgsToRealNewSectionAppearanceArgs = (
     };
 };
 
-export interface ModifiedSectionAppearanceArgs extends AppearanceModelOptional {
+export interface ModifiedSectionAppearanceArgs extends AppearanceComponentOptional {
     id: number;
     section?: string;
 }
 
-interface RealModifiedSectionAppearanceArgs extends AppearanceModelRawOptional {
+interface RealModifiedSectionAppearanceArgs extends AppearanceComponentRawOptional {
     id: number;
     section?: string;
 }

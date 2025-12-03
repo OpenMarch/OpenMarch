@@ -9,7 +9,9 @@ const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
 });
 
 /** Definition of a marcher appearance exactly as it is stored in the database. */
-export type AppearanceModelRaw = InferSelectModel<typeof fakeAppearanceTable>;
+export type AppearanceComponentRaw = InferSelectModel<
+    typeof fakeAppearanceTable
+>;
 
 // Parse rgba(0, 0, 0, 1) string color to RGBA color
 function parseRgbaColor(colorStr: string): RgbaColor {
@@ -30,8 +32,8 @@ function parseRgbaColor(colorStr: string): RgbaColor {
 }
 
 /** Parsed definition of a marcher appearance. The colors are parsed and integers are converted to booleans. */
-export type AppearanceModel = Omit<
-    AppearanceModelRaw,
+export type AppearanceComponent = Omit<
+    AppearanceComponentRaw,
     "fill_color" | "outline_color" | "visible" | "label_visible"
 > & {
     fill_color: RgbaColor | null;
@@ -41,18 +43,18 @@ export type AppearanceModel = Omit<
 };
 
 /** Definition of a marcher appearance, with all of the non-required fields optional */
-export type AppearanceModelOptional = Pick<
-    AppearanceModel,
+export type AppearanceComponentOptional = Pick<
+    AppearanceComponent,
     "visible" | "label_visible"
 > &
-    Partial<AppearanceModel>;
+    Partial<AppearanceComponent>;
 
 /** Definition of a marcher appearance, with all of the non-required fields optional */
-export type AppearanceModelRawOptional = Pick<
-    AppearanceModelRaw,
+export type AppearanceComponentRawOptional = Pick<
+    AppearanceComponentRaw,
     "visible" | "label_visible"
 > &
-    Partial<AppearanceModelRaw>;
+    Partial<AppearanceComponentRaw>;
 
 /**
  * Converts a raw appearance model from the database to a parsed appearance model.
@@ -61,8 +63,8 @@ export type AppearanceModelRawOptional = Pick<
  * @returns The parsed appearance model.
  */
 export const appearanceModelRawToParsed = (
-    appearance: AppearanceModelRaw,
-): AppearanceModel => {
+    appearance: AppearanceComponentRaw,
+): AppearanceComponent => {
     return {
         ...appearance,
         fill_color: appearance.fill_color
@@ -83,8 +85,8 @@ export const appearanceModelRawToParsed = (
  * @returns The raw appearance model.
  */
 export const appearanceModelParsedToRaw = (
-    appearance: AppearanceModel,
-): AppearanceModelRaw => {
+    appearance: AppearanceComponent,
+): AppearanceComponentRaw => {
     return {
         ...appearance,
         fill_color: appearance.fill_color
@@ -99,13 +101,13 @@ export const appearanceModelParsedToRaw = (
 };
 
 export const appearanceModelParsedToRawOptional = (
-    appearance: AppearanceModelOptional,
-): AppearanceModelRawOptional => {
-    const output: AppearanceModelRawOptional = {
+    appearance: AppearanceComponentOptional,
+): AppearanceComponentRawOptional => {
+    const output: AppearanceComponentRawOptional = {
         ...appearance,
         visible: appearance.visible ? 1 : 0,
         label_visible: appearance.label_visible ? 1 : 0,
-    } as AppearanceModelRawOptional;
+    } as AppearanceComponentRawOptional;
 
     if (appearance.fill_color != null) {
         output.fill_color = rgbaToString(appearance.fill_color);
