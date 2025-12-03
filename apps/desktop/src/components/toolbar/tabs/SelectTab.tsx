@@ -12,7 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import ToolbarSection from "../ToolbarSection";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import * as Popover from "@radix-ui/react-popover";
@@ -310,12 +310,24 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
     );
 }
 
+const SELECT_BY_STORAGE_KEY = "openmarch-select-tab-mode";
+
 function SelectTabContents() {
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
-    const [selectByOption, setSelectByOption] =
-        useState<SelectByOption>("section");
+    const [selectByOption, setSelectByOption] = useState<SelectByOption>(() => {
+        const stored = localStorage.getItem(SELECT_BY_STORAGE_KEY);
+        if (stored && SelectByOptions.includes(stored as SelectByOption)) {
+            return stored as SelectByOption;
+        }
+        return "section";
+    });
+
+    useEffect(() => {
+        localStorage.setItem(SELECT_BY_STORAGE_KEY, selectByOption);
+    }, [selectByOption]);
+
     if (!marchersLoaded) {
         return <div>Loading...</div>;
     }
