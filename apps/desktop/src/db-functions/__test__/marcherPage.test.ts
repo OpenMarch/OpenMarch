@@ -355,6 +355,8 @@ describeDbTests("marcherPage", (it) => {
 
 describe("lockedDecorator", () => {
     // Helper function to create a mock DatabaseMarcherPage
+    // Note: visible and label_visible use parsed boolean values since lockedDecorator
+    // returns MarcherPage (with parsed values) via appearanceModelRawToParsed
     const createMockMarcherPage = (
         overrides: Partial<DatabaseMarcherPage> = {},
     ): DatabaseMarcherPage =>
@@ -371,6 +373,10 @@ describe("lockedDecorator", () => {
             path_end_position: null,
             notes: null,
             rotation_degrees: 0,
+            fill_color: null,
+            outline_color: null,
+            visible: false,
+            label_visible: false,
             ...overrides,
         }) as DatabaseMarcherPage;
 
