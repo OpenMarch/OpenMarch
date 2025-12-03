@@ -8,6 +8,10 @@ import {
 import { schema } from "@/global/database/db";
 import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "@openmarch/core";
+import {
+    AppearanceModel,
+    AppearanceModelRaw,
+} from "electron/database/migrations/schema";
 
 // ============================================================================
 // TAGS
@@ -130,21 +134,16 @@ export const deleteTagsInTransaction = async ({
 // ============================================================================
 
 /** How a tag appearance is represented in the database */
-export interface DatabaseTagAppearance {
+export interface TagAppearance extends schema.AppearanceModel {
     id: number;
     tag_id: number;
     start_page_id: number;
-    fill_color: RgbaColor | null;
-    outline_color: RgbaColor | null;
-    shape_type: string | null;
-    visible: boolean;
-    label_visible: boolean;
     priority: number;
     created_at: string;
     updated_at: string;
 }
 
-type RealDatabaseTagAppearance = typeof schema.tag_appearances.$inferSelect;
+type DatabaseTagAppearance = typeof schema.tag_appearances.$inferSelect;
 
 // Parse rgba(0, 0, 0, 1) string color to RGBA color
 function parseColor(colorStr: string): RgbaColor {
@@ -165,44 +164,28 @@ function parseColor(colorStr: string): RgbaColor {
 }
 
 export const realDatabaseTagAppearanceToDatabaseTagAppearance = (
-    item: RealDatabaseTagAppearance,
-): DatabaseTagAppearance => {
+    item: DatabaseTagAppearance,
+): TagAppearance => {
     return {
-        id: item.id,
-        tag_id: item.tag_id,
-        start_page_id: item.start_page_id,
+        ...item,
         fill_color: item.fill_color ? parseColor(item.fill_color) : null,
         outline_color: item.outline_color
             ? parseColor(item.outline_color)
             : null,
-        shape_type: item.shape_type ?? null,
         visible: item.visible === 1,
         label_visible: item.label_visible === 1,
-        priority: item.priority,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
     };
 };
 
-export interface NewTagAppearanceArgs {
+export interface NewTagAppearanceArgs extends Partial<AppearanceModel> {
     tag_id: number;
     start_page_id: number;
-    fill_color?: RgbaColor;
-    outline_color?: RgbaColor;
-    shape_type?: string;
-    visible?: boolean;
-    label_visible?: boolean;
     priority?: number;
 }
 
-interface RealNewTagAppearanceArgs {
+interface RealNewTagAppearanceArgs extends Partial<AppearanceModelRaw> {
     tag_id: number;
     start_page_id: number;
-    fill_color?: string;
-    outline_color?: string;
-    shape_type?: string;
-    visible?: number;
-    label_visible?: number;
     priority?: number;
 }
 
@@ -214,10 +197,10 @@ const newTagAppearanceArgsToRealNewTagAppearanceArgs = (
         start_page_id: args.start_page_id,
     };
 
-    if (args.fill_color !== undefined) {
+    if (args.fill_color != null) {
         result.fill_color = rgbaToString(args.fill_color);
     }
-    if (args.outline_color !== undefined) {
+    if (args.outline_color != null) {
         result.outline_color = rgbaToString(args.outline_color);
     }
     if (args.shape_type !== undefined) {
@@ -307,10 +290,7 @@ export const _calculateMapAllTagAppearanceIdsByPageId = ({
     tagAppearances,
     pagesInOrder,
 }: {
-    tagAppearances: Pick<
-        DatabaseTagAppearance,
-        "id" | "tag_id" | "start_page_id"
-    >[];
+    tagAppearances: Pick<TagAppearance, "id" | "tag_id" | "start_page_id">[];
     pagesInOrder: Pick<DatabasePage, "id">[];
 }): TagAppearanceIdsByPageId => {
     const output: TagAppearanceIdsByPageId = new Map();
@@ -381,7 +361,7 @@ export async function getTagAppearances({
     db,
 }: {
     db: DbConnection;
-}): Promise<DatabaseTagAppearance[]> {
+}): Promise<TagAppearance[]> {
     const result = await db.query.tag_appearances.findMany();
     return result.map(realDatabaseTagAppearanceToDatabaseTagAppearance);
 }
@@ -400,7 +380,7 @@ export async function getTagAppearancesByPageId({
     db: DbConnection;
     pageId: number;
     tagAppearanceIdsByPageId: TagAppearanceIdsByPageId;
-}): Promise<DatabaseTagAppearance[]> {
+}): Promise<TagAppearance[]> {
     const tagAppearanceIds = tagAppearanceIdsByPageId.get(pageId);
     if (!tagAppearanceIds) {
         console.error(
@@ -423,7 +403,7 @@ export async function createTagAppearances({
 }: {
     newItems: NewTagAppearanceArgs[];
     db: DbConnection;
-}): Promise<DatabaseTagAppearance[]> {
+}): Promise<TagAppearance[]> {
     if (newItems.length === 0) {
         console.warn("No new tag appearances to create");
         return [];
@@ -448,7 +428,7 @@ export const createTagAppearancesInTransaction = async ({
 }: {
     newItems: NewTagAppearanceArgs[];
     tx: DbTransaction;
-}): Promise<DatabaseTagAppearance[]> => {
+}): Promise<TagAppearance[]> => {
     const createdItems = await tx
         .insert(schema.tag_appearances)
         .values(newItems.map(newTagAppearanceArgsToRealNewTagAppearanceArgs))
@@ -466,7 +446,7 @@ export async function updateTagAppearances({
 }: {
     db: DbConnection;
     modifiedItems: ModifiedTagAppearanceArgs[];
-}): Promise<DatabaseTagAppearance[]> {
+}): Promise<TagAppearance[]> {
     const transactionResult = await transactionWithHistory(
         db,
         "updateTagAppearances",
@@ -486,8 +466,8 @@ export const updateTagAppearancesInTransaction = async ({
 }: {
     modifiedItems: ModifiedTagAppearanceArgs[];
     tx: DbTransaction;
-}): Promise<DatabaseTagAppearance[]> => {
-    const updatedItems: DatabaseTagAppearance[] = [];
+}): Promise<TagAppearance[]> => {
+    const updatedItems: TagAppearance[] = [];
     const realModifiedItems = modifiedItems.map(
         modifiedTagAppearanceArgsToRealModifiedTagAppearanceArgs,
     );
@@ -517,7 +497,7 @@ export async function deleteTagAppearances({
 }: {
     itemIds: Set<number>;
     db: DbConnection;
-}): Promise<DatabaseTagAppearance[]> {
+}): Promise<TagAppearance[]> {
     if (itemIds.size === 0) return [];
 
     const response = await transactionWithHistory(
@@ -539,7 +519,7 @@ const deleteTagAppearancesInTransaction = async ({
 }: {
     itemIds: Set<number>;
     tx: DbTransaction;
-}): Promise<DatabaseTagAppearance[]> => {
+}): Promise<TagAppearance[]> => {
     const deletedItems = await tx
         .delete(schema.tag_appearances)
         .where(inArray(schema.tag_appearances.id, Array.from(itemIds)))

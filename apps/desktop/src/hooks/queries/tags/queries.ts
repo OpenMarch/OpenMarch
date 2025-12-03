@@ -5,7 +5,7 @@ import {
     _calculateMapAllTagAppearanceIdsByPageId,
     getPagesInOrder,
     getTagAppearancesByPageId,
-    DatabaseTagAppearance,
+    TagAppearance,
     DatabaseTag,
     getTags,
     getTagById,
@@ -23,11 +23,10 @@ const KEY_BASE = "tags";
 export const tagKeys = {
     allTags: () => [KEY_BASE] as const,
     byId: (id: number) => [KEY_BASE, "id", id] as const,
-    byPageId: (page_id: number) => [KEY_BASE, { page_id }] as const,
+    tagAppearanceIdsByPageIdMap: () => [KEY_BASE, "page"] as const,
+    byPageId: (page_id: number) => [KEY_BASE, "page", { page_id }] as const,
     marcherIdsByTagIdMap: () =>
         [KEY_BASE, "marcher_ids_by_tag_id_map"] as const,
-    tagAppearanceIdsByPageIdMap: () =>
-        [KEY_BASE, "tag_appearance_ids_by_page_id_map"] as const,
     allTagAppearances: () => [KEY_BASE, "tag_appearances"] as const,
     allMarcherTags: () => [KEY_BASE, "marcher_tags"] as const,
 };
@@ -93,32 +92,33 @@ export const tagAppearanceByPageIdMapQueryOptions = () => {
     });
 };
 
-// The actual tag appearances for a given page
-export const useTagAppearancesByPageId = (
-    pageId: number | null | undefined,
-) => {
-    const {
-        data: tagAppearanceIdsByPageIdMap,
-        isSuccess: isSuccessTagAppearanceIdsByPageIdMap,
-        dataUpdatedAt,
-    } = useQuery(tagAppearanceByPageIdMapQueryOptions());
-
-    const queryFn = useCallback(async () => {
-        return await getTagAppearancesByPageId({
-            db,
-            pageId: pageId!,
-            tagAppearanceIdsByPageId: tagAppearanceIdsByPageIdMap!,
-        });
-    }, [pageId, tagAppearanceIdsByPageIdMap]);
-
-    return useQuery({
-        queryKey: [...tagKeys.byPageId(pageId!), dataUpdatedAt],
-        queryFn,
+export const tagAppearancesByPageIdQueryOptions = ({
+    pageId,
+    queryClient,
+}: {
+    pageId: number | null | undefined;
+    queryClient: QueryClient;
+}) => {
+    return queryOptions<TagAppearance[]>({
+        queryKey: tagKeys.byPageId(pageId!),
         staleTime: DEFAULT_STALE_TIME,
-        enabled: pageId != null && isSuccessTagAppearanceIdsByPageIdMap,
+        enabled: pageId != null,
+
+        queryFn: async () => {
+            // 1. Ensure the map query is available
+            const globalMap = await queryClient.ensureQueryData(
+                tagAppearanceByPageIdMapQueryOptions(),
+            );
+
+            // 2. Now compute the per-page results
+            return await getTagAppearancesByPageId({
+                db,
+                pageId: pageId!,
+                tagAppearanceIdsByPageId: globalMap,
+            });
+        },
     });
 };
-
 /**
  *
  * This type will only ever contain the tag appearances for a single page.
@@ -127,7 +127,7 @@ export const useTagAppearancesByPageId = (
  * Map<tag_id, tag_appearance>
  * ```
  */
-export type TagAppearanceForPageByTagId = Map<number, DatabaseTagAppearance>;
+export type TagAppearanceForPageByTagId = Map<number, TagAppearance>;
 
 // The actual tag appearances for a given page
 export const tagAppearancesForPageQueryOptions = (
@@ -194,7 +194,7 @@ export const tagQueryByIdOptions = (id: number) => {
  * Query options for getting all tag appearances
  */
 export const allTagAppearancesQueryOptions = () => {
-    return queryOptions<DatabaseTagAppearance[]>({
+    return queryOptions<TagAppearance[]>({
         queryKey: tagKeys.allTagAppearances(),
         queryFn: async () => {
             return await getTagAppearances({ db });

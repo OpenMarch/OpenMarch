@@ -303,8 +303,8 @@ export default function Canvas({
 
         canvas
             .renderMarchers({
-                marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
+                marcherVisuals,
+                marcherPages,
             })
             .catch((error) => {
                 console.error("Error rendering marchers", error);

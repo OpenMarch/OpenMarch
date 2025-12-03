@@ -3,7 +3,7 @@ import {
     TagAppearanceIdsByPageId,
 } from "../tag";
 import { describe, expect, it } from "vitest";
-import { DatabaseTagAppearance } from "@/db-functions";
+import { TagAppearance } from "@/db-functions";
 import * as fc from "fast-check";
 
 describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
@@ -122,7 +122,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
             }));
             // Create tag appearances for each page and tag
             const tagAppearances: Pick<
-                DatabaseTagAppearance,
+                TagAppearance,
                 "id" | "tag_id" | "start_page_id"
             >[] = [];
             for (let i = 0; i < numberOfPages; i++) {
@@ -298,7 +298,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
 
                             // Create multiple appearances for each tag
                             const tagAppearances: Pick<
-                                DatabaseTagAppearance,
+                                TagAppearance,
                                 "id" | "tag_id" | "start_page_id"
                             >[] = [];
                             let appearanceId = 1;
@@ -606,7 +606,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                 (_, i) => ({ id: i }),
                             );
                             const tagAppearances: Pick<
-                                DatabaseTagAppearance,
+                                TagAppearance,
                                 "id" | "tag_id" | "start_page_id"
                             >[] = [];
                             let appearanceId = 1;

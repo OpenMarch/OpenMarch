@@ -33,11 +33,9 @@ export default class MarcherVisualGroup {
     constructor({
         marcher,
         appearances,
-        fieldTheme,
     }: {
         marcher: Marcher;
         appearances?: AppearanceModelOptional | AppearanceModelOptional[];
-        fieldTheme: FieldTheme;
     }) {
         this.marcherId = marcher.id;
 
