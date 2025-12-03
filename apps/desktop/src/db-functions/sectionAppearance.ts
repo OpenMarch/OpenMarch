@@ -9,15 +9,14 @@ import { RgbaColor } from "@uiw/react-color";
 import { rgbaToString } from "@openmarch/core";
 
 /** How a section appearance is represented in the database */
-export interface DatabaseSectionAppearance {
+export interface DatabaseSectionAppearance
+    extends schema.AppearanceModelParsed {
     id: number;
     section: string;
-    fill_color: RgbaColor;
-    outline_color: RgbaColor;
-    shape_type: string;
     created_at: string;
     updated_at: string;
 }
+export type SectionAppearance = DatabaseSectionAppearance;
 
 // Only do this if it's needed to convert the real database values to something else
 // I.e. integer -> boolean in sqlite
@@ -46,13 +45,11 @@ export const realDatabaseSectionAppearanceToDatabaseSectionAppearance = (
     item: RealDatabaseSectionAppearance,
 ): DatabaseSectionAppearance => {
     return {
-        id: item.id,
-        section: item.section,
-        fill_color: parseColor(item.fill_color),
-        outline_color: parseColor(item.outline_color),
-        shape_type: item.shape_type,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
+        ...item,
+        fill_color: item.fill_color ? parseColor(item.fill_color) : null,
+        outline_color: item.outline_color
+            ? parseColor(item.outline_color)
+            : null,
     };
 };
 

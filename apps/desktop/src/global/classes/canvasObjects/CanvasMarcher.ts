@@ -5,13 +5,14 @@ import { FieldProperties } from "@openmarch/core";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "@openmarch/core";
-import { SectionAppearance } from "../SectionAppearance";
 import { UiSettings } from "@/stores/UiSettingsStore";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import {
     CoordinateLike,
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
+import { SectionAppearance } from "@/db-functions";
+import { AppearanceModelParsed } from "electron/database/migrations/schema";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -49,36 +50,31 @@ export default class CanvasMarcher
      * @param marcher The marcher object to create the canvas object from
      * @param marcherPage The MarcherPage object to set the initial coordinates from
      * @param dotRadius The radius of the dot
-     * @param color The color of the dot
+     * @param sectionAppearance The section appearance to use for the dot
      */
     // eslint-disable-next-line max-lines-per-function
     constructor({
         marcher,
         coordinate,
         dotRadius = CanvasMarcher.dotRadius,
-        sectionAppearance,
-        color,
+        appearance,
     }: {
         marcher: Marcher;
         coordinate: CoordinateLike;
         dotRadius?: number;
-        color?: string;
-        sectionAppearance?: SectionAppearance;
+        appearance?: AppearanceModelParsed;
     }) {
         // Use section-specific colors if available
-        const fillColor =
-            color ||
-            rgbaToString(
-                sectionAppearance?.fill_color ||
-                    CanvasMarcher.theme.defaultMarcher.fill,
-            );
+        const fillColor = rgbaToString(
+            appearance?.fill_color || CanvasMarcher.theme.defaultMarcher.fill,
+        );
         const outlineColor = rgbaToString(
-            sectionAppearance?.outline_color ||
+            appearance?.outline_color ||
                 CanvasMarcher.theme.defaultMarcher.outline,
         );
 
         // Determine shape type from section appearance
-        const shapeType = sectionAppearance?.shape_type || "circle";
+        const shapeType = appearance?.shape_type || "circle";
 
         // Create the appropriate shape based on shapeType
         let markerShape: fabric.Object;
@@ -113,8 +109,7 @@ export default class CanvasMarcher
             // Use fillColor for X stroke to ensure visibility, since X has no fill area
             // and outline color might be transparent
             const xStrokeColor =
-                sectionAppearance?.outline_color &&
-                sectionAppearance.outline_color.a > 0.1
+                appearance?.outline_color && appearance.outline_color.a > 0.1
                     ? outlineColor
                     : fillColor;
             const line1 = new fabric.Line([-xSize, -xSize, xSize, xSize], {

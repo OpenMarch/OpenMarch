@@ -3,12 +3,18 @@ import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import Marcher from "@/global/classes/Marcher";
-import {
-    getSectionAppearance,
-    SectionAppearance,
-} from "@/global/classes/SectionAppearance";
 // import EditablePath from "./canvasObjects/EditablePath";
 import { FieldTheme } from "@openmarch/core";
+import { SectionAppearance } from "@/db-functions";
+
+const getSectionAppearance = (
+    section: string,
+    sectionAppearances: SectionAppearance[],
+) => {
+    return sectionAppearances.find(
+        (appearance) => appearance.section === section,
+    );
+};
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -48,7 +54,7 @@ export default class MarcherVisualGroup {
         this.canvasMarcher = new CanvasMarcher({
             marcher: marcher,
             coordinate: { x: 0, y: 0 },
-            sectionAppearance: sectionAppearance,
+            appearance: sectionAppearance,
         });
 
         this.previousPathway = new Pathway({

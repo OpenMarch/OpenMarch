@@ -4,13 +4,13 @@ import { FieldProperties, FieldTheme, rgbaToString } from "@openmarch/core";
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { defaultSettings } from "@/stores/UiSettingsStore";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { db } from "@/global/database/db";
+import { SectionAppearance } from "@/db-functions";
 
 const SectionAppearanceBySection = (
     sectionAppearances: SectionAppearance[] | undefined,
@@ -207,7 +207,7 @@ const initializeCanvasForRendering = async (args: {
         const canvasMarcher = new CanvasMarcher({
             marcher,
             coordinate: { x: 0, y: 0 }, // dummy coordinate, will be set later
-            sectionAppearance,
+            appearance: sectionAppearance,
         });
         canvasMarchersById[marcher.id] = canvasMarcher;
         // Add the marcher to the canvas

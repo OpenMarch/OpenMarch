@@ -10,7 +10,8 @@ import {
     customType,
     sqliteView,
 } from "drizzle-orm/sqlite-core";
-import { sql } from "drizzle-orm";
+import { InferSelectModel, sql } from "drizzle-orm";
+import { RgbaColor } from "@uiw/react-color";
 
 /*************** COMMON COLUMNS ***************/
 
@@ -33,6 +34,20 @@ const appearance_columns = {
     label_visible: integer().default(1).notNull(),
     equipment_name: text(),
     equipment_state: text(),
+};
+
+/** a table that is used to infer the type of the appearance columns. Do not export this table. */
+const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
+    ...appearance_columns,
+});
+
+export type AppearanceModel = InferSelectModel<typeof fakeAppearanceTable>;
+export type AppearanceModelParsed = Omit<
+    AppearanceModel,
+    "fill_color" | "outline_color"
+> & {
+    fill_color: RgbaColor | null;
+    outline_color: RgbaColor | null;
 };
 
 /*************** TABLES ***************/

@@ -19,7 +19,6 @@ import {
 } from "@openmarch/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { SectionAppearance } from "@/global/classes/SectionAppearance";
 import * as Form from "@radix-ui/react-form";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import ColorPicker from "../../ui/ColorPicker";
@@ -33,6 +32,7 @@ import { getTranslatedSectionName } from "@/global/classes/Sections";
 import {
     ModifiedSectionAppearanceArgs,
     NewSectionAppearanceArgs,
+    SectionAppearance,
 } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -352,7 +352,10 @@ export default function SectionAppearanceList() {
 
                                     <ColorPicker
                                         label={t("marchers.list.fillColor")}
-                                        initialColor={appearance.fill_color}
+                                        initialColor={
+                                            appearance.fill_color ??
+                                            defaultFillColor
+                                        }
                                         onChange={(color) => {
                                             handleChange(
                                                 color,
@@ -371,7 +374,10 @@ export default function SectionAppearanceList() {
 
                                     <ColorPicker
                                         label={t("marchers.list.outlineColor")}
-                                        initialColor={appearance.outline_color}
+                                        initialColor={
+                                            appearance.outline_color ??
+                                            defaultOutlineColor
+                                        }
                                         onChange={(color) => {
                                             handleChange(
                                                 color,
@@ -393,7 +399,10 @@ export default function SectionAppearanceList() {
                                         className="px-0"
                                     >
                                         <Select
-                                            value={appearance.shape_type}
+                                            value={
+                                                appearance.shape_type ??
+                                                defaultShapeType
+                                            }
                                             onValueChange={(value) =>
                                                 handleChange(
                                                     value,

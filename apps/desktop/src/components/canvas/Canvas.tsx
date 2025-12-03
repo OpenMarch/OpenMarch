@@ -214,17 +214,6 @@ export default function Canvas({
         }
     }, [canvas, updateMarcherPages.mutate]);
 
-    // // Sync marcher visuals with marchers and section appearances
-    // useEffect(() => {
-    //     if (marchers && sectionAppearances && fieldProperties) {
-    //         updateMarcherVisuals(
-    //             marchers,
-    //             fieldProperties.theme,
-    //             sectionAppearances,
-    //         );
-    //     }
-    // }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
-
     // Sync canvas with marcher visuals
     useEffect(() => {
         if (!canvas || !marchers || !marcherVisuals || !fieldProperties) return;

@@ -1,8 +1,4 @@
 import {
-    getSectionAppearance,
-    SectionAppearance,
-} from "@/global/classes/SectionAppearance";
-import {
     allMarchersQueryOptions,
     allSectionAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
@@ -11,8 +7,18 @@ import { useQueries, UseQueryResult } from "@tanstack/react-query";
 import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 import Marcher from "@/global/classes/Marcher";
 import { FieldProperties } from "@openmarch/core";
+import { SectionAppearance } from "@/db-functions";
 
 export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
+
+const getSectionAppearance = (
+    section: string,
+    sectionAppearances: SectionAppearance[],
+) => {
+    return sectionAppearances.find(
+        (appearance) => appearance.section === section,
+    );
+};
 
 export const _combineMarcherVisualGroups = (
     results: [
