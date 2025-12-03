@@ -3,8 +3,7 @@ import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import Marcher from "@/global/classes/Marcher";
-import { FieldTheme } from "@openmarch/core";
-import { AppearanceModelOptional } from "electron/database/migrations/schema";
+import { AppearanceModelOptional } from "@/entity-components/appearance";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.

@@ -170,6 +170,8 @@ export default function SectionAppearanceList() {
             fill_color: defaultFillColor,
             outline_color: defaultOutlineColor,
             shape_type: defaultShapeType,
+            visible: true,
+            label_visible: true,
         };
 
         try {

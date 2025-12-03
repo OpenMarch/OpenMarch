@@ -13,10 +13,9 @@ import {
     getMarcherTags,
     getTagAppearances,
 } from "@/db-functions";
-import { QueryClient, queryOptions, useQuery } from "@tanstack/react-query";
+import { QueryClient, queryOptions } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
-import { useCallback } from "react";
 
 const KEY_BASE = "tags";
 

@@ -10,8 +10,7 @@ import {
     customType,
     sqliteView,
 } from "drizzle-orm/sqlite-core";
-import { InferSelectModel, sql } from "drizzle-orm";
-import { RgbaColor } from "@uiw/react-color";
+import { sql } from "drizzle-orm";
 
 /*************** COMMON COLUMNS ***************/
 
@@ -28,7 +27,7 @@ const timestamps = {
 // APPEARANCE
 
 /** Columns that define how a marcher looks */
-const appearance_columns = {
+export const appearance_columns = {
     fill_color: text(),
     outline_color: text(),
     shape_type: text(),
@@ -37,32 +36,6 @@ const appearance_columns = {
     equipment_name: text(),
     equipment_state: text(),
 };
-
-/** a table that is used to infer the type of the appearance columns. Do not export this table. */
-const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
-    ...appearance_columns,
-});
-
-/** Definition of a marcher appearance exactly as it is stored in the database. */
-export type AppearanceModelRaw = InferSelectModel<typeof fakeAppearanceTable>;
-
-/** Definition of a marcher appearance. The colors are parsed and integers are converted to booleans. */
-export type AppearanceModel = Omit<
-    AppearanceModelRaw,
-    "fill_color" | "outline_color" | "visible" | "label_visible"
-> & {
-    fill_color: RgbaColor | null;
-    outline_color: RgbaColor | null;
-    visible: boolean;
-    label_visible: boolean;
-};
-
-/** Definition of a marcher appearance, with all of the non-required fields optional */
-export type AppearanceModelOptional = Pick<
-    AppearanceModel,
-    "visible" | "label_visible"
-> &
-    Partial<AppearanceModel>;
 
 /*************** TABLES ***************/
 
@@ -227,6 +200,7 @@ export const marcher_pages = sqliteTable(
         /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
         rotation_degrees: real().notNull().default(0),
+        ...appearance_columns,
     },
     (table) => [
         check(

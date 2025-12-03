@@ -6,12 +6,14 @@ import {
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
-import { RgbaColor } from "@uiw/react-color";
-import { rgbaToString } from "@openmarch/core";
 import {
     AppearanceModel,
+    AppearanceModelOptional,
+    appearanceModelParsedToRawOptional,
     AppearanceModelRaw,
-} from "electron/database/migrations/schema";
+    AppearanceModelRawOptional,
+    appearanceModelRawToParsed,
+} from "@/entity-components/appearance";
 
 // ============================================================================
 // TAGS
@@ -134,7 +136,7 @@ export const deleteTagsInTransaction = async ({
 // ============================================================================
 
 /** How a tag appearance is represented in the database */
-export interface TagAppearance extends schema.AppearanceModel {
+export interface TagAppearance extends AppearanceModel {
     id: number;
     tag_id: number;
     start_page_id: number;
@@ -145,35 +147,12 @@ export interface TagAppearance extends schema.AppearanceModel {
 
 type DatabaseTagAppearance = typeof schema.tag_appearances.$inferSelect;
 
-// Parse rgba(0, 0, 0, 1) string color to RGBA color
-function parseColor(colorStr: string): RgbaColor {
-    // Extract r, g, b, a values from rgba string
-    const match = colorStr.match(
-        /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*\.?\d+))?\)/,
-    );
-    if (match) {
-        return {
-            r: parseInt(match[1], 10),
-            g: parseInt(match[2], 10),
-            b: parseInt(match[3], 10),
-            a: match[4] ? parseFloat(match[4]) : 1,
-        };
-    }
-    // Default fallback color
-    return { r: 0, g: 0, b: 0, a: 1 };
-}
-
 export const realDatabaseTagAppearanceToDatabaseTagAppearance = (
     item: DatabaseTagAppearance,
 ): TagAppearance => {
     return {
         ...item,
-        fill_color: item.fill_color ? parseColor(item.fill_color) : null,
-        outline_color: item.outline_color
-            ? parseColor(item.outline_color)
-            : null,
-        visible: item.visible === 1,
-        label_visible: item.label_visible === 1,
+        ...appearanceModelRawToParsed(item),
     };
 };
 
@@ -192,54 +171,28 @@ interface RealNewTagAppearanceArgs extends Partial<AppearanceModelRaw> {
 const newTagAppearanceArgsToRealNewTagAppearanceArgs = (
     args: NewTagAppearanceArgs,
 ): RealNewTagAppearanceArgs => {
-    const result: RealNewTagAppearanceArgs = {
+    return {
         tag_id: args.tag_id,
         start_page_id: args.start_page_id,
+        ...appearanceModelParsedToRawOptional({
+            ...args,
+            visible: true,
+            label_visible: true,
+        }),
     };
-
-    if (args.fill_color != null) {
-        result.fill_color = rgbaToString(args.fill_color);
-    }
-    if (args.outline_color != null) {
-        result.outline_color = rgbaToString(args.outline_color);
-    }
-    if (args.shape_type !== undefined) {
-        result.shape_type = args.shape_type;
-    }
-    if (args.visible !== undefined) {
-        result.visible = args.visible ? 1 : 0;
-    }
-    if (args.label_visible !== undefined) {
-        result.label_visible = args.label_visible ? 1 : 0;
-    }
-    if (args.priority !== undefined) {
-        result.priority = args.priority;
-    }
-
-    return result;
 };
 
-export interface ModifiedTagAppearanceArgs {
+export interface ModifiedTagAppearanceArgs extends AppearanceModelOptional {
     id: number;
     tag_id?: number;
     start_page_id?: number;
-    fill_color?: RgbaColor | null;
-    outline_color?: RgbaColor | null;
-    shape_type?: string | null;
-    visible?: boolean;
-    label_visible?: boolean;
     priority?: number;
 }
 
-interface RealModifiedTagAppearanceArgs {
+interface RealModifiedTagAppearanceArgs extends AppearanceModelRawOptional {
     id: number;
     tag_id?: number;
     start_page_id?: number;
-    fill_color?: string | null;
-    outline_color?: string | null;
-    shape_type?: string | null;
-    visible?: number;
-    label_visible?: number;
     priority?: number;
 }
 
@@ -248,36 +201,12 @@ const modifiedTagAppearanceArgsToRealModifiedTagAppearanceArgs = (
 ): RealModifiedTagAppearanceArgs => {
     const result: RealModifiedTagAppearanceArgs = {
         id: args.id,
+        ...appearanceModelParsedToRawOptional({
+            ...args,
+            visible: true,
+            label_visible: true,
+        }),
     };
-
-    if (args.tag_id !== undefined) {
-        result.tag_id = args.tag_id;
-    }
-    if (args.start_page_id !== undefined) {
-        result.start_page_id = args.start_page_id;
-    }
-    if (args.fill_color !== undefined) {
-        result.fill_color = args.fill_color
-            ? rgbaToString(args.fill_color)
-            : null;
-    }
-    if (args.outline_color !== undefined) {
-        result.outline_color = args.outline_color
-            ? rgbaToString(args.outline_color)
-            : null;
-    }
-    if (args.shape_type !== undefined) {
-        result.shape_type = args.shape_type;
-    }
-    if (args.visible !== undefined) {
-        result.visible = args.visible ? 1 : 0;
-    }
-    if (args.label_visible !== undefined) {
-        result.label_visible = args.label_visible ? 1 : 0;
-    }
-    if (args.priority !== undefined) {
-        result.priority = args.priority;
-    }
 
     return result;
 };

@@ -12,9 +12,9 @@ import {
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
 import {
-    AppearanceModel,
     AppearanceModelOptional,
-} from "electron/database/migrations/schema";
+    AppearanceModel,
+} from "@/entity-components/appearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
 

@@ -13,6 +13,7 @@ import {
 } from "../svg-generator";
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import { seedObj } from "@/test/base";
+import MarcherPage from "@/global/classes/MarcherPage";
 
 describe("svgGenerator", () => {
     describe("generateDrillChartExportSVGs - should generate SVGs for each page", () => {
@@ -30,7 +31,9 @@ describe("svgGenerator", () => {
                 seed,
             });
 
-            const marcherPagesMap = marcherPageMapFromArray(marcherPages);
+            const marcherPagesMap = marcherPageMapFromArray(
+                marcherPages as unknown as MarcherPage[],
+            );
 
             const output = await generateDrillChartExportSVGs({
                 marchers,
@@ -72,7 +75,9 @@ describe("svgGenerator", () => {
                 seed,
             });
 
-            const marcherPagesMap = marcherPageMapFromArray(marcherPages);
+            const marcherPagesMap = marcherPageMapFromArray(
+                marcherPages as unknown as MarcherPage[],
+            );
 
             const output = await generateDrillChartExportSVGs({
                 marchers,
