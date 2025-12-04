@@ -16,6 +16,8 @@ import {
     XIcon,
     EyeIcon,
     EyeClosedIcon,
+    TextTSlashIcon,
+    TextTIcon,
 } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
@@ -58,10 +60,6 @@ export default function SectionAppearanceList() {
     );
 
     const defaultShapeType = "circle";
-
-    async function handleDeleteAppearance(appearanceId: number) {
-        await deleteSectionAppearances(new Set([appearanceId]));
-    }
 
     // Get available sections (sections without appearances)
     const availableSections = Object.values(SECTIONS)
@@ -252,7 +250,11 @@ function SectionAppearanceEditor({
     const handleVisibilityChange = () => {
         void handleChange(appearance.id, { visible: !appearance.visible });
     };
-
+    const handleLabelVisibilityChange = () => {
+        void handleChange(appearance.id, {
+            label_visible: !appearance.label_visible,
+        });
+    };
     return (
         <div className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12">
             <div className="flex items-center justify-between">
@@ -280,6 +282,16 @@ function SectionAppearanceEditor({
                         <EyeIcon size={18} />
                     ) : (
                         <EyeClosedIcon size={18} />
+                    )}
+                </div>
+                <div
+                    className="hover:text-accent cursor-pointer duration-150 ease-out"
+                    onClick={handleLabelVisibilityChange}
+                >
+                    {appearance.label_visible ? (
+                        <TextTIcon size={18} />
+                    ) : (
+                        <TextTSlashIcon size={18} />
                     )}
                 </div>
                 <ColorPickerMini

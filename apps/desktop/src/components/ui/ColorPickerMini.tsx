@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@openmarch/ui";
 import {
     CheckIcon,
@@ -63,6 +63,10 @@ export default function ColorPickerMini({
         },
         [currentColor, onBlur, onChange],
     );
+
+    useEffect(() => {
+        setCurrentColor(initialColor);
+    }, [initialColor]);
 
     const handleChange = (color: ColorResult) => {
         setCurrentColor(color.rgba);
