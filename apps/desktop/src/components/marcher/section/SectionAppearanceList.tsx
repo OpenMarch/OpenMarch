@@ -1,26 +1,33 @@
 import {
     Button,
-    SelectTriggerCompact,
     Select,
     SelectContent,
-    SelectItem,
     SelectGroup,
+    SelectItem,
+    SelectTriggerCompact,
 } from "@openmarch/ui";
-import { TrashIcon, CaretLeftIcon, XIcon } from "@phosphor-icons/react";
-import { CaretDownIcon } from "@phosphor-icons/react";
+import {
+    CaretLeftIcon,
+    CaretDownIcon,
+    CircleIcon,
+    SquareIcon,
+    TrashIcon,
+    TriangleIcon,
+    XIcon,
+    EyeIcon,
+    EyeClosedIcon,
+} from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import ColorPicker from "../../ui/ColorPicker";
 import { SECTIONS } from "@/global/classes/Sections";
-import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { toast } from "sonner";
 import { MarcherListContents } from "../MarchersModal";
-import { StaticFormField } from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import { getTranslatedSectionName } from "@/global/classes/Sections";
 import {
     ModifiedSectionAppearanceArgs,
     NewSectionAppearanceArgs,
+    SectionAppearance,
 } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -30,6 +37,7 @@ import {
     updateSectionAppearancesMutationOptions,
 } from "@/hooks/queries";
 import { RgbaColor } from "@openmarch/core";
+import ColorPickerMini from "@/components/ui/ColorPickerMini";
 
 export default function SectionAppearanceList() {
     const { t } = useTolgee();
@@ -49,50 +57,10 @@ export default function SectionAppearanceList() {
         deleteSectionAppearancesMutationOptions(queryClient),
     );
 
-    const defaultFillColor = CanvasMarcher.theme.defaultMarcher.fill;
-    const defaultOutlineColor = CanvasMarcher.theme.defaultMarcher.outline;
     const defaultShapeType = "circle";
-
-    const shapeOptions = ["circle", "square", "triangle", "x"];
 
     async function handleDeleteAppearance(appearanceId: number) {
         await deleteSectionAppearances(new Set([appearanceId]));
-    }
-
-    async function handleChange(
-        appearanceId: number,
-        changes: Partial<
-            Pick<
-                ModifiedSectionAppearanceArgs,
-                "fill_color" | "outline_color" | "shape_type"
-            >
-        >,
-    ) {
-        const appearance = sectionAppearances?.find(
-            (a) => a.id === appearanceId,
-        );
-        if (!appearance) return;
-
-        await updateSectionAppearances([
-            {
-                id: appearanceId,
-                visible: appearance.visible,
-                label_visible: appearance.label_visible,
-                ...changes,
-            },
-        ]);
-    }
-
-    function handleColorChange(
-        appearanceId: number,
-        attribute: "fill_color" | "outline_color",
-        color: RgbaColor,
-    ) {
-        void handleChange(appearanceId, { [attribute]: color });
-    }
-
-    function handleShapeChange(appearanceId: number, shape: string) {
-        void handleChange(appearanceId, { shape_type: shape });
     }
 
     // Get available sections (sections without appearances)
@@ -112,8 +80,8 @@ export default function SectionAppearanceList() {
 
         const newAppearance: NewSectionAppearanceArgs = {
             section: sectionName,
-            fill_color: defaultFillColor,
-            outline_color: defaultOutlineColor,
+            fill_color: null,
+            outline_color: null,
             shape_type: defaultShapeType,
             visible: true,
             label_visible: true,
@@ -193,124 +161,22 @@ export default function SectionAppearanceList() {
                     {sectionAppearances && sectionAppearances.length > 0 ? (
                         <>
                             {sectionAppearances.map((appearance) => (
-                                <div
+                                <SectionAppearanceEditor
                                     key={appearance.id}
-                                    className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12"
-                                >
-                                    <div className="flex items-center justify-between">
-                                        <h4 className="text-h5">
-                                            {getTranslatedSectionName(
-                                                appearance.section,
-                                                t,
-                                            )}
-                                        </h4>
-                                        <Button
-                                            type="button"
-                                            variant="red"
-                                            size="compact"
-                                            content="icon"
-                                            onClick={() =>
-                                                void handleDeleteAppearance(
-                                                    appearance.id,
-                                                )
-                                            }
-                                            tooltipText={t(
-                                                "marchers.list.deleteSectionStyle",
-                                            )}
-                                            tooltipSide="left"
-                                        >
-                                            <TrashIcon size={18} />
-                                        </Button>
-                                    </div>
-
-                                    <ColorPicker
-                                        doNotUseForm
-                                        label={t("marchers.list.fillColor")}
-                                        initialColor={
-                                            appearance.fill_color ??
-                                            defaultFillColor
-                                        }
-                                        onBlur={(color) =>
-                                            handleColorChange(
-                                                appearance.id,
-                                                "fill_color",
-                                                color,
-                                            )
-                                        }
-                                        className="px-0"
-                                        defaultColor={{
-                                            r: 0,
-                                            g: 0,
-                                            b: 0,
-                                            a: 1,
-                                        }}
-                                    />
-
-                                    <ColorPicker
-                                        doNotUseForm
-                                        label={t("marchers.list.outlineColor")}
-                                        initialColor={
-                                            appearance.outline_color ??
-                                            defaultOutlineColor
-                                        }
-                                        onBlur={(color) =>
-                                            handleColorChange(
-                                                appearance.id,
-                                                "outline_color",
-                                                color,
-                                            )
-                                        }
-                                        className="px-0"
-                                        defaultColor={{
-                                            r: 255,
-                                            g: 255,
-                                            b: 255,
-                                            a: 1,
-                                        }}
-                                    />
-
-                                    <StaticFormField
-                                        label={t("marchers.list.shape")}
-                                        className="px-0"
-                                    >
-                                        <Select
-                                            value={
-                                                appearance.shape_type ??
-                                                defaultShapeType
-                                            }
-                                            onValueChange={(value) =>
-                                                handleShapeChange(
-                                                    appearance.id,
-                                                    value,
-                                                )
-                                            }
-                                        >
-                                            <SelectTriggerCompact
-                                                label={t("marchers.list.shape")}
-                                            >
-                                                {t(
-                                                    `shapes.${appearance.shape_type}`,
-                                                )}
-                                            </SelectTriggerCompact>
-                                            <SelectContent>
-                                                <SelectGroup>
-                                                    {shapeOptions.map(
-                                                        (shape) => (
-                                                            <SelectItem
-                                                                key={shape}
-                                                                value={shape}
-                                                            >
-                                                                {t(
-                                                                    `shapes.${shape}`,
-                                                                )}
-                                                            </SelectItem>
-                                                        ),
-                                                    )}
-                                                </SelectGroup>
-                                            </SelectContent>
-                                        </Select>
-                                    </StaticFormField>
-                                </div>
+                                    appearance={appearance}
+                                    handleUpdateAppearance={(
+                                        modifiedAppearance: ModifiedSectionAppearanceArgs,
+                                    ) =>
+                                        void updateSectionAppearances([
+                                            modifiedAppearance,
+                                        ])
+                                    }
+                                    handleDeleteAppearance={() =>
+                                        void deleteSectionAppearances(
+                                            new Set([appearance.id]),
+                                        )
+                                    }
+                                />
                             ))}
                         </>
                     ) : (
@@ -319,6 +185,145 @@ export default function SectionAppearanceList() {
                         </p>
                     )}
                 </div>
+            </div>
+        </div>
+    );
+}
+
+const shapeOptions = ["circle", "square", "triangle", "x"] as const;
+type ShapeType = (typeof shapeOptions)[number];
+
+const shapeIcons: Record<ShapeType, React.ReactNode> = {
+    circle: <CircleIcon size={18} />,
+    square: <SquareIcon size={18} />,
+    triangle: <TriangleIcon size={18} />,
+    x: <XIcon size={18} />,
+};
+
+const defaultShapeType: ShapeType = "circle";
+
+interface SectionAppearanceEditorProps {
+    appearance: SectionAppearance;
+    handleUpdateAppearance: (
+        modifiedAppearance: ModifiedSectionAppearanceArgs,
+    ) => void;
+    handleDeleteAppearance: () => void;
+}
+
+function SectionAppearanceEditor({
+    appearance,
+    handleUpdateAppearance,
+    handleDeleteAppearance,
+}: SectionAppearanceEditorProps) {
+    const { t } = useTolgee();
+
+    async function handleChange(
+        appearanceId: number,
+        changes: Partial<
+            Pick<
+                ModifiedSectionAppearanceArgs,
+                | "fill_color"
+                | "outline_color"
+                | "shape_type"
+                | "visible"
+                | "label_visible"
+            >
+        >,
+    ) {
+        await handleUpdateAppearance({
+            id: appearanceId,
+            visible: appearance.visible,
+            label_visible: appearance.label_visible,
+            ...changes,
+        });
+    }
+
+    function onColorChange(
+        appearanceId: number,
+        attribute: "fill_color" | "outline_color",
+        color: RgbaColor | null,
+    ) {
+        void handleChange(appearanceId, { [attribute]: color });
+    }
+
+    function onShapeChange(appearanceId: number, shape: string) {
+        void handleChange(appearanceId, { shape_type: shape });
+    }
+    const handleVisibilityChange = () => {
+        void handleChange(appearance.id, { visible: !appearance.visible });
+    };
+
+    return (
+        <div className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12">
+            <div className="flex items-center justify-between">
+                <h4 className="text-h5">
+                    {getTranslatedSectionName(appearance.section, t)}
+                </h4>
+                <Button
+                    type="button"
+                    variant="red"
+                    size="compact"
+                    content="icon"
+                    onClick={() => void handleDeleteAppearance()}
+                    tooltipText={t("marchers.list.deleteSectionStyle")}
+                    tooltipSide="left"
+                >
+                    <TrashIcon size={18} />
+                </Button>
+            </div>
+            <div className="flex gap-12">
+                <div
+                    className="hover:text-accent cursor-pointer duration-150 ease-out"
+                    onClick={handleVisibilityChange}
+                >
+                    {appearance.visible ? (
+                        <EyeIcon size={18} />
+                    ) : (
+                        <EyeClosedIcon size={18} />
+                    )}
+                </div>
+                <ColorPickerMini
+                    label={t("marchers.list.fillColor")}
+                    initialColor={appearance.fill_color}
+                    onBlur={(color) =>
+                        onColorChange(appearance.id, "fill_color", color)
+                    }
+                    className="px-0"
+                />
+
+                <ColorPickerMini
+                    label={t("marchers.list.outlineColor")}
+                    initialColor={appearance.outline_color}
+                    onBlur={(color) =>
+                        onColorChange(appearance.id, "outline_color", color)
+                    }
+                    className="px-0"
+                />
+
+                <Select
+                    value={appearance.shape_type ?? defaultShapeType}
+                    onValueChange={(value) =>
+                        onShapeChange(appearance.id, value)
+                    }
+                >
+                    <SelectTriggerCompact label={t("marchers.list.shape")}>
+                        {
+                            shapeIcons[
+                                (appearance.shape_type ??
+                                    defaultShapeType) as ShapeType
+                            ]
+                        }
+                    </SelectTriggerCompact>
+                    <SelectContent>
+                        <SelectGroup>
+                            {shapeOptions.map((shape) => (
+                                <SelectItem key={shape} value={shape}>
+                                    {shapeIcons[shape]}
+                                </SelectItem>
+                            ))}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );

@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "破棄",
+        "removeSetting": "設定を削除",
         "save": "保存"
     },
     "coordinateRoundingSettings": {

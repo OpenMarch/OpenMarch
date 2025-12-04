@@ -74,8 +74,6 @@ const modifiedSectionAppearanceArgsToRealModifiedSectionAppearanceArgs = (
         id: args.id,
         ...appearanceModelParsedToRawOptional({
             ...args,
-            visible: true,
-            label_visible: true,
         }),
     };
 };

@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "Descartar",
+        "removeSetting": "Eliminar configuración",
         "save": "Guardar"
     },
     "coordinateRoundingSettings": {

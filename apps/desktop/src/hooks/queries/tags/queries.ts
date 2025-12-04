@@ -18,16 +18,19 @@ import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
 
 const KEY_BASE = "tags";
+const TAG_APPEARANCES_KEY = "tag_appearances";
+const MARCHER_TAGS_KEY = "marcher_tags";
 
 export const tagKeys = {
     allTags: () => [KEY_BASE] as const,
     byId: (id: number) => [KEY_BASE, "id", id] as const,
-    tagAppearanceIdsByPageIdMap: () => [KEY_BASE, "page"] as const,
-    byPageId: (page_id: number) => [KEY_BASE, "page", { page_id }] as const,
+    tagAppearanceIdsByPageIdMap: () => [TAG_APPEARANCES_KEY, "page"] as const,
+    byPageId: (page_id: number) =>
+        [TAG_APPEARANCES_KEY, "page", { page_id }] as const,
     marcherIdsByTagIdMap: () =>
-        [KEY_BASE, "marcher_ids_by_tag_id_map"] as const,
-    allTagAppearances: () => [KEY_BASE, "tag_appearances"] as const,
-    allMarcherTags: () => [KEY_BASE, "marcher_tags"] as const,
+        [MARCHER_TAGS_KEY, "marcher_ids_by_tag_id_map"] as const,
+    allTagAppearances: () => [TAG_APPEARANCES_KEY] as const,
+    allMarcherTags: () => [MARCHER_TAGS_KEY] as const,
 };
 
 export const invalidateTagQueries = (qc: QueryClient) => {

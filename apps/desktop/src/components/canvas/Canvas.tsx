@@ -238,6 +238,9 @@ export default function Canvas({
             const visualGroup = marcherVisuals[marcher.id];
             if (!visualGroup) return;
 
+            const canvasMarcher = visualGroup.getCanvasMarcher();
+            canvasMarcher.setAppearance(visualGroup.appearances);
+
             canvas.add(visualGroup.getCanvasMarcher());
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
 

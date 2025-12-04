@@ -21,7 +21,6 @@ interface ColorPickerProps {
     label: string;
     tooltip?: string;
     defaultColor?: RgbaColor;
-    size?: "default" | "compact";
     onChange?: (color: RgbaColor) => void;
     onBlur?: (color: RgbaColor) => void;
     className?: string;
@@ -54,7 +53,6 @@ export default function ColorPicker({
     onChange,
     onBlur,
     className,
-    size = "default",
     doNotUseForm = false,
 }: ColorPickerProps) {
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
@@ -98,21 +96,16 @@ export default function ColorPicker({
         }
     }, [defaultColor, onChange]);
 
-    const internalComponent =
-        size === "compact" ? (
-            <></>
-        ) : (
-            DefaultColorPicker({
-                currentColor,
-                initialColor,
-                handleBlur,
-                handleKeyDown,
-                handleClose,
-                setCurrentColor,
-                resetToDefault,
-                handleChange,
-            })
-        );
+    const internalComponent = DefaultColorPicker({
+        currentColor,
+        initialColor,
+        handleBlur,
+        handleKeyDown,
+        handleClose,
+        setCurrentColor,
+        resetToDefault,
+        handleChange,
+    });
 
     if (doNotUseForm)
         return (

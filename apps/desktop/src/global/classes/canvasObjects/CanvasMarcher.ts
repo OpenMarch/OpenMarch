@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import Marcher from "../Marcher";
 import MarcherPage from "../MarcherPage";
-import { FieldProperties } from "@openmarch/core";
+import { FieldProperties, RgbaColor } from "@openmarch/core";
 import { ActiveObjectArgs } from "@/components/canvas/CanvasConstants";
 import * as Selectable from "./interfaces/Selectable";
 import { DEFAULT_FIELD_THEME, FieldTheme, rgbaToString } from "@openmarch/core";
@@ -11,10 +11,8 @@ import {
     CoordinateLike,
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
-import {
-    AppearanceComponentOptional,
-    AppearanceComponent,
-} from "@/entity-components/appearance";
+import { AppearanceComponentOptional } from "@/entity-components/appearance";
+import MarcherVisualGroup from "../MarcherVisualGroup";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -76,7 +74,7 @@ export default class CanvasMarcher
         shapeType: string;
         fillColor: string;
         outlineColor: string;
-        outlineColorValue: { a: number } | null;
+        outlineColorValue: RgbaColor | null;
         coordinate: { x: number; y: number };
         dotRadius: number;
     }): fabric.Object {
@@ -276,8 +274,11 @@ export default class CanvasMarcher
      *
      * @param appearancesInput A single appearance or array of appearances in priority order (highest priority first)
      */
+    // eslint-disable-next-line max-lines-per-function
     setAppearance(
-        appearancesInput: AppearanceComponent | AppearanceComponent[],
+        appearancesInput:
+            | AppearanceComponentOptional
+            | AppearanceComponentOptional[],
     ) {
         // Normalize to array
         const appearances = Array.isArray(appearancesInput)
@@ -285,9 +286,9 @@ export default class CanvasMarcher
             : [appearancesInput];
 
         // Helper to get first non-null/non-undefined value from appearances for a given key
-        const getFirstValue = <K extends keyof AppearanceComponent>(
+        const getFirstValue = <K extends keyof AppearanceComponentOptional>(
             key: K,
-        ): AppearanceComponent[K] | null => {
+        ): AppearanceComponentOptional[K] | null => {
             for (const appearance of appearances) {
                 if (appearance[key] != null) {
                     return appearance[key];
@@ -295,6 +296,43 @@ export default class CanvasMarcher
             }
             return null;
         };
+        // Visibility is always defined
+        let visible: boolean = !MarcherVisualGroup.isHidden(appearances);
+
+        let labelVisible: boolean;
+        if (!visible) {
+            labelVisible = false;
+        } else if (appearances.length > 0)
+            if (appearances.length > 1 && appearances[0].label_visible) {
+                // If there is more than one appearance, and the marcherPage appearance is true, use the next one
+                // This is because the marcherPage will almost always be visible
+                labelVisible = appearances[1].label_visible;
+            } else {
+                labelVisible = appearances[0].label_visible;
+            }
+        else {
+            labelVisible = true;
+        }
+        // Update visibility of the marcher marker
+        this.set({ visible } as Partial<this>);
+        this.dotObject.set({ visible });
+
+        // Update label visibility
+        this.textLabel.set({ visible: labelVisible });
+
+        // Exit early if not visible
+        if (!visible) {
+            this.currentAppearanceValues = {
+                fill_color: null,
+                outline_color: null,
+                shape_type: null,
+                visible: false,
+                label_visible: false,
+                equipment_name: null,
+                equipment_state: null,
+            };
+            return;
+        }
 
         // Cascade through appearances to get first non-null value for each attribute
         const fillColorValue = getFirstValue("fill_color");
@@ -302,11 +340,6 @@ export default class CanvasMarcher
         const shapeType = getFirstValue("shape_type") ?? "circle";
         const equipmentName = getFirstValue("equipment_name");
         const equipmentState = getFirstValue("equipment_state");
-
-        // Visibility is always defined
-        const visible = appearances.length > 0 ? appearances[0].visible : true;
-        const labelVisible =
-            appearances.length > 0 ? appearances[0].label_visible : true;
 
         // Store the appearances list
         this.appearances = appearances;
@@ -332,7 +365,7 @@ export default class CanvasMarcher
                 shapeType,
                 fillColor,
                 outlineColor,
-                outlineColorValue,
+                outlineColorValue: outlineColorValue ?? null,
                 coordinate: absoluteCoords,
                 dotRadius: CanvasMarcher.dotRadius,
             });
@@ -362,15 +395,6 @@ export default class CanvasMarcher
                 });
             }
         }
-
-        // Update visibility of the marcher marker
-        const isVisible = visible === true;
-        this.set({ visible: isVisible } as Partial<this>);
-        this.dotObject.set({ visible: isVisible });
-
-        // Update label visibility
-        const isLabelVisible = labelVisible === true;
-        this.textLabel.set({ visible: isLabelVisible });
 
         this.currentAppearanceValues = {
             fill_color: fillColorValue,

@@ -4,7 +4,6 @@ import {
     mutationOptions,
     QueryClient,
 } from "@tanstack/react-query";
-import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
 import {
     DbConnection,
@@ -119,18 +118,20 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
             }
 
             // Invalidate by ID queries
-            void qc.invalidateQueries({
-                queryKey: Array.from(itemIds).map((id) =>
-                    sectionAppearanceKeys.byId(id),
-                ),
-            });
+            if (itemIds.size > 0)
+                void qc.invalidateQueries({
+                    queryKey: Array.from(itemIds).map((id) =>
+                        sectionAppearanceKeys.byId(id),
+                    ),
+                });
 
             // Invalidate by section queries
-            void qc.invalidateQueries({
-                queryKey: Array.from(sections).map((section) =>
-                    sectionAppearanceKeys.bySection(section),
-                ),
-            });
+            if (sections.size > 0)
+                void qc.invalidateQueries({
+                    queryKey: Array.from(sections).map((section) =>
+                        sectionAppearanceKeys.bySection(section),
+                    ),
+                });
 
             // Invalidate all queries
             void qc.invalidateQueries({
