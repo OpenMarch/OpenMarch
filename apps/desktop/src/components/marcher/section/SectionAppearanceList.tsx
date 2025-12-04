@@ -1,4 +1,3 @@
-import { useState, useRef, useEffect } from "react";
 import {
     Button,
     SelectTriggerCompact,
@@ -8,31 +7,20 @@ import {
     SelectGroup,
 } from "@openmarch/ui";
 import { TrashIcon, CaretLeftIcon, XIcon } from "@phosphor-icons/react";
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@openmarch/ui";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import * as Form from "@radix-ui/react-form";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import ColorPicker from "../../ui/ColorPicker";
 import { SECTIONS } from "@/global/classes/Sections";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import { toast } from "sonner";
 import { MarcherListContents } from "../MarchersModal";
-import FormField from "@/components/ui/FormField";
+import { StaticFormField } from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import { getTranslatedSectionName } from "@/global/classes/Sections";
 import {
     ModifiedSectionAppearanceArgs,
     NewSectionAppearanceArgs,
-    SectionAppearance,
 } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -41,6 +29,7 @@ import {
     deleteSectionAppearancesMutationOptions,
     updateSectionAppearancesMutationOptions,
 } from "@/hooks/queries";
+import { RgbaColor } from "@openmarch/core";
 
 export default function SectionAppearanceList() {
     const { t } = useTolgee();
@@ -59,16 +48,6 @@ export default function SectionAppearanceList() {
     const { mutateAsync: deleteSectionAppearances } = useMutation(
         deleteSectionAppearancesMutationOptions(queryClient),
     );
-    const [localAppearances, setLocalAppearances] = useState<
-        SectionAppearance[]
-    >([]);
-    const changesRef = useRef<{ [key: number]: any }>({});
-    const deletionsRef = useRef<number[]>([]);
-
-    function clearChanges() {
-        changesRef.current = {};
-        deletionsRef.current = [];
-    }
 
     const defaultFillColor = CanvasMarcher.theme.defaultMarcher.fill;
     const defaultOutlineColor = CanvasMarcher.theme.defaultMarcher.outline;
@@ -76,78 +55,44 @@ export default function SectionAppearanceList() {
 
     const shapeOptions = ["circle", "square", "triangle", "x"];
 
-    // Reset change tracking when source data changes
-    useEffect(() => {
-        setLocalAppearances(sectionAppearances || []);
-        clearChanges();
-    }, [sectionAppearances]);
+    async function handleDeleteAppearance(appearanceId: number) {
+        await deleteSectionAppearances(new Set([appearanceId]));
+    }
 
-    async function handleSubmit() {
-        const modifiedAppearances: ModifiedSectionAppearanceArgs[] = [];
-        for (const [appearanceId, changes] of Object.entries(
-            changesRef.current,
-        )) {
-            modifiedAppearances.push({
-                id: parseInt(appearanceId),
+    async function handleChange(
+        appearanceId: number,
+        changes: Partial<
+            Pick<
+                ModifiedSectionAppearanceArgs,
+                "fill_color" | "outline_color" | "shape_type"
+            >
+        >,
+    ) {
+        const appearance = sectionAppearances?.find(
+            (a) => a.id === appearanceId,
+        );
+        if (!appearance) return;
+
+        await updateSectionAppearances([
+            {
+                id: appearanceId,
+                visible: appearance.visible,
+                label_visible: appearance.label_visible,
                 ...changes,
-            });
-        }
-
-        if (modifiedAppearances.length > 0) {
-            await updateSectionAppearances(modifiedAppearances);
-        }
-
-        if (deletionsRef.current.length > 0) {
-            await deleteSectionAppearances(new Set(deletionsRef.current));
-        }
+            },
+        ]);
     }
 
-    // Handle canceling edits
-    function handleCancel() {
-        setLocalAppearances(sectionAppearances || []);
-        clearChanges();
+    function handleColorChange(
+        appearanceId: number,
+        attribute: "fill_color" | "outline_color",
+        color: RgbaColor,
+    ) {
+        void handleChange(appearanceId, { [attribute]: color });
     }
 
-    function handleDeleteAppearance(appearanceId: number) {
-        deletionsRef.current.push(appearanceId);
-        setLocalAppearances(
-            localAppearances.filter(
-                (appearance) => appearance.id !== appearanceId,
-            ),
-        );
-    }
-
-    function handleChange(value: any, attribute: string, appearanceId: number) {
-        // Create an entry for the appearance if it doesn't exist
-        if (!changesRef.current[appearanceId])
-            changesRef.current[appearanceId] = {};
-
-        // Record the change
-        changesRef.current[appearanceId][attribute] = value;
-
-        // Update local state to reflect the change
-        setLocalAppearances((prevAppearances) =>
-            prevAppearances.map((appearance) =>
-                appearance.id === appearanceId
-                    ? { ...appearance, [attribute]: value }
-                    : appearance,
-            ),
-        );
-    }
-
-    const hasPendingChanges =
-        Object.keys(changesRef.current).length > 0 ||
-        deletionsRef.current.length > 0;
-
-    function getDeletedSectionNames() {
-        return deletionsRef.current
-            .map((id) => {
-                const sectionName = sectionAppearances?.find(
-                    (appearance) => appearance.id === id,
-                )?.section;
-                return getTranslatedSectionName(sectionName || "", t);
-            })
-            .join(", ");
+    function handleShapeChange(appearanceId: number, shape: string) {
+        void handleChange(appearanceId, { shape_type: shape });
     }
 
     // Get available sections (sections without appearances)
@@ -243,85 +188,11 @@ export default function SectionAppearanceList() {
                     </button>
                 </div>
             </header>
-            <Form.Root
-                onSubmit={(event) => {
-                    event.preventDefault();
-                    void handleSubmit();
-                }}
-                className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
-            >
-                <div className="flex w-full items-center justify-between">
-                    {localAppearances && hasPendingChanges && (
-                        <div className="flex w-full justify-between gap-8">
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="compact"
-                                onClick={handleCancel}
-                            >
-                                <T keyName="marchers.list.discardChanges" />
-                            </Button>
-                            {deletionsRef.current.length > 0 ? (
-                                <AlertDialog>
-                                    <AlertDialogTrigger>
-                                        <Button
-                                            type="button"
-                                            variant="red"
-                                            size="compact"
-                                        >
-                                            <T keyName="marchers.list.saveChanges" />
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogTitle>
-                                            <T keyName="marchers.deleteTitle" />
-                                        </AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            {t("marchers.deleteDescription", {
-                                                sections:
-                                                    getDeletedSectionNames(),
-                                            })}
-                                        </AlertDialogDescription>
-                                        <div className="flex w-full justify-end gap-8">
-                                            <AlertDialogCancel>
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="compact"
-                                                >
-                                                    <T keyName="marchers.cancelDeleteButton" />
-                                                </Button>
-                                            </AlertDialogCancel>
-                                            <AlertDialogAction>
-                                                <Button
-                                                    type="button"
-                                                    variant="red"
-                                                    size="compact"
-                                                    onClick={handleSubmit}
-                                                >
-                                                    <T keyName="marchers.deleteButton" />
-                                                </Button>
-                                            </AlertDialogAction>
-                                        </div>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            ) : hasPendingChanges ? (
-                                <Button
-                                    type="submit"
-                                    variant="primary"
-                                    size="compact"
-                                >
-                                    <T keyName="marchers.list.saveChanges" />
-                                </Button>
-                            ) : null}
-                        </div>
-                    )}
-                </div>
-
+            <div className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto">
                 <div className="flex h-fit w-full min-w-0 flex-col gap-16">
-                    {localAppearances && localAppearances.length > 0 ? (
+                    {sectionAppearances && sectionAppearances.length > 0 ? (
                         <>
-                            {localAppearances.map((appearance) => (
+                            {sectionAppearances.map((appearance) => (
                                 <div
                                     key={appearance.id}
                                     className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12"
@@ -339,7 +210,7 @@ export default function SectionAppearanceList() {
                                             size="compact"
                                             content="icon"
                                             onClick={() =>
-                                                handleDeleteAppearance(
+                                                void handleDeleteAppearance(
                                                     appearance.id,
                                                 )
                                             }
@@ -353,18 +224,19 @@ export default function SectionAppearanceList() {
                                     </div>
 
                                     <ColorPicker
+                                        doNotUseForm
                                         label={t("marchers.list.fillColor")}
                                         initialColor={
                                             appearance.fill_color ??
                                             defaultFillColor
                                         }
-                                        onChange={(color) => {
-                                            handleChange(
-                                                color,
-                                                "fill_color",
+                                        onBlur={(color) =>
+                                            handleColorChange(
                                                 appearance.id,
-                                            );
-                                        }}
+                                                "fill_color",
+                                                color,
+                                            )
+                                        }
                                         className="px-0"
                                         defaultColor={{
                                             r: 0,
@@ -375,18 +247,19 @@ export default function SectionAppearanceList() {
                                     />
 
                                     <ColorPicker
+                                        doNotUseForm
                                         label={t("marchers.list.outlineColor")}
                                         initialColor={
                                             appearance.outline_color ??
                                             defaultOutlineColor
                                         }
-                                        onChange={(color) => {
-                                            handleChange(
-                                                color,
-                                                "outline_color",
+                                        onBlur={(color) =>
+                                            handleColorChange(
                                                 appearance.id,
-                                            );
-                                        }}
+                                                "outline_color",
+                                                color,
+                                            )
+                                        }
                                         className="px-0"
                                         defaultColor={{
                                             r: 255,
@@ -396,7 +269,7 @@ export default function SectionAppearanceList() {
                                         }}
                                     />
 
-                                    <FormField
+                                    <StaticFormField
                                         label={t("marchers.list.shape")}
                                         className="px-0"
                                     >
@@ -406,10 +279,9 @@ export default function SectionAppearanceList() {
                                                 defaultShapeType
                                             }
                                             onValueChange={(value) =>
-                                                handleChange(
-                                                    value,
-                                                    "shape_type",
+                                                handleShapeChange(
                                                     appearance.id,
+                                                    value,
                                                 )
                                             }
                                         >
@@ -437,7 +309,7 @@ export default function SectionAppearanceList() {
                                                 </SelectGroup>
                                             </SelectContent>
                                         </Select>
-                                    </FormField>
+                                    </StaticFormField>
                                 </div>
                             ))}
                         </>
@@ -447,7 +319,7 @@ export default function SectionAppearanceList() {
                         </p>
                     )}
                 </div>
-            </Form.Root>
+            </div>
         </div>
     );
 }
