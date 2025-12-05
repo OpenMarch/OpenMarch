@@ -153,7 +153,7 @@ export async function create{tableName}s({
         db,
         "create{tableName}s",
         async (tx) => {
-            return await _create{tableName}sInTransaction({
+            return await create{tableName}sInTransaction({
                 newItems,
                 tx,
             });
@@ -165,7 +165,7 @@ export async function create{tableName}s({
 /**
  * Creates new items in the database.
  */
-export const _create{tableName}sInTransaction = async ({
+export const create{tableName}sInTransaction = async ({
     newItems,
     tx,
 }: {
@@ -258,7 +258,7 @@ export async function delete{tableName}s({
 /**
  * Deletes items from the database.
  */
-const delete{tableName}sInTransaction = async ({
+export const delete{tableName}sInTransaction = async ({
     itemIds,
     tx,
 }: {

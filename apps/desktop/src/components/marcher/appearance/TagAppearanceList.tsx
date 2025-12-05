@@ -16,7 +16,7 @@ import {
     deleteSectionAppearancesMutationOptions,
     updateSectionAppearancesMutationOptions,
 } from "@/hooks/queries";
-import { AppearanceEditor } from "@/components/AppearanceEditor";
+import { AppearanceEditor } from "@/components/marcher/appearance/AppearanceEditor";
 import { useMemo } from "react";
 
 export default function SectionAppearanceList() {
