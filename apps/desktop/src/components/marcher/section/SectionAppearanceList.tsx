@@ -159,7 +159,7 @@ export default function SectionAppearanceList() {
                     {sectionAppearances && sectionAppearances.length > 0 ? (
                         <>
                             {sectionAppearances.map((appearance) => (
-                                <SectionAppearanceEditor
+                                <AppearanceEditor
                                     key={appearance.id}
                                     appearance={appearance}
                                     handleUpdateAppearance={(
@@ -200,7 +200,7 @@ const shapeIcons: Record<ShapeType, React.ReactNode> = {
 
 const defaultShapeType: ShapeType = "circle";
 
-interface SectionAppearanceEditorProps {
+interface AppearanceEditorProps {
     appearance: SectionAppearance;
     handleUpdateAppearance: (
         modifiedAppearance: ModifiedSectionAppearanceArgs,
@@ -208,11 +208,11 @@ interface SectionAppearanceEditorProps {
     handleDeleteAppearance: () => void;
 }
 
-function SectionAppearanceEditor({
+function AppearanceEditor({
     appearance,
     handleUpdateAppearance,
     handleDeleteAppearance,
-}: SectionAppearanceEditorProps) {
+}: AppearanceEditorProps) {
     const { t } = useTolgee();
 
     async function handleChange(
