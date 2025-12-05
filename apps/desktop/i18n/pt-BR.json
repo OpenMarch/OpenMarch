@@ -545,17 +545,21 @@
             "pendingChanges": "Os valores abaixo podem não ser aplicados até que seja feito um recarregamento",
             "saveChanges": "Salvar Alterações",
             "sectionStyles": "Estilos da Seção",
+            "sectionsInShow": "Seções no Show",
             "sectionTitle": "Seção",
             "selectSection": "Seção",
-            "shape": "Forma"
+            "shape": "Forma",
+            "allSections": "Todas as Seções"
         },
         "listTitle": "Lista",
         "quantity": "Quantidade",
         "section": "Seção",
+        "sectionText": "Seção",
         "sectionError": {
             "chooseSection": "Por favor, escolha uma seção"
         },
-        "sectionStyles": "Estilos da Seção",
+        "marcherAppearance": "Aparência dos marchadores",
+        "tagText": "Etiqueta",
         "title": "Marchadores"
     },
     "music": {

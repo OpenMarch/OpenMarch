@@ -95,7 +95,7 @@ export default function ColorPickerMini({
     );
 
     return (
-        <div className={twMerge("flex items-center gap-8", className)}>
+        <div className={twMerge("flex items-center gap-4", className)}>
             <Popover.Root>
                 <Popover.Trigger
                     className={twMerge(
@@ -167,7 +167,7 @@ export default function ColorPickerMini({
                 className="rounded-6 hover:text-accent h-full border-0 bg-transparent transition-colors duration-150 ease-out"
                 content="icon"
             >
-                <ArrowUUpLeftIcon size={20} />
+                <ArrowUUpLeftIcon size={12} />
             </Button>
         </div>
     );

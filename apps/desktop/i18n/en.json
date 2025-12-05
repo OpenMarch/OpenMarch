@@ -546,17 +546,21 @@
             "pendingChanges": "Below values may not be applied until after a refresh",
             "saveChanges": "Save Changes",
             "sectionStyles": "Section Styles",
+            "sectionsInShow": "Sections in Show",
             "sectionTitle": "Section",
             "selectSection": "Section",
-            "shape": "Shape"
+            "shape": "Shape",
+            "allSections": "All Sections"
         },
         "listTitle": "List",
         "quantity": "Quantity",
         "section": "Section",
+        "sectionText": "Section",
         "sectionError": {
             "chooseSection": "Please choose a section"
         },
-        "sectionStyles": "Section Styles",
+        "marcherAppearance": "Marcher Appearance",
+        "tagText": "Tag",
         "title": "Marchers"
     },
     "music": {

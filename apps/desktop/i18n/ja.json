@@ -545,17 +545,21 @@
             "pendingChanges": "更新 するまで 下記 の 値 は適用 されない ことがあります",
             "saveChanges": "変更を保存",
             "sectionStyles": "セクション スタイル",
+            "sectionsInShow": "ショーのセクション",
             "sectionTitle": "セクション",
             "selectSection": "セクション",
-            "shape": "形状"
+            "shape": "形状",
+            "allSections": "すべてのセクション"
         },
         "listTitle": "リスト",
         "quantity": "数量",
         "section": "セクション",
+        "sectionText": "セクション",
         "sectionError": {
             "chooseSection": "セクションを選択してください"
         },
-        "sectionStyles": "セクションスタイル",
+        "marcherAppearance": "マーチャーの外観",
+        "tagText": "タグ",
         "title": "マーチャーズ"
     },
     "music": {

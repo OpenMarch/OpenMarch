@@ -1,45 +1,23 @@
-import {
-    Button,
-    Select,
-    SelectContent,
-    SelectGroup,
-    SelectItem,
-    SelectTriggerCompact,
-} from "@openmarch/ui";
-import {
-    CaretLeftIcon,
-    CaretDownIcon,
-    CircleIcon,
-    SquareIcon,
-    TrashIcon,
-    TriangleIcon,
-    XIcon,
-    EyeIcon,
-    EyeClosedIcon,
-    TextTSlashIcon,
-    TextTIcon,
-} from "@phosphor-icons/react";
+import { Button } from "@openmarch/ui";
+import { CaretLeftIcon, CaretDownIcon, XIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
-import { SECTIONS } from "@/global/classes/Sections";
+import { getSectionObjectByName, SECTIONS } from "@/global/classes/Sections";
 import { toast } from "sonner";
 import { MarcherListContents } from "../MarchersModal";
 import { T, useTolgee } from "@tolgee/react";
 import { getTranslatedSectionName } from "@/global/classes/Sections";
-import {
-    ModifiedSectionAppearanceArgs,
-    NewSectionAppearanceArgs,
-    SectionAppearance,
-} from "@/db-functions";
+import { NewSectionAppearanceArgs } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+    allMarchersQueryOptions,
     allSectionAppearancesQueryOptions,
     createSectionAppearancesMutationOptions,
     deleteSectionAppearancesMutationOptions,
     updateSectionAppearancesMutationOptions,
 } from "@/hooks/queries";
-import { RgbaColor } from "@openmarch/core";
-import ColorPickerMini from "@/components/ui/ColorPickerMini";
+import { AppearanceEditor } from "@/components/AppearanceEditor";
+import { useMemo } from "react";
 
 export default function SectionAppearanceList() {
     const { t } = useTolgee();
@@ -58,6 +36,16 @@ export default function SectionAppearanceList() {
     const { mutateAsync: deleteSectionAppearances } = useMutation(
         deleteSectionAppearancesMutationOptions(queryClient),
     );
+    const { data: allMarchers } = useQuery(allMarchersQueryOptions());
+    const allSectionsInShow = useMemo(() => {
+        const allSections = allMarchers?.map((marcher) =>
+            getSectionObjectByName(marcher.section),
+        );
+        if (!allSections || allSections.length === 0) return [];
+
+        const uniqueSections = new Set(allSections);
+        return Array.from(uniqueSections).sort((a, b) => a.compareTo(b));
+    }, [allMarchers]);
 
     const defaultShapeType = "circle";
 
@@ -127,6 +115,29 @@ export default function SectionAppearanceList() {
                         </Dropdown.Trigger>
                         <Dropdown.Portal>
                             <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke z-[999] flex max-h-[70vh] flex-col items-start gap-0 overflow-y-auto border p-8">
+                                <Dropdown.Label className="text-text-subtitle">
+                                    <T keyName="marchers.list.sectionsInShow" />
+                                </Dropdown.Label>
+                                {allSectionsInShow.map((section) => (
+                                    <Dropdown.Item
+                                        key={section.name + "-in-show"}
+                                        onSelect={() =>
+                                            handleCreateNewAppearance(
+                                                section.name,
+                                            )
+                                        }
+                                        className="text-text text-body hover:text-accent w-full cursor-pointer px-6 py-4 text-left duration-150 ease-out outline-none"
+                                    >
+                                        {getTranslatedSectionName(
+                                            section.name,
+                                            t,
+                                        )}
+                                    </Dropdown.Item>
+                                ))}
+                                <Dropdown.Separator />
+                                <Dropdown.Label className="text-text-subtitle">
+                                    <T keyName="marchers.list.allSections" />
+                                </Dropdown.Label>
                                 {availableSections.map((sectionName) => (
                                     <Dropdown.Item
                                         key={sectionName}
@@ -161,12 +172,19 @@ export default function SectionAppearanceList() {
                             {sectionAppearances.map((appearance) => (
                                 <AppearanceEditor
                                     key={appearance.id}
+                                    label={getTranslatedSectionName(
+                                        appearance.section,
+                                        t,
+                                    )}
                                     appearance={appearance}
                                     handleUpdateAppearance={(
-                                        modifiedAppearance: ModifiedSectionAppearanceArgs,
+                                        modifiedAppearance,
                                     ) =>
                                         void updateSectionAppearances([
-                                            modifiedAppearance,
+                                            {
+                                                id: appearance.id,
+                                                ...modifiedAppearance,
+                                            },
                                         ])
                                     }
                                     handleDeleteAppearance={() =>
@@ -183,159 +201,6 @@ export default function SectionAppearanceList() {
                         </p>
                     )}
                 </div>
-            </div>
-        </div>
-    );
-}
-
-const shapeOptions = ["circle", "square", "triangle", "x"] as const;
-type ShapeType = (typeof shapeOptions)[number];
-
-const shapeIcons: Record<ShapeType, React.ReactNode> = {
-    circle: <CircleIcon size={18} />,
-    square: <SquareIcon size={18} />,
-    triangle: <TriangleIcon size={18} />,
-    x: <XIcon size={18} />,
-};
-
-const defaultShapeType: ShapeType = "circle";
-
-interface AppearanceEditorProps {
-    appearance: SectionAppearance;
-    handleUpdateAppearance: (
-        modifiedAppearance: ModifiedSectionAppearanceArgs,
-    ) => void;
-    handleDeleteAppearance: () => void;
-}
-
-function AppearanceEditor({
-    appearance,
-    handleUpdateAppearance,
-    handleDeleteAppearance,
-}: AppearanceEditorProps) {
-    const { t } = useTolgee();
-
-    async function handleChange(
-        appearanceId: number,
-        changes: Partial<
-            Pick<
-                ModifiedSectionAppearanceArgs,
-                | "fill_color"
-                | "outline_color"
-                | "shape_type"
-                | "visible"
-                | "label_visible"
-            >
-        >,
-    ) {
-        await handleUpdateAppearance({
-            id: appearanceId,
-            visible: appearance.visible,
-            label_visible: appearance.label_visible,
-            ...changes,
-        });
-    }
-
-    function onColorChange(
-        appearanceId: number,
-        attribute: "fill_color" | "outline_color",
-        color: RgbaColor | null,
-    ) {
-        void handleChange(appearanceId, { [attribute]: color });
-    }
-
-    function onShapeChange(appearanceId: number, shape: string) {
-        void handleChange(appearanceId, { shape_type: shape });
-    }
-    const handleVisibilityChange = () => {
-        void handleChange(appearance.id, { visible: !appearance.visible });
-    };
-    const handleLabelVisibilityChange = () => {
-        void handleChange(appearance.id, {
-            label_visible: !appearance.label_visible,
-        });
-    };
-    return (
-        <div className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12">
-            <div className="flex items-center justify-between">
-                <h4 className="text-h5">
-                    {getTranslatedSectionName(appearance.section, t)}
-                </h4>
-                <Button
-                    type="button"
-                    variant="red"
-                    size="compact"
-                    content="icon"
-                    onClick={() => void handleDeleteAppearance()}
-                    tooltipText={t("marchers.list.deleteSectionStyle")}
-                    tooltipSide="left"
-                >
-                    <TrashIcon size={18} />
-                </Button>
-            </div>
-            <div className="flex gap-12">
-                <div
-                    className="hover:text-accent cursor-pointer duration-150 ease-out"
-                    onClick={handleVisibilityChange}
-                >
-                    {appearance.visible ? (
-                        <EyeIcon size={18} />
-                    ) : (
-                        <EyeClosedIcon size={18} />
-                    )}
-                </div>
-                <div
-                    className="hover:text-accent cursor-pointer duration-150 ease-out"
-                    onClick={handleLabelVisibilityChange}
-                >
-                    {appearance.label_visible ? (
-                        <TextTIcon size={18} />
-                    ) : (
-                        <TextTSlashIcon size={18} />
-                    )}
-                </div>
-                <ColorPickerMini
-                    label={t("marchers.list.fillColor")}
-                    initialColor={appearance.fill_color}
-                    onBlur={(color) =>
-                        onColorChange(appearance.id, "fill_color", color)
-                    }
-                    className="px-0"
-                />
-
-                <ColorPickerMini
-                    label={t("marchers.list.outlineColor")}
-                    initialColor={appearance.outline_color}
-                    onBlur={(color) =>
-                        onColorChange(appearance.id, "outline_color", color)
-                    }
-                    className="px-0"
-                />
-
-                <Select
-                    value={appearance.shape_type ?? defaultShapeType}
-                    onValueChange={(value) =>
-                        onShapeChange(appearance.id, value)
-                    }
-                >
-                    <SelectTriggerCompact label={t("marchers.list.shape")}>
-                        {
-                            shapeIcons[
-                                (appearance.shape_type ??
-                                    defaultShapeType) as ShapeType
-                            ]
-                        }
-                    </SelectTriggerCompact>
-                    <SelectContent>
-                        <SelectGroup>
-                            {shapeOptions.map((shape) => (
-                                <SelectItem key={shape} value={shape}>
-                                    {shapeIcons[shape]}
-                                </SelectItem>
-                            ))}
-                        </SelectGroup>
-                    </SelectContent>
-                </Select>
             </div>
         </div>
     );
