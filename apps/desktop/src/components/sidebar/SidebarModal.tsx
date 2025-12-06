@@ -73,6 +73,7 @@ export function SidebarModalLauncher({
                     className,
                 ),
             )}
+            id={"sidebar-launcher-" + newContentId}
         >
             {buttonLabel}
         </button>

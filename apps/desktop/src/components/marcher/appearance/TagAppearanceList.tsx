@@ -223,6 +223,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
 
     return (
         <div
+            aria-label={`page ${page.name} tag appearance list`}
             ref={ref}
             className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
         >
@@ -270,6 +271,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
                         <>
                             {tagAppearancesSorted.map((tagAppearance) => (
                                 <div
+                                    aria-label={`page_${page.id}-tag_appearance_${tagAppearance.id}`}
                                     className={twMerge(
                                         "text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto",
                                     )}

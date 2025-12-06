@@ -194,6 +194,7 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                                 Rename tag
                             </label>
                             <Input
+                                aria-label="Rename tag"
                                 ref={renameInputRef}
                                 type="text"
                                 value={renameValue}
@@ -282,6 +283,7 @@ const NewTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
+                    aria-label="Create new tag with selected marchers"
                     tooltipText="Create new tag with selected marchers"
                     size="compact"
                     variant="secondary"
@@ -374,11 +376,12 @@ const AddToTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
+                    aria-label="Add selected marchers to existing tag"
                     tooltipText="Add selected marchers to tag"
                     size="compact"
                     variant="secondary"
                     className={buttonClassName}
-                    disabled={isPending}
+                    disabled={isPending || allTags.length === 0}
                 >
                     <TagIcon size={16} />
                     <PlusIcon size={16} />
@@ -463,6 +466,7 @@ const DeleteFromTagButton = ({
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
                 <Button
+                    aria-label="Remove selected marchers from tag"
                     tooltipText="Remove selected marchers from tag"
                     size="compact"
                     variant="secondary"

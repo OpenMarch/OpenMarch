@@ -5,7 +5,6 @@ import { PaletteIcon, XIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import SectionAppearanceList from "./SectionAppearanceList";
 import TagAppearanceList from "./TagAppearanceList";
-import { useState } from "react";
 
 export default function MetronomeModal({
     label = <PaletteIcon size={24} />,
