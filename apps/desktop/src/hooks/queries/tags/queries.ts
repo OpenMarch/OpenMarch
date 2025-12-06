@@ -38,19 +38,13 @@ export const tagKeys = {
 
 export const invalidateTagQueries = (qc: QueryClient) => {
     void qc.invalidateQueries({
-        queryKey: tagKeys.allTags(),
+        queryKey: [KEY_BASE],
     });
     void qc.invalidateQueries({
-        queryKey: tagKeys.tagAppearanceIdsByPageIdMap(),
+        queryKey: [MARCHER_TAGS_KEY],
     });
     void qc.invalidateQueries({
-        queryKey: tagKeys.marcherIdsByTagIdMap(),
-    });
-    void qc.invalidateQueries({
-        queryKey: tagKeys.allTagAppearances(),
-    });
-    void qc.invalidateQueries({
-        queryKey: tagKeys.allMarcherTags(),
+        queryKey: [TAG_APPEARANCES_KEY],
     });
 };
 
