@@ -20,7 +20,7 @@ import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
-import { MarcherVisualMap } from "@/hooks";
+import { MarcherVisualMap } from "@/hooks/queries";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
