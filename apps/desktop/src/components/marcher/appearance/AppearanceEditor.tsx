@@ -15,6 +15,7 @@ import {
     EyeClosedIcon,
     TextTIcon,
     TextTSlashIcon,
+    MinusIcon,
 } from "@phosphor-icons/react";
 import { useTolgee } from "@tolgee/react";
 import { RgbaColor } from "@uiw/react-color";
@@ -34,8 +35,6 @@ const shapeIcons: Record<ShapeType, React.ReactNode> = {
     triangle: <TriangleIcon size={18} />,
     x: <XIcon size={18} />,
 };
-
-const defaultShapeType: ShapeType = "circle";
 
 export function AppearanceEditor({
     label,
@@ -76,7 +75,8 @@ export function AppearanceEditor({
     }
 
     function onShapeChange(shape: string) {
-        void handleChange({ shape_type: shape });
+        // Convert the special "__none__" value to null
+        void handleChange({ shape_type: shape === "__none__" ? null : shape });
     }
     const handleVisibilityChange = () => {
         void handleChange({ visible: !appearance.visible });
@@ -146,19 +146,21 @@ export function AppearanceEditor({
                 />
 
                 <Select
-                    value={appearance.shape_type ?? defaultShapeType}
+                    value={appearance.shape_type ?? "__none__"}
                     onValueChange={(value) => onShapeChange(value)}
                 >
                     <SelectTriggerCompact label={t("marchers.list.shape")}>
-                        {
-                            shapeIcons[
-                                (appearance.shape_type ??
-                                    defaultShapeType) as ShapeType
-                            ]
-                        }
+                        {appearance.shape_type ? (
+                            shapeIcons[appearance.shape_type as ShapeType]
+                        ) : (
+                            <MinusIcon size={10} />
+                        )}
                     </SelectTriggerCompact>
                     <SelectContent>
                         <SelectGroup>
+                            <SelectItem value="__none__">
+                                <MinusIcon size={10} />
+                            </SelectItem>
                             {shapeOptions.map((shape) => (
                                 <SelectItem key={shape} value={shape}>
                                     {shapeIcons[shape]}
