@@ -68,7 +68,8 @@ export const getButtonClassName = ({
     twMerge(clsx(variants({ variant, size, content }), className));
 
 export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    extends
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof variants> {
     variant?: "primary" | "secondary" | "red";
     size?: "default" | "compact";
