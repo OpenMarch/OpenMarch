@@ -5,6 +5,7 @@ import { PaletteIcon, XIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import SectionAppearanceList from "./SectionAppearanceList";
 import TagAppearanceList from "./TagAppearanceList";
+import { useState } from "react";
 
 export default function MetronomeModal({
     label = <PaletteIcon size={24} />,
@@ -30,6 +31,10 @@ export function AppearanceModalContents({
     mode?: "section" | "tag";
     launchArgs?: { targetTagId?: number; targetPageId?: number };
 }) {
+    const localStorageMode = localStorage.getItem("marcher-appearance-mode");
+    const setLocalStorageMode = (mode: "section" | "tag") => {
+        localStorage.setItem("marcher-appearance-mode", mode);
+    };
     const { toggleOpen } = useSidebarModalStore();
 
     return (
@@ -46,7 +51,12 @@ export function AppearanceModalContents({
                 </button>
             </header>
 
-            <Tabs defaultValue={mode ?? "section"}>
+            <Tabs
+                defaultValue={mode ?? localStorageMode ?? "section"}
+                onValueChange={(value) =>
+                    setLocalStorageMode(value as "section" | "tag")
+                }
+            >
                 <TabsList>
                     <TabItem value="section">
                         <T keyName="marchers.sectionText" />

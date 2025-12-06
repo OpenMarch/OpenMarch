@@ -1,15 +1,12 @@
 import {
     allMarchersQueryOptions,
     allSectionAppearancesQueryOptions,
+    DEFAULT_STALE_TIME,
     marcherIdsForAllTagIdsQueryOptions,
     marcherPagesByPageQueryOptions,
     resolvedTagAppearancesByPageIdQueryOptions,
-} from "./queries";
-import {
-    useQueries,
-    useQueryClient,
-    UseQueryResult,
-} from "@tanstack/react-query";
+} from ".";
+import { QueryClient, queryOptions } from "@tanstack/react-query";
 import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 import Marcher from "@/global/classes/Marcher";
 import {
@@ -17,9 +14,15 @@ import {
     SectionAppearance,
     MarcherIdsByTagId,
 } from "@/db-functions";
-import { useSelectedPage } from "@/context/SelectedPageContext";
 import { AppearanceComponentOptional } from "@/entity-components/appearance";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+
+const KEY_BASE = "marcher-with-visuals";
+
+export const marcherWithVisualsKeys = {
+    all: () => [KEY_BASE] as const,
+    byPageId: (pageId: number) => [KEY_BASE, { pageId }] as const,
+};
 
 export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
 
@@ -83,22 +86,20 @@ const separateTagAppearanceByMarcherId = (
  *
  * @returns
  */
-export const _combineMarcherVisualGroups = (
-    results: [
-        UseQueryResult<Marcher[]>,
-        UseQueryResult<SectionAppearance[]>,
-        UseQueryResult<MarcherIdsByTagId>,
-        UseQueryResult<TagAppearance[]>,
-        UseQueryResult<MarcherPagesByMarcher>,
-    ],
-): MarcherVisualMap => {
-    const { data: marchers } = results[0];
-    const { data: sectionAppearances } = results[1];
-    const { data: marcherIdsByTagId } = results[2];
-    const { data: tagAppearances } = results[3];
-    const { data: marcherPages } = results[4];
-
-    if (!marchers /*|| !sectionAppearances || !fieldProperties*/) {
+export const _combineMarcherVisualGroups = ({
+    marchers,
+    sectionAppearances,
+    marcherIdsByTagId,
+    tagAppearances,
+    marcherPages,
+}: {
+    marchers: Marcher[];
+    sectionAppearances: SectionAppearance[];
+    marcherIdsByTagId: MarcherIdsByTagId;
+    tagAppearances: TagAppearance[];
+    marcherPages: MarcherPagesByMarcher;
+}): MarcherVisualMap => {
+    if (!marchers) {
         return {};
     }
     const tagAppearanceByMarcherId: Map<number, TagAppearance[]> =
@@ -138,23 +139,40 @@ export const _combineMarcherVisualGroups = (
     return newVisuals;
 };
 
-export const useMarchersWithVisuals = (): MarcherVisualMap => {
-    const { selectedPage } = useSelectedPage()!;
-    const queryClient = useQueryClient();
-
-    return useQueries({
-        queries: [
-            allMarchersQueryOptions(),
-            allSectionAppearancesQueryOptions(),
-            marcherIdsForAllTagIdsQueryOptions(),
-            resolvedTagAppearancesByPageIdQueryOptions({
-                pageId: selectedPage?.id,
-                queryClient,
-            }),
-            marcherPagesByPageQueryOptions(selectedPage?.id),
-        ],
-        // This must be a stable function, not an inline function, otherwise it will be called every time the component re-renders
-        // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization
-        combine: _combineMarcherVisualGroups,
+export const marcherWithVisualsQueryOptions = (
+    pageId: number | null | undefined,
+    queryClient: QueryClient,
+) =>
+    queryOptions({
+        // eslint-disable-next-line @tanstack/query/exhaustive-deps
+        queryKey: marcherWithVisualsKeys.byPageId(pageId!),
+        queryFn: async () => {
+            const [
+                marchers,
+                sectionAppearances,
+                marcherIdsByTagId,
+                tagAppearances,
+                marcherPages,
+            ] = await Promise.all([
+                queryClient.fetchQuery(allMarchersQueryOptions()),
+                queryClient.fetchQuery(allSectionAppearancesQueryOptions()),
+                queryClient.fetchQuery(marcherIdsForAllTagIdsQueryOptions()),
+                queryClient.fetchQuery(
+                    resolvedTagAppearancesByPageIdQueryOptions({
+                        pageId,
+                        queryClient,
+                    }),
+                ),
+                queryClient.fetchQuery(marcherPagesByPageQueryOptions(pageId)),
+            ]);
+            return _combineMarcherVisualGroups({
+                marchers,
+                sectionAppearances,
+                marcherIdsByTagId,
+                tagAppearances,
+                marcherPages,
+            });
+        },
+        enabled: pageId != null,
+        staleTime: DEFAULT_STALE_TIME,
     });
-};

@@ -17,6 +17,7 @@ import {
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
+import { marcherWithVisualsKeys } from "..";
 
 const KEY_BASE = "tags";
 const TAG_APPEARANCES_KEY = "tag_appearances";
@@ -39,14 +40,18 @@ export const tagKeys = {
 };
 
 export const invalidateTagQueries = (qc: QueryClient) => {
-    void qc.invalidateQueries({
-        queryKey: [KEY_BASE],
-    });
-    void qc.invalidateQueries({
-        queryKey: [MARCHER_TAGS_KEY],
-    });
-    void qc.invalidateQueries({
-        queryKey: [TAG_APPEARANCES_KEY],
+    void Promise.all([
+        qc.invalidateQueries({ queryKey: [KEY_BASE] }),
+        qc.invalidateQueries({
+            queryKey: [MARCHER_TAGS_KEY],
+        }),
+        qc.invalidateQueries({
+            queryKey: [TAG_APPEARANCES_KEY],
+        }),
+    ]).then(() => {
+        void qc.invalidateQueries({
+            queryKey: marcherWithVisualsKeys.all(),
+        });
     });
 };
 
@@ -116,7 +121,7 @@ export const resolvedTagAppearancesByPageIdQueryOptions = ({
 
         queryFn: async () => {
             // 1. Ensure the map query is available
-            const globalMap = await queryClient.ensureQueryData(
+            const globalMap = await queryClient.fetchQuery(
                 tagAppearanceByPageIdMapQueryOptions(),
             );
 
@@ -170,7 +175,7 @@ export const tagAppearancesForPageQueryOptions = (
         queryKey: tagKeys.byPageId(pageId!),
         queryFn: async () => {
             const tagAppearanceIdsByPageIdMap =
-                await queryClient.ensureQueryData<TagAppearanceIdsByPageId>({
+                await queryClient.fetchQuery<TagAppearanceIdsByPageId>({
                     queryKey: tagKeys.tagAppearanceIdsByPageIdMap(),
                 });
             const result = await getResolvedTagAppearancesByPageId({

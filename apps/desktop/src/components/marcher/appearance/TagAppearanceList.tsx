@@ -56,7 +56,7 @@ export default function TagAppearanceList({
 
         const checkAndCreateTagAppearance = async () => {
             // Check if tag appearance exists for this page/tag combination
-            const tagAppearances = await queryClient.ensureQueryData(
+            const tagAppearances = await queryClient.fetchQuery(
                 tagAppearancesByStartPageIdQueryOptions(targetPageId),
             );
 
@@ -91,7 +91,13 @@ export default function TagAppearanceList({
         };
 
         void checkAndCreateTagAppearance();
-    }, [targetPageId, targetTagId, createTagAppearances, queryClient]);
+    }, [
+        targetPageId,
+        targetTagId,
+        createTagAppearances,
+        queryClient,
+        highlightSelection,
+    ]);
 
     return (
         <div
@@ -179,7 +185,10 @@ const SinglePageTagAppearanceList = React.forwardRef<
 
     // Scroll to the target tag appearance when it becomes available
     useEffect(() => {
-        if (targetTagId == null || !highlightSelection) return;
+        if (targetTagId == null || !highlightSelection) {
+            setHighlightedTagId(null);
+            return;
+        }
 
         const targetAppearance = tagAppearancesSorted.find(
             (appearance) => appearance.tag_id === targetTagId,
@@ -204,7 +213,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
             // Fade out the highlight after 2 seconds
             const fadeOutTimer = setTimeout(() => {
                 setHighlightedTagId(null);
-            }, 2000);
+            }, 1500);
 
             return () => {
                 clearTimeout(fadeOutTimer);

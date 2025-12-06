@@ -18,6 +18,7 @@ import {
     ModifiedSectionAppearanceArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
 
 const KEY_BASE = "section_appearances";
 
@@ -91,9 +92,15 @@ export const createSectionAppearancesMutationOptions = (qc: QueryClient) => {
             createSectionAppearances({ db, newItems }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error creating section appearances`, e, variables);
@@ -133,10 +140,15 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
                     ),
                 });
 
-            // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error updating section appearances`, e, variables);
@@ -150,9 +162,15 @@ export const deleteSectionAppearancesMutationOptions = (qc: QueryClient) => {
             deleteSectionAppearances({ db, itemIds }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error deleting section appearances`, e, variables);

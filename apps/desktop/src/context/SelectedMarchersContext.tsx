@@ -7,9 +7,10 @@ import {
     useState,
 } from "react";
 import Marcher from "@/global/classes/Marcher";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
-import { useMarchersWithVisuals } from "@/hooks";
+import { useSelectedPage } from "./SelectedPageContext";
+import { marcherWithVisualsQueryOptions } from "@/hooks/queries";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -35,8 +36,13 @@ export function SelectedMarchersProvider({
 }) {
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
-    const marcherVisuals = useMarchersWithVisuals();
+    const { selectedPage } = useSelectedPage()!;
+    const queryClient = useQueryClient();
+    const { data: marcherVisuals } = useQuery(
+        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+    );
     const hiddenMarcherIds: Set<number> = useMemo(() => {
+        if (marcherVisuals == null) return new Set();
         const hiddenMarcherIds = new Set(
             Object.values(marcherVisuals)
                 .filter((marcherVisual) => marcherVisual.isHidden())

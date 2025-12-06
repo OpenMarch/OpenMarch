@@ -3,6 +3,7 @@ import { coordinateDataKeys } from "./useCoordinateData";
 import { QueryClient } from "@tanstack/react-query";
 import { shapePageKeys } from "./useShapePages";
 import { pageKeys } from "./usePages";
+import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
 /**
  * Invalidate the marcher pages and coordinate data queries for a given page id
  *
@@ -27,6 +28,9 @@ export const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
                 });
                 void qc.invalidateQueries({
                     queryKey: shapePageKeys.byPageId(pageId),
+                });
+                void qc.invalidateQueries({
+                    queryKey: marcherWithVisualsKeys.byPageId(pageId),
                 });
             });
     }
