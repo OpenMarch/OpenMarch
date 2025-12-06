@@ -23,7 +23,13 @@ export default function MetronomeModal({
     );
 }
 
-export function AppearanceModalContents() {
+export function AppearanceModalContents({
+    mode,
+    launchArgs,
+}: {
+    mode?: "section" | "tag";
+    launchArgs?: { targetTagId?: number; targetPageId?: number };
+}) {
     const { toggleOpen } = useSidebarModalStore();
 
     return (
@@ -40,7 +46,7 @@ export function AppearanceModalContents() {
                 </button>
             </header>
 
-            <Tabs defaultValue="section">
+            <Tabs defaultValue={mode ?? "section"}>
                 <TabsList>
                     <TabItem value="section">
                         <T keyName="marchers.sectionText" />
@@ -54,7 +60,10 @@ export function AppearanceModalContents() {
                     <SectionAppearanceList />
                 </TabContent>
                 <TabContent value="tag">
-                    <TagAppearanceList />
+                    <TagAppearanceList
+                        targetTagId={launchArgs?.targetTagId}
+                        targetPageId={launchArgs?.targetPageId}
+                    />
                 </TabContent>
             </Tabs>
         </div>

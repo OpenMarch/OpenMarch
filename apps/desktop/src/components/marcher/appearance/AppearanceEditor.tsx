@@ -39,11 +39,13 @@ const defaultShapeType: ShapeType = "circle";
 
 export function AppearanceEditor({
     label,
+    className,
     appearance,
     handleUpdateAppearance,
     handleDeleteAppearance,
 }: {
     label: string;
+    className?: string;
     appearance: AppearanceComponent;
     handleUpdateAppearance: (
         modifiedAppearance: AppearanceComponentOptional,
@@ -85,7 +87,12 @@ export function AppearanceEditor({
         });
     };
     return (
-        <div className="bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12">
+        <div
+            className={twMerge(
+                "bg-fg-1 rounded-6 border-stroke flex flex-col gap-12 border p-12",
+                className,
+            )}
+        >
             <div className="flex items-center justify-between">
                 <h4 className="text-h5">{label}</h4>
                 <div

@@ -33,6 +33,8 @@ export const tagKeys = {
     allTagAppearances: () => [TAG_APPEARANCES_KEY] as const,
     tagAppearancesByPageId: (page_id: number) =>
         [TAG_APPEARANCES_KEY, "page", { page_id }] as const,
+    tagAppearancesByStartPageId: (start_page_id: number) =>
+        [TAG_APPEARANCES_KEY, "start_page", { start_page_id }] as const,
     allMarcherTags: () => [MARCHER_TAGS_KEY] as const,
 };
 
@@ -138,7 +140,7 @@ export const tagAppearancesByStartPageIdQueryOptions = (
     pageId: number | null | undefined,
 ) => {
     return queryOptions<TagAppearance[]>({
-        queryKey: tagKeys.tagAppearancesByPageId(pageId!),
+        queryKey: tagKeys.tagAppearancesByStartPageId(pageId!),
         queryFn: async () => {
             return await getTagAppearancesByStartPageId({
                 db,

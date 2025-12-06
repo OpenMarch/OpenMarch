@@ -15,11 +15,20 @@ import {
     updateTagAppearancesMutationOptions,
 } from "@/hooks/queries";
 import { AppearanceEditor } from "@/components/marcher/appearance/AppearanceEditor";
-import { useMemo } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useTimingObjects } from "@/hooks";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 
-export default function SectionAppearanceList() {
+export default function TagAppearanceList({
+    targetPageId,
+    targetTagId,
+}: {
+    targetPageId?: number;
+    targetTagId?: number;
+} = {}) {
+    const { setHighlightSelection, highlightSelection } =
+        useSidebarModalStore();
     const queryClient = useQueryClient();
     const { data: allTags } = useQuery(allTagsQueryOptions());
     const tagNamesByTagId = useMemo(() => {
@@ -37,15 +46,78 @@ export default function SectionAppearanceList() {
         deleteTagAppearancesMutationOptions(queryClient),
     );
 
+    const pageRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+    // Check if tag appearance exists and create it if needed, then scroll
+    useEffect(() => {
+        if (targetPageId == null || targetTagId == null || !highlightSelection)
+            return;
+
+        const checkAndCreateTagAppearance = async () => {
+            // Check if tag appearance exists for this page/tag combination
+            const tagAppearances = await queryClient.ensureQueryData(
+                tagAppearancesByStartPageIdQueryOptions(targetPageId),
+            );
+
+            const existingAppearance = tagAppearances?.find(
+                (appearance) => appearance.tag_id === targetTagId,
+            );
+
+            if (!existingAppearance) {
+                // Create the tag appearance
+                void createTagAppearances([
+                    { tag_id: targetTagId, start_page_id: targetPageId },
+                ]);
+            }
+
+            // Wait for React to re-render with the new data, then scroll
+            await new Promise<void>((resolve) => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        resolve();
+                    });
+                });
+            });
+
+            const pageElement = pageRefs.current.get(targetPageId);
+            if (pageElement && scrollContainerRef.current) {
+                // Scroll the container to show the page
+                pageElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "start",
+                });
+            }
+        };
+
+        void checkAndCreateTagAppearance();
+    }, [targetPageId, targetTagId, createTagAppearances, queryClient]);
+
     return (
-        <div className="animate-scale-in flex flex-col gap-8">
-            <div className="text-body text-text flex h-full w-[28rem] flex-col gap-48 overflow-y-auto">
+        <div
+            className="animate-scale-in flex flex-col gap-8"
+            onClick={() => setHighlightSelection(false)}
+        >
+            <div
+                ref={scrollContainerRef}
+                className="text-body text-text flex h-full w-[28rem] flex-col gap-48 overflow-y-auto"
+            >
                 {pages.map((page) => (
                     <SinglePageTagAppearanceList
                         key={page.id}
+                        ref={(el) => {
+                            if (el) {
+                                pageRefs.current.set(page.id, el);
+                            } else {
+                                pageRefs.current.delete(page.id);
+                            }
+                        }}
                         page={page}
                         availableTags={allTags ?? []}
                         tagNamesByTagId={tagNamesByTagId}
+                        targetTagId={
+                            page.id === targetPageId ? targetTagId : undefined
+                        }
                         handleCreateAppearance={(tagId) =>
                             void createTagAppearances([
                                 { tag_id: tagId, start_page_id: page.id },
@@ -64,21 +136,30 @@ export default function SectionAppearanceList() {
     );
 }
 
-function SinglePageTagAppearanceList({
-    page,
-    availableTags,
-    tagNamesByTagId,
-    handleCreateAppearance,
-    handleUpdateAppearance,
-    handleDeleteAppearance,
-}: {
-    page: { id: number; name: string };
-    availableTags: DatabaseTag[];
-    tagNamesByTagId: Map<number, string | null>;
-    handleCreateAppearance: (tagId: number) => void;
-    handleUpdateAppearance: (appearance: ModifiedTagAppearanceArgs) => void;
-    handleDeleteAppearance: (tagId: number) => void;
-}) {
+const SinglePageTagAppearanceList = React.forwardRef<
+    HTMLDivElement,
+    {
+        page: { id: number; name: string };
+        availableTags: DatabaseTag[];
+        tagNamesByTagId: Map<number, string | null>;
+        targetTagId?: number;
+        handleCreateAppearance: (tagId: number) => void;
+        handleUpdateAppearance: (appearance: ModifiedTagAppearanceArgs) => void;
+        handleDeleteAppearance: (tagId: number) => void;
+    }
+>(function SinglePageTagAppearanceList(
+    {
+        page,
+        availableTags,
+        tagNamesByTagId,
+        targetTagId,
+        handleCreateAppearance,
+        handleUpdateAppearance,
+        handleDeleteAppearance,
+    },
+    ref,
+) {
+    const { highlightSelection } = useSidebarModalStore();
     const { data: tagAppearances } = useQuery(
         tagAppearancesByStartPageIdQueryOptions(page.id),
     );
@@ -91,8 +172,51 @@ function SinglePageTagAppearanceList({
         [tagAppearances],
     );
 
+    const tagAppearanceRefs = useRef<Map<number, HTMLDivElement>>(new Map());
+    const [highlightedTagId, setHighlightedTagId] = useState<number | null>(
+        null,
+    );
+
+    // Scroll to the target tag appearance when it becomes available
+    useEffect(() => {
+        if (targetTagId == null || !highlightSelection) return;
+
+        const targetAppearance = tagAppearancesSorted.find(
+            (appearance) => appearance.tag_id === targetTagId,
+        );
+
+        if (targetAppearance) {
+            // Set highlight state
+            setHighlightedTagId(targetTagId);
+
+            const tagElement = tagAppearanceRefs.current.get(
+                targetAppearance.id,
+            );
+            if (tagElement) {
+                setTimeout(() => {
+                    tagElement.scrollIntoView({
+                        behavior: "smooth",
+                        block: "center",
+                    });
+                }, 300);
+            }
+
+            // Fade out the highlight after 2 seconds
+            const fadeOutTimer = setTimeout(() => {
+                setHighlightedTagId(null);
+            }, 2000);
+
+            return () => {
+                clearTimeout(fadeOutTimer);
+            };
+        }
+    }, [targetTagId, tagAppearancesSorted, highlightSelection]);
+
     return (
-        <div className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto">
+        <div
+            ref={ref}
+            className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
+        >
             <div className="flex flex-col gap-16">
                 <h3 className="text-text-subtitle text-lg leading-none">
                     Page {page.name}
@@ -136,27 +260,54 @@ function SinglePageTagAppearanceList({
                     {tagAppearancesSorted && tagAppearancesSorted.length > 0 ? (
                         <>
                             {tagAppearancesSorted.map((tagAppearance) => (
-                                <AppearanceEditor
+                                <div
+                                    className={twMerge(
+                                        "text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto",
+                                    )}
                                     key={tagAppearance.id}
-                                    label={getTagName({
-                                        tag_id: tagAppearance.tag_id,
-                                        name: tagNamesByTagId.get(
-                                            tagAppearance.tag_id,
-                                        ),
-                                    })}
-                                    appearance={tagAppearance}
-                                    handleUpdateAppearance={(
-                                        modifiedAppearance,
-                                    ) =>
-                                        void handleUpdateAppearance({
-                                            id: tagAppearance.id,
-                                            ...modifiedAppearance,
-                                        })
-                                    }
-                                    handleDeleteAppearance={() =>
-                                        handleDeleteAppearance(tagAppearance.id)
-                                    }
-                                />
+                                    ref={(el) => {
+                                        if (el) {
+                                            tagAppearanceRefs.current.set(
+                                                tagAppearance.id,
+                                                el,
+                                            );
+                                        } else {
+                                            tagAppearanceRefs.current.delete(
+                                                tagAppearance.id,
+                                            );
+                                        }
+                                    }}
+                                >
+                                    <AppearanceEditor
+                                        label={getTagName({
+                                            tag_id: tagAppearance.tag_id,
+                                            name: tagNamesByTagId.get(
+                                                tagAppearance.tag_id,
+                                            ),
+                                        })}
+                                        className={twMerge(
+                                            "transition-all duration-500 ease-out",
+                                            highlightedTagId ===
+                                                tagAppearance.tag_id
+                                                ? "bg-accent/50 border-accent"
+                                                : "",
+                                        )}
+                                        appearance={tagAppearance}
+                                        handleUpdateAppearance={(
+                                            modifiedAppearance,
+                                        ) =>
+                                            void handleUpdateAppearance({
+                                                id: tagAppearance.id,
+                                                ...modifiedAppearance,
+                                            })
+                                        }
+                                        handleDeleteAppearance={() =>
+                                            handleDeleteAppearance(
+                                                tagAppearance.id,
+                                            )
+                                        }
+                                    />
+                                </div>
                             ))}
                         </>
                     ) : (
@@ -168,4 +319,4 @@ function SinglePageTagAppearanceList({
             </div>
         </div>
     );
-}
+});

@@ -4,6 +4,7 @@ import {
     SparkleIcon,
     PlusIcon,
     TrashIcon,
+    PaletteIcon,
 } from "@phosphor-icons/react";
 import { twMerge } from "tailwind-merge";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
@@ -15,8 +16,13 @@ import {
     createMarcherTagsMutationOptions,
     createNewTagFromMarcherIdsMutationOptions,
     deleteMarcherTagsMutationOptions,
+    updateTagsMutationOptions,
+    deleteTagsMutationOptions,
 } from "@/hooks/queries";
 import { DatabaseTag, getTagName, NewMarcherTagArgs } from "@/db-functions";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { AppearanceModalContents } from "@/components/marcher/appearance/AppearanceModal";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -31,17 +37,201 @@ export const TagButtons = ({
 
     if (!tagsLoaded) return null;
     return (
-        <div className="grid w-full grid-cols-3 gap-8">
-            <NewTagButton selectedMarcherIds={selectedMarcherIds} />
-            <AddToTagButton
-                selectedMarcherIds={selectedMarcherIds}
-                allTags={allTags}
-            />
-            <DeleteFromTagButton
-                selectedMarcherIds={selectedMarcherIds}
-                allTags={allTags}
-            />
+        <div className="flex flex-col gap-8">
+            <div className="grid w-full grid-cols-3 gap-8">
+                <NewTagButton selectedMarcherIds={selectedMarcherIds} />
+                <AddToTagButton
+                    selectedMarcherIds={selectedMarcherIds}
+                    allTags={allTags}
+                />
+                <DeleteFromTagButton
+                    selectedMarcherIds={selectedMarcherIds}
+                    allTags={allTags}
+                />
+            </div>
+            <SelectedMarcherTags selectedMarcherIds={selectedMarcherIds} />
         </div>
+    );
+};
+
+const SelectedMarcherTags = ({
+    selectedMarcherIds,
+}: {
+    selectedMarcherIds: Set<number>;
+}) => {
+    const { data: allTags, isSuccess: tagsLoaded } = useQuery(
+        allTagsQueryOptions(),
+    );
+    const { data: marcherTags } = useQuery(allMarcherTagsQueryOptions());
+    const selectedTags = useMemo(() => {
+        const selectedMarcherTags =
+            marcherTags?.filter((mt) =>
+                selectedMarcherIds.has(mt.marcher_id),
+            ) ?? [];
+        return allTags?.filter((tag) =>
+            selectedMarcherTags.some((mt) => mt.tag_id === tag.id),
+        );
+    }, [allTags, marcherTags, selectedMarcherIds]);
+
+    if (!tagsLoaded) return <></>;
+
+    return (
+        <div className="flex flex-wrap gap-4 text-xs">
+            {selectedTags?.map((tag) => (
+                <TagContextMenu key={tag.id} tag={tag} />
+            ))}
+        </div>
+    );
+};
+
+const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
+    const [popoverOpen, setPopoverOpen] = useState(false);
+    const {
+        setOpen: setSidebarModalOpen,
+        setContent: setSidebarModalContent,
+        setHighlightSelection,
+    } = useSidebarModalStore();
+    const [renameValue, setRenameValue] = useState(tag.name ?? "");
+    const [isRenaming, setIsRenaming] = useState(false);
+    const renameInputRef = useRef<HTMLInputElement>(null);
+    const queryClient = useQueryClient();
+    const { selectedPage } = useSelectedPage()!;
+
+    const { mutate: updateTag, isPending: isUpdating } = useMutation(
+        updateTagsMutationOptions(queryClient),
+    );
+    const { mutate: deleteTag } = useMutation(
+        deleteTagsMutationOptions(queryClient),
+    );
+
+    useEffect(() => {
+        if (isRenaming && renameInputRef.current) {
+            renameInputRef.current.focus();
+            renameInputRef.current.select();
+        }
+    }, [isRenaming]);
+
+    useEffect(() => {
+        setRenameValue(tag.name ?? "");
+    }, [tag.name]);
+
+    useEffect(() => {
+        if (!popoverOpen) {
+            setIsRenaming(false);
+        }
+    }, [popoverOpen]);
+
+    const handleRename = useCallback(() => {
+        if (renameValue.trim() !== (tag.name ?? "")) {
+            updateTag([
+                {
+                    id: tag.id,
+                    name: renameValue.trim() || null,
+                },
+            ]);
+        }
+        setIsRenaming(false);
+    }, [renameValue, tag.id, tag.name, updateTag]);
+
+    const handleDelete = useCallback(() => {
+        deleteTag(new Set([tag.id]));
+        setPopoverOpen(false);
+    }, [tag.id, deleteTag]);
+
+    const handleEditAppearance = useCallback(() => {
+        // TODO: Open appearance context menu
+        setPopoverOpen(false);
+        setHighlightSelection(true);
+        setSidebarModalOpen(true);
+        setSidebarModalContent(
+            <AppearanceModalContents
+                mode="tag"
+                launchArgs={{
+                    targetTagId: tag.id,
+                    targetPageId: selectedPage?.id,
+                }}
+            />,
+            "marcher-appearance",
+        );
+    }, [
+        selectedPage?.id,
+        setHighlightSelection,
+        setSidebarModalContent,
+        setSidebarModalOpen,
+        tag.id,
+    ]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            handleRename();
+        } else if (e.key === "Escape") {
+            e.preventDefault();
+            setIsRenaming(false);
+            setRenameValue(tag.name ?? "");
+        }
+    };
+
+    return (
+        <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
+            <Popover.Trigger asChild>
+                <div className="rounded-6 bg-fg-1 border-stroke hover:text-accent cursor-pointer border p-4 duration-150 ease-out">
+                    {getTagName({ tag_id: tag.id, name: tag.name })}
+                </div>
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content
+                    className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex min-w-[200px] flex-col gap-8 border p-16 py-12 backdrop-blur-md outline-none"
+                    sideOffset={8}
+                    align="start"
+                    onCloseAutoFocus={(e) => {
+                        e.preventDefault();
+                    }}
+                >
+                    {isRenaming ? (
+                        <div className="flex flex-col gap-4">
+                            <label className="text-text-subtitle text-sm">
+                                Rename tag
+                            </label>
+                            <Input
+                                ref={renameInputRef}
+                                type="text"
+                                value={renameValue}
+                                onChange={(e) => setRenameValue(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                onBlur={handleRename}
+                                className="bg-input border-stroke text-text rounded-4 focus:border-primary border px-8 py-4 outline-none"
+                                placeholder="Enter tag name..."
+                                disabled={isUpdating}
+                            />
+                        </div>
+                    ) : (
+                        <>
+                            <div
+                                className="text-text hover:text-accent flex cursor-pointer items-center gap-8 transition-all duration-150 ease-out"
+                                onClick={() => setIsRenaming(true)}
+                            >
+                                <span className="text-sm">Rename tag</span>
+                            </div>
+                            <div
+                                onClick={handleEditAppearance}
+                                className="text-text-subtitle hover:text-accent flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
+                            >
+                                Edit appearance
+                                <PaletteIcon size={16} />
+                            </div>
+                            <div
+                                onClick={handleDelete}
+                                className="text-text-subtitle hover:text-red flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
+                            >
+                                Delete tag
+                                <TrashIcon size={16} />
+                            </div>
+                        </>
+                    )}
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
     );
 };
 
@@ -298,7 +488,7 @@ const DeleteFromTagButton = ({
                     <div className="text-text-subtitle text-sm">
                         Remove selected marchers from tag
                     </div>
-                    <div className="flex flex-col gap-4">
+                    <div className="wrap flex flex-col gap-4">
                         {allTags
                             .filter((tag) =>
                                 tagsInSelectedMarcherIds.includes(tag.id),

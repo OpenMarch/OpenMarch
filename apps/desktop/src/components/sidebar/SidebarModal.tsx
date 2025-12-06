@@ -17,7 +17,7 @@ export default function SidebarModal() {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (isFocused && event.key === "Escape") {
+            if (event.key === "Escape") {
                 setOpen(false);
             }
         };
