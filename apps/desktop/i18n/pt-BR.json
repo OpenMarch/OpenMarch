@@ -534,7 +534,9 @@
         "editButton": "Editar Marchadores",
         "list": {
             "addSectionStyle": "Adicionar Estilo de Seção",
+            "addTagAppearance": "Adicionar aparência de etiqueta",
             "deleteSectionStyle": "Excluir este estilo de seção",
+            "none": "Nenhum",
             "discardChanges": "Descartar Alterações",
             "drillNumberTitle": "#",
             "fillColor": "Cor de Preenchimento",

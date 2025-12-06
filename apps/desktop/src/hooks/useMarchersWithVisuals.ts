@@ -3,7 +3,7 @@ import {
     allSectionAppearancesQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
     marcherPagesByPageQueryOptions,
-    tagAppearancesByPageIdQueryOptions,
+    resolvedTagAppearancesByPageIdQueryOptions,
 } from "./queries";
 import {
     useQueries,
@@ -147,7 +147,7 @@ export const useMarchersWithVisuals = (): MarcherVisualMap => {
             allMarchersQueryOptions(),
             allSectionAppearancesQueryOptions(),
             marcherIdsForAllTagIdsQueryOptions(),
-            tagAppearancesByPageIdQueryOptions({
+            resolvedTagAppearancesByPageIdQueryOptions({
                 pageId: selectedPage?.id,
                 queryClient,
             }),

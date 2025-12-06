@@ -535,7 +535,9 @@
         "editButton": "Edit Marchers",
         "list": {
             "addSectionStyle": "Add Section Style",
+            "addTagAppearance": "Add Tag Appearance",
             "deleteSectionStyle": "Delete this section style",
+            "none": "None",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
             "fillColor": "Fill Color",

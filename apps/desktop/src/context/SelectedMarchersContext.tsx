@@ -37,11 +37,12 @@ export function SelectedMarchersProvider({
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
     const marcherVisuals = useMarchersWithVisuals();
     const hiddenMarcherIds: Set<number> = useMemo(() => {
-        return new Set(
+        const hiddenMarcherIds = new Set(
             Object.values(marcherVisuals)
                 .filter((marcherVisual) => marcherVisual.isHidden())
                 .map((marcherVisual) => marcherVisual.marcherId),
         );
+        return hiddenMarcherIds;
     }, [marcherVisuals]);
 
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher

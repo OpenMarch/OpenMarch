@@ -1,20 +1,10 @@
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import {
-    TabContent,
-    TabItem,
-    Tabs,
-    TabsList,
-    ToggleGroup,
-    ToggleGroupItem,
-} from "@openmarch/ui";
-import { PaletteIcon, TagIcon, UsersIcon, XIcon } from "@phosphor-icons/react";
+import { TabContent, TabItem, Tabs, TabsList } from "@openmarch/ui";
+import { PaletteIcon, XIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
-import { useCallback, useMemo, useState } from "react";
 import SectionAppearanceList from "./SectionAppearanceList";
 import TagAppearanceList from "./TagAppearanceList";
-
-const APPEARANCE_CATEGORY_KEY = "appearanceModalCategory";
 
 export default function MetronomeModal({
     label = <PaletteIcon size={24} />,
@@ -35,23 +25,9 @@ export default function MetronomeModal({
 
 export function AppearanceModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const [selectedAppearanceCategory, setSelectedAppearanceCategoryState] =
-        useState<"section" | "tag">(() => {
-            const stored = localStorage.getItem(APPEARANCE_CATEGORY_KEY);
-            return stored === "tag" ? "tag" : "section";
-        });
-
-    const setSelectedAppearanceCategory = useCallback(
-        (category: "section" | "tag") => {
-            setSelectedAppearanceCategoryState(category);
-            localStorage.setItem(APPEARANCE_CATEGORY_KEY, category);
-        },
-        [],
-    );
 
     return (
-        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            {/* Header */}
+        <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16 overflow-y-auto">
             <header className="flex items-center justify-between gap-24">
                 <h4 className="text-h4 leading-none">
                     <T keyName="marchers.marcherAppearance" />

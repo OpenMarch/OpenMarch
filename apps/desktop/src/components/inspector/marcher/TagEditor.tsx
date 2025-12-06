@@ -16,7 +16,7 @@ import {
     createNewTagFromMarcherIdsMutationOptions,
     deleteMarcherTagsMutationOptions,
 } from "@/hooks/queries";
-import { DatabaseTag, NewMarcherTagArgs } from "@/db-functions";
+import { DatabaseTag, getTagName, NewMarcherTagArgs } from "@/db-functions";
 
 const buttonClassName = twMerge("flex items-center gap-4 w-full");
 
@@ -218,7 +218,7 @@ const AddToTagButton = ({
                                     setPopoverOpen(false);
                                 }}
                             >
-                                {tag.name}
+                                {getTagName({ tag_id: tag.id, name: tag.name })}
                             </div>
                         ))}
                     </div>
@@ -313,7 +313,10 @@ const DeleteFromTagButton = ({
                                         setPopoverOpen(false);
                                     }}
                                 >
-                                    {tag.name}
+                                    {getTagName({
+                                        tag_id: tag.id,
+                                        name: tag.name,
+                                    })}
                                 </div>
                             ))}
                     </div>

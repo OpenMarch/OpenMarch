@@ -534,7 +534,9 @@
         "editButton": "マーチャーズ 編集",
         "list": {
             "addSectionStyle": "セクションスタイルを追加",
+            "addTagAppearance": "タグの外観を追加",
             "deleteSectionStyle": "このセクションスタイルを削除",
+            "none": "なし",
             "discardChanges": "変更を破棄",
             "drillNumberTitle": "号",
             "fillColor": "塗り の色",

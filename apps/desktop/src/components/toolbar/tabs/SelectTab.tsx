@@ -16,6 +16,7 @@ import { useCallback, useEffect, useState } from "react";
 import { CaretDownIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import * as Popover from "@radix-ui/react-popover";
+import { getTagName } from "@/db-functions/tag";
 
 export default function ViewTab() {
     return (
@@ -204,7 +205,7 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
                                 className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
                                 onClick={(e) => handleSelectByTag(e, tag.id)}
                             >
-                                {tag.name ?? tag.id}
+                                {getTagName({ tag_id: tag.id, name: tag.name })}
                             </button>
                             {index < tags.length - 1 && <Separator />}
                         </div>

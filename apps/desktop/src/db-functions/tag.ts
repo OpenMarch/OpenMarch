@@ -22,6 +22,11 @@ import {
 /** How a tag is represented in the database */
 export type DatabaseTag = typeof schema.tags.$inferSelect;
 
+export const getTagName = (tag: { tag_id: number; name?: string | null }) =>
+    tag.name != null && tag.name.trim().length > 0
+        ? tag.name
+        : `tag-${tag.tag_id}`;
+
 export interface NewTagArgs {
     name?: string | null;
     description?: string | null;
@@ -301,7 +306,7 @@ export async function getTagAppearances({
  * Note, you must provide the tag appearance IDs by page ID map.
  * This is because we only store the starting page ID of the tag appearance.
  */
-export async function getTagAppearancesByPageId({
+export async function getResolvedTagAppearancesByPageId({
     db,
     pageId,
     tagAppearanceIdsByPageId,
@@ -319,6 +324,19 @@ export async function getTagAppearancesByPageId({
     }
     const result = await db.query.tag_appearances.findMany({
         where: inArray(schema.tag_appearances.id, Array.from(tagAppearanceIds)),
+    });
+    return result.map(realDatabaseTagAppearanceToDatabaseTagAppearance);
+}
+
+export async function getTagAppearancesByStartPageId({
+    db,
+    pageId,
+}: {
+    db: DbConnection;
+    pageId: number;
+}): Promise<TagAppearance[]> {
+    const result = await db.query.tag_appearances.findMany({
+        where: eq(schema.tag_appearances.start_page_id, pageId),
     });
     return result.map(realDatabaseTagAppearanceToDatabaseTagAppearance);
 }

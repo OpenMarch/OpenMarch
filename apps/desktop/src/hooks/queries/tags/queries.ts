@@ -4,7 +4,7 @@ import {
     TagAppearanceIdsByPageId,
     _calculateMapAllTagAppearanceIdsByPageId,
     getPagesInOrder,
-    getTagAppearancesByPageId,
+    getResolvedTagAppearancesByPageId,
     TagAppearance,
     DatabaseTag,
     getTags,
@@ -12,6 +12,7 @@ import {
     DatabaseMarcherTag,
     getMarcherTags,
     getTagAppearances,
+    getTagAppearancesByStartPageId,
 } from "@/db-functions";
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
@@ -30,6 +31,8 @@ export const tagKeys = {
     marcherIdsByTagIdMap: () =>
         [MARCHER_TAGS_KEY, "marcher_ids_by_tag_id_map"] as const,
     allTagAppearances: () => [TAG_APPEARANCES_KEY] as const,
+    tagAppearancesByPageId: (page_id: number) =>
+        [TAG_APPEARANCES_KEY, "page", { page_id }] as const,
     allMarcherTags: () => [MARCHER_TAGS_KEY] as const,
 };
 
@@ -73,6 +76,7 @@ export const marcherIdsForAllTagIdsQueryOptions = () => {
 };
 
 // What tag appearances are on each page?
+// This will fill in the array of tag appearance IDs for each page.
 export const tagAppearanceByPageIdMapQueryOptions = () => {
     return queryOptions<TagAppearanceIdsByPageId>({
         queryKey: tagKeys.tagAppearanceIdsByPageIdMap(),
@@ -94,7 +98,15 @@ export const tagAppearanceByPageIdMapQueryOptions = () => {
     });
 };
 
-export const tagAppearancesByPageIdQueryOptions = ({
+/**
+ * Calculates the tag appearance that will be used for a given page.
+ * This fills in the array of tag appearance IDs for each page.
+ *
+ * @param pageId - The page ID to get the tag appearances for.
+ * @param queryClient - The query client to use to get the tag appearance IDs by page ID map.
+ * @returns
+ */
+export const resolvedTagAppearancesByPageIdQueryOptions = ({
     pageId,
     queryClient,
 }: {
@@ -113,12 +125,34 @@ export const tagAppearancesByPageIdQueryOptions = ({
             );
 
             // 2. Now compute the per-page results
-            return await getTagAppearancesByPageId({
+            return await getResolvedTagAppearancesByPageId({
                 db,
                 pageId: pageId!,
                 tagAppearanceIdsByPageId: globalMap,
             });
         },
+    });
+};
+
+/**
+ * Gets the tag appearance with a given start page ID.
+ *
+ * @param pageId the page ID to get the tag appearances for.
+ * @returns the tag appearances for the given page.
+ */
+export const tagAppearancesByStartPageIdQueryOptions = (
+    pageId: number | null | undefined,
+) => {
+    return queryOptions<TagAppearance[]>({
+        queryKey: tagKeys.tagAppearancesByPageId(pageId!),
+        queryFn: async () => {
+            return await getTagAppearancesByStartPageId({
+                db,
+                pageId: pageId!,
+            });
+        },
+        enabled: pageId != null,
+        staleTime: DEFAULT_STALE_TIME,
     });
 };
 /**
@@ -143,7 +177,7 @@ export const tagAppearancesForPageQueryOptions = (
                 await queryClient.ensureQueryData<TagAppearanceIdsByPageId>({
                     queryKey: tagKeys.tagAppearanceIdsByPageIdMap(),
                 });
-            const result = await getTagAppearancesByPageId({
+            const result = await getResolvedTagAppearancesByPageId({
                 db,
                 pageId: pageId!,
                 tagAppearanceIdsByPageId: tagAppearanceIdsByPageIdMap!,

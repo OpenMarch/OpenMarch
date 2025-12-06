@@ -82,7 +82,6 @@ export default function SectionAppearanceList() {
 
         try {
             await createSectionAppearances([newAppearance]);
-            toast.success(`Added style for ${sectionName}`);
         } catch (error) {
             toast.error("Failed to create section appearance");
             console.error("Error creating section appearance:", error);
@@ -186,7 +185,8 @@ export default function SectionAppearanceList() {
             </header>
             <div className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto">
                 <div className="flex h-fit w-full min-w-0 flex-col gap-16">
-                    {sectionAppearances && sectionAppearances.length > 0 ? (
+                    {sectionAppearancesSorted &&
+                    sectionAppearancesSorted.length > 0 ? (
                         <>
                             {sectionAppearancesSorted.map((appearance) => (
                                 <AppearanceEditor
