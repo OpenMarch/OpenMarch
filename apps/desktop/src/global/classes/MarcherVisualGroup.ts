@@ -3,12 +3,7 @@ import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 import Marcher from "@/global/classes/Marcher";
-import {
-    getSectionAppearance,
-    SectionAppearance,
-} from "@/global/classes/SectionAppearance";
-// import EditablePath from "./canvasObjects/EditablePath";
-import { FieldTheme } from "@openmarch/core";
+import { AppearanceComponentOptional } from "@/entity-components/appearance";
 
 /**
  * MarcherVisualGroup is a class that contains all the visual elements of a marcher.
@@ -28,27 +23,28 @@ export default class MarcherVisualGroup {
     nextMidpoint: Midpoint;
     previousEndPoint: Endpoint;
     nextEndPoint: Endpoint;
+    appearances: AppearanceComponentOptional[];
 
     /**
      * Creates a new MarcherVisualGroup instance.
      * @param marcher the marcher this visual group is associated with
-     * @param sectionAppearance section appearances to apply to the visuals
+     * @param appearances section appearances to apply to the visuals
      */
     constructor({
         marcher,
-        sectionAppearance,
-        fieldTheme,
+        appearances,
     }: {
         marcher: Marcher;
-        sectionAppearance?: SectionAppearance;
-        fieldTheme: FieldTheme;
+        appearances?:
+            | AppearanceComponentOptional
+            | AppearanceComponentOptional[];
     }) {
         this.marcherId = marcher.id;
 
         this.canvasMarcher = new CanvasMarcher({
             marcher: marcher,
             coordinate: { x: 0, y: 0 },
-            sectionAppearance: sectionAppearance,
+            appearances,
         });
 
         this.previousPathway = new Pathway({
@@ -94,6 +90,11 @@ export default class MarcherVisualGroup {
             dotRadius: 3,
             color: "black",
         });
+        this.appearances = appearances
+            ? Array.isArray(appearances)
+                ? appearances
+                : [appearances]
+            : [];
     }
 
     // Getters
@@ -118,31 +119,33 @@ export default class MarcherVisualGroup {
     getNextEndpoint() {
         return this.nextEndPoint;
     }
-}
-
-/**
- * Creates a MarcherVisualGroup for each marcher in the receivedMarchers array.
- * Updates existing visuals or creates new ones as needed.
- */
-export function marcherVisualsFromMarchers({
-    receivedMarchers,
-    sectionAppearances,
-    fieldTheme,
-}: {
-    receivedMarchers: Marcher[];
-    sectionAppearances?: SectionAppearance[];
-    fieldTheme: FieldTheme;
-}): Record<number, MarcherVisualGroup> {
-    const newVisuals: Record<number, MarcherVisualGroup> = {};
-    for (const marcher of receivedMarchers) {
-        const appearance = sectionAppearances
-            ? getSectionAppearance(marcher.section, sectionAppearances)
-            : undefined;
-        newVisuals[marcher.id] = new MarcherVisualGroup({
-            marcher,
-            sectionAppearance: appearance,
-            fieldTheme,
-        });
+    getAppearances() {
+        return this.appearances;
     }
-    return newVisuals;
+    static isHidden(
+        appearancesInput:
+            | AppearanceComponentOptional[]
+            | AppearanceComponentOptional,
+    ) {
+        const appearances = Array.isArray(appearancesInput)
+            ? appearancesInput
+            : [appearancesInput];
+
+        let visible: boolean;
+        if (appearances.length > 0)
+            if (appearances.length > 1 && appearances[0].visible) {
+                // If there is more than one appearance, and the marcherPage appearance is true, use the next one
+                // This is because the marcherPage will almost always be visible
+                visible = appearances[1].visible;
+            } else {
+                visible = appearances[0].visible;
+            }
+        else visible = true;
+
+        return !visible;
+    }
+
+    isHidden() {
+        return MarcherVisualGroup.isHidden(this.appearances);
+    }
 }

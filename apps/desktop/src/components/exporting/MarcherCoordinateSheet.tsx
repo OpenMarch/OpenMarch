@@ -55,9 +55,9 @@ export default function MarcherCoordinateSheetPreview({
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const [marcherToUse, setMarcherToUse] = useState<Marcher>();
     const [pagesToUse, setPagesToUse] = useState<Page[]>([]);
-    const [marcherPagesToUse, setMarcherPagesToUse] = useState<MarcherPage[]>(
-        [],
-    );
+    const [marcherPagesToUse, setMarcherPagesToUse] = useState<
+        Pick<MarcherPage, "id" | "marcher_id" | "page_id" | "x" | "y">[]
+    >([]);
 
     const t = tolgee.t;
 
@@ -184,13 +184,6 @@ export default function MarcherCoordinateSheetPreview({
                     page_id: 1,
                     x: fieldProperties.centerFrontPoint.xPixels,
                     y: fieldProperties.centerFrontPoint.yPixels,
-                    path_data_id: null,
-                    path_start_position: null,
-                    path_end_position: null,
-                    notes: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    rotation_degrees: 0,
                 },
                 {
                     id: 2,
@@ -202,13 +195,6 @@ export default function MarcherCoordinateSheetPreview({
                     y:
                         fieldProperties.centerFrontPoint.yPixels +
                         2 * pixelsPerStep,
-                    path_data_id: null,
-                    path_start_position: null,
-                    path_end_position: null,
-                    notes: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    rotation_degrees: 0,
                 },
                 {
                     id: 3,
@@ -222,13 +208,6 @@ export default function MarcherCoordinateSheetPreview({
                         (fieldProperties.yCheckpoints[0].stepsFromCenterFront *
                             pixelsPerStep -
                             2.32 * pixelsPerStep),
-                    path_data_id: null,
-                    path_start_position: null,
-                    path_end_position: null,
-                    notes: null,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString(),
-                    rotation_degrees: 0,
                 },
             ]);
         } else {
@@ -262,7 +241,10 @@ export default function MarcherCoordinateSheetPreview({
 interface StaticCoordinateSheetProps {
     marcher: Marcher;
     pages: Page[];
-    marcherPages: MarcherPage[];
+    marcherPages: Pick<
+        MarcherPage,
+        "id" | "marcher_id" | "page_id" | "x" | "y"
+    >[];
     fieldProperties: FieldProperties;
     includeMeasures?: boolean;
 
@@ -326,8 +308,7 @@ export function StaticMarcherCoordinateSheet({
     const [marcherState, setMarcherState] = useState<Marcher>(marcher);
     const [fieldPropertiesState, setFieldPropertiesState] =
         useState<FieldProperties>(fieldProperties);
-    const [marcherPagesState, setMarcherPagesState] =
-        useState<MarcherPage[]>(marcherPages);
+    const [marcherPagesState, setMarcherPagesState] = useState(marcherPages);
     const [pagesState, setPagesState] = useState<Page[]>(pages);
     const [includeMeasuresState, setIncludeMeasures] =
         useState<boolean>(includeMeasures);
@@ -542,80 +523,77 @@ export function StaticMarcherCoordinateSheet({
                             </tr>
                         </thead>
                         <tbody>
-                            {marcherPagesState.map(
-                                (marcherPage: MarcherPage) => {
-                                    if (!fieldPropertiesState) return null;
+                            {marcherPagesState.map((marcherPage) => {
+                                if (!fieldPropertiesState) return null;
 
-                                    const page = pagesState.find(
-                                        (page) =>
-                                            page.id === marcherPage.page_id,
-                                    );
-                                    const rCoords = new ReadableCoords({
-                                        x: marcherPage.x,
-                                        y: marcherPage.y,
-                                        roundingDenominator:
-                                            roundingDenominatorState,
-                                    });
+                                const page = pagesState.find(
+                                    (page) => page.id === marcherPage.page_id,
+                                );
+                                const rCoords = new ReadableCoords({
+                                    x: marcherPage.x,
+                                    y: marcherPage.y,
+                                    roundingDenominator:
+                                        roundingDenominatorState,
+                                });
 
-                                    if (!page || !rCoords) return null;
+                                if (!page || !rCoords) return null;
 
-                                    return (
-                                        <tr key={marcherPage.id}>
+                                return (
+                                    <tr key={marcherPage.id}>
+                                        <td
+                                            className="text-center"
+                                            aria-label="page name"
+                                            style={{
+                                                ...thTdStyle,
+                                            }}
+                                        >
+                                            {page.name}
+                                        </td>
+                                        <td
+                                            className="text-center"
+                                            aria-label="page counts"
+                                            style={{
+                                                ...thTdStyle,
+                                            }}
+                                        >
+                                            {page.counts}
+                                        </td>
+                                        {includeMeasuresState && (
                                             <td
                                                 className="text-center"
-                                                aria-label="page name"
+                                                aria-label="page measures"
                                                 style={{
                                                     ...thTdStyle,
                                                 }}
                                             >
-                                                {page.name}
+                                                {measureRangeString(page)}
                                             </td>
-                                            <td
-                                                className="text-center"
-                                                aria-label="page counts"
-                                                style={{
-                                                    ...thTdStyle,
-                                                }}
-                                            >
-                                                {page.counts}
-                                            </td>
-                                            {includeMeasuresState && (
-                                                <td
-                                                    className="text-center"
-                                                    aria-label="page measures"
-                                                    style={{
-                                                        ...thTdStyle,
-                                                    }}
-                                                >
-                                                    {measureRangeString(page)}
-                                                </td>
-                                            )}
-                                            <td
-                                                aria-label="x coordinate"
-                                                style={{
-                                                    ...thTdStyle,
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                {terseState
-                                                    ? rCoords.toTerseStringX()
-                                                    : rCoords.toVerboseStringX()}
-                                            </td>
-                                            <td
-                                                aria-label="y coordinate"
-                                                style={{
-                                                    ...thTdStyle,
-                                                    textAlign: "left",
-                                                }}
-                                            >
-                                                {terseState
-                                                    ? rCoords.toTerseStringY()
-                                                    : rCoords.toVerboseStringY()}
-                                            </td>
-                                        </tr>
-                                    );
-                                },
-                            )}
+                                        )}
+                                        <td
+                                            aria-label="x coordinate"
+                                            style={{
+                                                ...thTdStyle,
+                                                textAlign: "left",
+                                            }}
+                                        >
+                                            {terseState
+                                                ? rCoords.toTerseStringX()
+                                                : rCoords.toVerboseStringX()}
+                                        </td>
+                                        <td
+                                            aria-label="y coordinate"
+                                            style={{
+                                                ...thTdStyle,
+                                                textAlign: "left",
+                                            }}
+                                        >
+                                            {terseState
+                                                ? rCoords.toTerseStringY()
+                                                : rCoords.toVerboseStringY()}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
                         </tbody>
                     </table>
                 </>

@@ -11,3 +11,4 @@ export * from "./sectionAppearance";
 export * from "./shapes";
 export * from "./shapePages";
 export * from "./shapePageMarchers";
+export * from "./tag";

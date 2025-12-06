@@ -5,8 +5,8 @@ import NewMarcherForm from "./NewMarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
-import SectionAppearanceList from "./section/SectionAppearanceList";
 import { T } from "@tolgee/react";
+import { AppearanceModalContents } from "./appearance/AppearanceModal";
 
 export default function MarchersModal() {
     return (
@@ -30,12 +30,15 @@ export function MarcherListContents() {
                 <div className="flex items-center gap-8">
                     <Button
                         onClick={() => {
-                            setContent(<SectionAppearanceList />, "marchers");
+                            setContent(
+                                <AppearanceModalContents />,
+                                "marcher-appearance",
+                            );
                         }}
                         size="compact"
                         variant="secondary"
                     >
-                        <T keyName="marchers.sectionStyles" />
+                        <T keyName="marchers.marcherAppearance" />
                     </Button>
                     <Button
                         onClick={() => {

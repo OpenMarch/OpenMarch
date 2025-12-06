@@ -19,6 +19,7 @@ import {
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherPageKeys } from "./useMarcherPages";
+import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
 
 const { marchers } = schema;
 
@@ -83,13 +84,16 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newMarchers: NewMarcherArgs[]) =>
             createMarchers({ db, newMarchers }),
-        onSuccess: (_, variables) => {
+        onSuccess: async (_, variables) => {
             // Invalidate all marcher queries
-            void qc.invalidateQueries({
+            await qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
             void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
+            });
+            void qc.invalidateQueries({
+                queryKey: marcherWithVisualsKeys.all(),
             });
         },
         onError: (e, variables) => {

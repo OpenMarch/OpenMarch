@@ -20,7 +20,7 @@ import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
-import { MarcherVisualMap } from "@/hooks";
+import { MarcherVisualMap } from "@/hooks/queries";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -1362,7 +1362,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         y: number;
         denominator?: number;
     }) => {
-        const fakeMarcherPage: MarcherPage = {
+        const fakeMarcherPage: Partial<MarcherPage> = {
             marcher_id: -1,
             x,
             y,
@@ -1378,7 +1378,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         };
 
         const response = CoordinateActions.getRoundCoordinates({
-            marcherPages: [fakeMarcherPage],
+            marcherPages: [fakeMarcherPage as MarcherPage],
             denominator,
             fieldProperties: this.fieldProperties,
             xAxis: true,

@@ -22,6 +22,9 @@ const tablesWithHistory = [
     schema.field_properties,
     schema.section_appearances,
     schema.utility,
+    schema.tags,
+    schema.tag_appearances,
+    schema.marcher_tags,
 ];
 
 /**

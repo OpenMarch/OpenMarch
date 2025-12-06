@@ -152,6 +152,7 @@ module.exports = {
         "bbox",
         "localappdata",
         "VMEA",
+        "overscan",
     ],
     ignorePaths: [
         "node_modules/**",

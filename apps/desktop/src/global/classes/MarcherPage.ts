@@ -1,24 +1,35 @@
 import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { schema } from "../database/db";
-import type Page from "./Page";
-import { DbConnection, DbTransaction } from "@/db-functions/types";
+import {
+    AppearanceComponent,
+    appearanceModelRawToParsed,
+} from "@/entity-components/appearance";
 
 const { marcher_pages } = schema;
 
 // Define types from the existing schema
-export type DatabaseMarcherPageBase = typeof marcher_pages.$inferSelect;
-export type DatabaseMarcherPage = DatabaseMarcherPageBase;
+export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
 
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export default interface MarcherPage extends DatabaseMarcherPageBase {
+export default interface MarcherPage extends AppearanceComponent {
+    readonly id: number;
     readonly isLocked?: boolean;
     readonly lockedReason?: string;
     readonly marcher_id: number;
     readonly page_id: number;
+    readonly x: number;
+    readonly y: number;
+    readonly notes: string | null;
+    readonly path_data_id: number | null;
+    readonly path_start_position: number | null;
+    readonly path_end_position: number | null;
+    readonly rotation_degrees: number;
+    readonly created_at: string;
+    readonly updated_at: string;
 }
 
 /**
@@ -70,29 +81,9 @@ export function getByMarcherAndPageId(
 
 export function databaseMarcherPagesToMarcherPages(
     databaseMarcherPages: DatabaseMarcherPage[],
-    pages?: Page[],
 ): MarcherPage[] {
-    return databaseMarcherPages;
+    return databaseMarcherPages.map((databaseMarcherPage) => ({
+        ...databaseMarcherPage,
+        ...appearanceModelRawToParsed(databaseMarcherPage),
+    }));
 }
-
-// export const marcherPagesToPath = ({
-//     startMarcherPage,
-//     endMarcherPage,
-// }: {
-//     startMarcherPage: MarcherPage;
-//     endMarcherPage: MarcherPage;
-// }): Path => {
-//     if (!endMarcherPage.path_data_id) {
-//         return new Path([
-//             new Spline([
-//                 { x: startMarcherPage.x, y: startMarcherPage.y },
-//                 {
-//                     x: (startMarcherPage.x + endMarcherPage.x) / 2,
-//                     y: (startMarcherPage.y + endMarcherPage.y) / 2,
-//                 },
-//                 { x: endMarcherPage.x, y: endMarcherPage.y },
-//             ]),
-//         ]);
-//     }
-//     return endMarcherPage.path_data;
-// };

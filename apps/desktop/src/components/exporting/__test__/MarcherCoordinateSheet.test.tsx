@@ -6,7 +6,10 @@ import Marcher from "@/global/classes/Marcher";
 import { describe, expect, it, afterEach, beforeAll } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
-import { databaseMarcherPagesToMarcherPages } from "@/global/classes/MarcherPage";
+import {
+    DatabaseMarcherPage,
+    databaseMarcherPagesToMarcherPages,
+} from "@/global/classes/MarcherPage";
 
 const Providers = ({ children }: { children: React.ReactNode }) => (
     <TolgeeProvider
@@ -29,7 +32,7 @@ describe("StaticMarcherCoordinateSheet", () => {
 
     // Convert DatabaseMarcherPage[] to MarcherPage[] for the component
     const mockMarcherPages = databaseMarcherPagesToMarcherPages(
-        globalMocks.mockMarcherPages,
+        globalMocks.mockMarcherPages as DatabaseMarcherPage[],
     );
 
     afterEach(() => {

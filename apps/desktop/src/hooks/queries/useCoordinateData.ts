@@ -129,11 +129,11 @@ export const coordinateDataQueryOptions = (
         queryKey: coordinateDataKeys.byPage(page),
         queryFn: async () => {
             // Ensure deps exist (fetch if missing/stale)
-            const marcherPagesPromise = qc.ensureQueryData(
+            const marcherPagesPromise = qc.fetchQuery(
                 marcherPagesByPageQueryOptions(page.id),
             );
 
-            const pathwaysPromise = qc.ensureQueryData(
+            const pathwaysPromise = qc.fetchQuery(
                 pathwaysByPageQueryOptions(page.id),
             );
 

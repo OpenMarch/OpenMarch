@@ -3,7 +3,7 @@ import { SECTIONS } from "@/global/classes/Sections";
 import { DatabaseBeat } from "@/db-functions/beat";
 import { DatabaseMeasure } from "@/db-functions/measures";
 import { DatabasePage } from "@/db-functions/page";
-import { DatabaseMarcherPage } from "@/db-functions/marcherPage";
+import { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
 import { faker } from "@faker-js/faker";
 import { TimingObjects } from "@/hooks";
 import { FieldProperties } from "@openmarch/core";
@@ -397,7 +397,7 @@ const createMarcherPage = (
         rotation_degrees: rotationDegrees,
         created_at: faker.date.recent().toISOString(),
         updated_at: faker.date.recent().toISOString(),
-    };
+    } as DatabaseMarcherPage;
 };
 
 // Helper function to convert field properties to bounds

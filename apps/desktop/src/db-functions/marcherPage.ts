@@ -11,7 +11,8 @@ import {
     getSpmMapByPageId,
     ShapePageMarcher,
 } from "./shapePageMarchers";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
+import { appearanceModelRawToParsed } from "@/entity-components/appearance";
 
 const { marcher_pages } = schema;
 
@@ -21,9 +22,6 @@ type MarcherPageIdentifier =
           pageId: number;
       }
     | { marcherPageId: number };
-
-// Define types from the existing schema - remove pathway fields from base type
-export type DatabaseMarcherPage = typeof schema.marcher_pages.$inferSelect;
 
 /**
  * Filters for the marcherPageQueries.getAll function
@@ -146,8 +144,8 @@ export async function updateMarcherPagesInTransaction({
 }: {
     tx: DbTransaction;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
-}): Promise<DatabaseMarcherPage[]> {
-    const results: DatabaseMarcherPage[] = [];
+}): Promise<number[]> {
+    const updatedIds: number[] = [];
 
     for (const modifiedMarcherPage of modifiedMarcherPages) {
         const { marcher_id, page_id, ...updateData } = modifiedMarcherPage;
@@ -163,17 +161,9 @@ export async function updateMarcherPagesInTransaction({
             )
             .returning({
                 id: marcher_pages.id,
-                marcher_id: marcher_pages.marcher_id,
-                page_id: marcher_pages.page_id,
+                path_data_id: marcher_pages.path_data_id,
                 x: marcher_pages.x,
                 y: marcher_pages.y,
-                created_at: marcher_pages.created_at,
-                updated_at: marcher_pages.updated_at,
-                path_data_id: marcher_pages.path_data_id,
-                path_start_position: marcher_pages.path_start_position,
-                path_end_position: marcher_pages.path_end_position,
-                notes: marcher_pages.notes,
-                rotation_degrees: marcher_pages.rotation_degrees,
             })
             .get();
 
@@ -205,10 +195,10 @@ export async function updateMarcherPagesInTransaction({
             });
         }
 
-        results.push(currentMarcherPage);
+        updatedIds.push(currentMarcherPage.id);
     }
 
-    return results;
+    return updatedIds;
 }
 
 export async function updateMarcherPages({
@@ -217,7 +207,7 @@ export async function updateMarcherPages({
 }: {
     db: DbConnection;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
-}): Promise<DatabaseMarcherPage[]> {
+}): Promise<number[]> {
     const transactionResult = await transactionWithHistory(
         db,
         "updateMarcherPages",
@@ -391,6 +381,7 @@ export const lockedDecorator = (
         }
         return {
             ...marcherPage,
+            ...appearanceModelRawToParsed(marcherPage),
             isLocked,
             lockedReason,
         };

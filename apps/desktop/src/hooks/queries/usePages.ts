@@ -19,6 +19,8 @@ import {
     createLastPage,
     NewPageArgs,
     ModifiedPageArgs,
+    getPagesInOrder,
+    DatabasePageWithBeat,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
@@ -36,6 +38,7 @@ const KEY_BASE = "pages";
 export const pageKeys = {
     /** This should almost never be used unless you absolutely need every page in the show at one time */
     all: () => [KEY_BASE] as const,
+    inOrder: () => [KEY_BASE, "in_order"] as const,
     byId: (pageId: number) => [KEY_BASE, "id", pageId] as const,
     byStartBeat: (startBeat: number) =>
         [KEY_BASE, "startBeat", startBeat] as const,
@@ -234,5 +237,13 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
                 variables,
             );
         },
+    });
+};
+
+export const pagesInOrderQueryOptions = () => {
+    return queryOptions<DatabasePageWithBeat[]>({
+        queryKey: pageKeys.inOrder(),
+        queryFn: async () => await getPagesInOrder({ tx: db }),
+        staleTime: DEFAULT_STALE_TIME,
     });
 };

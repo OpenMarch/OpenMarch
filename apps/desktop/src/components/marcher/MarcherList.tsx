@@ -1,11 +1,12 @@
 import {
-    useCallback,
+    RefObject,
     useEffect,
     useMemo,
     useRef,
     useState,
     type MutableRefObject,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFormProps } from "../../global/Interfaces";
 import Marcher from "@/global/classes/Marcher";
 import { SECTIONS, getTranslatedSectionName } from "@/global/classes/Sections";
@@ -183,7 +184,7 @@ export default function MarcherList({
                     event.preventDefault();
                     void handleSubmit();
                 }}
-                className="text-body text-text flex flex-col gap-16 select-text"
+                className="text-body text-text flex h-full flex-col gap-16 select-text"
             >
                 <div className="flex w-full items-center justify-between">
                     <p className="text-body text-text">
@@ -269,7 +270,7 @@ export default function MarcherList({
                 </div>
                 <div
                     id="table"
-                    className="flex h-fit w-[27rem] min-w-0 flex-col gap-10"
+                    className="flex min-h-0 w-[27rem] min-w-0 flex-1 flex-col gap-10"
                 >
                     {localMarchers && marchers.length > 0 && (
                         <>
@@ -290,19 +291,16 @@ export default function MarcherList({
                                     </p>
                                 </div>
                             </div>
-                            {localMarchers.map((marcher) => (
-                                <MarcherRow
-                                    key={marcher.id}
-                                    marcher={marcher}
-                                    isEditing={isEditing}
-                                    onChange={handleChange}
-                                    onDelete={handleDeleteMarcher}
-                                    sectionOptions={sectionOptions}
-                                    sectionLabelMap={sectionLabelMap}
-                                    selectPlaceholder={selectPlaceholder}
-                                    changesRef={changesRef}
-                                />
-                            ))}
+                            <VirtualizedMarcherRows
+                                localMarchers={localMarchers}
+                                isEditing={isEditing}
+                                handleChange={handleChange}
+                                handleDeleteMarcher={handleDeleteMarcher}
+                                sectionOptions={sectionOptions}
+                                sectionLabelMap={sectionLabelMap}
+                                selectPlaceholder={selectPlaceholder}
+                                changesRef={changesRef}
+                            />
                         </>
                     )}
                 </div>
@@ -313,6 +311,83 @@ export default function MarcherList({
             <p className="text-body text-text/90">
                 <T keyName="marchers.list.noMarchers" />
             </p>
+        </div>
+    );
+}
+
+interface VirtualizedMarcherRowsProps {
+    localMarchers: Marcher[];
+    isEditing: boolean;
+    handleChange: (value: string, attribute: string, marcherId: number) => void;
+    handleDeleteMarcher: (marcherId: number) => void;
+    sectionOptions: SectionOption[];
+    sectionLabelMap: Record<string, string>;
+    selectPlaceholder: string;
+    changesRef: RefObject<{ [key: number | string]: unknown }>;
+}
+
+const ROW_HEIGHT = 34;
+
+function VirtualizedMarcherRows({
+    localMarchers,
+    isEditing,
+    handleChange,
+    handleDeleteMarcher,
+    sectionOptions,
+    sectionLabelMap,
+    selectPlaceholder,
+    changesRef,
+}: VirtualizedMarcherRowsProps) {
+    const parentRef = useRef<HTMLDivElement>(null);
+
+    const rowVirtualizer = useVirtualizer({
+        count: localMarchers.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => ROW_HEIGHT,
+        overscan: 5,
+    });
+
+    return (
+        <div
+            ref={parentRef}
+            className="flex-1 overflow-auto pr-8"
+            style={{ minHeight: 0 }}
+        >
+            <div
+                style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: "100%",
+                    position: "relative",
+                }}
+            >
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => {
+                    const marcher = localMarchers[virtualItem.index];
+                    return (
+                        <div
+                            key={marcher.id}
+                            style={{
+                                position: "absolute",
+                                top: 0,
+                                left: 0,
+                                width: "100%",
+                                height: `${virtualItem.size}px`,
+                                transform: `translateY(${virtualItem.start}px)`,
+                            }}
+                        >
+                            <MarcherRow
+                                marcher={marcher}
+                                isEditing={isEditing}
+                                onChange={handleChange}
+                                onDelete={handleDeleteMarcher}
+                                sectionOptions={sectionOptions}
+                                sectionLabelMap={sectionLabelMap}
+                                selectPlaceholder={selectPlaceholder}
+                                changesRef={changesRef}
+                            />
+                        </div>
+                    );
+                })}
+            </div>
         </div>
     );
 }
@@ -338,7 +413,6 @@ function MarcherRow({
     selectPlaceholder,
     changesRef,
 }: MarcherRowProps) {
-    const { ref, isVisible } = useVisibilityObserver();
     const pendingChanges =
         (changesRef.current[marcher.id] as Record<string, unknown>) || {};
     const pendingSection =
@@ -346,7 +420,6 @@ function MarcherRow({
     const pendingName =
         (pendingChanges.name as string | undefined) ?? marcher.name ?? "";
 
-    const shouldRenderInputs = isEditing && isVisible;
     const sectionLabel =
         (pendingSection && sectionLabelMap[pendingSection]) ||
         sectionLabelMap[marcher.section] ||
@@ -357,7 +430,6 @@ function MarcherRow({
             data-testid={`marcher row`}
             id={`${marcher.drill_number} marcher row`}
             className="flex items-center gap-4"
-            ref={ref}
         >
             <div className="w-[13%]" data-testid="marcher-drill-number">
                 <p className="text-body text-text font-mono">
@@ -365,7 +437,7 @@ function MarcherRow({
                 </p>
             </div>
             <div className="w-[45%]" data-testid="marcher section">
-                {shouldRenderInputs ? (
+                {isEditing ? (
                     <Select
                         defaultValue={pendingSection}
                         aria-label="Marcher section input"
@@ -396,7 +468,7 @@ function MarcherRow({
                 )}
             </div>
             <div className="flex w-[45%] items-center gap-6">
-                {shouldRenderInputs ? (
+                {isEditing ? (
                     <Input
                         className="w-full"
                         type="text"
@@ -418,7 +490,7 @@ function MarcherRow({
                         {pendingName}
                     </p>
                 )}
-                {shouldRenderInputs && (
+                {isEditing && (
                     <Button
                         variant="red"
                         size="compact"
@@ -431,43 +503,4 @@ function MarcherRow({
             </div>
         </div>
     );
-}
-
-function useVisibilityObserver(rootMargin = "300px 0px") {
-    const [node, setNode] = useState<Element | null>(null);
-    const [isVisible, setIsVisible] = useState(false);
-
-    useEffect(() => {
-        if (!node) {
-            setIsVisible(false);
-            return;
-        }
-
-        if (
-            typeof window === "undefined" ||
-            !("IntersectionObserver" in window)
-        ) {
-            setIsVisible(true);
-            return;
-        }
-
-        const observer = new IntersectionObserver(
-            ([entry]) => {
-                setIsVisible(entry.isIntersecting);
-            },
-            { rootMargin },
-        );
-
-        observer.observe(node);
-
-        return () => {
-            observer.disconnect();
-        };
-    }, [node, rootMargin]);
-
-    const ref = useCallback((element: HTMLDivElement | null) => {
-        setNode(element);
-    }, []);
-
-    return { ref, isVisible };
 }

@@ -2,7 +2,10 @@ import { renderHook, act } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { AlignmentEvent, useAlignmentEventStore } from "../AlignmentEventStore";
 import { mockMarcherPages, mockMarchers } from "@/__mocks__/globalMocks";
-import { databaseMarcherPagesToMarcherPages } from "@/global/classes/MarcherPage";
+import {
+    DatabaseMarcherPage,
+    databaseMarcherPagesToMarcherPages,
+} from "@/global/classes/MarcherPage";
 
 describe("AlignmentEvent Store", () => {
     it("AlignmentEventStore - initial settings", async () => {
@@ -47,8 +50,9 @@ describe("AlignmentEvent Store", () => {
         const { result } = renderHook(() => useAlignmentEventStore());
 
         // Convert DatabaseMarcherPage[] to MarcherPage[] before using
-        const expectedMarcherPages =
-            databaseMarcherPagesToMarcherPages(mockMarcherPages);
+        const expectedMarcherPages = databaseMarcherPagesToMarcherPages(
+            mockMarcherPages as DatabaseMarcherPage[],
+        );
 
         act(() =>
             result.current.setAlignmentEventNewMarcherPages(
