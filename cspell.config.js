@@ -151,6 +151,7 @@ module.exports = {
         "toks",
         "bbox",
         "localappdata",
+        "VMEA",
     ],
     ignorePaths: [
         "node_modules/**",
@@ -177,6 +178,7 @@ module.exports = {
         "*.svg",
         "*.musicxml",
         "pnpm-workspace.yaml",
+        ".vscode/extensions.json",
     ],
     ignoreRegExpList: [
         "@[a-z\\-]+",
