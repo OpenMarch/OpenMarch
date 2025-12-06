@@ -1,14 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
     marcherPagesByPageQueryOptions,
     fieldPropertiesQueryOptions,
     shapePageMarchersQueryByPageIdOptions,
+    useUpdateSelectedMarchersOnSelectedPage,
+    type MarcherCoordinate,
 } from "@/hooks/queries";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import RegisteredActionButton from "../RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import {
+    Button,
     getButtonClassName,
     Input,
     Select,
@@ -23,6 +26,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
 import { T } from "@tolgee/react";
 import { useQuery } from "@tanstack/react-query";
+import type { FieldProperties } from "@openmarch/core";
 import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
@@ -34,6 +38,123 @@ import {
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 
+const DEFAULT_SORTING_THRESHOLD = 0.1;
+
+const getNumericValue = (value: MarcherCoordinate["x"]) => {
+    if (value == null) return 0;
+    if (typeof value === "number") return value;
+    const parsed = Number(value);
+    return Number.isNaN(parsed) ? 0 : parsed;
+};
+
+const evenlyDistributeHorizontally = ({
+    coordinates,
+    fieldProperties,
+    sortingThreshold = DEFAULT_SORTING_THRESHOLD,
+}: {
+    coordinates: MarcherCoordinate[];
+    fieldProperties: FieldProperties;
+    sortingThreshold?: number;
+}): MarcherCoordinate[] => {
+    if (coordinates.length === 0) return coordinates;
+
+    const threshold = fieldProperties.pixelsPerStep * sortingThreshold;
+    const getX = (coordinate: MarcherCoordinate) =>
+        getNumericValue(coordinate.x);
+    const getY = (coordinate: MarcherCoordinate) =>
+        getNumericValue(coordinate.y);
+
+    const marcherWithSmallestX = coordinates.reduce((min, coordinate) =>
+        getX(coordinate) < getX(min) ? coordinate : min,
+    );
+    const marcherWithLargestX = coordinates.reduce((max, coordinate) =>
+        getX(coordinate) > getX(max) ? coordinate : max,
+    );
+    const slopeDirection =
+        getY(marcherWithSmallestX) < getY(marcherWithLargestX) ? 1 : -1;
+
+    const sorted = [...coordinates].sort((a, b) => {
+        const xDiff = Math.abs(getX(a) - getX(b));
+        if (xDiff < threshold)
+            return slopeDirection > 0 ? getY(a) - getY(b) : getY(b) - getY(a);
+        return getX(a) - getX(b);
+    });
+
+    const firstX = getX(sorted[0]);
+    const lastX = getX(sorted[sorted.length - 1]);
+    const totalWidth = lastX - firstX;
+    const spaceBetween =
+        sorted.length > 1 ? totalWidth / (sorted.length - 1) : 0;
+
+    const updatedX = new Map<number, number>();
+    sorted.forEach((coordinate, index) => {
+        updatedX.set(coordinate.marcher_id, firstX + index * spaceBetween);
+    });
+
+    return coordinates.map((coordinate) => {
+        const newX = updatedX.get(coordinate.marcher_id);
+        if (newX == null) return coordinate;
+        return {
+            ...coordinate,
+            x: newX,
+        };
+    });
+};
+
+const evenlyDistributeVertically = ({
+    coordinates,
+    fieldProperties,
+    sortingThreshold = DEFAULT_SORTING_THRESHOLD,
+}: {
+    coordinates: MarcherCoordinate[];
+    fieldProperties: FieldProperties;
+    sortingThreshold?: number;
+}): MarcherCoordinate[] => {
+    if (coordinates.length === 0) return coordinates;
+
+    const threshold = fieldProperties.pixelsPerStep * sortingThreshold;
+    const getX = (coordinate: MarcherCoordinate) =>
+        getNumericValue(coordinate.x);
+    const getY = (coordinate: MarcherCoordinate) =>
+        getNumericValue(coordinate.y);
+
+    const marcherWithSmallestY = coordinates.reduce((min, coordinate) =>
+        getY(coordinate) < getY(min) ? coordinate : min,
+    );
+    const marcherWithLargestY = coordinates.reduce((max, coordinate) =>
+        getY(coordinate) > getY(max) ? coordinate : max,
+    );
+    const slopeDirection =
+        getX(marcherWithSmallestY) < getX(marcherWithLargestY) ? 1 : -1;
+
+    const sorted = [...coordinates].sort((a, b) => {
+        const yDiff = Math.abs(getY(a) - getY(b));
+        if (yDiff < threshold)
+            return slopeDirection > 0 ? getX(a) - getX(b) : getX(b) - getX(a);
+        return getY(a) - getY(b);
+    });
+
+    const firstY = getY(sorted[0]);
+    const lastY = getY(sorted[sorted.length - 1]);
+    const totalHeight = lastY - firstY;
+    const spaceBetween =
+        sorted.length > 1 ? totalHeight / (sorted.length - 1) : 0;
+
+    const updatedY = new Map<number, number>();
+    sorted.forEach((coordinate, index) => {
+        updatedY.set(coordinate.marcher_id, firstY + index * spaceBetween);
+    });
+
+    return coordinates.map((coordinate) => {
+        const newY = updatedY.get(coordinate.marcher_id);
+        if (newY == null) return coordinate;
+        return {
+            ...coordinate,
+            y: newY,
+        };
+    });
+};
+
 /**
  * Component that renders all alignment, distribution, and transformation buttons
  * for multiple selected marchers
@@ -43,9 +164,89 @@ interface AlignmentButtonsProps {
 }
 
 function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
+    const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
+    const [verticalStepInterval, setVerticalStepInterval] = useState("");
+    const { mutate: updateSelectedMarchers } =
+        useUpdateSelectedMarchersOnSelectedPage();
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const distributionDisabled = editingDisabled || !fieldProperties;
+
+    const parseStepInterval = useCallback((value: string) => {
+        const trimmed = value.trim();
+        if (!trimmed) return undefined;
+        const parsed = Number(trimmed);
+        if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+        return parsed;
+    }, []);
+
+    const handleHorizontalDistribute = useCallback(() => {
+        updateSelectedMarchers(({ currentCoordinates }) => {
+            if (currentCoordinates.length === 0) return currentCoordinates;
+            const stepValue = parseStepInterval(horizontalStepInterval);
+
+            if (!stepValue) {
+                if (!fieldProperties) return currentCoordinates;
+                return evenlyDistributeHorizontally({
+                    coordinates: currentCoordinates,
+                    fieldProperties,
+                });
+            }
+
+            if (!fieldProperties) return currentCoordinates;
+            const interval = stepValue * fieldProperties.pixelsPerStep;
+            const startingX = Number(currentCoordinates[0]?.x ?? 0);
+
+            return currentCoordinates.map((coordinate, index) => ({
+                ...coordinate,
+                x: startingX + index * interval,
+            }));
+        });
+    }, [
+        fieldProperties,
+        horizontalStepInterval,
+        parseStepInterval,
+        updateSelectedMarchers,
+    ]);
+
+    const handleVerticalDistribute = useCallback(() => {
+        updateSelectedMarchers(({ currentCoordinates }) => {
+            if (currentCoordinates.length === 0) return currentCoordinates;
+            const stepValue = parseStepInterval(verticalStepInterval);
+
+            if (!stepValue) {
+                if (!fieldProperties) return currentCoordinates;
+                return evenlyDistributeVertically({
+                    coordinates: currentCoordinates,
+                    fieldProperties,
+                });
+            }
+
+            if (!fieldProperties) return currentCoordinates;
+            const interval = stepValue * fieldProperties.pixelsPerStep;
+            const startingY = Number(currentCoordinates[0]?.y ?? 0);
+            const avgX =
+                currentCoordinates.reduce(
+                    (sum, marcher) => sum + (marcher.x as number),
+                    0,
+                ) / currentCoordinates.length;
+
+            return currentCoordinates.map((coordinate, index) => ({
+                ...coordinate,
+                x: avgX,
+                y: startingY + index * interval,
+            }));
+        });
+    }, [
+        fieldProperties,
+        parseStepInterval,
+        updateSelectedMarchers,
+        verticalStepInterval,
+    ]);
+
     return (
         <>
             {/* Align buttons */}
+            <h5 className="text-h5">Align</h5>
             <div className="flex gap-8">
                 <RegisteredActionButton
                     registeredAction={RegisteredActionsObjects.alignVertically}
@@ -104,40 +305,78 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                 </RegisteredActionButton>
             </div>
 
-            {/* Flip buttons */}
-            <div className="flex gap-8">
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.evenlyDistributeHorizontally
-                    }
-                    disabled={editingDisabled}
-                    className={clsx(
-                        getButtonClassName({
-                            variant: "secondary",
-                            size: "compact",
-                        }),
-                        "flex flex-1 items-center justify-center",
-                    )}
-                >
-                    <DotsThreeOutlineIcon size={16} weight="bold" />
-                </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.evenlyDistributeVertically
-                    }
-                    disabled={editingDisabled}
-                    className={clsx(
-                        getButtonClassName({
-                            variant: "secondary",
-                            size: "compact",
-                        }),
-                        "flex flex-1 items-center justify-center",
-                    )}
-                >
-                    <DotsThreeOutlineVerticalIcon size={16} weight="bold" />
-                </RegisteredActionButton>
+            {/* Distribute buttons */}
+            <div className="flex flex-col gap-8">
+                <h5 className="text-h5">Distribute</h5>
+                <div className="flex flex-1 items-center justify-center gap-4">
+                    <Button
+                        disabled={distributionDisabled}
+                        className={clsx(
+                            getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            }),
+                            "flex flex-1 items-center justify-center",
+                        )}
+                        onClick={handleHorizontalDistribute}
+                    >
+                        <DotsThreeOutlineIcon
+                            size={20}
+                            weight={
+                                horizontalStepInterval.trim()
+                                    ? "regular"
+                                    : "fill"
+                            }
+                        />
+                    </Button>
+                    <Input
+                        type="number"
+                        min={1}
+                        placeholder="Steps"
+                        value={horizontalStepInterval}
+                        onChange={(e) =>
+                            setHorizontalStepInterval(e.target.value)
+                        }
+                        compact
+                        className="w-8 flex-1 rounded border text-center text-xs"
+                        disabled={editingDisabled}
+                    />
+                </div>
+                <div className="flex flex-1 items-center justify-center gap-4">
+                    <Button
+                        disabled={distributionDisabled}
+                        className={clsx(
+                            getButtonClassName({
+                                variant: "secondary",
+                                size: "compact",
+                            }),
+                            "flex flex-1 items-center justify-center",
+                        )}
+                        onClick={handleVerticalDistribute}
+                    >
+                        <DotsThreeOutlineVerticalIcon
+                            size={20}
+                            weight={
+                                verticalStepInterval.trim() ? "regular" : "fill"
+                            }
+                        />
+                    </Button>
+                    <Input
+                        type="number"
+                        min={1}
+                        placeholder="Steps"
+                        value={verticalStepInterval}
+                        compact
+                        onChange={(e) =>
+                            setVerticalStepInterval(e.target.value)
+                        }
+                        className="w-8 flex-1 rounded border text-center text-xs"
+                        disabled={editingDisabled}
+                    />
+                </div>
             </div>
 
+            <hr className="border-stroke w-full border" />
             {/* Set Marcher Positions Dropdowns */}
             <div className="flex flex-col gap-8">
                 <Dropdown.Root>
