@@ -65,20 +65,22 @@ export default function TagAppearanceList({
             );
 
             if (!existingAppearance) {
-                // Create the tag appearance
-                void createTagAppearances([
+                // Create the tag appearance and wait for persistence
+                await createTagAppearances([
                     { tag_id: targetTagId, start_page_id: targetPageId },
                 ]);
-            }
-
-            // Wait for React to re-render with the new data, then scroll
-            await new Promise<void>((resolve) => {
-                requestAnimationFrame(() => {
+                // Allow React Query to invalidate and re-render
+                await queryClient.invalidateQueries();
+            } else {
+                // Appearance already exists, just wait for render cycle
+                await new Promise<void>((resolve) => {
                     requestAnimationFrame(() => {
-                        resolve();
+                        requestAnimationFrame(() => {
+                            resolve();
+                        });
                     });
                 });
-            });
+            }
 
             const pageElement = pageRefs.current.get(targetPageId);
             if (pageElement && scrollContainerRef.current) {
@@ -201,8 +203,9 @@ const SinglePageTagAppearanceList = React.forwardRef<
             const tagElement = tagAppearanceRefs.current.get(
                 targetAppearance.id,
             );
+            let scrollTimer: ReturnType<typeof setTimeout> | undefined;
             if (tagElement) {
-                setTimeout(() => {
+                scrollTimer = setTimeout(() => {
                     tagElement.scrollIntoView({
                         behavior: "smooth",
                         block: "center",
@@ -216,6 +219,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
             }, 1500);
 
             return () => {
+                if (scrollTimer) clearTimeout(scrollTimer);
                 clearTimeout(fadeOutTimer);
             };
         }

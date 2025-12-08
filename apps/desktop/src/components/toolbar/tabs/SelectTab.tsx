@@ -240,7 +240,7 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
     );
 
     return (
-        <ToolbarSection aria-label="Select sections">
+        <ToolbarSection aria-label="Select drill prefixes">
             <div className="flex gap-8">
                 {drillPrefixes.length > 0 ? (
                     drillPrefixes.map((drillPrefix, index) => (
@@ -293,7 +293,7 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
     );
 
     return (
-        <ToolbarSection aria-label="Select sections">
+        <ToolbarSection aria-label="Select families">
             <div className="flex gap-8">
                 {families.map((family, index) => (
                     <div key={family.name} className="flex items-center gap-8">
