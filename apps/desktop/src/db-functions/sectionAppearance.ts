@@ -72,6 +72,7 @@ const modifiedSectionAppearanceArgsToRealModifiedSectionAppearanceArgs = (
 ): RealModifiedSectionAppearanceArgs => {
     return {
         id: args.id,
+        section: args.section,
         ...appearanceModelParsedToRawOptional({
             ...args,
         }),

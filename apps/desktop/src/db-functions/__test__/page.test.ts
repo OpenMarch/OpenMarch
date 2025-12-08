@@ -2875,7 +2875,7 @@ describeDbTests("pages", (it) => {
         });
     });
 
-    describe.only("getPagesInOrder", () => {
+    describe("getPagesInOrder", () => {
         testWithHistory(
             "should return pages ordered by beat position ascending",
             async ({ db }) => {

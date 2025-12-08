@@ -96,16 +96,18 @@ export default function ColorPicker({
         }
     }, [defaultColor, onChange]);
 
-    const internalComponent = DefaultColorPicker({
-        currentColor,
-        initialColor,
-        handleBlur,
-        handleKeyDown,
-        handleClose,
-        setCurrentColor,
-        resetToDefault,
-        handleChange,
-    });
+    const internalComponent = (
+        <DefaultColorPicker
+            currentColor={currentColor}
+            initialColor={initialColor}
+            handleBlur={handleBlur}
+            handleKeyDown={handleKeyDown}
+            handleClose={handleClose}
+            setCurrentColor={setCurrentColor}
+            resetToDefault={resetToDefault}
+            handleChange={handleChange}
+        />
+    );
 
     if (doNotUseForm)
         return (
