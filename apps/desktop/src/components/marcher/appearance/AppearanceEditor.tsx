@@ -19,7 +19,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTolgee } from "@tolgee/react";
 import { RgbaColor } from "@uiw/react-color";
-import ColorPickerMini from "../../ui/ColorPickerMini";
+import ColorPickerMini from "@/components/ui/ColorPickerMini";
 import {
     AppearanceComponent,
     AppearanceComponentOptional,

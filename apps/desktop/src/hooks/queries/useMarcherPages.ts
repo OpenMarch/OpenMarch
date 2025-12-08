@@ -33,7 +33,6 @@ import { useTolgee } from "@tolgee/react";
 import { FieldProperties } from "@openmarch/core";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 import { appearanceModelRawToParsed } from "@/entity-components/appearance";
-import { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
 
 const KEY_BASE = "marcher_pages";
 
