@@ -453,13 +453,17 @@ const DeleteFromTagButton = ({
                 return;
             }
             const marcherTagIds = allMarcherTags
-                .filter((mt) => mt.tag_id === tagId)
+                .filter(
+                    (mt) =>
+                        mt.tag_id === tagId &&
+                        selectedMarcherIds.has(mt.marcher_id),
+                )
                 .map((mt) => mt.id);
             if (marcherTagIds) {
                 deleteMarcherTags(new Set(marcherTagIds));
             }
         },
-        [allMarcherTags, deleteMarcherTags],
+        [allMarcherTags, deleteMarcherTags, selectedMarcherIds],
     );
     if (!marcherTagsLoaded) return null;
     return (
