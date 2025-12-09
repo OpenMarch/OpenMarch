@@ -13,6 +13,15 @@ function processCommandExport(
     command.register(keyRegistry);
 }
 
+function overrideKeyBind(keyBoardRegistry: KeyboardRegistry) {
+    const userOverrides = fs.readFileSync("./userCommands.json", "utf-8");
+    const data: { id: string; key: string }[] = JSON.parse(userOverrides);
+
+    data.forEach((keyBind) => {
+        keyBoardRegistry.overrideKeyBind(keyBind.id, keyBind.key);
+    });
+}
+
 export const registerCommands = async (
     keyBindRegistry: KeyboardRegistry,
     commandRegistry: CommandRegistry,
@@ -22,9 +31,9 @@ export const registerCommands = async (
     for (const file of commandFiles) {
         if (file.endsWith(".ts")) {
             const module = await import(__dirname + `/commands/${file}`);
-            if (module.command.register === undefined)
+            if (module.command === undefined)
                 throw new Error(
-                    `Command file ${file} must export a register function`,
+                    `Command file ${file} must be named export or array of objects`,
                 );
 
             // single module export
@@ -60,4 +69,6 @@ export const registerCommands = async (
             }
         }
     }
+
+    overrideKeyBind(keyBindRegistry);
 };

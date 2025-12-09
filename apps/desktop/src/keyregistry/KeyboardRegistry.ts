@@ -30,6 +30,10 @@ class KeyboardRegistry {
 
         return bind.id;
     }
+
+    overrideKeyBind(id: string, newBind: string) {
+        this.keyBinds[id].key = newBind;
+    }
 }
 
 export default KeyboardRegistry;
