@@ -6,7 +6,10 @@ import { useTimingObjects } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import { updateShapePagesMutationOptions } from "@/hooks/queries";
+import {
+    marcherWithVisualsQueryOptions,
+    updateShapePagesMutationOptions,
+} from "@/hooks/queries";
 import {
     MarcherShape,
     marcherShapeToShapePageArgs,
@@ -30,23 +33,37 @@ function StateInitializer() {
         void queryClient.prefetchQuery(
             coordinateDataQueryOptions(selectedPage, queryClient),
         );
+        void queryClient.prefetchQuery(
+            marcherWithVisualsQueryOptions(selectedPage.id, queryClient),
+        );
         if (selectedPage.nextPageId != null) {
             const nextPage = pages.find(
                 (page) => page.id === selectedPage.nextPageId,
             );
-            if (nextPage)
+            if (nextPage) {
                 void queryClient.prefetchQuery(
                     coordinateDataQueryOptions(nextPage, queryClient),
                 );
+                void queryClient.prefetchQuery(
+                    marcherWithVisualsQueryOptions(nextPage.id, queryClient),
+                );
+            }
         }
         if (selectedPage.previousPageId != null) {
             const previousPage = pages.find(
                 (page) => page.id === selectedPage.previousPageId,
             );
-            if (previousPage)
+            if (previousPage) {
                 void queryClient.prefetchQuery(
                     coordinateDataQueryOptions(previousPage, queryClient),
                 );
+                void queryClient.prefetchQuery(
+                    marcherWithVisualsQueryOptions(
+                        previousPage.id,
+                        queryClient,
+                    ),
+                );
+            }
         }
     }
 

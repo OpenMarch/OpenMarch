@@ -435,6 +435,28 @@ export const getLastPage = async ({
         .get();
 };
 
+export type DatabasePageWithBeat = DatabasePage & { beatObject: DatabaseBeat };
+
+/**
+ * Returns in ascending order by the beat position.
+ */
+export const getPagesInOrder = async ({
+    tx,
+}: {
+    tx: DbConnection | DbTransaction;
+}): Promise<DatabasePageWithBeat[]> => {
+    const response = await tx
+        .select()
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.beats.id, schema.pages.start_beat))
+        .orderBy(asc(schema.beats.position))
+        .all();
+    return response.map(({ pages, beats }) => ({
+        ...realDatabasePageToDatabasePage(pages),
+        beatObject: realDatabaseBeatToDatabaseBeat(beats),
+    }));
+};
+
 /**
  * Ensure that the second beat of the show has a page associated with it.
  * This is crucial to run when deleting pages or beats to make sure beats aren't lost.

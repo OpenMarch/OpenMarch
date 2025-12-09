@@ -20,7 +20,7 @@ import {
     SelectTriggerCompact,
 } from "@openmarch/ui";
 import { StepSize } from "@/global/classes/StepSize";
-import MarcherRotationInput from "./MarcherRotationInput";
+import MarcherRotationInput from "./marcher/MarcherRotationInput";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { clsx } from "clsx";
@@ -37,6 +37,7 @@ import {
     CaretDownIcon,
 } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
+import { TagButtons } from "./marcher/TagEditor";
 
 const DEFAULT_SORTING_THRESHOLD = 0.1;
 
@@ -719,6 +720,16 @@ function MarcherEditor() {
                                     disabled={editingDisabled}
                                 />
                             </div>
+
+                            <TagButtons
+                                selectedMarcherIds={
+                                    new Set(
+                                        selectedMarchers.map(
+                                            (marcher) => marcher.id,
+                                        ),
+                                    )
+                                }
+                            />
                         </InspectorCollapsible>
                     ) : (
                         // One marcher selected
@@ -1007,6 +1018,11 @@ function MarcherEditor() {
                                         />
                                     </span>
                                 </div>
+                                <TagButtons
+                                    selectedMarcherIds={
+                                        new Set([selectedMarchers[0].id])
+                                    }
+                                />
                                 {/* This is here so the form submits when enter is pressed, does NOT need to be translated */}
                                 <button
                                     type="submit"

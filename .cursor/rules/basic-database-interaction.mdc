@@ -11,6 +11,25 @@ When adding new database table interactions in OpenMarch, **always create both a
 
 ## 📋 **Required Steps for New Tables**
 
+### 0. **Figure out if you're only creating 'inTransaction' functions**
+
+In a table management file, we typically have two types of database functions for `create`, `update`, and `delete`:
+
+1. `{action}TableItemInTransaction` - (e.g. `createItemInTransaction`)
+    1. Accepts a `DbTransaction` as a `tx` parameter
+    1. Where the core logic of the query is
+1. `{action}TableItem` - (e.g. `createItem`)
+    1. Accepts a `DbConnection` as a `db` parameter
+    1. Doesn't have much logic in it
+    1. Wraps the `...InTransaction` equivalent around a `transactionWithHistory`
+    1. Standalone function that uses its own history group
+
+These are separate to cater to different needs. If we provided the non-`InTransaction` function, we are expecting that function to be called a lot on its own.
+
+This is getting rarer and rarer as we often need database functions to be part of a larger transaction.
+
+Because of this **by default, you should only provide the `{action}InTransaction` functions, not the standalone ones.** Only deviate from this if the user explicitly asks. The examples below are just for you to use for reference in case they ask for it.
+
 ### 1. **Create Database Function File**
 
 Create a new file in `apps/desktop/src/db-functions/[tableName].ts`
@@ -90,7 +109,7 @@ const modified{tableName}ArgsToRealModified{tableName}Args = (
 export async function get{tableName}s({
     db,
 }: {
-    db: DbConnection;
+    db: DbConnection | DbTransaction;
 }): Promise<Database{tableName}[]> {
     const result = await db.query.table_name.findMany();
     return result.map(realDatabase{tableName}ToDatabase{tableName});
@@ -103,7 +122,7 @@ export async function get{tableName}ById({
     db,
     id,
 }: {
-    db: DbConnection;
+    db: DbConnection | DbTransaction;
     id: number;
 }): Promise<Database{tableName} | undefined> {
     const result = await db.query.table_name.findFirst({
@@ -117,6 +136,7 @@ export async function get{tableName}ById({
 /**
  * Creates new items in the database.
  */
+// ONLY PROVIDE STANDALONE FUNCTION IF USER ASKS FOR IT
 export async function create{tableName}s({
     newItems,
     db,
@@ -125,7 +145,7 @@ export async function create{tableName}s({
     db: DbConnection;
 }): Promise<Database{tableName}[]> {
     if (newItems.length === 0) {
-        console.log("No new items to create");
+        console.warn("No new items to create");
         return [];
     }
 
@@ -142,7 +162,10 @@ export async function create{tableName}s({
     return transactionResult;
 }
 
-const create{tableName}sInTransaction = async ({
+/**
+ * Creates new items in the database.
+ */
+export const create{tableName}sInTransaction = async ({
     newItems,
     tx,
 }: {
@@ -157,9 +180,7 @@ const create{tableName}sInTransaction = async ({
     return createdItems.map(realDatabase{tableName}ToDatabase{tableName});
 };
 
-/**
- * Updates existing items in the database.
- */
+// ONLY PROVIDE STANDALONE FUNCTION IF USER ASKS FOR IT
 export async function update{tableName}s({
     db,
     modifiedItems,
@@ -180,6 +201,9 @@ export async function update{tableName}s({
     return transactionResult;
 }
 
+/**
+ * Updates existing items in the database.
+ */
 export const update{tableName}sInTransaction = async ({
     modifiedItems,
     tx,
@@ -208,9 +232,7 @@ export const update{tableName}sInTransaction = async ({
     return updatedItems;
 };
 
-/**
- * Deletes items from the database.
- */
+// ONLY PROVIDE STANDALONE FUNCTION IF USER ASKS FOR IT
 export async function delete{tableName}s({
     itemIds,
     db,
@@ -233,7 +255,10 @@ export async function delete{tableName}s({
     return response;
 }
 
-const delete{tableName}sInTransaction = async ({
+/**
+ * Deletes items from the database.
+ */
+export const delete{tableName}sInTransaction = async ({
     itemIds,
     tx,
 }: {
@@ -512,7 +537,7 @@ export async function complexUpdate{tableName}s({
 - ✅ Create separate database function files and React Query hook files
 - ✅ Include proper TypeScript types with transformations
 - ✅ Use `transactionWithHistory` for all mutations
-- ✅ Put all of the core database login in a "inTransaction" function that takes a transaction as an argument
+- ✅ Put all of the core database logic in a "inTransaction" function that takes a transaction as an argument
 - ✅ Implement smart cache invalidation
 - ✅ Follow the established naming conventions
 - ✅ Include comprehensive error handling

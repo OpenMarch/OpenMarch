@@ -1,7 +1,6 @@
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { describe, expect, it } from "vitest";
 import {
-    DatabaseMarcherPage,
     getAllMarcherPages,
     getNextMarcherPage,
     getPreviousMarcherPage,
@@ -17,7 +16,7 @@ import {
     ShapePageMarcher,
 } from "..";
 import { faker } from "@faker-js/faker";
-import MarcherPage from "@/global/classes/MarcherPage";
+import MarcherPage, { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
 import { getTestWithHistory } from "@/test/history";
 import fc from "fast-check";
 import { _createMarcherShape } from "@/global/classes/canvasObjects/MarcherShape";
@@ -356,23 +355,30 @@ describeDbTests("marcherPage", (it) => {
 
 describe("lockedDecorator", () => {
     // Helper function to create a mock DatabaseMarcherPage
+    // Note: visible and label_visible use parsed boolean values since lockedDecorator
+    // returns MarcherPage (with parsed values) via appearanceModelRawToParsed
     const createMockMarcherPage = (
         overrides: Partial<DatabaseMarcherPage> = {},
-    ): DatabaseMarcherPage => ({
-        id: 1,
-        marcher_id: 1,
-        page_id: 1,
-        x: 100,
-        y: 200,
-        created_at: "2024-01-01T00:00:00Z",
-        updated_at: "2024-01-01T00:00:00Z",
-        path_data_id: null,
-        path_start_position: null,
-        path_end_position: null,
-        notes: null,
-        rotation_degrees: 0,
-        ...overrides,
-    });
+    ): DatabaseMarcherPage =>
+        ({
+            id: 1,
+            marcher_id: 1,
+            page_id: 1,
+            x: 100,
+            y: 200,
+            created_at: "2024-01-01T00:00:00Z",
+            updated_at: "2024-01-01T00:00:00Z",
+            path_data_id: null,
+            path_start_position: null,
+            path_end_position: null,
+            notes: null,
+            rotation_degrees: 0,
+            fill_color: null,
+            outline_color: null,
+            visible: false,
+            label_visible: false,
+            ...overrides,
+        }) as DatabaseMarcherPage;
 
     // Helper function to create a mock ShapePageMarcher
     const createMockShapePageMarcher = (

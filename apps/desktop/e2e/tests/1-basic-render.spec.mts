@@ -1,4 +1,4 @@
-import { expect } from "@playwright/test";
+import { expect, Page } from "@playwright/test";
 import { test } from "../fixtures.mjs";
 
 test("Launch page is visible", async ({ electronAppEmpty }) => {
@@ -34,6 +34,11 @@ test("Launch page sub-menus", async ({ electronAppEmpty }) => {
     await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 });
 
+const canvasIsVisible = async (page: Page) => {
+    await expect(page.getByText("Timeline")).toBeVisible();
+    await expect(page.locator("canvas").nth(1)).toBeVisible();
+};
+
 test("Canvas is visible", async ({ electronApp }) => {
     const { app, page } = electronApp;
     const isPackaged = await app.evaluate(async ({ app }) => {
@@ -43,17 +48,12 @@ test("Canvas is visible", async ({ electronApp }) => {
     });
 
     expect(isPackaged).toBe(false);
-    await expect(page.getByText("FileAlignmentView")).toBeVisible();
-    await expect(page.getByText("InspectorPage")).toBeVisible();
-    await expect(page.getByText("Timeline")).toBeVisible();
-    await expect(page.locator("canvas").nth(1)).toBeVisible();
+    await canvasIsVisible(page);
 });
 
 test("Toolbars are visible", async ({ electronApp }) => {
     const { page } = electronApp;
-    await expect(page.getByText("FileAlignmentView")).toBeVisible();
-    await expect(page.locator("canvas").nth(1)).toBeVisible();
-    await expect(page.getByText("InspectorPage")).toBeVisible();
+    await canvasIsVisible(page);
     await page.getByRole("tab", { name: "File" }).click();
     await expect(page.getByText("Open FileNew FileSave Copy")).toBeVisible();
     console.log("clicking view tab");
@@ -90,10 +90,7 @@ test("Sidebars are visible", async ({ electronApp }) => {
     await page.locator("#sidebar").getByRole("button").first().click();
     await expect(page.getByRole("heading", { name: "Marchers" })).toBeVisible();
     await expect(
-        page
-            .locator("#workspace div")
-            .filter({ hasText: "MarchersSection" })
-            .nth(1),
+        page.locator("#workspace div").filter({ hasText: "Marchers" }).nth(1),
     ).toBeVisible();
     await page.locator("#sidebar").getByRole("button").nth(1).click();
     await expect(page.locator("header")).toContainText("Music");

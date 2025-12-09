@@ -115,9 +115,7 @@ export const _cascadeDeleteMeasures = async (measures: Measure[]) => {
     const beatIdsToDelete = new Set(
         measures.flatMap((m) => m.beats.map((b) => b.id)),
     );
-    const pages = await queryClient.ensureQueryData(
-        allDatabasePagesQueryOptions(),
-    );
+    const pages = await queryClient.fetchQuery(allDatabasePagesQueryOptions());
     const pageIdsToDelete = new Set(
         pages.filter((p) => beatIdsToDelete.has(p.start_beat)).map((p) => p.id),
     );

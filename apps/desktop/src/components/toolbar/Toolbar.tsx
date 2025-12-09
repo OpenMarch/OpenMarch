@@ -10,6 +10,7 @@ import { T } from "@tolgee/react";
 import { WarningIcon } from "@phosphor-icons/react/dist/ssr";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
+import SelectTab from "./tabs/SelectTab";
 
 export default function Topbar() {
     const { isFullscreen } = useFullscreenStore();
@@ -59,9 +60,15 @@ export default function Topbar() {
                         <T keyName="inspector.shape.fileTab" />
                     </TabItem>
                     {!isFullscreen && (
-                        <TabItem value="alignment">
-                            <T keyName="inspector.shape.alignmentTab" />
-                        </TabItem>
+                        <>
+                            <TabItem value="alignment">
+                                <T keyName="inspector.shape.alignmentTab" />
+                            </TabItem>
+
+                            <TabItem value="select">
+                                <T keyName="inspector.shape.selectTab" />
+                            </TabItem>
+                        </>
                     )}
                     <TabItem value="view">
                         <T keyName="inspector.shape.viewTab" />
@@ -86,9 +93,15 @@ export default function Topbar() {
                 </TabContent>
 
                 {!isFullscreen && (
-                    <TabContent value="alignment">
-                        <AlignmentTab />
-                    </TabContent>
+                    <>
+                        <TabContent value="alignment">
+                            <AlignmentTab />
+                        </TabContent>
+
+                        <TabContent value="select">
+                            <SelectTab />
+                        </TabContent>
+                    </>
                 )}
 
                 <TabContent value="view">

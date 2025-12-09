@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "破棄",
+        "removeSetting": "設定を削除",
         "save": "保存"
     },
     "coordinateRoundingSettings": {
@@ -467,7 +468,8 @@
             "ungroupShapeButton": "グループ解除",
             "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません",
             "viewTab": "ビュー",
-            "shapesTab": "形状"
+            "shapesTab": "形状",
+            "selectTab": "選択"
         },
         "shapes": {
             "title": "形状",
@@ -532,7 +534,9 @@
         "editButton": "マーチャーズ 編集",
         "list": {
             "addSectionStyle": "セクションスタイルを追加",
+            "addTagAppearance": "タグの外観を追加",
             "deleteSectionStyle": "このセクションスタイルを削除",
+            "none": "なし",
             "discardChanges": "変更を破棄",
             "drillNumberTitle": "号",
             "fillColor": "塗り の色",
@@ -543,17 +547,21 @@
             "pendingChanges": "更新 するまで 下記 の 値 は適用 されない ことがあります",
             "saveChanges": "変更を保存",
             "sectionStyles": "セクション スタイル",
+            "sectionsInShow": "ショーのセクション",
             "sectionTitle": "セクション",
             "selectSection": "セクション",
-            "shape": "形状"
+            "shape": "形状",
+            "allSections": "すべてのセクション"
         },
         "listTitle": "リスト",
         "quantity": "数量",
         "section": "セクション",
+        "sectionText": "セクション",
         "sectionError": {
             "chooseSection": "セクションを選択してください"
         },
-        "sectionStyles": "セクションスタイル",
+        "marcherAppearance": "マーチャーの外観",
+        "tagText": "タグ",
         "title": "マーチャーズ"
     },
     "music": {
@@ -620,6 +628,14 @@
     },
     "section": {
         "drumMajor": "ドラム メジャー",
+        "family": {
+            "woodwind": "木管楽器",
+            "brass": "金管楽器",
+            "battery": "バッテリー",
+            "guard": "ガード",
+            "other": "その他",
+            "pit": "ピット"
+        },
         "guard": {
             "colorGuard": "カラー ガード",
             "dancer": "ダンサー",
@@ -766,6 +782,18 @@
             "nextPaths": "次の パス",
             "previousPaths": "前の パス",
             "uiSettingsToolbar": "UI 設定 ツールバー"
+        },
+        "select": {
+            "selectByText": "選択方法",
+            "selectBy": {
+                "section": "セクション",
+                "drillPrefix": "ドリル プレフィックス",
+                "family": "ファミリー",
+                "tag": "タグ"
+            },
+            "noSectionsToSelect": "選択できるセクションが見つかりません",
+            "noTagsToSelect": "選択できるタグが見つかりません",
+            "noDrillPrefixesToSelect": "選択できるドリルプレフィックスが見つかりません"
         }
     },
     "versionCheck": {

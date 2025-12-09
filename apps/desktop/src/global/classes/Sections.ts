@@ -52,13 +52,15 @@ class Section {
     }
 }
 
-class SectionFamily {
+export class SectionFamily {
     private static currentScoreOrder = 0;
     readonly name: string;
+    readonly tName: string;
     readonly scoreOrder: number;
-    constructor(name: string) {
+    constructor(name: string, tName: string) {
         this.name = name;
         this.scoreOrder = SectionFamily.currentScoreOrder++;
+        this.tName = tName;
     }
 
     /**
@@ -86,13 +88,13 @@ class SectionFamily {
  * The order of families is the order they are defined in this object.
  * This is used for sorting sections in the UI. Family order supersedes score order.
  */
-const FAMILIES: { [key: string]: SectionFamily } = {
-    Woodwind: new SectionFamily("Woodwind"),
-    Brass: new SectionFamily("Brass"),
-    Battery: new SectionFamily("Battery"),
-    Guard: new SectionFamily("Guard"),
-    Other: new SectionFamily("Other"),
-    Pit: new SectionFamily("Pit"),
+export const FAMILIES: { [key: string]: SectionFamily } = {
+    Woodwind: new SectionFamily("Woodwind", "section.family.woodwind"),
+    Brass: new SectionFamily("Brass", "section.family.brass"),
+    Battery: new SectionFamily("Battery", "section.family.battery"),
+    Guard: new SectionFamily("Guard", "section.family.guard"),
+    Other: new SectionFamily("Other", "section.family.other"),
+    Pit: new SectionFamily("Pit", "section.family.pit"),
 };
 
 /**

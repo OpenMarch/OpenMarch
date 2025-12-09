@@ -7,6 +7,7 @@ import {
     updateMarcherPagesMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
+    marcherWithVisualsQueryOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -22,7 +23,7 @@ import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
 import useEditablePath from "./hooks/editablePath";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useTimingObjects, useMarchersWithVisuals } from "@/hooks";
+import { useTimingObjects } from "@/hooks";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
@@ -49,10 +50,12 @@ export default function Canvas({
     const queryClient = useQueryClient();
     useEditablePath();
     const { isPlaying } = useIsPlaying()!;
-    const marcherVisuals = useMarchersWithVisuals();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
+    const { data: marcherVisuals } = useQuery(
+        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+    );
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
     // MarcherPage queries
@@ -214,20 +217,10 @@ export default function Canvas({
         }
     }, [canvas, updateMarcherPages.mutate]);
 
-    // // Sync marcher visuals with marchers and section appearances
-    // useEffect(() => {
-    //     if (marchers && sectionAppearances && fieldProperties) {
-    //         updateMarcherVisuals(
-    //             marchers,
-    //             fieldProperties.theme,
-    //             sectionAppearances,
-    //         );
-    //     }
-    // }, [marchers, sectionAppearances, updateMarcherVisuals, fieldProperties]);
-
     // Sync canvas with marcher visuals
     useEffect(() => {
-        if (!canvas || !marchers || !marcherVisuals || !fieldProperties) return;
+        if (!canvas || !marchers || marcherVisuals == null || !fieldProperties)
+            return;
 
         // Remove all marcher visuals from the canvas
         canvas.getCanvasMarchers().forEach((canvasMarcher) => {
@@ -248,6 +241,9 @@ export default function Canvas({
         marchers.forEach((marcher) => {
             const visualGroup = marcherVisuals[marcher.id];
             if (!visualGroup) return;
+
+            const canvasMarcher = visualGroup.getCanvasMarcher();
+            canvasMarcher.setAppearance(visualGroup.appearances);
 
             canvas.add(visualGroup.getCanvasMarcher());
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
@@ -307,15 +303,21 @@ export default function Canvas({
 
     // Render the marchers when the selected page or the marcher pages change
     useEffect(() => {
-        if (!canvas || !selectedPage || !marchers || !marcherPagesLoaded)
+        if (
+            !canvas ||
+            !selectedPage ||
+            !marchers ||
+            !marcherPagesLoaded ||
+            marcherVisuals == null
+        )
             return;
 
         canvas.currentPage = selectedPage;
 
         canvas
             .renderMarchers({
-                marcherVisuals: marcherVisuals,
-                marcherPages: marcherPages,
+                marcherVisuals,
+                marcherPages,
             })
             .catch((error) => {
                 console.error("Error rendering marchers", error);
@@ -331,7 +333,13 @@ export default function Canvas({
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
-        if (!canvas || !selectedPage || !fieldProperties || !marcherPagesLoaded)
+        if (
+            !canvas ||
+            !selectedPage ||
+            !fieldProperties ||
+            !marcherPagesLoaded ||
+            marcherVisuals == null
+        )
             return;
 
         if (marchers) {
@@ -430,7 +438,13 @@ export default function Canvas({
     // This effect ensures that when the animation is paused, the marchers are
     // rendered at their final positions for the selected page.
     useEffect(() => {
-        if (canvas && !isPlaying && selectedPage && marcherPagesLoaded) {
+        if (
+            canvas &&
+            !isPlaying &&
+            selectedPage &&
+            marcherPagesLoaded &&
+            marcherVisuals != null
+        ) {
             canvas
                 .renderMarchers({
                     marcherPages: marcherPages,

@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "Descartar",
+        "removeSetting": "Eliminar configuración",
         "save": "Guardar"
     },
     "coordinateRoundingSettings": {
@@ -467,7 +468,8 @@
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Eliminar esta forma para esta página. No moverá los marchadores de su posición actual",
             "viewTab": "Vista",
-            "shapesTab": "Formas"
+            "shapesTab": "Formas",
+            "selectTab": "Seleccionar"
         },
         "shapes": {
             "title": "Formas",
@@ -532,7 +534,9 @@
         "editButton": "Editar Marchadores",
         "list": {
             "addSectionStyle": "Agregar Estilo de Sección",
+            "addTagAppearance": "Agregar apariencia de etiqueta",
             "deleteSectionStyle": "Eliminar este estilo de sección",
+            "none": "Ninguno",
             "discardChanges": "Descartar cambios",
             "drillNumberTitle": "#",
             "fillColor": "Color de Relleno",
@@ -543,17 +547,21 @@
             "pendingChanges": "Es posible que los valores no se apliquen hasta después de una actualización",
             "saveChanges": "Guardar Cambios",
             "sectionStyles": "Estilos de sección",
+            "sectionsInShow": "Secciones en el Show",
             "sectionTitle": "Sección",
             "selectSection": "Sección",
-            "shape": "Forma"
+            "shape": "Forma",
+            "allSections": "Todas las Secciones"
         },
         "listTitle": "Lista",
         "quantity": "Cantidad",
         "section": "Sección",
+        "sectionText": "Sección",
         "sectionError": {
             "chooseSection": "Por favor, elija una sección"
         },
-        "sectionStyles": "Estilos de sección",
+        "marcherAppearance": "Apariencia de marchantes",
+        "tagText": "Etiqueta",
         "title": "Marchadores"
     },
     "music": {
@@ -620,6 +628,14 @@
     },
     "section": {
         "drumMajor": "Director de Percusión",
+        "family": {
+            "woodwind": "Maderas",
+            "brass": "Metales",
+            "battery": "Batería",
+            "guard": "Guardia",
+            "other": "Otro",
+            "pit": "Foso"
+        },
         "guard": {
             "colorGuard": "Guardia de color",
             "dancer": "Bailarín",
@@ -766,6 +782,18 @@
             "nextPaths": "Próximas Rutas",
             "previousPaths": "Rutas anteriores",
             "uiSettingsToolbar": "Barra de herramientas de configuración"
+        },
+        "select": {
+            "selectByText": "Seleccionar por",
+            "selectBy": {
+                "section": "Sección",
+                "drillPrefix": "Prefijo de Instrucción",
+                "family": "Familia",
+                "tag": "Etiqueta"
+            },
+            "noSectionsToSelect": "No se encontraron secciones para seleccionar",
+            "noTagsToSelect": "No se encontraron etiquetas para seleccionar",
+            "noDrillPrefixesToSelect": "No se encontraron prefijos de instrucción para seleccionar"
         }
     },
     "versionCheck": {
