@@ -537,6 +537,7 @@
         "list": {
             "addSectionStyle": "Agregar Estilo de Sección",
             "addTagAppearance": "Agregar apariencia de etiqueta",
+            "createTagsFirst": "Cree etiquetas primero en el editor de marchadores para agregar apariencias de etiquetas.",
             "deleteSectionStyle": "Eliminar este estilo de sección",
             "none": "Ninguno",
             "discardChanges": "Descartar cambios",
