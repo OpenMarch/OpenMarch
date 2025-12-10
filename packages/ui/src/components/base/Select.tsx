@@ -140,16 +140,18 @@ export const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
                 {...props}
                 ref={forwardedRef}
             >
-                <RadixSelect.ItemText
-                    className={twMerge(
-                        clsx(
-                            "text-body text-text w-full leading-none",
-                            !allowMultiline && "truncate whitespace-nowrap",
-                            allowMultiline && "whitespace-normal",
-                        ),
-                    )}
-                >
-                    {children}
+                <RadixSelect.ItemText>
+                    <span
+                        className={twMerge(
+                            clsx(
+                                "text-body text-text w-full leading-none",
+                                !allowMultiline && "truncate whitespace-nowrap",
+                                allowMultiline && "whitespace-normal",
+                            ),
+                        )}
+                    >
+                        {children}
+                    </span>
                 </RadixSelect.ItemText>
                 <RadixSelect.ItemIndicator>
                     <CheckIcon size={20} />

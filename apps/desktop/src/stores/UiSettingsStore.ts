@@ -90,7 +90,21 @@ const loadSettings = (): UiSettings => {
 
         const parsed = JSON.parse(stored) as UiSettings;
         // Merge with default settings to ensure all properties exist
-        return { ...defaultSettings, ...parsed };
+        // Deep merge nested objects to preserve new properties in defaults
+        return {
+            ...defaultSettings,
+            ...parsed,
+            mouseSettings: {
+                ...defaultSettings.mouseSettings,
+                ...parsed.mouseSettings,
+            },
+            coordinateRounding: parsed.coordinateRounding
+                ? {
+                      ...defaultSettings.coordinateRounding,
+                      ...parsed.coordinateRounding,
+                  }
+                : defaultSettings.coordinateRounding,
+        };
     } catch (error) {
         console.error("Failed to load UI settings from localStorage:", error);
         return defaultSettings;
