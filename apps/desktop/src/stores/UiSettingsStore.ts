@@ -35,6 +35,8 @@ export interface UiSettings {
         zoomSensitivity: number;
         /** Standard pan sensitivity (0.1-3.0) */
         panSensitivity: number;
+        /** Pan behavior: "exact" moves canvas exactly with mouse, "zoom-adjusted" adjusts speed based on zoom level */
+        panBehavior: "exact" | "zoom-adjusted";
     };
     coordinateRounding?: {
         /** In steps, the closest step to round to on the X-axis, offset on the nearestXSteps */
@@ -68,6 +70,7 @@ export const defaultSettings: UiSettings = {
         trackpadPanSensitivity: 0.5,
         zoomSensitivity: 1.0,
         panSensitivity: 0.5,
+        panBehavior: "exact",
     },
     coordinateRounding: {
         nearestXSteps: 0,
@@ -114,7 +117,8 @@ interface UiSettingsStoreActions {
     setAudioVolume: (volume: number) => void;
 }
 interface UiSettingsStoreInterface
-    extends UiSettingsStoreState, UiSettingsStoreActions {}
+    extends UiSettingsStoreState,
+        UiSettingsStoreActions {}
 
 export const useUiSettingsStore = create<UiSettingsStoreInterface>(
     (set, get) => ({

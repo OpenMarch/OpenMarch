@@ -1,6 +1,16 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Switch, Slider } from "@openmarch/ui";
+import {
+    Switch,
+    Slider,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+    TooltipClassName,
+} from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { InfoIcon } from "@phosphor-icons/react";
 
 export default function MouseSettings() {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
@@ -108,6 +118,75 @@ export default function MouseSettings() {
                         })
                     }
                 />
+            </div>
+            <div className="flex h-[2.5rem] items-center justify-between px-8">
+                <div className="flex items-center gap-4">
+                    <label
+                        htmlFor="panBehavior"
+                        className="text-body text-text-subtitle"
+                    >
+                        <T keyName="settings.mouse.panBehavior" />
+                    </label>
+                    <Tooltip.Provider>
+                        <Tooltip.Root>
+                            <Tooltip.Trigger type="button">
+                                <InfoIcon size={18} className="text-text/60" />
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                                <Tooltip.Content
+                                    className={TooltipClassName}
+                                    side="right"
+                                >
+                                    <T keyName="settings.mouse.panBehavior.tooltip" />
+                                </Tooltip.Content>
+                            </Tooltip.Portal>
+                        </Tooltip.Root>
+                    </Tooltip.Provider>
+                </div>
+                <Select
+                    value={uiSettings.mouseSettings.panBehavior}
+                    onValueChange={(value: "exact" | "zoom-adjusted") =>
+                        setUiSettings({
+                            ...uiSettings,
+                            mouseSettings: {
+                                ...uiSettings.mouseSettings,
+                                panBehavior: value,
+                            },
+                        })
+                    }
+                >
+                    <SelectTriggerButton
+                        label={t(
+                            `settings.mouse.panBehavior.${uiSettings.mouseSettings.panBehavior}`,
+                        )}
+                        className="min-w-[180px]"
+                    />
+                    <SelectContent>
+                        <SelectItem value="exact" className="!h-auto py-12">
+                            <div className="flex flex-col gap-4">
+                                <span className="leading-none">
+                                    <T keyName="settings.mouse.panBehavior.exact" />
+                                </span>
+                                <span className="text-sub text-text/60 leading-tight">
+                                    <T keyName="settings.mouse.panBehavior.exact.description" />
+                                </span>
+                            </div>
+                        </SelectItem>
+                        <SelectItem
+                            value="zoom-adjusted"
+                            className="!h-auto py-12"
+                        >
+                            <div className="flex flex-col gap-4">
+                                <span className="leading-none">
+                                    <T keyName="settings.mouse.panBehavior.zoomAdjusted" />
+                                </span>
+                                <span className="text-sub text-text/60 leading-tight">
+                                    <T keyName="settings.mouse.panBehavior.zoomAdjusted.description" />
+                                </span>
+                            </div>
+                        </SelectItem>
+                    </SelectContent>
+                </Select>
             </div>
         </div>
     );
