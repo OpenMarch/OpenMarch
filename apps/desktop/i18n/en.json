@@ -536,6 +536,7 @@
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
+            "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
             "deleteSectionStyle": "Delete this section style",
             "none": "None",
             "discardChanges": "Discard Changes",

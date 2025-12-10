@@ -101,6 +101,16 @@ export default function TagAppearanceList({
         highlightSelection,
     ]);
 
+    if (allTags?.length === 0) {
+        return (
+            <div className="animate-scale-in flex flex-col gap-8">
+                <p className="text-body text-text-subtitle">
+                    <T keyName="marchers.list.createTagsFirst" />
+                </p>
+            </div>
+        );
+    }
+
     return (
         <div
             className="animate-scale-in flex flex-col gap-8"

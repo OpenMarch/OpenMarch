@@ -15,12 +15,32 @@ test("Navigate through appearance menu", async ({ electronApp }) => {
     await expect(page.getByRole("menuitem", { name: "Piccolo" })).toBeVisible();
     await expect(page.getByRole("tab", { name: "All" })).toBeVisible();
 
+    // Open the tag appearance editor
     await page.locator("html").click();
     await page.getByRole("tab", { name: "Tag" }).click();
     await expect(
         page.getByLabel("Tag").getByRole("heading", { name: "Page" }),
+        "Tag editor shouldn't be visible when no tags exist",
+    ).not.toBeVisible();
+    await page.locator("body").press("Escape");
+    await createMarchers(page, 25, "Piccolo");
+
+    // Create a new tag with a name
+    await page.locator("body").press("ControlOrMeta+a");
+    await page
+        .getByRole("button", { name: "Create new tag with selected" })
+        .click();
+    await page
+        .getByRole("textbox", { name: "Define a name for the new tag" })
+        .fill("cool tag");
+    await page.getByRole("button", { name: "Create Tag" }).click();
+
+    await page.locator("#sidebar-launcher-marcher-appearance").click();
+    await expect(
+        page.getByLabel("Tag").getByRole("heading", { name: "Page" }),
+        "Tag editor should be visible when a tag exists",
     ).toBeVisible();
-    await expect(page.getByText("None", { exact: true })).toBeVisible();
+    await page.locator("body").press("Escape");
 
     // close the appearance modal
     await page.locator("body").press("Escape");
