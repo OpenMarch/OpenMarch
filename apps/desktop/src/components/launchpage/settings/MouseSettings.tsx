@@ -162,9 +162,13 @@ export default function MouseSettings() {
                         className="min-w-[180px]"
                     />
                     <SelectContent>
-                        <SelectItem value="exact" className="!h-auto py-12">
-                            <div className="flex flex-col gap-4">
-                                <span className="leading-none">
+                        <SelectItem
+                            value="exact"
+                            allowMultiline
+                            className="py-12"
+                        >
+                            <div className="flex w-full flex-col gap-4">
+                                <span className="text-body text-text leading-none">
                                     <T keyName="settings.mouse.panBehavior.exact" />
                                 </span>
                                 <span className="text-sub text-text/60 leading-tight">
@@ -174,10 +178,11 @@ export default function MouseSettings() {
                         </SelectItem>
                         <SelectItem
                             value="zoom-adjusted"
-                            className="!h-auto py-12"
+                            allowMultiline
+                            className="py-12"
                         >
-                            <div className="flex flex-col gap-4">
-                                <span className="leading-none">
+                            <div className="flex w-full flex-col gap-4">
+                                <span className="text-body text-text leading-none">
                                     <T keyName="settings.mouse.panBehavior.zoomAdjusted" />
                                 </span>
                                 <span className="text-sub text-text/60 leading-tight">
