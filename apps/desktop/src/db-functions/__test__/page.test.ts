@@ -13,10 +13,12 @@ import {
     createTempoGroupAndPageFromWorkspaceSettings,
     NewPageArgs,
     updateLastPageCounts,
+    getPagesInOrder,
+    DatabasePageWithBeat,
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { inArray, desc, eq, and, gte, lte, asc } from "drizzle-orm";
+import { inArray, desc, eq, and, gte, lte, asc, isNotNull } from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
     NewBeatArgs,
@@ -1471,6 +1473,7 @@ describeDbTests("pages", (it) => {
                 );
             });
         });
+
         describe("with existing data", () => {
             describe.each([
                 {
@@ -1652,6 +1655,74 @@ describeDbTests("pages", (it) => {
             );
             it.todo(
                 "Delete many pages at once and make sure the last page counts are updated correctly",
+            );
+        });
+
+        describe("delete second page", () => {
+            testWithHistory(
+                "moves the third page to the second page's starting beat",
+                async ({ db }) => {
+                    const newPageCounts = 16;
+                    // Create a bunch of pages
+                    for (let i = 0; i < 10; i++)
+                        await createLastPage({
+                            db,
+                            newPageCounts,
+                            createNewBeats: true,
+                        });
+
+                    const pages = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pages.entries()) {
+                        if (index === 0) continue;
+                        expect(page.position).toBe(
+                            (index - 1) * newPageCounts + 1,
+                        );
+                    }
+
+                    // delete the second page
+                    await deletePages({
+                        pageIds: new Set([pages[1].page_id!]),
+                        db,
+                    });
+
+                    const pagesAfterDelete = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pagesAfterDelete.entries()) {
+                        if (index === 0) continue;
+                        if (index === 1) expect(page.position).toBe(1);
+                        else
+                            expect(page.position).toBe(
+                                index * newPageCounts + 1,
+                            );
+                    }
+
+                    // delete the second page again
+                    await deletePages({
+                        pageIds: new Set([pages[2].page_id!]),
+                        db,
+                    });
+
+                    const pagesAfterDelete2 = await db
+                        .select()
+                        .from(schema.timing_objects)
+                        .where(isNotNull(schema.timing_objects.page_id));
+
+                    for (const [index, page] of pagesAfterDelete2.entries()) {
+                        if (index === 0) continue;
+                        if (index === 1) expect(page.position).toBe(1);
+                        else
+                            expect(page.position).toBe(
+                                (index + 1) * newPageCounts + 1,
+                            );
+                    }
+                },
             );
         });
     });
@@ -2801,6 +2872,292 @@ describeDbTests("pages", (it) => {
                 lastPage.start_beat,
                 "Expect the last page to have the correct start beat",
             ).toBe(expectedBeat.id);
+        });
+    });
+
+    describe("getPagesInOrder", () => {
+        testWithHistory(
+            "should return pages ordered by beat position ascending",
+            async ({ db }) => {
+                // Create beats for testing
+                await createBeats({
+                    db,
+                    newBeats: Array.from({ length: 20 }).map(() => ({
+                        duration: 1,
+                        include_in_measure: true,
+                    })),
+                });
+
+                // Create pages at different beat positions (using beat IDs that match positions)
+                const newPages: NewPageArgs[] = [
+                    { start_beat: 5, is_subset: false }, // position 5
+                    { start_beat: 2, is_subset: false }, // position 2
+                    { start_beat: 8, is_subset: true }, // position 8
+                ];
+
+                await createPages({ newPages, db });
+
+                let result: any;
+                await transaction(db, async (tx) => {
+                    result = await getPagesInOrder({ tx });
+                });
+
+                // First page (page 0) should be at position 0, then 2, 5, 8
+                expect(result).toHaveLength(4);
+                expect(result[0].beatObject.position).toBe(0);
+                expect(result[1].beatObject.position).toBe(2);
+                expect(result[2].beatObject.position).toBe(5);
+                expect(result[3].beatObject.position).toBe(8);
+
+                // Verify the pages are correctly associated
+                expect(result[0].id).toBe(FIRST_PAGE_ID);
+                expect(result[0].start_beat).toBe(FIRST_BEAT_ID);
+            },
+        );
+
+        testWithHistory(
+            "should handle single page correctly",
+            async ({ db }) => {
+                let result: any;
+                await transaction(db, async (tx) => {
+                    result = await getPagesInOrder({ tx });
+                });
+
+                expect(result).toHaveLength(1);
+                expect(result[0].id).toBe(FIRST_PAGE_ID);
+                expect(result[0].beatObject.position).toBe(0);
+            },
+        );
+
+        testWithHistory(
+            "should maintain consistent ordering with many pages",
+            async ({ db }) => {
+                // Create beats for testing
+                await createBeats({
+                    db,
+                    newBeats: Array.from({ length: 20 }).map(() => ({
+                        duration: 1,
+                        include_in_measure: true,
+                    })),
+                });
+
+                // Create many pages in random order (using beat IDs that match positions)
+                const newPages: NewPageArgs[] = [
+                    { start_beat: 10, is_subset: false }, // position 10
+                    { start_beat: 3, is_subset: true }, // position 3
+                    { start_beat: 15, is_subset: false }, // position 15
+                    { start_beat: 1, is_subset: false }, // position 1
+                    { start_beat: 7, is_subset: true }, // position 7
+                    { start_beat: 12, is_subset: false }, // position 12
+                ];
+
+                await createPages({ newPages, db });
+
+                let result: any;
+                await transaction(db, async (tx) => {
+                    result = await getPagesInOrder({ tx });
+                });
+
+                // Verify all pages are returned
+                expect(result).toHaveLength(7); // 6 new + 1 first page
+
+                // Verify they are in ascending order
+                for (let i = 1; i < result.length; i++) {
+                    expect(result[i].beatObject.position).toBeGreaterThan(
+                        result[i - 1].beatObject.position,
+                    );
+                }
+
+                // Verify positions are as expected
+                expect(result[0].beatObject.position).toBe(0);
+                expect(result[1].beatObject.position).toBe(1);
+                expect(result[2].beatObject.position).toBe(3);
+                expect(result[3].beatObject.position).toBe(7);
+                expect(result[4].beatObject.position).toBe(10);
+                expect(result[5].beatObject.position).toBe(12);
+                expect(result[6].beatObject.position).toBe(15);
+            },
+        );
+
+        describe("data integrity", () => {
+            testWithHistory(
+                "should correctly map page properties",
+                async ({ db }) => {
+                    // Create beats for testing
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 10 }).map(() => ({
+                            duration: 1,
+                            include_in_measure: true,
+                        })),
+                    });
+
+                    const newPages: NewPageArgs[] = [
+                        {
+                            start_beat: 3, // position 3
+                            is_subset: true,
+                            notes: "Test page notes",
+                        },
+                        {
+                            start_beat: 7, // position 7
+                            is_subset: false,
+                            notes: null,
+                        },
+                    ];
+
+                    await createPages({ newPages, db });
+
+                    let result: DatabasePageWithBeat[] = [];
+                    await transaction(db, async (tx) => {
+                        result = await getPagesInOrder({ tx });
+                    });
+
+                    // Find the created pages
+                    const pageAtBeat3 = result.find(
+                        (r) => r.beatObject.position === 3,
+                    );
+                    const pageAtBeat7 = result.find(
+                        (r) => r.beatObject.position === 7,
+                    );
+
+                    // Verify is_subset is correctly converted from database (0/1) to boolean
+                    expect(pageAtBeat3?.is_subset).toBe(true);
+                    expect(pageAtBeat7?.is_subset).toBe(false);
+
+                    // Verify notes are correctly passed through
+                    expect(pageAtBeat3?.notes).toBe("Test page notes");
+                    expect(pageAtBeat7?.notes).toBe(null);
+                },
+            );
+
+            testWithHistory(
+                "should include all beat properties",
+                async ({ db }) => {
+                    // Create beats for testing
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 10 }).map(() => ({
+                            duration: 1,
+                            include_in_measure: true,
+                        })),
+                    });
+
+                    const newPages: NewPageArgs[] = [
+                        { start_beat: 5, is_subset: false }, // position 5
+                    ];
+
+                    await createPages({ newPages, db });
+
+                    let result: DatabasePageWithBeat[] = [];
+                    await transaction(db, async (tx) => {
+                        result = await getPagesInOrder({ tx });
+                    });
+
+                    const pageAtBeat5 = result.find(
+                        (r) => r.beatObject.position === 5,
+                    );
+
+                    // Verify beat properties are included
+                    expect(pageAtBeat5?.beatObject).toBeDefined();
+                    expect(pageAtBeat5?.beatObject.id).toBe(5);
+                    expect(pageAtBeat5?.beatObject.position).toBe(5);
+                    expect(pageAtBeat5?.beatObject.duration).toBeDefined();
+                    expect(
+                        pageAtBeat5?.beatObject.include_in_measure,
+                    ).toBeDefined();
+                },
+            );
+
+            testWithHistory(
+                "should correctly join pages with their start beats",
+                async ({ db }) => {
+                    // Create beats for testing
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 15 }).map(() => ({
+                            duration: 1,
+                            include_in_measure: true,
+                        })),
+                    });
+
+                    const newPages: NewPageArgs[] = [
+                        { start_beat: 3, is_subset: false }, // position 2
+                        { start_beat: 10, is_subset: true }, // position 9
+                    ];
+
+                    await createPages({ newPages, db });
+
+                    let result: any;
+                    await transaction(db, async (tx) => {
+                        result = await getPagesInOrder({ tx });
+                    });
+
+                    // Verify each page is joined with the correct beat
+                    for (const page of result) {
+                        expect(page.start_beat).toBe(page.beatObject.id);
+                    }
+                },
+            );
+        });
+
+        describe("edge cases", () => {
+            testWithHistory(
+                "should work with DbConnection instead of DbTransaction",
+                async ({ db }) => {
+                    // Create beats for testing
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 10 }).map(() => ({
+                            duration: 1,
+                            include_in_measure: true,
+                        })),
+                    });
+
+                    const newPages: NewPageArgs[] = [
+                        { start_beat: 4, is_subset: false }, // position 4
+                    ];
+
+                    await createPages({ newPages, db });
+
+                    // Call directly with db (DbConnection) instead of tx
+                    const result = await getPagesInOrder({ tx: db });
+
+                    expect(result).toHaveLength(2);
+                    expect(result[0].beatObject.position).toBe(0);
+                    expect(result[1].beatObject.position).toBe(4);
+                },
+            );
+
+            testWithHistory(
+                "should handle pages with identical beat positions (should not happen but test robustness)",
+                async ({ db }) => {
+                    // Create beats for testing
+                    await createBeats({
+                        db,
+                        newBeats: Array.from({ length: 10 }).map(() => ({
+                            duration: 1,
+                            include_in_measure: true,
+                        })),
+                    });
+
+                    // This should not happen in practice due to unique constraint,
+                    // but test that the function doesn't crash with proper data
+                    const newPages: NewPageArgs[] = [
+                        { start_beat: 5, is_subset: false }, // position 5
+                    ];
+
+                    await createPages({ newPages, db });
+
+                    let result: any;
+                    await transaction(db, async (tx) => {
+                        result = await getPagesInOrder({ tx });
+                    });
+
+                    expect(result).toHaveLength(2);
+                    expect(result[0].beatObject.position).toBe(0);
+                    expect(result[1].beatObject.position).toBe(5);
+                },
+            );
         });
     });
 });

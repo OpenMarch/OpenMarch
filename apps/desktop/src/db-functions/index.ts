@@ -13,3 +13,4 @@ export * from "./shapePages";
 export * from "./shapePageMarchers";
 export * from "./prop";
 export * from "./propPage";
+export * from "./tag";

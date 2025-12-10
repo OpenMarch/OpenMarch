@@ -85,6 +85,41 @@
             "when": 1760733039979,
             "tag": "0011_fancy_phil_sheldon",
             "breakpoints": true
+        },
+        {
+            "idx": 12,
+            "version": "6",
+            "when": 1764521848101,
+            "tag": "0012_pink_king_cobra",
+            "breakpoints": true
+        },
+        {
+            "idx": 13,
+            "version": "6",
+            "when": 1764547615201,
+            "tag": "0013_gigantic_maestro",
+            "breakpoints": true
+        },
+        {
+            "idx": 14,
+            "version": "6",
+            "when": 1764557592093,
+            "tag": "0014_colossal_chat",
+            "breakpoints": true
+        },
+        {
+            "idx": 15,
+            "version": "6",
+            "when": 1764723930076,
+            "tag": "0015_typical_gorilla_man",
+            "breakpoints": true
+        },
+        {
+            "idx": 16,
+            "version": "6",
+            "when": 1764733345489,
+            "tag": "0016_unique_ultimo",
+            "breakpoints": true
         }
     ]
 }

@@ -61,11 +61,17 @@ export const DialogClose = ({ children }: { children: React.ReactNode }) => (
 export const DialogContent = ({
     children,
     className,
+    overlayClassName,
     ...props
-}: RadixDialogContentProps) => {
+}: RadixDialogContentProps & { overlayClassName?: string }) => {
     return (
         <RadixDialog.Portal>
-            <RadixDialog.Overlay className="bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[500]" />
+            <RadixDialog.Overlay
+                className={twMerge(
+                    "bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[500]",
+                    overlayClassName,
+                )}
+            />
             <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[501] flex items-center justify-center">
                 <RadixDialog.Content
                     {...props}

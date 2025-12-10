@@ -5,69 +5,43 @@ import {
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
-import { RgbaColor } from "@uiw/react-color";
-import { rgbaToString } from "@openmarch/core";
+import {
+    AppearanceComponent,
+    AppearanceComponentOptional,
+    appearanceModelParsedToRawOptional,
+    AppearanceComponentRawOptional,
+    appearanceModelRawToParsed,
+} from "@/entity-components/appearance";
 
 /** How a section appearance is represented in the database */
-export interface DatabaseSectionAppearance {
+export interface DatabaseSectionAppearance extends AppearanceComponent {
     id: number;
     section: string;
-    fill_color: RgbaColor;
-    outline_color: RgbaColor;
-    shape_type: string;
     created_at: string;
     updated_at: string;
 }
+export type SectionAppearance = DatabaseSectionAppearance;
 
 // Only do this if it's needed to convert the real database values to something else
 // I.e. integer -> boolean in sqlite
 type RealDatabaseSectionAppearance =
     typeof schema.section_appearances.$inferSelect;
 
-// Parse rgba(0, 0, 0, 1) string color to RGBA color
-function parseColor(colorStr: string): RgbaColor {
-    // Extract r, g, b, a values from rgba string
-    const match = colorStr.match(
-        /rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*(\d*\.?\d+))?\)/,
-    );
-    if (match) {
-        return {
-            r: parseInt(match[1], 10),
-            g: parseInt(match[2], 10),
-            b: parseInt(match[3], 10),
-            a: match[4] ? parseFloat(match[4]) : 1,
-        };
-    }
-    // Default fallback color
-    return { r: 0, g: 0, b: 0, a: 1 };
-}
-
 export const realDatabaseSectionAppearanceToDatabaseSectionAppearance = (
     item: RealDatabaseSectionAppearance,
 ): DatabaseSectionAppearance => {
     return {
-        id: item.id,
-        section: item.section,
-        fill_color: parseColor(item.fill_color),
-        outline_color: parseColor(item.outline_color),
-        shape_type: item.shape_type,
-        created_at: item.created_at,
-        updated_at: item.updated_at,
+        ...item,
+        ...appearanceModelRawToParsed(item),
     };
 };
 
-export interface NewSectionAppearanceArgs {
+export interface NewSectionAppearanceArgs extends AppearanceComponentOptional {
     section: string;
-    fill_color: RgbaColor;
-    outline_color: RgbaColor;
-    shape_type?: string;
 }
 
-interface RealNewSectionAppearanceArgs {
+interface RealNewSectionAppearanceArgs extends AppearanceComponentRawOptional {
     section: string;
-    fill_color: string;
-    outline_color: string;
-    shape_type: string;
 }
 
 const newSectionAppearanceArgsToRealNewSectionAppearanceArgs = (
@@ -75,49 +49,36 @@ const newSectionAppearanceArgsToRealNewSectionAppearanceArgs = (
 ): RealNewSectionAppearanceArgs => {
     return {
         section: args.section,
-        fill_color: rgbaToString(args.fill_color),
-        outline_color: rgbaToString(args.outline_color),
-        shape_type: args.shape_type || "circle",
+        ...appearanceModelParsedToRawOptional({
+            ...args,
+            visible: true,
+            label_visible: true,
+        }),
     };
 };
 
-export interface ModifiedSectionAppearanceArgs {
+export interface ModifiedSectionAppearanceArgs
+    extends AppearanceComponentOptional {
     id: number;
     section?: string;
-    fill_color?: RgbaColor;
-    outline_color?: RgbaColor;
-    shape_type?: string;
 }
 
-interface RealModifiedSectionAppearanceArgs {
+interface RealModifiedSectionAppearanceArgs
+    extends AppearanceComponentRawOptional {
     id: number;
     section?: string;
-    fill_color?: string;
-    outline_color?: string;
-    shape_type?: string;
 }
 
 const modifiedSectionAppearanceArgsToRealModifiedSectionAppearanceArgs = (
     args: ModifiedSectionAppearanceArgs,
 ): RealModifiedSectionAppearanceArgs => {
-    const result: RealModifiedSectionAppearanceArgs = {
+    return {
         id: args.id,
+        section: args.section,
+        ...appearanceModelParsedToRawOptional({
+            ...args,
+        }),
     };
-
-    if (args.section !== undefined) {
-        result.section = args.section;
-    }
-    if (args.fill_color !== undefined) {
-        result.fill_color = rgbaToString(args.fill_color);
-    }
-    if (args.outline_color !== undefined) {
-        result.outline_color = rgbaToString(args.outline_color);
-    }
-    if (args.shape_type !== undefined) {
-        result.shape_type = args.shape_type;
-    }
-
-    return result;
 };
 
 /**
@@ -177,7 +138,7 @@ export async function createSectionAppearances({
     db: DbConnection;
 }): Promise<DatabaseSectionAppearance[]> {
     if (newItems.length === 0) {
-        console.log("No new section appearances to create");
+        console.debug("No new section appearances to create");
         return [];
     }
 

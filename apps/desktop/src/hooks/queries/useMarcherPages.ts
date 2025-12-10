@@ -32,6 +32,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useTolgee } from "@tolgee/react";
 import { FieldProperties } from "@openmarch/core";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
+import { appearanceModelRawToParsed } from "@/entity-components/appearance";
 
 const KEY_BASE = "marcher_pages";
 
@@ -113,7 +114,11 @@ export const marcherPagesByMarcherQueryOptions = (
                 db,
                 marcherId: marcherId!,
             });
-            return toMarcherPagesByPage(mpResponse);
+            const parsed = mpResponse.map((mp) => ({
+                ...mp,
+                ...appearanceModelRawToParsed(mp),
+            }));
+            return toMarcherPagesByPage(parsed);
         },
         enabled: marcherId != null,
         staleTime: DEFAULT_STALE_TIME,

@@ -4,7 +4,6 @@ import {
     mutationOptions,
     QueryClient,
 } from "@tanstack/react-query";
-import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
 import {
     DbConnection,
@@ -19,6 +18,7 @@ import {
     ModifiedSectionAppearanceArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
 
 const KEY_BASE = "section_appearances";
 
@@ -92,9 +92,15 @@ export const createSectionAppearancesMutationOptions = (qc: QueryClient) => {
             createSectionAppearances({ db, newItems }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error creating section appearances`, e, variables);
@@ -119,23 +125,30 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
             }
 
             // Invalidate by ID queries
-            void qc.invalidateQueries({
-                queryKey: Array.from(itemIds).map((id) =>
-                    sectionAppearanceKeys.byId(id),
-                ),
-            });
+            if (itemIds.size > 0)
+                void qc.invalidateQueries({
+                    queryKey: Array.from(itemIds).map((id) =>
+                        sectionAppearanceKeys.byId(id),
+                    ),
+                });
 
             // Invalidate by section queries
-            void qc.invalidateQueries({
-                queryKey: Array.from(sections).map((section) =>
-                    sectionAppearanceKeys.bySection(section),
-                ),
-            });
+            if (sections.size > 0)
+                void qc.invalidateQueries({
+                    queryKey: Array.from(sections).map((section) =>
+                        sectionAppearanceKeys.bySection(section),
+                    ),
+                });
 
-            // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error updating section appearances`, e, variables);
@@ -149,9 +162,15 @@ export const deleteSectionAppearancesMutationOptions = (qc: QueryClient) => {
             deleteSectionAppearances({ db, itemIds }),
         onSuccess: (_, variables) => {
             // Invalidate all queries
-            void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
-            });
+            void qc
+                .invalidateQueries({
+                    queryKey: [KEY_BASE],
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: marcherWithVisualsKeys.all(),
+                    });
+                });
         },
         onError: (e, variables) => {
             conToastError(`Error deleting section appearances`, e, variables);

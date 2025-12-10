@@ -112,7 +112,7 @@ export const mockPages: Page[] = [
     } satisfies Page,
 ] as const;
 
-export const mockMarcherPages: DatabaseMarcherPage[] = [
+export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
     {
         id: 1,
         marcher_id: 1,
@@ -242,7 +242,9 @@ export const mockMarcherPages: DatabaseMarcherPage[] = [
 ] as const;
 
 export const mockMarcherPageMap = marcherPageMapFromArray(
-    databaseMarcherPagesToMarcherPages(mockMarcherPages),
+    databaseMarcherPagesToMarcherPages(
+        mockMarcherPages as DatabaseMarcherPage[],
+    ),
 );
 
 export const mockMarcherLines: MarcherLine[] = [

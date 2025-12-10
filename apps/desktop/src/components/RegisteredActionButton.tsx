@@ -4,10 +4,8 @@ import {
     RegisteredActionsEnum,
 } from "@/utilities/RegisteredActionsHandler";
 import { useRef, useEffect } from "react";
-import * as RadixTooltip from "@radix-ui/react-tooltip";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
-import { TooltipClassName } from "@openmarch/ui";
 
 interface registeredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {

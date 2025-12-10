@@ -8,8 +8,11 @@ import {
     check,
     unique,
     customType,
+    sqliteView,
 } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
+
+/*************** COMMON COLUMNS ***************/
 
 const timestamps = {
     created_at: text()
@@ -20,6 +23,21 @@ const timestamps = {
         .default(sql`(CURRENT_TIMESTAMP)`)
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 };
+
+// APPEARANCE
+
+/** Columns that define how a marcher looks */
+export const appearance_columns = {
+    fill_color: text(),
+    outline_color: text(),
+    shape_type: text(),
+    visible: integer().default(1).notNull(),
+    label_visible: integer().default(1).notNull(),
+    equipment_name: text(),
+    equipment_state: text(),
+};
+
+/*************** TABLES ***************/
 
 // Drizzle defaults to using Buffer for "blob", which does not exist in the browser
 // Uint8Array is available on both Node and the browser
@@ -182,6 +200,7 @@ export const marcher_pages = sqliteTable(
         /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
         rotation_degrees: real().notNull().default(0),
+        ...appearance_columns,
     },
     (table) => [
         check(
@@ -295,11 +314,54 @@ export const shape_page_marchers = sqliteTable(
 export const section_appearances = sqliteTable("section_appearances", {
     id: integer().primaryKey(),
     section: text().notNull(),
-    fill_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-    outline_color: text().default("rgba(0, 0, 0, 1)").notNull(),
-    shape_type: text().default("circle").notNull(),
+    ...appearance_columns,
     ...timestamps,
 });
+
+export const tags = sqliteTable("tags", {
+    id: integer().primaryKey(),
+    name: text(),
+    description: text(),
+    icon: text(),
+    color_hex: text(),
+    ...timestamps,
+});
+
+/**
+ * What a tag looks like on a page and onward.
+ */
+export const tag_appearances = sqliteTable(
+    "tag_appearances",
+    {
+        id: integer().primaryKey(),
+        tag_id: integer()
+            .notNull()
+            .references(() => tags.id, { onDelete: "cascade" }),
+        start_page_id: integer()
+            .notNull()
+            // TODO: Restrict deletion so that when a page is deleted, we ensure the tag is moved to another page
+            .references(() => pages.id, { onDelete: "cascade" }),
+        priority: integer().default(0).notNull(),
+        ...appearance_columns,
+        ...timestamps,
+    },
+    (table) => [unique().on(table.tag_id, table.start_page_id)],
+);
+
+export const marcher_tags = sqliteTable(
+    "marcher_tags",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        tag_id: integer()
+            .notNull()
+            .references(() => tags.id, { onDelete: "cascade" }),
+        ...timestamps,
+    },
+    (table) => [unique().on(table.marcher_id, table.tag_id)],
+);
 
 export const utility = sqliteTable(
     "utility",
@@ -362,4 +424,32 @@ export const prop_pages = sqliteTable(
         ...timestamps,
     },
     (table) => [unique().on(table.prop_id, table.page_id)],
+);
+
+/* =========================== VIEWS =========================== */
+export const timing_objects = sqliteView("timing_objects", {
+    position: integer("position").notNull(),
+    duration: real("duration").notNull(),
+    timestamp: real("timestamp").notNull(),
+    beat_id: integer("beat_id").notNull(),
+    page_id: integer("page_id"),
+    measure_id: integer("measure_id"),
+}).as(
+    sql`
+    SELECT
+        beats.position AS position,
+        beats.duration AS duration,
+        SUM(duration) OVER (
+            ORDER BY position
+            ROWS BETWEEN UNBOUNDED PRECEDING AND 1 PRECEDING
+        ) AS timestamp,
+        beats.id AS beat_id,
+        pages.id AS page_id,
+        measures.id AS measure_id
+    FROM beats
+    LEFT JOIN pages
+        ON beats.id = pages.start_beat
+    LEFT JOIN measures
+        ON beats.id = measures.start_beat
+    ORDER BY beats.position ASC`,
 );

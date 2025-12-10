@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "Discard",
+        "removeSetting": "Remove setting",
         "save": "Save"
     },
     "coordinateRoundingSettings": {
@@ -203,9 +204,12 @@
         },
         "generatingPDF": " Generating PDF file for: {drillNumber}",
         "includeMeasures": "Include measures",
+        "includeNotesAppendix": "Include notes appendix pages",
         "individualCharts": "Individual Drill Charts",
         "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
         "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
+        "includeNotesAppendixTooltip": "Add portrait appendix pages listing notes for each set.",
+        "includeNotesAppendixTooltipDescription": "Inline notes under charts are truncated so they fit on the page. The notes appendix includes the full notes text for every page that has notes.",
         "marcher": "Marcher: {status}",
         "marchersNotLoaded": "Marchers not loaded",
         "marcherPagesNotLoaded": "Marcher pages not loaded",
@@ -466,7 +470,8 @@
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
             "viewTab": "View",
-            "shapesTab": "Shapes"
+            "shapesTab": "Shapes",
+            "selectTab": "Select"
         },
         "shapes": {
             "title": "Shapes",
@@ -532,7 +537,9 @@
         "editButton": "Edit Marchers",
         "list": {
             "addSectionStyle": "Add Section Style",
+            "addTagAppearance": "Add Tag Appearance",
             "deleteSectionStyle": "Delete this section style",
+            "none": "None",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
             "fillColor": "Fill Color",
@@ -543,17 +550,21 @@
             "pendingChanges": "Below values may not be applied until after a refresh",
             "saveChanges": "Save Changes",
             "sectionStyles": "Section Styles",
+            "sectionsInShow": "Sections in Show",
             "sectionTitle": "Section",
             "selectSection": "Section",
-            "shape": "Shape"
+            "shape": "Shape",
+            "allSections": "All Sections"
         },
         "listTitle": "List",
         "quantity": "Quantity",
         "section": "Section",
+        "sectionText": "Section",
         "sectionError": {
             "chooseSection": "Please choose a section"
         },
-        "sectionStyles": "Section Styles",
+        "marcherAppearance": "Marcher Appearance",
+        "tagText": "Tag",
         "title": "Marchers"
     },
     "music": {
@@ -620,6 +631,14 @@
     },
     "section": {
         "drumMajor": "Drum Major",
+        "family": {
+            "woodwind": "Woodwind",
+            "brass": "Brass",
+            "battery": "Battery",
+            "guard": "Guard",
+            "other": "Other",
+            "pit": "Pit"
+        },
         "guard": {
             "colorGuard": "Color Guard",
             "dancer": "Dancer",
@@ -773,6 +792,18 @@
             "nextPaths": "Next paths",
             "previousPaths": "Previous paths",
             "uiSettingsToolbar": "Ui Settings Toolbar"
+        },
+        "select": {
+            "selectByText": "Select by",
+            "selectBy": {
+                "section": "Section",
+                "drillPrefix": "Drill Prefix",
+                "family": "Family",
+                "tag": "Tag"
+            },
+            "noSectionsToSelect": "No sections to select found",
+            "noTagsToSelect": "No tags to select found",
+            "noDrillPrefixesToSelect": "No drill prefixes to select found"
         }
     },
     "versionCheck": {

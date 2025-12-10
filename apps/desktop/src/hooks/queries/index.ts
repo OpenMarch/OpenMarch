@@ -13,3 +13,6 @@ export * from "./useShapePages";
 export * from "./useProps";
 export * from "./usePropPages";
 export * from "./constants";
+export * from "./tags/queries";
+export * from "./tags/mutations";
+export * from "./useMarchersWithVisuals";

@@ -3,12 +3,15 @@ import { fabric } from "fabric";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useQuery } from "@tanstack/react-query";
-import { marcherPagesByPageQueryOptions } from "@/hooks/queries";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+    marcherPagesByPageQueryOptions,
+    marcherWithVisualsQueryOptions,
+} from "@/hooks/queries";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useMarchersWithVisuals } from "@/hooks";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
+// eslint-disable-next-line max-lines-per-function
 export const useMovementListeners = ({
     canvas,
 }: {
@@ -17,7 +20,10 @@ export const useMovementListeners = ({
     const { uiSettings } = useUiSettingsStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers } = useSelectedMarchers()!;
-    const marcherVisuals = useMarchersWithVisuals();
+    const queryClient = useQueryClient();
+    const { data: marcherVisuals } = useQuery(
+        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+    );
 
     // MarcherPage queries
     const { data: marcherPages } = useQuery(
@@ -57,7 +63,13 @@ export const useMovementListeners = ({
         }
 
         frameRef.current = requestAnimationFrame(() => {
-            if (!canvas || !selectedPage || !marcherPages) return;
+            if (
+                !canvas ||
+                !selectedPage ||
+                !marcherPages ||
+                marcherVisuals == null
+            )
+                return;
 
             // Render paths based on UI settings (pass empty objects for disabled paths)
             canvas.renderPathVisuals({

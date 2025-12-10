@@ -137,6 +137,7 @@
     },
     "colorPicker": {
         "discard": "Descartar",
+        "removeSetting": "Remover configuração",
         "save": "Salvar"
     },
     "coordinateRoundingSettings": {
@@ -203,9 +204,12 @@
         },
         "generatingPDF": "Gerando arquivo PDF para: {drillNumber}",
         "includeMeasures": "Incluir medidas",
+        "includeNotesAppendix": "Incluir páginas de apêndice de notas",
         "individualCharts": "Gráficos de Perfuração Individuais",
         "individualChartsTooltip": "Crie PDFs de gráficos detalhados personalizados para cada integrante.",
         "individualChartsTooltipDescription": "Se isso não estiver marcado, será criado um PDF de gráfico de perfuração de visão geral.",
+        "includeNotesAppendixTooltip": "Adiciona páginas de apêndice em modo retrato listando as notas de cada set.",
+        "includeNotesAppendixTooltipDescription": "As notas exibidas sob os gráficos são truncadas para caber na página. O apêndice de notas inclui o texto completo das notas para cada página que possui notas.",
         "marcher": "Marcher: {status}",
         "marchersNotLoaded": "Marchadores não carregados",
         "marcherPagesNotLoaded": "Páginas de marchadores não carregadas",
@@ -466,7 +470,8 @@
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
             "viewTab": "Visualizar",
-            "shapesTab": "Formas"
+            "shapesTab": "Formas",
+            "selectTab": "Selecionar"
         },
         "shapes": {
             "title": "Formas",
@@ -531,7 +536,9 @@
         "editButton": "Editar Marchadores",
         "list": {
             "addSectionStyle": "Adicionar Estilo de Seção",
+            "addTagAppearance": "Adicionar aparência de etiqueta",
             "deleteSectionStyle": "Excluir este estilo de seção",
+            "none": "Nenhum",
             "discardChanges": "Descartar Alterações",
             "drillNumberTitle": "#",
             "fillColor": "Cor de Preenchimento",
@@ -542,17 +549,21 @@
             "pendingChanges": "Os valores abaixo podem não ser aplicados até que seja feito um recarregamento",
             "saveChanges": "Salvar Alterações",
             "sectionStyles": "Estilos da Seção",
+            "sectionsInShow": "Seções no Show",
             "sectionTitle": "Seção",
             "selectSection": "Seção",
-            "shape": "Forma"
+            "shape": "Forma",
+            "allSections": "Todas as Seções"
         },
         "listTitle": "Lista",
         "quantity": "Quantidade",
         "section": "Seção",
+        "sectionText": "Seção",
         "sectionError": {
             "chooseSection": "Por favor, escolha uma seção"
         },
-        "sectionStyles": "Estilos da Seção",
+        "marcherAppearance": "Aparência dos marchadores",
+        "tagText": "Etiqueta",
         "title": "Marchadores"
     },
     "music": {
@@ -619,6 +630,14 @@
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
+        "family": {
+            "woodwind": "Madeiras",
+            "brass": "Metais",
+            "battery": "Bateria",
+            "guard": "Guarda",
+            "other": "Outro",
+            "pit": "Fosso"
+        },
         "guard": {
             "colorGuard": "Guarda de Cor",
             "dancer": "Dançarino",
@@ -765,6 +784,18 @@
             "nextPaths": "Próximos Caminhos",
             "previousPaths": "Caminhos Anteriores",
             "uiSettingsToolbar": "Barra de Ferramentas de Configurações da UI"
+        },
+        "select": {
+            "selectByText": "Selecionar por",
+            "selectBy": {
+                "section": "Seção",
+                "drillPrefix": "Prefixo de Ordem",
+                "family": "Família",
+                "tag": "Etiqueta"
+            },
+            "noSectionsToSelect": "Nenhuma seção encontrada para selecionar",
+            "noTagsToSelect": "Nenhuma etiqueta encontrada para selecionar",
+            "noDrillPrefixesToSelect": "Nenhum prefixo de ordem encontrado para selecionar"
         }
     },
     "versionCheck": {

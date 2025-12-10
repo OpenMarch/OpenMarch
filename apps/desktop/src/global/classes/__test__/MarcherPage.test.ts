@@ -62,7 +62,7 @@ const mockPages = [
 describe.skip("MarcherPage Functions", () => {
     it("should correctly find previous marcher page based on beat order", () => {
         // Create test data with marcher pages in non-sequential page order
-        const testMarcherPages: DatabaseMarcherPage[] = [
+        const testMarcherPages: Partial<DatabaseMarcherPage>[] = [
             {
                 id: 1,
                 marcher_id: 1,
@@ -108,8 +108,7 @@ describe.skip("MarcherPage Functions", () => {
         ];
 
         const result = databaseMarcherPagesToMarcherPages(
-            testMarcherPages,
-            mockPages,
+            testMarcherPages as DatabaseMarcherPage[],
         );
 
         // Should be sorted by page order (1, 2, 3) not by array order (2, 1, 3)

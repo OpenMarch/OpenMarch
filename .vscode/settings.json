@@ -31,5 +31,8 @@
     "jest.jestCommandLine": "node_modules/.bin/jest",
     "prettier.configPath": ".prettierrc.mjs",
     "files.eol": "\n",
-    "cSpell.import": ["cspell.config.js"]
+    "cSpell.import": [
+        "cspell.config.js"
+    ],
+    "cSpell.mergeCSpellSettings": false
 }
