@@ -1,24 +1,33 @@
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useMemo } from "react";
 import KeyboardRegistry from "./KeyboardRegistry";
 import CommandRegistry from "./CommandRegistry";
 import { registerCommands } from "./registerListeners";
 
 const useKeyRegistry = () => {
-    const keyRegistry = new KeyboardRegistry();
-    const commandRegistry = new CommandRegistry();
+    const keyRegistry = useMemo(() => new KeyboardRegistry(), []);
+    const commandRegistry = useMemo(() => new CommandRegistry(), []);
 
-    function executeCommand(keyCombo: string) {
-        const id = keyRegistry.getCommandForKey(keyCombo);
-        if (!id) return;
-        commandRegistry.execute(id);
-    }
+    const executeCommand = useCallback(
+        (keyCombo: string) => {
+            const id = keyRegistry.getCommandForKey(keyCombo);
+            if (!id) return;
+            commandRegistry.execute(id);
+        },
+        [keyRegistry, commandRegistry],
+    );
 
-    function executeId(id: string) {
-        commandRegistry.execute(id);
-    }
+    const executeId = useCallback(
+        (id: string) => {
+            commandRegistry.execute(id);
+        },
+        [commandRegistry],
+    );
 
     useEffect(() => {
-        void registerCommands(keyRegistry, commandRegistry);
+        registerCommands(keyRegistry, commandRegistry).catch((error) => {
+            console.error("Failed to register commands:", error);
+        });
+
         const eventListener = (e: KeyboardEvent) => {
             const keys = [];
             if (e.ctrlKey) keys.push("ctrl");
@@ -34,7 +43,7 @@ const useKeyRegistry = () => {
         return () => {
             window.removeEventListener("keydown", eventListener);
         };
-    });
+    }, [keyRegistry, commandRegistry, executeCommand]);
 
     return { executeId, executeCommand };
 };

@@ -14,12 +14,19 @@ function processCommandExport(
 }
 
 function overrideKeyBind(keyBoardRegistry: KeyboardRegistry) {
-    const userOverrides = fs.readFileSync("./userCommands.json", "utf-8");
-    const data: { id: string; key: string }[] = JSON.parse(userOverrides);
-
-    data.forEach((keyBind) => {
-        keyBoardRegistry.overrideKeyBind(keyBind.id, keyBind.key);
-    });
+    const configPath = __dirname + "/userCommands.json";
+    if (!fs.existsSync(configPath)) {
+        return; // No user overrides configured
+    }
+    try {
+        const userOverrides = fs.readFileSync(configPath, "utf-8");
+        const data: { id: string; key: string }[] = JSON.parse(userOverrides);
+        data.forEach((keyBind) => {
+            keyBoardRegistry.overrideKeyBind(keyBind.id, keyBind.key);
+        });
+    } catch (error) {
+        console.error("Failed to load user key bind overrides:", error);
+    }
 }
 
 export const registerCommands = async (
@@ -37,7 +44,7 @@ export const registerCommands = async (
                 );
 
             // single module export
-            if (module) {
+            if (typeof module.command === "object" && module.command.id) {
                 processCommandExport(
                     module.command,
                     keyBindRegistry,

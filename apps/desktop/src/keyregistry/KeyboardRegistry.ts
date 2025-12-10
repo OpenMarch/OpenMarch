@@ -1,13 +1,18 @@
 import { KeyBindInterface } from "./keyRegister";
 
 class KeyboardRegistry {
-    private keyBinds: Record<string, KeyBindInterface> = {}; // something like ctrl+f -> tooltip.show
+    // resolved key combo -> KeyBindInterface
+    private keyMap: Record<string, KeyBindInterface> = {};
+    // command id -> resolved key combo
+    private idToKey: Record<string, string> = {};
 
     register(keyBind: KeyBindInterface) {
-        if (this.keyBinds[keyBind.key]) {
-            throw new Error(`Duplicate keyBind id: ${keyBind.key}`);
+        const resolved = this.resolveKeyForPlatform(keyBind).toLowerCase();
+        if (this.keyMap[resolved]) {
+            throw new Error(`Duplicate keyBind for: ${resolved}`);
         }
-        this.keyBinds[keyBind.key] = keyBind;
+        this.keyMap[resolved] = { ...keyBind, key: resolved };
+        this.idToKey[keyBind.id] = resolved;
     }
 
     resolveKeyForPlatform(bind: KeyBindInterface): string {
@@ -24,15 +29,32 @@ class KeyboardRegistry {
     }
 
     getCommandForKey(keyPressed: string): string | undefined {
-        if (!(keyPressed in this.keyBinds)) return undefined;
-
-        const bind = this.keyBinds[keyPressed];
-
-        return bind.id;
+        const normalized = keyPressed.toLowerCase();
+        const bind = this.keyMap[normalized];
+        return bind?.id;
     }
 
     overrideKeyBind(id: string, newBind: string) {
-        this.keyBinds[id].key = newBind;
+        const oldResolved = this.idToKey[id];
+        if (!oldResolved) return;
+
+        const existing = this.keyMap[oldResolved];
+        if (!existing) return;
+
+        // remove old entry
+        delete this.keyMap[oldResolved];
+
+        const newResolved = newBind.toLowerCase();
+        if (this.keyMap[newResolved]) {
+            throw new Error(
+                `Cannot override; target key ${newResolved} already in use`,
+            );
+        }
+
+        // update stored bind and maps
+        const updatedBind: KeyBindInterface = { ...existing, key: newResolved };
+        this.keyMap[newResolved] = updatedBind;
+        this.idToKey[id] = newResolved;
     }
 }
 
