@@ -249,9 +249,6 @@ export default class DefaultListeners implements CanvasListeners {
             this.canvas.requestRenderAll();
             return;
         }
-
-        // Note: Removed left-click canvas dragging logic
-        // Left-click is now exclusively for selection and multi-select
     }
 
     /**
