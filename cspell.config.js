@@ -107,6 +107,7 @@ module.exports = {
         "viewports",
         "codegen",
         "spinbutton",
+        "nums",
         "monokai",
         "openmarchdev",
         "tolgee",

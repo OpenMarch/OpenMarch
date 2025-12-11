@@ -687,7 +687,6 @@
         "general.language": "Language",
         "general.showFullDatabasePath": "Show full file path",
         "mouse": "Mouse & Trackpad",
-        "mouse.panSensitivity": "Pan sensitivity",
         "mouse.trackpadMode": "Trackpad mode (recommended for macOS)",
         "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
         "mouse.zoomSensitivity": "Zoom sensitivity",
