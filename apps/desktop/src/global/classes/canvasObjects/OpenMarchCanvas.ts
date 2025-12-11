@@ -1370,7 +1370,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             page_id: -1,
             path_data_id: null,
             path_start_position: null,
-            path_end_position: null,
+            path_arrival_position: null,
             notes: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),

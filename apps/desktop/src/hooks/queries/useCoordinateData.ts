@@ -94,7 +94,7 @@ const getMarcherTimelines = (
             y: marcherPage.y,
             path: pathData,
             previousPathPosition: marcherPage.path_start_position || 0,
-            nextPathPosition: marcherPage.path_end_position || 1,
+            nextPathPosition: marcherPage.path_arrival_position || 1,
         });
         // // Add midset positions at their progress placements
         // for (const midset of midsetsForMarcherPage) {

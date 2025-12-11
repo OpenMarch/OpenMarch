@@ -3,6 +3,10 @@ import { appearance_columns } from "../../electron/database/migrations/schema";
 import { InferSelectModel } from "drizzle-orm";
 import { RgbaColor, rgbaToString } from "@openmarch/core";
 
+/**
+ * Trajectory defines an object whose appearance can be changed
+ */
+
 /** a table that is used to infer the type of the appearance columns. Do not export this table. */
 const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
     ...appearance_columns,

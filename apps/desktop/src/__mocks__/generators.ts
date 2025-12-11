@@ -323,7 +323,7 @@ const generatePathwayData = () => {
         fractionDigits: 3,
     });
 
-    // Ensure path_end_position is greater than path_start_position
+    // Ensure path_arrival_position is greater than path_start_position
     if (pathEndPosition <= pathStartPosition) {
         pathEndPosition = faker.number.float({
             min: Math.min(1, pathStartPosition + 0.001),
@@ -392,7 +392,7 @@ const createMarcherPage = (
         y,
         path_data_id: pathDataId,
         path_start_position: pathStartPosition,
-        path_end_position: pathEndPosition,
+        path_arrival_position: pathEndPosition,
         notes,
         rotation_degrees: rotationDegrees,
         created_at: faker.date.recent().toISOString(),
@@ -463,7 +463,7 @@ interface MockMidset {
     progress_placement: number;
     path_data_id: number | null;
     path_start_position: number | null;
-    path_end_position: number | null;
+    path_arrival_position: number | null;
     notes: string | null;
     created_at: string;
     updated_at: string;
@@ -628,7 +628,7 @@ const generateMockMidsets = (
                     progress_placement: progressPlacement,
                     path_data_id: pathwayId,
                     path_start_position: pathStartPosition,
-                    path_end_position: pathEndPosition,
+                    path_arrival_position: pathEndPosition,
                     notes: faker.datatype.boolean({ probability: 0.2 })
                         ? faker.lorem.sentence()
                         : null,

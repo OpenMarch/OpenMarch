@@ -370,7 +370,7 @@ describe("lockedDecorator", () => {
             updated_at: "2024-01-01T00:00:00Z",
             path_data_id: null,
             path_start_position: null,
-            path_end_position: null,
+            path_arrival_position: null,
             notes: null,
             rotation_degrees: 0,
             fill_color: null,
@@ -520,7 +520,7 @@ describe("lockedDecorator", () => {
             y: 250.75,
             path_data_id: 5,
             path_start_position: 0.2,
-            path_end_position: 0.8,
+            path_arrival_position: 0.8,
             notes: "Test notes",
             rotation_degrees: 45,
         });

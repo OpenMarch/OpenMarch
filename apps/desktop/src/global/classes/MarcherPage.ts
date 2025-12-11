@@ -4,6 +4,10 @@ import {
     AppearanceComponent,
     appearanceModelRawToParsed,
 } from "@/entity-components/appearance";
+import {
+    MotionComponent,
+    motionModelRawToParsed,
+} from "@/entity-components/motion";
 
 const { marcher_pages } = schema;
 
@@ -15,19 +19,15 @@ export type DatabaseMarcherPage = typeof marcher_pages.$inferSelect;
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
  * There should be a MarcherPage for every Marcher and Page combination (M * P).
  */
-export default interface MarcherPage extends AppearanceComponent {
+export default interface MarcherPage
+    extends AppearanceComponent,
+        MotionComponent {
     readonly id: number;
     readonly isLocked?: boolean;
     readonly lockedReason?: string;
     readonly marcher_id: number;
     readonly page_id: number;
-    readonly x: number;
-    readonly y: number;
     readonly notes: string | null;
-    readonly path_data_id: number | null;
-    readonly path_start_position: number | null;
-    readonly path_end_position: number | null;
-    readonly rotation_degrees: number;
     readonly created_at: string;
     readonly updated_at: string;
 }
@@ -85,5 +85,6 @@ export function databaseMarcherPagesToMarcherPages(
     return databaseMarcherPages.map((databaseMarcherPage) => ({
         ...databaseMarcherPage,
         ...appearanceModelRawToParsed(databaseMarcherPage),
+        ...motionModelRawToParsed(databaseMarcherPage),
     }));
 }

@@ -1,4 +1,4 @@
-import { asc, gt, eq, lt, desc, and, sql } from "drizzle-orm";
+import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
@@ -13,6 +13,10 @@ import {
 } from "./shapePageMarchers";
 import MarcherPage, { DatabaseMarcherPage } from "@/global/classes/MarcherPage";
 import { appearanceModelRawToParsed } from "@/entity-components/appearance";
+import {
+    MotionComponentUpdateArgs,
+    motionModelRawToParsed,
+} from "@/entity-components/motion";
 
 const { marcher_pages } = schema;
 
@@ -37,20 +41,10 @@ export type MarcherPageQueryFilters =
  * Defines the editable fields of a MarcherPage.
  * `marcher_id` and `page_id` are used to identify the marcherPage and cannot be changed.
  */
-export interface ModifiedMarcherPageArgs {
+export type ModifiedMarcherPageArgs = {
     marcher_id: number;
     page_id: number;
-    /** The new X coordinate of the MarcherPage */
-    x: number;
-    /** The new Y coordinate of the MarcherPage */
-    y: number;
-    notes?: string | null;
-    /** The ID of the pathway data */
-    path_data_id?: number | null;
-    /** The position along the pathway (0-1) */
-    path_start_position?: number | null;
-    path_end_position?: number | null;
-}
+} & MotionComponentUpdateArgs;
 
 async function getMarcherPageByPosition(
     tx: DbTransaction | DbConnection,
@@ -382,6 +376,7 @@ export const lockedDecorator = (
         return {
             ...marcherPage,
             ...appearanceModelRawToParsed(marcherPage),
+            ...motionModelRawToParsed(marcherPage),
             isLocked,
             lockedReason,
         };

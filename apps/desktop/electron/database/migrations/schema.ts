@@ -14,7 +14,7 @@ import { sql } from "drizzle-orm";
 
 /*************** COMMON COLUMNS ***************/
 
-const timestamps = {
+const timestamped = {
     created_at: text()
         .notNull()
         .default(sql`(CURRENT_TIMESTAMP)`),
@@ -23,8 +23,6 @@ const timestamps = {
         .default(sql`(CURRENT_TIMESTAMP)`)
         .$onUpdate(() => sql`(CURRENT_TIMESTAMP)`),
 };
-
-// APPEARANCE
 
 /** Columns that define how a marcher looks */
 export const appearance_columns = {
@@ -36,6 +34,41 @@ export const appearance_columns = {
     equipment_name: text(),
     equipment_state: text(),
 };
+
+/** Columns that define a motion */
+export const motion_columns = {
+    /** X coordinate in pixels */
+    x: real().notNull(),
+    /** Y coordinate in pixels */
+    y: real().notNull(),
+    /** The ID of the pathway data */
+    path_data_id: integer().references(() => pathways.id, {
+        onDelete: "set null",
+    }),
+    /**
+     * The position along the pathway (0-1) the object starts moving towards the arrival position.
+     * This is the position in the pathway the object starts at for this coordinate.
+     */
+    path_start_position: real(),
+    /**
+     * The position along the pathway (0-1) the object arrives on the path
+     * This is the position in the pathway the object ends up at for this coordinate.
+     */
+    path_arrival_position: real(),
+    /** The rotation of the object in degrees. 0 is facing front field */
+    rotation_degrees: real().notNull().default(0),
+};
+
+export const motion_checks = (tableName: string) => [
+    check(
+        `${tableName}_path_start_position_check`,
+        sql`path_start_position >= 0 AND path_start_position <= 1`,
+    ),
+    check(
+        `${tableName}_path_arrival_position_check`,
+        sql`path_arrival_position >= 0 AND path_arrival_position <= 1`,
+    ),
+];
 
 /*************** TABLES ***************/
 
@@ -85,7 +118,7 @@ export const beats = sqliteTable(
         include_in_measure: integer().default(1).notNull(),
         /** Human readable notes. */
         notes: text(),
-        ...timestamps,
+        ...timestamped,
     },
     (_table) => [
         check("beats_duration_check", sql`duration >= 0`),
@@ -118,7 +151,7 @@ export const pages = sqliteTable(
         is_subset: integer().default(0).notNull(),
         /** Optional notes or description for the page */
         notes: text(),
-        ...timestamps,
+        ...timestamped,
         /** The ID of the beat this page starts on */
         start_beat: integer()
             .notNull()
@@ -146,7 +179,7 @@ export const marchers = sqliteTable(
         drill_prefix: text().notNull(),
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
-        ...timestamps,
+        ...timestamped,
     },
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
 );
@@ -155,7 +188,7 @@ export const pathways = sqliteTable("pathways", {
     id: integer().primaryKey(),
     path_data: text().notNull(),
     notes: text(),
-    ...timestamps,
+    ...timestamped,
 });
 
 /**
@@ -176,37 +209,14 @@ export const marcher_pages = sqliteTable(
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
-        /** X coordinate of the MarcherPage in pixels */
-        x: real().notNull(),
-        /** Y coordinate of the MarcherPage in pixels */
-        y: real().notNull(),
-        ...timestamps,
-        /** The ID of the pathway data */
-        path_data_id: integer().references(() => pathways.id, {
-            onDelete: "set null",
-        }),
-        /**
-         * The position along the pathway (0-1).
-         * This is the position in the pathway the marcher starts at for this coordinate.
-         * If this is null, then it is assumed to be 0 (the start of the pathway).
-         */
-        path_start_position: real(),
-        /**
-         * The position along the pathway (0-1).
-         * This is the position in the pathway the marcher ends up at for this coordinate.
-         * If this is null, then it is assumed to be 1 (the end of the pathway).
-         */
-        path_end_position: real(),
+        ...timestamped,
         /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
-        rotation_degrees: real().notNull().default(0),
+        ...motion_columns,
         ...appearance_columns,
     },
     (table) => [
-        check(
-            "marcher_pages_path_data_position_check",
-            sql`path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1`,
-        ),
+        ...motion_checks("marcher_pages"),
         index("index_marcher_pages_on_page_id").on(table.page_id),
         index("index_marcher_pages_on_marcher_id").on(table.marcher_id),
         unique().on(table.marcher_id, table.page_id),
@@ -221,23 +231,14 @@ export const midsets = sqliteTable(
         mp_id: integer()
             .notNull()
             .references(() => marcher_pages.id, { onDelete: "cascade" }),
-        x: real().notNull(),
-        y: real().notNull(),
         /** The progress placement of the midset on the marcher page */
         progress_placement: real().notNull(),
-        ...timestamps,
-        path_data_id: integer().references(() => pathways.id, {
-            onDelete: "set null",
-        }),
-        path_start_position: real(),
-        path_end_position: real(),
+        ...timestamped,
+        ...motion_columns,
         notes: text(),
     },
     (table) => [
-        check(
-            "midsets_path_data_position_check",
-            sql`path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1`,
-        ),
+        ...motion_checks("midsets"),
         check(
             "placement_check",
             sql`progress_placement > 0 AND progress_placement < 1`,
@@ -262,13 +263,13 @@ export const audio_files = sqliteTable("audio_files", {
     nickname: text(),
     data: blob(),
     selected: integer().default(0).notNull(),
-    ...timestamps,
+    ...timestamped,
 });
 
 export const shapes = sqliteTable("shapes", {
     id: integer().primaryKey(),
     name: text(),
-    ...timestamps,
+    ...timestamped,
     notes: text(),
 });
 
@@ -283,7 +284,7 @@ export const shape_pages = sqliteTable(
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
         svg_path: text().notNull(),
-        ...timestamps,
+        ...timestamped,
         notes: text(),
     },
     (table) => [unique().on(table.page_id, table.shape_id)],
@@ -300,7 +301,7 @@ export const shape_page_marchers = sqliteTable(
             .notNull()
             .references(() => marchers.id, { onDelete: "cascade" }),
         position_order: integer().notNull(),
-        ...timestamps,
+        ...timestamped,
         notes: text(),
     },
     (table) => [
@@ -315,7 +316,7 @@ export const section_appearances = sqliteTable("section_appearances", {
     id: integer().primaryKey(),
     section: text().notNull(),
     ...appearance_columns,
-    ...timestamps,
+    ...timestamped,
 });
 
 export const tags = sqliteTable("tags", {
@@ -324,7 +325,7 @@ export const tags = sqliteTable("tags", {
     description: text(),
     icon: text(),
     color_hex: text(),
-    ...timestamps,
+    ...timestamped,
 });
 
 /**
@@ -343,7 +344,7 @@ export const tag_appearances = sqliteTable(
             .references(() => pages.id, { onDelete: "cascade" }),
         priority: integer().default(0).notNull(),
         ...appearance_columns,
-        ...timestamps,
+        ...timestamped,
     },
     (table) => [unique().on(table.tag_id, table.start_page_id)],
 );
@@ -358,7 +359,7 @@ export const marcher_tags = sqliteTable(
         tag_id: integer()
             .notNull()
             .references(() => tags.id, { onDelete: "cascade" }),
-        ...timestamps,
+        ...timestamped,
     },
     (table) => [unique().on(table.marcher_id, table.tag_id)],
 );
@@ -389,7 +390,7 @@ export const workspace_settings = sqliteTable(
     {
         id: integer().primaryKey(),
         json_data: text().notNull(),
-        ...timestamps,
+        ...timestamped,
     },
     (_table) => [check("workspace_settings_id_check", sql`id = 1`)],
 );
@@ -399,7 +400,9 @@ export const props = sqliteTable("props", {
     type: text().notNull().default("polygon"),
     field_label: text(),
     notes: text(),
-    ...timestamps,
+    origin_x: text().notNull().default("left"),
+    origin_y: text().notNull().default("bottom"),
+    ...timestamped,
 });
 
 export const prop_pages = sqliteTable(
@@ -412,18 +415,18 @@ export const prop_pages = sqliteTable(
         page_id: integer()
             .notNull()
             .references(() => pages.id, { onDelete: "cascade" }),
-        x: real().notNull(),
-        y: real().notNull(),
         /** JSON string of relative points for the prop page. Should be [number, number][] */
         relative_points: text().notNull(),
         /** JSON string of properties for the prop page */
         properties: text().notNull().default("{}"),
-        origin_x: text().notNull().default("left"),
-        origin_y: text().notNull().default("bottom"),
         notes: text(),
-        ...timestamps,
+        ...motion_columns,
+        ...timestamped,
     },
-    (table) => [unique().on(table.prop_id, table.page_id)],
+    (table) => [
+        unique().on(table.prop_id, table.page_id),
+        ...motion_checks("prop_pages"),
+    ],
 );
 
 /* =========================== VIEWS =========================== */

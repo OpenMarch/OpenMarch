@@ -124,7 +124,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -138,7 +138,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -152,7 +152,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -166,7 +166,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -180,7 +180,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -194,7 +194,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -208,7 +208,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -222,7 +222,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
     {
@@ -236,7 +236,7 @@ export const mockMarcherPages: Partial<DatabaseMarcherPage>[] = [
         updated_at: "other_time",
         path_data_id: null,
         path_start_position: null,
-        path_end_position: null,
+        path_arrival_position: null,
         rotation_degrees: 0,
     },
 ] as const;

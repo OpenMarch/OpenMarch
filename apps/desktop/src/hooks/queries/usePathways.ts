@@ -155,7 +155,7 @@ const pathwayMutations = {
                     .set({
                         path_data_id: createdPathway.id,
                         path_start_position: 0,
-                        path_end_position: 0,
+                        path_arrival_position: 0,
                     })
                     .where(inArray(marcher_pages.id, marcherPageIds));
             }

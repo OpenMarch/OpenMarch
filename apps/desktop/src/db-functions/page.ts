@@ -229,7 +229,8 @@ const _createMarcherPages = async ({
                         notes: marcherPage.notes,
                         path_data_id: marcherPage.path_data_id,
                         path_start_position: marcherPage.path_start_position,
-                        path_end_position: marcherPage.path_end_position,
+                        path_arrival_position:
+                            marcherPage.path_arrival_position,
                     });
             } else {
                 for (const marcher of allMarchers) {
