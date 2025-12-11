@@ -33,5 +33,9 @@
         "tsup": "^8.5.0",
         "typescript": "latest",
         "vitest": "^2.1.9"
+    },
+    "dependencies": {
+        "svg-path-commander": "^2.1.11",
+        "uuid": "^11.1.0"
     }
 }

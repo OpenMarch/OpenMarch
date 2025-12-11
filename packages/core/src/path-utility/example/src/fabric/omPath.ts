@@ -1,4 +1,4 @@
-import { ControlPointManager, Path, type Point } from "@openmarch/path-utility";
+import { ControlPointManager, Path, type Point } from "@openmarch/core";
 import { fabric } from "fabric";
 import FabricControlPoint from "./ControlPoint";
 

@@ -1,10 +1,10 @@
 import {
-    IControllableSegment,
-    Point,
-    ControlPointType,
-    ControlPointMoveCallback,
-    ControlPointConfig,
-    GlobalControlPoint,
+    type IControllableSegment,
+    type Point,
+    type ControlPointType,
+    type ControlPointMoveCallback,
+    type ControlPointConfig,
+    type GlobalControlPoint,
 } from "./interfaces";
 import { Path } from "./Path";
 import { v4 as uuidv4 } from "uuid";

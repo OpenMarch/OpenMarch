@@ -21,7 +21,6 @@
         "release": "pnpm run build && changeset version && changeset publish",
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
-        "path-utility": "turbo run --filter=@openmarch/path-utility",
         "test": "turbo run test",
         "lint": "turbo run lint",
         "format": "prettier --write .",

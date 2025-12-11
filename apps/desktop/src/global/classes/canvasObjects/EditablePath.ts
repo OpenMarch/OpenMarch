@@ -4,7 +4,7 @@ import {
     Line,
     Path,
     type Point,
-} from "@openmarch/path-utility";
+} from "@openmarch/core";
 import { fabric } from "fabric";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { FieldTheme, rgbaToString } from "@openmarch/core";

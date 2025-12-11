@@ -1,4 +1,4 @@
-import { Path, Line } from "@openmarch/path-utility";
+import { Path, Line } from "@openmarch/core";
 
 // Demo of the Path Utility functionality
 console.log("🚀 Path Utility Demo - Line Segments\n");

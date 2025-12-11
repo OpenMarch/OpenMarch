@@ -1,16 +1,16 @@
-import {
-    IPath,
-    IControllableSegment,
-    Point,
-    PathJsonData,
-    SegmentJsonData,
-} from "./interfaces";
 import { parseSvg } from "./SvgParser";
 import { Line } from "./segments/Line";
 import { Arc } from "./segments/Arc";
 import { CubicCurve } from "./segments/CubicCurve";
 import { Spline } from "./segments/Spline";
 import { QuadraticCurve } from "./segments/QuadraticCurve";
+import type {
+    IPath,
+    IControllableSegment,
+    PathJsonData,
+    SegmentJsonData,
+    Point,
+} from "./interfaces";
 
 /**
  * A path implementation that can contain multiple types of segments,
@@ -81,7 +81,7 @@ export class Path implements IPath {
         }
 
         if (dist <= 0) {
-            return this._segments[0].getPointAtLength(0);
+            return this._segments[0]!.getPointAtLength(0);
         }
 
         let remainingDistance = dist;
@@ -97,7 +97,7 @@ export class Path implements IPath {
         }
 
         // If we've gone past the end, return the last point of the last segment
-        const lastSegment = this._segments[this._segments.length - 1];
+        const lastSegment = this._segments[this._segments.length - 1]!;
         return lastSegment.getPointAtLength(lastSegment.getLength());
     }
 
@@ -105,7 +105,7 @@ export class Path implements IPath {
         if (this._segments.length === 0) {
             throw new Error("Cannot get start point of empty path");
         }
-        return this._segments[0].getStartPoint();
+        return this._segments[0]!.getStartPoint();
     }
 
     getLastPoint(): Point {
@@ -113,7 +113,7 @@ export class Path implements IPath {
             throw new Error("Cannot get last point of empty path");
         }
 
-        const lastSegment = this._segments[this._segments.length - 1];
+        const lastSegment = this._segments[this._segments.length - 1]!;
         return lastSegment.getEndPoint();
     }
 
@@ -167,8 +167,8 @@ export class Path implements IPath {
             );
 
             if (segments.length > 0) {
-                segments[0].startPointOverride = startPoint;
-                segments[segments.length - 1].endPointOverride = endPoint;
+                segments[0]!.startPointOverride = startPoint;
+                segments[segments.length - 1]!.endPointOverride = endPoint;
             }
 
             return new Path(segments, id);
@@ -245,7 +245,7 @@ export class Path implements IPath {
 
         const segments: IControllableSegment[] = [];
         for (let i = 0; i < points.length - 1; i++) {
-            segments.push(new Line(points[i], points[i + 1]));
+            segments.push(new Line(points[i]!, points[i + 1]!));
         }
 
         return new Path(segments, id);
@@ -277,7 +277,7 @@ export class Path implements IPath {
 
         // Collect all control points from all segments
         for (let i = 0; i < this._segments.length; i++) {
-            const segment = this._segments[i];
+            const segment = this._segments[i]!;
             const controlPoints = segment.getControlPoints(i);
 
             // Process each control point
@@ -317,7 +317,7 @@ export class Path implements IPath {
      */
     setStartPoint(point: Point) {
         if (this._segments.length > 0) {
-            this._segments[0].startPointOverride = point;
+            this._segments[0]!.startPointOverride = point;
         } else {
             throw new Error("Cannot set start point of empty path");
         }
@@ -329,7 +329,7 @@ export class Path implements IPath {
      */
     setEndPoint(point: Point) {
         if (this._segments.length > 0) {
-            this._segments[this._segments.length - 1].endPointOverride = point;
+            this._segments[this._segments.length - 1]!.endPointOverride = point;
         } else {
             throw new Error("Cannot set end point of empty path");
         }

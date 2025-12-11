@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Path, Line } from "@openmarch/path-utility";
+import { Path, Line } from "@openmarch/core";
 import { Button, InfoNote } from "@openmarch/ui";
 import FabricCanvas from "./components/FabricCanvas";
 import PathEditor from "./components/PathEditor";

@@ -47,7 +47,6 @@
         "@openmarch/core": "workspace:*",
         "@openmarch/metronome": "workspace:*",
         "@openmarch/musicxml-parser": "workspace:*",
-        "@openmarch/path-utility": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-alert-dialog": "^1.1.14",

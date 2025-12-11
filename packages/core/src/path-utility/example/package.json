@@ -13,7 +13,7 @@
         "demo": "tsx src/demo.ts"
     },
     "dependencies": {
-        "@openmarch/path-utility": "workspace:*",
+        "@openmarch/core": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@types/fabric": "^5.3.10",
         "fabric": "^5.5.2",

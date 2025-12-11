@@ -1,28 +1,29 @@
 import PathCommander from "svg-path-commander";
 import {
-    ControlPoint,
-    ControlPointType,
-    IControllableSegment,
-    Point,
-    SegmentJsonData,
+    type Point,
+    type SegmentJsonData,
+    type IControllableSegment,
+    type ControlPointType,
+    type ControlPoint,
 } from "../interfaces";
 import { placePointsOnBezier } from "./utils/bezier";
 
-export class QuadraticCurve implements IControllableSegment {
-    readonly type = "quadratic-curve";
-    readonly startPoint: Point;
-    readonly controlPoint: Point;
-    readonly endPoint: Point;
+/**
+ * Represents a cubic Bézier curve segment with start point, two control points, and end point.
+ */
+export class CubicCurve implements IControllableSegment {
+    readonly type = "cubic-curve";
 
     // Override properties for start and end points
     public startPointOverride?: Point;
     public endPointOverride?: Point;
 
-    constructor(startPoint: Point, controlPoint: Point, endPoint: Point) {
-        this.startPoint = startPoint;
-        this.controlPoint = controlPoint;
-        this.endPoint = endPoint;
-    }
+    constructor(
+        public readonly startPoint: Point,
+        public readonly controlPoint1: Point,
+        public readonly controlPoint2: Point,
+        public readonly endPoint: Point,
+    ) {}
 
     getLength(): number {
         const pathString = this.toSvgString();
@@ -41,7 +42,12 @@ export class QuadraticCurve implements IControllableSegment {
         const effectiveStartPoint = this.getStartPoint();
         const effectiveEndPoint = this.getEndPoint();
         return placePointsOnBezier({
-            points: [effectiveStartPoint, this.controlPoint, effectiveEndPoint],
+            points: [
+                effectiveStartPoint,
+                this.controlPoint1,
+                this.controlPoint2,
+                effectiveEndPoint,
+            ],
             count: numberOfPoints,
         });
     }
@@ -58,7 +64,7 @@ export class QuadraticCurve implements IControllableSegment {
         const effectiveStartPoint = this.startPointOverride || this.startPoint;
         const effectiveEndPoint = this.endPointOverride || this.endPoint;
 
-        return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} Q ${this.controlPoint.x} ${this.controlPoint.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
+        return `M ${effectiveStartPoint.x} ${effectiveStartPoint.y} C ${this.controlPoint1.x} ${this.controlPoint1.y} ${this.controlPoint2.x} ${this.controlPoint2.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
     }
 
     toJson(): SegmentJsonData {
@@ -66,40 +72,38 @@ export class QuadraticCurve implements IControllableSegment {
             type: this.type,
             data: {
                 startPoint: { ...this.getStartPoint() },
-                controlPoint: { ...this.controlPoint },
+                controlPoint1: { ...this.controlPoint1 },
+                controlPoint2: { ...this.controlPoint2 },
                 endPoint: { ...this.getEndPoint() },
             },
         };
     }
 
     fromJson(data: SegmentJsonData): IControllableSegment {
-        if (data.type !== "quadratic-curve") {
+        if (data.type !== "cubic-curve") {
             throw new Error(
-                `Cannot create QuadraticCurve from data of type ${data.type}`,
+                `Cannot create CubicCurve from data of type ${data.type}`,
             );
         }
-        return new QuadraticCurve(
+        return new CubicCurve(
             data.data.startPoint,
-            data.data.controlPoint,
+            data.data.controlPoint1,
+            data.data.controlPoint2,
             data.data.endPoint,
         );
     }
 
-    static fromJson(data: SegmentJsonData): QuadraticCurve {
-        const instance = new QuadraticCurve(
+    static fromJson(data: SegmentJsonData): CubicCurve {
+        const instance = new CubicCurve(
+            { x: 0, y: 0 },
             { x: 0, y: 0 },
             { x: 0, y: 0 },
             { x: 0, y: 0 },
         );
-        return instance.fromJson(data) as QuadraticCurve;
+        return instance.fromJson(data) as CubicCurve;
     }
 
-    toSvgCommand(): string {
-        const effectiveEndPoint = this.endPointOverride || this.endPoint;
-
-        return `Q ${this.controlPoint.x} ${this.controlPoint.y} ${effectiveEndPoint.x} ${effectiveEndPoint.y}`;
-    }
-
+    // IControllableSegment implementation
     getControlPoints(segmentIndex: number): ControlPoint[] {
         const effectiveStartPoint = this.startPointOverride || this.startPoint;
         const effectiveEndPoint = this.endPointOverride || this.endPoint;
@@ -112,15 +116,21 @@ export class QuadraticCurve implements IControllableSegment {
                 type: "start" as ControlPointType,
             },
             {
-                point: { ...this.controlPoint },
+                point: { ...this.controlPoint1 },
                 segmentIndex,
                 pointIndex: 1,
                 type: "control1" as ControlPointType,
             },
             {
-                point: { ...effectiveEndPoint },
+                point: { ...this.controlPoint2 },
                 segmentIndex,
                 pointIndex: 2,
+                type: "control2" as ControlPointType,
+            },
+            {
+                point: { ...effectiveEndPoint },
+                segmentIndex,
+                pointIndex: 3,
                 type: "end" as ControlPointType,
             },
         ];
@@ -133,26 +143,36 @@ export class QuadraticCurve implements IControllableSegment {
     ): IControllableSegment {
         switch (controlPointType) {
             case "start":
-                return new QuadraticCurve(
+                return new CubicCurve(
                     newPoint,
-                    this.controlPoint,
+                    this.controlPoint1,
+                    this.controlPoint2,
                     this.endPoint,
                 );
             case "control1":
-                return new QuadraticCurve(
+                return new CubicCurve(
                     this.startPoint,
+                    newPoint,
+                    this.controlPoint2,
+                    this.endPoint,
+                );
+            case "control2":
+                return new CubicCurve(
+                    this.startPoint,
+                    this.controlPoint1,
                     newPoint,
                     this.endPoint,
                 );
             case "end":
-                return new QuadraticCurve(
+                return new CubicCurve(
                     this.startPoint,
-                    this.controlPoint,
+                    this.controlPoint1,
+                    this.controlPoint2,
                     newPoint,
                 );
             default:
                 throw new Error(
-                    `QuadraticCurve segments do not support control point type: ${controlPointType}`,
+                    `CubicCurve segments do not support control point type: ${controlPointType}`,
                 );
         }
     }

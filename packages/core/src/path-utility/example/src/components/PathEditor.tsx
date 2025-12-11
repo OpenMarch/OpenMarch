@@ -7,7 +7,7 @@ import {
     Path,
     QuadraticCurve,
     Spline,
-} from "@openmarch/path-utility";
+} from "@openmarch/core";
 import OmPath from "../fabric/omPath";
 import { Button } from "@openmarch/ui";
 

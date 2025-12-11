@@ -15,7 +15,7 @@ A TypeScript library for working with complex paths that can contain multiple ty
 ## Installation
 
 ```bash
-npm install @openmarch/path-utility
+npm install @openmarch/core
 ```
 
 ## Interactive Control Points
@@ -25,12 +25,7 @@ The library now supports interactive control point editing, perfect for UI appli
 ### Quick Start with Control Points
 
 ```typescript
-import {
-  Path,
-  Line,
-  CubicCurve,
-  ControlPointManager,
-} from "@openmarch/path-utility";
+import { Path, Line, CubicCurve, ControlPointManager } from "@openmarch/core";
 
 // Create a path with a line and a curve
 const path = new Path([
@@ -165,7 +160,7 @@ The key feature of this library is the ability to distinguish between spline seg
 ### Basic Path Creation
 
 ```typescript
-import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/path-utility";
+import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/core";
 
 // Create a new path
 const path = new Path();

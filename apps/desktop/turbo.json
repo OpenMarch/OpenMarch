@@ -6,7 +6,6 @@
                 "@openmarch/core#dev",
                 "@openmarch/musicxml-parser#dev",
                 "@openmarch/ui#dev",
-                "@openmarch/path-utility#dev",
                 "@openmarch/metronome#dev"
             ],
             "persistent": true,

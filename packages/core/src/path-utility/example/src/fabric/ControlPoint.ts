@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { type GlobalControlPoint, type Point } from "@openmarch/path-utility";
+import { type GlobalControlPoint, type Point } from "@openmarch/core";
 
 export default class FabricControlPoint extends fabric.Circle {
     private _controlPointObj: GlobalControlPoint;

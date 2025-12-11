@@ -1,9 +1,9 @@
 import {
-    IControllableSegment,
-    Point,
-    SegmentJsonData,
-    ControlPointType,
-    ControlPoint,
+    type IControllableSegment,
+    type Point,
+    type SegmentJsonData,
+    type ControlPointType,
+    type ControlPoint,
 } from "../interfaces";
 
 /**
@@ -61,7 +61,7 @@ export class Spline implements IControllableSegment {
 
     getPointAtLength(dist: number): Point {
         const totalLength = this.getLength();
-        if (totalLength === 0) return { ...this.controlPoints[0] };
+        if (totalLength === 0) return { ...this.controlPoints[0]! };
 
         const t = Math.max(0, Math.min(1, dist / totalLength));
         return this.getPointAtT(t);
@@ -84,11 +84,11 @@ export class Spline implements IControllableSegment {
     }
 
     getStartPoint(): Point {
-        return this.controlPoints[0];
+        return this.controlPoints[0]!;
     }
 
     getEndPoint(): Point {
-        return this.controlPoints[this.controlPoints.length - 1];
+        return this.controlPoints[this.controlPoints.length - 1]!;
     }
 
     private getPointAtT(t: number): Point {
@@ -104,11 +104,11 @@ export class Spline implements IControllableSegment {
         const points = this.controlPoints;
         const n = points.length;
 
-        if (n === 1) return { ...points[0] };
+        if (n === 1) return { ...points[0]! };
         if (n === 2) {
             return {
-                x: points[0].x + t * (points[1].x - points[0].x),
-                y: points[0].y + t * (points[1].y - points[0].y),
+                x: points[0]!.x + t * (points[1]!.x - points[0]!.x),
+                y: points[0]!.y + t * (points[1]!.y - points[0]!.y),
             };
         }
 
@@ -121,7 +121,7 @@ export class Spline implements IControllableSegment {
 
         // Ensure we don't go beyond the valid segments
         if (segmentIndex >= numSegments) {
-            return { ...points[n - 1] };
+            return { ...points[n - 1]! };
         }
 
         // For each segment, we need 4 control points: p0, p1, p2, p3
@@ -130,22 +130,22 @@ export class Spline implements IControllableSegment {
 
         if (segmentIndex === 0) {
             // First segment: curve from p1 to p2
-            p0 = points[0]; // Use first point twice for smooth start
-            p1 = points[0];
-            p2 = points[1];
-            p3 = points[2];
+            p0 = points[0]!; // Use first point twice for smooth start
+            p1 = points[0]!;
+            p2 = points[1]!;
+            p3 = points[2]!;
         } else if (segmentIndex === numSegments - 1) {
             // Last segment: curve from p1 to p2
-            p0 = points[segmentIndex - 1];
-            p1 = points[segmentIndex];
-            p2 = points[segmentIndex + 1];
-            p3 = points[segmentIndex + 1]; // Use last point twice for smooth end
+            p0 = points[segmentIndex - 1]!;
+            p1 = points[segmentIndex]!;
+            p2 = points[segmentIndex + 1]!;
+            p3 = points[segmentIndex + 1]!; // Use last point twice for smooth end
         } else {
             // Middle segments: normal case
-            p0 = points[segmentIndex - 1];
-            p1 = points[segmentIndex];
-            p2 = points[segmentIndex + 1];
-            p3 = points[segmentIndex + 2];
+            p0 = points[segmentIndex - 1]!;
+            p1 = points[segmentIndex]!;
+            p2 = points[segmentIndex + 1]!;
+            p3 = points[segmentIndex + 2]!;
         }
 
         // Catmull-Rom interpolation formula
@@ -155,7 +155,7 @@ export class Spline implements IControllableSegment {
         return {
             x:
                 0.5 *
-                (2 * p1.x +
+                (2 * p1.x! +
                     (-p0.x + p2.x) * localT +
                     (2 * p0.x - 5 * p1.x + 4 * p2.x - p3.x) * t2 +
                     (-p0.x + 3 * p1.x - 3 * p2.x + p3.x) * t3),
@@ -179,7 +179,7 @@ export class Spline implements IControllableSegment {
 
         // Simplified evaluation - for production, implement de Boor's algorithm
         if (span >= n - 1) {
-            return { ...this.controlPoints[n - 1] };
+            return { ...this.controlPoints[n - 1]! };
         }
 
         return this.catmullRomInterpolation(t); // Fallback
@@ -206,15 +206,15 @@ export class Spline implements IControllableSegment {
     private findKnotSpan(t: number, knots: number[]): number {
         const n = this.controlPoints.length - 1;
 
-        if (t >= knots[n + 1]) return n;
-        if (t <= knots[this.degree]) return this.degree;
+        if (t >= knots[n + 1]!) return n;
+        if (t <= knots[this.degree]!) return this.degree;
 
         let low = this.degree;
         let high = n + 1;
         let mid = Math.floor((low + high) / 2);
 
-        while (t < knots[mid] || t >= knots[mid + 1]) {
-            if (t < knots[mid]) {
+        while (t < knots[mid]! || t >= knots[mid + 1]!) {
+            if (t < knots[mid]!) {
                 high = mid;
             } else {
                 low = mid;
@@ -237,10 +237,10 @@ export class Spline implements IControllableSegment {
         const n = points.length;
         if (n < 2) return "";
 
-        let pathData = `M ${points[0].x} ${points[0].y}`;
+        let pathData = `M ${points[0]!.x} ${points[0]!.y}`;
 
         if (n === 2) {
-            pathData += ` L ${points[1].x} ${points[1].y}`;
+            pathData += ` L ${points[1]!.x} ${points[1]!.y}`;
             if (this.closed) {
                 pathData += " Z";
             }
@@ -249,10 +249,10 @@ export class Spline implements IControllableSegment {
 
         if (this.closed) {
             for (let i = 0; i < n; i++) {
-                const p0 = points[(i - 1 + n) % n];
-                const p1 = points[i];
-                const p2 = points[(i + 1) % n];
-                const p3 = points[(i + 2) % n];
+                const p0 = points[(i - 1 + n) % n]!;
+                const p1 = points[i]!;
+                const p2 = points[(i + 1) % n]!;
+                const p3 = points[(i + 2) % n]!;
 
                 const cp1x = p1.x + (p2.x - p0.x) / 6;
                 const cp1y = p1.y + (p2.y - p0.y) / 6;
@@ -265,10 +265,10 @@ export class Spline implements IControllableSegment {
         } else {
             // Open spline
             for (let i = 0; i < n - 1; i++) {
-                const p0 = points[i > 0 ? i - 1 : 0];
-                const p1 = points[i];
-                const p2 = points[i + 1];
-                const p3 = points[i < n - 2 ? i + 2 : n - 1];
+                const p0 = points[i > 0 ? i - 1 : 0]!;
+                const p1 = points[i]!;
+                const p2 = points[i + 1]!;
+                const p3 = points[i < n - 2 ? i + 2 : n - 1]!;
 
                 const cp1x = p1.x + (p2.x - p0.x) / 6;
                 const cp1y = p1.y + (p2.y - p0.y) / 6;
@@ -368,10 +368,10 @@ export class Spline implements IControllableSegment {
 
         // Apply overrides if provided
         if (this.startPointOverride && controlPoints.length > 0) {
-            controlPoints[0].point = { ...this.startPointOverride };
+            controlPoints[0]!.point = { ...this.startPointOverride };
         }
         if (this.endPointOverride && controlPoints.length > 0) {
-            controlPoints[controlPoints.length - 1].point = {
+            controlPoints[controlPoints.length - 1]!.point = {
                 ...this.endPointOverride,
             };
         }

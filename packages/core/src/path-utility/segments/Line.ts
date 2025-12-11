@@ -1,10 +1,10 @@
 import PathCommander from "svg-path-commander";
 import {
-    Point,
-    SegmentJsonData,
-    IControllableSegment,
-    ControlPointType,
-    ControlPoint,
+    type Point,
+    type SegmentJsonData,
+    type IControllableSegment,
+    type ControlPointType,
+    type ControlPoint,
 } from "../interfaces";
 
 /**

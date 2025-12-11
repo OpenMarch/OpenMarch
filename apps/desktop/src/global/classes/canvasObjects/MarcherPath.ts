@@ -1,4 +1,4 @@
-import { IControllableSegment, IPath, Point } from "@openmarch/path-utility";
+import { IControllableSegment, IPath, Point } from "@openmarch/core";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { MarcherPathSegment } from "./MarcherPathSegment";
 import { ControlPoint } from "./ControlPoint";

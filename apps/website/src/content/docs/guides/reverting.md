@@ -23,37 +23,37 @@ E.g. "`into the light.dots`" will be named "`backup_2025-11-16T22-42-59-856Z_int
 
 ### Windows
 
-```path
+```txt
 %localappdata%\OpenMarch\backups
 ```
 
 or
 
-```path
+```txt
 C:\Users\{YOUR_USERNAME}\Appdata\Local\OpenMarch\backups
 ```
 
 ### MacOS
 
-```path
+```txt
 ~/Library/Application Support/OpenMarch/backups
 ```
 
 or
 
-```path
+```txt
 /Users/{YOUR_USERNAME}/Library/Application Support/OpenMarch/backups
 ```
 
 ### Linux
 
-```path
+```txt
 ~/.local/share/OpenMarch/backups
 ```
 
 or
 
-```path
+```txt
 /home/{YOUR_USERNAME}/.local/share/OpenMarch/backups
 ```
 

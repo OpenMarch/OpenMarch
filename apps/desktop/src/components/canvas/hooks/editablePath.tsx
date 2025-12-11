@@ -4,7 +4,7 @@ import {
     useCreatePathway,
     useUpdatePathway,
 } from "@/hooks/queries";
-import { Path } from "@openmarch/path-utility";
+import { Path } from "@openmarch/core";
 import { useEffect } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 

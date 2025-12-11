@@ -37,7 +37,7 @@ This example demonstrates how to use the OpenMarch Path Utility with Fabric.js t
 
 ### Path Utility Integration
 
-- Uses `Line` class from `@openmarch/path-utility`
+- Uses `Line` class from `@openmarch/core`
 - Creates `Path` objects to manage multiple segments
 - Maintains synchronization between visual representation and data model
 
@@ -86,7 +86,7 @@ This example demonstrates how to use the OpenMarch Path Utility with Fabric.js t
 ## Dependencies
 
 - `fabric`: Canvas manipulation and drawing
-- `@openmarch/path-utility`: Path and line segment management
+- `@openmarch/core`: Path and line segment management
 - `react`: UI framework
 - `typescript`: Type safety
 

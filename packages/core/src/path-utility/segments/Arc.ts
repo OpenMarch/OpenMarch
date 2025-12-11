@@ -1,11 +1,11 @@
-import {
-    Point,
-    SegmentJsonData,
-    IControllableSegment,
-    ControlPointType,
-    ControlPoint,
-} from "../interfaces";
 import PathCommander from "svg-path-commander";
+import type {
+    IControllableSegment,
+    SegmentJsonData,
+    ControlPoint,
+    ControlPointType,
+    Point,
+} from "../interfaces";
 
 /**
  * Represents an SVG elliptical arc segment defined by start point, radii, flags, and end point.
