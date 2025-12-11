@@ -112,9 +112,16 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
 
+        // Alt+drag panning is owned by OpenMarchCanvas (forceTrackpadPan); skip here.
+        if (evt.altKey) {
+            evt.preventDefault();
+            this.canvas.selection = false;
+            this.canvas.isDragging = false;
+            return;
+        }
+
         // Handle middle mouse button or right click for panning
-        if (evt.button === 1 || evt.button === 2 || evt.altKey) {
-            // Middle mouse button, right click, or Alt key
+        if (evt.button === 1 || evt.button === 2) {
             evt.preventDefault();
             this.isMiddleMouseDown = true;
             this.lastMousePosition = { x: evt.clientX, y: evt.clientY };
