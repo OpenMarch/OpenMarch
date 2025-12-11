@@ -14,7 +14,6 @@ import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
-import { update } from "./update";
 import {
     addRecentFile,
     getRecentFiles,
@@ -23,11 +22,11 @@ import {
     updateRecentFileSvgPreview,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
-import Page from "@/global/classes/Page";
 import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
+import { getAutoUpdater } from "./update";
 
 // The built directory structure
 //
@@ -99,6 +98,7 @@ let win: BrowserWindow | null = null;
 const preload = join(__dirname, "../preload/index.js");
 const url = process.env.VITE_DEV_SERVER_URL;
 const indexHtml = join(process.env.DIST, "index.html");
+// eslint-disable-next-line max-lines-per-function
 async function createWindow(title?: string) {
     win = new BrowserWindow({
         title: title || "OpenMarch",
@@ -219,7 +219,8 @@ async function createWindow(title?: string) {
     });
 
     // Apply electron-updater
-    update(win);
+    const autoUpdater = getAutoUpdater();
+    await autoUpdater.checkForUpdatesAndNotify();
 }
 
 void app.whenReady().then(async () => {
