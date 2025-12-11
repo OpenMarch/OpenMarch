@@ -228,22 +228,9 @@ export default class DefaultListeners implements CanvasListeners {
             const deltaX = e.clientX - this.lastMousePosition.x;
             const deltaY = e.clientY - this.lastMousePosition.y;
 
-            const panBehavior =
-                this.canvas.uiSettings?.mouseSettings?.panBehavior || "exact";
-
-            if (panBehavior === "zoom-adjusted") {
-                // Adjust panning speed based on zoom level for more precise control
-                const zoomFactor = this.canvas.getZoom();
-                const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
-
-                // Apply the pan with adjusted speed
-                vpt[4] += deltaX * panSpeed;
-                vpt[5] += deltaY * panSpeed;
-            } else {
-                // Apply the pan directly - canvas moves exactly the same amount as mouse movement
-                vpt[4] += deltaX;
-                vpt[5] += deltaY;
-            }
+            // Exact 1:1 panning - canvas moves exactly the same number of pixels as mouse
+            vpt[4] += deltaX;
+            vpt[5] += deltaY;
 
             this.lastMousePosition = { x: e.clientX, y: e.clientY };
             this.canvas.requestRenderAll();

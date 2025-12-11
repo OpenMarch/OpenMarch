@@ -29,14 +29,12 @@ export interface UiSettings {
     mouseSettings: {
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
         trackpadMode: boolean;
-        /** Trackpad pan sensitivity (0.1-3.0) */
+        /** Trackpad wheel pan sensitivity (0.1-3.0) */
         trackpadPanSensitivity: number;
-        /** Multiplier for base zoom sensitivity. Default: 1.0 (100%). Range 0.5-2.0 (50%-200%). */
+        /** Zoom sensitivity multiplier. Default: 1.0 (100%). Range 0.5-2.0. */
         zoomSensitivity: number;
-        /** Standard pan sensitivity (0.1-3.0) */
+        /** Trackpad drag pan sensitivity (0.1-3.0) */
         panSensitivity: number;
-        /** Pan behavior: "exact" moves canvas exactly with mouse, "zoom-adjusted" adjusts speed based on zoom level */
-        panBehavior: "exact" | "zoom-adjusted";
     };
     coordinateRounding?: {
         /** In steps, the closest step to round to on the X-axis, offset on the nearestXSteps */
@@ -70,7 +68,6 @@ export const defaultSettings: UiSettings = {
         trackpadPanSensitivity: 0.5,
         zoomSensitivity: 1.0,
         panSensitivity: 0.5,
-        panBehavior: "exact",
     },
     coordinateRounding: {
         nearestXSteps: 0,
