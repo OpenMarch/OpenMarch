@@ -31,7 +31,7 @@ export interface UiSettings {
         trackpadMode: boolean;
         /** Trackpad wheel pan sensitivity (0.1-3.0) */
         trackpadPanSensitivity: number;
-        /** Zoom sensitivity multiplier. Default: 1.0 (100%). Range 0.5-2.0. */
+        /** Zoom sensitivity multiplier. Default: 1.0 (100%). Range 0.5-4.0. */
         zoomSensitivity: number;
     };
     coordinateRounding?: {
@@ -76,6 +76,9 @@ export const defaultSettings: UiSettings = {
 
 const STORAGE_KEY = "openmarch:uiSettings";
 
+const clampZoomSensitivity = (value: number): number =>
+    Math.min(4.0, Math.max(0.5, value));
+
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {
     try {
@@ -83,15 +86,21 @@ const loadSettings = (): UiSettings => {
         if (!stored) return defaultSettings;
 
         const parsed = JSON.parse(stored) as UiSettings;
+        const mergedMouseSettings = {
+            ...defaultSettings.mouseSettings,
+            ...parsed.mouseSettings,
+        };
+        if (mergedMouseSettings.zoomSensitivity !== undefined) {
+            mergedMouseSettings.zoomSensitivity = clampZoomSensitivity(
+                mergedMouseSettings.zoomSensitivity,
+            );
+        }
         // Merge with default settings to ensure all properties exist
         // Deep merge nested objects to preserve new properties in defaults
         return {
             ...defaultSettings,
             ...parsed,
-            mouseSettings: {
-                ...defaultSettings.mouseSettings,
-                ...parsed.mouseSettings,
-            },
+            mouseSettings: mergedMouseSettings,
             coordinateRounding: parsed.coordinateRounding
                 ? {
                       ...defaultSettings.coordinateRounding,
@@ -143,6 +152,12 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
 
         setUiSettings: (newUiSettings, type) => {
             const uiSettings = { ...newUiSettings };
+
+            if (uiSettings.mouseSettings?.zoomSensitivity !== undefined) {
+                uiSettings.mouseSettings.zoomSensitivity = clampZoomSensitivity(
+                    uiSettings.mouseSettings.zoomSensitivity,
+                );
+            }
 
             if (uiSettings.lockX && type === "lockX") {
                 uiSettings.lockY = false;

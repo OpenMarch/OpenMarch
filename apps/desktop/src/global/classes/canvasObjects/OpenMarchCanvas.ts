@@ -531,8 +531,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (lastTouch && this.viewportTransform) {
                 const deltaX = touch.clientX - lastTouch.x;
                 const deltaY = touch.clientY - lastTouch.y;
-                this.viewportTransform[4] += deltaX * this.panSensitivity;
-                this.viewportTransform[5] += deltaY * this.panSensitivity;
+                const pan = this.trackpadPanSensitivity ?? 1;
+                this.viewportTransform[4] += deltaX * pan;
+                this.viewportTransform[5] += deltaY * pan;
                 this.requestRenderAll();
                 this.checkCanvasBounds();
                 this.touchPoints[touch.identifier] = {
@@ -792,7 +793,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (this._uiSettings?.mouseSettings) {
             this.zoomSensitivity =
                 this._uiSettings.mouseSettings.zoomSensitivity;
-            this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
             this.trackpadPanSensitivity =
                 this._uiSettings.mouseSettings.trackpadPanSensitivity;
             if (this._uiSettings.mouseSettings.trackpadMode !== undefined) {
