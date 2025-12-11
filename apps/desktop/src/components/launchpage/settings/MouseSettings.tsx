@@ -61,65 +61,36 @@ export default function MouseSettings() {
 
             {/* Trackpad-specific sensitivities */}
             {uiSettings.mouseSettings.trackpadMode && (
-                <>
-                    <div className="flex h-[2.5rem] items-center justify-between px-8">
-                        <label
-                            htmlFor="panSensitivity"
-                            className="text-body text-text-subtitle"
-                        >
-                            <T keyName="settings.mouse.panSensitivity" />
-                        </label>
-                        <div className="w-[200px]">
-                            <Slider
-                                min={0.1}
-                                max={3.0}
-                                step={0.1}
-                                value={[
-                                    uiSettings.mouseSettings.panSensitivity,
-                                ]}
-                                onValueChange={([value]) =>
-                                    setUiSettings({
-                                        ...uiSettings,
-                                        mouseSettings: {
-                                            ...uiSettings.mouseSettings,
-                                            panSensitivity: value,
-                                        },
-                                    })
-                                }
-                                aria-label={`${t("settings.mouse.panSensitivity")}`}
-                            />
-                        </div>
+                <div className="flex h-[2.5rem] items-center justify-between px-8">
+                    <label
+                        htmlFor="trackpadPanSensitivity"
+                        className="text-body text-text-subtitle"
+                    >
+                        <T keyName="settings.mouse.trackpadPanSensitivity" />
+                    </label>
+                    <div className="w-[200px]">
+                        <Slider
+                            min={0.1}
+                            max={3.0}
+                            step={0.1}
+                            value={[
+                                uiSettings.mouseSettings.trackpadPanSensitivity,
+                            ]}
+                            onValueChange={([value]) =>
+                                setUiSettings({
+                                    ...uiSettings,
+                                    mouseSettings: {
+                                        ...uiSettings.mouseSettings,
+                                        trackpadPanSensitivity: value,
+                                    },
+                                })
+                            }
+                            aria-label={`${t(
+                                "settings.mouse.trackpadPanSensitivity",
+                            )}`}
+                        />
                     </div>
-                    <div className="flex h-[2.5rem] items-center justify-between px-8">
-                        <label
-                            htmlFor="trackpadPanSensitivity"
-                            className="text-body text-text-subtitle"
-                        >
-                            <T keyName="settings.mouse.trackpadPanSensitivity" />
-                        </label>
-                        <div className="w-[200px]">
-                            <Slider
-                                min={0.1}
-                                max={3.0}
-                                step={0.1}
-                                value={[
-                                    uiSettings.mouseSettings
-                                        .trackpadPanSensitivity,
-                                ]}
-                                onValueChange={([value]) =>
-                                    setUiSettings({
-                                        ...uiSettings,
-                                        mouseSettings: {
-                                            ...uiSettings.mouseSettings,
-                                            trackpadPanSensitivity: value,
-                                        },
-                                    })
-                                }
-                                aria-label={`${t("settings.mouse.trackpadPanSensitivity")}`}
-                            />
-                        </div>
-                    </div>
-                </>
+                </div>
             )}
         </div>
     );

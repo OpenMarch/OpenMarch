@@ -157,7 +157,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
 
     // Sensitivity settings
-    private panSensitivity = 0.5; // Trackpad drag/Alt pan sensitivity
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
     private _activeGroup: fabric.Group | null = null;
@@ -601,13 +600,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const deltaX = event.clientX - this.lastPosX;
             const deltaY = event.clientY - this.lastPosY;
 
-            // Trackpad/Alt panning always uses zoom-adjusted speed with panSensitivity
+            // Trackpad/Alt panning always uses zoom-adjusted speed
             const zoomFactor = this.getZoom();
             const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
-            this.viewportTransform[4] +=
-                deltaX * panSpeed * this.panSensitivity;
-            this.viewportTransform[5] +=
-                deltaY * panSpeed * this.panSensitivity;
+            this.viewportTransform[4] += deltaX * panSpeed;
+            this.viewportTransform[5] += deltaY * panSpeed;
 
             this.requestRenderAll();
             this.checkCanvasBounds();

@@ -33,8 +33,6 @@ export interface UiSettings {
         trackpadPanSensitivity: number;
         /** Zoom sensitivity multiplier. Default: 1.0 (100%). Range 0.5-2.0. */
         zoomSensitivity: number;
-        /** Trackpad drag pan sensitivity (0.1-3.0) */
-        panSensitivity: number;
     };
     coordinateRounding?: {
         /** In steps, the closest step to round to on the X-axis, offset on the nearestXSteps */
@@ -67,7 +65,6 @@ export const defaultSettings: UiSettings = {
         trackpadMode: true,
         trackpadPanSensitivity: 0.5,
         zoomSensitivity: 1.0,
-        panSensitivity: 0.5,
     },
     coordinateRounding: {
         nearestXSteps: 0,
