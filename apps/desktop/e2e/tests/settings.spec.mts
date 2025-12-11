@@ -108,7 +108,9 @@ settingsMenus.forEach(({ name, navigate }) => {
             .getByRole("slider", { name: "Volume" })
             .press("ControlOrMeta+r");
         await page.getByLabel("Zoom sensitivity").click();
-        await page.getByLabel("Pan sensitivity", { exact: true }).click();
+        await page
+            .getByLabel("Trackpad pan sensitivity", { exact: true })
+            .click();
         await page.getByLabel("Trackpad pan sensitivity").click();
         await page
             .getByRole("switch", { name: "Trackpad mode (recommended" })
