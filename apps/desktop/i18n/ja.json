@@ -535,6 +535,7 @@
         "list": {
             "addSectionStyle": "セクションスタイルを追加",
             "addTagAppearance": "タグの外観を追加",
+            "createTagsFirst": "タグの外観を追加するには、まずマーチャーエディターでタグを作成してください。",
             "deleteSectionStyle": "このセクションスタイルを削除",
             "none": "なし",
             "discardChanges": "変更を破棄",

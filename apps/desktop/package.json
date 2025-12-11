@@ -2,7 +2,7 @@
     "name": "@openmarch/desktop",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.15-alpha",
+    "version": "0.0.15",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
     "license": "AGPL-3.0",
