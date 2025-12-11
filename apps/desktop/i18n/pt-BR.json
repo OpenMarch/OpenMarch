@@ -686,7 +686,6 @@
         "general.language": "Idioma",
         "general.showFullDatabasePath": "Mostrar caminho completo do arquivo",
         "mouse": "Mouse e Trackpad",
-        "mouse.panSensitivity": "Sensibilidade de panorâmica",
         "mouse.trackpadMode": "Modo Trackpad (recomendado para macOS)",
         "mouse.trackpadPanSensitivity": "Sensibilidade de panorâmica do trackpad",
         "mouse.zoomSensitivity": "Sensibilidade de zoom",
