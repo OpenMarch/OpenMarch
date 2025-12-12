@@ -70,6 +70,22 @@ export class Arc implements IControllableSegment {
         };
     }
 
+    getEquidistantPoints(numberOfPoints: number): Point[] {
+        if (numberOfPoints <= 0) return [];
+        if (numberOfPoints === 1) return [this.getStartPoint()];
+
+        const totalLength = this.getLength();
+        const points: Point[] = [];
+
+        for (let i = 0; i < numberOfPoints; i++) {
+            const t = i / (numberOfPoints - 1);
+            const dist = t * totalLength;
+            points.push(this.getPointAtLength(dist));
+        }
+
+        return points;
+    }
+
     getStartPoint(): Point {
         return this.startPointOverride || this.startPoint;
     }
@@ -242,7 +258,6 @@ export class Arc implements IControllableSegment {
                 const constrainedPoint = { x: midPoint.x, y: newPoint.y };
                 const rx = getDistance(this.startPoint, this.endPoint) / 2;
                 const ry = getDistance(constrainedPoint, midPoint);
-                console.log("ry", ry);
 
                 return new Arc(
                     this.startPoint,

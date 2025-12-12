@@ -6,6 +6,7 @@ import {
     Point,
     SegmentJsonData,
 } from "../interfaces";
+import { placePointsOnBezier } from "./utils/bezier";
 
 export class QuadraticCurve implements IControllableSegment {
     readonly type = "quadratic-curve";
@@ -34,6 +35,15 @@ export class QuadraticCurve implements IControllableSegment {
         const path = new PathCommander(pathString);
         const point = path.getPointAtLength(dist);
         return { x: point.x, y: point.y };
+    }
+
+    getEquidistantPoints(numberOfPoints: number): Point[] {
+        const effectiveStartPoint = this.getStartPoint();
+        const effectiveEndPoint = this.getEndPoint();
+        return placePointsOnBezier({
+            points: [effectiveStartPoint, this.controlPoint, effectiveEndPoint],
+            count: numberOfPoints,
+        });
     }
 
     getStartPoint(): Point {
