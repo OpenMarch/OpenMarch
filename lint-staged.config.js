@@ -1,11 +1,11 @@
 module.exports = {
     "*.{js,jsx,ts,tsx,astro}": [
+        "cspell --no-must-find-files",
         "eslint --fix",
         "prettier --write --ignore-unknown",
-        "cspell --no-must-find-files",
     ],
     "*.{json,md,mdx}": [
-        "prettier --write --ignore-unknown",
         "cspell --no-must-find-files",
+        "prettier --write --ignore-unknown",
     ],
 };

@@ -35,6 +35,29 @@ export class Line implements IControllableSegment {
         return { x: point.x, y: point.y };
     }
 
+    getEquidistantPoints(numberOfPoints: number): Point[] {
+        if (numberOfPoints <= 0) return [];
+        if (numberOfPoints === 1) return [this.getStartPoint()];
+
+        const effectiveStartPoint = this.getStartPoint();
+        const effectiveEndPoint = this.getEndPoint();
+        const points: Point[] = [];
+
+        for (let i = 0; i < numberOfPoints; i++) {
+            const t = i / (numberOfPoints - 1);
+            points.push({
+                x:
+                    effectiveStartPoint.x +
+                    t * (effectiveEndPoint.x - effectiveStartPoint.x),
+                y:
+                    effectiveStartPoint.y +
+                    t * (effectiveEndPoint.y - effectiveStartPoint.y),
+            });
+        }
+
+        return points;
+    }
+
     getStartPoint(): Point {
         return this.startPointOverride || this.startPoint;
     }
