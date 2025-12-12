@@ -18,7 +18,7 @@ import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 
 const KEY_BASE = "marcher-appearances";
 
-export const appearancesKeys = {
+export const marcherAppearancesKeys = {
     all: () => [KEY_BASE] as const,
     byPageId: (pageId: number) => [KEY_BASE, { pageId }] as const,
 };
@@ -144,7 +144,7 @@ export const marcherAppearancesQueryOptions = (
 ) =>
     queryOptions<MarcherAppearanceByIdMap>({
         // eslint-disable-next-line @tanstack/query/exhaustive-deps
-        queryKey: appearancesKeys.byPageId(pageId!),
+        queryKey: marcherAppearancesKeys.byPageId(pageId!),
         queryFn: async () => {
             const [
                 marchers,
