@@ -226,69 +226,74 @@ export default function Canvas({
         if (!canvas || !marchers || marcherVisuals == null || !fieldProperties)
             return;
 
-        // Remove all marcher visuals from the canvas
-        canvas.getCanvasMarchers().forEach((canvasMarcher) => {
-            canvas.remove(canvasMarcher);
-            canvas.remove(canvasMarcher.textLabel);
-        });
-        canvas.getPathways().forEach((pathway) => {
-            canvas.remove(pathway);
-        });
-        canvas.getMidpoints().forEach((midpoint) => {
-            canvas.remove(midpoint);
-        });
-        canvas.getEndpoints().forEach((endpoint) => {
-            canvas.remove(endpoint);
-        });
+        canvas.renderOnAddRemove = false;
+        try {
+            // Remove all marcher visuals from the canvas
+            canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+                canvas.remove(canvasMarcher);
+                canvas.remove(canvasMarcher.textLabel);
+            });
+            canvas.getPathways().forEach((pathway) => {
+                canvas.remove(pathway);
+            });
+            canvas.getMidpoints().forEach((midpoint) => {
+                canvas.remove(midpoint);
+            });
+            canvas.getEndpoints().forEach((endpoint) => {
+                canvas.remove(endpoint);
+            });
 
-        // Add all marcher visuals to the canvas
-        marchers.forEach((marcher) => {
-            const visualGroup = marcherVisuals[marcher.id];
-            if (!visualGroup) return;
+            // Add all marcher visuals to the canvas
+            marchers.forEach((marcher) => {
+                const visualGroup = marcherVisuals[marcher.id];
+                if (!visualGroup) return;
 
-            canvas.add(visualGroup.getCanvasMarcher());
-            canvas.add(visualGroup.getCanvasMarcher().textLabel);
+                canvas.add(visualGroup.getCanvasMarcher());
+                canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
-            canvas.add(visualGroup.getPreviousPathway());
-            // TODO: Uncomment when EditablePath is fully implemented
-            // Actually don't do this! We need the editable paths in separate queries since they're by page.
-            // They can't updated on every page change
-            // visualGroup
-            //     .getNextPathway()
-            //     .getFabricObjects()
-            //     .forEach((fabricObject: fabric.Object) => {
-            //         canvas.add(fabricObject);
-            //     });
-            // Using simple pathway method (like previous paths) for now
-            canvas.add(visualGroup.getNextPathway());
-            visualGroup
-                .getPreviousPathway()
-                .setColor(fieldProperties.theme.previousPath);
-            visualGroup
-                .getNextPathway()
-                .setColor(fieldProperties.theme.nextPath);
+                canvas.add(visualGroup.getPreviousPathway());
+                // TODO: Uncomment when EditablePath is fully implemented
+                // Actually don't do this! We need the editable paths in separate queries since they're by page.
+                // They can't updated on every page change
+                // visualGroup
+                //     .getNextPathway()
+                //     .getFabricObjects()
+                //     .forEach((fabricObject: fabric.Object) => {
+                //         canvas.add(fabricObject);
+                //     });
+                // Using simple pathway method (like previous paths) for now
+                canvas.add(visualGroup.getNextPathway());
+                visualGroup
+                    .getPreviousPathway()
+                    .setColor(fieldProperties.theme.previousPath);
+                visualGroup
+                    .getNextPathway()
+                    .setColor(fieldProperties.theme.nextPath);
 
-            canvas.add(visualGroup.getPreviousMidpoint());
-            canvas.add(visualGroup.getNextMidpoint());
-            visualGroup
-                .getPreviousMidpoint()
-                .setColor(fieldProperties.theme.previousPath);
-            visualGroup
-                .getNextMidpoint()
-                .setColor(fieldProperties.theme.nextPath);
+                canvas.add(visualGroup.getPreviousMidpoint());
+                canvas.add(visualGroup.getNextMidpoint());
+                visualGroup
+                    .getPreviousMidpoint()
+                    .setColor(fieldProperties.theme.previousPath);
+                visualGroup
+                    .getNextMidpoint()
+                    .setColor(fieldProperties.theme.nextPath);
 
-            canvas.add(visualGroup.getPreviousEndpoint());
-            canvas.add(visualGroup.getNextEndpoint());
-            visualGroup
-                .getPreviousEndpoint()
-                .setColor(fieldProperties.theme.previousPath);
-            visualGroup
-                .getNextEndpoint()
-                .setColor(fieldProperties.theme.nextPath);
-        });
+                canvas.add(visualGroup.getPreviousEndpoint());
+                canvas.add(visualGroup.getNextEndpoint());
+                visualGroup
+                    .getPreviousEndpoint()
+                    .setColor(fieldProperties.theme.previousPath);
+                visualGroup
+                    .getNextEndpoint()
+                    .setColor(fieldProperties.theme.nextPath);
+            });
 
-        // Request render all to ensure the canvas is updated
-        canvas.requestRenderAll();
+            // Request render all to ensure the canvas is updated
+            canvas.requestRenderAll();
+        } finally {
+            canvas.renderOnAddRemove = true;
+        }
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
 
     // Sync canvas with marcher appearances
@@ -308,7 +313,9 @@ export default function Canvas({
             if (!visualGroup || !appearancesForMarcher) return;
 
             const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(appearancesForMarcher);
+            canvasMarcher.setAppearance(appearancesForMarcher, {
+                requestRenderAll: false,
+            });
         });
 
         canvas.requestRenderAll();

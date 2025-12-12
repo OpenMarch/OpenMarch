@@ -281,6 +281,7 @@ export default class CanvasMarcher
         appearancesInput:
             | AppearanceComponentOptional
             | AppearanceComponentOptional[],
+        options: { requestRenderAll: boolean } = { requestRenderAll: false },
     ) {
         // Normalize to array
         const appearances = Array.isArray(appearancesInput)
@@ -409,9 +410,8 @@ export default class CanvasMarcher
         };
 
         // Request canvas re-render if canvas exists
-        if (this.canvas) {
+        if (this.canvas && options.requestRenderAll)
             this.canvas.requestRenderAll();
-        }
     }
 
     refreshLockedStatus() {

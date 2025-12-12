@@ -1,7 +1,8 @@
-import { allMarchersQueryOptions, DEFAULT_STALE_TIME } from ".";
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 import Marcher from "@/global/classes/Marcher";
+import { DEFAULT_STALE_TIME } from "./constants";
+import { allMarchersQueryOptions } from "./useMarchers";
 
 const KEY_BASE = "marcher-with-visuals";
 
