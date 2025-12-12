@@ -7,7 +7,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import {
-    marcherWithVisualsQueryOptions,
+    marcherAppearancesQueryOptions,
     updateShapePagesMutationOptions,
 } from "@/hooks/queries";
 import {
@@ -34,7 +34,7 @@ function StateInitializer() {
             coordinateDataQueryOptions(selectedPage, queryClient),
         );
         void queryClient.prefetchQuery(
-            marcherWithVisualsQueryOptions(selectedPage.id, queryClient),
+            marcherAppearancesQueryOptions(selectedPage.id, queryClient),
         );
         if (selectedPage.nextPageId != null) {
             const nextPage = pages.find(
@@ -45,7 +45,7 @@ function StateInitializer() {
                     coordinateDataQueryOptions(nextPage, queryClient),
                 );
                 void queryClient.prefetchQuery(
-                    marcherWithVisualsQueryOptions(nextPage.id, queryClient),
+                    marcherAppearancesQueryOptions(nextPage.id, queryClient),
                 );
             }
         }
@@ -58,7 +58,7 @@ function StateInitializer() {
                     coordinateDataQueryOptions(previousPage, queryClient),
                 );
                 void queryClient.prefetchQuery(
-                    marcherWithVisualsQueryOptions(
+                    marcherAppearancesQueryOptions(
                         previousPage.id,
                         queryClient,
                     ),

@@ -8,6 +8,7 @@ import {
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
+    marcherAppearancesQueryOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -54,7 +55,10 @@ export default function Canvas({
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherVisuals } = useQuery(
-        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+        marcherWithVisualsQueryOptions(queryClient),
+    );
+    const { data: marcherAppearances } = useQuery(
+        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
     );
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
@@ -242,14 +246,13 @@ export default function Canvas({
             const visualGroup = marcherVisuals[marcher.id];
             if (!visualGroup) return;
 
-            const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(visualGroup.appearances);
-
             canvas.add(visualGroup.getCanvasMarcher());
             canvas.add(visualGroup.getCanvasMarcher().textLabel);
 
             canvas.add(visualGroup.getPreviousPathway());
             // TODO: Uncomment when EditablePath is fully implemented
+            // Actually don't do this! We need the editable paths in separate queries since they're by page.
+            // They can't updated on every page change
             // visualGroup
             //     .getNextPathway()
             //     .getFabricObjects()
@@ -287,6 +290,29 @@ export default function Canvas({
         // Request render all to ensure the canvas is updated
         canvas.requestRenderAll();
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
+
+    // Sync canvas with marcher appearances
+    useEffect(() => {
+        if (
+            !canvas ||
+            !marchers ||
+            marcherAppearances == null ||
+            marcherVisuals == null
+        )
+            return;
+
+        // Add all marcher appearances to the canvas
+        marchers.forEach((marcher) => {
+            const visualGroup = marcherVisuals[marcher.id];
+            const appearancesForMarcher = marcherAppearances[marcher.id];
+            if (!visualGroup || !appearancesForMarcher) return;
+
+            const canvasMarcher = visualGroup.getCanvasMarcher();
+            canvasMarcher.setAppearance(appearancesForMarcher);
+        });
+
+        canvas.requestRenderAll();
+    }, [canvas, marchers, marcherAppearances, marcherVisuals]);
 
     // Setters for alignmentEvent state
     useEffect(() => {

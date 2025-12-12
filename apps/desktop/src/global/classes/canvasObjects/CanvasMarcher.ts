@@ -11,8 +11,10 @@ import {
     CoordinateLike,
     getRoundCoordinates2,
 } from "@/utilities/CoordinateActions";
-import { AppearanceComponentOptional } from "@/entity-components/appearance";
-import MarcherVisualGroup from "../MarcherVisualGroup";
+import {
+    AppearanceComponentOptional,
+    appearanceIsHidden,
+} from "@/entity-components/appearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -297,7 +299,7 @@ export default class CanvasMarcher
             return null;
         };
         // Visibility is always defined
-        let visible: boolean = !MarcherVisualGroup.isHidden(appearances);
+        let visible: boolean = !appearanceIsHidden(appearances);
 
         let labelVisible: boolean;
         if (!visible) {
