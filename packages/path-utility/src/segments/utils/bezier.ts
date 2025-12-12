@@ -7,7 +7,6 @@ Quadratic Bézier curve:
        + t^2 * P2
 */
 function quadBezier([p0, p1, p2]: [Point, Point, Point], t: number): Point {
-    // cspell:disable-line
     const u = 1 - t;
     const uu = u * u;
     const tt = t * t;
@@ -107,9 +106,9 @@ function findNextT(
 }
 
 /*
-Main entry point:
-Place N marchers equally spaced by Euclidean distance.
-*/
+ * Main entry point:
+ * Place N marchers equally spaced by Euclidean distance.
+ */
 export function placePointsOnBezier({
     points,
     count,
@@ -128,7 +127,7 @@ export function placePointsOnBezier({
 
     const bezier = (t: number): Point =>
         isQuadratic
-            ? quadBezier(points as [Point, Point, Point], t) // cspell:disable-line
+            ? quadBezier(points as [Point, Point, Point], t)
             : cubicBezier(points as [Point, Point, Point, Point], t);
 
     // Approximate total length
