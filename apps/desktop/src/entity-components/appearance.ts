@@ -118,3 +118,26 @@ export const appearanceModelParsedToRawOptional = (
 
     return output;
 };
+
+export function appearanceIsHidden(
+    appearancesInput:
+        | AppearanceComponentOptional[]
+        | AppearanceComponentOptional,
+): boolean {
+    const appearances = Array.isArray(appearancesInput)
+        ? appearancesInput
+        : [appearancesInput];
+
+    let visible: boolean;
+    if (appearances.length > 0)
+        if (appearances.length > 1 && appearances[0].visible) {
+            // If there is more than one appearance, and the marcherPage appearance is true, use the next one
+            // This is because the marcherPage will almost always be visible
+            visible = appearances[1].visible;
+        } else {
+            visible = appearances[0].visible;
+        }
+    else visible = true;
+
+    return !visible;
+}

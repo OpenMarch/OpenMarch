@@ -22,7 +22,7 @@ export const useMovementListeners = ({
     const { selectedMarchers } = useSelectedMarchers()!;
     const queryClient = useQueryClient();
     const { data: marcherVisuals } = useQuery(
-        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+        marcherWithVisualsQueryOptions(queryClient),
     );
 
     // MarcherPage queries
