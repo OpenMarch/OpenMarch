@@ -67,6 +67,22 @@ export class Spline implements IControllableSegment {
         return this.getPointAtT(t);
     }
 
+    getEquidistantPoints(numberOfPoints: number): Point[] {
+        if (numberOfPoints <= 0) return [];
+        if (numberOfPoints === 1) return [this.getStartPoint()];
+
+        const totalLength = this.getLength();
+        const points: Point[] = [];
+
+        for (let i = 0; i < numberOfPoints; i++) {
+            const t = i / (numberOfPoints - 1);
+            const dist = t * totalLength;
+            points.push(this.getPointAtLength(dist));
+        }
+
+        return points;
+    }
+
     getStartPoint(): Point {
         return this.controlPoints[0];
     }

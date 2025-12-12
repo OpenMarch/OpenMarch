@@ -467,25 +467,39 @@ export class StaticMarcherShape {
 
         // Place marchers evenly on each segment based on length
         // Ensure that every segment has at least one marcher (on the point) and that the last point has a marcher on it.
+
         const output: { id: number; x: number; y: number }[] = [];
         let currentItemIndex = 0;
         for (let i = 0; i < svgSegmentLengths.length; i++) {
-            const segmentLength = svgSegmentLengths[i];
             const itemsOnSegment = itemsPerSegment[i];
+            if (itemsOnSegment < 1) continue;
             const command = shapePath.points[i + 1].command;
             const isAfterClose =
                 i > 0 && shapePath.points[i].command === SvgCommandEnum.CLOSE;
+            if (isAfterClose) currentItemIndex = 1;
 
             // If this is the last segment and we are including the end point, we need to reduce the spacing by 1
             const isLastSegment =
                 i === svgSegmentLengths.length - 1 &&
                 command !== SvgCommandEnum.CLOSE;
-            const spacing =
-                segmentLength / (itemsOnSegment - (isLastSegment ? 1 : 0));
 
-            // Don't include the start point if it is not included
-            for (let j = isAfterClose ? 1 : 0; j < itemsOnSegment; j++) {
-                const point = svgPathObjects[i].getPointAtLength(spacing * j);
+            const pathObj = svgPathObjects[i];
+
+            // If this is not the last segment we need to add 1 segment to account for the space of the next point
+            const itemsOnSegmentAdjusted =
+                itemsOnSegment + (!isLastSegment ? 1 : 0);
+
+            if (pathObj.segments.length > 1)
+                console.warn(
+                    `The path has more than one segment. This was not implemented with this in mind. ${pathObj.toSvgString()}`,
+                );
+
+            const distributedPoints = pathObj.segments[0].getEquidistantPoints(
+                itemsOnSegmentAdjusted,
+            );
+            // Use the actual number of items on the segment to distribute the points
+            for (let j = 0; j < itemsOnSegment; j++) {
+                const point = distributedPoints[j];
                 output.push({
                     id: itemIds[currentItemIndex].id,
                     x: point.x,

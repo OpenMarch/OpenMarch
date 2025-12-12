@@ -32,7 +32,7 @@
     "prettier.configPath": ".prettierrc.mjs",
     "files.eol": "\n",
     "cSpell.import": [
-        "cspell.config.js"
+        "cspell.config.yaml"
     ],
     "cSpell.mergeCSpellSettings": false
 }
