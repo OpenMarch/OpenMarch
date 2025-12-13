@@ -1,0 +1,15 @@
+# Python OCR dependencies for OpenMarch PDF import
+# Install with: pip install -r requirements.txt
+
+# Core OCR library - EasyOCR provides best accuracy
+easyocr>=1.7.0
+
+# PDF to image conversion
+pdf2image>=1.16.3
+Pillow>=10.0.0
+
+# PDF text extraction
+pymupdf>=1.23.0
+
+# Optional: GPU acceleration (install separately if you have CUDA)
+# torch>=2.0.0  # Uncomment if you want GPU support

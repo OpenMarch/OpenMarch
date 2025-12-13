@@ -114,7 +114,8 @@ interface UiSettingsStoreActions {
     setAudioVolume: (volume: number) => void;
 }
 interface UiSettingsStoreInterface
-    extends UiSettingsStoreState, UiSettingsStoreActions {}
+    extends UiSettingsStoreState,
+        UiSettingsStoreActions {}
 
 export const useUiSettingsStore = create<UiSettingsStoreInterface>(
     (set, get) => ({

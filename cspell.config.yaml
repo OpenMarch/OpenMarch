@@ -13,6 +13,7 @@ words:
   - barline
   - barlines
   - bbox
+  - bboxes
   - behance
   - Bézier
   - BFSL
@@ -32,16 +33,20 @@ words:
   - codegen
   - colours
   - Configuración
+  - Confs
   - cooldown
+  - criticals
   - couldn
   - customizer
   - dbstat
+  - DBSCAN
   - DELME
   - Dhruva
   - dorico
   - drumline
   - dukc
   - Dumouchelle
+  - easyocr
   - Ehhh
   - ehlert
   - endzone
@@ -52,9 +57,11 @@ words:
   - fielddots
   - fieldots
   - forwardslash
+  - fitz
   - frontfield
   - Geral
   - GLHF
+  - hdrs
   - Hipp
   - idioma
   - Invalidators
@@ -70,16 +77,20 @@ words:
   - midset
   - midsets
   - monokai
+  - mvmt
   - Moulse
   - multiselection
   - musescore
   - musicxml
+  - numpy
   - Nativewind
   - notarytool
   - NSIS
   - NURBS
   - oklch
   - openmarch
+  - poppler
+  - pymupdf
   - openmarchdev
   - overscan
   - pagewidth
@@ -88,7 +99,11 @@ words:
   - Português
   - posthog
   - Pressable
+  - Pyware
+  - quantiles
   - Rcoords
+  - Rects
+  - Refetched
   - rgba
   - ritardandos
   - rootfile
@@ -113,6 +128,7 @@ words:
   - svgs
   - tabler
   - Tamagui
+  - tesseract
   - Titlebar
   - togglefullscreen
   - toks
@@ -142,6 +158,7 @@ words:
   - vmin
   - Vree
   - WASD
+  - yardline
   - wavesurfer
   - winget
   - Woodgrove

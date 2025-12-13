@@ -64,3 +64,6 @@ packages/metronome/
 
 *.tmp.dots
 *.tmp.dots-journal
+
+# Python virtual environment
+apps/desktop/scripts/venv/

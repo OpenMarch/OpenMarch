@@ -145,6 +145,29 @@ const APP_API = {
 
     // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
+
+    // PDF OCR
+    ocr: {
+        initialize: () => ipcRenderer.invoke("ocr:initialize"),
+        checkPython: () => ipcRenderer.invoke("ocr:checkPython"),
+        runPython: (
+            pdfArrayBuffer: ArrayBuffer,
+            pageIndex: number,
+            dpi: number,
+        ) =>
+            ipcRenderer.invoke("ocr:runPython", pdfArrayBuffer, pageIndex, dpi),
+        runCoordinateParser: (
+            pdfArrayBuffer: ArrayBuffer,
+            pageIndex: number,
+            dpi: number,
+        ) =>
+            ipcRenderer.invoke(
+                "ocr:runCoordinateParser",
+                pdfArrayBuffer,
+                pageIndex,
+                dpi,
+            ),
+    },
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),

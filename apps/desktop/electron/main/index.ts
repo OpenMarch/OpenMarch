@@ -23,6 +23,12 @@ import {
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
+import {
+    runPythonOCR,
+    initializeOCRService,
+    checkPythonAvailable,
+    runCoordinateParser,
+} from "./services/pdf-ocr-service";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
@@ -128,7 +134,7 @@ async function createWindow(title?: string) {
                 responseHeaders: {
                     ...details.responseHeaders,
                     "Content-Security-Policy": [
-                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
+                        "script-src 'self' 'unsafe-inline' blob: https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
                     ],
                 },
             });
@@ -274,6 +280,36 @@ void app.whenReady().then(async () => {
         await setActiveDb(filePath);
         return 200;
     });
+
+    // OCR handlers
+    ipcMain.handle("ocr:initialize", async () => {
+        return await initializeOCRService();
+    });
+    ipcMain.handle("ocr:checkPython", async () => {
+        return await checkPythonAvailable();
+    });
+    ipcMain.handle(
+        "ocr:runPython",
+        async (
+            _,
+            pdfArrayBuffer: ArrayBuffer,
+            pageIndex: number,
+            dpi: number,
+        ) => {
+            return await runPythonOCR(pdfArrayBuffer, pageIndex, dpi);
+        },
+    );
+    ipcMain.handle(
+        "ocr:runCoordinateParser",
+        async (
+            _,
+            pdfArrayBuffer: ArrayBuffer,
+            pageIndex: number,
+            dpi: number,
+        ) => {
+            return await runCoordinateParser(pdfArrayBuffer, pageIndex, dpi);
+        },
+    );
 
     // Getters
     initGetters();

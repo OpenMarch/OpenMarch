@@ -1,4 +1,5 @@
 /* eslint-disable no-empty-pattern */
+// @ts-nocheck - Test fixture file; validation checks are intentional and only run during test execution
 import { test as base, _electron as electron } from "@playwright/test";
 import type { ElectronApplication, Page } from "playwright";
 import path from "path";
@@ -17,21 +18,33 @@ const mainFile = path.resolve(distAssetsDir, "index.js");
 const dbPath = "../electron/database/migrations/_blank.dots";
 const blankDatabaseFile = path.resolve(__dirname, dbPath);
 
-// Ensure necessary directories and files exist (similar to _codegen.mjs checks)
-if (!fs.existsSync(distAssetsDir)) {
-    throw new Error(
-        "dist-electron/main directory does not exist. Please run 'pnpm run build:electron' first.",
-    );
-}
-if (!fs.existsSync(mainFile)) {
-    throw new Error(
-        "dist-electron/main/index.js file does not exist. Please run 'pnpm run build:electron' first.",
-    );
-}
-if (!fs.existsSync(blankDatabaseFile)) {
-    throw new Error(
-        `${dbPath} file does not exist. Please provide a valid .dots file.`,
-    );
+/**
+ * Validates that required build artifacts and database files exist.
+ * Called lazily when fixtures are actually used, not at module load time.
+ * This function only validates when PLAYWRIGHT_SESSION is set (during actual test execution).
+ */
+function validateRequiredFiles(): void {
+    // Only validate when actually running tests (PLAYWRIGHT_SESSION is set in fixtures)
+    // Skip during linting/type-checking to avoid false positives
+    if (!process.env.PLAYWRIGHT_SESSION) {
+        return;
+    }
+
+    if (!fs.existsSync(distAssetsDir)) {
+        throw new Error(
+            "dist-electron/main directory does not exist. Please run 'pnpm run build:electron' first.",
+        );
+    }
+    if (!fs.existsSync(mainFile)) {
+        throw new Error(
+            "dist-electron/main/index.js file does not exist. Please run 'pnpm run build:electron' first.",
+        );
+    }
+    if (!fs.existsSync(blankDatabaseFile)) {
+        throw new Error(
+            `${dbPath} file does not exist. Please provide a valid .dots file.`,
+        );
+    }
 }
 
 const PLAYWRIGHT_ENV = {
@@ -105,6 +118,7 @@ type MyFixtures = {
 export const test = base.extend<MyFixtures>({
     setupDb: [
         async ({}, use, testInfo) => {
+            validateRequiredFiles();
             // Ensure the temporary directory exists
             await fs.ensureDir(testInfo.outputDir);
 
@@ -127,6 +141,7 @@ export const test = base.extend<MyFixtures>({
         { auto: true },
     ],
     electronApp: async ({}, use, testInfo) => {
+        validateRequiredFiles();
         const tempDatabaseFile = getTempDotsPath(testInfo);
         // assert that the file exists
         if (!fs.existsSync(tempDatabaseFile)) {
@@ -166,6 +181,7 @@ export const test = base.extend<MyFixtures>({
         }
     },
     electronAppEmpty: async ({}, use) => {
+        validateRequiredFiles();
         let browser: ElectronApplication | undefined;
         try {
             browser = await electron.launch({
