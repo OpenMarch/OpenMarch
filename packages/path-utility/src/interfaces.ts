@@ -62,6 +62,9 @@ export interface IControllableSegment {
     /** Returns a point at a given distance along this segment (0 to getLength()). */
     getPointAtLength(dist: number): Point;
 
+    /** Returns an array of equidistant points along this segment. */
+    getEquidistantPoints(numberOfPoints: number): Point[];
+
     /** Returns the start point of this segment. */
     getStartPoint(): Point;
 

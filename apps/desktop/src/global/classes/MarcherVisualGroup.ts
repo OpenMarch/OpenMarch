@@ -23,7 +23,6 @@ export default class MarcherVisualGroup {
     nextMidpoint: Midpoint;
     previousEndPoint: Endpoint;
     nextEndPoint: Endpoint;
-    appearances: AppearanceComponentOptional[];
 
     /**
      * Creates a new MarcherVisualGroup instance.
@@ -90,11 +89,6 @@ export default class MarcherVisualGroup {
             dotRadius: 3,
             color: "black",
         });
-        this.appearances = appearances
-            ? Array.isArray(appearances)
-                ? appearances
-                : [appearances]
-            : [];
     }
 
     // Getters
@@ -118,34 +112,5 @@ export default class MarcherVisualGroup {
     }
     getNextEndpoint() {
         return this.nextEndPoint;
-    }
-    getAppearances() {
-        return this.appearances;
-    }
-    static isHidden(
-        appearancesInput:
-            | AppearanceComponentOptional[]
-            | AppearanceComponentOptional,
-    ) {
-        const appearances = Array.isArray(appearancesInput)
-            ? appearancesInput
-            : [appearancesInput];
-
-        let visible: boolean;
-        if (appearances.length > 0)
-            if (appearances.length > 1 && appearances[0].visible) {
-                // If there is more than one appearance, and the marcherPage appearance is true, use the next one
-                // This is because the marcherPage will almost always be visible
-                visible = appearances[1].visible;
-            } else {
-                visible = appearances[0].visible;
-            }
-        else visible = true;
-
-        return !visible;
-    }
-
-    isHidden() {
-        return MarcherVisualGroup.isHidden(this.appearances);
     }
 }

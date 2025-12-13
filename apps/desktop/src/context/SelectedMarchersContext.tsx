@@ -10,7 +10,8 @@ import Marcher from "@/global/classes/Marcher";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { useSelectedPage } from "./SelectedPageContext";
-import { marcherWithVisualsQueryOptions } from "@/hooks/queries";
+import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
+import { appearanceIsHidden } from "@/entity-components/appearance";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -38,18 +39,20 @@ export function SelectedMarchersProvider({
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
     const { selectedPage } = useSelectedPage()!;
     const queryClient = useQueryClient();
-    const { data: marcherVisuals } = useQuery(
-        marcherWithVisualsQueryOptions(selectedPage?.id, queryClient),
+    const { data: marcherAppearances } = useQuery(
+        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
     );
     const hiddenMarcherIds: Set<number> = useMemo(() => {
-        if (marcherVisuals == null) return new Set();
+        if (marcherAppearances == null) return new Set();
         const hiddenMarcherIds = new Set(
-            Object.values(marcherVisuals)
-                .filter((marcherVisual) => marcherVisual.isHidden())
-                .map((marcherVisual) => marcherVisual.marcherId),
+            Object.entries(marcherAppearances)
+                .filter((marcherAppearance) =>
+                    appearanceIsHidden(marcherAppearance[1]),
+                )
+                .map((marcherAppearance) => parseInt(marcherAppearance[0])),
         );
         return hiddenMarcherIds;
-    }, [marcherVisuals]);
+    }, [marcherAppearances]);
 
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher
     useEffect(() => {

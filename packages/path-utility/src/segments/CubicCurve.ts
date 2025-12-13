@@ -6,6 +6,7 @@ import {
     ControlPointType,
     ControlPoint,
 } from "../interfaces";
+import { placePointsOnBezier } from "./utils/bezier";
 
 /**
  * Represents a cubic Bézier curve segment with start point, two control points, and end point.
@@ -35,6 +36,20 @@ export class CubicCurve implements IControllableSegment {
         const path = new PathCommander(pathString);
         const point = path.getPointAtLength(dist);
         return { x: point.x, y: point.y };
+    }
+
+    getEquidistantPoints(numberOfPoints: number): Point[] {
+        const effectiveStartPoint = this.getStartPoint();
+        const effectiveEndPoint = this.getEndPoint();
+        return placePointsOnBezier({
+            points: [
+                effectiveStartPoint,
+                this.controlPoint1,
+                this.controlPoint2,
+                effectiveEndPoint,
+            ],
+            count: numberOfPoints,
+        });
     }
 
     getStartPoint(): Point {

@@ -1,78 +1,16 @@
-import {
-    allMarchersQueryOptions,
-    allSectionAppearancesQueryOptions,
-    DEFAULT_STALE_TIME,
-    marcherIdsForAllTagIdsQueryOptions,
-    marcherPagesByPageQueryOptions,
-    resolvedTagAppearancesByPageIdQueryOptions,
-} from ".";
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import MarcherVisualGroup from "@/global/classes/MarcherVisualGroup";
 import Marcher from "@/global/classes/Marcher";
-import {
-    TagAppearance,
-    SectionAppearance,
-    MarcherIdsByTagId,
-} from "@/db-functions";
-import { AppearanceComponentOptional } from "@/entity-components/appearance";
-import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+import { DEFAULT_STALE_TIME } from "./constants";
+import { allMarchersQueryOptions } from "./useMarchers";
 
 const KEY_BASE = "marcher-with-visuals";
 
 export const marcherWithVisualsKeys = {
     all: () => [KEY_BASE] as const,
-    byPageId: (pageId: number) => [KEY_BASE, { pageId }] as const,
 };
 
 export type MarcherVisualMap = Record<number, MarcherVisualGroup>;
-
-const getSectionAppearance = (
-    section: string,
-    sectionAppearances: SectionAppearance[],
-) => {
-    return sectionAppearances.find(
-        (appearance) => appearance.section === section,
-    );
-};
-
-/**
- * Creates a map of tag appearances by marcher id sorted by the priority of the tag appearance.
- *
- * @param tagAppearances
- * @returns Map<marcher_id, TagAppearance[]>
- */
-const separateTagAppearanceByMarcherId = (
-    tagAppearances: TagAppearance[],
-    marcherIdsByTagId: MarcherIdsByTagId,
-): Map<number, TagAppearance[]> => {
-    const tagAppearanceByMarcherId: Map<number, TagAppearance[]> = new Map();
-
-    // Add all tag appearances to the map, unsorted for now
-    for (const tagAppearance of tagAppearances) {
-        const marcherIds = marcherIdsByTagId.get(tagAppearance.tag_id);
-        if (!marcherIds) {
-            continue;
-        }
-        for (const marcherId of marcherIds) {
-            if (!tagAppearanceByMarcherId.has(marcherId))
-                tagAppearanceByMarcherId.set(marcherId, []);
-            tagAppearanceByMarcherId.get(marcherId)!.push(tagAppearance);
-        }
-    }
-
-    // Sort the tag appearances by priority
-    for (const tagAppearances of tagAppearanceByMarcherId.values()) {
-        tagAppearances.sort((a, b) => {
-            if (b.priority !== a.priority) {
-                return b.priority - a.priority;
-            }
-            // This shouldn't happen, but sort by id in reverse in case the priorities are the same
-            return b.id - a.id;
-        });
-    }
-
-    return tagAppearanceByMarcherId;
-};
 
 /**
  * Combine queries to determine the visual style for each marcher.
@@ -88,91 +26,32 @@ const separateTagAppearanceByMarcherId = (
  */
 export const _combineMarcherVisualGroups = ({
     marchers,
-    sectionAppearances,
-    marcherIdsByTagId,
-    tagAppearances,
-    marcherPages,
 }: {
     marchers: Marcher[];
-    sectionAppearances: SectionAppearance[];
-    marcherIdsByTagId: MarcherIdsByTagId;
-    tagAppearances: TagAppearance[];
-    marcherPages: MarcherPagesByMarcher;
 }): MarcherVisualMap => {
     if (!marchers) {
         return {};
     }
-    const tagAppearanceByMarcherId: Map<number, TagAppearance[]> =
-        tagAppearances && marcherIdsByTagId
-            ? separateTagAppearanceByMarcherId(
-                  tagAppearances,
-                  marcherIdsByTagId,
-              )
-            : new Map();
 
     const newVisuals: Record<number, MarcherVisualGroup> = {};
-    for (const marcher of marchers) {
-        const appearances: AppearanceComponentOptional[] = [];
-
-        const marcherPage = marcherPages?.[marcher.id];
-        if (marcherPage) {
-            appearances.push(marcherPage);
-        }
-
-        const tagAppearances = tagAppearanceByMarcherId.get(marcher.id);
-        if (tagAppearances) {
-            appearances.push(...tagAppearances);
-        }
-
-        const sectionAppearance = sectionAppearances
-            ? getSectionAppearance(marcher.section, sectionAppearances)
-            : undefined;
-        if (sectionAppearance) {
-            appearances.push(sectionAppearance);
-        }
-
+    for (const marcher of marchers)
         newVisuals[marcher.id] = new MarcherVisualGroup({
             marcher,
-            appearances,
         });
-    }
+
     return newVisuals;
 };
 
-export const marcherWithVisualsQueryOptions = (
-    pageId: number | null | undefined,
-    queryClient: QueryClient,
-) =>
+export const marcherWithVisualsQueryOptions = (queryClient: QueryClient) =>
     queryOptions({
-        // eslint-disable-next-line @tanstack/query/exhaustive-deps
-        queryKey: marcherWithVisualsKeys.byPageId(pageId!),
+        queryKey: marcherWithVisualsKeys.all(),
         queryFn: async () => {
-            const [
-                marchers,
-                sectionAppearances,
-                marcherIdsByTagId,
-                tagAppearances,
-                marcherPages,
-            ] = await Promise.all([
+            const [marchers] = await Promise.all([
                 queryClient.fetchQuery(allMarchersQueryOptions()),
-                queryClient.fetchQuery(allSectionAppearancesQueryOptions()),
-                queryClient.fetchQuery(marcherIdsForAllTagIdsQueryOptions()),
-                queryClient.fetchQuery(
-                    resolvedTagAppearancesByPageIdQueryOptions({
-                        pageId,
-                        queryClient,
-                    }),
-                ),
-                queryClient.fetchQuery(marcherPagesByPageQueryOptions(pageId)),
             ]);
             return _combineMarcherVisualGroups({
                 marchers,
-                sectionAppearances,
-                marcherIdsByTagId,
-                tagAppearances,
-                marcherPages,
             });
         },
-        enabled: pageId != null,
         staleTime: DEFAULT_STALE_TIME,
     });
