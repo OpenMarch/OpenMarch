@@ -20,7 +20,7 @@
     ],
 
     mac: {
-        target: "dmg",
+        target: ["dmg", "zip"],
         hardenedRuntime: true,
         gatekeeperAssess: false,
         darkModeSupport: true,
