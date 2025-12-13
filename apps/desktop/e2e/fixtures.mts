@@ -100,6 +100,11 @@ type MyFixtures = {
     setupDb: { databasePath: string };
     electronApp: { app: ElectronApplication; databasePath: string; page: Page };
     electronAppEmpty: { app: ElectronApplication; page: Page };
+    electronAppNewFile: {
+        app: ElectronApplication;
+        page: Page;
+        newFilePath: string;
+    };
     audioFiles: { expectedAudioFiles: string[] };
 };
 export const test = base.extend<MyFixtures>({
@@ -195,6 +200,57 @@ export const test = base.extend<MyFixtures>({
             // Cleanup: Close the browser and delete the temporary database file
             if (browser) {
                 await browser.close();
+            }
+        }
+    },
+    /**
+     * Fixture for testing new file creation.
+     * Launches the app with PLAYWRIGHT_NEW_FILE_PATH env variable set,
+     * which causes the main process to use this path instead of showing the save dialog.
+     */
+    electronAppNewFile: async ({}, use, testInfo) => {
+        // Create a path for the new test file in the test output directory
+        const newFilePath = path.resolve(testInfo.outputDir, "new-test-file.dots");
+
+        // Clean up any existing file before test
+        if (fs.existsSync(newFilePath)) {
+            fs.unlinkSync(newFilePath);
+        }
+
+        let browser: ElectronApplication | undefined;
+        try {
+            browser = await electron.launch({
+                args: [
+                    mainFile,
+                    ".",
+                    "--no-audio",
+                    "--disable-audio-output",
+                    "--disable-audio-input",
+                ],
+                env: {
+                    ...PLAYWRIGHT_ENV,
+                    PLAYWRIGHT_NEW_FILE_PATH: newFilePath,
+                },
+            });
+
+            // Capture main process logs
+            browser.process().stdout?.on("data", (data) => {
+                console.log("[MAIN STDOUT]", data.toString().trim());
+            });
+            browser.process().stderr?.on("data", (data) => {
+                console.log("[MAIN STDERR]", data.toString().trim());
+            });
+
+            const page = await browser.firstWindow();
+
+            await use({ app: browser, page, newFilePath });
+        } finally {
+            if (browser) {
+                await browser.close();
+            }
+            // Clean up the test file after test
+            if (fs.existsSync(newFilePath)) {
+                fs.unlinkSync(newFilePath);
             }
         }
     },
