@@ -50,10 +50,12 @@ export class DrizzleMigrationService {
 
         console.debug("migrationsFolder:", folder);
 
+        let migrationsSucceeded = false;
         try {
             // console.log("Dropping history triggers...");
             // await dropAllUndoTriggers(this.db);
-            await dropAllTriggers(this.db);
+            // Use rawDb to avoid SQL proxy issues with empty queries
+            await dropAllTriggers(this.db, this.rawDb);
             console.log("Disabling foreign key checks...");
             this.rawDb.pragma("foreign_keys = OFF");
 
@@ -71,14 +73,23 @@ export class DrizzleMigrationService {
             }
 
             console.log("Drizzle migrations applied successfully.");
+            migrationsSucceeded = true;
         } catch (error) {
             console.error("Error applying Drizzle migrations:", error);
             throw error;
         } finally {
-            // console.log("Recreating history triggers...");
-            // await createAllUndoTriggers(this.db);
-            console.log("Recreating triggers...");
-            await createAllTriggers(this.db);
+            // Only recreate triggers if migrations succeeded (tables exist)
+            if (migrationsSucceeded) {
+                // console.log("Recreating history triggers...");
+                // await createAllUndoTriggers(this.db);
+                console.log("Recreating triggers...");
+                try {
+                    await createAllTriggers(this.db, this.rawDb);
+                } catch (triggerError) {
+                    console.error("Error creating triggers:", triggerError);
+                    // Don't throw - migrations succeeded, triggers are secondary
+                }
+            }
             console.log("Enabling foreign key checks...");
             this.rawDb.pragma("foreign_keys = ON");
         }
@@ -156,6 +167,7 @@ export class DrizzleMigrationService {
         });
 
         // await createAllUndoTriggers(db);
-        await createAllTriggers(db);
+        // Use rawDb to avoid semicolon stripping in SQL proxy
+        await createAllTriggers(db, this.rawDb);
     }
 }

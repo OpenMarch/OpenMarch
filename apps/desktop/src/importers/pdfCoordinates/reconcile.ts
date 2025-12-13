@@ -29,12 +29,29 @@ export function reconcileSheets(
     }
     for (const s of sheets) {
         const rows: ParsedRow[] = [];
+        let lastLateral = "";
+        let lastFb = "";
+
         for (const r of s.rows) {
             const setId = (r.setId || "").trim();
             const counts = r.counts;
             // Criticals unchanged; non-critical fields trim only
-            const lateralText = (r.lateralText || "").trim();
-            const fbText = (r.fbText || "").trim();
+            let lateralText = (r.lateralText || "").trim();
+            let fbText = (r.fbText || "").trim();
+
+            // Infer hold: if both coordinates are missing, use previous from same sheet
+            // This handles cases where a performer stands still and the sheet lists only set/counts
+            if (!lateralText && !fbText && lastLateral && lastFb) {
+                lateralText = lastLateral;
+                fbText = lastFb;
+            }
+
+            // Update tracking if we have valid coordinates
+            if (lateralText || fbText) {
+                lastLateral = lateralText;
+                lastFb = fbText;
+            }
+
             // Enforce counts consistency when a canonical value exists and row has 0/NaN
             let nextCounts = counts;
             const canonical = setToCounts.get(setId);

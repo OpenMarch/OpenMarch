@@ -24,12 +24,57 @@ let pythonPath: string | null = null;
 
 /**
  * Check if Python 3 is available and find the executable path
- * Uses system Python (python3 or python command)
+ * First checks for virtual environment Python (preferred), then falls back to system Python
  */
 export async function checkPythonAvailable(): Promise<boolean> {
     if (pythonAvailable !== null) return pythonAvailable;
 
     const isWindows = process.platform === "win32";
+
+    // First, check for virtual environment Python (preferred)
+    const appRoot = app.isPackaged
+        ? path.join(process.resourcesPath, "app")
+        : app.getAppPath();
+    const venvPythonPath = path.join(
+        appRoot,
+        "scripts",
+        "venv",
+        isWindows ? "Scripts" : "bin",
+        isWindows ? "python.exe" : "python3",
+    );
+
+    // Check if venv Python exists and works
+    if (fs.existsSync(venvPythonPath)) {
+        try {
+            const result = await new Promise<boolean>((resolve) => {
+                const proc = spawn(venvPythonPath, ["--version"], {
+                    shell: isWindows,
+                });
+                let output = "";
+                proc.stdout.on("data", (data) => {
+                    output += data.toString();
+                });
+                proc.on("close", (code) => {
+                    if (code === 0 && output.includes("Python 3")) {
+                        pythonPath = venvPythonPath;
+                        resolve(true);
+                    } else {
+                        resolve(false);
+                    }
+                });
+                proc.on("error", () => resolve(false));
+            });
+
+            if (result) {
+                pythonAvailable = true;
+                return true;
+            }
+        } catch {
+            // Fall through to system Python check
+        }
+    }
+
+    // Fall back to system Python
     const pythonCommands = ["python3", "python"];
 
     for (const cmd of pythonCommands) {

@@ -71,7 +71,6 @@ SET start_beat = CASE
         LIMIT 1
     )
     ELSE pages.start_beat
-END
+    END
 WHERE pages.id != 0
 AND (SELECT should_fix FROM needs_fix) = 1;
---> statement-breakpoint

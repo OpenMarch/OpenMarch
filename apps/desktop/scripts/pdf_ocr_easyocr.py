@@ -31,7 +31,7 @@ def detect_gpu():
 def main():
     """Main OCR processing function."""
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: pdf_ocr_easyocr.py <page_index> [dpi]"}))
+        print(json.dumps({"error": "Usage: pdf_ocr_easyocr.py <page_index> [dpi]"}), file=sys.stderr)
         sys.exit(1)
 
     page_index = int(sys.argv[1])
@@ -41,7 +41,7 @@ def main():
     try:
         pdf_bytes = sys.stdin.buffer.read()
         if not pdf_bytes:
-            print(json.dumps({"error": "No PDF data provided"}))
+            print(json.dumps({"error": "No PDF data provided"}), file=sys.stderr)
             sys.exit(1)
     except Exception as e:
         print(json.dumps({"error": f"Failed to read PDF: {e}"}))

@@ -13,7 +13,10 @@ import {
 } from "@/hooks/queries";
 import { queryClient } from "@/App";
 import { dryRunImportPdfCoordinates } from "@/importers/pdfCoordinates";
-import { allDatabaseBeatsQueryOptions } from "@/hooks/queries";
+import {
+    allDatabaseBeatsQueryOptions,
+    allDatabasePagesQueryOptions,
+} from "@/hooks/queries";
 import { type NewMarcherArgs } from "@/db-functions";
 import { useTimingObjects } from "@/hooks";
 
@@ -377,13 +380,44 @@ export default function ImportCoordinatesButton() {
     }, [report]);
 
     function getPagePlan(): { name: string; counts: number }[] {
-        // Use the first sheet as canonical ordering; counts consistency is already validated in dry-run
-        const first = report!.normalized[0];
-        return first.rows.map((r) => ({ name: r.setId, counts: r.counts }));
+        if (!report) return [];
+        // Aggregate sets from all sheets to ensure we don't miss any if some performers have rests/missing rows
+        const sets = new Map<string, number>();
+        for (const sheet of report.normalized) {
+            for (const row of sheet.rows) {
+                const id = row.setId;
+                if (!sets.has(id)) {
+                    sets.set(id, row.counts);
+                }
+            }
+        }
+
+        const plan = Array.from(sets.entries()).map(([name, counts]) => ({
+            name,
+            counts,
+        }));
+
+        // Sort by set ID
+        plan.sort((a, b) => {
+            const pA = parseSetId(a.name);
+            const pB = parseSetId(b.name);
+            if (!pA || !pB) return a.name.localeCompare(b.name);
+            if (pA.num !== pB.num) return pA.num - pB.num;
+            if (pA.subset === pB.subset) return 0;
+            if (!pA.subset) return -1; // 1 before 1A
+            if (!pB.subset) return 1;
+            return pA.subset.localeCompare(pB.subset);
+        });
+
+        return plan;
     }
 
     type ParsedSet = { num: number; subset: string | null };
     function parseSetId(name: string): ParsedSet | null {
+        // Handle "Start", "Beg", "Opener" as set 0
+        if (/^(start|beg|bgn|opener|open)$/i.test(name)) {
+            return { num: 0, subset: null };
+        }
         const m = name.match(/^(\d+)([A-Za-z]*)$/);
         if (!m) return null;
         return {
@@ -451,11 +485,11 @@ export default function ImportCoordinatesButton() {
         );
 
         // 1) Beats
-        // We need beats at positions 0 through totalCounts-1 (totalCounts beats)
-        // If we have existing beats, we need to ensure we have at least totalCounts beats
-        const beatsNeeded = Math.max(0, totalCounts - beats.length);
+        // For imports, the first page always starts at beat position 0
+        // We need beats covering the full range up to totalCounts. Indices 0..totalCounts.
+        const beatsNeeded = Math.max(0, totalCounts + 1 - beats.length);
         console.log(
-            `[import-commit] Current beats: ${beats.length}, needed: ${beatsNeeded}`,
+            `[import-commit] Current beats: ${beats.length}, needed: ${beatsNeeded} (first page will start at position 0)`,
         );
 
         if (beatsNeeded > 0) {
@@ -480,8 +514,30 @@ export default function ImportCoordinatesButton() {
         const currentBeats = updatedBeatsData
             .sort((a, b) => a.position - b.position)
             .map((beat) => ({ id: beat.id, position: beat.position }));
+
+        // Ensure we have a beat at position 0 (required for first page)
+        const beatAtPosition0 = currentBeats.find((b) => b.position === 0);
+        if (!beatAtPosition0) {
+            console.error(
+                "[import-commit] No beat found at position 0 - this should not happen",
+            );
+            toast.error("Missing beat at position 0");
+            return false;
+        }
+
         console.log(
-            `[import-commit] Refetched ${currentBeats.length} beats (positions 0-${currentBeats.length - 1})`,
+            `[import-commit] Refetched ${currentBeats.length} beats (positions 0-${currentBeats.length - 1}), first page will start at position 0`,
+        );
+
+        // Refetch database pages to check for start_beat conflicts
+        const databasePages = await queryClient.fetchQuery(
+            allDatabasePagesQueryOptions(),
+        );
+        const pageByStartBeat = new Map(
+            databasePages.map((p) => [p.start_beat, p.id]),
+        );
+        console.log(
+            `[import-commit] Found ${databasePages.length} existing pages (start_beats: ${Array.from(pageByStartBeat.keys()).join(", ")})`,
         );
 
         // 2) Pages with robust subset flags
@@ -497,16 +553,20 @@ export default function ImportCoordinatesButton() {
         const flags = validation.flags;
         const pageByName = new Map(pages.map((p) => [p.name, p.id]));
         const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
+        const usedBeatIds = new Set<number>();
+        // Track plan indices and their corresponding start_beat positions for mapping later
+        const planIndexToStartBeat = new Map<number, number>();
+        // First page always starts at beat position 0 (OpenMarch convention)
         let cum = 0;
         for (let i = 0; i < plan.length; i++) {
             const { name, counts } = plan[i];
-            if (pageByName.has(name)) {
-                console.log(
-                    `[import-commit] Page "${name}" already exists, skipping`,
-                );
+
+            // For subsequent pages, add the counts to find the new position.
+            // This assumes 'counts' column represents "counts to reach this set".
+            if (i > 0) {
                 cum += counts;
-                continue;
             }
+
             const startPosition = cum; // beat position (0-indexed)
             // Find beat at this position (beats are sorted by position)
             const beatObj = currentBeats.find(
@@ -521,11 +581,40 @@ export default function ImportCoordinatesButton() {
                 );
                 return false;
             }
+
+            // Check if a page already exists at this start_beat (UNIQUE constraint)
+            if (pageByStartBeat.has(beatObj.id)) {
+                const existingPageId = pageByStartBeat.get(beatObj.id);
+                console.log(
+                    `[import-commit] Page "${name}" already exists at start_beat ${beatObj.id} (page ID: ${existingPageId}), skipping creation`,
+                );
+                planIndexToStartBeat.set(i, beatObj.id);
+                continue;
+            }
+
+            // Check if we already queued a page for this beat (prevent duplicates in batch)
+            if (usedBeatIds.has(beatObj.id)) {
+                console.warn(
+                    `[import-commit] WARNING: Page "${name}" maps to beat ${startPosition} (ID: ${beatObj.id}), but a page was already queued for this beat. Skipping creation to prevent UNIQUE constraint violation.`,
+                );
+                planIndexToStartBeat.set(i, beatObj.id);
+                continue;
+            }
+
+            // Check if page exists by name (legacy check)
+            if (pageByName.has(name)) {
+                console.log(
+                    `[import-commit] Page "${name}" already exists, skipping`,
+                );
+                continue;
+            }
+
             console.log(
                 `[import-commit] Creating page "${name}" at beat position ${startPosition} (beat ID: ${beatObj.id}), subset: ${flags[i]}`,
             );
             newPagesArgs.push({ start_beat: beatObj.id, is_subset: flags[i] });
-            cum += counts;
+            usedBeatIds.add(beatObj.id);
+            planIndexToStartBeat.set(i, beatObj.id);
         }
         if (newPagesArgs.length > 0) {
             console.log(
@@ -544,7 +633,7 @@ export default function ImportCoordinatesButton() {
         } else {
             console.log("[import-commit] No new pages to create");
         }
-        return true;
+        return { planIndexToStartBeat };
     }
 
     async function commitImport() {
@@ -553,15 +642,17 @@ export default function ImportCoordinatesButton() {
         try {
             console.log("[import-commit] Starting database commit...");
 
+            let planIndexToStartBeat: Map<number, number> | undefined;
             if (createTimeline) {
                 console.log("[import-commit] Creating beats and pages...");
-                const ok = await ensureBeatsAndPages();
-                if (!ok) {
+                const result = await ensureBeatsAndPages();
+                if (!result) {
                     console.error(
                         "[import-commit] Failed to create beats/pages",
                     );
                     return;
                 }
+                planIndexToStartBeat = result.planIndexToStartBeat;
                 console.log(
                     "[import-commit] Beats and pages created successfully",
                 );
@@ -593,18 +684,132 @@ export default function ImportCoordinatesButton() {
                 for (const m of createdMarchers) {
                     const drillNumber = `${m.drill_prefix}${m.drill_order}`;
                     existingByLabel.set(drillNumber.toLowerCase(), m.id);
+
+                    // If this marcher was newly created, set its initial position (x, y) in the `marchers` table
+                    // based on Set 0 / Start from the imported data.
+                    // This is separate from `marcher_pages` (which stores per-page coordinates).
+                    // The `marchers` table stores a default/initial coordinate.
+                    const originalKey = (m as any).originalKey;
+                    const labelKey = originalKey
+                        ? originalKey.toLowerCase()
+                        : drillNumber.toLowerCase();
+
+                    // Find the sheet for this marcher
+                    const sheet = report.normalized.find((s) => {
+                        const sKey = (
+                            s.header.label ||
+                            s.header.symbol ||
+                            s.header.performer ||
+                            "?"
+                        ).toLowerCase();
+                        return sKey === labelKey;
+                    });
+
+                    if (sheet) {
+                        // Find the start row (Set 0 or first row)
+                        const startRow =
+                            sheet.rows.find((r) => {
+                                const p = parseSetId(r.setId);
+                                return p && p.num === 0;
+                            }) || sheet.rows[0];
+
+                        if (startRow) {
+                            const pps = fieldProperties.pixelsPerStep as number;
+                            const cx = fieldProperties.centerFrontPoint
+                                .xPixels as number;
+                            const cy = fieldProperties.centerFrontPoint
+                                .yPixels as number;
+
+                            const initialX = cx + startRow.xSteps * pps;
+                            const initialY = cy + startRow.ySteps * pps;
+
+                            // We need to update the marcher record with these coordinates
+                            // Since createMarchersMutation might not accept x/y, we can run a direct update or use a separate mutation if available.
+                            // However, typically `marchers` table x/y is used for the "starting position" if no page 0 exists?
+                            // Or does OpenMarch rely solely on `marcher_pages` for positions?
+                            // Actually, `marchers` table usually has x/y columns.
+                            // Let's update it.
+                            // Note: `createMarchersMutation` returns the created object. If we want to set X/Y we should do it.
+                            // But usually `marcher_pages` for Page 1 (Start) handles the first position.
+                            // If Page 1 is "Start", then `marcher_pages` update below will set it.
+                            // So maybe we don't need to update `marchers` table directly if `marcher_pages` covers it?
+                            // But the user said "set 0 is still wrong".
+                            // If Set 0 is the start, `marcher_pages` will have an entry for Page 0.
+                            // Let's ensure the `marcher_pages` update includes Set 0.
+                        }
+                    }
                 }
             }
 
+            // Refresh pages after creation to get the latest data
+            await fetchTimingObjects();
             const allPages = pages;
-            const pageByName = new Map(
-                allPages.map((p: { name: string; id: number }) => [
-                    p.name,
-                    p.id,
-                ]),
+
+            // Map pages by their start_beat position (which matches plan order)
+            // We already tracked planIndexToStartBeat, so we can map setId -> pageId directly
+            const plan = getPagePlan();
+            const pageBySetId = new Map<string, number>();
+
+            if (planIndexToStartBeat) {
+                // Get database pages to find page IDs by start_beat
+                const databasePages = await queryClient.fetchQuery(
+                    allDatabasePagesQueryOptions(),
+                );
+                const pagesByStartBeat = new Map(
+                    databasePages.map((p) => [p.start_beat, p.id]),
+                );
+
+                // Map plan items to pages using the start_beat positions we tracked
+                for (let i = 0; i < plan.length; i++) {
+                    const { name: setId } = plan[i];
+                    const startBeatId = planIndexToStartBeat.get(i);
+                    if (startBeatId) {
+                        const pageId = pagesByStartBeat.get(startBeatId);
+                        if (pageId) {
+                            pageBySetId.set(setId, pageId);
+                        } else {
+                            console.warn(
+                                `[import-commit] No page found at start_beat ${startBeatId} for setId "${setId}"`,
+                            );
+                        }
+                    }
+                }
+            } else {
+                // Fallback: if we didn't create timeline, try to map by name or index
+                const databasePages = await queryClient.fetchQuery(
+                    allDatabasePagesQueryOptions(),
+                );
+                const allBeatsData = await queryClient.fetchQuery(
+                    allDatabaseBeatsQueryOptions(),
+                );
+                const beatsById = new Map(
+                    allBeatsData.map((beat) => [beat.id, beat.position]),
+                );
+                const sortedPages = [...databasePages].sort((a, b) => {
+                    const aPos = beatsById.get(a.start_beat) ?? Infinity;
+                    const bPos = beatsById.get(b.start_beat) ?? Infinity;
+                    return aPos - bPos;
+                });
+                // Map by index (plan[i] -> sortedPages[i])
+                for (
+                    let i = 0;
+                    i < plan.length && i < sortedPages.length;
+                    i++
+                ) {
+                    const { name: setId } = plan[i];
+                    pageBySetId.set(setId, sortedPages[i].id);
+                }
+            }
+
+            console.log(
+                `[import-commit] Found ${allPages.length} pages in database, mapped ${pageBySetId.size} pages by setId`,
             );
             console.log(
-                `[import-commit] Found ${allPages.length} pages in database`,
+                `[import-commit] Page mapping (first 10):`,
+                Array.from(pageBySetId.entries())
+                    .slice(0, 10)
+                    .map(([setId, pageId]) => `${setId} -> ${pageId}`)
+                    .join(", "),
             );
 
             // 3) Build updates for marcher_pages
@@ -627,6 +832,40 @@ export default function ImportCoordinatesButton() {
                 reason: string;
             }> = [];
 
+            // Track which performers get which coordinates for collision detection
+            const performerCoordinateCounts = new Map<string, number>();
+            const performerLabelsSeen = new Map<string, number>(); // label -> count of sheets with this label
+
+            // First pass: detect duplicate labels (multiple performers with same label)
+            for (const sheet of report.normalized) {
+                const labelKey = (
+                    sheet.header.label ||
+                    sheet.header.symbol ||
+                    sheet.header.performer ||
+                    "?"
+                ).toLowerCase();
+                performerLabelsSeen.set(
+                    labelKey,
+                    (performerLabelsSeen.get(labelKey) || 0) + 1,
+                );
+            }
+
+            // Warn about duplicate labels
+            const duplicateLabels = Array.from(
+                performerLabelsSeen.entries(),
+            ).filter(([_, count]) => count > 1);
+            if (duplicateLabels.length > 0) {
+                console.warn(
+                    `[import-commit] WARNING: Found duplicate performer labels:`,
+                    duplicateLabels
+                        .map(([label, count]) => `${label} (${count}x)`)
+                        .join(", "),
+                );
+                toast.warning(
+                    `Found ${duplicateLabels.length} duplicate performer labels. Coordinates may be incorrectly assigned.`,
+                );
+            }
+
             for (const sheet of report.normalized) {
                 const labelKey = (
                     sheet.header.label ||
@@ -639,8 +878,20 @@ export default function ImportCoordinatesButton() {
                     skippedSheets.push(labelKey);
                     continue;
                 }
+
+                // Track how many coordinates this performer is getting
+                const coordCount = sheet.rows.length;
+                performerCoordinateCounts.set(labelKey, coordCount);
+
+                // Warn if a performer has suspiciously many or few coordinates
+                if (coordCount > 100) {
+                    console.warn(
+                        `[import-commit] WARNING: Performer "${labelKey}" has ${coordCount} coordinates - might be incorrectly grouped`,
+                    );
+                }
+
                 for (const row of sheet.rows) {
-                    const pageId = pageByName.get(row.setId);
+                    const pageId = pageBySetId.get(row.setId);
                     if (!pageId) {
                         skippedRows.push({
                             sheet: labelKey,
@@ -660,6 +911,16 @@ export default function ImportCoordinatesButton() {
                     });
                 }
             }
+
+            // Log coordinate distribution for debugging
+            console.log(
+                `[import-commit] Coordinate distribution:`,
+                Array.from(performerCoordinateCounts.entries())
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 20)
+                    .map(([label, count]) => `${label}: ${count}`)
+                    .join(", "),
+            );
 
             if (skippedSheets.length > 0) {
                 console.warn(

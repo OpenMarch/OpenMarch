@@ -11,8 +11,22 @@ Output: JSON with extracted sheets and sets
 import sys
 import json
 import re
-import fitz  # PyMuPDF
-import numpy as np
+
+try:
+    import fitz  # PyMuPDF
+    import numpy as np
+except ImportError as e:
+    error_msg = str(e)
+    # Provide clearer error message for common missing modules
+    if "fitz" in error_msg.lower():
+        error_msg = "No module named 'fitz' (PyMuPDF). Install with: pip3 install pymupdf numpy"
+    elif "numpy" in error_msg.lower():
+        error_msg = "No module named 'numpy'. Install with: pip3 install numpy"
+    else:
+        error_msg = f"Missing dependency: {e}. Install with: pip3 install pymupdf numpy"
+    print(json.dumps({"error": error_msg}), file=sys.stderr)
+    sys.exit(1)
+
 from typing import List, Dict, Any, Optional, Tuple
 
 # Regex patterns
@@ -20,7 +34,7 @@ REGEX_PERFORMER_LABEL = re.compile(r"Label:\s*(?P<label>[A-Za-z0-9]+)", re.IGNOR
 REGEX_PERFORMER_NAME = re.compile(r"Performer:\s*(?P<name>.*?)(?:\s+Label:|\s+ID:|$)", re.IGNORECASE)
 REGEX_PRINTED_PAGE = re.compile(r"Page\s+(?P<page>\d+)\s+of\s+\d+", re.IGNORECASE)
 REGEX_HEADER_START = re.compile(r"^Set\s+Measure\s+Counts", re.IGNORECASE)
-REGEX_ROW_START = re.compile(r"^(?P<set_id>\d+[A-Z]?)\s+(?P<rest>.*)", re.IGNORECASE)
+REGEX_ROW_START = re.compile(r"^(?P<set_id>Start|Beg|Bgn|Opener|Open|\d+[A-Z]?)\s+(?P<rest>.*)", re.IGNORECASE)
 
 # Constants
 MIN_TEXT_LENGTH_THRESHOLD = 200
@@ -151,10 +165,20 @@ def parse_set_row(line: str) -> Optional[Dict]:
         
     # 2. Smart Parse Measure/Counts
     measure_range = ""
-    counts = None
+    counts = 0 # Default to 0 for start/opener
     coord_start_idx = 0
     
-    if len(tokens) >= 2:
+    # Check if this is a "Start" row which often skips measure/counts columns
+    # If first token looks like coordinate keyword, assume no measure/counts
+    first_token_lower = tokens[0].lower()
+    coord_keywords = ["side", "on", "inside", "outside", "left", "right", "s1", "s2"]
+    
+    if set_id.lower() in ["start", "beg", "bgn", "opener", "open"] and first_token_lower in coord_keywords:
+        # Start row with coordinates immediately
+        measure_range = ""
+        counts = 0
+        coord_start_idx = 0
+    elif len(tokens) >= 2:
         val0 = tokens[0]
         val1 = tokens[1]
         
@@ -308,18 +332,27 @@ def process_text_content(text_lines: List[str]) -> List[Dict]:
                 log_debug(f"Merging blocks Rule A: {current['label']} p{current['page']} -> p{next_b['page']}")
                 
             # Rule B: Missing header at start + row-like lines (Continuation)
+            # BE MORE CONSERVATIVE: Only merge if we're very confident it's a continuation
             elif (not next_b["has_header"] and 
                   len(next_b["lines"]) > 0 and 
                   REGEX_ROW_START.match(next_b["lines"][0])):
                 
-                # Rule B says: "If a block starts without header... merge if previous block had same label"
+                # Only merge if:
+                # 1. Both blocks have the same label (most reliable)
+                # 2. OR next block has no label AND current block has a label AND next block starts with a row
+                #    (but be more cautious - check if there's a "Performer:" marker that might have been missed)
                 if current["label"] and next_b["label"] and current["label"] == next_b["label"]:
                     should_merge = True
-                    log_debug("Merging blocks Rule B (Same Label)")
-                elif not next_b["label"]:
-                    # Next block has no label (maybe just rows), assume continuation
+                    log_debug(f"Merging blocks Rule B (Same Label: {current['label']})")
+                elif (not next_b["label"] and 
+                      current["label"] and
+                      not any("Performer:" in line for line in next_b["lines"])):
+                    # Only merge if there's NO "Performer:" marker in next block (otherwise it's a new performer)
                     should_merge = True
-                    log_debug("Merging blocks Rule B (No Label in Next)")
+                    log_debug(f"Merging blocks Rule B (No Label in Next, continuing {current['label']})")
+                else:
+                    # Don't merge - likely a new performer
+                    log_debug(f"NOT merging blocks: current={current.get('label')}, next={next_b.get('label')}, has_performer_marker={any('Performer:' in line for line in next_b['lines'])}")
             
             if should_merge:
                 # Merge content
@@ -366,11 +399,21 @@ def process_text_content(text_lines: List[str]) -> List[Dict]:
             elif REGEX_ROW_START.match(line):
                 log_debug(f"Failed to parse row: {line}")
                 
+        # Validation: Warn if we have many sets but label might be wrong
+        if len(sets) == 0:
+            log_debug(f"WARNING: Performer {label} has no parsed sets!")
+        elif len(sets) > 50:
+            log_debug(f"WARNING: Performer {label} has {len(sets)} sets - might be incorrectly grouped")
+            
         results.append({
             "performer_label": label,
             "performer_name": name,
             "printed_page_number": printed_page,
             "sets": sets,
+            "debug": {
+                "num_sets": len(sets),
+                "num_lines": len(lines)
+            }
         })
         
     return results
