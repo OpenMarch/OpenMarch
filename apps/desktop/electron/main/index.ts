@@ -538,19 +538,35 @@ export async function newFile() {
 
     if (!win) return -1;
 
-    // Get path to new file
-    const path = await dialog.showSaveDialog(win, {
-        buttonLabel: "Create New",
-        filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
-    });
-    if (path.canceled || !path.filePath) return;
-    if (fs.existsSync(path.filePath)) {
-        fs.unlinkSync(path.filePath);
+    let filePath: string | undefined;
+
+    // In Playwright test mode, use the provided test file path instead of showing dialog
+    if (
+        process.env.PLAYWRIGHT_SESSION &&
+        process.env.PLAYWRIGHT_NEW_FILE_PATH
+    ) {
+        console.log(
+            "Using test file path:",
+            process.env.PLAYWRIGHT_NEW_FILE_PATH,
+        );
+        filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
+    } else {
+        // Get path to new file via dialog
+        const dialogResult = await dialog.showSaveDialog(win, {
+            buttonLabel: "Create New",
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        });
+        if (dialogResult.canceled || !dialogResult.filePath) return;
+        filePath = dialogResult.filePath;
     }
-    await setActiveDb(path.filePath, true);
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    await setActiveDb(filePath, true);
 
     // Add to recent files
-    addRecentFile(path.filePath);
+    addRecentFile(filePath);
     win?.webContents.reload();
 
     return 200;
