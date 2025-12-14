@@ -1,6 +1,17 @@
 import { test } from "../fixtures.mjs";
 import { expect } from "@playwright/test";
+import { createMarchers } from "e2e/utils/marchers.mjs";
 import fs from "fs-extra";
+import path from "path";
+import { fileURLToPath } from "url";
+import initSqlJs from "sql.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const blankDotsPath = path.resolve(
+    __dirname,
+    "../../electron/database/migrations/_blank.dots",
+);
 
 /**
  * E2E tests for creating a new file.
@@ -49,9 +60,8 @@ test("Create new file and verify database is functional", async ({
     await page.locator("#pages").getByRole("button").click();
     await expect(page.locator("#pages")).toContainText("1");
 
-    // Verify we can interact with the marchers sidebar
-    await page.locator("#sidebar").getByRole("button").first().click();
-    await expect(page.getByRole("heading", { name: "Marchers" })).toBeVisible();
+    // Create marchers to verify the database is functional
+    await createMarchers(page, 25, "Piccolo");
 
     // Verify the file exists
     expect(fs.existsSync(newFilePath)).toBe(true);
@@ -66,12 +76,36 @@ test("New file has proper SQLite database structure", async ({
     await page.getByRole("tab", { name: "Files" }).click();
     await page.getByRole("button", { name: "New File" }).click();
 
-    // Wait for the editor to load
-    await expect(page.getByText("Timeline")).toBeVisible({ timeout: 10000 });
-
-    // Verify the file is a valid SQLite database (has proper size)
+    // Verify the file exists
     expect(fs.existsSync(newFilePath)).toBe(true);
-    const fileStats = fs.statSync(newFilePath);
-    // A valid SQLite database should be larger than just a text file
-    expect(fileStats.size).toBeGreaterThan(1000);
+
+    // Use sql.js to validate the table structure matches blank.dots
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
+    });
+
+    // Load both databases
+    const blankDbBuffer = fs.readFileSync(blankDotsPath);
+    const newDbBuffer = fs.readFileSync(newFilePath);
+
+    const blankDb = new SQL.Database(blankDbBuffer);
+    const newDb = new SQL.Database(newDbBuffer);
+
+    // Get table names from both databases
+    const getTableNames = (db: InstanceType<typeof SQL.Database>) => {
+        const result = db.exec(
+            "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
+        );
+        return result[0]?.values.map((row) => row[0] as string) ?? [];
+    };
+
+    const blankTables = getTableNames(blankDb);
+    const newTables = getTableNames(newDb);
+
+    // Verify the new file has all the same tables as blank.dots
+    expect(newTables).toEqual(blankTables);
+
+    // Clean up
+    blankDb.close();
+    newDb.close();
 });

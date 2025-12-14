@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /* eslint-disable no-empty-pattern */
 import { test as base, _electron as electron } from "@playwright/test";
 import type { ElectronApplication, Page } from "playwright";
@@ -210,7 +211,10 @@ export const test = base.extend<MyFixtures>({
      */
     electronAppNewFile: async ({}, use, testInfo) => {
         // Create a path for the new test file in the test output directory
-        const newFilePath = path.resolve(testInfo.outputDir, "new-test-file.dots");
+        const newFilePath = path.resolve(
+            testInfo.outputDir,
+            "new-test-file.dots",
+        );
 
         // Clean up any existing file before test
         if (fs.existsSync(newFilePath)) {
