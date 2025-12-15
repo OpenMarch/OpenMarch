@@ -6,8 +6,6 @@
             "cancelUpdates": "Cancelar actualizaciones a marchadores",
             "distributeHorizontally": "Distribuir marchadores uniformemente horizontalmente",
             "distributeVertically": "Distribuir marchadores uniformemente verticalmente",
-            "flipHorizontal": "",
-            "flipVertical": "",
             "lockX": "Bloqueo del eje X",
             "lockXOff": "Habilitar movimiento en X",
             "lockXOn": "Bloquear movimiento X",
@@ -26,17 +24,17 @@
             "setSelectedToNext": "Fijar las coordenadas de los marchadores seleccionados a la página siguiente",
             "setSelectedToNextSuccess": "{count, plural, one {Configuró exitosamente {count} coordenada de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}} other {Configuró exitosamente {count} coordenadas de marcha en la página {currentPage} a las coordenadas de la próxima página {nextPage}}}",
             "setSelectedToPrevious": "Fijar las coordenadas de los marchadores seleccionados a la página anterior",
-            "setSelectedToPreviousSuccess": "Configurado con éxito {count} coordenada{{count, plural, one {} other {s}}} de marcha en la página {currentPage} a las coordenadas de la página anterior {previousPage}"
+            "setSelectedToPreviousSuccess": "{count, plural, other {Configurado con éxito '{count} coordenada{{count, plural, one {} other {s}}} de marcha en la página {currentPage} a las coordenadas de la página anterior {previousPage}'}}"
         },
         "cursor": {
             "defaultMode": "Establecer modo cursor a predeterminado",
             "lineMode": "Crear una línea con los manifestantes seleccionados"
         },
         "edit": {
-            "redo": "Rehacer",
-            "undo": "Deshacer",
+            "noRedoAvailable": "No hay acción para rehacer",
             "noUndoAvailable": "No hay acción para deshacer",
-            "noRedoAvailable": "No hay acción para rehacer"
+            "redo": "Rehacer",
+            "undo": "Deshacer"
         },
         "file": {
             "importMusicXml": "Importar archivo MusicXML para obtener compases",
@@ -186,6 +184,7 @@
         "exportPDFSuccess": "¡Exportado exitosamente como PDF!",
         "exportSuccess": "{value, plural, one {¡Coordenadas exportadas con éxito para {count} marchante!} other {¡Coordenadas exportadas con éxito para {count} marchantes!} }",
         "fieldProperties": "Propiedades del campo: {status}",
+        "fieldPropertiesNotLoaded": "Propiedades del campo no cargadas",
         "fieldPropertiesRequired": "Las propiedades del campo son necesarias para la exportación",
         "frontToBackHeader": "Frente a Atrás",
         "funPhrase": {
@@ -211,10 +210,8 @@
         "individualChartsTooltip": "Crear PDFs de gráficos perforados personalizados para cada individuo que marcha.",
         "individualChartsTooltipDescription": "Si esto no está marcado, se creará un PDF de gráfico de perforación general.",
         "marcher": "Marcher: {estado}",
-        "marchersNotLoaded": "Marchadores no cargados",
         "marcherPagesNotLoaded": "Páginas de marchadores no cargadas",
-        "fieldPropertiesNotLoaded": "Propiedades del campo no cargadas",
-        "sectionAppearancesNotLoaded": "Apariencias de sección no cargadas",
+        "marchersNotLoaded": "Marchadores no cargados",
         "measuresHeader": "Medida",
         "noFieldProperties": "No se proporcionaron propiedades de campo",
         "noMarcher": "No se proporcionó marcha",
@@ -231,6 +228,7 @@
         "processingPage": "Procesando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Distribución de un cuarto de página",
         "roundingDenominator": "Redondeo de coordenadas:",
+        "sectionAppearancesNotLoaded": "Apariencias de sección no cargadas",
         "selectRoundingDenominator": "Seleccionar redondeo",
         "sideToSideHeader": "Lado a Lado",
         "svgExportFailed": "La exportación SVG para {drillNumber} falló con error: {error}",
@@ -433,6 +431,8 @@
         },
         "page": {
             "counts": "Conteos",
+            "deletedFailed": "Fallido en la eliminación de páginas",
+            "deletedSuccessfully": "Página eliminada con éxito",
             "measures": "Medidas",
             "notes": "Notas",
             "notesPlaceholder": "Añadir notas para esta página...",
@@ -441,9 +441,7 @@
                 "success": "Página dividida con éxito"
             },
             "subset": "Subconjunto",
-            "title": "Página {pageNumber}",
-            "deletedSuccessfully": "Página eliminada con éxito",
-            "deletedFailed": "Fallido en la eliminación de páginas"
+            "title": "Página {pageNumber}"
         },
         "shape": {
             "addSegmentButton": "Añadir",
@@ -464,17 +462,17 @@
             "segments": {
                 "title": "Segmentos"
             },
+            "selectTab": "Seleccionar",
+            "shapesTab": "Formas",
             "successfullyCopied": "Forma copiada con éxito a la página {pageName}",
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Eliminar esta forma para esta página. No moverá los marchadores de su posición actual",
-            "viewTab": "Vista",
-            "shapesTab": "Formas",
-            "selectTab": "Seleccionar"
+            "viewTab": "Vista"
         },
         "shapes": {
-            "title": "Formas",
+            "moreShapesComingSoon": "¡Más formas próximamente!",
             "selectShape": "Seleccionar Forma",
-            "moreShapesComingSoon": "¡Más formas próximamente!"
+            "title": "Formas"
         },
         "title": "Inspector"
     },
@@ -493,10 +491,6 @@
             "guides": {
                 "title": "Guías"
             },
-            "videoGuides": {
-                "title": "Guías en vídeo",
-                "description": "Mira guías en vídeo para aprender a usar OpenMarch."
-            },
             "title": "Aprender",
             "troubleshooting": {
                 "clearCache": "Borrar la caché",
@@ -505,6 +499,10 @@
                 "refresh": "Actualizar la página",
                 "refresh.description": "Cuando tengas dudas, actualiza la página (Ctrl/Cmd + R). Si OpenMarch parece estar roto, refrescarlo suele solucionarlo.",
                 "title": "Consejos para la solución de problemas"
+            },
+            "videoGuides": {
+                "description": "Mira guías en vídeo para aprender a usar OpenMarch.",
+                "title": "Guías en vídeo"
             }
         },
         "merch": "Consigue productos de OpenMarch!",
@@ -535,33 +533,34 @@
         "list": {
             "addSectionStyle": "Agregar Estilo de Sección",
             "addTagAppearance": "Agregar apariencia de etiqueta",
+            "allSections": "Todas las Secciones",
             "createTagsFirst": "Cree etiquetas primero en el editor de marchadores para agregar apariencias de etiquetas.",
             "deleteSectionStyle": "Eliminar este estilo de sección",
-            "none": "Ninguno",
             "discardChanges": "Descartar cambios",
             "drillNumberTitle": "#",
             "fillColor": "Color de Relleno",
             "nameTitle": "Nombre",
             "noMarchers": "No se han creado marchadores aún. ¿Por qué no creas uno?",
+            "none": "Ninguno",
             "noSectionStyles": "Aún no se han definido estilos de sección. Agrega uno para personalizar la apariencia de cada sección.",
             "outlineColor": "Color del Contorno",
             "pendingChanges": "Es posible que los valores no se apliquen hasta después de una actualización",
             "saveChanges": "Guardar Cambios",
-            "sectionStyles": "Estilos de sección",
             "sectionsInShow": "Secciones en el Show",
+            "sectionStyles": "Estilos de sección",
             "sectionTitle": "Sección",
             "selectSection": "Sección",
-            "shape": "Forma",
-            "allSections": "Todas las Secciones"
+            "shape": "Forma"
         },
         "listTitle": "Lista",
+        "marcherAppearance": "Apariencia de marchantes",
         "quantity": "Cantidad",
         "section": "Sección",
-        "sectionText": "Sección",
         "sectionError": {
             "chooseSection": "Por favor, elija una sección"
         },
-        "marcherAppearance": "Apariencia de marchantes",
+        "sectionStyles": "Estilos de sección",
+        "sectionText": "Sección",
         "tagText": "Etiqueta",
         "title": "Marchadores"
     },
@@ -630,12 +629,12 @@
     "section": {
         "drumMajor": "Director de Percusión",
         "family": {
-            "woodwind": "Maderas",
-            "brass": "Metales",
             "battery": "Batería",
+            "brass": "Metales",
             "guard": "Guardia",
             "other": "Otro",
-            "pit": "Foso"
+            "pit": "Foso",
+            "woodwind": "Maderas"
         },
         "guard": {
             "colorGuard": "Guardia de color",
@@ -776,6 +775,18 @@
             "toNextPagePositions": "...a posiciones de página siguientes",
             "toPreviousPagePositions": "...a posiciones en la página anterior"
         },
+        "select": {
+            "noDrillPrefixesToSelect": "No se encontraron prefijos de instrucción para seleccionar",
+            "noSectionsToSelect": "No se encontraron secciones para seleccionar",
+            "noTagsToSelect": "No se encontraron etiquetas para seleccionar",
+            "selectBy": {
+                "drillPrefix": "Prefijo de Instrucción",
+                "family": "Familia",
+                "section": "Sección",
+                "tag": "Etiqueta"
+            },
+            "selectByText": "Seleccionar por"
+        },
         "settings": "Configuración de la App",
         "view": {
             "gridLines": "Líneas de cuadrícula",
@@ -783,18 +794,6 @@
             "nextPaths": "Próximas Rutas",
             "previousPaths": "Rutas anteriores",
             "uiSettingsToolbar": "Barra de herramientas de configuración"
-        },
-        "select": {
-            "selectByText": "Seleccionar por",
-            "selectBy": {
-                "section": "Sección",
-                "drillPrefix": "Prefijo de Instrucción",
-                "family": "Familia",
-                "tag": "Etiqueta"
-            },
-            "noSectionsToSelect": "No se encontraron secciones para seleccionar",
-            "noTagsToSelect": "No se encontraron etiquetas para seleccionar",
-            "noDrillPrefixesToSelect": "No se encontraron prefijos de instrucción para seleccionar"
         }
     },
     "versionCheck": {
@@ -827,12 +826,12 @@
         "resetToDefaults": "Restablecer a Predeterminados",
         "saveChanges": "Guardar Cambios",
         "title": "Configuración del Espacio de Trabajo",
-        "unsavedChanges": "Tienes cambios sin guardar",
         "units": {
-            "bpm": "PPM",
             "beats": "pulsos",
+            "bpm": "PPM",
             "counts": "cuentas",
             "seconds": "segundos"
-        }
+        },
+        "unsavedChanges": "Tienes cambios sin guardar"
     }
 }
