@@ -421,6 +421,7 @@
             "createLine": "Créer la Ligne",
             "drillNumber": "Numéro de parcours",
             "errorLoadingCoords": "Erreur de chargement des coordonnées",
+            "loading": "Chargement du marcheur",
             "maxStepSize": "Taille maximale des pas",
             "minStepSize": "Taille minimale des pas",
             "name": "Nom",
@@ -629,6 +630,9 @@
         "undoWithCtrlZ": "Cette action est annulable avec Ctrl + Z",
         "volume": "Volume"
     },
+    "page": {
+        "deletedSuccessfully": "Page supprimée avec succès"
+    },
     "pages": {
         "createFailed": "Échec de la création de la page - {error}",
         "createLastPageFailed": "Échec de la création de la dernière page - {error}",
@@ -732,6 +736,9 @@
         "square": "Carré",
         "triangle": "Triangle",
         "x": "X"
+    },
+    "tags": {
+        "title": "Étiquettes"
     },
     "tempoGroup": {
         "createBeatsError": "Erreur de création des beats",

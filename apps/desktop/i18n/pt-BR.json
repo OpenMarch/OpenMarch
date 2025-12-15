@@ -428,6 +428,7 @@
             "createLine": "Criar Linha",
             "drillNumber": "Número do Furo",
             "errorLoadingCoords": "Erro ao carregar coordenadas",
+            "loading": "Carregando marchador",
             "maxStepSize": "Maior tamanho do passo",
             "minStepSize": "Menor tamanho do passo",
             "name": "Nome",
@@ -636,6 +637,9 @@
         "undoWithCtrlZ": "Esta ação é reversível com Ctrl + Z",
         "volume": "Volume"
     },
+    "page": {
+        "deletedSuccessfully": "Página excluída com sucesso"
+    },
     "pages": {
         "createFailed": "Falha ao criar página - {erro}",
         "createLastPageFailed": "Falha ao criar a última página - {erro}",
@@ -738,6 +742,9 @@
         "square": "Quadrado",
         "triangle": "Triângulo",
         "x": "X"
+    },
+    "tags": {
+        "title": "Etiquetas"
     },
     "tempoGroup": {
         "createBeatsError": "Erro ao criar beats",
