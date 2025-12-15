@@ -15,6 +15,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 const languages = [
     { code: "en", name: "English" },
     { code: "es", name: "Español" },
+    { code: "fr", name: "Français" },
     { code: "pt-BR", name: "Português (Brasil)" },
     { code: "ja", name: "日本語" },
 ];
