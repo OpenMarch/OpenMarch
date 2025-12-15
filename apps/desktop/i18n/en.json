@@ -428,6 +428,7 @@
             "createLine": "Create Line",
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
+            "loading": "Loading marcher",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
             "name": "Name",
@@ -636,6 +637,9 @@
         "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume"
     },
+    "page": {
+        "deletedSuccessfully": "Page deleted successfully"
+    },
     "pages": {
         "createFailed": "Failed to create page - {error}",
         "createLastPageFailed": "Failed to create last page - {error}",
@@ -738,6 +742,9 @@
         "square": "Square",
         "triangle": "Triangle",
         "x": "X"
+    },
+    "tags": {
+        "title": "Tags"
     },
     "tempoGroup": {
         "createBeatsError": "Error creating beats",
