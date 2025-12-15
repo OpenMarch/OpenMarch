@@ -6,6 +6,8 @@
             "cancelUpdates": "Cancelar atualizações para os marchadores",
             "distributeHorizontally": "Distribuir marchadores uniformemente na horizontal",
             "distributeVertically": "Distribuir marchadores uniformemente na vertical",
+            "flipHorizontal": "Virar marchadores na horizontal",
+            "flipVertical": "Inverter marchantes verticalmente",
             "lockX": "Travar eixo X",
             "lockXOff": "Habilitar movimento em X",
             "lockXOn": "Bloquear movimento X",
@@ -107,7 +109,7 @@
             }
         },
         "context": {
-            "error": "Falha ao inicializar contexto de áudio"
+            "error": "Falha ao inicializar o contexto de áudio"
         },
         "decode": {
             "error": "Falha ao decodificar arquivo de áudio"
@@ -204,13 +206,13 @@
         "generatingPDF": "Gerando arquivo PDF para: {drillNumber}",
         "includeMeasures": "Incluir medidas",
         "includeNotesAppendix": "Incluir páginas de apêndice de notas",
-        "includeNotesAppendixTooltip": "Adiciona páginas de apêndice em modo retrato listando as notas de cada set.",
-        "includeNotesAppendixTooltipDescription": "As notas exibidas sob os gráficos são truncadas para caber na página. O apêndice de notas inclui o texto completo das notas para cada página que possui notas.",
+        "includeNotesAppendixTooltip": "Adicionar páginas em formato retrato com apêndice listando notas para cada conjunto.",
+        "includeNotesAppendixTooltipDescription": "Notas em linha abaixo dos gráficos são truncadas para se ajustarem à página. O apêndice de notas inclui o texto completo das notas em todas as páginas que as tenham.",
         "individualCharts": "Gráficos de Perfuração Individuais",
         "individualChartsTooltip": "Crie PDFs de gráficos detalhados personalizados para cada integrante.",
         "individualChartsTooltipDescription": "Se isso não estiver marcado, será criado um PDF de gráfico de perfuração de visão geral.",
         "marcher": "Marcher: {status}",
-        "marcherPagesNotLoaded": "Páginas de marchadores não carregadas",
+        "marcherPagesNotLoaded": "Páginas de marchador não carregadas",
         "marchersNotLoaded": "Marchadores não carregados",
         "measuresHeader": "Medida",
         "noFieldProperties": "Nenhuma propriedade de campo fornecida",
@@ -228,7 +230,7 @@
         "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Layout de quarto de página",
         "roundingDenominator": "Arredondamento de coordenadas:",
-        "sectionAppearancesNotLoaded": "Aparências de seção não carregadas",
+        "sectionAppearancesNotLoaded": "Aparências da seção não carregadas",
         "selectRoundingDenominator": "Selecionar arredondamento",
         "sideToSideHeader": "Lado a Lado",
         "svgExportFailed": "Exportação SVG para {drillNumber} falhou com erro: {error}",
@@ -431,8 +433,8 @@
         },
         "page": {
             "counts": "Contagens",
-            "deletedFailed": "Exclusão de página falhou",
-            "deletedSuccessfully": "Página deletada com sucesso",
+            "deletedFailed": "Falha na exclusão da página",
+            "deletedSuccessfully": "Página excluída com sucesso",
             "measures": "Medidas",
             "notes": "Notas",
             "notesPlaceholder": "Adicionar notas para esta página...",
@@ -483,6 +485,7 @@
             "failedToOpen": "Falha ao abrir arquivo",
             "failedToRemoveRecent": "Falha ao remover arquivo da lista de recentes",
             "fieldPreview": "Pré-visualização do Campo",
+            "movedOrMissing": "Arquivo movido ou ausente",
             "openFile": "Abrir Arquivo",
             "removeFile": "Remover dos arquivos recentes",
             "title": "Arquivos Recentes"
@@ -502,7 +505,7 @@
             },
             "videoGuides": {
                 "description": "Assista a guias em vídeo para aprender a usar o OpenMarch.",
-                "title": "Guias em Vídeo"
+                "title": "Guias de Vídeo"
             }
         },
         "merch": "Obtenha OpenMarch Merch!",
@@ -532,9 +535,9 @@
         "editButton": "Editar Marchadores",
         "list": {
             "addSectionStyle": "Adicionar Estilo de Seção",
-            "addTagAppearance": "Adicionar aparência de etiqueta",
+            "addTagAppearance": "Adicionar Aparência de Tag",
             "allSections": "Todas as Seções",
-            "createTagsFirst": "Crie tags primeiro no editor de marchadores para adicionar aparências de tags.",
+            "createTagsFirst": "Primeiro, crie tags no inspetor de marchadores para adicionar aparências de tags.",
             "deleteSectionStyle": "Excluir este estilo de seção",
             "discardChanges": "Descartar Alterações",
             "drillNumberTitle": "#",
@@ -546,14 +549,14 @@
             "outlineColor": "Cor do Contorno",
             "pendingChanges": "Os valores abaixo podem não ser aplicados até que seja feito um recarregamento",
             "saveChanges": "Salvar Alterações",
-            "sectionsInShow": "Seções no Show",
+            "sectionsInShow": "Seções no Espetáculo",
             "sectionStyles": "Estilos da Seção",
             "sectionTitle": "Seção",
             "selectSection": "Seção",
             "shape": "Forma"
         },
         "listTitle": "Lista",
-        "marcherAppearance": "Aparência dos marchadores",
+        "marcherAppearance": "Aparência do Marchador",
         "quantity": "Quantidade",
         "section": "Seção",
         "sectionError": {
@@ -565,7 +568,7 @@
         "title": "Marchadores"
     },
     "music": {
-        "accent": "Acento na primeira batida",
+        "accent": "Acentuar o primeiro compasso",
         "addNewTempoGroupAfter": "Adicionar um novo grupo de tempo após este",
         "addTempoGroup": "Adicionar Novo Grupo",
         "audio": "Áudio",
@@ -587,7 +590,7 @@
         "endTempo": "Tempo Final",
         "endTempoPlaceholder": "Opcional",
         "endTempoTooltip": "O novo grupo irá gradualmente em direção ao tempo final, mas não o alcançará.\nIsto é para criar uma transição suave para um novo grupo.",
-        "general": "Em geral",
+        "general": "Geral",
         "import": "Importar",
         "importAudioFile": "Importar arquivo de áudio",
         "importButton": "Importar Arquivo MusicXML",
@@ -604,14 +607,14 @@
         "nameDescription": "Letra ou identificador de ensaio",
         "namePlaceholder": "Opcional",
         "numberOfMeasures": "Número de Compassos *",
-        "onlyClickOnMeasure": "Basta clicar na medida",
+        "onlyClickOnMeasure": "Clique apenas na medida",
         "onOff": "Ligado/Desligado",
         "rehearsalLetterOrIdentifier": "Letra ou identificador de ensaio",
         "saveChanges": "Salvar Alterações",
         "seeDocs": "Ver documentos",
-        "select": "Selecione",
+        "select": "Selecionar",
         "selectPattern": "Selecione um padrão",
-        "sharp": "Afiada",
+        "sharp": "Sustenido",
         "smooth": "Suave",
         "standard": "Padrão",
         "startTempo": "Tempo Inicial *",
@@ -626,15 +629,21 @@
         "undoWithCtrlZ": "Esta ação é reversível com Ctrl + Z",
         "volume": "Volume"
     },
+    "pages": {
+        "createFailed": "Falha ao criar página - {erro}",
+        "createLastPageFailed": "Falha ao criar a última página - {erro}",
+        "deleteFailed": "Falha ao excluir página - {erro}",
+        "updateFailed": "Falha ao atualizar página - {erro}"
+    },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
         "family": {
             "battery": "Bateria",
-            "brass": "Metais",
+            "brass": "Latão",
             "guard": "Guarda",
-            "other": "Outro",
-            "pit": "Fosso",
-            "woodwind": "Madeiras"
+            "other": "Família Outros",
+            "pit": "Poço",
+            "woodwind": "Madeira"
         },
         "guard": {
             "colorGuard": "Guarda de Cor",
@@ -730,6 +739,7 @@
         "deletedSuccessfully": "Grupo de tempo excluído com sucesso",
         "deleteFailed": "Falha ao excluir grupo de tempo",
         "differentBeatsError": "Grupo de tempo tem número diferente de batidas. Isso não deveria acontecer. Por favor, entre em contato conosco!",
+        "errorUpdatingTempoGroup": "Erro ao atualizar grupo de tempo",
         "noMeasures": "Grupo de tempo não tem medidas"
     },
     "timeline": {
@@ -776,7 +786,7 @@
             "toPreviousPagePositions": "...para posições anteriores de página"
         },
         "select": {
-            "noDrillPrefixesToSelect": "Nenhum prefixo de ordem encontrado para selecionar",
+            "noDrillPrefixesToSelect": "Nenhum prefixo de perfuração encontrado para selecionar",
             "noSectionsToSelect": "Nenhuma seção encontrada para selecionar",
             "noTagsToSelect": "Nenhuma etiqueta encontrada para selecionar",
             "selectBy": {
@@ -814,13 +824,13 @@
         "title": "Bem-vindo ao OpenMarch"
     },
     "workspaceSettings": {
-        "audioOffsetSeconds": "Segundos de Compensação de Áudio",
+        "audioOffsetSeconds": "Deslocamento de Áudio",
         "cancel": "Cancelar",
-        "defaultBeatsPerMeasure": "Batidas por Compasso Padrão",
-        "defaultNewPageCounts": "Contagens de Página Nova Padrão",
+        "defaultBeatsPerMeasure": "Batidas Padrão por Compasso",
+        "defaultNewPageCounts": "Contadores Padrão de Novas Páginas",
         "defaultTempo": "Tempo Padrão",
         "loadingSettings": "Carregando configurações do espaço de trabalho...",
-        "measurementOffset": "Compensação de Número de Compasso",
+        "measurementOffset": "Compensação de Número de Medida",
         "noSettingsFound": "Nenhuma configuração de espaço de trabalho encontrada",
         "pageNumberOffset": "Compensação de Número de Página",
         "resetToDefaults": "Redefinir para Padrões",

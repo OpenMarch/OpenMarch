@@ -6,6 +6,8 @@
             "cancelUpdates": "マーチャー への アップデートをキャンセル",
             "distributeHorizontally": "行進者 を 横 に 均等 に 配置する",
             "distributeVertically": "行進者 を 縦 に 均等 に 配置する",
+            "flipHorizontal": "行進者 を 横 に 反転する",
+            "flipVertical": "行進者を縦に反転",
             "lockX": "X 軸 をロック",
             "lockXOff": "X 移動を有効にする",
             "lockXOn": "X の動きをロック",
@@ -32,7 +34,7 @@
         },
         "edit": {
             "noRedoAvailable": "やり直すアクションはありません",
-            "noUndoAvailable": "元に戻す操作はありません",
+            "noUndoAvailable": "元に戻すアクションはありません",
             "redo": "やり直し を実行",
             "undo": "元に戻す を実行"
         },
@@ -68,7 +70,7 @@
             "create": "ページにまたがって編集可能な、線または曲線で構成された新しい形状を作成",
             "createCircle": "円を作成",
             "delete": "選択されている形状を削除",
-            "noMarchersSelected": "マーチャーが選択されていません"
+            "noMarchersSelected": "行進者が選択されていません"
         },
         "swap": {
             "error": "スワップできませんでした マーチャーズ {marcher1} と {marcher2}",
@@ -107,10 +109,10 @@
             }
         },
         "context": {
-            "error": "オーディオコンテキストの初期化に失敗しました"
+            "error": "オーディオ コンテキストの初期化に失敗しました"
         },
         "decode": {
-            "error": "オーディオファイルのデコードに失敗しました"
+            "error": "オーディオファイル をデコードできませんでした"
         },
         "editableBeatPlayer": {
             "description": "任意のビートの右端をドラッグして、その持続時間を調整します"
@@ -184,7 +186,7 @@
         "exportPDFSuccess": "PDF として正常にエクスポートされました！",
         "exportSuccess": "{value, plural, other {座標シートを {count} 人のマーチャー用に正常にエクスポートしました！} }",
         "fieldProperties": "フィールドプロパティ: {status}",
-        "fieldPropertiesNotLoaded": "フィールドプロパティがロードされていません",
+        "fieldPropertiesNotLoaded": "フィールドプロパティが読み込まれていません",
         "fieldPropertiesRequired": "エクスポートにフィールドプロパティが必要です",
         "frontToBackHeader": "前から後ろへ",
         "funPhrase": {
@@ -203,15 +205,15 @@
         },
         "generatingPDF": "PDF ファイルを生成中: {drillNumber}",
         "includeMeasures": "測定 を 含める",
-        "includeNotesAppendix": "ノート付録ページを含める",
-        "includeNotesAppendixTooltip": "各セットのノートをまとめた縦向きの付録ページを追加します。",
-        "includeNotesAppendixTooltipDescription": "チャート下に表示されるノートはページに収まるように一部が切り詰められます。付録ページには、ノートがあるすべてのページについて全文が表示されます。",
+        "includeNotesAppendix": "注釈の追加ページを含める",
+        "includeNotesAppendixTooltip": "各セットの注釈を一覧する縦向き附録ページを追加します。",
+        "includeNotesAppendixTooltipDescription": "図表の下にあるメモはページに収まるように切り詰められています。メモの付録には、メモがあるページごとの完全なメモテキストが含まれています。",
         "individualCharts": "個別 ドリル チャート",
         "individualChartsTooltip": "各個の マーチャー 用にカスタマイズされたドリル チャートの PDF を作成します。",
         "individualChartsTooltipDescription": "これが チェック され てい ない 場合 、1 つ の 概要 ドリル チャート PDF が 作成 され ます 。",
         "marcher": "行進: {status}",
-        "marcherPagesNotLoaded": "マーチャーページがロードされていません",
-        "marchersNotLoaded": "マーチャーがロードされていません",
+        "marcherPagesNotLoaded": "マーチャー ページ がロードされていません",
+        "marchersNotLoaded": "マーチャー がロードされていません",
         "measuresHeader": "測定",
         "noFieldProperties": "フィールドプロパティが提供されていません",
         "noMarcher": "マーチャーが提供されていません",
@@ -228,7 +230,7 @@
         "processingPage": "{pageNumber} ページ中 {totalPages} ページを 処理しています: {pageName}",
         "quarterPageLayout": "四分の一 ページ レイアウト",
         "roundingDenominator": "座標 丸め:",
-        "sectionAppearancesNotLoaded": "セクションの外観がロードされていません",
+        "sectionAppearancesNotLoaded": "セクション アピアランス がロードされていません",
         "selectRoundingDenominator": "丸めを選択",
         "sideToSideHeader": "サイド トゥ サイド",
         "svgExportFailed": "{drillNumber} の SVG エクスポートがエラー {error} で失敗しました",
@@ -431,8 +433,8 @@
         },
         "page": {
             "counts": "カウント",
-            "deletedFailed": "ページ削除に失敗しました",
-            "deletedSuccessfully": "ページが正常に削除されました",
+            "deletedFailed": "ページの削除に失敗しました",
+            "deletedSuccessfully": "ページ が正常に削除されました",
             "measures": "測定",
             "notes": "ノート",
             "notesPlaceholder": "この ページ に メモ を 追加...",
@@ -470,8 +472,8 @@
             "viewTab": "ビュー"
         },
         "shapes": {
-            "moreShapesComingSoon": "さらに多くの図形が近日公開予定！",
-            "selectShape": "形状を選択",
+            "moreShapesComingSoon": "近日公開、もっと多くの図形！",
+            "selectShape": "形状 選択",
             "title": "形状"
         },
         "title": "インスペクター"
@@ -483,6 +485,7 @@
             "failedToOpen": "ファイル を 開く こと が できません",
             "failedToRemoveRecent": "最近 の リスト から ファイル を 削除 できません でした",
             "fieldPreview": "フィールド プレビュー",
+            "movedOrMissing": "ファイルが移動されたまたは見つかりません",
             "openFile": "ファイル を 開く",
             "removeFile": "最近 の ファイル から 削除",
             "title": "最近 の ファイル"
@@ -501,8 +504,8 @@
                 "title": "トラブルシューティング ヒント"
             },
             "videoGuides": {
-                "description": "OpenMarchの使い方を学ぶには動画ガイドをご覧ください。",
-                "title": "ビデオガイド"
+                "description": "OpenMarch の使い方を学ぶには ビデオ ガイド を 見てください",
+                "title": "ビデオ ガイド"
             }
         },
         "merch": "OpenMarch グッズ を手に入れよう！",
@@ -533,8 +536,8 @@
         "list": {
             "addSectionStyle": "セクションスタイルを追加",
             "addTagAppearance": "タグの外観を追加",
-            "allSections": "すべてのセクション",
-            "createTagsFirst": "タグの外観を追加するには、まずマーチャーエディターでタグを作成してください。",
+            "allSections": "全ての セクション",
+            "createTagsFirst": "第 一 行 で タグ 作成 し、 マーチャー インスペクター に タグ 登場 を 追加 します。",
             "deleteSectionStyle": "このセクションスタイルを削除",
             "discardChanges": "変更を破棄",
             "drillNumberTitle": "号",
@@ -546,14 +549,14 @@
             "outlineColor": "アウトライン カラー",
             "pendingChanges": "更新 するまで 下記 の 値 は適用 されない ことがあります",
             "saveChanges": "変更を保存",
-            "sectionsInShow": "ショーのセクション",
+            "sectionsInShow": "ショー 内 の セクション",
             "sectionStyles": "セクション スタイル",
             "sectionTitle": "セクション",
             "selectSection": "セクション",
             "shape": "形状"
         },
         "listTitle": "リスト",
-        "marcherAppearance": "マーチャーの外観",
+        "marcherAppearance": "マーチャー 外観",
         "quantity": "数量",
         "section": "セクション",
         "sectionError": {
@@ -565,14 +568,14 @@
         "title": "マーチャーズ"
     },
     "music": {
-        "accent": "アクセントの1拍目",
+        "accent": "最初のビートにアクセント",
         "addNewTempoGroupAfter": "この後に新しいテンポ グループを追加",
         "addTempoGroup": "新しいグループを追加",
         "audio": "オーディオ",
         "audioFile": "オーディオ ファイル",
         "beatPattern": "拍子パターン *",
         "beatsPerMeasure": "拍 数 *",
-        "beatStyle": "ビートスタイル",
+        "beatStyle": "ビート スタイル",
         "cancel": "キャンセル",
         "create": "作成",
         "custom": "カスタム",
@@ -587,7 +590,7 @@
         "endTempo": "エンド テンポ",
         "endTempoPlaceholder": "オプション",
         "endTempoTooltip": "新しい グループ は 徐々 に エンド テンポ に 近づき ます が、 到達 する こと は ありません。\nこれは 新しい グループ へ 的 ため の スムーズ な 移行 を 作成 します。",
-        "general": "一般的な",
+        "general": "一般",
         "import": "インポート",
         "importAudioFile": "オーディオ ファイルをインポート",
         "importButton": "MusicXML ファイル をインポート",
@@ -604,16 +607,16 @@
         "nameDescription": "リハーサル レター または識別子",
         "namePlaceholder": "オプション",
         "numberOfMeasures": "小節数 *",
-        "onlyClickOnMeasure": "メジャーをクリックするだけ",
-        "onOff": "オン/オフ",
+        "onlyClickOnMeasure": "拍子 のみ クリック",
+        "onOff": "オン / オフ",
         "rehearsalLetterOrIdentifier": "リハーサル レター または識別子",
         "saveChanges": "変更を保存",
         "seeDocs": "ドキュメントを参照",
-        "select": "選び出す",
+        "select": "選択",
         "selectPattern": "パターンを選択",
         "sharp": "シャープ",
         "smooth": "スムーズ",
-        "standard": "標準",
+        "standard": "スタンダード",
         "startTempo": "スタート テンポ *",
         "tempo": "テンポ *",
         "tempoDescription": "分 解能",
@@ -626,14 +629,20 @@
         "undoWithCtrlZ": "この操作は Ctrl + Z で元に戻すことができます",
         "volume": "音量"
     },
+    "pages": {
+        "createFailed": "ページの作成に失敗しました - {error}",
+        "createLastPageFailed": "最後のページの作成に失敗しました - {error}",
+        "deleteFailed": "ページの削除に失敗しました - {error}",
+        "updateFailed": "ページの更新に失敗しました - {error}"
+    },
     "section": {
         "drumMajor": "ドラム メジャー",
         "family": {
             "battery": "バッテリー",
-            "brass": "金管楽器",
+            "brass": "ブラス",
             "guard": "ガード",
-            "other": "その他",
-            "pit": "ピット",
+            "other": "その他の",
+            "pit": "穴",
             "woodwind": "木管楽器"
         },
         "guard": {
@@ -683,7 +692,7 @@
         "general.appearance.dark": "ダーク",
         "general.appearance.light": "ライト",
         "general.language": "言語",
-        "general.showFullDatabasePath": "ファイルパス全体を表示する",
+        "general.showFullDatabasePath": "フル ファイル パスを表示",
         "mouse": "マウス ＆ トラックパッド",
         "mouse.panSensitivity": "パン 感度",
         "mouse.trackpadMode": "トラックパッド モード （ macOS に推奨 ）",
@@ -730,6 +739,7 @@
         "deletedSuccessfully": "テンポ グループ が正常に削除されました",
         "deleteFailed": "テンポ グループの削除に失敗しました",
         "differentBeatsError": "テンポ グループ に は 異なる 数 の ビート が あります。これは発生しないはず です。ぜひ お問い合わせ ください！",
+        "errorUpdatingTempoGroup": "テンポ グループ更新エラー",
         "noMeasures": "テンポ グループに 測定値 が ありません"
     },
     "timeline": {
@@ -738,7 +748,7 @@
             "label": "再生 コントロール"
         },
         "label": "タイムライン",
-        "masterVolume": "マスター音量",
+        "masterVolume": "マスタ 音量",
         "music": {
             "add": "音楽を追加"
         },
@@ -785,7 +795,7 @@
                 "section": "セクション",
                 "tag": "タグ"
             },
-            "selectByText": "選択方法"
+            "selectByText": "テキスト によって 選択"
         },
         "settings": "アプリ 設定",
         "view": {
@@ -814,24 +824,24 @@
         "title": "OpenMarch へようこそ"
     },
     "workspaceSettings": {
-        "audioOffsetSeconds": "オーディオオフセット秒",
+        "audioOffsetSeconds": "オーディオ オフセット",
         "cancel": "キャンセル",
-        "defaultBeatsPerMeasure": "デフォルトの拍子数",
-        "defaultNewPageCounts": "デフォルトの新しいページカウント",
-        "defaultTempo": "デフォルトテンポ",
+        "defaultBeatsPerMeasure": "デフォルト 拍 数",
+        "defaultNewPageCounts": "デフォルト 新規ページ 件数",
+        "defaultTempo": "デフォルト テンポ",
         "loadingSettings": "ワークスペース設定を読み込み中...",
         "measurementOffset": "小節番号オフセット",
         "noSettingsFound": "ワークスペース設定が見つかりません",
         "pageNumberOffset": "ページ番号オフセット",
-        "resetToDefaults": "デフォルトにリセット",
+        "resetToDefaults": " デフォルト にリセット",
         "saveChanges": "変更を保存",
         "title": "ワークスペース設定",
         "units": {
-            "beats": "拍",
-            "bpm": "BPM",
+            "beats": "ビート",
+            "bpm": "BPM(ビート・パー・ミニット)",
             "counts": "カウント",
             "seconds": "秒"
         },
-        "unsavedChanges": "保存されていない変更があります"
+        "unsavedChanges": "保存されていない 変更があります"
     }
 }
