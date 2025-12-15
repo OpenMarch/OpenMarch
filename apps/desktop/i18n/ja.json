@@ -6,8 +6,6 @@
             "cancelUpdates": "マーチャー への アップデートをキャンセル",
             "distributeHorizontally": "行進者 を 横 に 均等 に 配置する",
             "distributeVertically": "行進者 を 縦 に 均等 に 配置する",
-            "flipHorizontal": "",
-            "flipVertical": "",
             "lockX": "X 軸 をロック",
             "lockXOff": "X 移動を有効にする",
             "lockXOn": "X の動きをロック",
@@ -24,19 +22,19 @@
             "setAllToPrevious": "すべての マーカー座標を 前のページに設定",
             "setAllToPreviousSuccess": "すべての {count} マーカー座標をページ {currentPage} 上の前のページ {previousPage} の座標に成功して設定しました",
             "setSelectedToNext": "選択したマーチャーの座標を 次のページに設定",
-            "setSelectedToNextSuccess": "{value, plural, other {'{'count, plural, other '{'ページ '{'currentPage'}' 上の '{'count'}' ヶ所の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'\n'{'count, plural, one '{'ページ '{'currentPage'}' 上の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'}}",
+            "setSelectedToNextSuccess": "{count, plural, other {'{'count, plural, other '{'ページ '{'currentPage'}' 上の '{'count'}' ヶ所の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'\n'{'count, plural, one '{'ページ '{'currentPage'}' 上の座標を次のページ '{'nextPage'}' の座標に正常に設定しました'}}'}}",
             "setSelectedToPrevious": "選択したマーチャーの座標を 前のページに設定",
-            "setSelectedToPreviousSuccess": "ページ {currentPage} 上の {count} マーカー座標を前のページ {previousPage} の座標に成功して設定しました"
+            "setSelectedToPreviousSuccess": "{count, plural, other {ページ {currentPage} 上の {count} マーカー座標を前のページ {previousPage} の座標に成功して設定しました}}"
         },
         "cursor": {
             "defaultMode": "カーソルモードをデフォルトに設定",
             "lineMode": "選択したマーチャーから ライン を作成する"
         },
         "edit": {
-            "redo": "やり直し を実行",
-            "undo": "元に戻す を実行",
+            "noRedoAvailable": "やり直すアクションはありません",
             "noUndoAvailable": "元に戻す操作はありません",
-            "noRedoAvailable": "やり直すアクションはありません"
+            "redo": "やり直し を実行",
+            "undo": "元に戻す を実行"
         },
         "file": {
             "importMusicXml": "MusicXML ファイル をインポートして 小節 を取得",
@@ -186,6 +184,7 @@
         "exportPDFSuccess": "PDF として正常にエクスポートされました！",
         "exportSuccess": "{value, plural, other {座標シートを {count} 人のマーチャー用に正常にエクスポートしました！} }",
         "fieldProperties": "フィールドプロパティ: {status}",
+        "fieldPropertiesNotLoaded": "フィールドプロパティがロードされていません",
         "fieldPropertiesRequired": "エクスポートにフィールドプロパティが必要です",
         "frontToBackHeader": "前から後ろへ",
         "funPhrase": {
@@ -205,16 +204,14 @@
         "generatingPDF": "PDF ファイルを生成中: {drillNumber}",
         "includeMeasures": "測定 を 含める",
         "includeNotesAppendix": "ノート付録ページを含める",
+        "includeNotesAppendixTooltip": "各セットのノートをまとめた縦向きの付録ページを追加します。",
+        "includeNotesAppendixTooltipDescription": "チャート下に表示されるノートはページに収まるように一部が切り詰められます。付録ページには、ノートがあるすべてのページについて全文が表示されます。",
         "individualCharts": "個別 ドリル チャート",
         "individualChartsTooltip": "各個の マーチャー 用にカスタマイズされたドリル チャートの PDF を作成します。",
         "individualChartsTooltipDescription": "これが チェック され てい ない 場合 、1 つ の 概要 ドリル チャート PDF が 作成 され ます 。",
-        "includeNotesAppendixTooltip": "各セットのノートをまとめた縦向きの付録ページを追加します。",
-        "includeNotesAppendixTooltipDescription": "チャート下に表示されるノートはページに収まるように一部が切り詰められます。付録ページには、ノートがあるすべてのページについて全文が表示されます。",
         "marcher": "行進: {status}",
-        "marchersNotLoaded": "マーチャーがロードされていません",
         "marcherPagesNotLoaded": "マーチャーページがロードされていません",
-        "fieldPropertiesNotLoaded": "フィールドプロパティがロードされていません",
-        "sectionAppearancesNotLoaded": "セクションの外観がロードされていません",
+        "marchersNotLoaded": "マーチャーがロードされていません",
         "measuresHeader": "測定",
         "noFieldProperties": "フィールドプロパティが提供されていません",
         "noMarcher": "マーチャーが提供されていません",
@@ -231,6 +228,7 @@
         "processingPage": "{pageNumber} ページ中 {totalPages} ページを 処理しています: {pageName}",
         "quarterPageLayout": "四分の一 ページ レイアウト",
         "roundingDenominator": "座標 丸め:",
+        "sectionAppearancesNotLoaded": "セクションの外観がロードされていません",
         "selectRoundingDenominator": "丸めを選択",
         "sideToSideHeader": "サイド トゥ サイド",
         "svgExportFailed": "{drillNumber} の SVG エクスポートがエラー {error} で失敗しました",
@@ -440,6 +438,8 @@
         },
         "page": {
             "counts": "カウント",
+            "deletedFailed": "ページ削除に失敗しました",
+            "deletedSuccessfully": "ページが正常に削除されました",
             "measures": "測定",
             "notes": "ノート",
             "notesPlaceholder": "この ページ に メモ を 追加...",
@@ -448,9 +448,7 @@
                 "success": "ページ 分割 に 成功 しました"
             },
             "subset": "サブセット",
-            "title": "ページ {pageNumber}",
-            "deletedSuccessfully": "ページが正常に削除されました",
-            "deletedFailed": "ページ削除に失敗しました"
+            "title": "ページ {pageNumber}"
         },
         "shape": {
             "addSegmentButton": "追加",
@@ -471,17 +469,17 @@
             "segments": {
                 "title": "セグメント"
             },
+            "selectTab": "選択",
+            "shapesTab": "形状",
             "successfullyCopied": "ページ {pageName} に形状 が正常にコピーされました",
             "ungroupShapeButton": "グループ解除",
             "ungroupShapeTooltip": "このページのこのシェイプを削除します。 マーチャーの現在の位置は移動されません",
-            "viewTab": "ビュー",
-            "shapesTab": "形状",
-            "selectTab": "選択"
+            "viewTab": "ビュー"
         },
         "shapes": {
-            "title": "形状",
+            "moreShapesComingSoon": "さらに多くの図形が近日公開予定！",
             "selectShape": "形状を選択",
-            "moreShapesComingSoon": "さらに多くの図形が近日公開予定！"
+            "title": "形状"
         },
         "title": "インスペクター"
     },
@@ -500,10 +498,6 @@
             "guides": {
                 "title": "ガイド"
             },
-            "videoGuides": {
-                "title": "ビデオガイド",
-                "description": "OpenMarchの使い方を学ぶには動画ガイドをご覧ください。"
-            },
             "title": "学ぶ",
             "troubleshooting": {
                 "clearCache": "キャッシュをクリア",
@@ -512,6 +506,10 @@
                 "refresh": "ページを更新",
                 "refresh.description": "迷ったときは ページ を更新してください（ Ctrl/Cmd + R）. OpenMarch が 正常に動作 しない場合は、 更新することで よく 解決 します。",
                 "title": "トラブルシューティング ヒント"
+            },
+            "videoGuides": {
+                "description": "OpenMarchの使い方を学ぶには動画ガイドをご覧ください。",
+                "title": "ビデオガイド"
             }
         },
         "merch": "OpenMarch グッズ を手に入れよう！",
@@ -525,7 +523,7 @@
         "addMarchers": "マーチャーズ 追加",
         "cancelDeleteButton": "キャンセル",
         "createButton": "{quantity, plural, other { マーチャー を 作成 } }",
-        "createButtonWithSection": "{quantity, plural, other { {quantity} {section} 行進者 を 作成 } }",
+        "createButtonWithSection": "{quantity, plural, other { {quantity} {section} 行進者 を 作成 }}",
         "created": "{count, plural, other {マーチャー {drillNumbers} のドリル番号が正常に作成されました}}",
         "createError": "{count, plural, other {行進者{drillNumbers}を作成するエラー}}",
         "createInfo": "新しい 行進者 は 更新 する まで 表示されない 可能性 が あります",
@@ -542,33 +540,34 @@
         "list": {
             "addSectionStyle": "セクションスタイルを追加",
             "addTagAppearance": "タグの外観を追加",
+            "allSections": "すべてのセクション",
             "createTagsFirst": "タグの外観を追加するには、まずマーチャーエディターでタグを作成してください。",
             "deleteSectionStyle": "このセクションスタイルを削除",
-            "none": "なし",
             "discardChanges": "変更を破棄",
             "drillNumberTitle": "号",
             "fillColor": "塗り の色",
             "nameTitle": "名前",
             "noMarchers": "まだマーチャーズが作成されていません。作成してみませんか？",
+            "none": "なし",
             "noSectionStyles": "まだ セクション スタイル は 定義 されていません。 各セクション の 表示 方法 を カスタマイズ するために 追加 してください。",
             "outlineColor": "アウトライン カラー",
             "pendingChanges": "更新 するまで 下記 の 値 は適用 されない ことがあります",
             "saveChanges": "変更を保存",
-            "sectionStyles": "セクション スタイル",
             "sectionsInShow": "ショーのセクション",
+            "sectionStyles": "セクション スタイル",
             "sectionTitle": "セクション",
             "selectSection": "セクション",
-            "shape": "形状",
-            "allSections": "すべてのセクション"
+            "shape": "形状"
         },
         "listTitle": "リスト",
+        "marcherAppearance": "マーチャーの外観",
         "quantity": "数量",
         "section": "セクション",
-        "sectionText": "セクション",
         "sectionError": {
             "chooseSection": "セクションを選択してください"
         },
-        "marcherAppearance": "マーチャーの外観",
+        "sectionStyles": "セクションスタイル",
+        "sectionText": "セクション",
         "tagText": "タグ",
         "title": "マーチャーズ"
     },
@@ -637,12 +636,12 @@
     "section": {
         "drumMajor": "ドラム メジャー",
         "family": {
-            "woodwind": "木管楽器",
-            "brass": "金管楽器",
             "battery": "バッテリー",
+            "brass": "金管楽器",
             "guard": "ガード",
             "other": "その他",
-            "pit": "ピット"
+            "pit": "ピット",
+            "woodwind": "木管楽器"
         },
         "guard": {
             "colorGuard": "カラー ガード",
@@ -782,6 +781,18 @@
             "toNextPagePositions": "次の ページ位置 に進む",
             "toPreviousPagePositions": "...前のページ位置へ"
         },
+        "select": {
+            "noDrillPrefixesToSelect": "選択できるドリルプレフィックスが見つかりません",
+            "noSectionsToSelect": "選択できるセクションが見つかりません",
+            "noTagsToSelect": "選択できるタグが見つかりません",
+            "selectBy": {
+                "drillPrefix": "ドリル プレフィックス",
+                "family": "ファミリー",
+                "section": "セクション",
+                "tag": "タグ"
+            },
+            "selectByText": "選択方法"
+        },
         "settings": "アプリ 設定",
         "view": {
             "gridLines": "グリッド ライン",
@@ -789,18 +800,6 @@
             "nextPaths": "次の パス",
             "previousPaths": "前の パス",
             "uiSettingsToolbar": "UI 設定 ツールバー"
-        },
-        "select": {
-            "selectByText": "選択方法",
-            "selectBy": {
-                "section": "セクション",
-                "drillPrefix": "ドリル プレフィックス",
-                "family": "ファミリー",
-                "tag": "タグ"
-            },
-            "noSectionsToSelect": "選択できるセクションが見つかりません",
-            "noTagsToSelect": "選択できるタグが見つかりません",
-            "noDrillPrefixesToSelect": "選択できるドリルプレフィックスが見つかりません"
         }
     },
     "versionCheck": {
@@ -833,12 +832,12 @@
         "resetToDefaults": "デフォルトにリセット",
         "saveChanges": "変更を保存",
         "title": "ワークスペース設定",
-        "unsavedChanges": "保存されていない変更があります",
         "units": {
-            "bpm": "BPM",
             "beats": "拍",
+            "bpm": "BPM",
             "counts": "カウント",
             "seconds": "秒"
-        }
+        },
+        "unsavedChanges": "保存されていない変更があります"
     }
 }

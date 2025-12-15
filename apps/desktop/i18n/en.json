@@ -26,17 +26,17 @@
             "setSelectedToNext": "Set selected marcher(s) coordinates to next page",
             "setSelectedToNextSuccess": "{count, plural, one {Successfully set {count} marcher coordinate on page {currentPage} to the coordinates of the next page {nextPage}} other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the next page {nextPage}}}",
             "setSelectedToPrevious": "Set selected marcher(s) coordinates to previous page",
-            "setSelectedToPreviousSuccess": "Successfully set {count} marcher coordinate{count, plural, one {} other {s}} on page {currentPage} to the coordinates of the previous page {previousPage}"
+            "setSelectedToPreviousSuccess": "{count, plural, other {Successfully set {count} marcher coordinates on page {currentPage} to the coordinates of the previous page {previousPage}}}"
         },
         "cursor": {
             "defaultMode": "Set cursor mode to default",
             "lineMode": "Create a line out of the selected marchers"
         },
         "edit": {
-            "redo": "Perform redo",
-            "undo": "Perform undo",
+            "noRedoAvailable": "No action to redo",
             "noUndoAvailable": "No action to undo",
-            "noRedoAvailable": "No action to redo"
+            "redo": "Perform redo",
+            "undo": "Perform undo"
         },
         "file": {
             "importMusicXml": "Import MusicXML file to get measures",
@@ -186,6 +186,7 @@
         "exportPDFSuccess": "Successfully exported as PDF!",
         "exportSuccess": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
         "fieldProperties": "Field Properties: {status}",
+        "fieldPropertiesNotLoaded": "Field properties not loaded",
         "fieldPropertiesRequired": "Field properties are required for export",
         "frontToBackHeader": "Front to Back",
         "funPhrase": {
@@ -205,16 +206,14 @@
         "generatingPDF": " Generating PDF file for: {drillNumber}",
         "includeMeasures": "Include measures",
         "includeNotesAppendix": "Include notes appendix pages",
+        "includeNotesAppendixTooltip": "Add portrait appendix pages listing notes for each set.",
+        "includeNotesAppendixTooltipDescription": "Inline notes under charts are truncated so they fit on the page. The notes appendix includes the full notes text for every page that has notes.",
         "individualCharts": "Individual Drill Charts",
         "individualChartsTooltip": "Create customized drill chart PDFs for each individual marcher.",
         "individualChartsTooltipDescription": "If this is not checked, one overview drill chart PDF will be created.",
-        "includeNotesAppendixTooltip": "Add portrait appendix pages listing notes for each set.",
-        "includeNotesAppendixTooltipDescription": "Inline notes under charts are truncated so they fit on the page. The notes appendix includes the full notes text for every page that has notes.",
         "marcher": "Marcher: {status}",
-        "marchersNotLoaded": "Marchers not loaded",
         "marcherPagesNotLoaded": "Marcher pages not loaded",
-        "fieldPropertiesNotLoaded": "Field properties not loaded",
-        "sectionAppearancesNotLoaded": "Section appearances not loaded",
+        "marchersNotLoaded": "Marchers not loaded",
         "measuresHeader": "Measure",
         "noFieldProperties": "No field properties provided",
         "noMarcher": "No marcher provided",
@@ -231,6 +230,7 @@
         "processingPage": "Processing page {pageNumber} of {totalPages}: {pageName}",
         "quarterPageLayout": "Quarter-page layout",
         "roundingDenominator": "Coordinate rounding:",
+        "sectionAppearancesNotLoaded": "Section appearances not loaded",
         "selectRoundingDenominator": "Select rounding",
         "sideToSideHeader": "Side to Side",
         "svgExportFailed": "SVG export for {drillNumber} failed with error: {error}",
@@ -440,6 +440,8 @@
         },
         "page": {
             "counts": "Counts",
+            "deletedFailed": "Page deletion failed",
+            "deletedSuccessfully": "Page deleted successfully",
             "measures": "Measures",
             "notes": "Notes",
             "notesPlaceholder": "Add notes for this page...",
@@ -448,9 +450,7 @@
                 "success": "Page split successfully"
             },
             "subset": "Subset",
-            "title": "Page {pageNumber}",
-            "deletedSuccessfully": "Page deleted successfully",
-            "deletedFailed": "Page deletion failed"
+            "title": "Page {pageNumber}"
         },
         "shape": {
             "addSegmentButton": "Add",
@@ -471,17 +471,17 @@
             "segments": {
                 "title": "Segments"
             },
+            "selectTab": "Select",
+            "shapesTab": "Shapes",
             "successfullyCopied": "Shape successfully copied to page",
             "ungroupShapeButton": "Un-group",
             "ungroupShapeTooltip": "Delete this shape for this page. Will not move marchers from their current position",
-            "viewTab": "View",
-            "shapesTab": "Shapes",
-            "selectTab": "Select"
+            "viewTab": "View"
         },
         "shapes": {
-            "title": "Shapes",
+            "moreShapesComingSoon": "More shapes coming soon!",
             "selectShape": "Select Shape",
-            "moreShapesComingSoon": "More shapes coming soon!"
+            "title": "Shapes"
         },
         "title": "Inspector"
     },
@@ -501,10 +501,6 @@
             "guides": {
                 "title": "Guides"
             },
-            "videoGuides": {
-                "title": "Video Guides",
-                "description": "Watch video guides to learn how to use OpenMarch."
-            },
             "title": "Learn",
             "troubleshooting": {
                 "clearCache": "Clear the cache",
@@ -513,6 +509,10 @@
                 "refresh": "Refresh the page",
                 "refresh.description": "When in doubt, refresh the page (Ctrl/Cmd + R). If OpenMarch ever seems broken, refreshing will often fix it.",
                 "title": "Troubleshooting Tips"
+            },
+            "videoGuides": {
+                "description": "Watch video guides to learn how to use OpenMarch.",
+                "title": "Video Guides"
             }
         },
         "merch": "Get OpenMarch Merch!",
@@ -543,33 +543,34 @@
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
+            "allSections": "All Sections",
             "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
             "deleteSectionStyle": "Delete this section style",
-            "none": "None",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
             "fillColor": "Fill Color",
             "nameTitle": "Name",
             "noMarchers": "No marchers created yet. Why not create one?",
+            "none": "None",
             "noSectionStyles": "No section styles defined yet. Add one to customize how each section appears.",
             "outlineColor": "Outline Color",
             "pendingChanges": "Below values may not be applied until after a refresh",
             "saveChanges": "Save Changes",
-            "sectionStyles": "Section Styles",
             "sectionsInShow": "Sections in Show",
+            "sectionStyles": "Section Styles",
             "sectionTitle": "Section",
             "selectSection": "Section",
-            "shape": "Shape",
-            "allSections": "All Sections"
+            "shape": "Shape"
         },
         "listTitle": "List",
+        "marcherAppearance": "Marcher Appearance",
         "quantity": "Quantity",
         "section": "Section",
-        "sectionText": "Section",
         "sectionError": {
             "chooseSection": "Please choose a section"
         },
-        "marcherAppearance": "Marcher Appearance",
+        "sectionStyles": "Section Styles",
+        "sectionText": "Section",
         "tagText": "Tag",
         "title": "Marchers"
     },
@@ -635,15 +636,21 @@
         "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume"
     },
+    "pages": {
+        "createFailed": "Failed to create page - {error}",
+        "createLastPageFailed": "Failed to create last page - {error}",
+        "deleteFailed": "Failed to delete page - {error}",
+        "updateFailed": "Failed to update page - {error}"
+    },
     "section": {
         "drumMajor": "Drum Major",
         "family": {
-            "woodwind": "Woodwind",
-            "brass": "Brass",
             "battery": "Battery",
+            "brass": "Brass",
             "guard": "Guard",
             "other": "Other",
-            "pit": "Pit"
+            "pit": "Pit",
+            "woodwind": "Woodwind"
         },
         "guard": {
             "colorGuard": "Color Guard",
@@ -738,8 +745,8 @@
         "deletedSuccessfully": "Tempo group deleted successfully",
         "deleteFailed": "Failed to delete tempo group",
         "differentBeatsError": "Tempo group has different number of beats. This should not happen. Please reach out to us!",
-        "noMeasures": "Tempo group has no measures",
-        "errorUpdatingTempoGroup": "Error updating tempo group"
+        "errorUpdatingTempoGroup": "Error updating tempo group",
+        "noMeasures": "Tempo group has no measures"
     },
     "timeline": {
         "audio": "Audio",
@@ -768,12 +775,6 @@
             "label": "Perspective"
         }
     },
-    "pages": {
-        "createFailed": "Failed to create page - {error}",
-        "createLastPageFailed": "Failed to create last page - {error}",
-        "updateFailed": "Failed to update page - {error}",
-        "deleteFailed": "Failed to delete page - {error}"
-    },
     "titlebar": {
         "bugReport": "Submit bug or feedback",
         "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
@@ -790,6 +791,18 @@
             "toNextPagePositions": "...to next page positions",
             "toPreviousPagePositions": "...to previous page positions"
         },
+        "select": {
+            "noDrillPrefixesToSelect": "No drill prefixes to select found",
+            "noSectionsToSelect": "No sections to select found",
+            "noTagsToSelect": "No tags to select found",
+            "selectBy": {
+                "drillPrefix": "Drill Prefix",
+                "family": "Family",
+                "section": "Section",
+                "tag": "Tag"
+            },
+            "selectByText": "Select by"
+        },
         "settings": "App Settings",
         "view": {
             "gridLines": "Grid lines",
@@ -797,18 +810,6 @@
             "nextPaths": "Next paths",
             "previousPaths": "Previous paths",
             "uiSettingsToolbar": "Ui Settings Toolbar"
-        },
-        "select": {
-            "selectByText": "Select by",
-            "selectBy": {
-                "section": "Section",
-                "drillPrefix": "Drill Prefix",
-                "family": "Family",
-                "tag": "Tag"
-            },
-            "noSectionsToSelect": "No sections to select found",
-            "noTagsToSelect": "No tags to select found",
-            "noDrillPrefixesToSelect": "No drill prefixes to select found"
         }
     },
     "versionCheck": {
@@ -841,12 +842,12 @@
         "resetToDefaults": "Reset to Defaults",
         "saveChanges": "Save Changes",
         "title": "Workspace Settings",
-        "unsavedChanges": "You have unsaved changes",
         "units": {
-            "bpm": "BPM",
             "beats": "beats",
+            "bpm": "BPM",
             "counts": "counts",
             "seconds": "seconds"
-        }
+        },
+        "unsavedChanges": "You have unsaved changes"
     }
 }
