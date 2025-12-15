@@ -421,6 +421,7 @@
             "createLine": "ライン を作成",
             "drillNumber": "ドリル ナンバー",
             "errorLoadingCoords": "座標の読み込みエラー",
+            "loading": "読み込み中 マーチャー",
             "maxStepSize": "最大 ステップサイズ",
             "minStepSize": "最小 ステップサイズ",
             "name": "名前",
@@ -629,6 +630,9 @@
         "undoWithCtrlZ": "この操作は Ctrl + Z で元に戻すことができます",
         "volume": "音量"
     },
+    "page": {
+        "deletedSuccessfully": "ページ が正常に削除されました"
+    },
     "pages": {
         "createFailed": "ページの作成に失敗しました - {error}",
         "createLastPageFailed": "最後のページの作成に失敗しました - {error}",
@@ -732,6 +736,9 @@
         "square": "正方形",
         "triangle": "三角形",
         "x": "X"
+    },
+    "tags": {
+        "title": "タグ"
     },
     "tempoGroup": {
         "createBeatsError": "ビーツ の作成エラー",
