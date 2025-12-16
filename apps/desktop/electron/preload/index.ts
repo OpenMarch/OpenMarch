@@ -142,6 +142,8 @@ const APP_API = {
     invoke: (channel: string, ...args: any[]) => {
         return ipcRenderer.invoke(channel, ...args);
     },
+    getSettingSync: (key: string) =>
+        ipcRenderer.sendSync("settings:getSync", key),
 
     // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
