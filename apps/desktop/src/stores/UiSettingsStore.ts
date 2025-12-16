@@ -46,6 +46,10 @@ export interface UiSettings {
         /** In steps, the offset from the center-front point to round to on the Y-axis */
         referencePointY?: number;
     };
+    /** Whether to enable Tolgee In-Context Translating */
+    tolgeeDevTools?: boolean;
+    /** Tolgee API Key for In-Context Translating */
+    tolgeeApiKey?: string;
 }
 
 // Default settings that will be used if no localStorage data exists
@@ -75,6 +79,7 @@ export const defaultSettings: UiSettings = {
         nearestYSteps: 0,
         referencePointY: undefined,
     },
+    tolgeeDevTools: false,
 };
 
 const STORAGE_KEY = "openmarch:uiSettings";

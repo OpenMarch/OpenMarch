@@ -1,26 +1,38 @@
 import { Tolgee, DevTools, FormatSimple } from "@tolgee/react";
 import { FormatIcu } from "@tolgee/format-icu";
 
-const tolgee = Tolgee()
-    .use(DevTools())
-    .use(FormatSimple())
-    .use(FormatIcu())
-    .init({
-        language: "en", // Default language, will be overridden by saved language
+const TOLGEE_API_URL = "https://app.tolgee.io";
 
-        // for development only
-        ...(import.meta.env.MODE === "development" && {
-            apiUrl: import.meta.env.VITE_APP_TOLGEE_API_URL,
-            apiKey: import.meta.env.VITE_APP_TOLGEE_API_KEY,
-        }),
+async function initTolgee() {
+    const tolgeeDevTools = await window.electron.invoke(
+        "settings:get",
+        "tolgeeDevTools",
+    );
+    const tolgeeApiKey = await window.electron.invoke(
+        "settings:get",
+        "tolgeeApiKey",
+    );
 
-        staticData: {
-            en: () => import("../../../i18n/en.json"),
-            es: () => import("../../../i18n/es.json"),
-            fr: () => import("../../../i18n/fr.json"),
-            "pt-BR": () => import("../../../i18n/pt-BR.json"),
-            ja: () => import("../../../i18n/ja.json"),
-        },
-    });
+    return Tolgee()
+        .use(DevTools())
+        .use(FormatSimple())
+        .use(FormatIcu())
+        .init({
+            language: "en",
+            ...(tolgeeDevTools &&
+                tolgeeApiKey && {
+                    apiUrl: TOLGEE_API_URL,
+                    apiKey: tolgeeApiKey,
+                }),
+            staticData: {
+                en: () => import("../../../i18n/en.json"),
+                es: () => import("../../../i18n/es.json"),
+                fr: () => import("../../../i18n/fr.json"),
+                "pt-BR": () => import("../../../i18n/pt-BR.json"),
+                ja: () => import("../../../i18n/ja.json"),
+            },
+        });
+}
 
+const tolgee = await initTolgee();
 export default tolgee;
