@@ -1,0 +1,241 @@
+---
+title: Translating OpenMarch
+description: Learn how to add and manage translations in OpenMarch using Tolgee
+---
+
+OpenMarch uses [Tolgee](https://tolgee.io/) for internationalization (i18n), which provides in-context translation editing and makes it easy to manage translations across multiple languages.
+
+## Current Languages
+
+OpenMarch currently supports the following languages:
+
+- English (`en`)
+- Spanish (`es`)
+- French (`fr`)
+- Portuguese (Brazil) (`pt-BR`)
+- Japanese (`ja`)
+
+Translation files are located in `apps/desktop/i18n/`.
+
+## Enabling In-Context Translation
+
+To translate OpenMarch directly in the app using Tolgee's visual editor:
+
+### 1. Get a Tolgee API Key
+
+1. Go to [app.tolgee.io](https://app.tolgee.io)
+2. Sign in or create an account
+3. Navigate to the OpenMarch project
+4. Go to **Integrations** → **API Keys**
+5. Create a new API key with translation permissions
+
+### 2. Enable Developer Settings
+
+1. Open OpenMarch
+2. Go to **Settings** (from the launch page)
+3. Expand the **Developer** section
+4. Toggle on **Tolgee In-Context Translating**
+5. Paste your API key into the text field
+6. Click the refresh link in the yellow notice to restart the app
+
+### 3. Start Translating
+
+Once the app restarts with DevTools enabled:
+
+1. Press `Alt` (or `Option` on Mac) to see translation keys highlighted
+2. Click on any highlighted text to edit the translation
+3. Use the Tolgee UI to add translations in different languages
+4. Changes are saved to the Tolgee cloud automatically
+
+## Adding Translations in Code
+
+When writing new features, you need to add translatable strings to your components.
+
+### Using the `<T>` Component
+
+For simple text translations:
+
+```tsx
+import { T } from "@tolgee/react";
+
+export function MyComponent() {
+  return (
+    <div>
+      <h1>
+        <T keyName="myFeature.title" />
+      </h1>
+      <p>
+        <T keyName="myFeature.description" />
+      </p>
+    </div>
+  );
+}
+```
+
+### Using the Translation Hook
+
+For translations in JavaScript logic or with parameters:
+
+```tsx
+import { useTranslate } from "@tolgee/react";
+
+export function MyComponent() {
+  const { t } = useTranslate();
+
+  const errorMessage = t("myFeature.error");
+  const greeting = t("myFeature.greeting", { name: "User" });
+
+  return <div>{greeting}</div>;
+}
+```
+
+### Translations with Parameters
+
+For dynamic content, use parameters:
+
+```tsx
+<T
+  keyName="settings.plugins.toast.installSuccess"
+  params={{ pluginName: "My Plugin" }}
+/>
+```
+
+### Translations with Rich Text
+
+For translations containing HTML elements:
+
+```tsx
+<T
+  keyName="settings.plugins.refreshNotice"
+  params={{
+    a: (content) => (
+      <strong
+        className="cursor-pointer"
+        onClick={() => window.location.reload()}
+      >
+        {content}
+      </strong>
+    ),
+  }}
+/>
+```
+
+## Pulling Translations from Tolgee
+
+After adding or updating translations through the Tolgee UI, you need to pull them into your local codebase:
+
+### Using the Tolgee CLI
+
+1. Navigate to the desktop app directory:
+
+   ```bash
+   cd apps/desktop
+   ```
+
+2. Pull the latest translations:
+   ```bash
+   tolgee pull
+   ```
+
+This command downloads all translations from Tolgee and updates the JSON files in `apps/desktop/i18n/`.
+
+### Commit the Changes
+
+After pulling translations, commit the updated JSON files:
+
+```bash
+git add apps/desktop/i18n/
+git commit -m "Update translations"
+```
+
+## Translation File Structure
+
+Translation files are organized by language code in `apps/desktop/i18n/`:
+
+```
+apps/desktop/i18n/
+├── en.json      # English (default)
+├── es.json      # Spanish
+├── fr.json      # French
+├── pt-BR.json   # Portuguese (Brazil)
+└── ja.json      # Japanese
+```
+
+Each file contains a flat structure of key-value pairs:
+
+```json
+{
+  "settings.developer": "Developer Settings",
+  "settings.tolgeeDevToolsToggle": "Tolgee In-Context Translating",
+  "settings.tolgeeApiKeyPlaceholder": "Enter your Tolgee API key",
+  "settings.plugins.refreshNotice": "Please {a}refresh{/a} the app to apply changes"
+}
+```
+
+## Best Practices
+
+### Key Naming Conventions
+
+- Use dot notation for hierarchical organization: `section.subsection.key`
+- Use descriptive names that indicate where the text appears: `settings.plugins.install`
+- Keep keys lowercase with camelCase for the last segment
+
+### Writing Translatable Content
+
+- Keep strings concise and context-free when possible
+- Avoid concatenating strings (use parameters instead)
+- Don't hardcode text that will be displayed to users
+- Consider plural forms and gender when relevant
+
+### Testing Translations
+
+1. Enable DevTools and switch between languages in the app
+2. Check that all UI elements display properly in different languages
+3. Verify that text doesn't overflow containers
+4. Test with longer languages (German, Portuguese) to ensure layout flexibility
+
+## Adding a New Language
+
+To add support for a new language:
+
+1. Add the language to Tolgee (via the web UI)
+2. Add a new translation file in `apps/desktop/i18n/` (e.g., `de.json` for German)
+3. Update the Tolgee configuration in [apps/desktop/src/global/singletons/Tolgee.ts](apps/desktop/src/global/singletons/Tolgee.ts):
+   ```tsx
+   staticData: {
+       en: () => import("../../../i18n/en.json"),
+       es: () => import("../../../i18n/es.json"),
+       de: () => import("../../../i18n/de.json"), // Add new language
+       // ... other languages
+   }
+   ```
+4. Pull translations using `tolgee pull`
+5. Add language selection UI (if not already available)
+
+## Troubleshooting
+
+### Translations not showing up
+
+- Make sure you've run `tolgee pull` after adding translations
+- Verify the translation key matches exactly (case-sensitive)
+- Check that the language file is imported in `Tolgee.ts`
+- Restart the app after changing settings
+
+### In-context editing not working
+
+- Verify your API key has the correct permissions
+- Make sure DevTools are enabled in Settings → Developer
+- Refresh the app after enabling DevTools
+- Try pressing `Alt` to toggle the Tolgee UI
+
+### Translation key not found errors
+
+- Run `tolgee pull` to sync with the cloud
+- Check that the key exists in `en.json` (the default language)
+- Verify there are no typos in the key name
+
+## Resources
+
+- [Tolgee Documentation](https://tolgee.io/platform)
+- [Tolgee React Integration](https://tolgee.io/integrations/react)
+- [OpenMarch Translation Files](https://github.com/OpenMarch/OpenMarch/tree/main/apps/desktop/i18n)
