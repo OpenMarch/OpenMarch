@@ -698,6 +698,8 @@
         }
     },
     "settings": {
+        "developer": "Developer Settings",
+        "developer.refreshNotice": "Please <a>reload the app</a> to update settings.",
         "general": "General",
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
@@ -735,7 +737,9 @@
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
         "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
-        "title": "Settings"
+        "title": "Settings",
+        "tolgeeApiKeyPlaceholder": "Tolgee API Key",
+        "tolgeeDevToolsToggle": "Tolgee In-Context Translating"
     },
     "shapes": {
         "circle": "Circle",
