@@ -691,6 +691,8 @@
         }
     },
     "settings": {
+        "developer": "開発者設定",
+        "developer.refreshNotice": "設定を更新するにはアプ リを <a>再読み込みしてください</a>。",
         "general": "一般",
         "general.appearance": "外観",
         "general.appearance.dark": "ダーク",
@@ -729,7 +731,9 @@
         "privacy.analytics.enabled": "使用状況分析情報を共有しています。OpenMarch の改善にご協力いただきありがとうございます。",
         "privacy.analytics.feedback.link": "フィードバック を 提出",
         "privacy.analytics.toggle": "アナリティクスを有効にする",
-        "title": "設定"
+        "title": "設定",
+        "tolgeeApiKeyPlaceholder": "Tolgee API キー",
+        "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳"
     },
     "shapes": {
         "circle": "円",
