@@ -30,7 +30,7 @@ import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
-import { DevTools } from "@tolgee/react";
+import { InContextTools } from "@tolgee/web/tools";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -175,7 +175,7 @@ function App() {
                 tolgee.updateOptions({
                     apiKey: tolgeeApiKey,
                 });
-                tolgee.addPlugin(DevTools());
+                tolgee.addPlugin(InContextTools());
             }
         }
         void injectTolgeeApiKey();
