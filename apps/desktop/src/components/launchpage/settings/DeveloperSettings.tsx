@@ -3,6 +3,8 @@ import { Input, Switch } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
 import { GearIcon } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
+import tolgee from "@/global/singletons/Tolgee";
+import { InContextTools } from "@tolgee/web/tools";
 
 export default function DeveloperSettings() {
     const { t } = useTranslate();
@@ -78,6 +80,15 @@ export default function DeveloperSettings() {
                                     tolgeeDevTools: checked,
                                 });
                                 setShowRefreshNotice(true);
+                                if (checked) {
+                                    tolgee.updateOptions({
+                                        apiKey: tolgeeApiKey,
+                                    });
+                                    tolgee.addPlugin(InContextTools());
+                                    setShowRefreshNotice(false);
+                                } else {
+                                    setShowRefreshNotice(true);
+                                }
                             }}
                         />
                     </div>
@@ -92,7 +103,9 @@ export default function DeveloperSettings() {
                                 window.electron.send("settings:set", {
                                     tolgeeApiKey: e.target.value,
                                 });
-                                setShowRefreshNotice(true);
+                                tolgee.updateOptions({
+                                    apiKey: e.target.value,
+                                });
                             }}
                             required
                             maxLength={64}
