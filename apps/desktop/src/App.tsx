@@ -29,6 +29,8 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
+import tolgee from "./global/singletons/Tolgee";
+import { DevTools } from "@tolgee/react";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -157,6 +159,27 @@ function App() {
                 console.error("Error creating undo triggers:", error);
             });
     }, [databaseIsReady]);
+
+    // Inject Tolgee API key
+    useEffect(() => {
+        async function injectTolgeeApiKey() {
+            const tolgeeDevTools = await window.electron.invoke(
+                "settings:get",
+                "tolgeeDevTools",
+            );
+            const tolgeeApiKey = await window.electron.invoke(
+                "settings:get",
+                "tolgeeApiKey",
+            );
+            if (tolgeeDevTools && tolgeeApiKey) {
+                tolgee.updateOptions({
+                    apiKey: tolgeeApiKey,
+                });
+                tolgee.addPlugin(DevTools());
+            }
+        }
+        void injectTolgeeApiKey();
+    }, []);
 
     return (
         <ErrorBoundary>
