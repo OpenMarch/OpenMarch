@@ -1,7 +1,22 @@
-import { Tolgee, FormatSimple } from "@tolgee/react";
+import {
+    Tolgee,
+    FormatSimple,
+    TolgeeInstance,
+    PluginTools,
+    TolgeePlugin,
+} from "@tolgee/react";
 import { FormatIcu } from "@tolgee/format-icu";
 
 const TOLGEE_API_URL = "https://app.tolgee.io";
+
+export const RemoveInContextTools =
+    (): TolgeePlugin => (tolgee: TolgeeInstance, tools: PluginTools) => {
+        tools.setDevBackend(undefined);
+        tools.setUi(undefined);
+        tools.setObserver(undefined);
+
+        return tolgee;
+    };
 
 const tolgee = Tolgee()
     .use(FormatSimple())
