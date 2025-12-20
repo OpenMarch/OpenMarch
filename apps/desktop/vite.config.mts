@@ -53,7 +53,6 @@ export default defineConfig(({ command }) => {
                             rollupOptions: {
                                 external: [
                                     "better-sqlite3",
-                                    "electron/xml2abc-js/xml2abc.js",
                                     "electron",
                                     "node",
                                 ].concat(

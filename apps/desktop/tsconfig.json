@@ -21,11 +21,6 @@
         },
         "typeRoots": ["./node_modules/@types", "./types"]
     },
-    "include": [
-        "src",
-        "electron",
-        "e2e",
-        "external-packages/types/xml2abc.d.ts"
-    ],
+    "include": ["src", "electron", "e2e"],
     "references": [{ "path": "./tsconfig.node.json" }]
 }
