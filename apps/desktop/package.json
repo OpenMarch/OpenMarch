@@ -97,7 +97,6 @@
         "tailwind-merge": "^2.6.0",
         "uuid": "^11.1.0",
         "wavesurfer.js": "^7.9.9",
-        "xml2abc": "file:external-packages/xml2abc.tgz",
         "zod": "^4.1.12",
         "zustand": "^4.5.7"
     },
