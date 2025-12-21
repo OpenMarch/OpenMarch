@@ -90,7 +90,7 @@
     publish: [
         {
             provider: "github",
-            channel: "latest-${os}-${arch}",
+            channel: "latest-${arch}",
         },
     ],
 }
