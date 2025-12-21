@@ -18,6 +18,19 @@
     ],
     "configurations": [
         {
+            "name": "Debug Playwright Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+            "args": ["test", "${file}"],
+            "cwd": "${workspaceFolder}/apps/desktop",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+              "PWDEBUG": "1"
+            }
+          },
+        {
             "name": "Debug Current Vitest Test File - desktop",
             "type": "node",
             "request": "launch",
