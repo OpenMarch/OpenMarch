@@ -183,7 +183,7 @@ export default class DefaultListeners implements CanvasListeners {
 
         // Check if any marcher is within proximity
         for (const marcherObj of marchers) {
-            const marcher = marcherObj as CanvasMarcher;
+            const marcher = marcherObj;
 
             // Get marcher center point
             const marcherCenter = marcher.getCenterPoint();

@@ -285,7 +285,7 @@ describe("ReadableCoords", () => {
             });
 
             it("should pick the right checkpoint when close to the transition", () => {
-                let readableCoords = createReadableCoords(19.99, -16.01);
+                const readableCoords = createReadableCoords(19.99, -16.01);
                 expect(readableCoords.xCheckpoint.name).toBe("40 yard line");
                 expect(readableCoords.xDescription).toBe(X_DESCRIPTION.OUTSIDE);
                 expect(readableCoords.yCheckpoint.name).toBe("NCAA front hash");

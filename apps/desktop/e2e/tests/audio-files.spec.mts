@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { expect } from "@playwright/test";
 import { test } from "../fixtures.mjs";
 import { expectedAudioFiles } from "e2e/mock-databases/audio-files.mjs";

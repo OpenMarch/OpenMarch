@@ -523,18 +523,18 @@ function RegisteredActionsHandler() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { registeredButtonActions } = useRegisteredActionsStore()!;
-    const { pages } = useTimingObjects()!;
+    const { registeredButtonActions } = useRegisteredActionsStore();
+    const { pages } = useTimingObjects();
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { toggleMetronome } = useMetronomeStore()!;
+    const { toggleMetronome } = useMetronomeStore();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId),
     );
     const { mutate: swapMarchers } = useMutation(
         swapMarchersMutationOptions(queryClient),
@@ -548,8 +548,8 @@ function RegisteredActionsHandler() {
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: canUndo } = useQuery(canUndoQueryOptions);
     const { data: canRedo } = useQuery(canRedoQueryOptions);
-    const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const { uiSettings, setUiSettings } = useUiSettingsStore();
+    const { setSelectedShapePageIds } = useSelectionStore();
     const isPerformingHistoryAction = useRef(false);
     const {
         resetAlignmentEvent,
@@ -557,7 +557,7 @@ function RegisteredActionsHandler() {
         setAlignmentEventMarchers,
         alignmentEventNewMarcherPages,
         alignmentEventMarchers,
-    } = useAlignmentEventStore()!;
+    } = useAlignmentEventStore();
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
     const {
         mutate: updateSelectedMarchers,
@@ -614,7 +614,7 @@ function RegisteredActionsHandler() {
                     void window.electron
                         .launchInsertAudioFileDialogue()
                         .then(() => {
-                            AudioFile.getSelectedAudioFile().then(
+                            void AudioFile.getSelectedAudioFile().then(
                                 (response) => {
                                     const selectedAudioFileWithoutAudio = {
                                         ...response,
@@ -722,8 +722,8 @@ function RegisteredActionsHandler() {
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
+                            x: marcherPage.x,
+                            y: marcherPage.y,
                             notes: marcherPage.notes || undefined,
                         }),
                     );
@@ -758,8 +758,8 @@ function RegisteredActionsHandler() {
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
                                 page_id: selectedPage.id,
-                                x: marcherPage.x as number,
-                                y: marcherPage.y as number,
+                                x: marcherPage.x,
+                                y: marcherPage.y,
                                 notes: marcherPage.notes || undefined,
                             }),
                         );
@@ -790,8 +790,8 @@ function RegisteredActionsHandler() {
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: selectedPage.id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
+                            x: marcherPage.x,
+                            y: marcherPage.y,
                             notes: marcherPage.notes || undefined,
                         }),
                     );
@@ -824,8 +824,8 @@ function RegisteredActionsHandler() {
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
                                 page_id: selectedPage.id,
-                                x: marcherPage.x as number,
-                                y: marcherPage.y as number,
+                                x: marcherPage.x,
+                                y: marcherPage.y,
                                 notes: marcherPage.notes || undefined,
                             }),
                         );
@@ -854,11 +854,11 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    void updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).then(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersDown: {
@@ -872,11 +872,11 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    void updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).then(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersLeft: {
@@ -890,11 +890,11 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    void updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).then(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersRight: {
@@ -908,11 +908,11 @@ function RegisteredActionsHandler() {
                         fieldProperties: fieldProperties,
                         snapDenominator: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    void updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).then(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
 
@@ -1048,8 +1048,8 @@ function RegisteredActionsHandler() {
                         alignmentEventNewMarcherPages.map((marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
                             page_id: marcherPage.page_id,
-                            x: marcherPage.x as number,
-                            y: marcherPage.y as number,
+                            x: marcherPage.x,
+                            y: marcherPage.y,
                             notes: marcherPage.notes || undefined,
                         })),
                     );

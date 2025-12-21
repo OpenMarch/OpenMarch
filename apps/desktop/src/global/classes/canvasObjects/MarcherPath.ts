@@ -42,7 +42,7 @@ export class MarcherPath {
         this._areControlsEnabled = true;
         const controllableSegments = this._path.segments.filter(
             (segment) => "getControlPoints" in segment,
-        ) as IControllableSegment[];
+        );
 
         for (let i = 0; i < controllableSegments.length; i++) {
             const segment = controllableSegments[i];

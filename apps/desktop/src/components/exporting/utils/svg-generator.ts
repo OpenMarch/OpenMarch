@@ -188,8 +188,8 @@ const initializeCanvasForRendering = async (args: {
         isGeneratingSVG: true,
     });
 
-    canvas.setWidth(fieldProperties!.width + svgMargin * 2);
-    canvas.setHeight(fieldProperties!.height + svgMargin * 2);
+    canvas.setWidth(fieldProperties.width + svgMargin * 2);
+    canvas.setHeight(fieldProperties.height + svgMargin * 2);
     canvas.viewportTransform = [1, 0, 0, 1, svgMargin, svgMargin];
 
     // Add the background image
@@ -312,7 +312,7 @@ export const generateDrillChartExportSVGs = async (args: {
     } = args;
     const outputSVGs: string[][] = [];
     // Readable coordinates storage for each marcher
-    let readableCoordsStrings: string[][] = individualCharts
+    const readableCoordsStrings: string[][] = individualCharts
         ? Array.from({ length: marchers.length }, () => [])
         : Array.from({ length: marchers.length }, () =>
               Array.from({ length: sortedPages.length }, () => ""),
@@ -363,7 +363,7 @@ export const generateDrillChartExportSVGs = async (args: {
                 );
 
             marcherReadableCoordStrings.forEach((coord, index) =>
-                readableCoordsStrings![index].push(coord),
+                readableCoordsStrings[index].push(coord),
             );
         } else {
             if (outputSVGs.length === 0) outputSVGs.push([]);

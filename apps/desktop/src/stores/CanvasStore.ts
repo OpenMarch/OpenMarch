@@ -28,7 +28,7 @@ const calculateCollisionBounds = (collisionMarkers: any[]) => {
     for (const marker of collisionMarkers) {
         const left = marker.left || 0;
         const top = marker.top || 0;
-        const radius = (marker as any).radius || 0;
+        const radius = (marker).radius || 0;
 
         minX = Math.min(minX, left - radius);
         minY = Math.min(minY, top - radius);

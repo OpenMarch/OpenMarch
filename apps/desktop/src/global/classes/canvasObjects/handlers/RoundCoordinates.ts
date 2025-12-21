@@ -24,8 +24,8 @@ export const roundCoordinatesHandler = (
         ? { xPixels: object.left, yPixels: object.top }
         : getRoundCoordinates2({
               coordinate: { xPixels: object.left, yPixels: object.top },
-              fieldProperties: (canvas as OpenMarchCanvas).fieldProperties,
-              uiSettings: (canvas as OpenMarchCanvas).uiSettings,
+              fieldProperties: (canvas).fieldProperties,
+              uiSettings: (canvas).uiSettings,
               customOrigin,
           });
 

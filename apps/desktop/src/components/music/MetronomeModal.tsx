@@ -147,7 +147,7 @@ function MetronomeModalContents() {
                                         <T
                                             keyName={
                                                 BEAT_STYLE_LABELS[
-                                                    beatStyle as BeatStyleId
+                                                    beatStyle
                                                 ] || "music.beatStyle.select"
                                             }
                                         />
@@ -157,7 +157,7 @@ function MetronomeModalContents() {
                                 <T
                                     keyName={
                                         BEAT_STYLE_LABELS[
-                                            beatStyle as BeatStyleId
+                                            beatStyle
                                         ] || "music.beatStyle.select"
                                     }
                                 />

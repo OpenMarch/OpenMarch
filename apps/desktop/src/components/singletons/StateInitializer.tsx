@@ -24,7 +24,7 @@ function StateInitializer() {
     const { pages } = useTimingObjects();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore();
     const { mutate: updateMarcherShape } = useMutation(
         updateShapePagesMutationOptions(queryClient),
     );
@@ -77,7 +77,7 @@ function StateInitializer() {
     // Select the currently selected audio file
     useEffect(() => {
         if (!selectedAudioFile) {
-            AudioFile.getSelectedAudioFile().then((audioFile) => {
+            void AudioFile.getSelectedAudioFile().then((audioFile) => {
                 setSelectedAudioFile({ ...audioFile, data: undefined });
             });
         }

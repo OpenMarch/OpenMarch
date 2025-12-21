@@ -485,7 +485,7 @@ function executeHistoryAction(
             type === "undo"
                 ? Constants.UndoHistoryTableName
                 : Constants.RedoHistoryTableName;
-        let currentGroup = (
+        const currentGroup = (
             db
                 .prepare(
                     `SELECT max("history_group") as max_group FROM ${tableName};`,

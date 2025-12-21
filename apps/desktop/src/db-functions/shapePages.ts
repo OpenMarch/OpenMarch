@@ -478,6 +478,7 @@ export const copyShapePageToPageInTransaction = async ({
     });
     assert(
         createdShapePage.length === 1,
+        // eslint-disable-next-line @typescript-eslint/no-base-to-string
         `Failed to create shape page. ${createdShapePage}`,
     );
 

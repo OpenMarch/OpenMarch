@@ -57,7 +57,7 @@ export class ControlPoint extends fabric.Circle {
 
         const currentSegment = this._path.path.segments[
             this._controlPoint.segmentIndex
-        ] as IControllableSegment;
+        ];
 
         if (!currentSegment || !("updateControlPoint" in currentSegment)) {
             return;
@@ -75,7 +75,7 @@ export class ControlPoint extends fabric.Circle {
         newSegments[originalIndex] = newSegment;
 
         const newControlPoints = (
-            newSegment as IControllableSegment
+            newSegment
         ).getControlPoints(originalIndex);
         const updatedControlPoint = newControlPoints.find(
             (cp) =>

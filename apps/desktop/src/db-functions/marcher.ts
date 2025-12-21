@@ -70,7 +70,7 @@ const calculateStartingData = async (
     const intervalInPixels = _stepInterval * pixelsPerStep;
 
     // start 4 steps in front of and inside the top left corner of the field
-    let startingPoint = {
+    const startingPoint = {
         x: 8 * pixelsPerStep,
         y: 8 * pixelsPerStep,
     };

@@ -374,14 +374,14 @@ export const generatePageNames = (
      * @returns A -> B, B -> C, ..., Z -> AA, AA -> AB, etc. Letters are always capitalized.
      */
     const incrementLetters = (letters: string) => {
-        let result = [];
+        const result = [];
         let carry = true; // Start with the assumption that we need to increment the last character
 
         const capitalizedLetters = letters.toUpperCase();
 
         // Traverse from last to first character to handle the carry
         for (let i = capitalizedLetters.length - 1; i >= 0; i--) {
-            let char = capitalizedLetters[i];
+            const char = capitalizedLetters[i];
             if (carry) {
                 if (char === "Z") {
                     result.push("A");

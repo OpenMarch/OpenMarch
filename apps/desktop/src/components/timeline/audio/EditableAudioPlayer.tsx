@@ -77,7 +77,7 @@ export default function EditableAudioPlayer() {
 
     useEffect(() => {
         if (!selectedAudioFile) return;
-        AudioFile.getSelectedAudioFile().then((audioFile) => {
+        void AudioFile.getSelectedAudioFile().then((audioFile) => {
             if (!audioFile || !audioFile.data) return;
             const blob = new Blob([audioFile.data], { type: "audio/wav" });
             const url = URL.createObjectURL(blob);
@@ -128,7 +128,7 @@ export default function EditableAudioPlayer() {
                 regions,
                 beats,
                 measures,
-                fetchTimingObjects,
+                () => void fetchTimingObjects(),
                 utility?.default_beat_duration ?? 0.5,
             );
             timingMarkersPlugin.current = timelineMarkersPlugin;
@@ -238,7 +238,7 @@ export default function EditableAudioPlayer() {
     }, [audioDuration, waveSurfer, uiSettings.timelinePixelsPerSecond]);
 
     const handleAudioLoaded = (event: SyntheticEvent<HTMLAudioElement>) => {
-        let audioElement = event.target as HTMLAudioElement;
+        const audioElement = event.target as HTMLAudioElement;
         setAudioDuration(audioElement.duration);
     };
 
@@ -354,7 +354,7 @@ export default function EditableAudioPlayer() {
                                     isAudioPlaying ||
                                     replaceAllBeatObjectsMutation.isPending
                                 }
-                                onClick={handleSave}
+                                onClick={() => void handleSave()}
                             >
                                 <T keyName="audio.saveNewBeats.label" />
                             </Button>

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
 /* eslint-disable max-lines-per-function */
 import { dialog, BrowserWindow, app, shell } from "electron";
 import * as path from "path";

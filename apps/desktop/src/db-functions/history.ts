@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/restrict-plus-operands */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
 import {
     incrementHistoryGroupInTransaction,
     getCurrentHistoryGroup,
@@ -442,9 +445,9 @@ async function createTriggers(
             `Cannot create triggers for ${tableName} as it is a forbidden table`,
         );
 
-    const columns = (await db.all(
+    const columns = await db.all(
         sql`SELECT name FROM pragma_table_info(${tableName});`,
-    )) as { name: string }[];
+    );
 
     const historyTableName =
         type === "undo"
@@ -477,13 +480,14 @@ async function createTriggers(
     const columnNames = columns.map((c) => {
         let columnName: string;
         if (Array.isArray(c)) columnName = c[0];
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
         else if (typeof c === "object") columnName = c.name;
         else throw new Error(`Unknown column type: ${typeof c}`);
         return columnName;
     });
 
     // INSERT trigger
-    let insertTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_it'
+    const insertTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_it'
         AFTER INSERT ON "${tableName}"
         BEGIN
             INSERT INTO ${historyTableName} ("sequence" , "history_group", "sql")
@@ -758,9 +762,9 @@ async function executeHistoryAction(
  */
 export async function clearMostRecentRedo(db: DbConnection | DB) {
     mainProcessLog("info", `-------- Clearing most recent redo --------`);
-    const maxGroupResult = (await db.get(sql`
+    const maxGroupResult = await db.get(sql`
         SELECT MAX(history_group) as max_redo_group FROM ${Constants.RedoHistoryTableName}
-    `)) as { max_redo_group: number };
+    `);
     const maxGroup = maxGroupResult.max_redo_group;
     await db.run(sql`
         DELETE FROM ${Constants.RedoHistoryTableName} WHERE history_group = ${maxGroup}
@@ -773,11 +777,11 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * @returns The current undo group number in the history stats table
  */
 export async function getCurrentUndoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
+    const result = await db.get(
         sql.raw(`
         SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
     `),
-    )) as { cur_undo_group: number };
+    );
     return result.cur_undo_group;
 }
 
@@ -786,11 +790,11 @@ export async function getCurrentUndoGroup(db: DbConnection | DB) {
  * @returns The current redo group number in the history stats table
  */
 export async function getCurrentRedoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
+    const result = await db.get(
         sql.raw(`
         SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};
     `),
-    )) as { cur_redo_group: number };
+    );
     return result.cur_redo_group;
 }
 
@@ -820,14 +824,14 @@ export async function getRedoStackLength(db: DbConnection): Promise<number> {
  */
 export async function decrementLastUndoGroup(db: DbConnection | DB) {
     mainProcessLog("info", `-------- Decrementing last undo group --------`);
-    const maxGroupResult = (await db.get(sql`
+    const maxGroupResult = await db.get(sql`
         SELECT MAX(history_group) as max_undo_group FROM ${Constants.UndoHistoryTableName}
-    `)) as { max_undo_group: number };
+    `);
     const maxGroup = maxGroupResult.max_undo_group;
 
-    const previousGroupResult = (await db.get(sql`
+    const previousGroupResult = await db.get(sql`
         SELECT MAX(history_group) as previous_group FROM ${Constants.UndoHistoryTableName} WHERE history_group < ${maxGroup}
-    `)) as { previous_group: number };
+    `);
     const previousGroup = previousGroupResult.previous_group;
 
     if (previousGroup) {
@@ -886,14 +890,15 @@ export async function flattenUndoGroupsAbove(
 export async function calculateHistorySize(db: DbConnection | DB) {
     // Get average SQL statement length
     const getSqlLength = async (tableName: string): Promise<number> => {
-        const rows = (await db.all(
-            sql.raw(`SELECT sql FROM ${tableName}`),
-        )) as HistoryTableRow[];
+        const rows = await db.all(sql.raw(`SELECT sql FROM ${tableName}`));
 
         if (rows.length === 0) return 0;
 
-        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
-        return totalLength;
+        const totalLength = rows.reduce(
+            (sum, row: any) => sum + row.sql.length,
+            0,
+        );
+        return totalLength as number;
     };
 
     const undoAvgLength = await getSqlLength(Constants.UndoHistoryTableName);

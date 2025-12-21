@@ -5,7 +5,6 @@ import {
     Select,
     SelectItem,
     SelectContent,
-    SelectSeparator,
     SelectTriggerButton,
     Button,
     AlertDialog,
@@ -28,7 +27,7 @@ export default function AudioSelector() {
     const { t } = useTolgee();
 
     const refreshAudioFiles = useCallback(() => {
-        AudioFile.getAudioFilesDetails().then((audioFiles) => {
+        void AudioFile.getAudioFilesDetails().then((audioFiles) => {
             setAudioFiles(audioFiles);
         });
     }, [setAudioFiles]);
@@ -36,7 +35,7 @@ export default function AudioSelector() {
     const handleSelectChange = useCallback(
         (value: string) => {
             const selectedAudioFileId = parseInt(value);
-            AudioFile.setSelectedAudioFile(selectedAudioFileId).then(
+            void AudioFile.setSelectedAudioFile(selectedAudioFileId).then(
                 (audioFile) => {
                     setSelectedAudioFile(audioFile);
                 },
@@ -47,12 +46,14 @@ export default function AudioSelector() {
 
     const handleDelete = useCallback(
         (audioFileId: number) => {
-            AudioFile.deleteAudioFile(audioFileId).then((newSelectedFile) => {
-                if (newSelectedFile) {
-                    setSelectedAudioFile(newSelectedFile);
-                }
-                refreshAudioFiles();
-            });
+            void AudioFile.deleteAudioFile(audioFileId).then(
+                (newSelectedFile) => {
+                    if (newSelectedFile) {
+                        setSelectedAudioFile(newSelectedFile);
+                    }
+                    refreshAudioFiles();
+                },
+            );
             toast.success(
                 t("music.deleteSuccess", {
                     fileName: selectedAudioFile?.nickname,

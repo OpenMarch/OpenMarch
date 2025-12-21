@@ -15,7 +15,7 @@ describe("IsPlayingContext", () => {
             wrapper: IsPlayingProvider,
         });
 
-        let expectedIsPlaying = true;
+        const expectedIsPlaying = true;
         await act(() => result.current?.setIsPlaying(expectedIsPlaying));
         expect(result.current?.isPlaying).toEqual(expectedIsPlaying);
     });

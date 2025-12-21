@@ -97,7 +97,7 @@ export class ShapePoint {
     static fromArray(array: VanillaPoint[]): ShapePoint[] {
         const points: ShapePoint[] = [];
         for (const point of array) {
-            const command = point[0] as string;
+            const command = point[0];
             const coordinates = point.slice(1) as number[];
             const coordPairs: Coordinate[] = [];
             for (let i = 0; i < coordinates.length; i += 2) {

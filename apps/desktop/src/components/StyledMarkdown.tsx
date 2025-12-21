@@ -1,4 +1,4 @@
-/* eslint-disable jsx-a11y/heading-has-content */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import Markdown from "react-markdown";
 
 export default function StyledMarkdown({ children }: { children: string }) {
@@ -33,7 +33,6 @@ export default function StyledMarkdown({ children }: { children: string }) {
                     <p className="text-text py-16" {...props} />
                 ),
                 a: ({ node, ...props }) => (
-                    // eslint-disable-next-line jsx-a11y/anchor-has-content
                     <a
                         className="text-accent hover:underline"
                         target="_blank"

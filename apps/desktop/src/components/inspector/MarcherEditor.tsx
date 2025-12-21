@@ -227,7 +227,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             const startingY = Number(currentCoordinates[0]?.y ?? 0);
             const avgX =
                 currentCoordinates.reduce(
-                    (sum, marcher) => sum + (marcher.x as number),
+                    (sum, marcher) => sum + (marcher.x),
                     0,
                 ) / currentCoordinates.length;
 
@@ -431,10 +431,10 @@ function MarcherEditor() {
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId),
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: spmsForThisPage } = useQuery(

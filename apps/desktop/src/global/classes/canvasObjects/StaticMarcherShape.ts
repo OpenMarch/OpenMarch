@@ -123,7 +123,7 @@ export class StaticMarcherShape {
                     canvas: this.canvas,
                     incomingPoint:
                         // If the point is the first point in the path or a line, there is no incoming point
-                        pointIndex > 0 && point.command !== "L"
+                        pointIndex > 0 && point.command !== SvgCommandEnum.LINE
                             ? newControlPoints[newControlPoints.length - 1]
                             : null,
                 });
@@ -218,9 +218,9 @@ export class StaticMarcherShape {
      *
      * @param e The fabric.js event object that triggered the modification.
      */
-    modifiedHandler(e: fabric.IEvent) {
+    modifiedHandler(_e: fabric.IEvent) {
         this._moveStartPoint = undefined;
-        this.recreatePath(this._shapePath.path as any as VanillaPoint[]);
+        this.recreatePath(this._shapePath.path as unknown as VanillaPoint[]);
     }
 
     /**

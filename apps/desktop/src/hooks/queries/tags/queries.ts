@@ -181,7 +181,7 @@ export const tagAppearancesForPageQueryOptions = (
             const result = await getResolvedTagAppearancesByPageId({
                 db,
                 pageId: pageId!,
-                tagAppearanceIdsByPageId: tagAppearanceIdsByPageIdMap!,
+                tagAppearanceIdsByPageId: tagAppearanceIdsByPageIdMap,
             });
             const outputMap: TagAppearanceForPageByTagId = new Map();
             for (const tagAppearance of result)

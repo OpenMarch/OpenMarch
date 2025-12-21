@@ -296,7 +296,7 @@ export async function getSelectedAudioFile(
             return null;
         }
         await setSelectAudioFile(firstAudioFile.id);
-        return firstAudioFile as AudioFile;
+        return firstAudioFile;
     } finally {
         if (!db) {
             dbToUse.close();

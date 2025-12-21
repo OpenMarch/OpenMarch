@@ -22,7 +22,7 @@ import clsx from "clsx";
 
 export default function TimelineContainer() {
     const { isPlaying } = useIsPlaying()!;
-    const { measures } = useTimingObjects()!;
+    const { measures } = useTimingObjects();
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
     const { isFullscreen } = useFullscreenStore();

@@ -278,7 +278,7 @@ void app.whenReady().then(async () => {
     // Getters
     initGetters();
 
-    await createWindow("OpenMarch - " + store.get("databasePath"));
+    await createWindow("OpenMarch - " + (store.get("databasePath") as string));
 });
 
 function initGetters() {

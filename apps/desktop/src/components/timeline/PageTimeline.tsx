@@ -30,9 +30,9 @@ export default function PageTimeline() {
     const { uiSettings } = useUiSettingsStore();
     const { isPlaying } = useIsPlaying()!;
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore();
     const { isFullscreen } = useFullscreenStore();
-    const { pages, beats } = useTimingObjects()!;
+    const { pages, beats } = useTimingObjects();
     const { mutate: updatePages } = useMutation(
         updatePagesMutationOptions(queryClient),
     );
@@ -195,13 +195,12 @@ export default function PageTimeline() {
                 nextPageIndex < pages.length ? pages[nextPageIndex] : null;
 
             // Check if the next page was also resized
-            let updateArgs: ModifyPagesRequest;
             const newBeats = durationToBeats({
                 newDuration,
                 allBeats: beats,
                 startBeat: resizingPage.current.beats[0],
             });
-            updateArgs = updatePageCountRequest({
+            const updateArgs: ModifyPagesRequest = updatePageCountRequest({
                 pages,
                 beats,
                 pageToUpdate: resizingPage.current,

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
@@ -29,7 +30,7 @@ const options: Partial<PostHogConfig> = {
 };
 
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
-    posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
+    posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY as string, options);
 }
 
 // Load saved language from electron store on app start
@@ -37,7 +38,7 @@ window.electron
     ?.getLanguage()
     .then((savedLanguage) => {
         if (savedLanguage && savedLanguage !== "en") {
-            tolgee.changeLanguage(savedLanguage);
+            void tolgee.changeLanguage(savedLanguage as string);
         }
     })
     .catch((error) => {

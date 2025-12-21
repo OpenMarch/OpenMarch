@@ -196,7 +196,7 @@ describeDbTests("usePathways", (baseIt) => {
                         if (!numberOfMarcherPagesOnPage)
                             throw new Error("No numberOfMarcherPagesOnPage");
 
-                        let expectedPathways = [];
+                        const expectedPathways = [];
                         const marcherPagesOnPage =
                             await db.query.marcher_pages.findMany({
                                 where: eq(schema.marcher_pages.page_id, pageId),

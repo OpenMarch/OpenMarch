@@ -300,7 +300,7 @@ export default class CanvasMarcher
             return null;
         };
         // Visibility is always defined
-        let visible: boolean = !appearanceIsHidden(appearances);
+        const visible: boolean = !appearanceIsHidden(appearances);
 
         let labelVisible: boolean;
         if (!visible) {
@@ -491,7 +491,7 @@ export default class CanvasMarcher
                 "Shape does not have left or top properties - getDotOffset: CanvasMarcher.ts",
             );
 
-        let yOffset = 0;
+        const yOffset = 0;
         // if (this.group) {
         //     const groupTransform = this.group.calcTransformMatrix();
         //     const scaleY = groupTransform[3];

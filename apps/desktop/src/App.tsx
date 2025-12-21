@@ -70,7 +70,7 @@ function App() {
                     try {
                         const code = await window.plugins.get(path);
 
-                        let metadata = Plugin.getMetadata(code);
+                        const metadata = Plugin.getMetadata(code);
 
                         if (!metadata) {
                             throw new Error(

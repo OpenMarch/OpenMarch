@@ -15,7 +15,7 @@ export const useSelectionListeners = ({
 }: {
     canvas: OpenMarchCanvas | null;
 }) => {
-    const { selectedShapePageIds } = useSelectionStore()!;
+    const { selectedShapePageIds } = useSelectionStore();
     const { selectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore();
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;

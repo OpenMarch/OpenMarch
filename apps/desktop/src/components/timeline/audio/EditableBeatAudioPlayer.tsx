@@ -49,7 +49,7 @@ export default function EditableBeatAudioPlayer() {
 
     useEffect(() => {
         if (!selectedAudioFile) return;
-        AudioFile.getSelectedAudioFile().then((audioFile) => {
+        void AudioFile.getSelectedAudioFile().then((audioFile) => {
             if (!audioFile || !audioFile.data) return;
             const blob = new Blob([audioFile.data], { type: "audio/wav" });
             const url = URL.createObjectURL(blob);
@@ -143,7 +143,7 @@ export default function EditableBeatAudioPlayer() {
     }, [audioDuration, waveSurfer, uiSettings.timelinePixelsPerSecond]);
 
     const handleAudioLoaded = (event: SyntheticEvent<HTMLAudioElement>) => {
-        let audioElement = event.target as HTMLAudioElement;
+        const audioElement = event.target as HTMLAudioElement;
         setAudioDuration(audioElement.duration);
     };
 

@@ -1751,7 +1751,7 @@ describeDbTests("pages", (it) => {
                     );
 
                     const utilityBeforeCreate =
-                        await db.query.utility.findFirst()!;
+                        await db.query.utility.findFirst();
                     if (!utilityBeforeCreate) {
                         await db.insert(schema.utility).values({
                             id: 0,
@@ -1811,7 +1811,7 @@ describeDbTests("pages", (it) => {
 
                     // assert that the utility record was updated
                     const utilityAfterCreate =
-                        await db.query.utility.findFirst()!;
+                        await db.query.utility.findFirst();
                     expect(utilityAfterCreate).toBeDefined();
                     expect(utilityAfterCreate?.last_page_counts).toEqual(
                         newPageCounts,
@@ -2675,7 +2675,7 @@ describeDbTests("pages", (it) => {
 
     describe("getNextBeatToStartPageOn", () => {
         it("should return null if no next beat exists", async ({ db }) => {
-            const utility = await db.query.utility.findFirst()!;
+            const utility = await db.query.utility.findFirst();
             expect(utility).toBeTruthy();
             expect(utility!.last_page_counts).toBeGreaterThan(0);
             const result = await getNextBeatToStartPageOn(db);
@@ -2685,7 +2685,7 @@ describeDbTests("pages", (it) => {
         it("should return beat ID 1 (position 1) when there is just one and the first page", async ({
             db,
         }) => {
-            const utility = await db.query.utility.findFirst()!;
+            const utility = await db.query.utility.findFirst();
             expect(utility).toBeTruthy();
             await createBeats({
                 db,

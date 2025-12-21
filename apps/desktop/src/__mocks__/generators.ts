@@ -46,7 +46,7 @@ export const generateMarchers = ({
             notes: faker.helpers.arrayElement([
                 faker.lorem.sentence(),
                 null,
-            ]) as string | null,
+            ]),
             drill_prefix: section.prefix,
             drill_order: drillOrder,
             drill_number: drillNumber,
@@ -84,9 +84,7 @@ const generateBeats = (numberOfBeats: number): DatabaseBeat[] => {
         duration: beat1Duration,
         position: 1,
         include_in_measure: true,
-        notes: faker.helpers.arrayElement([faker.lorem.word(), null]) as
-            | string
-            | null,
+        notes: faker.helpers.arrayElement([faker.lorem.word(), null]),
         created_at: faker.date.recent().toISOString(),
         updated_at: faker.date.recent().toISOString(),
     });
@@ -94,9 +92,7 @@ const generateBeats = (numberOfBeats: number): DatabaseBeat[] => {
     // Generate remaining beats starting from ID 2
     for (let i = 2; i < numberOfBeats; i++) {
         const duration = faker.helpers.arrayElement(commonDurations);
-        const notes = faker.helpers.arrayElement([faker.lorem.word(), null]) as
-            | string
-            | null;
+        const notes = faker.helpers.arrayElement([faker.lorem.word(), null]);
 
         beats.push({
             id: i,
@@ -162,7 +158,7 @@ const generateMeasures = (beats: DatabaseBeat[]): DatabaseMeasure[] => {
         const measureNotes = faker.helpers.arrayElement([
             faker.lorem.sentence(),
             null,
-        ]) as string | null;
+        ]);
 
         measures.push({
             id: currentMeasureId,
@@ -380,9 +376,7 @@ const createMarcherPage = (
         fractionDigits: 1,
     });
 
-    const notes = faker.helpers.arrayElement([faker.lorem.sentence(), null]) as
-        | string
-        | null;
+    const notes = faker.helpers.arrayElement([faker.lorem.sentence(), null]);
 
     return {
         id,

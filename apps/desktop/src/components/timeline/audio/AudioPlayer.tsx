@@ -185,7 +185,7 @@ export default function AudioPlayer() {
         let isCancelled = false;
         let worker: Worker | null = null;
 
-        AudioFile.getSelectedAudioFile(minimumAudioDuration).then(
+        void AudioFile.getSelectedAudioFile(minimumAudioDuration).then(
             async (audioFile) => {
                 if (!audioFile || !audioFile.data || isCancelled) return;
 

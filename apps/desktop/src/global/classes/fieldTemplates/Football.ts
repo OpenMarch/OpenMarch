@@ -147,7 +147,7 @@ function getFootballYardNumberCoordinates(
 ): YardNumberCoordinates {
     switch (footballFieldType) {
         case "non-pro": {
-            let coordinates: YardNumberCoordinates = {
+            const coordinates: YardNumberCoordinates = {
                 homeStepsFromFrontToOutside: 11.2,
                 homeStepsFromFrontToInside: 14.4,
                 awayStepsFromFrontToInside: 70.9333,
@@ -156,7 +156,7 @@ function getFootballYardNumberCoordinates(
             return coordinates;
         }
         case "pro": {
-            let coordinates: YardNumberCoordinates = {
+            const coordinates: YardNumberCoordinates = {
                 homeStepsFromFrontToOutside: 19.2,
                 homeStepsFromFrontToInside: 22.4,
                 awayStepsFromFrontToInside: 62.93,

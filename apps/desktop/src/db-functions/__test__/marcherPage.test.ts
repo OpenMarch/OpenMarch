@@ -275,11 +275,11 @@ describeDbTests("marcherPage", (it) => {
                     expect(marcherPage).toBeDefined();
                     const isLocked = expectToBeLocked(marcherPage);
                     if (isLocked) {
-                        expect(marcherPage!.isLocked).toBe(true);
-                        expect(marcherPage!.lockedReason).toContain("shape");
+                        expect(marcherPage.isLocked).toBe(true);
+                        expect(marcherPage.lockedReason).toContain("shape");
                     } else {
-                        expect(marcherPage!.isLocked).toBe(false);
-                        expect(marcherPage!.lockedReason).toBe("");
+                        expect(marcherPage.isLocked).toBe(false);
+                        expect(marcherPage.lockedReason).toBe("");
                     }
                 }
 
@@ -297,13 +297,13 @@ describeDbTests("marcherPage", (it) => {
                         expect(marcherPage).toBeDefined();
                         const isLocked = expectToBeLocked(marcherPage);
                         if (isLocked) {
-                            expect(marcherPage!.isLocked).toBe(true);
-                            expect(marcherPage!.lockedReason).toContain(
+                            expect(marcherPage.isLocked).toBe(true);
+                            expect(marcherPage.lockedReason).toContain(
                                 "shape",
                             );
                         } else {
-                            expect(marcherPage!.isLocked).toBe(false);
-                            expect(marcherPage!.lockedReason).toBe("");
+                            expect(marcherPage.isLocked).toBe(false);
+                            expect(marcherPage.lockedReason).toBe("");
                         }
                     }
                 }

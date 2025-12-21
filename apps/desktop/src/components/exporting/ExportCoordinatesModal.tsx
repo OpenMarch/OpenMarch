@@ -655,7 +655,7 @@ function CoordinateSheetExport() {
 
 // eslint-disable-next-line max-lines-per-function
 function DrillChartExport() {
-    const { pages } = useTimingObjects()!;
+    const { pages } = useTimingObjects();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         allMarcherPagesQueryOptions({

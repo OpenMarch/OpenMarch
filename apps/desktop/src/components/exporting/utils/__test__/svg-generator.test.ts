@@ -98,7 +98,7 @@ describe("svgGenerator", () => {
                 output.coords,
                 "Should have one array for each marcher",
             ).toHaveLength(marchers.length);
-            expect(output.coords!.flat()).toHaveLength(expectedLength);
+            expect(output.coords.flat()).toHaveLength(expectedLength);
             expect(
                 output.SVGs,
                 "Should have one array for each marcher",

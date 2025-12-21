@@ -9,7 +9,7 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should create correct checkpoints for minimum xSteps (4)", () => {
-        let checkpoints = createIndoorXCheckpoints({ xSteps: 4 }).sort(
+        const checkpoints = createIndoorXCheckpoints({ xSteps: 4 }).sort(
             (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
         );
         expect(checkpoints).toHaveLength(3);

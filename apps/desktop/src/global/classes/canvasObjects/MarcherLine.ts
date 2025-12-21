@@ -93,10 +93,10 @@ export default class MarcherLine extends fabric.Line {
         // Remove the grid offset to get the actual coordinates
         // This is the only time where it is ok to get the coordinates directly
         return {
-            x1: this.x1! - this.gridOffset,
-            y1: this.y1! - this.gridOffset,
-            x2: this.x2! - this.gridOffset,
-            y2: this.y2! - this.gridOffset,
+            x1: this.x1 - this.gridOffset,
+            y1: this.y1 - this.gridOffset,
+            x2: this.x2 - this.gridOffset,
+            y2: this.y2 - this.gridOffset,
         };
     };
 
@@ -187,7 +187,7 @@ export default class MarcherLine extends fabric.Line {
             return;
         }
 
-        let newCoords: { x1?: number; y1?: number; x2?: number; y2?: number } =
+        const newCoords: { x1?: number; y1?: number; x2?: number; y2?: number } =
             {};
 
         const roundPoint = (point: {

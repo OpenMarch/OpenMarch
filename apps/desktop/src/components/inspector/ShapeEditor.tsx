@@ -31,7 +31,7 @@ import { assert } from "@/utilities/utils";
 export default function ShapeEditor() {
     const queryClient = useQueryClient();
     const { selectedShapePageIds, setSelectedShapePageIds } =
-        useSelectionStore()!;
+        useSelectionStore();
     // const { data: shapePages } = useQuery({
     //     ...allDatabaseShapePagesQueryOptions(),
     //     queryKey: [shapePageKeys.all(), { selectedShapePageIds }],
@@ -292,7 +292,7 @@ export default function ShapeEditor() {
                         <div className="flex flex-wrap gap-8">
                             <Button
                                 onClick={() => {
-                                    marcherShape.addSegment();
+                                    void marcherShape.addSegment();
                                 }}
                                 type="button"
                                 size="compact"
@@ -307,7 +307,7 @@ export default function ShapeEditor() {
 
                             <Button
                                 onClick={() => {
-                                    marcherShape.deleteSegment(
+                                    void marcherShape.deleteSegment(
                                         marcherShape.shapePath.points.length -
                                             1,
                                     );

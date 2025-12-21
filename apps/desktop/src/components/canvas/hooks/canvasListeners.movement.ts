@@ -17,7 +17,7 @@ export const useMovementListeners = ({
 }: {
     canvas: OpenMarchCanvas | null;
 }) => {
-    const { uiSettings } = useUiSettingsStore()!;
+    const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers } = useSelectedMarchers()!;
     const queryClient = useQueryClient();
@@ -30,10 +30,10 @@ export const useMovementListeners = ({
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId),
     );
 
     const frameRef = useRef<number | null>(null);

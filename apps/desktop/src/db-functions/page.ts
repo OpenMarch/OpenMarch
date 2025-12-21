@@ -93,7 +93,7 @@ const modifiedPageArgsToRealModifiedPageArgs = (
         ...args,
         ...(args.is_subset === undefined
             ? {}
-            : { is_subset: (args.is_subset ? 1 : 0) as 0 | 1 }),
+            : { is_subset: (args.is_subset ? 1 : 0) }),
     } as RealModifiedPageArgs;
 };
 

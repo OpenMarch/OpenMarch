@@ -1699,7 +1699,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.background
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.background as RgbaColor
+                                DEFAULT_FIELD_THEME.background
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1723,7 +1723,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.primaryStroke
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
+                                DEFAULT_FIELD_THEME.primaryStroke
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1747,7 +1747,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.secondaryStroke
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
+                                DEFAULT_FIELD_THEME.secondaryStroke
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1771,7 +1771,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.tertiaryStroke
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
+                                DEFAULT_FIELD_THEME.tertiaryStroke
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1795,7 +1795,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.fieldLabel
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.fieldLabel as RgbaColor
+                                DEFAULT_FIELD_THEME.fieldLabel
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1819,7 +1819,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.externalLabel
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.externalLabel as RgbaColor
+                                DEFAULT_FIELD_THEME.externalLabel
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1843,7 +1843,7 @@ export default function FieldPropertiesCustomizer() {
                                 currentFieldProperties.theme.previousPath
                             }
                             defaultColor={
-                                DEFAULT_FIELD_THEME.previousPath as RgbaColor
+                                DEFAULT_FIELD_THEME.previousPath
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1865,7 +1865,7 @@ export default function FieldPropertiesCustomizer() {
                             label={t("fieldProperties.labels.nextPath")}
                             initialColor={currentFieldProperties.theme.nextPath}
                             defaultColor={
-                                DEFAULT_FIELD_THEME.nextPath as RgbaColor
+                                DEFAULT_FIELD_THEME.nextPath
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1890,7 +1890,7 @@ export default function FieldPropertiesCustomizer() {
                             label={t("fieldProperties.labels.shapes")}
                             initialColor={currentFieldProperties.theme.shape}
                             defaultColor={
-                                DEFAULT_FIELD_THEME.shape as RgbaColor
+                                DEFAULT_FIELD_THEME.shape
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(
@@ -1912,7 +1912,7 @@ export default function FieldPropertiesCustomizer() {
                             label={t("fieldProperties.labels.temporaryPath")}
                             initialColor={currentFieldProperties.theme.tempPath}
                             defaultColor={
-                                DEFAULT_FIELD_THEME.tempPath as RgbaColor
+                                DEFAULT_FIELD_THEME.tempPath
                             }
                             onChange={(color: RgbaColor) => {
                                 validateIsRgbaColor(

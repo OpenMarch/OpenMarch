@@ -567,7 +567,7 @@ export const _updateTempoGroup = async ({
                 tx,
                 modifiedItems: [
                     {
-                        id: tempoGroup.measures![0].id,
+                        id: tempoGroup.measures[0].id,
                         rehearsal_mark: newName.trim() === "" ? null : newName,
                     },
                 ],
@@ -606,7 +606,7 @@ export const _updateManualTempos = async ({
         });
     }
 
-    transactionWithHistory(db, "updateManualTempos", async (tx) => {
+    void transactionWithHistory(db, "updateManualTempos", async (tx) => {
         await updateBeatsInTransaction({
             tx,
             modifiedBeats: updatedBeats,

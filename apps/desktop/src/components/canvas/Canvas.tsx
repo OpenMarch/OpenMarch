@@ -52,7 +52,7 @@ export default function Canvas({
     useEditablePath();
     const { isPlaying } = useIsPlaying()!;
     const { data: marchers } = useQuery(allMarchersQueryOptions());
-    const { pages } = useTimingObjects()!;
+    const { pages } = useTimingObjects();
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
@@ -67,25 +67,25 @@ export default function Canvas({
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId),
     );
 
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const { setSelectedShapePageIds } = useSelectionStore();
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { uiSettings } = useUiSettingsStore()!;
+    const { uiSettings } = useUiSettingsStore();
     const {
         alignmentEvent,
         alignmentEventMarchers,
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
-    } = useAlignmentEventStore()!;
+    } = useAlignmentEventStore();
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);

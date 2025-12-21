@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-redundant-type-constituents */
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
@@ -136,10 +137,10 @@ const APP_API = {
         ipcRenderer.invoke("set-language", language),
 
     // Settings
-    send: (channel: string, ...args: any[]) => {
+    send: (channel: string, ...args: Array<any>) => {
         ipcRenderer.send(channel, ...args);
     },
-    invoke: (channel: string, ...args: any[]) => {
+    invoke: (channel: string, ...args: Array<any>) => {
         return ipcRenderer.invoke(channel, ...args);
     },
 
@@ -249,23 +250,23 @@ const APP_API = {
     // SQL Proxy for Drizzle
     sqlProxy: (
         sql: string,
-        params: any[],
+        params: Array<any>,
         method: "all" | "run" | "get" | "values",
     ) =>
         ipcRenderer.invoke("sql:proxy", sql, params, method) as Promise<{
-            rows: any[] | any;
+            rows: Array<any> | any;
         }>,
     /** Only needed for the triggers */
     unsafeSqlProxy: (sql: string) =>
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
-            rows: any[] | any;
+            rows: Array<any> | any;
         }>,
 
     // Logging
     log: (
         level: "log" | "info" | "warn" | "error",
         message: string,
-        ...args: any[]
+        ...args: Array<any>
     ) => ipcRenderer.invoke("log:print", level, message, ...args),
 };
 

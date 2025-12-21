@@ -228,9 +228,9 @@ export default class LineListeners
         });
 
         // Draw temporary pathways and midpoints from marchers to the active line
-        let createdPathways: Pathway[] = [];
-        let createdMidpoints: Midpoint[] = [];
-        let createdEndpoints: Endpoint[] = [];
+        const createdPathways: Pathway[] = [];
+        const createdMidpoints: Midpoint[] = [];
+        const createdEndpoints: Endpoint[] = [];
 
         for (let i = 0; i < oldDots.length; i++) {
             const [pathway, midpoint, endpoint] =

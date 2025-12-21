@@ -15,7 +15,7 @@ interface UseAnimationProps {
 
 // eslint-disable-next-line max-lines-per-function
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
-    const { pages } = useTimingObjects()!;
+    const { pages } = useTimingObjects();
     const pagesById: Record<number, Page> = useMemo(() => {
         return pages.reduce(
             (acc, page) => {

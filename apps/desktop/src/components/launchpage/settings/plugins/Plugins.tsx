@@ -42,7 +42,7 @@ export default function PluginsContents() {
                 return;
             }
 
-            let official: PluginMetadata[] = [];
+            const official: PluginMetadata[] = [];
 
             const data = await response.json();
             for (const plugin of data) {
@@ -76,7 +76,7 @@ export default function PluginsContents() {
                 return;
             }
 
-            let community: PluginMetadata[] = [];
+            const community: PluginMetadata[] = [];
 
             const data = await response.json();
             for (const plugin of data) {
@@ -169,7 +169,7 @@ export default function PluginsContents() {
                                                     );
                                                 }
 
-                                                let status =
+                                                const status =
                                                     await window.plugins.uninstall(
                                                         plugin.file,
                                                     );
@@ -269,7 +269,7 @@ export default function PluginsContents() {
                                                         );
                                                     }
 
-                                                    let status =
+                                                    const status =
                                                         await window.plugins.install(
                                                             plugin.download_url ||
                                                                 "",
@@ -294,7 +294,7 @@ export default function PluginsContents() {
                                                                 },
                                                             ),
                                                         );
-                                                        let path =
+                                                        const path =
                                                             plugin.download_url
                                                                 ?.split("/")
                                                                 .pop();
@@ -384,7 +384,7 @@ export default function PluginsContents() {
                                                         );
                                                     }
 
-                                                    let status =
+                                                    const status =
                                                         await window.plugins.install(
                                                             plugin.download_url ||
                                                                 "",
@@ -409,7 +409,7 @@ export default function PluginsContents() {
                                                                 },
                                                             ),
                                                         );
-                                                        let path =
+                                                        const path =
                                                             plugin.download_url
                                                                 ?.split("/")
                                                                 .pop();

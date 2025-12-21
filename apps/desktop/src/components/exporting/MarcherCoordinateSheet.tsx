@@ -48,7 +48,7 @@ export default function MarcherCoordinateSheetPreview({
     terse = false,
     useXY = false,
 }: MarcherCoordinateSheetProps) {
-    const { pages } = useTimingObjects()!;
+    const { pages } = useTimingObjects();
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByMarcherQueryOptions(marcher?.id || -1),
     );
@@ -341,7 +341,7 @@ export function StaticMarcherCoordinateSheet({
 
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())
-        ReadableCoords.setFieldProperties(fieldPropertiesState!);
+        ReadableCoords.setFieldProperties(fieldPropertiesState);
 
     return (
         <div
@@ -625,6 +625,7 @@ interface StaticQuarterMarcherSheetProps {
  */
 function compactMeasureFormat(measureStr: string): string {
     const match = measureStr.match(
+        // eslint-disable-next-line no-useless-escape
         /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
     );
     if (match) {
@@ -671,7 +672,7 @@ export function StaticQuarterMarcherSheet({
 
     // Ensure ReadableCoords has the field properties
     if (!ReadableCoords.getFieldProperties())
-        ReadableCoords.setFieldProperties(fieldPropertiesState!);
+        ReadableCoords.setFieldProperties(fieldPropertiesState);
 
     return (
         <div

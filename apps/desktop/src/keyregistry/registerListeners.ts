@@ -66,7 +66,7 @@ export const registerCommands = async (
 
             // I think this would handle named exports
             for (const key of Object.keys(module.command)) {
-                const exported = (module as any)[key];
+                const exported = (module)[key];
                 if (typeof exported === "object")
                     processCommandExport(
                         exported,
