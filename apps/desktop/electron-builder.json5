@@ -11,14 +11,6 @@
     files: ["dist-electron", "dist"],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
-    fileAssociations: [
-        {
-            ext: "dots",
-            name: "OpenMarch Dots",
-            role: "Editor",
-        },
-    ],
-
     mac: {
         target: ["dmg", "zip"],
         hardenedRuntime: true,
@@ -27,6 +19,16 @@
         entitlements: "./build/entitlements.mac.plist",
         notarize: true,
         category: "public.app-category.graphics-design",
+        fileAssociations: [
+            {
+                ext: "dots",
+                name: "OpenMarch DOTS File",
+                // MacOS specific settings
+                role: "Editor",
+                icon: "./build/om-dots-file.icns",
+                rank: "Default",
+            },
+        ],
     },
     dmg: {
         background: "./build/installerBackground.png",
@@ -57,6 +59,15 @@
             timeStampServer: "http://time.certum.pl/",
             signingHashAlgorithms: ["sha256"],
         },
+        fileAssociations: [
+            {
+                ext: "dots",
+                name: "OpenMarch DOTS File",
+                // Windows specific settings
+                description: "File containing show data for a show in OpenMarch",
+                icon: "./build/om-dots-file.ico",
+            },
+        ],
     },
     nsis: {
         oneClick: false,
@@ -68,7 +79,18 @@
     linux: {
         category: "Graphics",
         synopsis: "OpenMarch is an open source drill writing software built on web app frameworks. Our goal is to be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless. OpenMarch is designed with three principles: stay free, stay fast, and stay simple.\nOpenMarch is designed with three principles:\n\tStay free - All of the technologies OpenMarch uses have been intentionally chosen to minimize operation costs. This ensures that OpenMarch remains accessible to everyone, regardless of their financial situation.\n\tStay fast - OpenMarch is built with performance in mind. We want to ensure that the software runs smoothly on any device, making the drill writing process efficient and enjoyable.\n\tStay simple - We focus on providing essential features without unnecessary complexity. Our interface is intuitive and easy to use, allowing you to create drill without a steep learning curve.",
+        fileAssociations: [
+            {
+                ext: "dots",
+                name: "OpenMarch DOTS File",
+            },
+        ],
     },
     files: ["!**/node_modules/canvas/**"],
-    publish: ["github"],
+    publish: [
+        {
+            provider: "github",
+            channel: "latest-${arch}",
+        },
+    ],
 }
