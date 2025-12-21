@@ -87,5 +87,10 @@
         ],
     },
     files: ["!**/node_modules/canvas/**"],
-    publish: ["github"],
+    publish: [
+        {
+            provider: "github",
+            channel: "latest-${platform}-${arch}",
+        },
+    ],
 }
