@@ -103,12 +103,15 @@ settingsMenus.forEach(({ name, navigate }) => {
         const { page } = electronApp;
         await navigate(page);
         await page.getByLabel("Zoom sensitivity").click();
+        // Enable trackpad mode first so the trackpad pan sensitivity slider is visible
         await page
-            .getByLabel("Trackpad pan sensitivity")
-            .getByRole("slider", { name: "Volume" })
-            .press("ControlOrMeta+r");
+            .getByRole("switch", { name: "Trackpad mode (recommended" })
+            .click();
+        await page.getByLabel("Trackpad pan sensitivity").getByRole("slider");
         await page.getByLabel("Zoom sensitivity").click();
-        await page.getByLabel("Pan sensitivity", { exact: true }).click();
+        await page
+            .getByLabel("Trackpad pan sensitivity", { exact: true })
+            .click();
         await page.getByLabel("Trackpad pan sensitivity").click();
         await page
             .getByRole("switch", { name: "Trackpad mode (recommended" })

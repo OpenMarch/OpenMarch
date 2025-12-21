@@ -112,9 +112,16 @@ export default class DefaultListeners implements CanvasListeners {
     handleMouseDown(fabricEvent: fabric.IEvent<MouseEvent>) {
         const evt = fabricEvent.e;
 
+        // Alt+drag panning is owned by OpenMarchCanvas (forceTrackpadPan); skip here.
+        if (evt.altKey) {
+            evt.preventDefault();
+            this.canvas.selection = false;
+            this.canvas.isDragging = false;
+            return;
+        }
+
         // Handle middle mouse button or right click for panning
-        if (evt.button === 1 || evt.button === 2 || evt.altKey) {
-            // Middle mouse button, right click, or Alt key
+        if (evt.button === 1 || evt.button === 2) {
             evt.preventDefault();
             this.isMiddleMouseDown = true;
             this.lastMousePosition = { x: evt.clientX, y: evt.clientY };
@@ -228,21 +235,14 @@ export default class DefaultListeners implements CanvasListeners {
             const deltaX = e.clientX - this.lastMousePosition.x;
             const deltaY = e.clientY - this.lastMousePosition.y;
 
-            // Adjust panning speed based on zoom level for more precise control
-            const zoomFactor = this.canvas.getZoom();
-            const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
-
-            // Apply the pan with adjusted speed
-            vpt[4] += deltaX * panSpeed;
-            vpt[5] += deltaY * panSpeed;
+            // Exact 1:1 panning - canvas moves exactly the same number of pixels as mouse
+            vpt[4] += deltaX;
+            vpt[5] += deltaY;
 
             this.lastMousePosition = { x: e.clientX, y: e.clientY };
             this.canvas.requestRenderAll();
             return;
         }
-
-        // Note: Removed left-click canvas dragging logic
-        // Left-click is now exclusively for selection and multi-select
     }
 
     /**

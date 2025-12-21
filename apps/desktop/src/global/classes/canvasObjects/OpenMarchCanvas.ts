@@ -157,7 +157,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
 
     // Sensitivity settings
-    private panSensitivity = 0.5; // Reduced for smoother panning
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
     private _activeGroup: fabric.Group | null = null;
@@ -532,8 +531,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (lastTouch && this.viewportTransform) {
                 const deltaX = touch.clientX - lastTouch.x;
                 const deltaY = touch.clientY - lastTouch.y;
-                this.viewportTransform[4] += deltaX * this.panSensitivity;
-                this.viewportTransform[5] += deltaY * this.panSensitivity;
+                const pan = this.trackpadPanSensitivity ?? 1;
+                this.viewportTransform[4] += deltaX * pan;
+                this.viewportTransform[5] += deltaY * pan;
                 this.requestRenderAll();
                 this.checkCanvasBounds();
                 this.touchPoints[touch.identifier] = {
@@ -581,7 +581,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     private handleAdvancedMouseDown(event: MouseEvent) {
-        if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
+        // Do not handle mouse buttons here; DefaultListeners owns mouse-button panning.
+        // Only allow Alt-key forced panning (trackpad-like) to start a pan.
+        if (this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;
             this.lastPosX = event.clientX;
@@ -593,12 +595,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     private handleAdvancedMouseMove(event: MouseEvent) {
-        if (this.isPanning && this.viewportTransform) {
+        // Only handle panning here if Alt-key forced panning is active
+        if (this.isPanning && this.viewportTransform && this.forceTrackpadPan) {
             event.preventDefault();
             const deltaX = event.clientX - this.lastPosX;
             const deltaY = event.clientY - this.lastPosY;
-            this.viewportTransform[4] += deltaX * this.panSensitivity;
-            this.viewportTransform[5] += deltaY * this.panSensitivity;
+
+            // Trackpad/Alt panning always uses zoom-adjusted speed
+            const zoomFactor = this.getZoom();
+            const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
+            this.viewportTransform[4] += deltaX * panSpeed;
+            this.viewportTransform[5] += deltaY * panSpeed;
+
             this.requestRenderAll();
             this.checkCanvasBounds();
             this.lastPosX = event.clientX;
@@ -785,7 +793,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (this._uiSettings?.mouseSettings) {
             this.zoomSensitivity =
                 this._uiSettings.mouseSettings.zoomSensitivity;
-            this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
             this.trackpadPanSensitivity =
                 this._uiSettings.mouseSettings.trackpadPanSensitivity;
             if (this._uiSettings.mouseSettings.trackpadMode !== undefined) {
