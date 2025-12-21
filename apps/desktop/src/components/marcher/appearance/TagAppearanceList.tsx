@@ -220,9 +220,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
         setLocalOrder(serverSorted);
     }, [serverSorted]);
 
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    );
+    const sensors = useSensors(useSensor(PointerSensor));
 
     const handleDragEnd = (event: DragEndEvent) => {
         const { active, over } = event;
