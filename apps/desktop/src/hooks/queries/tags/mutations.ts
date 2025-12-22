@@ -7,6 +7,7 @@ import {
     createTagAppearances,
     NewTagAppearanceArgs,
     ModifiedTagAppearanceArgs,
+    TagAppearance,
     updateTagAppearances,
     deleteTagAppearances,
     createMarcherTags,
@@ -110,11 +111,49 @@ export const updateTagAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedItems: ModifiedTagAppearanceArgs[]) =>
             updateTagAppearances({ db, modifiedItems }),
-        onSuccess: async (_) => {
-            invalidateTagQueries(qc);
+        onMutate: async (modifiedItems) => {
+            // Get the page ID from the first modified item
+            const pageId = modifiedItems[0]?.start_page_id;
+            if (pageId == null) return;
+
+            const queryKey = tagKeys.tagAppearancesByStartPageId(pageId);
+
+            // Cancel outgoing refetch
+            await qc.cancelQueries({ queryKey });
+
+            // Snapshot previous data
+            const previousData = qc.getQueryData<TagAppearance[]>(queryKey);
+
+            // Optimistically update cache
+            qc.setQueryData<TagAppearance[]>(queryKey, (old) => {
+                if (!old) return old;
+                return old
+                    .map((appearance) => {
+                        const modified = modifiedItems.find(
+                            (m) => m.id === appearance.id,
+                        );
+                        if (modified) {
+                            return {
+                                ...appearance,
+                                ...modified,
+                            } as TagAppearance;
+                        }
+                        return appearance;
+                    })
+                    .sort((a, b) => b.priority - a.priority);
+            });
+
+            return { previousData, queryKey };
         },
-        onError: (e, variables) => {
+        onError: (e, variables, context) => {
+            // Rollback on error
+            if (context?.previousData && context?.queryKey) {
+                qc.setQueryData(context.queryKey, context.previousData);
+            }
             conToastError("Error updating tag appearances", e, variables);
+        },
+        onSettled: async () => {
+            invalidateTagQueries(qc);
         },
     });
 };

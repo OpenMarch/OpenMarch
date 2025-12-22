@@ -325,6 +325,7 @@
             "rightAbbreviation": "Right Abbreviation",
             "secondaryLines": "Secondary Lines",
             "shapes": "Shapes",
+            "shapeType": "Shape Type",
             "showBackgroundImage": "Show Background Image",
             "stepsFromFrontToAwayLabelBottom": "Steps from front to away label bottom",
             "stepsFromFrontToAwayLabelTop": "Steps from front to away label top",
@@ -359,6 +360,12 @@
             "theme": "Theme",
             "xCheckpoints": "X-Checkpoints",
             "yCheckpoints": "Y-Checkpoints"
+        },
+        "themeSubsections": {
+            "grid": "Grid",
+            "labels": "Labels",
+            "pathways": "Pathways",
+            "marchers": "Marchers"
         },
         "tabs": {
             "checkpoints": "Checkpoints",

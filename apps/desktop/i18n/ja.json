@@ -325,6 +325,7 @@
             "rightAbbreviation": "右 略語",
             "secondaryLines": "セカンダリー ライン",
             "shapes": "形状",
+            "shapeType": "形状タイプ",
             "showBackgroundImage": "背景 画像 を表示",
             "stepsFromFrontToAwayLabelBottom": "前から遠くへのラベル 底",
             "stepsFromFrontToAwayLabelTop": "前から遠くへのラベル 上部",
@@ -359,6 +360,12 @@
             "theme": "テーマ",
             "xCheckpoints": "X チェックポイント",
             "yCheckpoints": "Y チェックポイント"
+        },
+        "themeSubsections": {
+            "grid": "グリッド",
+            "labels": "ラベル",
+            "pathways": "パス",
+            "marchers": "マーチャーズ"
         },
         "tabs": {
             "checkpoints": "チェックポイント",

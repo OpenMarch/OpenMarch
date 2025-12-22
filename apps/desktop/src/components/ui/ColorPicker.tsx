@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@openmarch/ui";
 import {
     CheckIcon,
@@ -58,10 +58,19 @@ export default function ColorPicker({
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
 
-    const handleClose = useCallback(() => {
-        onChange && onChange(currentColor);
-        onBlur && onBlur(currentColor);
-    }, [currentColor, onBlur, onChange]);
+    // Reset the current color to the initial color when the initial color changes
+    useEffect(() => {
+        setCurrentColor(initialColor);
+    }, [initialColor]);
+
+    const handleClose = useCallback(
+        (colorToUse?: RgbaColor) => {
+            const color = colorToUse ?? currentColor;
+            onChange && onChange(color);
+            onBlur && onBlur(color);
+        },
+        [currentColor, onBlur, onChange],
+    );
 
     const handleChange = (color: ColorResult) => {
         setCurrentColor(color.rgba);
@@ -92,9 +101,9 @@ export default function ColorPicker({
     const resetToDefault = useCallback(() => {
         if (defaultColor) {
             setCurrentColor(defaultColor);
-            onChange && onChange(defaultColor);
+            handleClose(defaultColor);
         }
-    }, [defaultColor, onChange]);
+    }, [defaultColor, handleClose]);
 
     const internalComponent = (
         <DefaultColorPicker
@@ -167,7 +176,7 @@ export default function ColorPicker({
                                     </Popover.Close>
                                     <Popover.Close
                                         className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-green-800"
-                                        onClick={handleClose}
+                                        onClick={() => handleClose()}
                                     >
                                         <T keyName="colorPicker.save" />
                                         <CheckIcon size={22} />

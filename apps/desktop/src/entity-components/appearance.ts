@@ -119,10 +119,19 @@ export const appearanceModelParsedToRawOptional = (
     return output;
 };
 
+/**
+ * Determines if an appearance entity is hidden given a list of appearances.
+ *
+ * If the first appearance is visible, consider that ignored and check the second appearance.
+ * This is because the individual appearance settings will almost always be visible.
+ *
+ * @param appearancesInput - A single appearance or array of appearances in priority order (highest priority first)
+ * @returns
+ */
 export function appearanceIsHidden(
     appearancesInput:
-        | AppearanceComponentOptional[]
-        | AppearanceComponentOptional,
+        | Pick<AppearanceComponentOptional, "visible">[]
+        | Pick<AppearanceComponentOptional, "visible">,
 ): boolean {
     const appearances = Array.isArray(appearancesInput)
         ? appearancesInput

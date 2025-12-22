@@ -2,6 +2,7 @@ import {
     allMarchersQueryOptions,
     allSectionAppearancesQueryOptions,
     DEFAULT_STALE_TIME,
+    fieldPropertiesQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
     marcherPagesByPageQueryOptions,
     resolvedTagAppearancesByPageIdQueryOptions,
@@ -15,6 +16,7 @@ import {
 } from "@/db-functions";
 import { AppearanceComponentOptional } from "@/entity-components/appearance";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
+import { FieldProperties } from "@openmarch/core";
 
 const KEY_BASE = "marcher-appearances";
 
@@ -94,12 +96,14 @@ export const _combineMarcherAppearances = ({
     marcherIdsByTagId,
     tagAppearances,
     marcherPages,
+    fieldProperties,
 }: {
     marchers: Marcher[];
     sectionAppearances: SectionAppearance[];
     marcherIdsByTagId: MarcherIdsByTagId;
     tagAppearances: TagAppearance[];
     marcherPages: MarcherPagesByMarcher;
+    fieldProperties: FieldProperties;
 }): MarcherAppearanceByIdMap => {
     if (!marchers) {
         return {};
@@ -113,6 +117,14 @@ export const _combineMarcherAppearances = ({
             : new Map();
 
     const appearancesByMarcherId: MarcherAppearanceByIdMap = {};
+    const defaultTheme = fieldProperties.theme;
+    const defaultMarcherAppearance = {
+        fill_color: defaultTheme.defaultMarcher.fill,
+        outline_color: defaultTheme.defaultMarcher.outline,
+        visible: true,
+        shape_type: defaultTheme.shapeType,
+        label_visible: true,
+    } as AppearanceComponentOptional;
     for (const marcher of marchers) {
         const appearances: AppearanceComponentOptional[] = [];
 
@@ -133,6 +145,8 @@ export const _combineMarcherAppearances = ({
             appearances.push(sectionAppearance);
         }
 
+        appearances.push(defaultMarcherAppearance);
+
         appearancesByMarcherId[marcher.id] = appearances;
     }
     return appearancesByMarcherId;
@@ -152,6 +166,7 @@ export const marcherAppearancesQueryOptions = (
                 marcherIdsByTagId,
                 tagAppearances,
                 marcherPages,
+                fieldProperties,
             ] = await Promise.all([
                 queryClient.fetchQuery(allMarchersQueryOptions()),
                 queryClient.fetchQuery(allSectionAppearancesQueryOptions()),
@@ -163,6 +178,7 @@ export const marcherAppearancesQueryOptions = (
                     }),
                 ),
                 queryClient.fetchQuery(marcherPagesByPageQueryOptions(pageId)),
+                queryClient.fetchQuery(fieldPropertiesQueryOptions()),
             ]);
             return _combineMarcherAppearances({
                 marchers,
@@ -170,6 +186,7 @@ export const marcherAppearancesQueryOptions = (
                 marcherIdsByTagId,
                 tagAppearances,
                 marcherPages,
+                fieldProperties,
             });
         },
         enabled: pageId != null,

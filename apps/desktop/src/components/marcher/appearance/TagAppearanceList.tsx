@@ -1,10 +1,11 @@
-import { PlusIcon } from "@phosphor-icons/react";
+import { DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { T } from "@tolgee/react";
 import {
     DatabaseTag,
     getTagName,
     ModifiedTagAppearanceArgs,
+    TagAppearance,
 } from "@/db-functions";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -19,6 +20,21 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { twMerge } from "tailwind-merge";
 import { useTimingObjects } from "@/hooks";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import {
+    DndContext,
+    closestCenter,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    DragEndEvent,
+} from "@dnd-kit/core";
+import {
+    arrayMove,
+    SortableContext,
+    useSortable,
+    verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export default function TagAppearanceList({
     targetPageId,
@@ -144,6 +160,9 @@ export default function TagAppearanceList({
                         handleUpdateAppearance={(modifiedAppearance) =>
                             void updateTagAppearances([modifiedAppearance])
                         }
+                        handleUpdatePriorities={(appearances) =>
+                            void updateTagAppearances(appearances)
+                        }
                         handleDeleteAppearance={(tagId) =>
                             void deleteTagAppearances(new Set([tagId]))
                         }
@@ -163,6 +182,9 @@ const SinglePageTagAppearanceList = React.forwardRef<
         targetTagId?: number;
         handleCreateAppearance: (tagId: number) => void;
         handleUpdateAppearance: (appearance: ModifiedTagAppearanceArgs) => void;
+        handleUpdatePriorities: (
+            appearances: ModifiedTagAppearanceArgs[],
+        ) => void;
         handleDeleteAppearance: (tagId: number) => void;
     }
 >(function SinglePageTagAppearanceList(
@@ -173,6 +195,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
         targetTagId,
         handleCreateAppearance,
         handleUpdateAppearance,
+        handleUpdatePriorities,
         handleDeleteAppearance,
     },
     ref,
@@ -181,9 +204,45 @@ const SinglePageTagAppearanceList = React.forwardRef<
     const { data: tagAppearances } = useQuery(
         tagAppearancesByStartPageIdQueryOptions(page.id),
     );
-    const tagAppearancesSorted = useMemo(() => {
-        return tagAppearances?.sort((a, b) => a.priority - b.priority) ?? [];
+
+    // Server-sorted data (descending priority - higher priority first)
+    const serverSorted = useMemo(() => {
+        return [...(tagAppearances ?? [])].sort(
+            (a, b) => b.priority - a.priority,
+        );
     }, [tagAppearances]);
+
+    // Local state for immediate UI updates (prevents dnd-kit snap-back)
+    const [localOrder, setLocalOrder] = useState(serverSorted);
+
+    // Sync local state with server data when it changes
+    useEffect(() => {
+        setLocalOrder(serverSorted);
+    }, [serverSorted]);
+
+    const sensors = useSensors(useSensor(PointerSensor));
+
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over || active.id === over.id) return;
+
+        const oldIndex = localOrder.findIndex((a) => a.id === active.id);
+        const newIndex = localOrder.findIndex((a) => a.id === over.id);
+        if (oldIndex === -1 || newIndex === -1) return;
+
+        const reordered = arrayMove(localOrder, oldIndex, newIndex);
+
+        // Update local state immediately to prevent snap-back
+        setLocalOrder(reordered);
+
+        const updates: ModifiedTagAppearanceArgs[] = reordered.map(
+            (appearance, index) => ({
+                ...appearance,
+                priority: reordered.length - 1 - index,
+            }),
+        );
+        handleUpdatePriorities(updates);
+    };
 
     const takenTagIds: Set<number> = useMemo(
         () => new Set(tagAppearances?.map((a) => a.tag_id) ?? []),
@@ -202,7 +261,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
             return;
         }
 
-        const targetAppearance = tagAppearancesSorted.find(
+        const targetAppearance = localOrder.find(
             (appearance) => appearance.tag_id === targetTagId,
         );
 
@@ -233,7 +292,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
                 clearTimeout(fadeOutTimer);
             };
         }
-    }, [targetTagId, tagAppearancesSorted, highlightSelection]);
+    }, [targetTagId, localOrder, highlightSelection]);
 
     return (
         <div
@@ -281,43 +340,43 @@ const SinglePageTagAppearanceList = React.forwardRef<
                     </Dropdown.Portal>
                 </Dropdown.Root>
                 <div className="flex h-fit w-full min-w-0 flex-col gap-16">
-                    {tagAppearancesSorted && tagAppearancesSorted.length > 0 ? (
-                        <>
-                            {tagAppearancesSorted.map((tagAppearance) => (
-                                <div
-                                    aria-label={`page_${page.id}-tag_appearance_${tagAppearance.id}`}
-                                    className={twMerge(
-                                        "text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto",
-                                    )}
-                                    key={tagAppearance.id}
-                                    ref={(el) => {
-                                        if (el) {
-                                            tagAppearanceRefs.current.set(
-                                                tagAppearance.id,
-                                                el,
-                                            );
-                                        } else {
-                                            tagAppearanceRefs.current.delete(
-                                                tagAppearance.id,
-                                            );
-                                        }
-                                    }}
-                                >
-                                    <AppearanceEditor
-                                        label={getTagName({
+                    {localOrder && localOrder.length > 0 ? (
+                        <DndContext
+                            sensors={sensors}
+                            collisionDetection={closestCenter}
+                            onDragEnd={handleDragEnd}
+                        >
+                            <SortableContext
+                                items={localOrder.map((a) => a.id)}
+                                strategy={verticalListSortingStrategy}
+                            >
+                                {localOrder.map((tagAppearance) => (
+                                    <SortableTagAppearance
+                                        key={tagAppearance.id}
+                                        tagAppearance={tagAppearance}
+                                        pageId={page.id}
+                                        tagName={getTagName({
                                             tag_id: tagAppearance.tag_id,
                                             name: tagNamesByTagId.get(
                                                 tagAppearance.tag_id,
                                             ),
                                         })}
-                                        className={twMerge(
-                                            "transition-all duration-500 ease-out",
+                                        isHighlighted={
                                             highlightedTagId ===
-                                                tagAppearance.tag_id
-                                                ? "bg-accent/50 border-accent"
-                                                : "",
-                                        )}
-                                        appearance={tagAppearance}
+                                            tagAppearance.tag_id
+                                        }
+                                        setRef={(el) => {
+                                            if (el) {
+                                                tagAppearanceRefs.current.set(
+                                                    tagAppearance.id,
+                                                    el,
+                                                );
+                                            } else {
+                                                tagAppearanceRefs.current.delete(
+                                                    tagAppearance.id,
+                                                );
+                                            }
+                                        }}
                                         handleUpdateAppearance={(
                                             modifiedAppearance,
                                         ) =>
@@ -332,9 +391,9 @@ const SinglePageTagAppearanceList = React.forwardRef<
                                             )
                                         }
                                     />
-                                </div>
-                            ))}
-                        </>
+                                ))}
+                            </SortableContext>
+                        </DndContext>
                     ) : (
                         <p className="text-body text-text-subtitle">
                             <T keyName="marchers.list.none" />
@@ -345,3 +404,73 @@ const SinglePageTagAppearanceList = React.forwardRef<
         </div>
     );
 });
+
+function SortableTagAppearance({
+    tagAppearance,
+    pageId,
+    tagName,
+    isHighlighted,
+    setRef,
+    handleUpdateAppearance,
+    handleDeleteAppearance,
+}: {
+    tagAppearance: TagAppearance;
+    pageId: number;
+    tagName: string;
+    isHighlighted: boolean;
+    setRef: (el: HTMLDivElement | null) => void;
+    handleUpdateAppearance: (
+        appearance: Omit<ModifiedTagAppearanceArgs, "id">,
+    ) => void;
+    handleDeleteAppearance: () => void;
+}) {
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({ id: tagAppearance.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+    };
+
+    return (
+        <div
+            ref={(el) => {
+                setNodeRef(el);
+                setRef(el);
+            }}
+            style={style}
+            aria-label={`page_${pageId}-tag_appearance_${tagAppearance.id}`}
+            className={twMerge(
+                "text-body text-text flex w-[28rem] items-start gap-4",
+                isDragging ? "z-50 opacity-90" : "",
+            )}
+        >
+            <button
+                {...attributes}
+                {...listeners}
+                className="hover:text-accent mt-8 cursor-grab active:cursor-grabbing"
+                aria-label="Drag to reorder"
+            >
+                <DotsSixVerticalIcon size={16} weight="bold" />
+            </button>
+            <div className="flex-1">
+                <AppearanceEditor
+                    label={tagName}
+                    className={twMerge(
+                        "transition-all duration-500 ease-out",
+                        isHighlighted ? "bg-accent/50 border-accent" : "",
+                    )}
+                    appearance={tagAppearance}
+                    handleUpdateAppearance={handleUpdateAppearance}
+                    handleDeleteAppearance={handleDeleteAppearance}
+                />
+            </div>
+        </div>
+    );
+}

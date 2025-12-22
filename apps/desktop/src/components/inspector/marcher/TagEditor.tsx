@@ -172,10 +172,18 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
         }
     };
 
+    const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        setPopoverOpen(true);
+    };
+
     return (
         <Popover.Root open={popoverOpen} onOpenChange={setPopoverOpen}>
             <Popover.Trigger asChild>
-                <div className="rounded-6 bg-fg-1 border-stroke hover:text-accent cursor-pointer border p-4 duration-150 ease-out">
+                <div
+                    className="rounded-6 bg-fg-1 border-stroke hover:text-accent cursor-pointer border p-4 duration-150 ease-out"
+                    onContextMenu={handleContextMenu}
+                >
                     {getTagName({ tag_id: tag.id, name: tag.name })}
                 </div>
             </Popover.Trigger>

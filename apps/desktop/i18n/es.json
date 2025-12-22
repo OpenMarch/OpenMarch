@@ -325,6 +325,7 @@
             "rightAbbreviation": "Abreviatura derecha",
             "secondaryLines": "Líneas Secundarias",
             "shapes": "Formas",
+            "shapeType": "Tipo de Forma",
             "showBackgroundImage": "Mostrar Imagen de Fondo",
             "stepsFromFrontToAwayLabelBottom": "Pasos desde delante hasta la etiqueta inferior",
             "stepsFromFrontToAwayLabelTop": "Pasos desde adelante hasta lejos etiqueta superior",
@@ -359,6 +360,12 @@
             "theme": "Tema",
             "xCheckpoints": "Puntos de Control X",
             "yCheckpoints": "Puntos de Control Y"
+        },
+        "themeSubsections": {
+            "grid": "Cuadrícula",
+            "labels": "Etiquetas",
+            "pathways": "Rutas",
+            "marchers": "Marchadores"
         },
         "tabs": {
             "checkpoints": "Puntos de Control",
