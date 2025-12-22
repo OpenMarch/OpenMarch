@@ -47,6 +47,7 @@ export const transactionWithHistory = async <T>(
     return await db.transaction(async (tx) => {
         const startMessage = `=========== start ${funcName} ============`;
         if (window.electron) void window.electron?.log("info", startMessage);
+        // eslint-disable-next-line no-console
         else console.log(startMessage);
 
         try {
@@ -698,29 +699,37 @@ async function executeHistoryAction(
             await switchTriggerMode(db, "undo", false, tableNames);
         }
 
-        // Temporarily disable foreign key checks
-        await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
+        let error: Error | undefined;
+        try {
+            // Temporarily disable foreign key checks
+            await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
-        /// Execute all of the SQL statements in the current history group
-        for (const sqlStatement of sqlStatements) {
-            await db.run(sqlStatement);
+            /// Execute all of the SQL statements in the current history group
+            await db.transaction(async (tx) => {
+                for (const sqlStatement of sqlStatements)
+                    await tx.run(sqlStatement);
+            });
+        } catch (err: any) {
+            error = err;
+        } finally {
+            // Re-enable foreign key checks
+            await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
+
+            // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
+            await switchTriggerMode(db, "undo", true, tableNames);
         }
 
-        // Re-enable foreign key checks
-        await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
+        if (error) throw error;
 
         // Delete all of the SQL statements in the current history group
         await db.run(
             sql.raw(`
-            DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
-        `),
+        DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
+    `),
         );
-
         // Refresh the current group number in the history stats table
         await refreshCurrentGroups(db);
 
-        // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
-        await switchTriggerMode(db, "undo", true, tableNames);
         response = {
             success: true,
             tableNames,
