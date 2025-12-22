@@ -1,7 +1,6 @@
 import { Collapsible } from "@/components/ui/Collapsible";
 import { Input, Switch } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
-import { GearIcon } from "@phosphor-icons/react";
 import React, { useEffect } from "react";
 import tolgee from "@/global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
