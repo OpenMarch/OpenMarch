@@ -59,10 +59,6 @@ ipcMain.on("settings:set", (_, settings) => {
     }
 });
 
-ipcMain.on("settings:getSync", (event, key) => {
-    event.returnValue = store.get(key);
-});
-
 ipcMain.handle("settings:get", (_, key) => {
     return store.get(key);
 });
