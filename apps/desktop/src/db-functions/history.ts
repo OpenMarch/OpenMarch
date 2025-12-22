@@ -47,6 +47,7 @@ export const transactionWithHistory = async <T>(
     return await db.transaction(async (tx) => {
         const startMessage = `=========== start ${funcName} ============`;
         if (window.electron) void window.electron?.log("info", startMessage);
+        // eslint-disable-next-line no-console
         else console.log(startMessage);
 
         try {
@@ -702,9 +703,11 @@ async function executeHistoryAction(
         await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
         /// Execute all of the SQL statements in the current history group
-        for (const sqlStatement of sqlStatements) {
-            await db.run(sqlStatement);
-        }
+        await db.transaction(async (tx) => {
+            for (const sqlStatement of sqlStatements) {
+                await tx.run(sqlStatement);
+            }
+        });
 
         // Re-enable foreign key checks
         await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
