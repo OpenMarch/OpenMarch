@@ -225,15 +225,9 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             if (!fieldProperties) return currentCoordinates;
             const interval = stepValue * fieldProperties.pixelsPerStep;
             const startingY = Number(currentCoordinates[0]?.y ?? 0);
-            const avgX =
-                currentCoordinates.reduce(
-                    (sum, marcher) => sum + (marcher.x as number),
-                    0,
-                ) / currentCoordinates.length;
 
             return currentCoordinates.map((coordinate, index) => ({
                 ...coordinate,
-                x: avgX,
                 y: startingY + index * interval,
             }));
         });
