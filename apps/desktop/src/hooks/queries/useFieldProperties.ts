@@ -5,6 +5,7 @@ import {
     updateFieldProperties,
 } from "@/global/classes/FieldProperties";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { marcherAppearancesKeys } from ".";
 
 // Query key factory
 export const fieldPropertiesKeys = {
@@ -47,10 +48,14 @@ export const fieldPropertiesQueryOptions = () => ({
  */
 export const updateFieldPropertiesMutationOptions = (queryClient: any) => ({
     mutationFn: fieldPropertiesMutations.update,
-    onSuccess: (updatedFieldProperties: FieldProperties) => {
+    onSuccess: async () => {
         // Invalidate and refetch field properties
-        void queryClient.invalidateQueries({
+        await queryClient.invalidateQueries({
             queryKey: fieldPropertiesKeys.detail(),
+        });
+
+        await queryClient.invalidateQueries({
+            queryKey: marcherAppearancesKeys.all(),
         });
     },
 });

@@ -4,12 +4,22 @@ import {
     MeasurementSystem,
     DEFAULT_FIELD_THEME,
     FieldTheme,
+    ShapeType,
 } from "@openmarch/core";
 import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BooksIcon, CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
+import {
+    ArrowUUpLeftIcon,
+    BooksIcon,
+    CaretDownIcon,
+    CaretUpIcon,
+    CircleIcon,
+    SquareIcon,
+    TriangleIcon,
+    XIcon,
+} from "@phosphor-icons/react";
 import * as Form from "@radix-ui/react-form";
 import {
     Input,
@@ -32,7 +42,7 @@ import {
 } from "@openmarch/ui";
 import { RgbaColor } from "@uiw/react-color";
 import ColorPicker from "../ui/ColorPicker";
-import FormField from "../ui/FormField";
+import FormField, { StaticFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
@@ -45,11 +55,56 @@ const defaultFieldProperties =
 
 const inputClassname = clsx("col-span-6 self-center ");
 
+const shapeOptions = ["circle", "square", "triangle", "x"] as const;
+
+const shapeIcons: Record<(typeof shapeOptions)[number], React.ReactNode> = {
+    circle: <CircleIcon size={18} />,
+    square: <SquareIcon size={18} />,
+    triangle: <TriangleIcon size={18} />,
+    x: <XIcon size={18} />,
+};
+
 const blurOnEnterFunc = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
         e.currentTarget.blur();
     }
 };
+
+// Tab component props interfaces
+interface GeneralTabProps {
+    currentFieldProperties: FieldProperties;
+    updateFieldProperties: (props: FieldProperties) => void;
+    fieldProperties: FieldProperties | undefined;
+    measurementSystem: MeasurementSystem;
+    stepSizeInputRef: React.RefObject<HTMLInputElement | null>;
+    blurOnEnter: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
+
+interface CheckpointsTabProps {
+    currentFieldProperties: FieldProperties;
+    updateFieldProperties: (props: FieldProperties) => void;
+    updateCheckpoint: (args: {
+        oldCheckpoint: Checkpoint;
+        newCheckpoint: Checkpoint;
+        axis: "x" | "y";
+    }) => void;
+    deleteCheckpoint: (checkpoint: Checkpoint) => void;
+    addCheckpoint: (axis: "x" | "y") => void;
+    sorter: (a: Checkpoint, b: Checkpoint) => number;
+}
+
+interface ImageTabProps {
+    currentFieldProperties: FieldProperties;
+    updateFieldProperties: (props: FieldProperties) => void;
+}
+
+interface ThemeTabProps {
+    currentFieldProperties: FieldProperties;
+    validateIsRgbaColor: (
+        themeProperty: keyof FieldTheme,
+        fieldProperties: FieldProperties,
+    ) => boolean;
+}
 
 function CheckpointEditor({
     checkpoint,
@@ -299,11 +354,1435 @@ function CheckpointEditor({
     );
 }
 
+function GeneralTab({
+    currentFieldProperties,
+    updateFieldProperties,
+    fieldProperties,
+    measurementSystem,
+    stepSizeInputRef,
+    blurOnEnter,
+}: GeneralTabProps) {
+    const { t } = useTolgee();
+
+    return (
+        <TabContent value="general" className="flex flex-col gap-32">
+            {/* -------------------------------------------- GENERAL -------------------------------------------- */}
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.general" />
+                </h4>
+                <FormField
+                    label={t("fieldProperties.labels.fieldName")}
+                    tooltip={t("fieldProperties.tooltips.fieldName")}
+                >
+                    <Input
+                        type="text"
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (
+                                e.target.value !== currentFieldProperties.name
+                            ) {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        name: e.target.value,
+                                    }),
+                                );
+                            }
+                        }}
+                        className={inputClassname}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={currentFieldProperties.name}
+                        required
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.stepSize")}
+                    tooltip={t("fieldProperties.tooltips.stepSize")}
+                >
+                    <UnitInput
+                        type="text"
+                        ref={stepSizeInputRef}
+                        inputMode="numeric"
+                        pattern="[0-9]*\.?[0-9]*"
+                        containerClassName={inputClassname}
+                        unit={measurementSystem === "imperial" ? "in" : "cm"}
+                        onBlur={(e) => {
+                            e.preventDefault();
+
+                            if (e.target.value !== "") {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            stepSizeInches:
+                                                measurementSystem === "imperial"
+                                                    ? parsedFloat
+                                                    : FieldProperties.centimetersToInches(
+                                                          parsedFloat,
+                                                      ),
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers and decimal point
+                            const filtered = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                            );
+                            // Ensure only one decimal point
+                            const normalized = filtered.replace(/\.+/g, ".");
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={currentFieldProperties.stepSizeInUnits}
+                        required
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.measurementSystem")}
+                    tooltip={t("fieldProperties.tooltips.measurementSystem")}
+                >
+                    <Select
+                        onValueChange={(e) => {
+                            updateFieldProperties(
+                                new FieldProperties({
+                                    ...currentFieldProperties,
+                                    measurementSystem: e as MeasurementSystem,
+                                }),
+                            );
+                        }}
+                        defaultValue={currentFieldProperties.measurementSystem}
+                    >
+                        <SelectTriggerButton
+                            className={inputClassname}
+                            label={fieldProperties?.name || "Field type"}
+                        />
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="imperial">
+                                    <T keyName="fieldProperties.options.imperial" />
+                                </SelectItem>
+                                <SelectItem value="metric">
+                                    <T keyName="fieldProperties.options.metric" />
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </FormField>
+
+                <FormField
+                    label={t("fieldProperties.labels.halfLineXInterval")}
+                    tooltip={t("fieldProperties.tooltips.halfLineXInterval")}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        halfLineXInterval: undefined,
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            halfLineXInterval: parsedFloat,
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers and decimal point
+                            const filtered = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                            );
+                            // Ensure only one decimal point
+                            const normalized = filtered.replace(/\.+/g, ".");
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={fieldProperties?.halfLineXInterval ?? ""}
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.halfLineYInterval")}
+                    tooltip={t("fieldProperties.tooltips.halfLineYInterval")}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        halfLineYInterval: undefined,
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            halfLineYInterval: parsedFloat,
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers and decimal point
+                            const filtered = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                            );
+                            // Ensure only one decimal point
+                            const normalized = filtered.replace(/\.+/g, ".");
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={fieldProperties?.halfLineYInterval ?? ""}
+                    />
+                </FormField>
+            </div>
+
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.sideDescriptions" />
+                </h4>
+                <FormField
+                    label={t("fieldProperties.labels.directorsLeft")}
+                    tooltip={t("fieldProperties.tooltips.directorsLeft")}
+                >
+                    <Input
+                        type="text"
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (
+                                e.target.value !==
+                                currentFieldProperties.sideDescriptions
+                                    .verboseLeft
+                            ) {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        sideDescriptions: {
+                                            ...currentFieldProperties.sideDescriptions,
+                                            verboseLeft: e.target.value,
+                                        },
+                                    }),
+                                );
+                            }
+                        }}
+                        className={inputClassname}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            currentFieldProperties.sideDescriptions.verboseLeft
+                        }
+                        required
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.leftAbbreviation")}
+                    tooltip={t("fieldProperties.tooltips.leftAbbreviation")}
+                >
+                    <Input
+                        type="text"
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (
+                                e.target.value !==
+                                currentFieldProperties.sideDescriptions
+                                    .terseLeft
+                            ) {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        sideDescriptions: {
+                                            ...currentFieldProperties.sideDescriptions,
+                                            terseLeft: e.target.value,
+                                        },
+                                    }),
+                                );
+                            }
+                        }}
+                        className={inputClassname}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            currentFieldProperties.sideDescriptions.terseLeft
+                        }
+                        required
+                    />
+                </FormField>
+
+                <FormField
+                    label={t("fieldProperties.labels.directorsRight")}
+                    tooltip={t("fieldProperties.tooltips.directorsRight")}
+                >
+                    <Input
+                        type="text"
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (
+                                e.target.value !==
+                                currentFieldProperties.sideDescriptions
+                                    .verboseRight
+                            ) {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        sideDescriptions: {
+                                            ...currentFieldProperties.sideDescriptions,
+                                            verboseRight: e.target.value,
+                                        },
+                                    }),
+                                );
+                            }
+                        }}
+                        className={inputClassname}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            currentFieldProperties.sideDescriptions.verboseRight
+                        }
+                        required
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.rightAbbreviation")}
+                    tooltip={t("fieldProperties.tooltips.rightAbbreviation")}
+                >
+                    <Input
+                        type="text"
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (
+                                e.target.value !==
+                                currentFieldProperties.sideDescriptions
+                                    .terseRight
+                            ) {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        sideDescriptions: {
+                                            ...currentFieldProperties.sideDescriptions,
+                                            terseRight: e.target.value,
+                                        },
+                                    }),
+                                );
+                            }
+                        }}
+                        className={inputClassname}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            currentFieldProperties.sideDescriptions.terseRight
+                        }
+                        required
+                    />
+                </FormField>
+            </div>
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.fieldLabels" />
+                </h4>
+                <FormField
+                    label={t(
+                        "fieldProperties.labels.stepsFromFrontToHomeLabel",
+                    )}
+                    tooltip={t(
+                        "fieldProperties.tooltips.stepsFromFrontToHomeLabel",
+                    )}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="-?[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        yardNumberCoordinates: {
+                                            ...currentFieldProperties.yardNumberCoordinates,
+                                            homeStepsFromFrontToOutside:
+                                                undefined,
+                                        },
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToOutside:
+                                                    parsedFloat,
+                                            },
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers, decimal point, and negative sign
+                            const filtered = e.target.value.replace(
+                                /[^\d.-]/g,
+                                "",
+                            );
+
+                            // Ensure only one decimal point and one negative sign at start
+                            const normalized = filtered
+                                .replace(/\.+/g, ".")
+                                .replace(/--+/g, "-")
+                                .replace(/(.+)-/g, "$1");
+
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            fieldProperties?.yardNumberCoordinates
+                                .homeStepsFromFrontToOutside ?? ""
+                        }
+                        disabled
+                    />
+                </FormField>
+                <FormField
+                    label={t(
+                        "fieldProperties.labels.stepsFromFrontToHomeLabelTop",
+                    )}
+                    tooltip={t(
+                        "fieldProperties.tooltips.stepsFromFrontToHomeLabelTop",
+                    )}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="-?[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        yardNumberCoordinates: {
+                                            ...currentFieldProperties.yardNumberCoordinates,
+                                            homeStepsFromFrontToInside:
+                                                undefined,
+                                        },
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                homeStepsFromFrontToInside:
+                                                    parsedFloat,
+                                            },
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers, decimal point, and negative sign
+                            const filtered = e.target.value.replace(
+                                /[^\d.-]/g,
+                                "",
+                            );
+
+                            // Ensure only one decimal point and one negative sign at start
+                            const normalized = filtered
+                                .replace(/\.+/g, ".")
+                                .replace(/--+/g, "-")
+                                .replace(/(.+)-/g, "$1");
+
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            fieldProperties?.yardNumberCoordinates
+                                .homeStepsFromFrontToInside ?? ""
+                        }
+                        disabled
+                    />
+                </FormField>
+                <FormField
+                    label={t(
+                        "fieldProperties.labels.stepsFromFrontToAwayLabelTop",
+                    )}
+                    tooltip={t(
+                        "fieldProperties.tooltips.stepsFromFrontToAwayLabelTop",
+                    )}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="-?[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        yardNumberCoordinates: {
+                                            ...currentFieldProperties.yardNumberCoordinates,
+                                            awayStepsFromFrontToInside:
+                                                undefined,
+                                        },
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToInside:
+                                                    parsedFloat,
+                                            },
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers, decimal point, and negative sign
+                            const filtered = e.target.value.replace(
+                                /[^\d.-]/g,
+                                "",
+                            );
+
+                            // Ensure only one decimal point and one negative sign at start
+                            const normalized = filtered
+                                .replace(/\.+/g, ".")
+                                .replace(/--+/g, "-")
+                                .replace(/(.+)-/g, "$1");
+
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            fieldProperties?.yardNumberCoordinates
+                                .awayStepsFromFrontToInside ?? ""
+                        }
+                        disabled
+                    />
+                </FormField>
+                <FormField
+                    label={t(
+                        "fieldProperties.labels.stepsFromFrontToAwayLabelBottom",
+                    )}
+                    tooltip={t(
+                        "fieldProperties.tooltips.stepsFromFrontToAwayLabelBottom",
+                    )}
+                >
+                    <Input
+                        type="text"
+                        inputMode="numeric"
+                        pattern="-?[0-9]*\.?[0-9]*"
+                        className={inputClassname}
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (e.target.value === "") {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        yardNumberCoordinates: {
+                                            ...currentFieldProperties.yardNumberCoordinates,
+                                            awayStepsFromFrontToOutside:
+                                                undefined,
+                                        },
+                                    }),
+                                );
+                            } else {
+                                const parsedFloat = parseFloat(e.target.value);
+
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            yardNumberCoordinates: {
+                                                ...currentFieldProperties.yardNumberCoordinates,
+                                                awayStepsFromFrontToOutside:
+                                                    parsedFloat,
+                                            },
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            // Allow numbers, decimal point, and negative sign
+                            const filtered = e.target.value.replace(
+                                /[^\d.-]/g,
+                                "",
+                            );
+
+                            // Ensure only one decimal point and one negative sign at start
+                            const normalized = filtered
+                                .replace(/\.+/g, ".")
+                                .replace(/--+/g, "-")
+                                .replace(/(.+)-/g, "$1");
+
+                            e.target.value = normalized;
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            fieldProperties?.yardNumberCoordinates
+                                .awayStepsFromFrontToOutside ?? ""
+                        }
+                        disabled
+                    />
+                </FormField>
+            </div>
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.externalLabels" />
+                </h4>
+                <div className="grid grid-cols-4">
+                    <FormField label={t("fieldProperties.labels.left")}>
+                        <Switch
+                            className={clsx(inputClassname, "col-span-2")}
+                            checked={currentFieldProperties.leftLabelsVisible}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        leftLabelsVisible:
+                                            !currentFieldProperties.leftLabelsVisible,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                    <FormField label={t("fieldProperties.labels.right")}>
+                        <Switch
+                            className={clsx(inputClassname, "col-span-2")}
+                            checked={currentFieldProperties.rightLabelsVisible}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        rightLabelsVisible:
+                                            !currentFieldProperties.rightLabelsVisible,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                    <FormField label={t("fieldProperties.labels.bottom")}>
+                        <Switch
+                            className={inputClassname}
+                            checked={currentFieldProperties.bottomLabelsVisible}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        bottomLabelsVisible:
+                                            !currentFieldProperties.bottomLabelsVisible,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                    <FormField label={t("fieldProperties.labels.top")}>
+                        <Switch
+                            className={inputClassname}
+                            checked={currentFieldProperties.topLabelsVisible}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        topLabelsVisible:
+                                            !currentFieldProperties.topLabelsVisible,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                </div>
+            </div>
+        </TabContent>
+    );
+}
+
+function CheckpointsTab({
+    currentFieldProperties,
+    updateFieldProperties,
+    updateCheckpoint,
+    deleteCheckpoint,
+    addCheckpoint,
+    sorter,
+}: CheckpointsTabProps) {
+    const { t } = useTolgee();
+
+    return (
+        <TabContent value="checkpoints" className="flex flex-col gap-32">
+            {/* -------------------------------------------- CHECKPOINTS -------------------------------------------- */}
+            <div>
+                <h4 className="text-h4 mb-16">
+                    <T keyName="fieldProperties.sections.xCheckpoints" />
+                </h4>
+                <div
+                    className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
+                    hidden={
+                        Math.abs(
+                            Math.min(
+                                ...currentFieldProperties.xCheckpoints.map(
+                                    (x) => x.stepsFromCenterFront,
+                                ),
+                            ),
+                        ) ===
+                        Math.abs(
+                            Math.max(
+                                ...currentFieldProperties.xCheckpoints.map(
+                                    (x) => x.stepsFromCenterFront,
+                                ),
+                            ),
+                        )
+                    }
+                >
+                    <T keyName="fieldProperties.warnings.xCheckpointsNotEquidistant" />
+                </div>
+                <div className="flex flex-col gap-12">
+                    {currentFieldProperties.xCheckpoints
+                        .sort(sorter)
+                        .map((xCheckpoint) => (
+                            <CheckpointEditor
+                                checkpoint={xCheckpoint}
+                                updateCheckpoint={updateCheckpoint}
+                                key={xCheckpoint.id}
+                                axis="x"
+                                deleteCheckpoint={deleteCheckpoint}
+                            />
+                        ))}
+                </div>
+                <div className="mt-16 flex justify-end">
+                    <Button
+                        onClick={() => addCheckpoint("x")}
+                        className="self-end"
+                        size="compact"
+                        type="button"
+                    >
+                        <T keyName="fieldProperties.buttons.newXCheckpoint" />
+                    </Button>
+                </div>
+            </div>
+            <div>
+                <h4 className="text-h4 mb-16">
+                    <T keyName="fieldProperties.sections.yCheckpoints" />
+                </h4>
+                <div
+                    className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
+                    hidden={
+                        Math.max(
+                            ...currentFieldProperties.yCheckpoints.map(
+                                (y) => y.stepsFromCenterFront,
+                            ),
+                        ) <= 0
+                    }
+                >
+                    <T keyName="fieldProperties.warnings.yCheckpointsNegative" />
+                </div>
+                <div className="flex flex-col gap-12">
+                    <FormField
+                        label={t("fieldProperties.labels.useHashes")}
+                        tooltip={t("fieldProperties.tooltips.useHashes")}
+                    >
+                        <Switch
+                            className={inputClassname}
+                            checked={currentFieldProperties.useHashes}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        useHashes:
+                                            !currentFieldProperties.useHashes,
+                                    }),
+                                );
+                            }}
+                        />
+                    </FormField>
+                    {currentFieldProperties.yCheckpoints
+                        .sort(sorter)
+                        .map((yCheckpoint) => (
+                            <CheckpointEditor
+                                checkpoint={yCheckpoint}
+                                updateCheckpoint={updateCheckpoint}
+                                key={yCheckpoint.id}
+                                axis="y"
+                                deleteCheckpoint={deleteCheckpoint}
+                            />
+                        ))}
+                </div>
+                <div className="mt-16 mb-16 flex justify-end">
+                    <Button
+                        onClick={() => addCheckpoint("y")}
+                        size="compact"
+                        className="self-end"
+                        type="button"
+                    >
+                        <T keyName="fieldProperties.buttons.newYCheckpoint" />
+                    </Button>
+                </div>
+            </div>
+        </TabContent>
+    );
+}
+
+function ImageTab({
+    currentFieldProperties,
+    updateFieldProperties,
+}: ImageTabProps) {
+    const { t } = useTolgee();
+
+    return (
+        <TabContent value="image" className="flex flex-col gap-32">
+            {/* -------------------------------------------- IMAGE -------------------------------------------- */}
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.imageRendering" />
+                </h4>
+                <FormField
+                    label={t("fieldProperties.labels.showBackgroundImage")}
+                >
+                    <Switch
+                        className={clsx(inputClassname, "col-span-2")}
+                        checked={currentFieldProperties.showFieldImage}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            updateFieldProperties(
+                                new FieldProperties({
+                                    ...currentFieldProperties,
+                                    showFieldImage:
+                                        !currentFieldProperties.showFieldImage,
+                                }),
+                            );
+                        }}
+                    />
+                </FormField>
+                <FormField
+                    label={t("fieldProperties.labels.conformMethod")}
+                    tooltip={t("fieldProperties.tooltips.conformMethod")}
+                >
+                    <Select
+                        onValueChange={(e) => {
+                            const newValue =
+                                e === "fit" || e === "fill" ? e : "fit";
+                            updateFieldProperties(
+                                new FieldProperties({
+                                    ...currentFieldProperties,
+                                    imageFillOrFit: newValue,
+                                }),
+                            );
+                        }}
+                        defaultValue={currentFieldProperties.imageFillOrFit}
+                    >
+                        <SelectTriggerButton
+                            className={inputClassname}
+                            label={t("fieldProperties.labels.conformingMethod")}
+                        />
+                        <SelectContent>
+                            <SelectGroup>
+                                <SelectItem value="fit">
+                                    <T keyName="fieldProperties.options.fit" />
+                                </SelectItem>
+                                <SelectItem value="fill">
+                                    <T keyName="fieldProperties.options.fill" />
+                                </SelectItem>
+                            </SelectGroup>
+                        </SelectContent>
+                    </Select>
+                </FormField>
+
+                <div className="flex h-fit min-h-0 items-center gap-8">
+                    <label htmlFor="field-properties-image-input">
+                        <Button
+                            className="w-full"
+                            tooltipText={t(
+                                "fieldProperties.tooltips.importImage",
+                            )}
+                            tooltipSide="right"
+                            variant="primary"
+                            type="button"
+                            size="compact"
+                            onClick={() => {
+                                // one would hope the label "for" would be good enough, but it's not
+                                // so we need to manually click the file input
+                                document
+                                    .getElementById(
+                                        "field-properties-image-input",
+                                    )
+                                    ?.click();
+                            }}
+                        >
+                            <T keyName="fieldProperties.buttons.importImage" />
+                        </Button>
+                    </label>
+                    <input
+                        type="file"
+                        id="field-properties-image-input"
+                        className="hidden"
+                        accept="image/*"
+                        onChange={async (
+                            e: React.ChangeEvent<HTMLInputElement>,
+                        ) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const arrayBuffer = await file.arrayBuffer();
+                            const raw = new Uint8Array(arrayBuffer);
+                            await updateFieldPropertiesImage(raw);
+                            updateFieldProperties(
+                                new FieldProperties({
+                                    ...currentFieldProperties,
+                                    showFieldImage: true,
+                                }),
+                            );
+                        }}
+                    />
+                    <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
+                        <T keyName="fieldProperties.messages.refreshAfterImporting" />
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.measurements" />
+                </h4>
+                <div className="flex w-full flex-col gap-4">
+                    <div className={clsx("col-span-2 align-middle")}>
+                        <T keyName="fieldProperties.labels.width" />
+                    </div>
+                    <div className="flex w-full gap-8">
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {currentFieldProperties.width /
+                                currentFieldProperties.pixelsPerStep}{" "}
+                            <T keyName="fieldProperties.units.steps" />
+                        </div>
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {currentFieldProperties.prettyWidth}
+                        </div>
+                    </div>
+                </div>
+                <div className="flex w-full flex-col gap-4">
+                    <div className={clsx("col-span-2 align-middle")}>
+                        <T keyName="fieldProperties.labels.height" />
+                    </div>
+                    <div className="flex w-full gap-8">
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {currentFieldProperties.height /
+                                currentFieldProperties.pixelsPerStep}{" "}
+                            <T keyName="fieldProperties.units.steps" />
+                        </div>
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {currentFieldProperties.prettyHeight}
+                        </div>
+                    </div>
+                </div>
+                <div className="flex w-full flex-col gap-4">
+                    <div>
+                        <T keyName="fieldProperties.labels.fieldRatio" />
+                    </div>
+                    <div className="flex w-full gap-8">
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {(() => {
+                                const w = currentFieldProperties.width;
+                                const h = currentFieldProperties.height;
+                                const gcd = (a: number, b: number): number =>
+                                    b ? gcd(b, a % b) : a;
+                                const divisor = gcd(w, h);
+                                const ratioStr = `${w / divisor}:${h / divisor}`;
+                                const divStr = (w / h).toFixed(3);
+                                if (ratioStr.length > 12) {
+                                    return divStr;
+                                } else {
+                                    return t(
+                                        "fieldProperties.messages.fieldRatio",
+                                        {
+                                            ratio: ratioStr,
+                                            decimal: divStr,
+                                        },
+                                    );
+                                }
+                            })()}
+                        </div>
+                        <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
+                            <T keyName="fieldProperties.labels.widthHeight" />
+                        </div>
+                    </div>
+                </div>
+                <div className="flex w-full flex-col gap-4">
+                    <div className={clsx("col-span-5 align-middle")}>
+                        <T keyName="fieldProperties.labels.backgroundImageRatio" />
+                    </div>
+                    <div className="flex w-full gap-8">
+                        <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
+                            {(() => {
+                                if (!FieldProperties.imageDimensions) {
+                                    return "N/A";
+                                }
+                                const w = FieldProperties.imageDimensions.width;
+                                const h =
+                                    FieldProperties.imageDimensions.height;
+                                const gcd = (a: number, b: number): number =>
+                                    b ? gcd(b, a % b) : a;
+                                const divisor = gcd(w, h);
+                                const ratioStr = `${w / divisor}:${h / divisor}`;
+                                const divStr = (w / h).toFixed(3);
+                                if (ratioStr.length > 12) {
+                                    return divStr;
+                                } else {
+                                    return `${ratioStr}  or  ${divStr}`;
+                                }
+                            })()}
+                        </div>
+                        <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
+                            w/h
+                        </div>
+                    </div>
+                </div>
+                <div className="text-sub text-text mx-16 rounded-full py-4 text-end text-pretty">
+                    <T keyName="fieldProperties.messages.measurementModificationNote" />
+                </div>
+            </div>
+        </TabContent>
+    );
+}
+
+function ThemeTab({
+    currentFieldProperties,
+    validateIsRgbaColor,
+}: ThemeTabProps) {
+    const { t } = useTolgee();
+    const queryClient = useQueryClient();
+    const { mutate: updateFieldProperties, isPending } = useMutation(
+        updateFieldPropertiesMutationOptions(queryClient),
+    );
+
+    return (
+        <TabContent value="theme" className="flex flex-col gap-32">
+            {/* -------------------------------------------- THEME -------------------------------------------- */}
+            <div className="flex flex-col gap-12">
+                <h4 className="text-h4 mb-8">
+                    <T keyName="fieldProperties.sections.theme" />
+                </h4>
+
+                <h5 className="text-h5 mb-8">
+                    <T keyName="fieldProperties.themeSubsections.grid" />
+                </h5>
+                <ColorPicker
+                    label={t("fieldProperties.labels.background")}
+                    initialColor={currentFieldProperties.theme.background}
+                    defaultColor={DEFAULT_FIELD_THEME.background as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "background",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    background: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.primaryLines")}
+                    initialColor={currentFieldProperties.theme.primaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
+                    }
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "primaryStroke",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    primaryStroke: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.secondaryLines")}
+                    initialColor={currentFieldProperties.theme.secondaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
+                    }
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "secondaryStroke",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    secondaryStroke: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.gridLines")}
+                    initialColor={currentFieldProperties.theme.tertiaryStroke}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
+                    }
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "tertiaryStroke",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    tertiaryStroke: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <h5 className="text-h5 mb-8">
+                    <T keyName="fieldProperties.themeSubsections.labels" />
+                </h5>
+                <ColorPicker
+                    label={t("fieldProperties.labels.fieldLabels")}
+                    initialColor={currentFieldProperties.theme.fieldLabel}
+                    defaultColor={DEFAULT_FIELD_THEME.fieldLabel as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "fieldLabel",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    fieldLabel: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.externalLabels")}
+                    initialColor={currentFieldProperties.theme.externalLabel}
+                    defaultColor={
+                        DEFAULT_FIELD_THEME.externalLabel as RgbaColor
+                    }
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "externalLabel",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    externalLabel: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <h5 className="text-h5 mb-8">
+                    <T keyName="fieldProperties.themeSubsections.pathways" />
+                </h5>
+                <ColorPicker
+                    label={t("fieldProperties.labels.previousPath")}
+                    initialColor={currentFieldProperties.theme.previousPath}
+                    defaultColor={DEFAULT_FIELD_THEME.previousPath as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor(
+                            "previousPath",
+                            currentFieldProperties,
+                        );
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    previousPath: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.nextPath")}
+                    initialColor={currentFieldProperties.theme.nextPath}
+                    defaultColor={DEFAULT_FIELD_THEME.nextPath as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor("nextPath", currentFieldProperties);
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    nextPath: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.temporaryPath")}
+                    initialColor={currentFieldProperties.theme.tempPath}
+                    defaultColor={DEFAULT_FIELD_THEME.tempPath as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor("tempPath", currentFieldProperties);
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    tempPath: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <h5 className="text-h5 mb-8">
+                    <T keyName="fieldProperties.themeSubsections.marchers" />
+                </h5>
+                <ColorPicker
+                    label={t("fieldProperties.labels.marcherFill")}
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.fill
+                    }
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.fill}
+                    onBlur={(color: RgbaColor) =>
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        fill: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.marcherOutline")}
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.outline
+                    }
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.outline}
+                    onBlur={(color: RgbaColor) =>
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        outline: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.marcherText")}
+                    initialColor={
+                        currentFieldProperties.theme.defaultMarcher.label
+                    }
+                    defaultColor={DEFAULT_FIELD_THEME.defaultMarcher.label}
+                    onBlur={(color: RgbaColor) =>
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    defaultMarcher: {
+                                        ...currentFieldProperties.theme
+                                            .defaultMarcher,
+                                        label: color,
+                                    },
+                                },
+                            }),
+                        )
+                    }
+                />
+                <ColorPicker
+                    label={t("fieldProperties.labels.shapes")}
+                    initialColor={currentFieldProperties.theme.shape}
+                    defaultColor={DEFAULT_FIELD_THEME.shape as RgbaColor}
+                    onBlur={(color: RgbaColor) => {
+                        validateIsRgbaColor("shape", currentFieldProperties);
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: {
+                                    ...currentFieldProperties.theme,
+                                    shape: color,
+                                },
+                            }),
+                        );
+                    }}
+                />
+                <StaticFormField label={t("fieldProperties.labels.shapeType")}>
+                    <div className="flex items-center gap-8">
+                        <Select
+                            value={
+                                currentFieldProperties.theme.shapeType ??
+                                "__none__"
+                            }
+                            onValueChange={(value) => {
+                                const shapeType: ShapeType =
+                                    value === "__none__"
+                                        ? null
+                                        : (value as ShapeType);
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        theme: {
+                                            ...currentFieldProperties.theme,
+                                            shapeType,
+                                        },
+                                    }),
+                                );
+                            }}
+                        >
+                            <SelectTriggerButton
+                                className={inputClassname}
+                                label={t("fieldProperties.labels.shapeType")}
+                            >
+                                {currentFieldProperties.theme.shapeType
+                                    ? shapeIcons[
+                                          currentFieldProperties.theme
+                                              .shapeType as (typeof shapeOptions)[number]
+                                      ]
+                                    : shapeIcons["circle"]}
+                            </SelectTriggerButton>
+                            <SelectContent>
+                                <SelectGroup>
+                                    {shapeOptions.map((shape) => (
+                                        <SelectItem key={shape} value={shape}>
+                                            {shapeIcons[shape]}
+                                        </SelectItem>
+                                    ))}
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <Button
+                            tooltipSide="right"
+                            size="compact"
+                            tooltipText={"Reset to default"}
+                            variant="secondary"
+                            onClick={() => {
+                                updateFieldProperties(
+                                    new FieldProperties({
+                                        ...currentFieldProperties,
+                                        theme: {
+                                            ...currentFieldProperties.theme,
+                                            shapeType: "circle",
+                                        },
+                                    }),
+                                );
+                            }}
+                            className="rounded-6 h-full"
+                            content="icon"
+                        >
+                            <ArrowUUpLeftIcon size={20} />
+                        </Button>
+                    </div>
+                </StaticFormField>
+
+                <Button
+                    onClick={() =>
+                        updateFieldProperties(
+                            new FieldProperties({
+                                ...currentFieldProperties,
+                                theme: DEFAULT_FIELD_THEME,
+                            }),
+                        )
+                    }
+                    disabled={isPending}
+                    variant="secondary"
+                    size="compact"
+                    className="w-full px-16"
+                    tooltipSide="right"
+                    tooltipText={t("fieldProperties.tooltips.resetTheme")}
+                >
+                    <T keyName="fieldProperties.buttons.resetTheme" />
+                </Button>
+            </div>
+        </TabContent>
+    );
+}
+
 export default function FieldPropertiesCustomizer() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { mutate: setFieldProperties } = useMutation(
+    const { mutate: updateFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
     const [currentFieldProperties, setCurrentFieldProperties] =
@@ -343,14 +1822,14 @@ export default function FieldPropertiesCustomizer() {
                 return;
             }
             if (axis === "x") {
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         xCheckpoints: newCheckpoints,
                     }),
                 );
             } else {
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         yCheckpoints: newCheckpoints,
@@ -358,7 +1837,7 @@ export default function FieldPropertiesCustomizer() {
                 );
             }
         },
-        [currentFieldProperties, setFieldProperties],
+        [currentFieldProperties, updateFieldProperties],
     );
 
     const deleteCheckpoint = useCallback(
@@ -368,7 +1847,7 @@ export default function FieldPropertiesCustomizer() {
                     currentFieldProperties.xCheckpoints.filter(
                         (c) => c.id !== checkpoint.id,
                     );
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         xCheckpoints: newCheckpoints,
@@ -379,7 +1858,7 @@ export default function FieldPropertiesCustomizer() {
                     currentFieldProperties.yCheckpoints.filter(
                         (c) => c.id !== checkpoint.id,
                     );
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         yCheckpoints: newCheckpoints,
@@ -395,7 +1874,7 @@ export default function FieldPropertiesCustomizer() {
                 }),
             );
         },
-        [currentFieldProperties, setFieldProperties, t],
+        [currentFieldProperties, updateFieldProperties, t],
     );
 
     const addCheckpoint = useCallback(
@@ -428,7 +1907,7 @@ export default function FieldPropertiesCustomizer() {
                     useAsReference: true,
                     visible: true,
                 };
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         xCheckpoints: [
@@ -464,7 +1943,7 @@ export default function FieldPropertiesCustomizer() {
                     useAsReference: true,
                     visible: true,
                 };
-                setFieldProperties(
+                updateFieldProperties(
                     new FieldProperties({
                         ...currentFieldProperties,
                         yCheckpoints: [
@@ -481,7 +1960,7 @@ export default function FieldPropertiesCustomizer() {
                 }),
             );
         },
-        [currentFieldProperties, setFieldProperties, t],
+        [currentFieldProperties, updateFieldProperties, t],
     );
 
     const sorter = (a: Checkpoint, b: Checkpoint) => {
@@ -574,1457 +2053,33 @@ export default function FieldPropertiesCustomizer() {
                     </TabItem>
                 </TabsList>
 
-                <TabContent value="general" className="flex flex-col gap-32">
-                    {/* -------------------------------------------- GENERAL -------------------------------------------- */}
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.general" />
-                        </h4>
-                        <FormField
-                            label={t("fieldProperties.labels.fieldName")}
-                            tooltip={t("fieldProperties.tooltips.fieldName")}
-                        >
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.name
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                name: e.target.value,
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={currentFieldProperties.name}
-                                required
-                            />
-                        </FormField>
-                        <FormField
-                            label={t("fieldProperties.labels.stepSize")}
-                            tooltip={t("fieldProperties.tooltips.stepSize")}
-                        >
-                            <UnitInput
-                                type="text"
-                                ref={stepSizeInputRef}
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                containerClassName={inputClassname}
-                                // className={inputClassname}
-                                unit={
-                                    measurementSystem === "imperial"
-                                        ? "in"
-                                        : "cm"
-                                }
-                                onBlur={(e) => {
-                                    e.preventDefault();
+                <GeneralTab
+                    currentFieldProperties={currentFieldProperties}
+                    updateFieldProperties={updateFieldProperties}
+                    fieldProperties={fieldProperties}
+                    measurementSystem={measurementSystem}
+                    stepSizeInputRef={stepSizeInputRef}
+                    blurOnEnter={blurOnEnter}
+                />
 
-                                    if (e.target.value !== "") {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
+                <CheckpointsTab
+                    currentFieldProperties={currentFieldProperties}
+                    updateFieldProperties={updateFieldProperties}
+                    updateCheckpoint={updateCheckpoint}
+                    deleteCheckpoint={deleteCheckpoint}
+                    addCheckpoint={addCheckpoint}
+                    sorter={sorter}
+                />
 
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    stepSizeInches:
-                                                        measurementSystem ===
-                                                        "imperial"
-                                                            ? parsedFloat
-                                                            : FieldProperties.centimetersToInches(
-                                                                  parsedFloat,
-                                                              ),
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.stepSizeInUnits
-                                }
-                                required
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.measurementSystem",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.measurementSystem",
-                            )}
-                        >
-                            <Select
-                                onValueChange={(e) => {
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            measurementSystem:
-                                                e as MeasurementSystem,
-                                        }),
-                                    );
-                                }}
-                                defaultValue={
-                                    currentFieldProperties.measurementSystem
-                                }
-                            >
-                                <SelectTriggerButton
-                                    className={inputClassname}
-                                    label={
-                                        fieldProperties?.name || "Field type"
-                                    }
-                                />
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="imperial">
-                                            <T keyName="fieldProperties.options.imperial" />
-                                        </SelectItem>
-                                        <SelectItem value="metric">
-                                            <T keyName="fieldProperties.options.metric" />
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </FormField>
+                <ImageTab
+                    currentFieldProperties={currentFieldProperties}
+                    updateFieldProperties={updateFieldProperties}
+                />
 
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.halfLineXInterval",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.halfLineXInterval",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineXInterval: undefined,
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    halfLineXInterval:
-                                                        parsedFloat,
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.halfLineXInterval ?? ""
-                                }
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.halfLineYInterval",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.halfLineYInterval",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                halfLineYInterval: undefined,
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    halfLineYInterval:
-                                                        parsedFloat,
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers and decimal point
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.]/g,
-                                        "",
-                                    );
-                                    // Ensure only one decimal point
-                                    const normalized = filtered.replace(
-                                        /\.+/g,
-                                        ".",
-                                    );
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.halfLineYInterval ?? ""
-                                }
-                            />
-                        </FormField>
-                    </div>
-
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.sideDescriptions" />
-                        </h4>
-                        <FormField
-                            label={t("fieldProperties.labels.directorsLeft")}
-                            tooltip={t(
-                                "fieldProperties.tooltips.directorsLeft",
-                            )}
-                        >
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .verboseLeft
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    verboseLeft: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.sideDescriptions
-                                        .verboseLeft
-                                }
-                                required
-                            />
-                        </FormField>
-                        <FormField
-                            label={t("fieldProperties.labels.leftAbbreviation")}
-                            tooltip={t(
-                                "fieldProperties.tooltips.leftAbbreviation",
-                            )}
-                        >
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .terseLeft
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    terseLeft: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.sideDescriptions
-                                        .terseLeft
-                                }
-                                required
-                            />
-                        </FormField>
-
-                        <FormField
-                            label={t("fieldProperties.labels.directorsRight")}
-                            tooltip={t(
-                                "fieldProperties.tooltips.directorsRight",
-                            )}
-                        >
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .verboseRight
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    verboseRight:
-                                                        e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.sideDescriptions
-                                        .verboseRight
-                                }
-                                required
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.rightAbbreviation",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.rightAbbreviation",
-                            )}
-                        >
-                            <Input
-                                type="text" // Changed from "number"
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (
-                                        e.target.value !==
-                                        currentFieldProperties.sideDescriptions
-                                            .terseRight
-                                    ) {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                sideDescriptions: {
-                                                    ...currentFieldProperties.sideDescriptions,
-                                                    terseRight: e.target.value,
-                                                },
-                                            }),
-                                        );
-                                    }
-                                }}
-                                className={inputClassname}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    currentFieldProperties.sideDescriptions
-                                        .terseRight
-                                }
-                                required
-                            />
-                        </FormField>
-                    </div>
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.fieldLabels" />
-                        </h4>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.stepsFromFrontToHomeLabel",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.stepsFromFrontToHomeLabel",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    homeStepsFromFrontToOutside:
-                                                        undefined,
-                                                },
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        homeStepsFromFrontToOutside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
-                                    );
-
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .homeStepsFromFrontToOutside ?? ""
-                                }
-                                disabled
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.stepsFromFrontToHomeLabelTop",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.stepsFromFrontToHomeLabelTop",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    homeStepsFromFrontToInside:
-                                                        undefined,
-                                                },
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        homeStepsFromFrontToInside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
-                                    );
-
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .homeStepsFromFrontToInside ?? ""
-                                }
-                                disabled
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.stepsFromFrontToAwayLabelTop",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.stepsFromFrontToAwayLabelTop",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    awayStepsFromFrontToInside:
-                                                        undefined,
-                                                },
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        awayStepsFromFrontToInside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
-                                    );
-
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .awayStepsFromFrontToInside ?? ""
-                                }
-                                disabled
-                            />
-                        </FormField>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.stepsFromFrontToAwayLabelBottom",
-                            )}
-                            tooltip={t(
-                                "fieldProperties.tooltips.stepsFromFrontToAwayLabelBottom",
-                            )}
-                        >
-                            <Input
-                                type="text"
-                                inputMode="numeric"
-                                pattern="-?[0-9]*\.?[0-9]*"
-                                className={inputClassname}
-                                onBlur={(e) => {
-                                    e.preventDefault();
-                                    if (e.target.value === "") {
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                yardNumberCoordinates: {
-                                                    ...currentFieldProperties.yardNumberCoordinates,
-                                                    awayStepsFromFrontToOutside:
-                                                        undefined,
-                                                },
-                                            }),
-                                        );
-                                    } else {
-                                        const parsedFloat = parseFloat(
-                                            e.target.value,
-                                        );
-
-                                        if (!isNaN(parsedFloat)) {
-                                            setFieldProperties(
-                                                new FieldProperties({
-                                                    ...currentFieldProperties,
-                                                    yardNumberCoordinates: {
-                                                        ...currentFieldProperties.yardNumberCoordinates,
-                                                        awayStepsFromFrontToOutside:
-                                                            parsedFloat,
-                                                    },
-                                                }),
-                                            );
-                                        }
-                                    }
-                                }}
-                                onChange={(e) => {
-                                    // Allow numbers, decimal point, and negative sign
-                                    const filtered = e.target.value.replace(
-                                        /[^\d.-]/g,
-                                        "",
-                                    );
-
-                                    // Ensure only one decimal point and one negative sign at start
-                                    const normalized = filtered
-                                        .replace(/\.+/g, ".")
-                                        .replace(/--+/g, "-")
-                                        .replace(/(.+)-/g, "$1");
-
-                                    e.target.value = normalized;
-                                }}
-                                onKeyDown={blurOnEnter}
-                                defaultValue={
-                                    fieldProperties?.yardNumberCoordinates
-                                        .awayStepsFromFrontToOutside ?? ""
-                                }
-                                disabled
-                            />
-                        </FormField>
-                    </div>
-                    <div className="flex flex-col gap-12">
-                        {/* <div className="mb-16">Field </div> */}
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.externalLabels" />
-                        </h4>
-                        <div className="grid grid-cols-4">
-                            <FormField label={t("fieldProperties.labels.left")}>
-                                <Switch
-                                    className={clsx(
-                                        inputClassname,
-                                        "col-span-2",
-                                    )}
-                                    checked={
-                                        currentFieldProperties.leftLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                leftLabelsVisible:
-                                                    !currentFieldProperties.leftLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </FormField>
-                            <FormField
-                                label={t("fieldProperties.labels.right")}
-                            >
-                                <Switch
-                                    className={clsx(
-                                        inputClassname,
-                                        "col-span-2",
-                                    )}
-                                    checked={
-                                        currentFieldProperties.rightLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                rightLabelsVisible:
-                                                    !currentFieldProperties.rightLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </FormField>
-                            <FormField
-                                label={t("fieldProperties.labels.bottom")}
-                            >
-                                <Switch
-                                    className={inputClassname}
-                                    checked={
-                                        currentFieldProperties.bottomLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                bottomLabelsVisible:
-                                                    !currentFieldProperties.bottomLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </FormField>
-                            <FormField label={t("fieldProperties.labels.top")}>
-                                <Switch
-                                    className={inputClassname}
-                                    checked={
-                                        currentFieldProperties.topLabelsVisible
-                                    }
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                topLabelsVisible:
-                                                    !currentFieldProperties.topLabelsVisible,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </FormField>
-                        </div>
-                    </div>
-                </TabContent>
-
-                {/* -------------------------------------------- CHECKPOINTS -------------------------------------------- */}
-                <TabContent
-                    value="checkpoints"
-                    className="flex flex-col gap-32"
-                >
-                    <div>
-                        <h4 className="text-h4 mb-16">
-                            <T keyName="fieldProperties.sections.xCheckpoints" />
-                        </h4>
-                        <div
-                            className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
-                            hidden={
-                                Math.abs(
-                                    Math.min(
-                                        ...currentFieldProperties.xCheckpoints.map(
-                                            (x) => x.stepsFromCenterFront,
-                                        ),
-                                    ),
-                                ) ===
-                                Math.abs(
-                                    Math.max(
-                                        ...currentFieldProperties.xCheckpoints.map(
-                                            (x) => x.stepsFromCenterFront,
-                                        ),
-                                    ),
-                                )
-                            }
-                        >
-                            <T keyName="fieldProperties.warnings.xCheckpointsNotEquidistant" />
-                        </div>
-                        <div className="flex flex-col gap-12">
-                            {currentFieldProperties.xCheckpoints
-                                .sort(sorter)
-                                .map((xCheckpoint) => (
-                                    <CheckpointEditor
-                                        checkpoint={xCheckpoint}
-                                        updateCheckpoint={updateCheckpoint}
-                                        key={xCheckpoint.id}
-                                        axis="x"
-                                        deleteCheckpoint={deleteCheckpoint}
-                                    />
-                                ))}
-                        </div>
-                        <div className="mt-16 flex justify-end">
-                            <Button
-                                onClick={() => addCheckpoint("x")}
-                                className="self-end"
-                                size="compact"
-                                type="button"
-                            >
-                                <T keyName="fieldProperties.buttons.newXCheckpoint" />
-                            </Button>
-                        </div>
-                    </div>
-                    <div>
-                        <h4 className="text-h4 mb-16">
-                            <T keyName="fieldProperties.sections.yCheckpoints" />
-                        </h4>
-                        <div
-                            className="rounded-6 bg-red mx-4 my-8 p-6 text-center text-white"
-                            hidden={
-                                Math.max(
-                                    ...currentFieldProperties.yCheckpoints.map(
-                                        (y) => y.stepsFromCenterFront,
-                                    ),
-                                ) <= 0
-                            }
-                        >
-                            <T keyName="fieldProperties.warnings.yCheckpointsNegative" />
-                        </div>
-                        <div className="flex flex-col gap-12">
-                            <FormField
-                                label={t("fieldProperties.labels.useHashes")}
-                                tooltip={t(
-                                    "fieldProperties.tooltips.useHashes",
-                                )}
-                            >
-                                <Switch
-                                    className={inputClassname}
-                                    checked={currentFieldProperties.useHashes}
-                                    onClick={(e) => {
-                                        e.preventDefault();
-                                        setFieldProperties(
-                                            new FieldProperties({
-                                                ...currentFieldProperties,
-                                                useHashes:
-                                                    !currentFieldProperties.useHashes,
-                                            }),
-                                        );
-                                    }}
-                                />
-                            </FormField>
-                            {currentFieldProperties.yCheckpoints
-                                .sort(sorter)
-                                .map((yCheckpoint) => (
-                                    <CheckpointEditor
-                                        checkpoint={yCheckpoint}
-                                        updateCheckpoint={updateCheckpoint}
-                                        key={yCheckpoint.id}
-                                        axis="y"
-                                        deleteCheckpoint={deleteCheckpoint}
-                                    />
-                                ))}
-                        </div>
-                        <div className="mt-16 mb-16 flex justify-end">
-                            <Button
-                                onClick={() => addCheckpoint("y")}
-                                size="compact"
-                                className="self-end"
-                                type="button"
-                            >
-                                <T keyName="fieldProperties.buttons.newYCheckpoint" />
-                            </Button>
-                        </div>
-                    </div>
-                </TabContent>
-
-                {/* -------------------------------------------- IMAGE -------------------------------------------- */}
-                <TabContent value="image" className="flex flex-col gap-32">
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.imageRendering" />
-                        </h4>
-                        <FormField
-                            label={t(
-                                "fieldProperties.labels.showBackgroundImage",
-                            )}
-                        >
-                            <Switch
-                                className={clsx(inputClassname, "col-span-2")}
-                                checked={currentFieldProperties.showFieldImage}
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            showFieldImage:
-                                                !currentFieldProperties.showFieldImage,
-                                        }),
-                                    );
-                                }}
-                            />
-                        </FormField>
-                        <FormField
-                            label={t("fieldProperties.labels.conformMethod")}
-                            tooltip={t(
-                                "fieldProperties.tooltips.conformMethod",
-                            )}
-                        >
-                            <Select
-                                onValueChange={(e) => {
-                                    const newValue =
-                                        e === "fit" || e === "fill" ? e : "fit";
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            imageFillOrFit: newValue,
-                                        }),
-                                    );
-                                }}
-                                defaultValue={
-                                    currentFieldProperties.imageFillOrFit
-                                }
-                            >
-                                <SelectTriggerButton
-                                    className={inputClassname}
-                                    label={t(
-                                        "fieldProperties.labels.conformingMethod",
-                                    )}
-                                />
-                                <SelectContent>
-                                    <SelectGroup>
-                                        <SelectItem value="fit">
-                                            <T keyName="fieldProperties.options.fit" />
-                                        </SelectItem>
-                                        <SelectItem value="fill">
-                                            <T keyName="fieldProperties.options.fill" />
-                                        </SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-                        </FormField>
-
-                        <div className="flex h-fit min-h-0 items-center gap-8">
-                            <label htmlFor="field-properties-image-input">
-                                <Button
-                                    className="w-full"
-                                    tooltipText={t(
-                                        "fieldProperties.tooltips.importImage",
-                                    )}
-                                    tooltipSide="right"
-                                    variant="primary"
-                                    type="button"
-                                    size="compact"
-                                    onClick={() => {
-                                        // one would hope the label "for" would be good enough, but it's not
-                                        // so we need to manually click the file input
-                                        document
-                                            .getElementById(
-                                                "field-properties-image-input",
-                                            )
-                                            ?.click();
-                                    }}
-                                >
-                                    <T keyName="fieldProperties.buttons.importImage" />
-                                </Button>
-                            </label>
-                            <input
-                                type="file"
-                                id="field-properties-image-input"
-                                className="hidden"
-                                accept="image/*"
-                                onChange={async (
-                                    e: React.ChangeEvent<HTMLInputElement>,
-                                ) => {
-                                    const file = e.target.files?.[0];
-                                    if (!file) return;
-                                    const arrayBuffer =
-                                        await file.arrayBuffer();
-                                    const raw = new Uint8Array(arrayBuffer);
-                                    await updateFieldPropertiesImage(raw);
-                                    setFieldProperties(
-                                        new FieldProperties({
-                                            ...currentFieldProperties,
-                                            showFieldImage: true,
-                                        }),
-                                    );
-                                }}
-                            />
-                            <div className="text-sub text-text-subtitle h-fit min-h-0 w-fit leading-none whitespace-nowrap">
-                                <T keyName="fieldProperties.messages.refreshAfterImporting" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.measurements" />
-                        </h4>
-                        <div className="flex w-full flex-col gap-4">
-                            <div className={clsx("col-span-2 align-middle")}>
-                                <T keyName="fieldProperties.labels.width" />
-                            </div>
-                            <div className="flex w-full gap-8">
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {currentFieldProperties.width /
-                                        currentFieldProperties.pixelsPerStep}{" "}
-                                    <T keyName="fieldProperties.units.steps" />
-                                </div>
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {currentFieldProperties.prettyWidth}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex w-full flex-col gap-4">
-                            <div className={clsx("col-span-2 align-middle")}>
-                                <T keyName="fieldProperties.labels.height" />
-                            </div>
-                            <div className="flex w-full gap-8">
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {currentFieldProperties.height /
-                                        currentFieldProperties.pixelsPerStep}{" "}
-                                    <T keyName="fieldProperties.units.steps" />
-                                </div>
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {currentFieldProperties.prettyHeight}
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex w-full flex-col gap-4">
-                            <div>
-                                <T keyName="fieldProperties.labels.fieldRatio" />
-                            </div>
-                            <div className="flex w-full gap-8">
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {(() => {
-                                        const w = currentFieldProperties.width;
-                                        const h = currentFieldProperties.height;
-                                        const gcd = (
-                                            a: number,
-                                            b: number,
-                                        ): number => (b ? gcd(b, a % b) : a);
-                                        const divisor = gcd(w, h);
-                                        const ratioStr = `${w / divisor}:${h / divisor}`;
-                                        const divStr = (w / h).toFixed(3);
-                                        if (ratioStr.length > 12) {
-                                            return divStr;
-                                        } else {
-                                            return t(
-                                                "fieldProperties.messages.fieldRatio",
-                                                {
-                                                    ratio: ratioStr,
-                                                    decimal: divStr,
-                                                },
-                                            );
-                                        }
-                                    })()}
-                                </div>
-                                <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
-                                    <T keyName="fieldProperties.labels.widthHeight" />
-                                </div>
-                            </div>
-                        </div>
-                        <div className="flex w-full flex-col gap-4">
-                            <div className={clsx("col-span-5 align-middle")}>
-                                <T keyName="fieldProperties.labels.backgroundImageRatio" />
-                            </div>
-                            <div className="flex w-full gap-8">
-                                <div className="bg-fg-2 border-stroke rounded-6 w-full border px-8 py-2 text-center font-mono">
-                                    {(() => {
-                                        if (!FieldProperties.imageDimensions) {
-                                            return "N/A";
-                                        }
-                                        const w =
-                                            FieldProperties.imageDimensions
-                                                .width;
-                                        const h =
-                                            FieldProperties.imageDimensions
-                                                .height;
-                                        const gcd = (
-                                            a: number,
-                                            b: number,
-                                        ): number => (b ? gcd(b, a % b) : a);
-                                        const divisor = gcd(w, h);
-                                        const ratioStr = `${w / divisor}:${h / divisor}`;
-                                        const divStr = (w / h).toFixed(3);
-                                        if (ratioStr.length > 12) {
-                                            return divStr;
-                                        } else {
-                                            return `${ratioStr}  or  ${divStr}`;
-                                        }
-                                    })()}
-                                </div>
-                                <div className="bg-fg-2 border-stroke rounded-6 w-fit border px-8 py-2 text-center font-mono">
-                                    w/h
-                                </div>
-                            </div>
-                        </div>
-                        <div className="text-sub text-text mx-16 rounded-full py-4 text-end text-pretty">
-                            <T keyName="fieldProperties.messages.measurementModificationNote" />
-                        </div>
-                    </div>
-                </TabContent>
-
-                {/* -------------------------------------------- THEME -------------------------------------------- */}
-                <TabContent value="theme" className="flex flex-col gap-32">
-                    <div className="flex flex-col gap-12">
-                        <h4 className="text-h4 mb-8">
-                            <T keyName="fieldProperties.sections.theme" />
-                        </h4>
-                        <ColorPicker
-                            label={t("fieldProperties.labels.background")}
-                            initialColor={
-                                currentFieldProperties.theme.background
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.background as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "background",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            background: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.primaryLines")}
-                            initialColor={
-                                currentFieldProperties.theme.primaryStroke
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.primaryStroke as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "primaryStroke",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            primaryStroke: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.secondaryLines")}
-                            initialColor={
-                                currentFieldProperties.theme.secondaryStroke
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.secondaryStroke as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "secondaryStroke",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            secondaryStroke: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.gridLines")}
-                            initialColor={
-                                currentFieldProperties.theme.tertiaryStroke
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.tertiaryStroke as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "tertiaryStroke",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            tertiaryStroke: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.fieldLabels")}
-                            initialColor={
-                                currentFieldProperties.theme.fieldLabel
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.fieldLabel as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "fieldLabel",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            fieldLabel: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.externalLabels")}
-                            initialColor={
-                                currentFieldProperties.theme.externalLabel
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.externalLabel as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "externalLabel",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            externalLabel: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.previousPath")}
-                            initialColor={
-                                currentFieldProperties.theme.previousPath
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.previousPath as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "previousPath",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            previousPath: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.nextPath")}
-                            initialColor={currentFieldProperties.theme.nextPath}
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.nextPath as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "nextPath",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            nextPath: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <div className="bg-fg-2 text-text border-stroke rounded-full border py-4 text-center text-[14px]">
-                            <T keyName="fieldProperties.messages.refreshNote" />
-                        </div>
-                        <ColorPicker
-                            label={t("fieldProperties.labels.shapes")}
-                            initialColor={currentFieldProperties.theme.shape}
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.shape as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "shape",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            shape: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.temporaryPath")}
-                            initialColor={currentFieldProperties.theme.tempPath}
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.tempPath as RgbaColor
-                            }
-                            onChange={(color: RgbaColor) => {
-                                validateIsRgbaColor(
-                                    "tempPath",
-                                    currentFieldProperties,
-                                );
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            tempPath: color,
-                                        },
-                                    }),
-                                );
-                            }}
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.marcherFill")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher.fill
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.defaultMarcher.fill
-                            }
-                            onChange={(color: RgbaColor) =>
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
-                                                fill: color,
-                                            },
-                                        },
-                                    }),
-                                )
-                            }
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.marcherOutline")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher
-                                    .outline
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.defaultMarcher.outline
-                            }
-                            onChange={(color: RgbaColor) =>
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
-                                                outline: color,
-                                            },
-                                        },
-                                    }),
-                                )
-                            }
-                        />
-                        <ColorPicker
-                            label={t("fieldProperties.labels.marcherText")}
-                            initialColor={
-                                currentFieldProperties.theme.defaultMarcher
-                                    .label
-                            }
-                            defaultColor={
-                                DEFAULT_FIELD_THEME.defaultMarcher.label
-                            }
-                            onChange={(color: RgbaColor) =>
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: {
-                                            ...currentFieldProperties.theme,
-                                            defaultMarcher: {
-                                                ...currentFieldProperties.theme
-                                                    .defaultMarcher,
-                                                label: color,
-                                            },
-                                        },
-                                    }),
-                                )
-                            }
-                        />
-                        <Button
-                            onClick={() =>
-                                setFieldProperties(
-                                    new FieldProperties({
-                                        ...currentFieldProperties,
-                                        theme: DEFAULT_FIELD_THEME,
-                                    }),
-                                )
-                            }
-                            variant="secondary"
-                            size="compact"
-                            className="w-full px-16"
-                            tooltipSide="right"
-                            tooltipText={t(
-                                "fieldProperties.tooltips.resetTheme",
-                            )}
-                        >
-                            <T keyName="fieldProperties.buttons.resetTheme" />
-                        </Button>
-                    </div>
-                </TabContent>
+                <ThemeTab
+                    currentFieldProperties={currentFieldProperties}
+                    validateIsRgbaColor={validateIsRgbaColor}
+                />
             </Tabs>
         </Form.Root>
     );

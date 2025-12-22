@@ -119,6 +119,15 @@ export const appearanceModelParsedToRawOptional = (
     return output;
 };
 
+/**
+ * Determines if an appearance entity is hidden given a list of appearances.
+ *
+ * If given a list, it ignores the first two appearance definitions if they are true.
+ * This is because the field properties and marcher page appearances will almost always be visible.
+ *
+ * @param appearancesInput
+ * @returns
+ */
 export function appearanceIsHidden(
     appearancesInput:
         | AppearanceComponentOptional[]
@@ -130,12 +139,17 @@ export function appearanceIsHidden(
 
     let visible: boolean;
     if (appearances.length > 0)
-        if (appearances.length > 1 && appearances[0].visible) {
-            // If there is more than one appearance, and the marcherPage appearance is true, use the next one
-            // This is because the marcherPage will almost always be visible
-            visible = appearances[1].visible;
+        if (
+            appearances.length > 0 &&
+            (!appearances[0].visible ||
+                (appearances.length > 1 && !appearances[1].visible))
+        ) {
+            // Either the field properties or marcher page appearance is hidden, so the entity is hidden
+            visible = false;
+        } else if (appearances.length > 2) {
+            visible = appearances[2].visible;
         } else {
-            visible = appearances[0].visible;
+            visible = true;
         }
     else visible = true;
 

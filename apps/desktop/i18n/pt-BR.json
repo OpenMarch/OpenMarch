@@ -325,6 +325,7 @@
             "rightAbbreviation": "Abreviação Direita",
             "secondaryLines": "Linhas Secundárias",
             "shapes": "Formas",
+            "shapeType": "Tipo de Forma",
             "showBackgroundImage": "Exibir Imagem de Fundo",
             "stepsFromFrontToAwayLabelBottom": "Passos da frente para longe selo abaixo",
             "stepsFromFrontToAwayLabelTop": "Passos da frente para longe selo acima",
@@ -359,6 +360,12 @@
             "theme": "Tema",
             "xCheckpoints": "Pontos de Verificação X",
             "yCheckpoints": "Pontos de Verificação Y"
+        },
+        "themeSubsections": {
+            "grid": "Grade",
+            "labels": "Rótulos",
+            "pathways": "Caminhos",
+            "marchers": "Marchadores"
         },
         "tabs": {
             "checkpoints": "Pontos de Verificação",
