@@ -270,7 +270,9 @@ export const useUpdateSelectedMarchers = (
             const modifiedMarcherPages: ModifiedMarcherPageArgs[] =
                 newCoordinates.map((coordinate) => {
                     return {
-                        ...coordinate,
+                        x: coordinate.x,
+                        y: coordinate.y,
+                        marcher_id: coordinate.marcher_id,
                         page_id: pageId,
                     };
                 });
