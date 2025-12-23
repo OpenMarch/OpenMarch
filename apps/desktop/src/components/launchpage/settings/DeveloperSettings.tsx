@@ -6,6 +6,16 @@ import tolgee from "@/global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import { RemoveInContextTools } from "@/global/singletons/Tolgee";
 
+/**
+ * Render the Developer Settings panel for configuring Tolgee developer tools.
+ *
+ * Shows a toggle to enable or disable Tolgee In-Context Tools (persisted via Electron settings).
+ * When enabled, displays an input to set the Tolgee API key (persisted and applied to Tolgee options).
+ * Toggling the switch updates persisted settings and adds either the InContextTools plugin or the RemoveInContextTools plugin,
+ * and updating the API key updates Tolgee's configuration.
+ *
+ * @returns The React element containing the developer settings UI
+ */
 export default function DeveloperSettings() {
     const { t } = useTranslate();
     const [tolgeeDevTools, setTolgeeDevTools] = React.useState<boolean>(false);

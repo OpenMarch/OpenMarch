@@ -5,6 +5,11 @@ import PrivacySettings from "./PrivacySettings";
 import DeveloperSettings from "./DeveloperSettings";
 import { T } from "@tolgee/react";
 
+/**
+ * Render the settings content layout, grouping headings with their corresponding settings sections.
+ *
+ * @returns A JSX element containing the arranged settings sections: General, Mouse, Plugins, Privacy, and Developer.
+ */
 export default function SettingsContent() {
     return (
         <div className="flex h-fit w-full max-w-[512px] flex-col gap-16">

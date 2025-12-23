@@ -40,6 +40,15 @@ export const queryClient = new QueryClient({
     },
 });
 
+/**
+ * Root application component that initializes global state, side effects, and renders the main UI.
+ *
+ * Initializes application-level effects (plugin loading, database readiness, UI settings, analytics consent,
+ * codegen wiring, undo triggers, and Tolgee injection) and composes top-level providers and UI regions
+ * such as the title bar, canvas, sidebar, inspector, timeline, and modals.
+ *
+ * @returns The root JSX element for the application.
+ */
 function App() {
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
