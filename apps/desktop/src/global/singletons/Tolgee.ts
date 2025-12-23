@@ -18,12 +18,18 @@ export const RemoveInContextTools =
         return tolgee;
     };
 
+// Check if running in Playwright test environment
+const isPlaywrightSession =
+    import.meta.env.VITE_PUBLIC_PLAYWRIGHT_SESSION ||
+    (typeof window !== "undefined" && window.electron?.isPlaywrightSession);
+
 const tolgee = Tolgee()
     .use(FormatSimple())
     .use(FormatIcu())
     .init({
         language: "en",
-        apiUrl: TOLGEE_API_URL,
+        // Disable API URL during Playwright tests to prevent external network calls
+        apiUrl: isPlaywrightSession ? undefined : TOLGEE_API_URL,
         staticData: {
             en: () => import("../../../i18n/en.json"),
             es: () => import("../../../i18n/es.json"),
