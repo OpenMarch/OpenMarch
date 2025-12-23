@@ -151,6 +151,13 @@ export const coordinateDataQueryOptions = (
         staleTime: DEFAULT_STALE_TIME,
     });
 
+/**
+ * Combine an array of timeline maps into a single timeline map.
+ * This sorts the timestamps of the combined timeline.
+ *
+ * @param timelineMaps - an array of timeline maps to combine
+ * @returns a combined timeline map
+ */
 export const combineMarcherTimelines = (
     timelineMaps: MarcherTimelinesByMarcherId[],
 ) => {
