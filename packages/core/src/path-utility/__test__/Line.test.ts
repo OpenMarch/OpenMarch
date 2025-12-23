@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Line } from "../src/segments/Line";
-import { Point } from "../src/interfaces";
-import { parseSvg } from "../src/SvgParser";
-import { Path } from "../src/Path";
+import { Line } from "../segments/Line";
+import { Point } from "../interfaces";
+import { parseSvg } from "../SvgParser";
+import { Path } from "../Path";
 
 describe("Line segment", () => {
     it("should correctly calculate the length of a straight line", () => {

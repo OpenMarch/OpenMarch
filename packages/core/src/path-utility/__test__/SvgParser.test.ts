@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Path } from "../src/Path";
-import { CubicCurve } from "../src/segments/CubicCurve";
-import { QuadraticCurve } from "../src/segments/QuadraticCurve";
+import { Path } from "../Path";
+import { CubicCurve } from "../segments/CubicCurve";
+import { QuadraticCurve } from "../segments/QuadraticCurve";
 
 describe("parseSvg", () => {
     it("should correctly parse the S command", () => {

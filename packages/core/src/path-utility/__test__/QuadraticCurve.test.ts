@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { QuadraticCurve } from "../src/segments/QuadraticCurve";
-import { type Point } from "../src/interfaces";
-import { parseSvg } from "../src/SvgParser";
+import { QuadraticCurve } from "../segments/QuadraticCurve";
+import { type Point } from "../interfaces";
+import { parseSvg } from "../SvgParser";
 
 describe("QuadraticCurve segment", () => {
     it("should correctly calculate the length of a simple curve", () => {

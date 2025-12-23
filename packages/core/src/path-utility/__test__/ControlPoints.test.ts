@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { Path, Line, CubicCurve, Spline, ControlPointManager } from "../src";
+import { Path, Line, CubicCurve, Spline, ControlPointManager } from "..";
 
 describe("Control Points", () => {
     describe("ControlPointManager", () => {

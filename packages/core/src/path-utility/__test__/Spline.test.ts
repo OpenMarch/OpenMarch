@@ -1,6 +1,6 @@
 import { describe, expect, it, beforeEach } from "vitest";
-import { Spline } from "../src/segments/Spline";
-import type { SegmentJsonData, ControlPoint } from "../src/interfaces";
+import { Spline } from "../segments/Spline";
+import type { SegmentJsonData, ControlPoint } from "../interfaces";
 
 // Extended control point type that includes the id property added by Spline
 type SplineControlPoint = ControlPoint & { id: string };

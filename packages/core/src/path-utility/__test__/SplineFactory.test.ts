@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { SplineFactory } from "../src/SplineFactory";
-import { Path } from "../src/Path";
-import type { Point } from "../src/interfaces";
+import { SplineFactory } from "../SplineFactory";
+import { Path } from "../Path";
+import type { Point } from "../interfaces";
 
 describe("SplineFactory", () => {
     describe("createCatmullRomSplineFromRelativePoints", () => {

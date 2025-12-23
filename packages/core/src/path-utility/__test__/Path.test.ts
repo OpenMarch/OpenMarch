@@ -1,5 +1,5 @@
 import { test, describe, expect } from "vitest";
-import { Path, Line, Arc, CubicCurve, Spline, type Point } from "../src";
+import { Path, Line, Arc, CubicCurve, Spline, type Point } from "..";
 
 describe("Path JSON Serialization", () => {
     describe("toJson and fromJson", () => {

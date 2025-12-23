@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { CubicCurve } from "../src/segments/CubicCurve";
-import type { Point } from "../src/interfaces";
-import { parseSvg } from "../src/SvgParser";
-import { SplineFactory } from "../src/SplineFactory";
+import { CubicCurve } from "../segments/CubicCurve";
+import type { Point } from "../interfaces";
+import { parseSvg } from "../SvgParser";
+import { SplineFactory } from "../SplineFactory";
 
 describe("CubicCurve segment", () => {
     it("should correctly calculate the length of a simple S-curve", () => {

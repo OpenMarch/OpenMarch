@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { Arc } from "../src/segments/Arc";
-import { parseSvg } from "../src/SvgParser";
-import { Path } from "../src/Path";
-import type { Point } from "../src/interfaces";
+import { Arc } from "../segments/Arc";
+import { parseSvg } from "../SvgParser";
+import { Path } from "../Path";
+import type { Point } from "../interfaces";
 
 describe("Arc segment", () => {
     it("should correctly calculate the length of a 90-degree arc", () => {
