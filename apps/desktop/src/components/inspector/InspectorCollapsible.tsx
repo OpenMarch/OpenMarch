@@ -33,7 +33,7 @@ export const InspectorCollapsible = ({
         if (title) {
             return t(title);
         }
-        return t("Inspector");
+        return t("inspector.title");
     };
 
     return (

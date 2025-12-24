@@ -1,0 +1,856 @@
+{
+    "actions": {
+        "alignment": {
+            "alignHorizontally": "Aligner horizontalement",
+            "alignVertically": "Aligner verticalement",
+            "cancelUpdates": "Annuler les mises à jour des marcheurs",
+            "distributeHorizontally": "Distribuer les marcheurs uniformément sur l'horizontale",
+            "distributeVertically": "Distribuer les marcheurs uniformément sur la verticale",
+            "flipHorizontal": "Inverser les marcheurs horizontalement",
+            "flipVertical": "Inverser les marcheurs verticalement",
+            "lockX": "Verrouiller l'axe X",
+            "lockXOff": "Activer le mouvement X",
+            "lockXOn": "Verrouiller mouvement en X",
+            "lockY": "Verrouiller l'axe Y",
+            "lockYOff": "Activer le mouvement Y",
+            "lockYOn": "Verrouiller mouvement en Y",
+            "snapToWhole": "Aligner avec l'entier le plus proche"
+        },
+        "batchEdit": {
+            "noNextPage": "Impossible de définir les coordonnées des marcheurs sur la page suivante. Il n'y a pas de page suivante.",
+            "noPreviousPage": "Impossible de définir les coordonnées pour la page précédente. Il n'y a pas de page précédente",
+            "setAllToNext": "Définir toutes les coordonnées des marcheurs sur la page suivante",
+            "setAllToNextSuccess": "Coordonnées de {count} marcheurs sur la page {currentPage} définies avec succès aux coordonnées de la page suivante {nextPage}",
+            "setAllToPrevious": "Définir toutes les coordonnées des marcheurs sur la page précédente",
+            "setAllToPreviousSuccess": "Coordonnées de {{count}} marcheurs sur la page {{currentPage}} définies avec succès aux coordonnées de la page précédente {{previousPage}}",
+            "setSelectedToNext": "Définir les coordonnées du(es) marcheur(s) sélectionné(s) sur la page suivante",
+            "setSelectedToNextSuccess": "{count, plural, one {Paramètres {count} coordonnée de marcheur sur la page {currentPage} aux coordonnées de la page suivante {nextPage}} other {Paramètres {count} coordonnées de marcheur sur la page {currentPage} aux coordonnées de la page suivante {nextPage}} }",
+            "setSelectedToPrevious": "Définir les coordonnées du(es) marcheur(s) sélectionné(s) sur la page précédente",
+            "setSelectedToPreviousSuccess": "{count, plural, other {Coordonnée'{{count, plural, one {} other {s}}} de {{count}} marcheur{{count, plural, one {} other {s}}} sur la page {{currentPage}} définie avec succès aux coordonnées de la page précédente {{previousPage}}'}}"
+        },
+        "cursor": {
+            "defaultMode": "Définir le mode du curseur sur par défaut",
+            "lineMode": "Créer une ligne avec les marqueurs sélectionnés"
+        },
+        "edit": {
+            "noRedoAvailable": "Aucune action à rétablir",
+            "noUndoAvailable": "Aucune action à annuler",
+            "redo": "Rétablir",
+            "undo": "Annuler"
+        },
+        "file": {
+            "importMusicXml": "Importer le fichier MusicXML pour obtenir des mesures",
+            "insertAudio": "Charger un nouveau fichier audio dans le spectacle",
+            "loadDialogue": "Lancer la boîte de dialogue de chargement de fichier",
+            "newDialogue": "Lancer une nouvelle boîte de dialogue de fichier",
+            "saveDialogue": "Lancer la boîte de dialogue de sauvegarde de fichier"
+        },
+        "movement": {
+            "moveDown": "Déplacer le(s) marcheur(s) sélectionné(s) vers le bas",
+            "moveLeft": "Déplacer le(s) marcheur(s) sélectionné(s) vers la gauche",
+            "moveRight": "Déplacer le(s) marcheur(s) sélectionné(s) vers la droite",
+            "moveUp": "Déplacer le(s) marcheur(s) sélectionné(s) vers le haut"
+        },
+        "navigation": {
+            "firstPage": "Première page",
+            "lastPage": "Dernière page",
+            "nextPage": "Page suivante",
+            "previousPage": "Page précédente"
+        },
+        "playback": {
+            "pause": "Pause",
+            "play": "Jouer",
+            "playPause": "Lire ou mettre en pause"
+        },
+        "select": {
+            "selectAll": "Sélectionner tous les marcheurs"
+        },
+        "shape": {
+            "applyQuick": "Aligne les marcheurs à la forme sans créer un objet modifiable",
+            "create": "Crée une nouvelle forme avec des lignes ou des courbes pouvant être modifiées sur plusieurs pages",
+            "createCircle": "Créer cercle",
+            "delete": "Supprime les formes sélectionnées actuelles",
+            "noMarchersSelected": "Aucun marcheur sélectionné"
+        },
+        "swap": {
+            "error": "Impossible d'échanger les marcheurs {{marcher1}} et {{marcher2}}",
+            "mustSelectTwo": "Peut échanger uniquement lorsque 2 marcheurs sont sélectionnés.",
+            "success": "Échangé les marcheurs {{marcher1}} et {{marcher2}}",
+            "swap": "Échanger les marcheurs"
+        },
+        "ui": {
+            "focusCanvas": "Centrer la toile",
+            "focusTimeline": "Focaliser la chronologie",
+            "hideNextPaths": "Masquer les points/chemins de la page suivante",
+            "hidePreviousPaths": "Masquer les points/chemins de la page précédente",
+            "showNextPaths": "Afficher les points/chemins de la page suivante",
+            "showPreviousPaths": "Afficher les chemins/pages précédents",
+            "toggleNextPaths": "Basculer l'affichage des chemins de pages suivantes",
+            "togglePreviousPaths": "Basculer l'affichage des chemins de pages précédentes"
+        }
+    },
+    "analyticsOptIn": {
+        "description": "Pour nous aider à améliorer OpenMarch, nous collectons des données d'analyse, des journaux d'erreurs et des captures de session. Cela nous aide à comprendre comment vous utilisez l'application et à identifier les bugs. Consultez notre <a>politique de confidentialité</a> pour en savoir plus.",
+        "optIn": "Participation active",
+        "optOut": "Se désinscrire",
+        "settings": "Vous pouvez modifier ce paramètre à tout moment dans les paramètres de l'application.",
+        "title": "Aidez-nous à améliorer OpenMarch",
+        "whenYouOptIn": "Lorsque vous donnez votre consentement",
+        "whenYouOptOut": "Lorsque vous vous désinscrivez"
+    },
+    "audio": {
+        "beats": {
+            "create": {
+                "error": "Erreur de création des beats"
+            },
+            "save": {
+                "error": "Erreur de création de nouveaux beats",
+                "success": "Battements enregistrés avec succès"
+            }
+        },
+        "context": {
+            "error": "Échec de l'initialisation du contexte audio"
+        },
+        "decode": {
+            "error": "Échec du décodage du fichier audio"
+        },
+        "editableBeatPlayer": {
+            "description": "Faites glisser le bord droit de n'importe quel battement pour ajuster sa durée"
+        },
+        "play": {
+            "error": "Échec de la lecture de l'audio"
+        },
+        "saveNewBeats": {
+            "label": "Enregistrer de nouveaux rythmes"
+        },
+        "seeDocs": {
+            "label": "Voir docs"
+        },
+        "tapNewTempo": {
+            "exit": "Quitter",
+            "label": "Tap pour un Nouveau Tempo",
+            "restart": "Redémarrer"
+        },
+        "tapTempo": {
+            "label": "Tapez le Tempo"
+        }
+    },
+    "colorPicker": {
+        "discard": "Annuler",
+        "removeSetting": "Supprimer le paramètre",
+        "save": "Sauvegarder"
+    },
+    "coordinateRoundingSettings": {
+        "custom": "Personnalisé",
+        "disableOffset": "Désactiver le décalage",
+        "enableOffset": "Activer Décalage",
+        "groupNotice": "Ne fonctionne pas encore avec les groupes",
+        "nearestSteps": "Pas du tout steps les plus proches{axis}",
+        "none": "Aucun",
+        "offset": "Décalage",
+        "title": "Arrondissement des Coordonnées",
+        "unit": "pas",
+        "xStepDescription": "Cliquez gauche pour avancer d'un cran, cliquez droit pour reculer d'un cran parmi les options X-step",
+        "yStepDescription": "Cliquez gauche pour avancer d'un cran, cliquez droit pour reculer d'un cran parmi les options Y-step"
+    },
+    "coordinateSheet": {
+        "countAbbreviation": "Nb.",
+        "frontToBack": "De l'avant à l'arrière",
+        "frontToBackAbbreviation": "Av. à Ar.",
+        "measureAbbreviation": "Mme",
+        "measures": "Mesures",
+        "page": "Page {page}",
+        "pageAbbreviation": "Pg.",
+        "sideToSide": "Côte à côte",
+        "sideToSideAbbreviation": "C. à C."
+    },
+    "exportCoordinates": {
+        "abbreviateCoordinateDescriptions": "Abréger les descriptions des coordonnées",
+        "cancel": "Annuler",
+        "cancelledByUser": "Exportation annulée par l'utilisateur",
+        "coordinatesError": "Erreur : Impossible de calculer les coordonnées pour la page de marche {id}",
+        "coordinateSheets": "Feuilles de coordonnées",
+        "drillCharts": "Graphiques de forage",
+        "errorRendering": "Erreur lors du rendu {drillNumber}",
+        "errorTitle": "Erreur lors de l'exportation de la feuille de coordonnées",
+        "exampleMarcherName": "Exemple de Marcheur",
+        "exampleMarcherSection": "Baryton",
+        "export": "Exporter",
+        "exportButton": "Exporter",
+        "exportComplete": "Exportation terminée!",
+        "exportFailed": "Échec de l'exportation",
+        "exportFailedToast": "Échec de l'exportation : {error}",
+        "exporting": "Exportation... Veuillez patienter",
+        "exportNotAvailable": "Exportation Non Disponible",
+        "exportNotAvailableDescription": "L'exportation nécessite des propriétés de champ, au moins une page non par défaut, et au moins un marcheur.",
+        "exportPDFSuccess": "Exporté avec succès en PDF !",
+        "exportSuccess": "{count, plural, one {Feuilles de coordonnées exportées avec succès pour {count} marcheur !} other {Feuilles de coordonnées exportées avec succès pour {count} marcheurs !} }",
+        "fieldProperties": "Propriétés du champ : {status}",
+        "fieldPropertiesNotLoaded": "Propriétés du champ non chargées",
+        "fieldPropertiesRequired": "Les propriétés du champ sont requises pour l'exportation",
+        "frontToBackHeader": "De l'avant à l'arrière",
+        "funPhrase": {
+            "0": "Préparez-vous à marcher en 8 médiants parfaits! \uD83C\uDFBA",
+            "1": "Récupérer les fichiers à couvrir \uD83D\uDCCB",
+            "10": "Régler le tempo pour le succès \uD83C\uDFBC",
+            "11": "Ajuster finement chaque pas \uD83D\uDD27",
+            "2": "Nettoyer la perceuse de la boîte \uD83E\uDDF9",
+            "3": "S'assurer que tout le monde est synchronisé \uD83D\uDC5F",
+            "4": "Peindre un champ parfait \uD83D\uDD8C️",
+            "5": "En marche vers la perfection! \uD83C\uDFAF",
+            "6": "Peaufiner ces marqueurs de ligne de but ✨",
+            "7": "Compter le tempo parfait \uD83E\uDD41",
+            "8": "Aligner la formation comme un pro \uD83D\uDCD0",
+            "9": "En marche vers la perfection! \uD83C\uDFAF"
+        },
+        "generatingPDF": "Génération du fichier PDF pour : {drillNumber}",
+        "includeMeasures": "Inclure les mesures",
+        "includeNotesAppendix": "Inclure les pages d'annexe de notes",
+        "includeNotesAppendixTooltip": "Ajouter des pages d'annexe en format portrait listant des notes pour chaque ensemble.",
+        "includeNotesAppendixTooltipDescription": "Les notes en ligne sous les graphiques sont tronquées pour s'adapter à la page. L'annexe des notes inclut le texte complet des notes pour chaque page ayant des notes.",
+        "individualCharts": "Graphiques de forage individuels",
+        "individualChartsTooltip": "Créer des PDF de graphiques de sondage personnalisés pour chaque marcheur individuel.",
+        "individualChartsTooltipDescription": "Si cela n'est pas coché, un fichier PDF de graphique de sondage global sera créé.",
+        "marcher": "Marcher : {status}",
+        "marcherPagesNotLoaded": "Pages de marche non chargées",
+        "marchersNotLoaded": "Marcheurs non chargés",
+        "measuresHeader": "Mesure",
+        "noFieldProperties": "Aucune propriété de champ fournie",
+        "noMarcher": "Aucun marcheur fourni",
+        "noMarcherPages": "Aucune page de marche fournie",
+        "noPages": "Aucune page fournie",
+        "openExportDirectory": "Cliquer pour ouvrir l'exportation",
+        "openExportDirectoryError": "Impossible d'ouvrir le répertoire d'exportation: {error}",
+        "organizeBySection": "Organiser par rubrique",
+        "organizeBySectionTooltip": "Créez des fichiers PDF pour chaque marcheur individuel, organisés dans des dossiers par section.\\nSi cette option n’est pas cochée, un grand fichier PDF sera créé avec chaque feuille de coordonnées dans l'ordre de la partition.",
+        "page": "Page: {status}",
+        "pageNotFound": "Erreur : Page non trouvée pour la page de marche {id}",
+        "pdfExportFailed": "Échec de l'exportation PDF : {error}",
+        "preview": "Aperçu",
+        "processingPage": "Traitement de la page {pageNumber} de {totalPages} : {pageName}",
+        "quarterPageLayout": "Mise en page d'un quart de page",
+        "roundingDenominator": "Arrondissement des coordonnées:",
+        "sectionAppearancesNotLoaded": "Apparences de la section non chargées",
+        "selectRoundingDenominator": "Sélectionner l'arrondissement",
+        "sideToSideHeader": "Côte à côte",
+        "svgExportFailed": "L'exportation SVG pour {drillNumber} a échoué avec l'erreur : {error}",
+        "svgGenerationFailed": "Échec de la génération SVG : {error}",
+        "title": "Exporter",
+        "unknownError": "Erreur inconnue",
+        "unsortedSection": "Non trié",
+        "useXYHeaders": "Utiliser les en-têtes X/Y"
+    },
+    "field": {
+        "general": {
+            "exportField": "Exporter le champ",
+            "exportField.tooltip": "Exporter ce champ vers un fichier pour l'utiliser dans d'autres projets",
+            "importField": "Importer le champ",
+            "importField.tooltip": "Importer un champ personnalisé"
+        },
+        "title": "Champ"
+    },
+    "fieldProperties": {
+        "applyFieldType": "Appliquer le type de champ",
+        "applyFieldTypeWarning": "Les marcheurs ne se déplaceront pas à la nouvelle taille de type de champ, ils resteront là où ils sont sur le canevas. Vous pouvez toujours changer de type de champ.",
+        "buttons": {
+            "importImage": "Importer une image",
+            "newXCheckpoint": "Nouveau point de contrôle X",
+            "newYCheckpoint": "Nouveau point de contrôle Y",
+            "resetTheme": "Réinitialiser le thème par défaut"
+        },
+        "checkpoint": {
+            "created": "\"{axis}-point de contrôle à {steps} étapes créé\"",
+            "delete": "Supprimer",
+            "deleted": "\"{axis}-point de contrôle à {steps} étapes supprimé - \"{name}\"",
+            "fieldLabel": "Étiquette de point de cheminement",
+            "fieldLabelTooltip": "\"L'étiquette à afficher sur le champ (c'est-à-dire, les repères de terrain)\"",
+            "name": "Nom",
+            "nameTooltip": "Nommez votre point de contrôle comme vous le souhaitez. C'est juste pour que vous sachiez quel point de contrôle vous sélectionnez.",
+            "newXCheckpointName": "Nouveau point de contrôle X",
+            "newYCheckpointName": "Nouveau point de contrôle Y",
+            "shortName": "Nom court",
+            "shortNameTooltip": "Nom principal du point de contrôle. (Ex. \"Ligne des 45 verges - Côté 1\")",
+            "stepsFromCenter": "Étapes depuis le centre",
+            "stepsFromCenterTooltip": "Nombre de pas par rapport au centre du champ où se trouve ce point de contrôle. Négatif signifie vers l'arrière.",
+            "stepsFromFront": "Étapes depuis l'avant",
+            "stepsFromFrontTooltip": "Nombre de pas par rapport à l'avant du champ où se trouve ce point de contrôle. Négatif signifie vers l'arrière.",
+            "useAsReference": "Utiliser comme référence",
+            "useAsReferenceTooltip": "Si ce point de contrôle doit être utilisé comme référence pour les coordonnées.",
+            "visible": "Visible",
+            "visibleTooltip": "Si ce point de contrôle doit être visible sur le terrain"
+        },
+        "customField": "Champ personnalisé",
+        "customFieldDocs": "Voir docs",
+        "customFieldName": "Personnalisé",
+        "customization": "Personnalisation",
+        "customize": "Personnaliser",
+        "errors": {
+            "invalidColor": "Couleur invalide",
+            "noPropertiesToLoad": "Aucune propriété de champ à charger! Cela ne devrait jamais arriver, veuillez contacter le support",
+            "notDefined": "ChampPropriétés n'est pas défini. Cela ne devrait jamais arriver, veuillez contacter le support."
+        },
+        "fieldTemplate": {
+            "label": "Modèle de champ"
+        },
+        "fieldType": {
+            "label": "Type de champ"
+        },
+        "general": "Général",
+        "labels": {
+            "background": "Arrière-plan",
+            "backgroundImageRatio": "Ratio de l'image d'arrière-plan",
+            "bottom": "Bas",
+            "conformingMethod": "Méthode de mise en conformité",
+            "conformMethod": "Méthode de conformité",
+            "directorsLeft": "À gauche du directeur",
+            "directorsRight": "À droite du directeur",
+            "externalLabels": "Étiquettes externes",
+            "fieldLabels": "Étiquettes de champ",
+            "fieldName": "Nom du champ",
+            "fieldRatio": "Ratio du champ",
+            "gridLines": "Lignes de grille",
+            "halfLineXInterval": "Intervalle de demi-ligne X",
+            "halfLineYInterval": "Intervalle de demi-ligne Y",
+            "height": "Hauteur",
+            "left": "Gauche",
+            "leftAbbreviation": "Abréviation gauche",
+            "marcherFill": "Remplissage de marcheur",
+            "marcherOutline": "Contour du Marcher",
+            "marcherText": "Texte de marche",
+            "measurementSystem": "Système de mesure",
+            "nextPath": "Prochain chemin",
+            "previousPath": "Chemin précédent",
+            "primaryLines": "Lignes principales",
+            "right": "Droite",
+            "rightAbbreviation": "Abréviation droite",
+            "secondaryLines": "Lignes secondaires",
+            "shapes": "Formes",
+            "showBackgroundImage": "Afficher l'image d'arrière-plan",
+            "stepsFromFrontToAwayLabelBottom": "Étiquettes étape de face à partir à bas",
+            "stepsFromFrontToAwayLabelTop": "Étiquettes étape de face à partir à haut",
+            "stepsFromFrontToHomeLabel": "Étiquettes étape de face vers domicile à bas",
+            "stepsFromFrontToHomeLabelTop": "Étiquettes étape de face vers domicile à haut",
+            "stepSize": "Taille de pas",
+            "temporaryPath": "Chemin Temporaire",
+            "top": "Haut",
+            "useHashes": "Utiliser les hachages",
+            "width": "Largeur",
+            "widthHeight": "l/h"
+        },
+        "messages": {
+            "fieldRatio": "{ratio} ou {decimal}",
+            "measurementModificationNote": "Ces valeurs peuvent être modifiées en ajustant les coordonnées X et Y, la taille de pas et l'image de fond",
+            "refreshAfterImporting": "Actualiser après l'importation [Ctrl + R]",
+            "refreshNote": "Les valeurs ci-dessous peuvent ne pas être appliquées avant un rafraîchissement"
+        },
+        "options": {
+            "fill": "Remplir",
+            "fit": "Ajuster",
+            "imperial": "Impérial",
+            "metric": "Métrique"
+        },
+        "sections": {
+            "externalLabels": "Étiquettes externes",
+            "fieldLabels": "Étiquettes de champ",
+            "general": "Général",
+            "imageRendering": "Rendu de l'image",
+            "measurements": "Mesures",
+            "sideDescriptions": "Descriptions latérales",
+            "theme": "Thème",
+            "xCheckpoints": "Points de contrôle X",
+            "yCheckpoints": "Points de contrôle Y"
+        },
+        "tabs": {
+            "checkpoints": "Points de contrôle",
+            "general": "Général",
+            "image": "Image",
+            "theme": "Thème"
+        },
+        "title": "Propriétés du champ",
+        "tooltips": {
+            "conformMethod": "S'agit-il d'adapter l'image d'arrière-plan à l'intérieur du champ ou de le remplir. Le ratio d'aspect est toujours maintenu",
+            "directorsLeft": "Par ex. \"Côté 1\", \"Audience Gauche\" ou \"Scène Droite\"",
+            "directorsRight": "Par ex. \"Côté 2\", \"Audience Droite\" ou \"Scène Gauche\"",
+            "fieldName": "Le nom ou le titre du modèle de champ",
+            "halfLineXInterval": "L'intervalle auquel les demi-lignes apparaissent dans l'interface sur l'axe X depuis le centre du champ. Laisser vide pour omettre les demi-lignes sur l'axe X. C'est purement esthétique et n'affecte en rien les coordonnées.",
+            "halfLineYInterval": "L'intervalle auquel les demi-lignes apparaissent dans l'interface sur l'axe Y depuis l'avant du champ. Laisser vide pour omettre les demi-lignes sur l'axe Y. C'est purement esthétique et n'affecte en rien les coordonnées.",
+            "importImage": "Importer une image à afficher sur le champ",
+            "leftAbbreviation": "Par ex. \"S1\", \"AG\" ou \"SD\" (abréviation de \"Côté 1\", \"Audience Gauche\" ou \"Scène Droite\")",
+            "measurementSystem": "L'unité de mesure pour définir la taille de pas. Peut aller et venir",
+            "resetTheme": "Réinitialiser le thème aux valeurs par défaut",
+            "rightAbbreviation": "Par ex. \"S2\", \"AD\" ou \"SG\" (abréviation de \"Côté 2\", \"Audience Droite\" ou \"Scène Gauche\")",
+            "stepsFromFrontToAwayLabelBottom": "Nombre de pas depuis la ligne de touche avant jusqu'à l'extérieur du numéro extérieur (plus proche de la ligne de touche arrière)",
+            "stepsFromFrontToAwayLabelTop": "Nombre de pas depuis la ligne de touche avant jusqu'à l'intérieur du numéro extérieur (plus proche du centre du terrain)",
+            "stepsFromFrontToHomeLabel": "Nombre de pas depuis la ligne de touche avant jusqu'à l'extérieur du numéro de la maison (plus près de la ligne de touche avant)",
+            "stepsFromFrontToHomeLabelTop": "Nombre de pas depuis la ligne de touche avant jusqu'à l'intérieur du numéro de domicile (plus proche du centre du terrain)",
+            "stepSize": "La taille de chaque étape sur le terrain en pouces ou centimètres",
+            "useHashes": "Utilisez des hachures pour les points de contrôle Y, comme un terrain de football. Si non coché, des lignes seront utilisées."
+        },
+        "units": {
+            "steps": "pas"
+        },
+        "warnings": {
+            "xCheckpointsNotEquidistant": "AVERTISSEMENT - Les points de contrôle X les plus à gauche et à droite ne sont pas équidistants du centre. Cela peut provoquer des artefacts graphiques étranges et doit être corrigé.",
+            "yCheckpointsNegative": "AVERTISSEMENT - Il est fortement recommandé que toutes les étapes des points de contrôle Y soient inférieures à zéro (c’est-à-dire des nombres négatifs). Toutes les coordonnées Y doivent être derrière l'avant du champ. Ne pas le faire peut causer des erreurs graphiques et des coordonnées inattendues."
+        }
+    },
+    "fileTab": {
+        "exitFile": "Quitter le fichier",
+        "newFile": "Nouveau Fichier",
+        "openFile": "Ouvrir le fichier",
+        "redo": "Rétablir",
+        "saveFile": "Sauvegarder la copie",
+        "undo": "Annuler"
+    },
+    "formButtons": {
+        "cancel": "Annuler",
+        "editButton": "Modifier",
+        "saveChanges": "Enregistrer les modifications"
+    },
+    "formField": {
+        "valueMissing": "Veuillez entrer une valeur."
+    },
+    "inspector": {
+        "alignment": {
+            "applyCoordinates": "Appliquer coordonnées",
+            "cancelUpdates": "Annuler",
+            "createShape": "Créer Forme",
+            "drawLine": "Tracer une ligne."
+        },
+        "marcher": {
+            "createLine": "Créer la Ligne",
+            "drillNumber": "Numéro de parcours",
+            "errorLoadingCoords": "Erreur de chargement des coordonnées",
+            "loading": "Chargement du marcheur",
+            "maxStepSize": "Taille maximale des pas",
+            "minStepSize": "Taille minimale des pas",
+            "name": "Nom",
+            "noPageSelected": "Aucune page sélectionnée.",
+            "section": "Section",
+            "stepSize": "Taille des pas",
+            "swapMarchers": "Échanger les marcheurs",
+            "title": "{count} Marcheurs",
+            "titleSingle": "Marcheur {drillNumber}"
+        },
+        "page": {
+            "counts": "Comptes",
+            "deletedFailed": "Échec de la suppression de la page",
+            "deletedSuccessfully": "Page supprimée avec succès",
+            "measures": "Mesures",
+            "notes": "Notes",
+            "notesPlaceholder": "Ajouter des notes pour cette page...",
+            "splitPage": "Scinder la page",
+            "split": {
+                "success": "Page scindée avec succès"
+            },
+            "subset": "Sous-ensemble",
+            "title": "Page {pageNumber}"
+        },
+        "shape": {
+            "addSegmentButton": "Ajouter",
+            "addSegmentTooltip": "Ajouter un segment à la forme",
+            "alignmentTab": "Alignement",
+            "copyToNextPage": "Copier cette forme sur la page suivante",
+            "copyToNextPageButton": "Copier sur la page suivante",
+            "copyToPreviousPage": "Copier cette forme sur la page précédente",
+            "copyToPreviousPageButton": "Copier sur la page précédente",
+            "deleteLastSegmentTooltip": "Supprimer le dernier segment",
+            "errorCopyingPage": "Erreur lors de la copie sur la page {pageName}. Des marqueurs sont-ils déjà assignés aux formes?",
+            "errorNoNextPage": "Impossible de copier. Il n'y a pas de page suivante.",
+            "errorNoPreviousPage": "Impossible de copier. Il n'y a pas de page précédente.",
+            "errorPageNotFound": "Page introuvable avec l'id {pageId}",
+            "fileTab": "Fichier",
+            "marchersOnShape": "{marchersCount} Marcheurs",
+            "segment": "Segment {index}",
+            "segments": {
+                "title": "Segments"
+            },
+            "selectTab": "Sélectionner",
+            "shapesTab": "Formes",
+            "successfullyCopied": "Forme copiée avec succès sur la page {pageName}",
+            "ungroupShapeButton": "Dissocier",
+            "ungroupShapeTooltip": "Supprimer cette forme pour cette page. Ne déplacera pas les marcheurs de leur position actuelle",
+            "viewTab": "Vue"
+        },
+        "shapes": {
+            "moreShapesComingSoon": "Davantage de formes bientôt disponibles !",
+            "selectShape": "Sélectionner Forme",
+            "title": "Formes"
+        },
+        "title": "Inspecteur"
+    },
+    "launchpage": {
+        "files": {
+            "createNew": "Nouveau Fichier",
+            "failedToLoadRecent": "Échec du chargement des fichiers récents",
+            "failedToOpen": "Échec de l'ouverture du fichier",
+            "failedToRemoveRecent": "Échec de la suppression du fichier de la liste récente",
+            "fieldPreview": "Aperçu du champ",
+            "movedOrMissing": "Fichier déplacé ou manquant",
+            "openFile": "Ouvrir fichier",
+            "removeFile": "Retirer des fichiers récents",
+            "title": "Fichiers récents"
+        },
+        "learn": {
+            "guides": {
+                "title": "Guides"
+            },
+            "title": "Apprendre",
+            "troubleshooting": {
+                "clearCache": "Vider le cache",
+                "clearCache.description": "La suppression du dossier de cache et de métadonnées peut souvent résoudre les problèmes de performance. (Cela supprimera également la liste de vos fichiers récents et votre thème !)",
+                "description": "OpenMarch est encore en développement, voici donc quelques conseils en cas de problème.",
+                "refresh": "Rafraîchir la page",
+                "refresh.description": "En cas de doute, actualisez la page (Ctrl/Cmd + R). Si OpenMarch semble défectueux, actualiser résoudra souvent le problème.",
+                "title": "Conseils de dépannage"
+            },
+            "videoGuides": {
+                "description": "Regardez des guides vidéo pour apprendre à utiliser OpenMarch.",
+                "title": "Guides vidéo"
+            }
+        },
+        "merch": "Obtenez des produits dérivés OpenMarch !",
+        "settings": {
+            "title": "Paramètres"
+        },
+        "title": "Page de lancement"
+    },
+    "marchers": {
+        "addMarcher": "Ajouter",
+        "addMarchers": "Ajouter des marcheurs",
+        "cancelDeleteButton": "Annuler",
+        "createButton": "{quantity, plural, one {Créer Marcheur} other {Créer Marcheurs} }",
+        "createButtonWithSection": "{quantity, plural, one {Créer {section} Marcheur} other {Créer {section} Marcheurs} }",
+        "created": "{count, plural, one {Marcheur {drillNumbers} créé avec succès} other {Marcheurs {drillNumbers} créés avec succès} }",
+        "createError": "{count, plural, one {Erreur lors de la création du marcheur {drillNumbers}} other {Erreur lors de la création des marcheurs {drillNumbers}} }",
+        "createInfo": "Les nouveaux marcheurs peuvent ne pas apparaître immédiatement avant de rafraîchir.",
+        "deleteButton": "Supprimer",
+        "deleteDescription": "Vous êtes sur le point de supprimer ces styles de section : {sections}. Cela peut être annulé avec [Ctrl/Cmd+Z].",
+        "deleteTitle": "Avertissement",
+        "deleteWarning": "Vous êtes sur le point de supprimer ces marcheurs : {marchers}. Ceci peut être annulé avec [Crtl/Cmd+Z].",
+        "drillOrder": "Numéro de routine",
+        "drillOrderError": {
+            "exists": "Ce numéro de perceuse existe déjà"
+        },
+        "drillPrefix": "Préfixe de routine",
+        "editButton": "Modifier les marcheurs",
+        "list": {
+            "addSectionStyle": "Ajouter un style de section",
+            "addTagAppearance": "Ajouter Apparence de Tag",
+            "allSections": "Toutes les sections",
+            "createTagsFirst": "Créez d'abord des balises dans l'inspecteur de marcheur pour ajouter l'apparence des balises.",
+            "deleteSectionStyle": "Supprimer ce style de section",
+            "discardChanges": "Annuler les modifications",
+            "drillNumberTitle": "Numéro de forage",
+            "fillColor": "Couleur de Remplissage",
+            "nameTitle": "Nom",
+            "noMarchers": "Aucun marcheur n'a encore été créé. Pourquoi ne pas en créer un ?",
+            "none": "Aucun",
+            "noSectionStyles": "Aucun style de section défini pour le moment. Ajoutez-en un pour personnaliser l'apparence de chaque section.",
+            "outlineColor": "Couleur du Contour",
+            "pendingChanges": "Les valeurs ci-dessous peuvent ne pas être appliquées avant un rafraîchissement",
+            "saveChanges": "Enregistrer les modifications",
+            "sectionsInShow": "Sections dans le spectacle",
+            "sectionStyles": "Styles de section",
+            "sectionTitle": "Section",
+            "selectSection": "Section",
+            "shape": "Forme"
+        },
+        "listTitle": "Liste",
+        "marcherAppearance": "Apparence des Marcheurs",
+        "quantity": "Quantité",
+        "section": "Section",
+        "sectionError": {
+            "chooseSection": "Veuillez choisir une section"
+        },
+        "sectionStyles": "Styles de section",
+        "sectionText": "Section",
+        "tagText": "Étiquette",
+        "title": "Marcheurs"
+    },
+    "music": {
+        "accent": "Accentuer le premier temps",
+        "addNewTempoGroupAfter": "Ajouter un nouveau groupe de tempo après celui-ci",
+        "addTempoGroup": "Ajouter un nouveau groupe",
+        "audio": "Audio",
+        "audioFile": "Fichier Audio",
+        "beatPattern": "Motif de rythme *",
+        "beatsPerMeasure": "Battements par mesure *",
+        "beatStyle": "Style de beat",
+        "cancel": "Annuler",
+        "create": "Créer",
+        "custom": "Personnalisé",
+        "customization": "Personnalisation",
+        "delete": "Supprimer",
+        "deleteAllMeasures": "Supprimer toutes les mesures et leurs pages associées",
+        "deleteAudioFile": "Supprimer le fichier audio",
+        "deleteAudioFileDescription": "Êtes-vous sûr de vouloir supprimer ce fichier audio? Cette action ne peut pas être annulée.",
+        "deleteSuccess": "Supprimé avec succès {fileName}",
+        "deleteTempoGroupAlert": "Êtes-vous sûr ?",
+        "deleteTempoGroupDescription": "La suppression du groupe de tempo supprimera également toutes les pages associées.",
+        "endTempo": "Tempo final",
+        "endTempoPlaceholder": "Facultatif",
+        "endTempoTooltip": "Le nouveau groupe ira progressivement vers le tempo final, mais ne l'atteindra pas.\nCela permet de créer une transition fluide vers un nouveau groupe.",
+        "general": "Général",
+        "import": "Importer",
+        "importAudioFile": "Importer fichier audio",
+        "importButton": "Importer le fichier MusicXML",
+        "importError": "Échec de l'importation du fichier MusicXML",
+        "importing": "Importation...",
+        "importLabel": "Importation de MusicXML",
+        "importSuccess": "Fichier MusicXML : \"{fileName}\" importé avec succès !",
+        "individualBeatTempos": "Tempos individuels des battements",
+        "makeMixedMeter": "Créer un mètre mixte",
+        "makeSimpleMeter": "Créer un Mètre Régulier",
+        "metronome": "Métronome",
+        "mixedMeterTooManyBeats": "La métrique mixte ne devrait pas avoir plus de {maxBeats} temps. Cela rendra votre ordinateur triste. Si vous en avez vraiment besoin, veuillez nous contacter pour nous faire entendre votre musique cool en métrique mixte qui a {beatsPerMeasure} temps par mesure.",
+        "name": "Nom",
+        "nameDescription": "Lettre de répétition ou identifiant",
+        "namePlaceholder": "Facultatif",
+        "numberOfMeasures": "Nombre de mesures *",
+        "onlyClickOnMeasure": "Cliquez uniquement sur la mesure",
+        "onOff": "Activé/Désactivé",
+        "rehearsalLetterOrIdentifier": "Lettre de répétition ou identifiant",
+        "saveChanges": "Enregistrer les modifications",
+        "seeDocs": "Voir docs",
+        "select": "Sélectionner",
+        "selectPattern": "Sélectionnez un modèle",
+        "sharp": "Dièse",
+        "smooth": "Doux",
+        "standard": "Standard",
+        "startTempo": "Tempo de départ *",
+        "tempo": "Tempo *",
+        "tempoDescription": "Battements par minute",
+        "tempoGroupCreated": "Groupe de Tempo créé",
+        "tempoGroupNamePlaceholder": "Facultatif",
+        "tempoGroups": "Groupes de Tempo",
+        "tempoGroupUpdated": "Groupe de Tempo mis à jour",
+        "timeSignature": "Signature rythmique : {timeSignature}",
+        "title": "Musique",
+        "undoWithCtrlZ": "Cette action est annulable avec Ctrl + Z",
+        "volume": "Volume"
+    },
+    "pages": {
+        "createFailed": "Échec de la création de la page - {error}",
+        "createLastPageFailed": "Échec de la création de la dernière page - {error}",
+        "deleteFailed": "Échec de la suppression de la page - {error}",
+        "updateFailed": "Échec de la mise à jour de la page - {error}",
+        "deletedSuccessfully": "Page supprimée avec succès"
+    },
+    "section": {
+        "drumMajor": "Chef d'orchestre",
+        "family": {
+            "battery": "Batterie",
+            "brass": "Cuivre",
+            "guard": "Garde",
+            "other": "Autre",
+            "pit": "Fosse",
+            "woodwind": "Instruments à vent"
+        },
+        "guard": {
+            "colorGuard": "Garde de couleur",
+            "dancer": "Danseur",
+            "flag": "Drapeau",
+            "rifle": "Fusil",
+            "twirler": "Twirler"
+        },
+        "instrument": {
+            "altoSax": "Sax Alto",
+            "bariSax": "Sax Baryton",
+            "baritone": "Baryton",
+            "bassClarinet": "Clarinette Basse",
+            "bassDrum": "Grosse Caisse",
+            "bassTrombone": "Trombone basse",
+            "clarinet": "Clarinette",
+            "cymbals": "Cymbales",
+            "euphonium": "Euphonium",
+            "flubDrum": "Flub Drum",
+            "flute": "Flûte",
+            "mellophone": "Mellophone",
+            "piccolo": "Piccolo",
+            "snare": "Caisse claire",
+            "sopranoSax": "Sax Soprano",
+            "tenors": "Ténors",
+            "tenorSax": "Sax Ténor",
+            "trombone": "Trombone",
+            "trumpet": "Trompette",
+            "tuba": "Tuba"
+        },
+        "other": "Autre",
+        "pit": {
+            "auxPercussion": "Percussion auxiliaire",
+            "marimba": "Marimba",
+            "synthesizer": "Synthétiseur",
+            "vibraphone": "Vibraphone",
+            "xylophone": "Xylophone"
+        },
+        "soloist": {
+            "soloist": "Soliste"
+        }
+    },
+    "settings": {
+        "developer": "Paramètres du développeur",
+        "developer.refreshNotice": "Veuillez <a>recharger l'application</a> pour mettre à jour les paramètres.",
+        "general": "Général",
+        "general.appearance": "Apparence",
+        "general.appearance.dark": "Sombre",
+        "general.appearance.light": "Clair",
+        "general.language": "Langue",
+        "general.showFullDatabasePath": "Afficher le chemin complet du fichier",
+        "mouse": "Souris et Trackpad",
+        "mouse.panSensitivity": "Sensibilité du panoramique",
+        "mouse.trackpadMode": "Mode pavé tactile (recommandé pour macOS)",
+        "mouse.trackpadPanSensitivity": "Sensibilité du panoramique du pavé tactile",
+        "mouse.zoomSensitivity": "Sensibilité du zoom",
+        "plugins": "Plugins",
+        "plugins.community": "Communauté",
+        "plugins.install": "Installer",
+        "plugins.installed": "Installé",
+        "plugins.installFailed": "Échec de l'installation",
+        "plugins.installing": "Installation...",
+        "plugins.noCommunityPlugins": "Aucun plugin communautaire disponible.",
+        "plugins.noOfficialPlugins": "Aucun plugin officiel disponible.",
+        "plugins.noPlugins": "Aucun plugin installé",
+        "plugins.official": "Officiel",
+        "plugins.refreshNotice": "Veuillez <a>recharger l'application</a> pour mettre à jour les plugins.",
+        "plugins.toast.installFailed": "Échec de l'installation du plugin {pluginName}",
+        "plugins.toast.installSuccess": "Le plugin {pluginName} a été installé avec succès!",
+        "plugins.toast.uninstallFailed": "Échec de la suppression de {pluginName}",
+        "plugins.toast.uninstallSuccess": "Le plugin {pluginName} a été supprimé avec succès!",
+        "plugins.uninstall": "Désinstaller",
+        "plugins.uninstalled": "Supprimé",
+        "plugins.uninstallFailed": "Échec de la suppression",
+        "plugins.uninstalling": "Suppression...",
+        "privacy": "Confidentialité",
+        "privacy.analytics": "Partager les analyses d'utilisation",
+        "privacy.analytics.description": "Pour nous aider à améliorer OpenMarch, nous collectons des données d'analyse, des journaux d'erreurs et des enregistrements de session. Cela nous aide à comprendre comment vous utilisez l'application et à identifier les bugs. Consultez notre <a>politique de confidentialité</a> pour en savoir plus.",
+        "privacy.analytics.description.opt_out": "Vous pouvez vous désinscrire si vous le souhaitez. Sachez juste qu'OpenMarch est un outil gratuit créé par des bénévoles, et ces données nous aident à comprendre comment les designers utilisent l'application et à trouver des bugs—surtout lorsque nous n'en entendons pas parler immédiatement sur Discord ou Facebook :)",
+        "privacy.analytics.disabled": "Vous ne partagez pas les analyses. Si vous rencontrez des problèmes ou des bugs, nous ne serons pas au courant. Si vous avez un problème, veuillez <a>soumettre des commentaires</a> afin que nous puissions y remédier.",
+        "privacy.analytics.enabled": "Vous partagez des analyses d'utilisation. Merci de nous aider à améliorer OpenMarch pour tous.",
+        "privacy.analytics.feedback.link": "soumettre les commentaires",
+        "privacy.analytics.toggle": "Activer l'analyse",
+        "title": "Paramètres",
+        "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
+        "tolgeeDevToolsToggle": "Tolgee Traduction In-Context"
+    },
+    "shapes": {
+        "circle": "Cercle",
+        "square": "Carré",
+        "triangle": "Triangle",
+        "x": "X"
+    },
+    "tags": {
+        "title": "Étiquettes"
+    },
+    "tempoGroup": {
+        "createBeatsError": "Erreur de création des beats",
+        "createNewBeatsError": "Erreur de création de nouveaux beats",
+        "deletedSuccessfully": "Groupe de tempo supprimé avec succès",
+        "deleteFailed": "Échec de la suppression du groupe de tempo",
+        "differentBeatsError": "Le groupe de tempo a un nombre différent de temps. Cela ne devrait pas arriver. Veuillez nous contacter!",
+        "errorUpdatingTempoGroup": "Erreur lors de la mise à jour du groupe de tempo",
+        "noMeasures": "Le groupe de tempo n'a pas de mesures"
+    },
+    "timeline": {
+        "audio": "Audio",
+        "controls": {
+            "label": "Contrôles de lecture"
+        },
+        "label": "Chronologie",
+        "masterVolume": "Volume principal",
+        "music": {
+            "add": "Ajouter Musique"
+        },
+        "page": {
+            "contextMenu": {
+                "deletePage": "Supprimer",
+                "subsetToggle": "Sous-ensemble",
+                "title": "Page {pageName}"
+            },
+            "deleted": "Page {pageName} supprimée",
+            "deleteFailed": "Échec de la suppression de la page",
+            "firstPage": "Première page",
+            "label": "Page {pageName}",
+            "subset": "Sous-ensemble"
+        },
+        "pages": "Pages",
+        "perspective": {
+            "label": "Perspective"
+        }
+    },
+    "titlebar": {
+        "bugReport": "Envoyer un rapport de bug ou des commentaires",
+        "bugReport.placeholder": "Qu'est-ce qui s'est passé ?\nQu'attendiez-vous ?\nComment pouvons-nous reproduire le problème ?",
+        "databasePathError": "Erreur de chemin de base de données",
+        "databasePathError.description": "Échec de récupération du chemin du fichier .dots!\n\nVeuillez quitter complètement l'application et réessayer.\n\nSi le problème persiste, veuillez contacter le support.",
+        "databasePathError.dismiss": "Ignorer"
+    },
+    "toolbar": {
+        "alignment": {
+            "alignMarchersAriaLabel": "Aligner les marcheurs",
+            "lockMarchersAriaLabel": "Déplacement du curseur et ajustement des marcheurs",
+            "placeAllMarchers": "Placer tous les marcheurs",
+            "placeSelectedMarchers": "Placer les marcheurs sélectionnés",
+            "toNextPagePositions": "...aux positions suivantes de la page",
+            "toPreviousPagePositions": "...aux positions précédentes de la page"
+        },
+        "select": {
+            "noDrillPrefixesToSelect": "Aucun préfixe de forage à sélectionner trouvé",
+            "noSectionsToSelect": "Aucune section à sélectionner trouvée",
+            "noTagsToSelect": "Aucun tag à sélectionner trouvé",
+            "selectBy": {
+                "drillPrefix": "Préfixe de sélection",
+                "family": "Famille",
+                "section": "Section",
+                "tag": "Étiqueter"
+            },
+            "selectByText": "Sélectionner par"
+        },
+        "settings": "Paramètres de l'application",
+        "view": {
+            "gridLines": "Lignes de grille",
+            "halfLines": "Demi-lignes",
+            "nextPaths": "Prochains chemins",
+            "previousPaths": "Chemins précédents",
+            "uiSettingsToolbar": "Barre d'outils des paramètres de l'interface utilisateur"
+        }
+    },
+    "versionCheck": {
+        "error": {
+            "fetchFailed": "Une erreur s'est produite lors de la récupération de la version.",
+            "noVersion": "Impossible d'obtenir la dernière version."
+        },
+        "installLinux": "Installer pour Linux",
+        "installMacArm": "Installer pour Apple Silicon",
+        "installMacIntel": "Installer pour Mac Intel",
+        "installWindows": "Installer pour Windows",
+        "skipVersion": "Ignorer cette version",
+        "title": "Nouvelle Version Disponible",
+        "trigger": "Nouvelle Version Disponible!"
+    },
+    "welcome": {
+        "description": "Aucun fichier trouvé. Créez-en un, et assurez-vous de consulter les guides. Personnalisez votre thème et votre navigation dans Paramètres.",
+        "title": "Bienvenue à OpenMarch"
+    },
+    "workspaceSettings": {
+        "audioOffsetSeconds": "Décalage Audio",
+        "cancel": "Annuler",
+        "defaultBeatsPerMeasure": "Battements par mesure par défaut",
+        "defaultNewPageCounts": "Nombre de pages par défaut",
+        "defaultTempo": "Tempo Par Défaut",
+        "loadingSettings": "Chargement des paramètres de l'espace de travail…",
+        "measurementOffset": "Décalage du numéro de mesure",
+        "noSettingsFound": "Aucun paramètre d'espace de travail trouvé",
+        "pageNumberOffset": "Décalage du numéro de page",
+        "resetToDefaults": "Réinitialiser par défaut",
+        "saveChanges": "Enregistrer les modifications",
+        "title": "Paramètres de l'espace de travail",
+        "units": {
+            "beats": "battements",
+            "bpm": "BMP",
+            "counts": "comptes",
+            "seconds": "secondes"
+        },
+        "unsavedChanges": "Vous avez des modifications non enregistrées"
+    }
+}
