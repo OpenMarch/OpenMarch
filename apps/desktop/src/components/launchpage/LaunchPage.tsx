@@ -97,38 +97,45 @@ function Sidebar({
                 <p className="text-body text-text/60">
                     <T keyName="launchpage.title" />
                 </p>
-                <div className="flex gap-8">
+                <div className="flex min-w-0 gap-8">
                     <Button
-                        className="h-fit w-full px-8 leading-none whitespace-nowrap"
+                        className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"
                         onClick={handleCreateNew}
                     >
-                        <PlusIcon size={24} />{" "}
-                        <span className="h-fit leading-none whitespace-nowrap">
+                        <PlusIcon size={24} className="flex-shrink-0" />
+                        <span className="h-fit min-w-0 leading-tight break-words">
                             <T keyName="launchpage.files.createNew" />
                         </span>
                     </Button>
                     <Button
                         onClick={handleOpenExisting}
-                        className="h-fit w-full px-8 leading-none whitespace-nowrap"
+                        className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"
                         variant="secondary"
                     >
-                        <FolderIcon size={24} />
-                        <span className="h-fit leading-none whitespace-nowrap">
+                        <FolderIcon size={24} className="flex-shrink-0" />
+                        <span className="h-fit min-w-0 leading-tight break-words">
                             <T keyName="launchpage.files.openFile" />
                         </span>
                     </Button>
                 </div>
-                <div className="flex flex-col">
+                <div className="flex min-w-0 flex-col">
                     <Tabs.Trigger value="files">
                         <ListItem selected={selectedTab === "files"}>
-                            <FolderIcon size={24} />
-                            <T keyName="launchpage.files.title" />
+                            <FolderIcon size={24} className="flex-shrink-0" />
+                            <span className="min-w-0 break-words">
+                                <T keyName="launchpage.files.title" />
+                            </span>
                         </ListItem>
                     </Tabs.Trigger>
                     <Tabs.Trigger value="learn">
                         <ListItem selected={selectedTab === "learn"}>
-                            <LightbulbIcon size={24} />
-                            <T keyName="launchpage.learn.title" />
+                            <LightbulbIcon
+                                size={24}
+                                className="flex-shrink-0"
+                            />
+                            <span className="min-w-0 break-words">
+                                <T keyName="launchpage.learn.title" />
+                            </span>
                         </ListItem>
                     </Tabs.Trigger>
                 </div>
@@ -165,21 +172,25 @@ function Sidebar({
                         href="https://store.openmarch.com"
                         target="_blank"
                         rel="noreferrer"
-                        className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex h-[2.5rem] w-full items-center justify-start gap-8 overflow-clip border px-12 duration-150 ease-out`}
+                        className={`rounded-6 border-stroke text-text bg-fg-2 hover:border-accent relative mb-8 flex min-h-[2.5rem] w-full min-w-0 items-center justify-start gap-8 overflow-hidden border px-12 duration-150 ease-out`}
                     >
-                        <TShirtIcon size={24} />{" "}
-                        <T keyName="launchpage.merch" />
+                        <TShirtIcon size={24} className="flex-shrink-0" />
+                        <span className="min-w-0 break-words">
+                            <T keyName="launchpage.merch" />
+                        </span>
                         <div className="bg-accent absolute right-[5%] bottom-[-15%] -z-10 h-[1rem] w-[6rem] rounded-full opacity-75 blur-xl">
                             a
                         </div>
                     </a>
                 </div>
                 <hr className="border-stroke w-full border" />
-                <div className="flex flex-col">
+                <div className="flex min-w-0 flex-col">
                     <Tabs.Trigger value="settings">
                         <ListItem selected={selectedTab === "settings"}>
-                            <GearSixIcon size={24} />
-                            <T keyName="launchpage.settings.title" />
+                            <GearSixIcon size={24} className="flex-shrink-0" />
+                            <span className="min-w-0 break-words">
+                                <T keyName="launchpage.settings.title" />
+                            </span>
                         </ListItem>
                     </Tabs.Trigger>
                 </div>
