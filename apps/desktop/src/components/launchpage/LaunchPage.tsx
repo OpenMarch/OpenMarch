@@ -61,27 +61,22 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
 function Sidebar({
     setDatabaseIsReady,
     selectedTab,
-}: LaunchPageProps & { selectedTab: string }) {
+}: LaunchPageProps & {
+    selectedTab: string;
+}) {
     async function handleCreateNew() {
-        console.log("Creating new file...");
         try {
-            const dataBaseIsReady = await window.electron.databaseCreate();
-            console.log("Database create result:", dataBaseIsReady);
-
-            // If database creation was successful, update the state
-            if (dataBaseIsReady > 0) {
-                setDatabaseIsReady(true);
-            }
+            await window.electron.databaseCreate();
+            // Note: Window will reload after file creation, so wizard will be shown
+            // automatically via the detection logic in App component
         } catch (error) {
             console.error("Error creating new file:", error);
         }
     }
 
     async function handleOpenExisting() {
-        console.log("Opening existing file...");
         try {
             const dataBaseIsReady = await window.electron.databaseLoad();
-            console.log("Database load result:", dataBaseIsReady);
 
             // If database loading was successful, update the state
             if (dataBaseIsReady > 0) {

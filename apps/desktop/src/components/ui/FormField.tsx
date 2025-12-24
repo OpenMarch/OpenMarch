@@ -8,17 +8,21 @@ import { forwardRef } from "react";
 import { T } from "@tolgee/react";
 
 interface FormFieldProps {
-    label: string;
+    label: string | React.ReactNode;
     children: React.ReactNode;
     tooltip?: string;
     className?: string;
+    name?: string;
 }
 
 const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
-    ({ label, children, tooltip, className }, ref) => {
+    ({ label, children, tooltip, className, name }, ref) => {
+        // Use name prop if provided, otherwise convert label to string for Form.Field name
+        const fieldName = name || (typeof label === "string" ? label : "field");
+
         return (
             <Form.Field
-                name={label}
+                name={fieldName}
                 className={twMerge(
                     clsx(
                         "flex items-center justify-between gap-6 px-12",

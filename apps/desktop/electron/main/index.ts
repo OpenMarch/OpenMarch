@@ -258,6 +258,16 @@ void app.whenReady().then(async () => {
     ipcMain.handle("database:create", async () => newFile());
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 
+    // Wizard flag handlers
+    ipcMain.handle("wizard:shouldShow", () => {
+        const shouldShow = store.get("showSetupWizard", false) as boolean;
+        if (shouldShow) {
+            // Clear the flag after reading it
+            store.delete("showSetupWizard");
+        }
+        return shouldShow;
+    });
+
     // Recent files handlers
     ipcMain.handle("recent-files:get", getRecentFiles);
     ipcMain.handle("recent-files:remove", (_, filePath) =>
@@ -567,6 +577,10 @@ export async function newFile() {
 
     // Add to recent files
     addRecentFile(filePath);
+
+    // Set flag to show wizard after reload
+    store.set("showSetupWizard", true);
+
     win?.webContents.reload();
 
     return 200;
@@ -777,10 +791,8 @@ export async function insertAudioFile(): Promise<
             selected: true,
         });
 
-        // Only reload after successful insertion
-        if (databaseResponse.success) {
-            win?.webContents.reload();
-        }
+        // Don't reload - let the frontend handle refreshing via React Query/invalidation
+        // The RegisteredActionsHandler will refresh the audio files after insertion
 
         return databaseResponse;
     } catch (err) {

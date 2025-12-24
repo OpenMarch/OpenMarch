@@ -522,7 +522,10 @@ export const RegisteredActionsObjects: {
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
+    const setSelectedPage =
+        selectedPageContext?.setSelectedPage ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjects()!;
     const { isPlaying, setIsPlaying } = useIsPlaying()!;
@@ -613,22 +616,29 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
                     void window.electron
                         .launchInsertAudioFileDialogue()
-                        .then(() => {
-                            AudioFile.getSelectedAudioFile().then(
-                                (response) => {
-                                    const selectedAudioFileWithoutAudio = {
-                                        ...response,
-                                        data: undefined,
-                                    };
-                                    setSelectedAudioFile(
-                                        selectedAudioFileWithoutAudio,
-                                    );
-                                },
-                            );
+                        .then((response) => {
+                            if (response?.success) {
+                                // Refresh selected audio file
+                                AudioFile.getSelectedAudioFile().then(
+                                    (audioFile) => {
+                                        const selectedAudioFileWithoutAudio = {
+                                            ...audioFile,
+                                            data: undefined,
+                                        };
+                                        setSelectedAudioFile(
+                                            selectedAudioFileWithoutAudio,
+                                        );
+                                    },
+                                );
+                                // Send event to refresh audio files list
+                                // Components listening for this will refresh their audio files
+                                window.dispatchEvent(
+                                    new CustomEvent("audioFilesUpdated"),
+                                );
+                            }
                         });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
-                    console.log("launchImportMusicXmlFileDialogue");
                     break;
                 default:
                     isElectronAction = false;

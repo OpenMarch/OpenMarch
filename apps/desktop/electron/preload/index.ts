@@ -151,6 +151,10 @@ const APP_API = {
     databaseCreate: () => ipcRenderer.invoke("database:create"),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
+    // Wizard
+    wizardShouldShow: () =>
+        ipcRenderer.invoke("wizard:shouldShow") as Promise<boolean>,
+
     // SVG Generation
     onGetSvgForClose: (callback: () => Promise<string>) => {
         ipcRenderer.on("get-svg-on-close", async (event, requestId) => {

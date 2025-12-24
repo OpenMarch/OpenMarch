@@ -29,6 +29,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
+import GuidedSetupWizard from "@/components/wizard/GuidedSetupWizard";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -49,24 +50,20 @@ function App() {
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
+    const [wizardOpen, setWizardOpen] = useState(false);
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
-    if (isCodegen) {
-        console.log("🎭 React app running in Playwright Codegen mode");
-    }
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
-        console.log("Loading plugins...");
         void window.plugins
             ?.list()
             .then(async (pluginPaths: string[]) => {
                 for (const path of pluginPaths) {
                     const pluginName =
                         path.split(/[/\\]/).pop() || "Unknown Plugin";
-                    console.log(`Loading plugin: ${pluginName}`);
                     try {
                         const code = await window.plugins.get(path);
 
@@ -98,15 +95,32 @@ function App() {
                     }
                 }
             })
-            .then(() => {
-                console.log("All plugins loaded.");
-            });
+            .then(() => undefined);
     }, []);
 
     useEffect(() => {
         // Check if database is ready
         void window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
+
+            // Check for wizard flag if database is ready
+            if (result) {
+                const checkWizardFlag = async () => {
+                    try {
+                        const shouldShow =
+                            await window.electron.wizardShouldShow();
+                        if (shouldShow) {
+                            setTimeout(() => setWizardOpen(true), 1000);
+                        }
+                    } catch (error) {
+                        console.error(
+                            "App: Error checking wizard flag:",
+                            error,
+                        );
+                    }
+                };
+                void checkWizardFlag();
+            }
         });
     }, []);
 
@@ -222,6 +236,13 @@ function App() {
                                                 {!isFullscreen && <Inspector />}
                                             </div>
                                             <Toaster />
+                                            <GuidedSetupWizard
+                                                open={wizardOpen}
+                                                onOpenChange={setWizardOpen}
+                                                onComplete={() => {
+                                                    // Wizard complete
+                                                }}
+                                            />
                                         </SelectedAudioFileProvider>
                                     </SelectedMarchersProvider>
                                 </SelectedPageProvider>

@@ -5,7 +5,6 @@ import {
     Select,
     SelectItem,
     SelectContent,
-    SelectSeparator,
     SelectTriggerButton,
     Button,
     AlertDialog,
@@ -70,6 +69,20 @@ export default function AudioSelector() {
     useEffect(() => {
         refreshAudioFiles();
     }, [refreshAudioFiles, selectedAudioFile]);
+
+    // Listen for audio file updates (e.g., after insertion)
+    useEffect(() => {
+        const handleAudioFilesUpdated = () => {
+            refreshAudioFiles();
+        };
+        window.addEventListener("audioFilesUpdated", handleAudioFilesUpdated);
+        return () => {
+            window.removeEventListener(
+                "audioFilesUpdated",
+                handleAudioFilesUpdated,
+            );
+        };
+    }, [refreshAudioFiles]);
 
     return (
         <div className="flex flex-col gap-12">

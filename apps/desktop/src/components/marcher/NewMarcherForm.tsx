@@ -226,7 +226,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             onSubmit={handleSubmit}
             id="newMarcherForm"
             ref={formRef}
-            className="flex h-full flex-col gap-16"
+            className="flex flex-col gap-16"
         >
             <div className="flex flex-col gap-16">
                 <FormField label={t("marchers.quantity")}>

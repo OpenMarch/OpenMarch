@@ -848,5 +848,34 @@
             "counts": "counts",
             "seconds": "seconds"
         }
+    },
+    "wizard": {
+        "title": "Guided Setup",
+        "back": "Back",
+        "next": "Next",
+        "complete": "Complete",
+        "skip": "Skip",
+        "ensemble": {
+            "environment": "Environment",
+            "type": "Ensemble Type",
+            "outdoor": "Outdoor",
+            "indoor": "Indoor"
+        },
+        "performers": {
+            "added": "Added Performers",
+            "noneAdded": "No performers added yet. Add at least one performer to continue.",
+            "addNew": "Add New Performer",
+            "remove": "Remove"
+        },
+        "music": {
+            "method": "Music Setup Method",
+            "tempoOnly": "Tempo Only",
+            "musicXml": "Import MusicXML",
+            "audioFile": "Import Audio File",
+            "skip": "Skip for Now",
+            "tempo": "Tempo (BPM)",
+            "startCount": "Start Count",
+            "skipDescription": "You can add music later from the music settings."
+        }
     }
 }
