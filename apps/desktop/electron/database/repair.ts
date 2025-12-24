@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import * as fs from "fs";
 import * as path from "path";
+import { app } from "electron";
 import { getOrm } from "./db";
 import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
 
@@ -31,7 +32,13 @@ export const repairDatabase = async (originalDbPath: string) => {
         const drizzleDb = getOrm(newDb);
         const migrator = new DrizzleMigrationService(drizzleDb, newDb);
 
-        const migrationsFolder = path.join(__dirname, "migrations");
+        // Use the same path resolution as setActiveDb
+        const migrationsFolder = path.join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
         await migrator.applyPendingMigrations(migrationsFolder);
         await migrator.initializeDatabase(drizzleDb);
 
@@ -44,6 +51,7 @@ export const repairDatabase = async (originalDbPath: string) => {
             "__drizzle_migrations",
             "history_undo",
             "history_redo",
+            "history_stats",
         ]);
 
         // Get all table names from the original database
@@ -63,47 +71,33 @@ export const repairDatabase = async (originalDbPath: string) => {
                 continue;
             }
 
-            try {
-                // Get column names from the original table
-                const originalColumns = originalDb
-                    .prepare(`PRAGMA table_info(${tableName})`)
-                    .all() as Array<{ name: string; type: string }>;
+            // Get column names from the original table
+            const originalColumns = originalDb
+                .prepare(`PRAGMA table_info(${tableName})`)
+                .all() as Array<{ name: string; type: string }>;
 
-                // Get column names from the new table
-                const newColumns = newDb
-                    .prepare(`PRAGMA table_info(${tableName})`)
-                    .all() as Array<{ name: string; type: string }>;
+            // Get column names from the new table
+            const newColumns = newDb
+                .prepare(`PRAGMA table_info(${tableName})`)
+                .all() as Array<{ name: string; type: string }>;
 
-                // Find common columns between old and new tables
-                const newColumnNames = new Set(
-                    newColumns.map((col) => col.name),
-                );
-                const commonColumns = originalColumns
-                    .filter((col) => newColumnNames.has(col.name))
-                    .map((col) => col.name);
+            // Find common columns between old and new tables
+            const newColumnNames = new Set(newColumns.map((col) => col.name));
+            const commonColumns = originalColumns
+                .filter((col) => newColumnNames.has(col.name))
+                .map((col) => col.name);
 
-                if (commonColumns.length === 0) {
-                    console.log(
-                        `Skipping table ${tableName} - no common columns`,
-                    );
-                    continue;
-                }
-
-                // Build INSERT INTO ... SELECT statement
-                const columnsStr = commonColumns
-                    .map((c) => `"${c}"`)
-                    .join(", ");
-                const insertSql = `INSERT INTO "${tableName}" (${columnsStr}) SELECT ${columnsStr} FROM ${attachName}."${tableName}"`;
-
-                newDb.prepare(insertSql).run();
-                console.log(`Copied data from table: ${tableName}`);
-            } catch (error) {
-                console.error(
-                    `Error copying table ${tableName}:`,
-                    error instanceof Error ? error.message : String(error),
-                );
-                // Continue with other tables even if one fails
+            if (commonColumns.length === 0) {
+                console.log(`Skipping table ${tableName} - no common columns`);
+                continue;
             }
+
+            // Build INSERT INTO ... SELECT statement
+            const columnsStr = commonColumns.map((c) => `"${c}"`).join(", ");
+            const insertSql = `INSERT INTO "${tableName}" (${columnsStr}) SELECT ${columnsStr} FROM ${attachName}."${tableName}"`;
+
+            newDb.prepare(insertSql).run();
+            console.log(`Copied data from table: ${tableName}`);
         }
 
         // Detach the original database
@@ -113,6 +107,7 @@ export const repairDatabase = async (originalDbPath: string) => {
         newDb.pragma("foreign_keys = ON");
     } finally {
         // Close both databases
+        // Errors will propagate naturally, and finally ensures cleanup
         originalDb.close();
         newDb.close();
     }

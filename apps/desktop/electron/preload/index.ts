@@ -149,6 +149,8 @@ const APP_API = {
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    repairDatabase: (dbPath: string) =>
+        ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
     // SVG Generation

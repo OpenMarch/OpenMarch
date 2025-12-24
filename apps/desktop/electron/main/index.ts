@@ -27,6 +27,7 @@ import { init, captureException } from "@sentry/electron/main";
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
+import { repairDatabase } from "../database/repair";
 
 // The built directory structure
 //
@@ -256,6 +257,17 @@ void app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("database:repair", async (_, dbPath: string) => {
+        try {
+            const newPath = await repairDatabase(dbPath);
+            // Set the new database path and reload the window
+            await setActiveDb(newPath);
+            return newPath;
+        } catch (error) {
+            console.error("Error repairing database:", error);
+            throw error;
+        }
+    });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 
     // Recent files handlers
