@@ -361,17 +361,17 @@
             "xCheckpoints": "Puntos de Control X",
             "yCheckpoints": "Puntos de Control Y"
         },
-        "themeSubsections": {
-            "grid": "Cuadrícula",
-            "labels": "Etiquetas",
-            "pathways": "Rutas",
-            "marchers": "Marchadores"
-        },
         "tabs": {
             "checkpoints": "Puntos de Control",
             "general": "General",
             "image": "Imagen",
             "theme": "Tema"
+        },
+        "themeSubsections": {
+            "grid": "Cuadrícula",
+            "labels": "Etiquetas",
+            "marchers": "Marchadores",
+            "pathways": "Rutas"
         },
         "title": "Propiedades del Campo",
         "tooltips": {
@@ -640,9 +640,9 @@
     "pages": {
         "createFailed": "Error al crear la página - {error}",
         "createLastPageFailed": "Error al crear la última página - {error}",
+        "deletedSuccessfully": "Página eliminada exitosamente",
         "deleteFailed": "Error al eliminar la página - {error}",
-        "updateFailed": "Error al actualizar la página - {error}",
-        "deletedSuccessfully": "Página eliminada exitosamente"
+        "updateFailed": "Error al actualizar la página - {error}"
     },
     "section": {
         "drumMajor": "Director de Percusión",
@@ -705,6 +705,7 @@
         "general.language": "Idioma",
         "general.showFullDatabasePath": "Mostrar ruta completa del archivo",
         "mouse": "Ratón y Trackpad",
+        "mouse.panSensitivity": "Sensibilidad de panorámica",
         "mouse.trackpadMode": "Modo trackpad (recomendado para macOS)",
         "mouse.trackpadPanSensitivity": "Sensibilidad de panorámica del trackpad",
         "mouse.zoomSensitivity": "Sensibilidad de acercamiento",

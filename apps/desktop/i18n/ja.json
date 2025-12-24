@@ -361,17 +361,17 @@
             "xCheckpoints": "X チェックポイント",
             "yCheckpoints": "Y チェックポイント"
         },
-        "themeSubsections": {
-            "grid": "グリッド",
-            "labels": "ラベル",
-            "pathways": "パス",
-            "marchers": "マーチャーズ"
-        },
         "tabs": {
             "checkpoints": "チェックポイント",
             "general": "一般",
             "image": "画像",
             "theme": "テーマ"
+        },
+        "themeSubsections": {
+            "grid": "グリッド",
+            "labels": "ラベル",
+            "marchers": "マーチャーズ",
+            "pathways": "パス"
         },
         "title": "フィールドプロパティ",
         "tooltips": {
@@ -640,9 +640,9 @@
     "pages": {
         "createFailed": "ページの作成に失敗しました - {error}",
         "createLastPageFailed": "最後のページの作成に失敗しました - {error}",
+        "deletedSuccessfully": "ページ が正常に削除されました",
         "deleteFailed": "ページの削除に失敗しました - {error}",
-        "updateFailed": "ページの更新に失敗しました - {error}",
-        "deletedSuccessfully": "ページ が正常に削除されました"
+        "updateFailed": "ページの更新に失敗しました - {error}"
     },
     "section": {
         "drumMajor": "ドラム メジャー",
@@ -705,6 +705,7 @@
         "general.language": "言語",
         "general.showFullDatabasePath": "フル ファイル パスを表示",
         "mouse": "マウス ＆ トラックパッド",
+        "mouse.panSensitivity": "パン 感度",
         "mouse.trackpadMode": "トラックパッド モード （ macOS に推奨 ）",
         "mouse.trackpadPanSensitivity": "トラックパッド パン 感度",
         "mouse.zoomSensitivity": "ズーム 感度",

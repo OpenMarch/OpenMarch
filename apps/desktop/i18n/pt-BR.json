@@ -361,17 +361,17 @@
             "xCheckpoints": "Pontos de Verificação X",
             "yCheckpoints": "Pontos de Verificação Y"
         },
-        "themeSubsections": {
-            "grid": "Grade",
-            "labels": "Rótulos",
-            "pathways": "Caminhos",
-            "marchers": "Marchadores"
-        },
         "tabs": {
             "checkpoints": "Pontos de Verificação",
             "general": "Geral",
             "image": "Imagem",
             "theme": "Tema"
+        },
+        "themeSubsections": {
+            "grid": "Grade",
+            "labels": "Rótulos",
+            "marchers": "Marchadores",
+            "pathways": "Caminhos"
         },
         "title": "Propriedades do Campo",
         "tooltips": {
@@ -640,9 +640,9 @@
     "pages": {
         "createFailed": "Falha ao criar página - {erro}",
         "createLastPageFailed": "Falha ao criar a última página - {erro}",
+        "deletedSuccessfully": "Página excluída com sucesso",
         "deleteFailed": "Falha ao excluir página - {erro}",
-        "updateFailed": "Falha ao atualizar página - {erro}",
-        "deletedSuccessfully": "Página excluída com sucesso"
+        "updateFailed": "Falha ao atualizar página - {erro}"
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
@@ -705,6 +705,7 @@
         "general.language": "Idioma",
         "general.showFullDatabasePath": "Mostrar caminho completo do arquivo",
         "mouse": "Mouse e Trackpad",
+        "mouse.panSensitivity": "Sensibilidade de panorâmica",
         "mouse.trackpadMode": "Modo Trackpad (recomendado para macOS)",
         "mouse.trackpadPanSensitivity": "Sensibilidade de panorâmica do trackpad",
         "mouse.zoomSensitivity": "Sensibilidade de zoom",

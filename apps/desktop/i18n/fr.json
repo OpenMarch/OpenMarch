@@ -366,6 +366,12 @@
             "image": "Image",
             "theme": "Thème"
         },
+        "themeSubsections": {
+            "grid": "Grille",
+            "labels": "Étiquettes",
+            "marchers": "Marcheurs",
+            "pathways": "Chemins"
+        },
         "title": "Propriétés du champ",
         "tooltips": {
             "conformMethod": "S'agit-il d'adapter l'image d'arrière-plan à l'intérieur du champ ou de le remplir. Le ratio d'aspect est toujours maintenu",
@@ -633,9 +639,9 @@
     "pages": {
         "createFailed": "Échec de la création de la page - {error}",
         "createLastPageFailed": "Échec de la création de la dernière page - {error}",
+        "deletedSuccessfully": "Page supprimée avec succès",
         "deleteFailed": "Échec de la suppression de la page - {error}",
-        "updateFailed": "Échec de la mise à jour de la page - {error}",
-        "deletedSuccessfully": "Page supprimée avec succès"
+        "updateFailed": "Échec de la mise à jour de la page - {error}"
     },
     "section": {
         "drumMajor": "Chef d'orchestre",
