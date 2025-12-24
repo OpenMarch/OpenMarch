@@ -71,10 +71,12 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                     </div>
                 </AlertDialogContent>
             </AlertDialog>
-            <div className="main-app-titlebar text-text relative flex h-fit w-full items-center justify-between">
-                <div
-                    className={`flex items-center gap-20 px-24 py-8 ${isMacOS && "ml-64"}`}
-                >
+            <div
+                className={`main-app-titlebar text-text relative flex h-fit w-full items-center justify-between ${
+                    isMacOS ? "pl-[80px]" : ""
+                }`}
+            >
+                <div className="flex items-center gap-12 px-16 py-8 min-[600px]:gap-20 min-[600px]:px-24">
                     {!isMacOS && (
                         <button
                             className="titlebar-button hover:text-accent cursor-pointer outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
@@ -85,7 +87,7 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                             <ListIcon size={18} />
                         </button>
                     )}
-                    <div className="flex items-center gap-12">
+                    <div className="flex items-center gap-8 min-[600px]:gap-12">
                         <MarcherLogo />
                         <p className="text-body min-w-0 leading-none">
                             OpenMarch

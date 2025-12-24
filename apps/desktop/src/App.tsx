@@ -29,7 +29,6 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
-import GuidedSetupWizard from "@/components/wizard/GuidedSetupWizard";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -50,13 +49,14 @@ function App() {
     const { fetchUiSettings } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
-    const [wizardOpen, setWizardOpen] = useState(false);
+    const [showWizard, setShowWizard] = useState(false);
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
 
     useEffect(() => {
-        if (pluginsLoadedRef.current) return;
+        // Only load plugins after database is ready and canvas is available
+        if (!databaseIsReady || pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
         void window.plugins
             ?.list()
@@ -96,32 +96,35 @@ function App() {
                 }
             })
             .then(() => undefined);
-    }, []);
+    }, [databaseIsReady]);
 
     useEffect(() => {
-        // Check if database is ready
-        void window.electron.databaseIsReady().then((result: boolean) => {
-            setDatabaseIsReady(result);
+        // Check if database is ready and wizard flag
+        const checkDatabaseAndWizard = async () => {
+            try {
+                // Check for wizard flag first (even if database is not ready)
+                const shouldShowWizard =
+                    await window.electron.wizardShouldShow();
+                if (shouldShowWizard) {
+                    // Wizard should show - set showWizard and don't set databaseIsReady yet
+                    setShowWizard(true);
+                    setDatabaseIsReady(false);
+                    return;
+                }
 
-            // Check for wizard flag if database is ready
-            if (result) {
-                const checkWizardFlag = async () => {
-                    try {
-                        const shouldShow =
-                            await window.electron.wizardShouldShow();
-                        if (shouldShow) {
-                            setTimeout(() => setWizardOpen(true), 1000);
-                        }
-                    } catch (error) {
-                        console.error(
-                            "App: Error checking wizard flag:",
-                            error,
-                        );
-                    }
-                };
-                void checkWizardFlag();
+                const dbReady = await window.electron.databaseIsReady();
+                if (dbReady) {
+                    // Database is ready and no wizard - proceed normally
+                    setDatabaseIsReady(true);
+                } else {
+                    // Database not ready - show launch page
+                    setDatabaseIsReady(false);
+                }
+            } catch (error) {
+                console.error("App: Error checking database/wizard:", error);
             }
-        });
+        };
+        void checkDatabaseAndWizard();
     }, []);
 
     useEffect(() => {
@@ -190,9 +193,19 @@ function App() {
                             🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
                         </div>
                     )}
-                    {/* Always show LaunchPage when no file is selected, regardless of database state */}
-                    {!databaseIsReady ? (
-                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                    {/* Show LaunchPage when no file is selected OR when wizard should show */}
+                    {!databaseIsReady || showWizard ? (
+                        <LaunchPage
+                            setDatabaseIsReady={setDatabaseIsReady}
+                            wizardMode={showWizard}
+                            onWizardComplete={() => {
+                                setShowWizard(false);
+                                setDatabaseIsReady(true);
+                            }}
+                            onStartWizard={() => {
+                                setShowWizard(true);
+                            }}
+                        />
                     ) : (
                         <TooltipProvider
                             delayDuration={500}
@@ -236,13 +249,6 @@ function App() {
                                                 {!isFullscreen && <Inspector />}
                                             </div>
                                             <Toaster />
-                                            <GuidedSetupWizard
-                                                open={wizardOpen}
-                                                onOpenChange={setWizardOpen}
-                                                onComplete={() => {
-                                                    // Wizard complete
-                                                }}
-                                            />
                                         </SelectedAudioFileProvider>
                                     </SelectedMarchersProvider>
                                 </SelectedPageProvider>

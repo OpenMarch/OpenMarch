@@ -1,7 +1,19 @@
 import { FieldProperties } from "@openmarch/core";
 import { NewMarcherArgs } from "@/db-functions";
 
-export type WizardStepId = "ensemble" | "field" | "performers" | "music";
+export type WizardStepId =
+    | "project"
+    | "ensemble"
+    | "field"
+    | "performers"
+    | "music";
+
+export interface ProjectData {
+    projectName: string;
+    fileLocation?: string;
+    designer?: string;
+    client?: string;
+}
 
 export interface EnsembleData {
     environment: "indoor" | "outdoor";
@@ -25,6 +37,7 @@ export interface MusicData {
 
 export interface WizardState {
     currentStep: WizardStepId;
+    project: ProjectData | null;
     ensemble: EnsembleData | null;
     field: FieldData | null;
     performers: PerformersData | null;
@@ -32,6 +45,7 @@ export interface WizardState {
 }
 
 export const WIZARD_STEPS: WizardStepId[] = [
+    "project",
     "ensemble",
     "field",
     "performers",
@@ -39,7 +53,8 @@ export const WIZARD_STEPS: WizardStepId[] = [
 ];
 
 export const DEFAULT_WIZARD_STATE: WizardState = {
-    currentStep: "ensemble",
+    currentStep: "project",
+    project: null,
     ensemble: null,
     field: null,
     performers: null,

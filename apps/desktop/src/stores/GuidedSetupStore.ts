@@ -10,6 +10,7 @@ interface GuidedSetupStoreState {
 interface GuidedSetupStoreActions {
     setWizardState: (state: WizardState | null) => void;
     updateWizardStep: (step: WizardStepId) => void;
+    updateProject: (data: WizardState["project"]) => void;
     updateEnsemble: (data: WizardState["ensemble"]) => void;
     updateField: (data: WizardState["field"]) => void;
     updatePerformers: (data: WizardState["performers"]) => void;
@@ -38,6 +39,14 @@ export const useGuidedSetupStore = create<GuidedSetupStoreInterface>()(
                 set((state) => ({
                     wizardState: state.wizardState
                         ? { ...state.wizardState, currentStep: step }
+                        : null,
+                }));
+            },
+
+            updateProject: (data) => {
+                set((state) => ({
+                    wizardState: state.wizardState
+                        ? { ...state.wizardState, project: data }
                         : null,
                 }));
             },

@@ -33,7 +33,23 @@ export default function FieldPropertiesSelector({
     currentTemplate: externalCurrentTemplate,
 }: FieldPropertiesSelectorProps) {
     const queryClient = useQueryClient();
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+
+    // Check if database is ready - disable query if not (wizard mode)
+    const [databaseReady, setDatabaseReady] = useState(true);
+    useEffect(() => {
+        const checkDb = async () => {
+            const ready = await window.electron.databaseIsReady();
+            setDatabaseReady(ready);
+        };
+        void checkDb();
+    }, []);
+
+    // Only query field properties if database is ready and no external template provided
+    const { data: fieldProperties } = useQuery({
+        ...fieldPropertiesQueryOptions(),
+        enabled: databaseReady && !externalCurrentTemplate,
+    });
+
     const { mutate: setFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
@@ -70,13 +86,16 @@ export default function FieldPropertiesSelector({
     );
 
     useEffect(() => {
-        if (!externalCurrentTemplate) {
+        if (!externalCurrentTemplate && fieldProperties) {
             setInternalCurrentTemplate(fieldProperties);
         }
     }, [fieldProperties, externalCurrentTemplate]);
 
-    if (!fieldProperties)
+    // If we have an external template (wizard mode), we don't need fieldProperties
+    // If we don't have external template, we need fieldProperties
+    if (!externalCurrentTemplate && !fieldProperties) {
         return <div>{t("fieldProperties.errors.notDefined")}</div>;
+    }
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
@@ -137,7 +156,7 @@ export default function FieldPropertiesSelector({
                                     </>
                                 )}
                                 <SelectLabel>Custom</SelectLabel>
-                                {fieldProperties.isCustom && (
+                                {fieldProperties?.isCustom && (
                                     <SelectItem key={"custom"} value={"Custom"}>
                                         {t("fieldProperties.customFieldName")}
                                     </SelectItem>

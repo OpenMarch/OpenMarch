@@ -855,6 +855,14 @@
         "next": "Next",
         "complete": "Complete",
         "skip": "Skip",
+        "project": {
+            "projectName": "Project Name",
+            "fileLocation": "File Location",
+            "browse": "Browse",
+            "designer": "Designer",
+            "client": "Client",
+            "fileExistsWarning": "A file with this name already exists. It will be overwritten when you complete the wizard."
+        },
         "ensemble": {
             "environment": "Environment",
             "type": "Ensemble Type",

@@ -18,40 +18,75 @@ import { T } from "@tolgee/react";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
+import GuidedSetupWizard from "../wizard/GuidedSetupWizard";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
+    wizardMode?: boolean;
+    onWizardComplete?: () => void;
+    onStartWizard?: () => void;
 }
 
-export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
+export default function LaunchPage({
+    setDatabaseIsReady,
+    wizardMode = false,
+    onWizardComplete,
+    onStartWizard,
+}: LaunchPageProps) {
     const [selectedTab, setSelectedTab] = useState("files");
+
+    const handleWizardComplete = () => {
+        if (onWizardComplete) {
+            onWizardComplete();
+        }
+    };
 
     return (
         <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
             <TitleBar />
-            <Tabs.Root
-                value={selectedTab}
-                onValueChange={setSelectedTab}
-                className={clsx(
-                    "text-text z-10 flex h-full min-h-0 w-full min-w-0 gap-8 p-8",
-                )}
-            >
-                <Sidebar
-                    setDatabaseIsReady={setDatabaseIsReady}
-                    selectedTab={selectedTab}
-                />
-                <FilesContent />
-                <LearnContent />
-                <Tabs.Content
-                    value="settings"
-                    className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
+            {wizardMode ? (
+                <div className="text-text z-10 flex h-full min-h-0 w-full min-w-0 gap-8 p-8">
+                    <Sidebar
+                        setDatabaseIsReady={setDatabaseIsReady}
+                        selectedTab={selectedTab}
+                        wizardMode={wizardMode}
+                        onStartWizard={onStartWizard}
+                    />
+                    <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6">
+                        <div className="flex h-full w-full max-w-[512px] flex-col">
+                            <GuidedSetupWizard
+                                onComplete={handleWizardComplete}
+                            />
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <Tabs.Root
+                    value={selectedTab}
+                    onValueChange={setSelectedTab}
+                    className={clsx(
+                        "text-text z-10 flex h-full min-h-0 w-full min-w-0 gap-8 p-8",
+                    )}
                 >
-                    <h3 className="text-h3 w-[512px] pb-16">
-                        <T keyName="settings.title" />
-                    </h3>
-                    <SettingsContent />
-                </Tabs.Content>
-            </Tabs.Root>
+                    <Sidebar
+                        setDatabaseIsReady={setDatabaseIsReady}
+                        selectedTab={selectedTab}
+                        wizardMode={wizardMode}
+                        onStartWizard={onStartWizard}
+                    />
+                    <FilesContent />
+                    <LearnContent />
+                    <Tabs.Content
+                        value="settings"
+                        className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6 select-text"
+                    >
+                        <h3 className="text-h3 w-[512px] pb-16">
+                            <T keyName="settings.title" />
+                        </h3>
+                        <SettingsContent />
+                    </Tabs.Content>
+                </Tabs.Root>
+            )}
 
             <Toaster />
         </div>
@@ -61,16 +96,16 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
 function Sidebar({
     setDatabaseIsReady,
     selectedTab,
+    wizardMode,
+    onStartWizard,
 }: LaunchPageProps & {
     selectedTab: string;
+    wizardMode: boolean;
 }) {
     async function handleCreateNew() {
-        try {
-            await window.electron.databaseCreate();
-            // Note: Window will reload after file creation, so wizard will be shown
-            // automatically via the detection logic in App component
-        } catch (error) {
-            console.error("Error creating new file:", error);
+        // Start wizard mode without creating file - file will be created on wizard completion
+        if (onStartWizard) {
+            onStartWizard();
         }
     }
 
@@ -86,8 +121,8 @@ function Sidebar({
             console.error("Error opening existing file:", error);
         }
     }
-    return (
-        <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
+    const sidebarContent = (
+        <>
             <section className="flex flex-col gap-12">
                 <p className="text-body text-text/60">
                     <T keyName="launchpage.title" />
@@ -113,20 +148,22 @@ function Sidebar({
                         </span>
                     </Button>
                 </div>
-                <div className="flex flex-col">
-                    <Tabs.Trigger value="files">
-                        <ListItem selected={selectedTab === "files"}>
-                            <FolderIcon size={24} />
-                            <T keyName="launchpage.files.title" />
-                        </ListItem>
-                    </Tabs.Trigger>
-                    <Tabs.Trigger value="learn">
-                        <ListItem selected={selectedTab === "learn"}>
-                            <LightbulbIcon size={24} />
-                            <T keyName="launchpage.learn.title" />
-                        </ListItem>
-                    </Tabs.Trigger>
-                </div>
+                {!wizardMode && (
+                    <div className="flex flex-col">
+                        <Tabs.Trigger value="files">
+                            <ListItem selected={selectedTab === "files"}>
+                                <FolderIcon size={24} />
+                                <T keyName="launchpage.files.title" />
+                            </ListItem>
+                        </Tabs.Trigger>
+                        <Tabs.Trigger value="learn">
+                            <ListItem selected={selectedTab === "learn"}>
+                                <LightbulbIcon size={24} />
+                                <T keyName="launchpage.learn.title" />
+                            </ListItem>
+                        </Tabs.Trigger>
+                    </div>
+                )}
             </section>
             <section className="flex flex-col gap-8">
                 <div className="flex flex-col">
@@ -169,16 +206,34 @@ function Sidebar({
                         </div>
                     </a>
                 </div>
-                <hr className="border-stroke w-full border" />
-                <div className="flex flex-col">
-                    <Tabs.Trigger value="settings">
-                        <ListItem selected={selectedTab === "settings"}>
-                            <GearSixIcon size={24} />
-                            <T keyName="launchpage.settings.title" />
-                        </ListItem>
-                    </Tabs.Trigger>
-                </div>
+                {!wizardMode && (
+                    <>
+                        <hr className="border-stroke w-full border" />
+                        <div className="flex flex-col">
+                            <Tabs.Trigger value="settings">
+                                <ListItem selected={selectedTab === "settings"}>
+                                    <GearSixIcon size={24} />
+                                    <T keyName="launchpage.settings.title" />
+                                </ListItem>
+                            </Tabs.Trigger>
+                        </div>
+                    </>
+                )}
             </section>
+        </>
+    );
+
+    if (wizardMode) {
+        return (
+            <div className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
+                {sidebarContent}
+            </div>
+        );
+    }
+
+    return (
+        <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
+            {sidebarContent}
         </Tabs.List>
     );
 }

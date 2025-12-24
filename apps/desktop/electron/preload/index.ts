@@ -149,6 +149,14 @@ const APP_API = {
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    databaseCreateAtPath: (filePath: string) =>
+        ipcRenderer.invoke("database:createAtPath", filePath),
+    databaseCreateForWizard: (filePath: string) =>
+        ipcRenderer.invoke("database:createForWizard", filePath),
+    getDefaultDocumentsPath: () =>
+        ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
+    fileExists: (filePath: string) =>
+        ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
     // Wizard
@@ -175,7 +183,7 @@ const APP_API = {
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
 
     showSaveDialog: (options: SaveDialogOptions) =>
-        ipcRenderer.invoke("show-save-dialog", options),
+        ipcRenderer.invoke("dialog:showSaveDialog", options),
 
     export: {
         pdf: (params: {

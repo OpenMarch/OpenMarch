@@ -9,40 +9,27 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 
 export default function FieldSetupStep() {
     const { wizardState, updateField } = useGuidedSetupStore();
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const [currentTemplate, setCurrentTemplate] = useState<
-        FieldProperties | undefined
-    >(fieldProperties);
+
+    // Initialize with default template
+    const defaultTemplate =
+        FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+
+    const [currentTemplate, setCurrentTemplate] = useState<FieldProperties>(
+        wizardState?.field?.template || defaultTemplate,
+    );
 
     // Initialize with default template if not set
     useEffect(() => {
-        if (!wizardState?.field && fieldProperties) {
-            // Default to College Football Field (no end zones)
-            const defaultTemplate =
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+        if (!wizardState?.field) {
             setCurrentTemplate(defaultTemplate);
             updateField({
                 template: defaultTemplate,
                 isCustom: false,
             });
-        } else if (wizardState?.field) {
+        } else if (wizardState.field.template) {
             setCurrentTemplate(wizardState.field.template);
         }
-    }, [wizardState, fieldProperties, updateField]);
-
-    // Update wizard state when field properties change from database
-    useEffect(() => {
-        if (fieldProperties) {
-            updateField({
-                template: fieldProperties,
-                isCustom: fieldProperties.isCustom || false,
-            });
-        }
-    }, [fieldProperties, updateField]);
-
-    if (!fieldProperties) {
-        return <div>Loading field properties...</div>;
-    }
+    }, [wizardState, updateField]);
 
     const environment = wizardState?.ensemble?.environment || "outdoor";
 
@@ -50,9 +37,14 @@ export default function FieldSetupStep() {
         setCurrentTemplate(template);
         updateField({
             template,
-            isCustom: false,
+            isCustom: template.isCustom ?? false,
         });
     };
+
+    // Ensure currentTemplate is always defined before rendering
+    if (!currentTemplate) {
+        return <div>Loading field properties...</div>;
+    }
 
     return (
         <div className="flex flex-col gap-16">
@@ -61,9 +53,11 @@ export default function FieldSetupStep() {
                 onTemplateChange={handleTemplateChange}
                 currentTemplate={currentTemplate}
             />
-            {currentTemplate?.isCustom && (
+            {currentTemplate.isCustom && (
                 <div className="mt-8">
-                    <FieldPropertiesCustomizer />
+                    <FieldPropertiesCustomizer
+                        currentTemplate={currentTemplate}
+                    />
                 </div>
             )}
         </div>

@@ -30,12 +30,32 @@ export async function completeWizard(
     queryClient: QueryClient,
 ): Promise<void> {
     try {
-        // 1. Apply ensemble settings (extend workspace settings schema if needed)
+        // 0. File should already be created when project step completed
+        // Just verify it exists, or create it if it doesn't (fallback)
+        if (wizardState.project?.fileLocation) {
+            const dbReady = await window.electron.databaseIsReady();
+            if (!dbReady) {
+                // File wasn't created yet, create it now (fallback)
+                const result = await window.electron.databaseCreateAtPath(
+                    wizardState.project.fileLocation,
+                );
+                if (result !== 200) {
+                    throw new Error(
+                        "Failed to create file at specified location",
+                    );
+                }
+            }
+        }
+
+        // 1. Apply project settings
+        await applyProjectSettings(wizardState.project, queryClient);
+
+        // 2. Apply ensemble settings (extend workspace settings schema if needed)
         // For now, we'll store ensemble data in workspace settings JSON
         // Note: This requires extending the workspace settings schema
         await applyEnsembleSettings(wizardState.ensemble, queryClient);
 
-        // 2. Apply field properties
+        // 3. Apply field properties
         if (wizardState.field) {
             await updateFieldProperties(wizardState.field.template);
         } else {
@@ -45,13 +65,13 @@ export async function completeWizard(
             await updateFieldProperties(defaultTemplate);
         }
 
-        // 3. Performers are already created in the database (created during PerformersStep)
+        // 4. Performers are already created in the database (created during PerformersStep)
         // No action needed here
 
-        // 4. Apply music settings
+        // 5. Apply music settings
         await applyMusicSettings(wizardState.music, queryClient);
 
-        // 5. Create beats and pages
+        // 6. Create beats and pages
         await createBeatsAndPages(queryClient);
 
         toast.success("Setup complete! Your show is ready.");
@@ -60,6 +80,31 @@ export async function completeWizard(
         toast.error("Failed to complete setup. Please try again.");
         throw error;
     }
+}
+
+/**
+ * Applies project settings to workspace settings
+ */
+async function applyProjectSettings(
+    project: WizardState["project"],
+    queryClient: QueryClient,
+): Promise<void> {
+    if (!project || !project.projectName) return;
+
+    const currentSettings = await getWorkspaceSettingsParsed({ db });
+
+    const updatedSettings = {
+        ...currentSettings,
+        projectName: project.projectName,
+        designer: project.designer,
+        client: project.client,
+    };
+
+    const validatedSettings = workspaceSettingsSchema.parse(updatedSettings);
+    await updateWorkspaceSettingsParsed({
+        db,
+        settings: validatedSettings,
+    });
 }
 
 /**

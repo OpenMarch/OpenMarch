@@ -2,7 +2,7 @@ import { FieldProperties } from "@openmarch/core";
 import { eq } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
-import { transactionWithHistory } from "./history";
+import { createAllUndoTriggers, transactionWithHistory } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
@@ -49,6 +49,17 @@ const DEFAULT_STARTING_DATA: StartingData = {
         y: 100,
     },
     spacing: 25,
+};
+
+let undoTriggersReady: Promise<void> | null = null;
+const ensureUndoTriggers = async (db: DbConnection) => {
+    if (!undoTriggersReady) {
+        undoTriggersReady = createAllUndoTriggers(db).catch((error) => {
+            undoTriggersReady = null;
+            throw error;
+        });
+    }
+    await undoTriggersReady;
 };
 
 const calculateStartingData = async (
@@ -185,6 +196,7 @@ export async function createMarchers({
     newMarchers: NewMarcherArgs[];
     db: DbConnection;
 }): Promise<DatabaseMarcher[]> {
+    await ensureUndoTriggers(db);
     const transactionResult = await transactionWithHistory(
         db,
         "createMarchers",
@@ -234,6 +246,7 @@ export async function updateMarchers({
     modifiedMarchers: ModifiedMarcherArgs[];
     db: DbConnection;
 }): Promise<DatabaseMarcher[]> {
+    await ensureUndoTriggers(db);
     const updateResponse = await transactionWithHistory(
         db,
         "updateMarchers",
@@ -285,6 +298,7 @@ export async function deleteMarchers({
     marcherIds: Set<number>;
     db: DbConnection;
 }): Promise<DatabaseMarcher[]> {
+    await ensureUndoTriggers(db);
     const deleteResponse = await transactionWithHistory(
         db,
         "deleteMarchers",
