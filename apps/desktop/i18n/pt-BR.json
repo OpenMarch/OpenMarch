@@ -637,14 +637,12 @@
         "undoWithCtrlZ": "Esta ação é reversível com Ctrl + Z",
         "volume": "Volume"
     },
-    "page": {
-        "deletedSuccessfully": "Página excluída com sucesso"
-    },
     "pages": {
         "createFailed": "Falha ao criar página - {erro}",
         "createLastPageFailed": "Falha ao criar a última página - {erro}",
         "deleteFailed": "Falha ao excluir página - {erro}",
-        "updateFailed": "Falha ao atualizar página - {erro}"
+        "updateFailed": "Falha ao atualizar página - {erro}",
+        "deletedSuccessfully": "Página excluída com sucesso"
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",

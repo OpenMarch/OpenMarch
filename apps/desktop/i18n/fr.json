@@ -630,14 +630,12 @@
         "undoWithCtrlZ": "Cette action est annulable avec Ctrl + Z",
         "volume": "Volume"
     },
-    "page": {
-        "deletedSuccessfully": "Page supprimée avec succès"
-    },
     "pages": {
         "createFailed": "Échec de la création de la page - {error}",
         "createLastPageFailed": "Échec de la création de la dernière page - {error}",
         "deleteFailed": "Échec de la suppression de la page - {error}",
-        "updateFailed": "Échec de la mise à jour de la page - {error}"
+        "updateFailed": "Échec de la mise à jour de la page - {error}",
+        "deletedSuccessfully": "Page supprimée avec succès"
     },
     "section": {
         "drumMajor": "Chef d'orchestre",

@@ -637,14 +637,12 @@
         "undoWithCtrlZ": "Esta acción se puede deshacer con Ctrl + Z",
         "volume": "Volumen"
     },
-    "page": {
-        "deletedSuccessfully": "Página eliminada exitosamente"
-    },
     "pages": {
         "createFailed": "Error al crear la página - {error}",
         "createLastPageFailed": "Error al crear la última página - {error}",
         "deleteFailed": "Error al eliminar la página - {error}",
-        "updateFailed": "Error al actualizar la página - {error}"
+        "updateFailed": "Error al actualizar la página - {error}",
+        "deletedSuccessfully": "Página eliminada exitosamente"
     },
     "section": {
         "drumMajor": "Director de Percusión",

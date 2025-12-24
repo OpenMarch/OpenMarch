@@ -637,14 +637,12 @@
         "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume"
     },
-    "page": {
-        "deletedSuccessfully": "Page deleted successfully"
-    },
     "pages": {
         "createFailed": "Failed to create page - {error}",
         "createLastPageFailed": "Failed to create last page - {error}",
         "deleteFailed": "Failed to delete page - {error}",
-        "updateFailed": "Failed to update page - {error}"
+        "updateFailed": "Failed to update page - {error}",
+        "deletedSuccessfully": "Page deleted successfully"
     },
     "section": {
         "drumMajor": "Drum Major",

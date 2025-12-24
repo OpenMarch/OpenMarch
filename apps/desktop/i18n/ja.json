@@ -637,14 +637,12 @@
         "undoWithCtrlZ": "この操作は Ctrl + Z で元に戻すことができます",
         "volume": "音量"
     },
-    "page": {
-        "deletedSuccessfully": "ページ が正常に削除されました"
-    },
     "pages": {
         "createFailed": "ページの作成に失敗しました - {error}",
         "createLastPageFailed": "最後のページの作成に失敗しました - {error}",
         "deleteFailed": "ページの削除に失敗しました - {error}",
-        "updateFailed": "ページの更新に失敗しました - {error}"
+        "updateFailed": "ページの更新に失敗しました - {error}",
+        "deletedSuccessfully": "ページ が正常に削除されました"
     },
     "section": {
         "drumMajor": "ドラム メジャー",
