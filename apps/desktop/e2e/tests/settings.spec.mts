@@ -7,7 +7,9 @@ const navigateToLaunchPageSettings = async (page: Page) => {
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Settings" }).click();
-    await expect(page.getByRole("heading", { name: "Settings", exact: true })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 };
