@@ -35,8 +35,12 @@
         "vitest": "^2.1.9"
     },
     "dependencies": {
+        "@react-three/drei": "^10.7.7",
+        "@react-three/fiber": "^9.4.2",
+        "@types/three": "^0.182.0",
         "koota": "^0.6.0",
         "svg-path-commander": "^2.1.11",
+        "three": "^0.182.0",
         "uuid": "^11.1.0"
     }
 }

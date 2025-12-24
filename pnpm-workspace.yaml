@@ -10,5 +10,5 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - sharp
-patchedDependencies:
-  canvas: patches/canvas.patch
+# patchedDependencies:
+#   canvas: patches/canvas.patch
