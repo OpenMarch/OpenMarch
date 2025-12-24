@@ -11,7 +11,7 @@ import {
     Path,
     QuadraticCurve,
     Spline,
-} from "@openmarch/path-utility";
+} from "@openmarch/core";
 import { describe, expect } from "vitest";
 import { findPageIdsForPathway, updateEndPoint } from "../pathways";
 import { eq } from "drizzle-orm";

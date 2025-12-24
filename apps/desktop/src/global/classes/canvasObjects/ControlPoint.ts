@@ -4,7 +4,7 @@ import {
     IControllableSegment,
     Point,
     Path,
-} from "@openmarch/path-utility";
+} from "@openmarch/core";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { MarcherPath } from "./MarcherPath";
 import { rgbaToString } from "@openmarch/core";

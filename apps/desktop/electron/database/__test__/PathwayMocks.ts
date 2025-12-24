@@ -1,4 +1,4 @@
-import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/path-utility";
+import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/core";
 
 /**
  * Mock pathway data for testing purposes.

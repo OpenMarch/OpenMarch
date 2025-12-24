@@ -4,6 +4,7 @@
 // Field-related exports
 export * from "./field";
 export * from "./shapes";
+export * from "./path-utility";
 
 // Future core features can be added here:
 // export * from "./marching";

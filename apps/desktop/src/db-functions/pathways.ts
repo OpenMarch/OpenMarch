@@ -1,4 +1,4 @@
-import { Path, Point } from "@openmarch/path-utility";
+import { Path, Point } from "@openmarch/core";
 import { DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
