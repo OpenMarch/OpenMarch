@@ -75,7 +75,7 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page.getByRole("option", { name: "Español" }).click();
         await expect(page.getByText("Idioma")).toBeVisible();
         await expect(
-            page.getByRole("heading", { name: "Configuración" }),
+            page.getByRole("heading", { name: "Configuración", exact: true }),
         ).toBeVisible();
 
         // await expect(page.getByText("Configuración")).toBeVisible();
