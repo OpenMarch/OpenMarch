@@ -557,17 +557,32 @@ export default function ImportCoordinatesButton() {
         // Track plan indices and their corresponding start_beat positions for mapping later
         const planIndexToStartBeat = new Map<number, number>();
         // First page always starts at beat position 0 (OpenMarch convention)
-        let cum = 0;
+        // The first row in the PDF is the initial position (no movement before it) -> page 0
+        // The second row represents where they move TO (first movement) -> page 1 (starts at counts[0])
+        // The third row represents the second movement -> page 2 (starts at counts[0] + counts[1])
+        // The counts column represents "counts to reach this set"
+        let cumulativeBeatPosition = 0;
+        console.log(
+            `[import-commit] Processing ${plan.length} plan items to create/verify pages`,
+        );
         for (let i = 0; i < plan.length; i++) {
             const { name, counts } = plan[i];
 
-            // For subsequent pages, add the counts to find the new position.
-            // This assumes 'counts' column represents "counts to reach this set".
+            // Row 0 = initial position -> page 0 (beat 0)
+            // Row 1 = first movement destination -> page 1 (beat = counts[1])
+            // The counts column represents "counts to reach this set"
+            // So we accumulate the current row's counts to get the start position
             if (i > 0) {
-                cum += counts;
+                cumulativeBeatPosition += counts;
             }
 
-            const startPosition = cum; // beat position (0-indexed)
+            const startPosition = cumulativeBeatPosition; // beat position (0-indexed)
+            const parsedSet = parseSetId(name);
+            const isSet2 =
+                parsedSet && parsedSet.num === 2 && !parsedSet.subset;
+            console.log(
+                `[import-commit] Plan[${i}]: "${name}" -> counts=${counts}, cumulative=${cumulativeBeatPosition}, beat position=${startPosition}${isSet2 ? " [SET 2 - DEBUGGING]" : ""}`,
+            );
             // Find beat at this position (beats are sorted by position)
             const beatObj = currentBeats.find(
                 (b) => b.position === startPosition,
@@ -581,15 +596,31 @@ export default function ImportCoordinatesButton() {
                 );
                 return false;
             }
+            console.log(
+                `[import-commit] Found beat ID ${beatObj.id} at position ${startPosition} for "${name}"${isSet2 ? " [SET 2 - DEBUGGING]" : ""}`,
+            );
 
             // Check if a page already exists at this start_beat (UNIQUE constraint)
             if (pageByStartBeat.has(beatObj.id)) {
                 const existingPageId = pageByStartBeat.get(beatObj.id);
                 console.log(
-                    `[import-commit] Page "${name}" already exists at start_beat ${beatObj.id} (page ID: ${existingPageId}), skipping creation`,
+                    `[import-commit] Page "${name}" already exists at start_beat ${beatObj.id} (page ID: ${existingPageId}), skipping creation${isSet2 ? " [SET 2 - DEBUGGING: Page exists, will map to this page]" : ""}`,
                 );
                 planIndexToStartBeat.set(i, beatObj.id);
                 continue;
+            }
+
+            // CRITICAL: The first row (i === 0) should map to page ID 0 (FIRST_PAGE_ID)
+            // Page 0 always exists and is at beat position 0, so we should use it instead of creating a new page
+            if (i === 0 && startPosition === 0) {
+                const existingPage0 = databasePages.find((p) => p.id === 0);
+                if (existingPage0) {
+                    console.log(
+                        `[import-commit] First row "${name}" maps to existing page 0 (FIRST_PAGE_ID) at beat position 0`,
+                    );
+                    planIndexToStartBeat.set(i, beatObj.id);
+                    continue; // Don't create a new page, use existing page 0
+                }
             }
 
             // Check if we already queued a page for this beat (prevent duplicates in batch)
@@ -603,9 +634,12 @@ export default function ImportCoordinatesButton() {
 
             // Check if page exists by name (legacy check)
             if (pageByName.has(name)) {
+                const existingPageId = pageByName.get(name);
                 console.log(
-                    `[import-commit] Page "${name}" already exists, skipping`,
+                    `[import-commit] Page "${name}" already exists (page ID: ${existingPageId}), skipping creation but tracking mapping`,
                 );
+                // Still track the mapping even if page already exists
+                planIndexToStartBeat.set(i, beatObj.id);
                 continue;
             }
 
@@ -750,38 +784,144 @@ export default function ImportCoordinatesButton() {
             const plan = getPagePlan();
             const pageBySetId = new Map<string, number>();
 
-            if (planIndexToStartBeat) {
-                // Get database pages to find page IDs by start_beat
-                const databasePages = await queryClient.fetchQuery(
-                    allDatabasePagesQueryOptions(),
+            // Get database pages to find page IDs by start_beat
+            const databasePages = await queryClient.fetchQuery(
+                allDatabasePagesQueryOptions(),
+            );
+            console.log(
+                `[import-commit] Found ${databasePages.length} total pages in database`,
+            );
+            console.log(
+                `[import-commit] First 5 pages:`,
+                databasePages
+                    .slice(0, 5)
+                    .map((p) => `page ${p.id} at beat ${p.start_beat}`)
+                    .join(", "),
+            );
+            const pagesByStartBeat = new Map(
+                databasePages.map((p) => [p.start_beat, p.id]),
+            );
+            console.log(
+                `[import-commit] Built pagesByStartBeat map with ${pagesByStartBeat.size} entries`,
+            );
+
+            // Get beat at position 0 to find page 0 (FIRST_PAGE_ID)
+            const allBeatsData = await queryClient.fetchQuery(
+                allDatabaseBeatsQueryOptions(),
+            );
+            const beatAtPosition0 = allBeatsData.find((b) => b.position === 0);
+            const page0Id = beatAtPosition0
+                ? pagesByStartBeat.get(beatAtPosition0.id)
+                : null;
+
+            if (page0Id === null || page0Id === undefined) {
+                console.error(
+                    "[import-commit] Page 0 (FIRST_PAGE_ID) not found - this should never happen",
                 );
-                const pagesByStartBeat = new Map(
-                    databasePages.map((p) => [p.start_beat, p.id]),
+                toast.error("Page 0 not found. Cannot proceed with import.");
+                return;
+            }
+
+            if (planIndexToStartBeat) {
+                // Map plan items to pages using the start_beat positions we tracked
+                console.log(
+                    `[import-commit] Mapping ${plan.length} plan items to pages using planIndexToStartBeat`,
+                );
+                console.log(
+                    `[import-commit] planIndexToStartBeat entries:`,
+                    Array.from(planIndexToStartBeat.entries())
+                        .slice(0, 5)
+                        .map(
+                            ([idx, beatId]) => `plan[${idx}] -> beat ${beatId}`,
+                        )
+                        .join(", "),
+                );
+                console.log(
+                    `[import-commit] Available pages by start_beat:`,
+                    Array.from(pagesByStartBeat.entries())
+                        .slice(0, 5)
+                        .map(
+                            ([beatId, pageId]) =>
+                                `beat ${beatId} -> page ${pageId}`,
+                        )
+                        .join(", "),
                 );
 
-                // Map plan items to pages using the start_beat positions we tracked
                 for (let i = 0; i < plan.length; i++) {
-                    const { name: setId } = plan[i];
+                    const { name: setId, counts } = plan[i];
+                    const parsedSet = parseSetId(setId);
+
+                    // CRITICAL: The first row in the plan (index 0) ALWAYS maps to page ID 0
+                    // regardless of what the setId is called (could be "0", "1", "Start", etc.)
+                    if (i === 0) {
+                        pageBySetId.set(setId, page0Id);
+                        console.log(
+                            `[import-commit] Mapped first row "${setId}" (plan index 0, counts=${counts}) to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                        );
+                        // Also map "0" explicitly if the first row isn't "0"
+                        if (parsedSet && parsedSet.num === 0 && setId !== "0") {
+                            pageBySetId.set("0", page0Id);
+                            console.log(
+                                `[import-commit] Also mapped setId "0" to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                            );
+                        }
+                        continue;
+                    }
+
+                    // Also ensure that any row with setId "0" maps to page 0
+                    if (parsedSet && parsedSet.num === 0) {
+                        pageBySetId.set(setId, page0Id);
+                        console.log(
+                            `[import-commit] Mapped Set 0 "${setId}" to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                        );
+                        continue;
+                    }
+
                     const startBeatId = planIndexToStartBeat.get(i);
+                    const isSet2Mapping =
+                        parsedSet && parsedSet.num === 2 && !parsedSet.subset;
                     if (startBeatId) {
                         const pageId = pagesByStartBeat.get(startBeatId);
                         if (pageId) {
                             pageBySetId.set(setId, pageId);
-                        } else {
-                            console.warn(
-                                `[import-commit] No page found at start_beat ${startBeatId} for setId "${setId}"`,
+                            console.log(
+                                `[import-commit] Mapped "${setId}" (plan index ${i}, counts=${counts}) -> beat ${startBeatId} -> page ${pageId}${isSet2Mapping ? " [SET 2 - DEBUGGING: Successfully mapped]" : ""}`,
                             );
+                        } else {
+                            console.error(
+                                `[import-commit] ERROR: No page found at start_beat ${startBeatId} for setId "${setId}" (plan index ${i}, counts=${counts})${isSet2Mapping ? " [SET 2 - DEBUGGING: MAPPING FAILED]" : ""}`,
+                            );
+                            console.error(
+                                `[import-commit] Available beat IDs in pagesByStartBeat:`,
+                                Array.from(pagesByStartBeat.keys()).slice(
+                                    0,
+                                    10,
+                                ),
+                            );
+                            if (isSet2Mapping) {
+                                console.error(
+                                    `[import-commit] SET 2 DEBUG: Looking for beat ID ${startBeatId} at position 32`,
+                                );
+                                console.error(
+                                    `[import-commit] SET 2 DEBUG: All pages:`,
+                                    databasePages
+                                        .slice(0, 10)
+                                        .map(
+                                            (p) =>
+                                                `page ${p.id} at beat ${p.start_beat}`,
+                                        )
+                                        .join(", "),
+                                );
+                            }
                         }
+                    } else {
+                        console.error(
+                            `[import-commit] ERROR: No start_beat found in planIndexToStartBeat for plan index ${i} (setId="${setId}")${isSet2Mapping ? " [SET 2 - DEBUGGING: NO BEAT ID TRACKED]" : ""}`,
+                        );
                     }
                 }
             } else {
                 // Fallback: if we didn't create timeline, try to map by name or index
-                const databasePages = await queryClient.fetchQuery(
-                    allDatabasePagesQueryOptions(),
-                );
-                const allBeatsData = await queryClient.fetchQuery(
-                    allDatabaseBeatsQueryOptions(),
-                );
                 const beatsById = new Map(
                     allBeatsData.map((beat) => [beat.id, beat.position]),
                 );
@@ -797,7 +937,32 @@ export default function ImportCoordinatesButton() {
                     i++
                 ) {
                     const { name: setId } = plan[i];
-                    pageBySetId.set(setId, sortedPages[i].id);
+                    const parsedSet = parseSetId(setId);
+
+                    // CRITICAL: The first row in the plan (index 0) ALWAYS maps to page ID 0
+                    if (i === 0) {
+                        pageBySetId.set(setId, page0Id);
+                        console.log(
+                            `[import-commit] Mapped first row "${setId}" (plan index 0) to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                        );
+                        // Also map "0" explicitly if the first row isn't "0"
+                        if (parsedSet && parsedSet.num === 0 && setId !== "0") {
+                            pageBySetId.set("0", page0Id);
+                            console.log(
+                                `[import-commit] Also mapped setId "0" to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                            );
+                        }
+                    } else {
+                        // Also ensure that any row with setId "0" maps to page 0
+                        if (parsedSet && parsedSet.num === 0) {
+                            pageBySetId.set(setId, page0Id);
+                            console.log(
+                                `[import-commit] Mapped Set 0 "${setId}" to page ID ${page0Id} (FIRST_PAGE_ID)`,
+                            );
+                        } else {
+                            pageBySetId.set(setId, sortedPages[i].id);
+                        }
+                    }
                 }
             }
 
@@ -814,6 +979,17 @@ export default function ImportCoordinatesButton() {
 
             // 3) Build updates for marcher_pages
             console.log("[import-commit] Building marcher_pages updates...");
+
+            // Track statistics for comprehensive reporting
+            const stats = {
+                totalRowsFromNormalized: 0,
+                rowsSkippedNoMarcher: 0,
+                rowsSkippedNoPage: 0,
+                rowsSkippedInvalidCoords: 0,
+                rowsWithZeroZero: 0,
+                rowsCommitted: 0,
+            };
+
             const updates: {
                 marcher_id: number;
                 page_id: number;
@@ -835,6 +1011,13 @@ export default function ImportCoordinatesButton() {
             // Track which performers get which coordinates for collision detection
             const performerCoordinateCounts = new Map<string, number>();
             const performerLabelsSeen = new Map<string, number>(); // label -> count of sheets with this label
+            const invalidCoordinates: Array<{
+                sheet: string;
+                setId: string;
+                reason: string;
+                lateralText: string;
+                fbText: string;
+            }> = [];
 
             // First pass: detect duplicate labels (multiple performers with same label)
             for (const sheet of report.normalized) {
@@ -873,9 +1056,17 @@ export default function ImportCoordinatesButton() {
                     sheet.header.performer ||
                     "?"
                 ).toLowerCase();
+
+                // Count total rows before any filtering
+                stats.totalRowsFromNormalized += sheet.rows.length;
+
                 const marcherId = existingByLabel.get(labelKey);
                 if (!marcherId) {
                     skippedSheets.push(labelKey);
+                    stats.rowsSkippedNoMarcher += sheet.rows.length;
+                    console.warn(
+                        `[import-commit] Skipping sheet "${labelKey}" (${sheet.rows.length} rows) - no matching marcher found`,
+                    );
                     continue;
                 }
 
@@ -891,26 +1082,137 @@ export default function ImportCoordinatesButton() {
                 }
 
                 for (const row of sheet.rows) {
-                    const pageId = pageBySetId.get(row.setId);
+                    // Debug logging for Set 0 to track mapping issues
+                    const parsedSet = parseSetId(row.setId);
+                    if (parsedSet && parsedSet.num === 0) {
+                        console.log(
+                            `[import-commit] Processing Set 0 row: setId="${row.setId}", looking up in pageBySetId map`,
+                        );
+                        console.log(
+                            `[import-commit] Available mappings:`,
+                            Array.from(pageBySetId.entries())
+                                .slice(0, 5)
+                                .map(([s, p]) => `${s}->${p}`)
+                                .join(", "),
+                        );
+                    }
+
+                    let pageId = pageBySetId.get(row.setId);
+
+                    // If Set 0 is not found in the map, explicitly map it to page 0
+                    if (!pageId && parsedSet && parsedSet.num === 0) {
+                        console.warn(
+                            `[import-commit] Set 0 "${row.setId}" not found in pageBySetId, mapping to page 0 explicitly`,
+                        );
+                        pageId = page0Id;
+                    }
+
                     if (!pageId) {
                         skippedRows.push({
                             sheet: labelKey,
                             setId: row.setId,
                             reason: "Page not found",
                         });
+                        stats.rowsSkippedNoPage++;
                         continue;
                     }
-                    const x = cx + row.xSteps * pps;
-                    const y = cy + row.ySteps * pps;
-                    updates.push({
+
+                    // Debug logging for Set 0 to confirm correct mapping
+                    if (parsedSet && parsedSet.num === 0) {
+                        console.log(
+                            `[import-commit] Set 0 "${row.setId}" mapped to page ID ${pageId} (expected: ${page0Id})`,
+                        );
+                    }
+
+                    // Validate coordinates - check for NaN (parsing failures)
+                    const xSteps = row.xSteps;
+                    const ySteps = row.ySteps;
+                    const hasInvalidX = !Number.isFinite(xSteps);
+                    const hasInvalidY = !Number.isFinite(ySteps);
+
+                    if (hasInvalidX || hasInvalidY) {
+                        const reasons: string[] = [];
+                        if (hasInvalidX) {
+                            reasons.push("lateral coordinate failed to parse");
+                        }
+                        if (hasInvalidY) {
+                            reasons.push(
+                                "front-back coordinate failed to parse",
+                            );
+                        }
+                        invalidCoordinates.push({
+                            sheet: labelKey,
+                            setId: row.setId,
+                            reason: reasons.join(", "),
+                            lateralText: row.lateralText || "",
+                            fbText: row.fbText || "",
+                        });
+                        stats.rowsSkippedInvalidCoords++;
+                        console.warn(
+                            `[import-commit] Skipping invalid coordinates for ${labelKey} Set ${row.setId}: ${reasons.join(", ")}`,
+                            `lateralText: "${row.lateralText}", fbText: "${row.fbText}"`,
+                        );
+                        continue; // Skip this row instead of placing at center
+                    }
+
+                    // Warn if coordinates are exactly 0,0 (might indicate parsing failure)
+                    if (xSteps === 0 && ySteps === 0) {
+                        stats.rowsWithZeroZero++;
+                        console.warn(
+                            `[import-commit] WARNING: ${labelKey} Set ${row.setId} has coordinates (0, 0) - may indicate parsing failure`,
+                            `lateralText: "${row.lateralText}", fbText: "${row.fbText}"`,
+                        );
+                    }
+
+                    const x = cx + xSteps * pps;
+                    const y = cy + ySteps * pps;
+
+                    // Ensure all required fields are present and properly typed
+                    const update: {
+                        marcher_id: number;
+                        page_id: number;
+                        x: number;
+                        y: number;
+                        notes?: string | null;
+                    } = {
                         marcher_id: marcherId,
                         page_id: pageId,
-                        x,
-                        y,
-                        notes: `${row.lateralText} | ${row.fbText}`,
-                    });
+                        x: Number.isFinite(x) ? x : 0,
+                        y: Number.isFinite(y) ? y : 0,
+                        notes: `${row.lateralText} | ${row.fbText}` || null,
+                    };
+
+                    // Validate the update structure
+                    if (
+                        !Number.isFinite(update.marcher_id) ||
+                        !Number.isFinite(update.page_id) ||
+                        !Number.isFinite(update.x) ||
+                        !Number.isFinite(update.y)
+                    ) {
+                        console.error(
+                            `[import-commit] Invalid update structure:`,
+                            update,
+                        );
+                        continue;
+                    }
+
+                    updates.push(update);
+                    stats.rowsCommitted++;
                 }
             }
+
+            // Log comprehensive statistics
+            console.log(`[import-commit] Row processing statistics:`, {
+                totalRowsFromNormalized: stats.totalRowsFromNormalized,
+                rowsCommitted: stats.rowsCommitted,
+                rowsSkippedNoMarcher: stats.rowsSkippedNoMarcher,
+                rowsSkippedNoPage: stats.rowsSkippedNoPage,
+                rowsSkippedInvalidCoords: stats.rowsSkippedInvalidCoords,
+                rowsWithZeroZero: stats.rowsWithZeroZero,
+                skippedSheetsCount: skippedSheets.length,
+                skippedRowsCount: skippedRows.length,
+                invalidCoordsCount: invalidCoordinates.length,
+            });
 
             // Log coordinate distribution for debugging
             console.log(
@@ -932,6 +1234,33 @@ export default function ImportCoordinatesButton() {
                 console.warn(
                     `[import-commit] Skipped ${skippedRows.length} rows (page not found):`,
                     skippedRows,
+                );
+            }
+            if (invalidCoordinates.length > 0) {
+                console.warn(
+                    `[import-commit] Skipped ${invalidCoordinates.length} rows with invalid coordinates:`,
+                    invalidCoordinates
+                        .slice(0, 10)
+                        .map(
+                            (ic) =>
+                                `${ic.sheet} Set ${ic.setId}: ${ic.reason} (lateral: "${ic.lateralText}", fb: "${ic.fbText}")`,
+                        ),
+                );
+                toast.warning(
+                    `Skipped ${invalidCoordinates.length} rows with invalid coordinates. Check console for details.`,
+                );
+            }
+
+            // Summary toast with all statistics
+            const totalSkipped =
+                stats.rowsSkippedNoMarcher +
+                stats.rowsSkippedNoPage +
+                stats.rowsSkippedInvalidCoords;
+            if (totalSkipped > 0) {
+                console.warn(
+                    `[import-commit] SUMMARY: ${stats.totalRowsFromNormalized} total rows processed, ` +
+                        `${stats.rowsCommitted} committed, ${totalSkipped} skipped ` +
+                        `(${stats.rowsSkippedNoMarcher} no marcher, ${stats.rowsSkippedNoPage} no page, ${stats.rowsSkippedInvalidCoords} invalid coords)`,
                 );
             }
 
@@ -995,6 +1324,15 @@ export default function ImportCoordinatesButton() {
                             <div className="text-muted-foreground text-sm">
                                 Pages: {report.pages} · Errors: {report.errors}{" "}
                                 · Warnings: {report.warnings}
+                            </div>
+                            <div className="text-muted-foreground text-sm">
+                                Total rows parsed:{" "}
+                                {report.normalized.reduce(
+                                    (sum, s) => sum + (s.rows?.length || 0),
+                                    0,
+                                )}{" "}
+                                across {report.normalized.length} performer
+                                sheets
                             </div>
                             <div className="flex items-center gap-16">
                                 <label className="flex items-center gap-8">

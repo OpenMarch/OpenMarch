@@ -1,7 +1,13 @@
 import type { NormalizedSheet, ParsedSheet, NormalizedRow } from "./types";
 
+// Lateral regex handles:
+// - "On [yard] yard line" (with optional side prefix, handled separately)
+// - "X steps Inside/Outside [yard] yard line"
+// Pattern 1: "On [yard] yard line" - captures: [1]=yard number
+//   (matches "On 45 yd ln" or "On 45" but not "On Front Hash" - avoids matching when followed by Front/Back)
+// Pattern 2: "X steps Inside/Outside [yard] yard line" - captures: [2]=dist, [3]=Inside/Outside, [4]=yard
 const LATERAL_REGEX =
-    /(?:On|on)|(?:(\d+(?:\.\d+)?)\s*(?:steps?|stp?s?)?\s*(Inside|Outside)\s*(\d{1,2})\s*(?:yd|yard|yds)\s*(?:ln|line|ln\.|line\.|In|in))/i;
+    /(?:On|on)\s+(\d{1,2})(?:\s*(?:yd|yard|yds)\s*(?:ln|line|ln\.|line\.)?)?(?!\s*(?:Front|Back|Hash|FH|BH|FSL|BSL))|(\d+(?:\.\d+)?)\s*(?:steps?|stp?s?)?\s*(Inside|Outside)\s*(\d{1,2})\s*(?:yd|yard|yds)\s*(?:ln|line|ln\.|line\.|In|in)/i;
 // Front-to-back regex handles:
 // - Hash marks: "Front Hash", "Back Hash", "FH", "BH" with optional (HS), (CH), (PH) designations
 // - Side lines: "Front side line", "Back side line", "FSL", "BSL"
@@ -156,45 +162,80 @@ function detectSide(text: string): 1 | 2 {
 }
 
 export function parseLateral(text: string, field: FieldPropsLike): number {
-    const side = detectSide(text);
-    if (/^\s*(?:Side\s*[12ab]|Left|Right)\s*:\s*On\s*(\d{1,2})/i.test(text)) {
+    if (!text || !text.trim()) {
+        return NaN; // Empty text cannot be parsed
+    }
+
+    // Clean up the text - remove leading colons that might interfere with parsing
+    // but preserve "Side X: On Y" format
+    let cleanedText = text.trim();
+
+    // Remove leading colon if it exists (common parsing artifact)
+    cleanedText = cleanedText.replace(/^:\s*/, "");
+
+    // Handle "Side X: On Y" format (must check before cleaning colons)
+    const side = detectSide(cleanedText);
+    if (
+        /^\s*(?:Side\s*[12ab]|Left|Right)\s*:\s*On\s*(\d{1,2})/i.test(
+            cleanedText,
+        )
+    ) {
         const yard = parseInt(
-            text.match(/(\d{1,2})\s*(?:yd|yard|yds)/i)?.[1] || "50",
+            cleanedText.match(/(\d{1,2})\s*(?:yd|yard|yds)/i)?.[1] || "50",
             10,
         );
         return yardlineSteps(field, yard, side);
     }
-    const m = text.match(LATERAL_REGEX);
-    if (!m) return 0;
-    const dist = m[1] ? parseFloat(m[1]) : 0;
-    const relation = (m[2] || "On").toLowerCase();
-    const yard = m[3] ? parseInt(m[3], 10) : 50;
-    const base = yardlineSteps(field, yard, side);
-    if (!dist || relation === "on") return base;
 
-    // "Inside" means towards the center of the field (50 yd line / 0,0 coordinate)
-    // "Outside" means away from the center
-    //
-    // Coordinate system:
-    // - Side 1 (left) has negative xSteps (e.g., -8 for 45 yd line)
-    // - Side 2 (right) has positive xSteps (e.g., +8 for 45 yd line)
-    // - Center (50 yd line) is at 0
-    //
-    // Examples:
-    // - Side 1, "4 steps Inside 45 yd ln": base=-8, move towards 0 → -8 + 4 = -4
-    // - Side 1, "4 steps Outside 45 yd ln": base=-8, move away from 0 → -8 - 4 = -12
-    // - Side 2, "4 steps Inside 45 yd ln": base=+8, move towards 0 → +8 - 4 = +4
-    // - Side 2, "4 steps Outside 45 yd ln": base=+8, move away from 0 → +8 + 4 = +12
-    if (relation.toLowerCase() === "inside") {
-        // Move towards center (0): Side 1 adds (less negative), Side 2 subtracts (less positive)
-        return side === 1 ? base + dist : base - dist;
-    } else {
-        // Move away from center (0): Side 1 subtracts (more negative), Side 2 adds (more positive)
-        return side === 1 ? base - dist : base + dist;
+    const m = cleanedText.match(LATERAL_REGEX);
+    if (!m) {
+        return NaN; // No match - cannot parse
     }
+
+    // Pattern 1: "On [yard] yard line" - m[1] is the yard number
+    if (m[1]) {
+        const yard = parseInt(m[1], 10);
+        return yardlineSteps(field, yard, side);
+    }
+
+    // Pattern 2: "X steps Inside/Outside [yard] yard line"
+    // m[2] = distance, m[3] = Inside/Outside, m[4] = yard number
+    if (m[2] && m[3] && m[4]) {
+        const dist = parseFloat(m[2]);
+        const relation = m[3].toLowerCase();
+        const yard = parseInt(m[4], 10);
+        const base = yardlineSteps(field, yard, side);
+
+        // "Inside" means towards the center of the field (50 yd line / 0,0 coordinate)
+        // "Outside" means away from the center
+        //
+        // Coordinate system:
+        // - Side 1 (left) has negative xSteps (e.g., -8 for 45 yd line)
+        // - Side 2 (right) has positive xSteps (e.g., +8 for 45 yd line)
+        // - Center (50 yd line) is at 0
+        //
+        // Examples:
+        // - Side 1, "4 steps Inside 45 yd ln": base=-8, move towards 0 → -8 + 4 = -4
+        // - Side 1, "4 steps Outside 45 yd ln": base=-8, move away from 0 → -8 - 4 = -12
+        // - Side 2, "4 steps Inside 45 yd ln": base=+8, move towards 0 → +8 - 4 = +4
+        // - Side 2, "4 steps Outside 45 yd ln": base=+8, move away from 0 → +8 + 4 = +12
+        if (relation === "inside") {
+            // Move towards center (0): Side 1 adds (less negative), Side 2 subtracts (less positive)
+            return side === 1 ? base + dist : base - dist;
+        } else if (relation === "outside") {
+            // Move away from center (0): Side 1 subtracts (more negative), Side 2 adds (more positive)
+            return side === 1 ? base - dist : base + dist;
+        }
+    }
+
+    return NaN; // Matched but couldn't extract valid values
 }
 
 export function parseFrontBack(text: string, field: FieldPropsLike): number {
+    if (!text || !text.trim()) {
+        return NaN; // Empty text cannot be parsed
+    }
+
     const m = text.match(FB_REGEX);
     if (!m) {
         // Try simple patterns that might not match complex regex
@@ -209,10 +250,14 @@ export function parseFrontBack(text: string, field: FieldPropsLike): number {
                 | "CH"
                 | "PH"
                 | undefined;
-            return getYCheckpoint(field, which, target, hashType)
-                .stepsFromCenterFront;
+            try {
+                return getYCheckpoint(field, which, target, hashType)
+                    .stepsFromCenterFront;
+            } catch (e) {
+                return NaN; // Checkpoint not found
+            }
         }
-        return 0;
+        return NaN; // No match - cannot parse
     }
 
     const resolve = (
@@ -246,8 +291,12 @@ export function parseFrontBack(text: string, field: FieldPropsLike): number {
         const info = resolve(m[1], m[2], m[3]);
         if (info) {
             const tag = m[4] as "HS" | "CH" | "PH" | undefined;
-            return getYCheckpoint(field, info.which, info.target, tag)
-                .stepsFromCenterFront;
+            try {
+                return getYCheckpoint(field, info.which, info.target, tag)
+                    .stepsFromCenterFront;
+            } catch (e) {
+                return NaN; // Checkpoint not found
+            }
         }
     }
 
@@ -260,25 +309,29 @@ export function parseFrontBack(text: string, field: FieldPropsLike): number {
 
         if (info) {
             const tag = m[10] as "HS" | "CH" | "PH" | undefined;
-            const base = getYCheckpoint(
-                field,
-                info.which,
-                info.target,
-                tag,
-            ).stepsFromCenterFront;
+            try {
+                const base = getYCheckpoint(
+                    field,
+                    info.which,
+                    info.target,
+                    tag,
+                ).stepsFromCenterFront;
 
-            // Calculate final steps based on relative position.
-            // The coordinate system defines positive Y towards the Front (audience)
-            // and negative Y towards the Back.
-            // "In Front Of" adds distance (more positive).
-            // "Behind" subtracts distance (more negative).
+                // Calculate final steps based on relative position.
+                // The coordinate system defines positive Y towards the Front (audience)
+                // and negative Y towards the Back.
+                // "In Front Of" adds distance (more positive).
+                // "Behind" subtracts distance (more negative).
 
-            if (/In Front Of/i.test(relation)) {
-                return base + dist;
+                if (/In Front Of/i.test(relation)) {
+                    return base + dist;
+                }
+                return base - dist;
+            } catch (e) {
+                return NaN; // Checkpoint not found
             }
-            return base - dist;
         }
     }
 
-    return 0;
+    return NaN; // Matched but couldn't extract valid values
 }

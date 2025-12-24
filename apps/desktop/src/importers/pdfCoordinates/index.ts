@@ -56,10 +56,19 @@ export async function dryRunImportPdfCoordinates(
 
     const parsedSheets: ParsedSheet[] = [];
     const rawPythonOutputs: any[] = [];
+    let totalRowsFromParser = 0;
 
     for (let i = 0; i < pdf.numPages; i++) {
         const result = await extractSheetsFromPageParser(pdf, i);
         if (result?.sheets && result.sheets.length > 0) {
+            const pageRowCount = result.sheets.reduce(
+                (sum, s) => sum + (s.rows?.length || 0),
+                0,
+            );
+            totalRowsFromParser += pageRowCount;
+            console.log(
+                `[pdf-import] Page ${i + 1}: ${result.sheets.length} sheets, ${pageRowCount} total rows from parser`,
+            );
             parsedSheets.push(...result.sheets);
         }
         if (result?.rawPythonOutput) {
@@ -67,11 +76,31 @@ export async function dryRunImportPdfCoordinates(
         }
     }
 
+    console.log(
+        `[pdf-import] Total rows from parser: ${totalRowsFromParser} across ${parsedSheets.length} sheets`,
+    );
+
     const reconciled = reconcileSheets(parsedSheets as any);
+    const reconciledRowCount = reconciled.reduce(
+        (sum, s) => sum + (s.rows?.length || 0),
+        0,
+    );
+    console.log(
+        `[pdf-import] After reconciliation: ${reconciledRowCount} rows (${totalRowsFromParser - reconciledRowCount} rows lost in reconciliation)`,
+    );
+
     const normalized = normalizeSheets(
         reconciled as any,
         fieldProperties as any,
     );
+    const normalizedRowCount = normalized.reduce(
+        (sum, s) => sum + (s.rows?.length || 0),
+        0,
+    );
+    console.log(
+        `[pdf-import] After normalization: ${normalizedRowCount} rows (${reconciledRowCount - normalizedRowCount} rows lost in normalization)`,
+    );
+
     const dryRun = dryRunValidate(normalized);
 
     return {

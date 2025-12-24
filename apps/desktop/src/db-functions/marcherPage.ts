@@ -150,23 +150,83 @@ export async function updateMarcherPagesInTransaction({
     for (const modifiedMarcherPage of modifiedMarcherPages) {
         const { marcher_id, page_id, ...updateData } = modifiedMarcherPage;
 
-        const currentMarcherPage = await tx
-            .update(marcher_pages)
-            .set(updateData)
-            .where(
-                and(
-                    eq(marcher_pages.marcher_id, marcher_id),
-                    eq(marcher_pages.page_id, page_id),
-                ),
-            )
-            .returning({
-                id: marcher_pages.id,
-                path_data_id: marcher_pages.path_data_id,
-                x: marcher_pages.x,
-                y: marcher_pages.y,
-            })
-            .get();
+        // Check if marcher_page exists, if not create it
+        const existingMarcherPage = await tx.query.marcher_pages.findFirst({
+            where: and(
+                eq(marcher_pages.marcher_id, marcher_id),
+                eq(marcher_pages.page_id, page_id),
+            ),
+        });
 
+        // Type for the minimal fields we need from marcher_page
+        type MarcherPageFields = {
+            id: number;
+            path_data_id: number | null;
+            x: number;
+            y: number;
+        };
+
+        let currentMarcherPage: MarcherPageFields | null = null;
+
+        if (!existingMarcherPage) {
+            // Marcher_page doesn't exist, create it
+            const newMarcherPage = await tx
+                .insert(marcher_pages)
+                .values({
+                    marcher_id,
+                    page_id,
+                    x: updateData.x ?? 0,
+                    y: updateData.y ?? 0,
+                    notes: updateData.notes ?? null,
+                    path_data_id: updateData.path_data_id ?? null,
+                    path_start_position: updateData.path_start_position ?? null,
+                    path_end_position: updateData.path_end_position ?? null,
+                    rotation_degrees: 0,
+                })
+                .returning({
+                    id: marcher_pages.id,
+                    path_data_id: marcher_pages.path_data_id,
+                    x: marcher_pages.x,
+                    y: marcher_pages.y,
+                })
+                .get();
+
+            if (!newMarcherPage) {
+                console.error(
+                    `Failed to create marcher_page for marcher ${marcher_id} on page ${page_id}`,
+                );
+                continue;
+            }
+            currentMarcherPage = newMarcherPage;
+        } else {
+            // Update existing marcher_page
+            const updated = await tx
+                .update(marcher_pages)
+                .set(updateData)
+                .where(
+                    and(
+                        eq(marcher_pages.marcher_id, marcher_id),
+                        eq(marcher_pages.page_id, page_id),
+                    ),
+                )
+                .returning({
+                    id: marcher_pages.id,
+                    path_data_id: marcher_pages.path_data_id,
+                    x: marcher_pages.x,
+                    y: marcher_pages.y,
+                })
+                .get();
+
+            if (!updated) {
+                console.error(
+                    `Failed to update marcher_page for marcher ${marcher_id} on page ${page_id}`,
+                );
+                continue;
+            }
+            currentMarcherPage = updated;
+        }
+
+        // TypeScript now knows currentMarcherPage is not null after the checks above
         if (currentMarcherPage.path_data_id) {
             await updateEndPoint({
                 tx,

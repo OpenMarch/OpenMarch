@@ -71,6 +71,10 @@ export async function extractSheetsFromPageParser(
 
 function sanitizeLateralText(text: string): string {
     if (!text) return "";
+
+    // Remove leading colons that might be parsing artifacts
+    let cleaned = text.trim().replace(/^:\s*/, "");
+
     // Regex to find "Side X" patterns
     // Handles multiple naming conventions:
     // - Side A = Side 1, Side B = Side 2
@@ -79,18 +83,18 @@ function sanitizeLateralText(text: string): string {
     // Capture the side indication to preserve it for detection
     const sideRegex =
         /(?:^|\s)(s1|side\s*1|side\s*a\b|side\s*a:|left|s2|side\s*2|side\s*b\b|side\s*b:|right)(?:\b|$)/i;
-    const match = text.match(sideRegex);
+    const match = cleaned.match(sideRegex);
 
     if (match) {
         const sideStr = match[1]; // e.g. "Side 1"
         // Remove all occurrences from the string to allow coordinate regex to match
         // "2.0 steps inside Side 1 50 yd ln" -> "2.0 steps inside 50 yd ln"
-        const cleaned = text
+        cleaned = cleaned
             .replace(new RegExp(sideRegex, "gi"), " ")
             .replace(/\s+/g, " ")
             .trim();
         // Append at end so detectSide() still finds it
         return `${cleaned} ${sideStr}`;
     }
-    return text;
+    return cleaned;
 }
