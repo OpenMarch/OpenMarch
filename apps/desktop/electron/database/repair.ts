@@ -6,7 +6,7 @@ import { app } from "electron";
 import { getOrm } from "./db";
 import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
 
-const initializeAndMigrateDatabase = async (
+export const initializeAndMigrateDatabase = async (
     newDb: Database.Database,
 ): Promise<void> => {
     // Set user version to 7 (indicates Drizzle migration system)
@@ -26,7 +26,7 @@ const initializeAndMigrateDatabase = async (
     await migrator.initializeDatabase(drizzleDb);
 };
 
-const copyDataFromOriginalDatabase = (
+export const copyDataFromOriginalDatabase = (
     originalDb: Database.Database,
     newDb: Database.Database,
     originalDbPath: string,
@@ -112,7 +112,7 @@ const copyDataFromOriginalDatabase = (
     }
 };
 
-const copyFieldPropertiesFromOriginalDatabase = (
+export const copyFieldPropertiesFromOriginalDatabase = (
     originalDb: Database.Database,
     newDb: Database.Database,
     tableName: string,
