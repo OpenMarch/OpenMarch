@@ -38,7 +38,11 @@ const copyDataFromOriginalDatabase = (
         "history_stats",
     ]);
 
-    const singleRowTables = new Set(["field_properties", "utility"]);
+    const singleRowTables = new Set([
+        "field_properties",
+        "utility",
+        "workspace_settings",
+    ]);
 
     // Get all table names from the original database
     const tables = originalDb
