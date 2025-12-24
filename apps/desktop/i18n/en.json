@@ -361,17 +361,17 @@
             "xCheckpoints": "X-Checkpoints",
             "yCheckpoints": "Y-Checkpoints"
         },
-        "themeSubsections": {
-            "grid": "Grid",
-            "labels": "Labels",
-            "pathways": "Pathways",
-            "marchers": "Marchers"
-        },
         "tabs": {
             "checkpoints": "Checkpoints",
             "general": "General",
             "image": "Image",
             "theme": "Theme"
+        },
+        "themeSubsections": {
+            "grid": "Grid",
+            "labels": "Labels",
+            "marchers": "Marchers",
+            "pathways": "Pathways"
         },
         "title": "Field Properties",
         "tooltips": {
@@ -640,9 +640,9 @@
     "pages": {
         "createFailed": "Failed to create page - {error}",
         "createLastPageFailed": "Failed to create last page - {error}",
+        "deletedSuccessfully": "Page deleted successfully",
         "deleteFailed": "Failed to delete page - {error}",
-        "updateFailed": "Failed to update page - {error}",
-        "deletedSuccessfully": "Page deleted successfully"
+        "updateFailed": "Failed to update page - {error}"
     },
     "section": {
         "drumMajor": "Drum Major",
@@ -705,6 +705,7 @@
         "general.language": "Language",
         "general.showFullDatabasePath": "Show full file path",
         "mouse": "Mouse & Trackpad",
+        "mouse.panSensitivity": "Pan sensitivity",
         "mouse.trackpadMode": "Trackpad mode (recommended for macOS)",
         "mouse.trackpadPanSensitivity": "Trackpad pan sensitivity",
         "mouse.zoomSensitivity": "Zoom sensitivity",
