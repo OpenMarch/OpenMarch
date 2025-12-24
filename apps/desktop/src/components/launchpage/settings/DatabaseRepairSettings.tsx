@@ -86,7 +86,7 @@ export default function DatabaseRepairSettings() {
                                 <T keyName="settings.repairDotsFile.cancel" />
                             </Button>
                         </AlertDialogCancel>
-                        <AlertDialogAction asChild>
+                        <AlertDialogAction>
                             <Button
                                 variant="primary"
                                 disabled={isRepairing}
