@@ -2,16 +2,42 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 
 /**
+ * Calculates the inverse transform of the group to counteract distortion on child objects.
+ * This should be used when you want the children to move with the group but not inherit its
+ * scale, rotation, or skew (e.g. dots in a formation).
+ */
+const getCounterTransform = (group: fabric.Group) => {
+    // Calculate the inverse of the group's shape transform (rotation, scale, skew)
+    const groupMatrix = group.calcTransformMatrix();
+    // Zero out translation components (indexes 4 and 5) because we want the children
+    // to move with the group, but not distort with it.
+    const shapeMatrix = [...groupMatrix];
+    shapeMatrix[4] = 0;
+    shapeMatrix[5] = 0;
+
+    const invertedMatrix = fabric.util.invertTransform(shapeMatrix);
+    return fabric.util.qrDecompose(invertedMatrix);
+};
+
+/**
  * Actions that must be taken when a group is rotated
  */
 const rotationSideEffects = (group: fabric.Group) => {
     if (!group || typeof group.getObjects !== "function") return;
     const objects = group.getObjects?.();
     if (!Array.isArray(objects)) return;
+
+    const decomposed = getCounterTransform(group);
+
     for (const object of objects) {
         if (object instanceof CanvasMarcher) {
+            object.scaleX = decomposed.scaleX;
+            object.scaleY = decomposed.scaleY;
+            object.skewX = decomposed.skewX;
+            object.skewY = decomposed.skewY;
+            object.angle = decomposed.angle;
+
             object.updateTextLabelPosition();
-            object.angle = -(group.angle ?? 0); // Keeps the marcher dot upright
         }
     }
     group.setCoords();
@@ -64,16 +90,21 @@ export const handleGroupScaling = (
     if (!group || typeof group.getObjects !== "function") return;
     const objects = group.getObjects?.();
     if (!Array.isArray(objects)) return;
-    const transformMatrix = group.calcTransformMatrix();
-    const decomposed = fabric.util.qrDecompose(transformMatrix);
+
+    const decomposed = getCounterTransform(group);
 
     for (const object of objects) {
-        // Apply the inverse scale to the child so it visually stays the same size
-        object.scaleX = 1 / decomposed.scaleX;
-        object.scaleY = 1 / decomposed.scaleY;
+        if (object instanceof CanvasMarcher) {
+            // Apply the inverted properties to counteract group distortion
+            object.scaleX = decomposed.scaleX;
+            object.scaleY = decomposed.scaleY;
+            object.skewX = decomposed.skewX;
+            object.skewY = decomposed.skewY;
+            object.angle = decomposed.angle;
 
-        // Optionally, update position if needed (usually not necessary for simple groups)
-        object.setCoords();
+            object.updateTextLabelPosition();
+            object.setCoords();
+        }
     }
 
     // Reset the group's scale to 1 so the frame stays at the new size
