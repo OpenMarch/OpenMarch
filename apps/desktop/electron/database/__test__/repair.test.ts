@@ -16,7 +16,6 @@ import { app } from "electron";
 
 describe("Database Repair", () => {
     let tempDir: string;
-    let migrationsFolder: string;
 
     beforeEach(() => {
         // Mock app.getAppPath to return the correct path for tests
@@ -35,13 +34,6 @@ describe("Database Repair", () => {
 
         // Create a temporary directory for test databases
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "repair-test-"));
-        // migrationsFolder is relative to appRoot, which should be apps/desktop
-        migrationsFolder = path.join(
-            appRoot,
-            "electron",
-            "database",
-            "migrations",
-        );
         // Mock console methods to reduce noise in test output
         vi.spyOn(console, "log").mockImplementation(() => {});
         vi.spyOn(console, "debug").mockImplementation(() => {});
@@ -467,14 +459,6 @@ describe("Database Repair", () => {
             expect(copied[0].name).toBe("test1");
             expect(copied[1].name).toBe("test2");
 
-            // Should not have history_undo table data (it's excluded)
-            const historyTables = newDb
-                .prepare(
-                    `SELECT name FROM sqlite_master WHERE type='table' AND name='history_undo'`,
-                )
-                .all();
-            // history_undo exists in new schema but data shouldn't be copied
-
             originalDb.close();
             newDb.close();
             fs.unlinkSync(originalDbPath);
@@ -504,10 +488,6 @@ describe("Database Repair", () => {
             const newDb = await createNewDatabaseWithMigrations(newDbPath);
 
             copyDataFromOriginalDatabase(originalDb, newDb, originalDbPath);
-
-            const copied = newDb
-                .prepare("SELECT * FROM beats WHERE id != 0")
-                .all() as Array<{ id: number }>;
 
             // Should have the new database's default beat with id=0, plus the copied ones
             const allBeats = newDb
