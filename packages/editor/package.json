@@ -39,6 +39,7 @@
     },
     "dependencies": {
         "@openmarch/core": "workspace:*",
+        "@openmarch/metronome": "workspace:*",
         "@openmarch/ui": "workspace:*",
         "@tanstack/react-query": "^5.84.1",
         "drizzle-orm": "^0.43.1",
@@ -46,7 +47,8 @@
         "fabric": "^5.5.2",
         "clsx": "^2.1.1",
         "tailwind-merge": "^2.6.0",
-        "class-variance-authority": "^0.7.1"
+        "class-variance-authority": "^0.7.1",
+        "sonner": "^1.7.4"
     },
     "devDependencies": {
         "@openmarch/config": "workspace:*",

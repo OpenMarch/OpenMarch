@@ -27,9 +27,12 @@ export * from "./platform";
 // Database layer
 export * from "./database";
 
+// Stores
+export * from "./stores";
+
 // Future exports will include:
 // - Components
-// - Stores
+// - Contexts
 // - Hooks
 // - Classes (business logic)
 // - Utilities
