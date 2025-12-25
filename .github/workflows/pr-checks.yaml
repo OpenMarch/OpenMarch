@@ -1,4 +1,4 @@
-name: Basic PR Checks
+name: PR Checks
 
 on:
   pull_request:
@@ -8,7 +8,7 @@ permissions:
   contents: read
 
 jobs:
-  pr-checks:
+  basic-checks:
     strategy:
       matrix:
         pnpm-script:
@@ -26,3 +26,69 @@ jobs:
         run: pnpm install --no-frozen-lockfile
       - name: Run check
         run: pnpm run ${{ matrix.pnpm-script}}
+
+  test:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Install project dependencies
+        run: pnpm install
+
+      - name: Build project
+        run: pnpm run build
+
+      - name: Test Prepare (for desktop)
+        run: pnpm desktop test:prepare
+
+      - name: Test all packages
+        run: pnpm run test
+
+      - name: Test desktop with history
+        working-directory: apps/desktop
+        run: pnpm run test:history $(find . -type f -name "*.test.*" -exec grep -l "getTestWithHistory" {} +) --silent
+
+      # - name: "Upload Coverage"
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #       name: coverage-${{ matrix.artifact }}
+      #       path: coverage
+
+  desktop-e2e:
+    runs-on: macos-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+      - name: Install project dependencies
+        run: pnpm install
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
+      - name: Build monorepo
+        run: pnpm run build
+      - name: Run E2E tests
+        working-directory: apps/desktop
+        env:
+          DISPLAY: :0
+        run: |
+          Xvfb :0 -screen 0 1920x1080x24 &
+          pnpm run e2e
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: desktop-playwright-report-${{ github.run_number }}
+          path: apps/desktop/playwright-report/
+          retention-days: 30
