@@ -738,7 +738,16 @@
         "privacy.analytics.toggle": "アナリティクスを有効にする",
         "title": "設定",
         "tolgeeApiKeyPlaceholder": "Tolgee API キー",
-        "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳"
+        "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳",
+        "database": "データベース",
+        "repairDotsFile": "DOTS ファイルを修復",
+        "repairDotsFile.title": "DOTS ファイルを修復",
+        "repairDotsFile.description": "これにより、ファイル名に「- FIXED」が追加された新しいデータベースファイルが作成されます。修復プロセスは、現在のデータベースからすべてのデータを最新のスキーマを持つ新しいデータベースにコピーします。履歴（元に戻す/やり直す）はコピーされません。",
+        "repairDotsFile.confirm": "修復",
+        "repairDotsFile.cancel": "キャンセル",
+        "repairDotsFile.repairing": "修復中...",
+        "repairDotsFile.success": "データベースが正常に修復されました。再読み込み中...",
+        "repairDotsFile.error": "データベースの修復中にエラーが発生しました: {error}"
     },
     "shapes": {
         "circle": "円",

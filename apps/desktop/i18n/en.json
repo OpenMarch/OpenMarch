@@ -738,7 +738,16 @@
         "privacy.analytics.toggle": "Enable analytics",
         "title": "Settings",
         "tolgeeApiKeyPlaceholder": "Tolgee API Key",
-        "tolgeeDevToolsToggle": "Tolgee In-Context Translating"
+        "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
+        "database": "Database",
+        "repairDotsFile": "Repair DOTS file",
+        "repairDotsFile.title": "Repair DOTS file",
+        "repairDotsFile.description": "This will create a new database file with '- FIXED' appended to the filename. The repair process will copy all data from the current database to a new one with the latest schema. History (undo/redo) will not be copied.",
+        "repairDotsFile.confirm": "Repair",
+        "repairDotsFile.cancel": "Cancel",
+        "repairDotsFile.repairing": "Repairing...",
+        "repairDotsFile.success": "Database repaired successfully. Reloading...",
+        "repairDotsFile.error": "Error repairing database: {error}"
     },
     "shapes": {
         "circle": "Circle",

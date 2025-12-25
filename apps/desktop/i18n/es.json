@@ -738,7 +738,16 @@
         "privacy.analytics.toggle": "Habilitar analíticas",
         "title": "Configuración",
         "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
-        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee"
+        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee",
+        "database": "Base de datos",
+        "repairDotsFile": "Reparar archivo DOTS",
+        "repairDotsFile.title": "Reparar archivo DOTS",
+        "repairDotsFile.description": "Esto creará un nuevo archivo de base de datos con '- FIXED' añadido al nombre del archivo. El proceso de reparación copiará todos los datos de la base de datos actual a una nueva con el esquema más reciente. El historial (deshacer/rehacer) no se copiará.",
+        "repairDotsFile.confirm": "Reparar",
+        "repairDotsFile.cancel": "Cancelar",
+        "repairDotsFile.repairing": "Reparando...",
+        "repairDotsFile.success": "Base de datos reparada exitosamente. Recargando...",
+        "repairDotsFile.error": "Error al reparar la base de datos: {error}"
     },
     "shapes": {
         "circle": "Círculo",
