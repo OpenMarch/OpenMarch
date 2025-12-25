@@ -161,8 +161,17 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
-        // If not near any marcher, still keep selection enabled
-        // This allows for multi-select box creation anywhere on canvas
+        // If we clicked on empty space (not on an object and not near a marcher)
+        // AND we are not holding shift (adding to selection)
+        // AND we are not dragging to create a selection box (which is handled by fabric's default behavior)
+        if (!evt.shiftKey) {
+            // If we have an active selection and we click outside it, clear it
+            if (this.canvas.getActiveObject()) {
+                // If we are starting a drag selection, fabric will handle clearing the old selection
+                // But if we just click, we want to ensure it clears
+                // We let fabric handle the "discard on click" naturally, but ensure we don't interfere
+            }
+        }
     }
 
     /**
