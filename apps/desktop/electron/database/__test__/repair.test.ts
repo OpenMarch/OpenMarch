@@ -600,7 +600,7 @@ describe("Database Repair", () => {
 
             // id is a common column, so the row will be copied with just the id value
             expect(copied.length).toBe(1);
-            expect(copied[0].id).toBe(1);
+            expect((copied[0] as { id: number }).id).toBe(1);
 
             originalDb.close();
             newDb.close();
