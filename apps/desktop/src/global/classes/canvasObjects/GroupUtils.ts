@@ -177,6 +177,54 @@ export const resetMarcherRotation = (group: fabric.Group) => {
     });
 };
 
+/**
+ * Symbol keys for storing handler references on group objects.
+ * Using symbols prevents conflicts with other properties.
+ */
+const GROUP_HANDLERS = {
+    scaling: Symbol("groupScalingHandler"),
+    moving: Symbol("groupMovingHandler"),
+    scaled: Symbol("groupScaledHandler"),
+    modified: Symbol("groupModifiedHandler"),
+} as const;
+
+/**
+ * Removes any previously attached group event handlers to prevent accumulation.
+ * Should be called before adding new handlers or when disposing of a group.
+ */
+export const cleanupGroupHandlers = (group: fabric.Group) => {
+    const groupAny = group as any;
+
+    // Remove scaling handler
+    if (groupAny[GROUP_HANDLERS.scaling]) {
+        group.off("scaling", groupAny[GROUP_HANDLERS.scaling]);
+        delete groupAny[GROUP_HANDLERS.scaling];
+    }
+
+    // Remove moving handler
+    if (groupAny[GROUP_HANDLERS.moving]) {
+        group.off("moving", groupAny[GROUP_HANDLERS.moving]);
+        delete groupAny[GROUP_HANDLERS.moving];
+    }
+
+    // Remove scaled handler
+    if (groupAny[GROUP_HANDLERS.scaled]) {
+        group.off("scaled", groupAny[GROUP_HANDLERS.scaled]);
+        delete groupAny[GROUP_HANDLERS.scaled];
+    }
+
+    // Remove modified handler
+    if (groupAny[GROUP_HANDLERS.modified]) {
+        group.off("modified", groupAny[GROUP_HANDLERS.modified]);
+        delete groupAny[GROUP_HANDLERS.modified];
+    }
+
+    // Also cleanup scaling state if present
+    delete groupAny.__scalingCorner;
+    delete groupAny.__originalScaleX;
+    delete groupAny.__originalScaleY;
+};
+
 export const setGroupAttributes = (group: fabric.Group) => {
     const isLocked = anyObjectsAreLocked(group);
     group.hasControls = !isLocked;
@@ -191,18 +239,36 @@ export const setGroupAttributes = (group: fabric.Group) => {
     // Prevent scaling to negative values (flipping) when dragging past center
     group.lockScalingFlip = true;
 
+    // Always cleanup existing handlers first to prevent accumulation
+    cleanupGroupHandlers(group);
+
     if (isLocked) {
         group.evented = false;
     } else {
-        group.on("scaling", (e) => handleGroupScaling(e, group));
-        group.on("moving", (e) => handleGroupMoving(e, group));
+        const groupAny = group as any;
+
+        // Create and store handler references so they can be removed later
+        const scalingHandler = (e: fabric.IEvent<Event>) =>
+            handleGroupScaling(e, group);
+        const movingHandler = (e: fabric.IEvent<Event>) =>
+            handleGroupMoving(e, group);
 
         // Cleanup scaling state when scaling finishes
         const cleanupScalingState = () => {
-            delete (group as any).__scalingCorner;
-            delete (group as any).__originalScaleX;
-            delete (group as any).__originalScaleY;
+            delete groupAny.__scalingCorner;
+            delete groupAny.__originalScaleX;
+            delete groupAny.__originalScaleY;
         };
+
+        // Store handler references on the group for later cleanup
+        groupAny[GROUP_HANDLERS.scaling] = scalingHandler;
+        groupAny[GROUP_HANDLERS.moving] = movingHandler;
+        groupAny[GROUP_HANDLERS.scaled] = cleanupScalingState;
+        groupAny[GROUP_HANDLERS.modified] = cleanupScalingState;
+
+        // Attach the handlers
+        group.on("scaling", scalingHandler);
+        group.on("moving", movingHandler);
         group.on("scaled", cleanupScalingState);
         group.on("modified", cleanupScalingState);
     }
