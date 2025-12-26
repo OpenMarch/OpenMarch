@@ -35,44 +35,10 @@ export default class DefaultListeners implements CanvasListeners {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.updateMomentum = this.updateMomentum.bind(this);
         this.handleBeforeTransform = this.handleBeforeTransform.bind(this);
-        this.handleMouseDownBefore = this.handleMouseDownBefore.bind(this);
     }
-
-    /**
-     * Earliest interception point - fires before mouse:down.
-     * Used to completely block Shift+click on middle scale handles.
-     */
-    handleMouseDownBefore = (fabricEvent: fabric.IEvent<MouseEvent>) => {
-        const evt = fabricEvent.e;
-        if (!evt?.shiftKey) return;
-
-        const activeObject = this.canvas.getActiveObject();
-        if (!activeObject || activeObject.type !== "activeSelection") return;
-        if (!activeObject.hasControls) return;
-
-        // Check if clicking on a middle scale control
-        const pointer = this.canvas.getPointer(evt, true);
-        const controlInfo = (activeObject as any).findControl?.(pointer, true);
-        const corner = controlInfo?.corner;
-
-        if (corner && ["ml", "mr", "mt", "mb"].includes(corner)) {
-            // Completely block this event - prevent fabric from processing it
-            evt.preventDefault();
-            evt.stopPropagation();
-            evt.stopImmediatePropagation();
-
-            // Mark the event as handled so fabric skips processing
-            (fabricEvent as any).__skipFabricHandling = true;
-
-            // Prevent any transform from starting
-            (this.canvas as any)._currentTransform = null;
-            (this.canvas as any).__skipMouseDown = true;
-        }
-    };
 
     initiateListeners = () => {
         this.canvas.on("object:modified", this.handleObjectModified);
-        this.canvas.on("mouse:down:before", this.handleMouseDownBefore);
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
@@ -84,7 +50,6 @@ export default class DefaultListeners implements CanvasListeners {
 
     cleanupListeners = () => {
         this.canvas.off("object:modified", this.handleObjectModified as any);
-        this.canvas.off("mouse:down:before", this.handleMouseDownBefore as any);
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
@@ -94,24 +59,50 @@ export default class DefaultListeners implements CanvasListeners {
     /**
      * Intercept transforms before they start.
      * Block Shift+scaling on middle handles for multi-selection.
+     * Uses only public Fabric.js API: event.e, event.transform.corner, discardActiveObject, and setActiveObject
      */
-    handleBeforeTransform(e: any) {
+    handleBeforeTransform(
+        e: fabric.IEvent<MouseEvent> & {
+            transform?: { corner?: string; target?: fabric.Object };
+        },
+    ) {
         const transform = e.transform;
         if (!transform) return;
 
         const corner = transform.corner;
         const target = transform.target;
-        const evt = e.e as MouseEvent;
+        const evt = e.e;
 
         // Block Shift+click on middle scale handles (ml, mr, mt, mb) for ActiveSelection
+        // This prevents cross-axis scaling which causes unexpected behavior
         if (
             evt?.shiftKey &&
             corner &&
             ["ml", "mr", "mt", "mb"].includes(corner) &&
             target?.type === "activeSelection"
         ) {
-            // Cancel the transform by clearing it
-            (this.canvas as any)._currentTransform = null;
+            // Prevent the DOM event from propagating
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            // Cancel the transform by resetting the selection using public API
+            // Get the objects from the active selection before discarding
+            const activeSelection = target as fabric.ActiveSelection;
+            const selectedObjects = activeSelection.getObjects();
+
+            // Discard and immediately re-create the selection to reset transform state
+            this.canvas.discardActiveObject();
+
+            if (selectedObjects.length > 0) {
+                const newSelection = new fabric.ActiveSelection(
+                    selectedObjects,
+                    {
+                        canvas: this.canvas,
+                    },
+                );
+                this.canvas.setActiveObject(newSelection);
+            }
+
             this.canvas.requestRenderAll();
         }
     }
@@ -196,7 +187,6 @@ export default class DefaultListeners implements CanvasListeners {
         // But NOT if we're clicking on a control handle of an active selection
         const activeObject = this.canvas.getActiveObject();
         let isClickingOnControl = false;
-        let controlCorner: string | null = null;
 
         if (activeObject && activeObject.hasControls) {
             // Check if the click is on a control handle using fabric's findControl
@@ -206,24 +196,10 @@ export default class DefaultListeners implements CanvasListeners {
                 true,
             );
             isClickingOnControl = !!controlInfo;
-            controlCorner = controlInfo?.corner || null;
         }
 
-        // Block Shift+click on middle scale handles (ml, mr, mt, mb) for multi-selection
-        // This prevents cross-axis scaling which causes unexpected behavior
-        if (
-            evt.shiftKey &&
-            isClickingOnControl &&
-            controlCorner &&
-            ["ml", "mr", "mt", "mb"].includes(controlCorner) &&
-            activeObject?.type === "activeSelection"
-        ) {
-            evt.preventDefault();
-            evt.stopPropagation();
-            // Clear the transform to prevent scaling from starting
-            (this.canvas as any)._currentTransform = null;
-            return;
-        }
+        // Note: Shift+click blocking on middle scale handles (ml, mr, mt, mb) for multi-selection
+        // is handled in handleBeforeTransform using the public before:transform event
 
         if (
             evt.shiftKey &&
