@@ -1,6 +1,7 @@
 import { db } from "@/global/database/db";
 import { createBeats } from "@/db-functions/beat";
 import { createPages } from "@/db-functions/page";
+import { createMarchers } from "@/db-functions/marcher";
 import { updateFieldProperties } from "@/global/classes/FieldProperties";
 import {
     updateWorkspaceSettingsParsed,
@@ -10,16 +11,48 @@ import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import {
     allDatabaseBeatsQueryOptions,
     allDatabasePagesQueryOptions,
+    allMarchersQueryOptions,
 } from "@/hooks/queries";
 import { toast } from "sonner";
 import type { WizardState } from "./types";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { QueryClient } from "@tanstack/react-query";
+import { createAllUndoTriggers } from "@/db-functions/history";
 
 const DEFAULT_TEMPO = 120;
 const PAGES_COUNT = 8;
 const COUNTS_PER_PAGE = 16;
 const TOTAL_COUNTS = PAGES_COUNT * COUNTS_PER_PAGE; // 128 counts total
+
+/**
+ * Retry a database operation with exponential backoff to handle SQLITE_BUSY errors
+ */
+async function retryWithBackoff<T>(
+    operation: () => Promise<T>,
+    maxRetries = 5,
+    initialDelay = 50,
+): Promise<T> {
+    let lastError: Error | undefined;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+            return await operation();
+        } catch (error: any) {
+            lastError = error;
+            if (
+                error?.code === "SQLITE_BUSY" ||
+                error?.message?.includes("database is locked")
+            ) {
+                if (attempt < maxRetries - 1) {
+                    const delay = initialDelay * Math.pow(2, attempt);
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                    continue;
+                }
+            }
+            throw error;
+        }
+    }
+    throw lastError || new Error("Operation failed after retries");
+}
 
 /**
  * Completes the wizard by applying all collected data to the database
@@ -30,49 +63,173 @@ export async function completeWizard(
     queryClient: QueryClient,
 ): Promise<void> {
     try {
-        // 0. File should already be created when project step completed
-        // Just verify it exists, or create it if it doesn't (fallback)
-        if (wizardState.project?.fileLocation) {
-            const dbReady = await window.electron.databaseIsReady();
-            if (!dbReady) {
-                // File wasn't created yet, create it now (fallback)
-                const result = await window.electron.databaseCreateAtPath(
-                    wizardState.project.fileLocation,
-                );
-                if (result !== 200) {
-                    throw new Error(
-                        "Failed to create file at specified location",
-                    );
+        // 0. Verify file exists and is ready, create if needed
+        if (wizardState.project?.projectName) {
+            // Ensure fileLocation includes the project name
+            let filePath = wizardState.project.fileLocation;
+
+            // If fileLocation is missing or doesn't end with .dots, construct it
+            if (!filePath || !filePath.trim()) {
+                // Get default documents directory
+                const defaultDir =
+                    await window.electron.getDefaultDocumentsPath();
+                const sanitizedProjectName = wizardState.project.projectName
+                    .trim()
+                    .replace(/[<>:"/\\|?*]/g, "_"); // Remove invalid filename characters
+                filePath = `${defaultDir}/${sanitizedProjectName}.dots`;
+            } else {
+                // Ensure fileLocation has .dots extension and uses project name
+                filePath = filePath.trim();
+                const normalizedPath = filePath.replace(/\\/g, "/");
+                const pathParts = normalizedPath.split("/");
+                const lastPart = pathParts[pathParts.length - 1];
+
+                // If last part doesn't end with .dots or doesn't match project name, fix it
+                if (!lastPart.endsWith(".dots")) {
+                    const sanitizedProjectName = wizardState.project.projectName
+                        .trim()
+                        .replace(/[<>:"/\\|?*]/g, "_");
+                    pathParts[pathParts.length - 1] =
+                        `${sanitizedProjectName}.dots`;
+                    filePath = pathParts.join("/");
+                } else if (
+                    !lastPart.startsWith(
+                        wizardState.project.projectName
+                            .trim()
+                            .replace(/[<>:"/\\|?*]/g, "_"),
+                    )
+                ) {
+                    // If filename doesn't match project name, update it
+                    const sanitizedProjectName = wizardState.project.projectName
+                        .trim()
+                        .replace(/[<>:"/\\|?*]/g, "_");
+                    pathParts[pathParts.length - 1] =
+                        `${sanitizedProjectName}.dots`;
+                    filePath = pathParts.join("/");
                 }
             }
+
+            // Verify database is ready and connected to the correct file
+            const dbReady = await window.electron.databaseIsReady();
+            const currentPath = await window.electron.databaseGetPath();
+            const normalizedFilePath = filePath.replace(/\\/g, "/");
+            const normalizedCurrentPath = currentPath
+                ?.trim()
+                .replace(/\\/g, "/");
+
+            if (!dbReady || normalizedCurrentPath !== normalizedFilePath) {
+                // File wasn't created yet or wrong file is open, create it now
+                console.log("Creating database file at:", filePath);
+                const result =
+                    await window.electron.databaseCreateForWizard(filePath);
+                if (result !== 200) {
+                    throw new Error(
+                        `Failed to create file at specified location: ${filePath}`,
+                    );
+                }
+                // Verify it was created successfully
+                const verifyReady = await window.electron.databaseIsReady();
+                if (!verifyReady) {
+                    throw new Error(
+                        "Database file was created but is not ready",
+                    );
+                }
+                // Ensure undo/redo history triggers are set up
+                // This is critical for the history system to work correctly
+                console.log("Setting up undo/redo history triggers...");
+                try {
+                    await createAllUndoTriggers(db);
+                    console.log("History triggers set up successfully");
+                } catch (error) {
+                    console.error("Error setting up history triggers:", error);
+                    // Don't throw here - triggers might already exist
+                }
+            } else {
+                console.log(
+                    "Database file already exists and is ready:",
+                    filePath,
+                );
+                // Ensure undo/redo history triggers are set up even if file already exists
+                console.log(
+                    "Verifying undo/redo history triggers are set up...",
+                );
+                try {
+                    await createAllUndoTriggers(db);
+                    console.log(
+                        "History triggers verified/set up successfully",
+                    );
+                } catch (error) {
+                    console.error("Error setting up history triggers:", error);
+                    // Don't throw here - triggers might already exist
+                }
+            }
+        } else {
+            throw new Error("Project name is required to create database file");
         }
 
         // 1. Apply project settings
-        await applyProjectSettings(wizardState.project, queryClient);
+        console.log("Applying project settings...");
+        await retryWithBackoff(async () => {
+            await applyProjectSettings(wizardState.project, queryClient);
+        });
+        console.log("Project settings applied successfully");
 
         // 2. Apply ensemble settings (extend workspace settings schema if needed)
         // For now, we'll store ensemble data in workspace settings JSON
         // Note: This requires extending the workspace settings schema
+        console.log("Applying ensemble settings...");
         await applyEnsembleSettings(wizardState.ensemble, queryClient);
+        console.log("Ensemble settings applied successfully");
 
-        // 3. Apply field properties
-        if (wizardState.field) {
-            await updateFieldProperties(wizardState.field.template);
-        } else {
-            // Default to College Football Field (no end zones)
-            const defaultTemplate =
-                FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
-            await updateFieldProperties(defaultTemplate);
+        // 3. Apply music settings FIRST (tempo needed for beats)
+        console.log("Applying music settings...");
+        await retryWithBackoff(async () => {
+            await applyMusicSettings(wizardState.music, queryClient);
+        });
+        console.log("Music settings applied successfully");
+
+        // Small delay between operations
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // 4. Apply field properties
+        console.log("Applying field properties...");
+        await retryWithBackoff(async () => {
+            if (wizardState.field) {
+                await updateFieldProperties(wizardState.field.template);
+            } else {
+                // Default to College Football Field (no end zones)
+                const defaultTemplate =
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+                await updateFieldProperties(defaultTemplate);
+            }
+        });
+        console.log("Field properties applied successfully");
+
+        // Small delay to ensure field properties transaction completes
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // 5. Create beats and pages (performers need pages to exist)
+        console.log("Creating beats and pages...");
+        await retryWithBackoff(async () => {
+            await createBeatsAndPages(queryClient);
+        });
+        console.log("Beats and pages created successfully");
+
+        // Small delay to ensure all database transactions complete before creating performers
+        await new Promise((resolve) => setTimeout(resolve, 200));
+
+        // 6. Create performers in database (if any were added)
+        console.log("Applying performers settings...");
+        await retryWithBackoff(async () => {
+            await applyPerformersSettings(wizardState.performers, queryClient);
+        });
+        console.log("Performers settings applied successfully");
+
+        // Verify database is ready before completing
+        const finalDbReady = await window.electron.databaseIsReady();
+        if (!finalDbReady) {
+            throw new Error("Database is not ready after completing wizard");
         }
-
-        // 4. Performers are already created in the database (created during PerformersStep)
-        // No action needed here
-
-        // 5. Apply music settings
-        await applyMusicSettings(wizardState.music, queryClient);
-
-        // 6. Create beats and pages
-        await createBeatsAndPages(queryClient);
 
         toast.success("Setup complete! Your show is ready.");
     } catch (error) {
@@ -89,22 +246,37 @@ async function applyProjectSettings(
     project: WizardState["project"],
     queryClient: QueryClient,
 ): Promise<void> {
-    if (!project || !project.projectName) return;
+    if (!project || !project.projectName) {
+        console.warn("No project data to apply");
+        return;
+    }
 
-    const currentSettings = await getWorkspaceSettingsParsed({ db });
+    try {
+        const currentSettings = await getWorkspaceSettingsParsed({ db });
 
-    const updatedSettings = {
-        ...currentSettings,
-        projectName: project.projectName,
-        designer: project.designer,
-        client: project.client,
-    };
+        const updatedSettings = {
+            ...currentSettings,
+            projectName: project.projectName,
+            designer: project.designer,
+            client: project.client,
+        };
 
-    const validatedSettings = workspaceSettingsSchema.parse(updatedSettings);
-    await updateWorkspaceSettingsParsed({
-        db,
-        settings: validatedSettings,
-    });
+        const validatedSettings =
+            workspaceSettingsSchema.parse(updatedSettings);
+        await updateWorkspaceSettingsParsed({
+            db,
+            settings: validatedSettings,
+        });
+
+        // Verify the settings were saved
+        const verifySettings = await getWorkspaceSettingsParsed({ db });
+        if (verifySettings.projectName !== project.projectName) {
+            throw new Error("Failed to verify project settings were saved");
+        }
+    } catch (error) {
+        console.error("Error applying project settings:", error);
+        throw error;
+    }
 }
 
 /**
@@ -130,26 +302,101 @@ async function applyMusicSettings(
     music: WizardState["music"],
     queryClient: QueryClient,
 ): Promise<void> {
-    if (!music || music.method === "skip") return;
-
-    if (music.method === "tempo_only" && music.tempo) {
-        // Update workspace settings with default tempo
+    try {
+        // Always set a default tempo if none exists (needed for beats)
         const currentSettings = await getWorkspaceSettingsParsed({ db });
+        const needsTempoUpdate = !currentSettings?.defaultTempo;
 
-        const updatedSettings = {
-            ...currentSettings,
-            defaultTempo: music.tempo,
-        };
+        if (music && music.method === "tempo_only" && music.tempo) {
+            // Update workspace settings with user-specified tempo
+            const updatedSettings = {
+                ...currentSettings,
+                defaultTempo: music.tempo,
+            };
 
-        const validatedSettings =
-            workspaceSettingsSchema.parse(updatedSettings);
-        await updateWorkspaceSettingsParsed({
-            db,
-            settings: validatedSettings,
-        });
+            const validatedSettings =
+                workspaceSettingsSchema.parse(updatedSettings);
+            await updateWorkspaceSettingsParsed({
+                db,
+                settings: validatedSettings,
+            });
+
+            // Verify tempo was saved
+            const verifySettings = await getWorkspaceSettingsParsed({ db });
+            if (verifySettings.defaultTempo !== music.tempo) {
+                throw new Error("Failed to verify tempo was saved");
+            }
+        } else if (needsTempoUpdate) {
+            // Set default tempo if none exists and user skipped music step
+            const updatedSettings = {
+                ...currentSettings,
+                defaultTempo: DEFAULT_TEMPO,
+            };
+
+            const validatedSettings =
+                workspaceSettingsSchema.parse(updatedSettings);
+            await updateWorkspaceSettingsParsed({
+                db,
+                settings: validatedSettings,
+            });
+
+            // Verify default tempo was saved
+            const verifySettings = await getWorkspaceSettingsParsed({ db });
+            if (verifySettings.defaultTempo !== DEFAULT_TEMPO) {
+                throw new Error("Failed to verify default tempo was saved");
+            }
+        }
+        // For XML and MP3, the files are already imported during the MusicStep
+        // No additional action needed here
+    } catch (error) {
+        console.error("Error applying music settings:", error);
+        throw error;
     }
-    // For XML and MP3, the files are already imported during the MusicStep
-    // No additional action needed here
+}
+
+/**
+ * Creates performers in the database if any were added during the wizard
+ */
+async function applyPerformersSettings(
+    performers: WizardState["performers"],
+    queryClient: QueryClient,
+): Promise<void> {
+    if (
+        !performers ||
+        performers.method === "skip" ||
+        !performers.marchers ||
+        performers.marchers.length === 0
+    ) {
+        console.log("No performers to add");
+        return;
+    }
+
+    try {
+        console.log(`Creating ${performers.marchers.length} marchers...`);
+        await createMarchers({
+            db,
+            newMarchers: performers.marchers,
+        });
+
+        // Invalidate marchers query to refresh the UI
+        await queryClient.invalidateQueries({
+            queryKey: ["marchers"],
+        });
+
+        // Verify marchers were created by refetching
+        const allMarchers = await queryClient.fetchQuery(
+            allMarchersQueryOptions(),
+        );
+        if (!allMarchers || allMarchers.length < performers.marchers.length) {
+            throw new Error("Failed to verify all marchers were created");
+        }
+        console.log(
+            `Successfully created ${performers.marchers.length} marchers`,
+        );
+    } catch (error) {
+        console.error("Error applying performers settings:", error);
+        throw error;
+    }
 }
 
 /**

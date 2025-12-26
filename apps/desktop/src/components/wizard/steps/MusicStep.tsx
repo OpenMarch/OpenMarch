@@ -7,7 +7,7 @@ import {
     SelectTriggerButton,
     Input,
 } from "@openmarch/ui";
-import { StaticFormField } from "@/components/ui/FormField";
+import { WizardFormField } from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import AudioSelector from "@/components/music/AudioSelector";
 import MusicXmlSelector from "@/components/music/MusicXmlSelector";
@@ -73,8 +73,11 @@ export default function MusicStep() {
     };
 
     return (
-        <div className="flex flex-col gap-16">
-            <StaticFormField label={<T keyName="wizard.music.method" />}>
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
+            <WizardFormField
+                label={<T keyName="wizard.music.method" />}
+                helperText={<T keyName="wizard.music.methodHelper" />}
+            >
                 <Select
                     value={method}
                     onValueChange={(value) => setMethod(value as typeof method)}
@@ -95,11 +98,14 @@ export default function MusicStep() {
                         </SelectItem>
                     </SelectContent>
                 </Select>
-            </StaticFormField>
+            </WizardFormField>
 
             {method === "tempo_only" && (
-                <div className="flex flex-col gap-16">
-                    <StaticFormField label={<T keyName="wizard.music.tempo" />}>
+                <div className="flex flex-col gap-24">
+                    <WizardFormField
+                        label={<T keyName="wizard.music.tempo" />}
+                        helperText={<T keyName="wizard.music.tempoHelper" />}
+                    >
                         <Input
                             type="number"
                             value={tempo}
@@ -108,10 +114,14 @@ export default function MusicStep() {
                             }
                             min={1}
                             max={300}
+                            className="w-full"
                         />
-                    </StaticFormField>
-                    <StaticFormField
+                    </WizardFormField>
+                    <WizardFormField
                         label={<T keyName="wizard.music.startCount" />}
+                        helperText={
+                            <T keyName="wizard.music.startCountHelper" />
+                        }
                     >
                         <Input
                             type="number"
@@ -120,27 +130,30 @@ export default function MusicStep() {
                                 setStartCount(parseInt(e.target.value) || 1)
                             }
                             min={1}
+                            className="w-full"
                         />
-                    </StaticFormField>
+                    </WizardFormField>
                 </div>
             )}
 
             {method === "mp3" && (
-                <div className="mt-8">
+                <div className="flex flex-col gap-16">
                     <AudioSelector />
                 </div>
             )}
 
             {method === "xml" && (
-                <div className="mt-8">
+                <div className="flex flex-col gap-16">
                     <MusicXmlSelector />
                 </div>
             )}
 
             {method === "skip" && (
-                <p className="text-body text-text/60">
-                    <T keyName="wizard.music.skipDescription" />
-                </p>
+                <div className="rounded-12 bg-fg-1 border-stroke border p-20">
+                    <p className="text-body text-text/80 leading-relaxed">
+                        <T keyName="wizard.music.skipDescription" />
+                    </p>
+                </div>
             )}
         </div>
     );

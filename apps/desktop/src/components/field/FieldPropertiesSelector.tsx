@@ -11,7 +11,7 @@ import {
     SelectLabel,
     SelectSeparator,
 } from "@openmarch/ui";
-import { StaticFormField } from "../ui/FormField";
+import { StaticFormField, WizardFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
@@ -97,76 +97,80 @@ export default function FieldPropertiesSelector({
         return <div>{t("fieldProperties.errors.notDefined")}</div>;
     }
 
+    const FormField = onTemplateChange ? WizardFormField : StaticFormField;
+
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
-            <div className="flex w-full min-w-0 flex-col gap-16">
-                <StaticFormField
-                    label={t("fieldProperties.fieldTemplate.label")}
+            <FormField
+                label={t("fieldProperties.fieldTemplate.label")}
+                {...(onTemplateChange && {
+                    helperText: t("fieldProperties.fieldTemplate.helper"),
+                })}
+            >
+                <Select
+                    onValueChange={handleFieldTypeChange}
+                    value={
+                        currentTemplate?.isCustom
+                            ? "Custom"
+                            : currentTemplate?.name ||
+                              fieldProperties?.name ||
+                              ""
+                    }
+                    ref={selectRef}
                 >
-                    <Select
-                        onValueChange={handleFieldTypeChange}
-                        value={
-                            currentTemplate?.isCustom
-                                ? "Custom"
-                                : currentTemplate?.name || fieldProperties.name
+                    <SelectTriggerButton
+                        label={
+                            currentTemplate?.name ||
+                            fieldProperties?.name ||
+                            t("fieldProperties.fieldType.label")
                         }
-                        ref={selectRef}
-                    >
-                        <SelectTriggerButton
-                            label={
-                                currentTemplate?.name ||
-                                fieldProperties.name ||
-                                t("fieldProperties.fieldType.label")
-                            }
-                        />
-                        <SelectContent>
-                            <SelectGroup>
-                                {(environment === undefined ||
-                                    environment === "outdoor") && (
-                                    <>
-                                        <SelectLabel>Football</SelectLabel>
-                                        {Object.entries(FootballTemplates).map(
-                                            (template, index) => (
-                                                <SelectItem
-                                                    key={index}
-                                                    value={template[1].name}
-                                                >
-                                                    {template[1].name}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                        <SelectSeparator />
-                                    </>
-                                )}
-                                {(environment === undefined ||
-                                    environment === "indoor") && (
-                                    <>
-                                        <SelectLabel>Indoor</SelectLabel>
-                                        {Object.entries(IndoorTemplates).map(
-                                            (template, index) => (
-                                                <SelectItem
-                                                    key={index}
-                                                    value={template[1].name}
-                                                >
-                                                    {template[1].name}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                        <SelectSeparator />
-                                    </>
-                                )}
-                                <SelectLabel>Custom</SelectLabel>
-                                {fieldProperties?.isCustom && (
-                                    <SelectItem key={"custom"} value={"Custom"}>
-                                        {t("fieldProperties.customFieldName")}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </StaticFormField>
-            </div>
-            {/* Only show warning in non-wizard mode (when changes are applied immediately) */}
+                    />
+                    <SelectContent>
+                        <SelectGroup>
+                            {(environment === undefined ||
+                                environment === "outdoor") && (
+                                <>
+                                    <SelectLabel>Football</SelectLabel>
+                                    {Object.values(FootballTemplates).map(
+                                        (template, index) => (
+                                            <SelectItem
+                                                key={index}
+                                                value={template.name}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                    <SelectSeparator />
+                                </>
+                            )}
+                            {(environment === undefined ||
+                                environment === "indoor") && (
+                                <>
+                                    <SelectLabel>Indoor</SelectLabel>
+                                    {Object.values(IndoorTemplates).map(
+                                        (template, index) => (
+                                            <SelectItem
+                                                key={index}
+                                                value={template.name}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                    <SelectSeparator />
+                                </>
+                            )}
+                            <SelectLabel>Custom</SelectLabel>
+                            {fieldProperties?.isCustom && (
+                                <SelectItem key={"custom"} value={"Custom"}>
+                                    {t("fieldProperties.customFieldName")}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            </FormField>
             {!onTemplateChange && (
                 <div
                     hidden={

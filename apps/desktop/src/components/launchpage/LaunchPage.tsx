@@ -19,6 +19,7 @@ import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
 import GuidedSetupWizard from "../wizard/GuidedSetupWizard";
+import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
@@ -52,8 +53,8 @@ export default function LaunchPage({
                         wizardMode={wizardMode}
                         onStartWizard={onStartWizard}
                     />
-                    <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-6">
-                        <div className="flex h-full w-full max-w-[512px] flex-col">
+                    <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-12">
+                        <div className="flex h-full w-full max-w-[600px] flex-col">
                             <GuidedSetupWizard
                                 onComplete={handleWizardComplete}
                             />
@@ -102,7 +103,12 @@ function Sidebar({
     selectedTab: string;
     wizardMode: boolean;
 }) {
+    const { resetWizard } = useGuidedSetupStore();
+
     async function handleCreateNew() {
+        // Reset wizard state to ensure a fresh start
+        resetWizard();
+
         // Start wizard mode without creating file - file will be created on wizard completion
         if (onStartWizard) {
             onStartWizard();

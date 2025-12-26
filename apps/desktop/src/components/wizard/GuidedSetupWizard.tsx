@@ -24,6 +24,7 @@ export default function GuidedSetupWizard({
         updateWizardStep,
         setWizardActive,
         resetWizard,
+        updatePerformers,
     } = useGuidedSetupStore();
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -80,6 +81,11 @@ export default function GuidedSetupWizard({
     };
 
     const handleSkip = () => {
+        // If skipping performers step, mark it as skipped
+        if (currentStep === "performers") {
+            updatePerformers({ method: "skip", marchers: [] });
+        }
+
         if (isLastStep) {
             void handleComplete();
         } else {
@@ -104,10 +110,8 @@ export default function GuidedSetupWizard({
             case "field":
                 return effectiveWizardState.field !== null;
             case "performers":
-                return (
-                    effectiveWizardState.performers !== null &&
-                    effectiveWizardState.performers.marchers.length > 0
-                );
+                // Performers step is optional, can always proceed
+                return true;
             case "music":
                 // Music step is optional, can always proceed
                 return true;
@@ -174,8 +178,12 @@ export default function GuidedSetupWizard({
             canGoBack={!isFirstStep}
             isLastStep={isLastStep}
             onComplete={handleComplete}
-            onSkip={currentStep === "music" ? handleSkip : undefined}
-            canSkip={currentStep === "music"}
+            onSkip={
+                currentStep === "music" || currentStep === "performers"
+                    ? handleSkip
+                    : undefined
+            }
+            canSkip={currentStep === "music" || currentStep === "performers"}
             isCompleting={isCompleting}
         >
             {renderStepContent()}

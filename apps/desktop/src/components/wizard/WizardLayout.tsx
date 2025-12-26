@@ -39,11 +39,11 @@ export default function WizardLayout({
     return (
         <div className="flex h-full min-h-0 w-full flex-col">
             {/* Progress indicator */}
-            <div className="mb-16 flex flex-shrink-0 items-center gap-8">
+            <div className="mb-24 flex flex-shrink-0 items-center gap-10">
                 {WIZARD_STEPS.map((step, index) => (
-                    <div key={step} className="flex flex-1 items-center gap-8">
+                    <div key={step} className="flex flex-1 items-center gap-10">
                         <div
-                            className={`flex h-32 w-32 items-center justify-center rounded-full border-2 ${
+                            className={`flex h-32 w-32 items-center justify-center rounded-full border-2 transition-all duration-200 ${
                                 index <= currentStepIndex
                                     ? "border-accent bg-accent text-bg-1"
                                     : "border-stroke text-text/60"
@@ -53,7 +53,7 @@ export default function WizardLayout({
                         </div>
                         {index < WIZARD_STEPS.length - 1 && (
                             <div
-                                className={`h-1 flex-1 ${
+                                className={`h-1 flex-1 transition-all duration-200 ${
                                     index < currentStepIndex
                                         ? "bg-accent"
                                         : "bg-stroke"
@@ -66,19 +66,21 @@ export default function WizardLayout({
 
             {/* Step content */}
             <div className="flex min-h-0 flex-1 flex-col">
-                <div className="mb-16 flex-shrink-0">
-                    <h2 className="text-h3 mb-4">{stepTitle}</h2>
+                <div className="mb-24 flex-shrink-0 text-center">
+                    <h2 className="text-h3 mb-8 font-medium">{stepTitle}</h2>
                     {stepDescription && (
-                        <p className="text-body text-text/80">
+                        <p className="text-body text-text/70">
                             {stepDescription}
                         </p>
                     )}
                 </div>
 
-                <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
+                <div className="min-h-0 flex-1 overflow-y-auto pb-8">
+                    {children}
+                </div>
 
                 {/* Navigation buttons */}
-                <div className="border-stroke mt-16 flex flex-shrink-0 items-center justify-between border-t pt-16">
+                <div className="border-stroke mt-24 flex flex-shrink-0 items-center justify-between border-t pt-20">
                     <div className="flex gap-8">
                         {canGoBack && onBack && (
                             <Button

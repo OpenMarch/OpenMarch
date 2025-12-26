@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Select,
     SelectContent,
@@ -6,26 +6,60 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
-import { StaticFormField } from "@/components/ui/FormField";
+import { WizardFormField } from "@/components/ui/FormField";
 import { T } from "@tolgee/react";
 
-const ENSEMBLE_TYPES = [
-    "Marching Band",
-    "Drum Corps",
-    "Indoor Winds",
+const INDOOR_ENSEMBLE_TYPES = [
     "Indoor Percussion",
-    "Color Guard",
+    "Indoor Winds",
+    "Winter Guard",
     "Other",
 ];
+
+const OUTDOOR_ENSEMBLE_TYPES = ["Marching Band", "Drum Corps", "Other"];
 
 export default function EnsembleStep() {
     const { wizardState, updateEnsemble } = useGuidedSetupStore();
     const [environment, setEnvironment] = useState<"indoor" | "outdoor">(
         wizardState?.ensemble?.environment || "outdoor",
     );
-    const [ensembleType, setEnsembleType] = useState<string>(
-        wizardState?.ensemble?.ensemble_type || "Marching Band",
-    );
+
+    // Get available ensemble types based on environment
+    const availableEnsembleTypes = useMemo(() => {
+        return environment === "indoor"
+            ? INDOOR_ENSEMBLE_TYPES
+            : OUTDOOR_ENSEMBLE_TYPES;
+    }, [environment]);
+
+    // Initialize ensemble type - use stored value if valid, otherwise use first available
+    const getInitialEnsembleType = (): string => {
+        const stored = wizardState?.ensemble?.ensemble_type;
+        const currentEnvTypes =
+            (wizardState?.ensemble?.environment || "outdoor") === "indoor"
+                ? INDOOR_ENSEMBLE_TYPES
+                : OUTDOOR_ENSEMBLE_TYPES;
+        if (stored && currentEnvTypes.includes(stored)) {
+            return stored;
+        }
+        return currentEnvTypes[0] || OUTDOOR_ENSEMBLE_TYPES[0];
+    };
+
+    const [ensembleType, setEnsembleType] = useState<string>(() => {
+        const initial = getInitialEnsembleType();
+        // Ensure we always return a valid string, never undefined
+        return initial || OUTDOOR_ENSEMBLE_TYPES[0];
+    });
+
+    // Reset ensemble type when environment changes if current type is not valid
+    useEffect(() => {
+        if (
+            !availableEnsembleTypes.includes(ensembleType) &&
+            availableEnsembleTypes.length > 0
+        ) {
+            // Set to first available type for the new environment
+            setEnsembleType(availableEnsembleTypes[0]);
+        }
+    }, [environment, availableEnsembleTypes, ensembleType]);
 
     // Update wizard state when values change
     useEffect(() => {
@@ -42,9 +76,10 @@ export default function EnsembleStep() {
     }, [environment, ensembleType, updateEnsemble, wizardState?.ensemble]);
 
     return (
-        <div className="flex flex-col gap-16">
-            <StaticFormField
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
+            <WizardFormField
                 label={<T keyName="wizard.ensemble.environment" />}
+                helperText={<T keyName="wizard.ensemble.environmentHelper" />}
             >
                 <Select
                     value={environment}
@@ -62,20 +97,36 @@ export default function EnsembleStep() {
                         </SelectItem>
                     </SelectContent>
                 </Select>
-            </StaticFormField>
+            </WizardFormField>
 
-            <StaticFormField label={<T keyName="wizard.ensemble.type" />}>
-                <Select value={ensembleType} onValueChange={setEnsembleType}>
-                    <SelectTriggerButton label={ensembleType} />
+            <WizardFormField
+                label={<T keyName="wizard.ensemble.type" />}
+                helperText={<T keyName="wizard.ensemble.typeHelper" />}
+            >
+                <Select
+                    value={
+                        availableEnsembleTypes.includes(ensembleType)
+                            ? ensembleType
+                            : availableEnsembleTypes[0]
+                    }
+                    onValueChange={setEnsembleType}
+                >
+                    <SelectTriggerButton
+                        label={
+                            availableEnsembleTypes.includes(ensembleType)
+                                ? ensembleType
+                                : availableEnsembleTypes[0]
+                        }
+                    />
                     <SelectContent>
-                        {ENSEMBLE_TYPES.map((type) => (
+                        {availableEnsembleTypes.map((type) => (
                             <SelectItem key={type} value={type}>
                                 {type}
                             </SelectItem>
                         ))}
                     </SelectContent>
                 </Select>
-            </StaticFormField>
+            </WizardFormField>
         </div>
     );
 }

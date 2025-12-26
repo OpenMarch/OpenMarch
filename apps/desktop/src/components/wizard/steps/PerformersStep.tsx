@@ -1,35 +1,43 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 import NewMarcherForm from "@/components/marcher/NewMarcherForm";
-import { useQuery } from "@tanstack/react-query";
-import { allMarchersQueryOptions } from "@/hooks/queries";
 import { T, useTolgee } from "@tolgee/react";
 import Marcher from "@/global/classes/Marcher";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
-import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, CaretUpIcon, TrashIcon } from "@phosphor-icons/react";
+import { Button } from "@openmarch/ui";
 import {
     getSectionObjectByName,
     getTranslatedSectionName,
 } from "@/global/classes/Sections";
+import { NewMarcherArgs } from "@/db-functions";
 
 export default function PerformersStep() {
-    const { updatePerformers } = useGuidedSetupStore();
-    const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const { wizardState, updatePerformers } = useGuidedSetupStore();
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const { t } = useTolgee();
 
-    // Update wizard state when marchers in database change
-    // Convert Marcher objects to NewMarcherArgs format for wizard state
-    useEffect(() => {
-        if (marchers) {
-            const marcherArgs = marchers.map((marcher: Marcher) => ({
-                section: marcher.section,
-                drill_prefix: marcher.drill_prefix,
-                drill_order: marcher.drill_order,
-            }));
-            updatePerformers({ marchers: marcherArgs });
-        }
-    }, [marchers, updatePerformers]);
+    // Use marchers from wizard state instead of DB
+    const marchers = useMemo(() => {
+        return (wizardState?.performers?.marchers || []).map((m, index) => {
+            // Create temporary Marcher objects for display
+            // We use index as ID since they don't have real IDs yet
+            const marcher: Marcher = {
+                id: index,
+                section: m.section,
+                drill_prefix: m.drill_prefix,
+                drill_order: m.drill_order,
+                drill_number: `${m.drill_prefix}${m.drill_order}`,
+                // Default values for other required fields
+                name: null,
+                year: null,
+                notes: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            };
+            return marcher;
+        });
+    }, [wizardState?.performers?.marchers]);
 
     // Group marchers by section
     const marchersBySection = useMemo(() => {
@@ -57,6 +65,7 @@ export default function PerformersStep() {
     const sortedSections = useMemo(() => {
         const sections = Array.from(marchersBySection.keys())
             .map((sectionName) => getSectionObjectByName(sectionName))
+            .filter((section) => section !== undefined)
             .sort((a, b) => a.compareTo(b));
         return sections;
     }, [marchersBySection]);
@@ -78,29 +87,56 @@ export default function PerformersStep() {
         });
     };
 
+    const handleAddMarchers = (newMarchers: NewMarcherArgs[]) => {
+        const currentMarchers = wizardState?.performers?.marchers || [];
+        updatePerformers({
+            marchers: [...currentMarchers, ...newMarchers],
+        });
+    };
+
+    const handleDeleteMarcher = (marcherIndex: number) => {
+        const currentMarchers = wizardState?.performers?.marchers || [];
+        const newMarchers = currentMarchers.filter(
+            (_, index) => index !== marcherIndex,
+        );
+        updatePerformers({
+            marchers: newMarchers,
+        });
+    };
+
     return (
-        <div className="flex flex-col gap-16">
-            <div className="border-stroke border-b pb-16">
-                <h5 className="text-h5 mb-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
+            <div className="border-stroke flex flex-col gap-20 border-b pb-32">
+                <h5 className="text-h5 font-medium">
                     <T keyName="wizard.performers.addNew" />
                 </h5>
-                <NewMarcherForm disabledProp={false} />
+                <NewMarcherForm
+                    disabledProp={false}
+                    hideInfoNote={true}
+                    skipSidebarContent={true}
+                    onMarchersCreate={handleAddMarchers}
+                    existingMarchers={marchers}
+                    wizardMode={true}
+                />
             </div>
 
-            <div className="flex flex-col gap-8">
-                <h5 className="text-h5">
+            <div className="flex flex-col gap-20">
+                <h5 className="text-h5 font-medium">
                     <T keyName="wizard.performers.added" />
                 </h5>
                 {!marchers || marchers.length === 0 ? (
-                    <p className="text-body text-text/60">
-                        <T keyName="wizard.performers.noneAdded" />
-                    </p>
+                    <div className="rounded-12 bg-fg-1 border-stroke border p-20">
+                        <p className="text-body text-text/60 leading-relaxed">
+                            <T keyName="wizard.performers.noneAdded" />
+                        </p>
+                    </div>
                 ) : (
-                    <div className="flex max-h-[400px] flex-col gap-8 overflow-y-auto">
+                    <div className="flex max-h-[400px] flex-col gap-12 overflow-y-auto">
                         {sortedSections.map((section) => {
+                            if (!section) return null;
                             const sectionMarchers =
                                 marchersBySection.get(section.name) || [];
-                            const count = sectionMarchers.length;
+                            const count = sectionMarchers?.length || 0;
                             const isOpen = openSections.has(section.name);
                             const sectionLabel = getTranslatedSectionName(
                                 section.name,
@@ -115,12 +151,12 @@ export default function PerformersStep() {
                                         toggleSection(section.name)
                                     }
                                 >
-                                    <RadixCollapsible.Trigger className="border-stroke focus-visible:text-accent rounded-6 bg-fg-1 flex w-full items-center justify-between gap-8 border px-16 py-12 duration-150 ease-out">
-                                        <div className="flex items-center gap-8">
+                                    <RadixCollapsible.Trigger className="border-stroke focus-visible:border-accent hover:bg-fg-2 rounded-8 bg-fg-1 flex w-full items-center justify-between gap-8 border px-20 py-16 duration-150 ease-out">
+                                        <div className="flex items-center gap-10">
                                             <span className="text-body font-medium">
                                                 {sectionLabel}
                                             </span>
-                                            <span className="text-body text-text/60">
+                                            <span className="text-sub text-text/60">
                                                 ({count})
                                             </span>
                                         </div>
@@ -130,19 +166,35 @@ export default function PerformersStep() {
                                             <CaretDownIcon size={20} />
                                         )}
                                     </RadixCollapsible.Trigger>
-                                    <RadixCollapsible.Content className="bg-fg-1 border-stroke rounded-6 mt-6 border p-8">
-                                        <div className="flex flex-col gap-8">
-                                            {sectionMarchers.map(
+                                    <RadixCollapsible.Content className="bg-fg-1 border-stroke rounded-8 mt-8 border p-12">
+                                        <div className="flex flex-col gap-10">
+                                            {(sectionMarchers || []).map(
                                                 (marcher: Marcher) => (
                                                     <div
                                                         key={marcher.id}
-                                                        className="rounded-6 border-stroke bg-fg-2 flex items-center border p-12"
+                                                        className="rounded-6 border-stroke bg-fg-2 hover:bg-fg-1 flex items-center justify-between gap-8 border px-16 py-12 duration-150 ease-out"
                                                     >
                                                         <span className="text-body">
                                                             {getMarcherDisplayName(
                                                                 marcher,
                                                             )}
                                                         </span>
+                                                        <Button
+                                                            variant="secondary"
+                                                            size="compact"
+                                                            content="icon"
+                                                            onClick={() =>
+                                                                handleDeleteMarcher(
+                                                                    marcher.id,
+                                                                )
+                                                            }
+                                                            className="text-red hover:text-red/80"
+                                                            aria-label={`Delete ${getMarcherDisplayName(marcher)}`}
+                                                        >
+                                                            <TrashIcon
+                                                                size={18}
+                                                            />
+                                                        </Button>
                                                     </div>
                                                 ),
                                             )}
