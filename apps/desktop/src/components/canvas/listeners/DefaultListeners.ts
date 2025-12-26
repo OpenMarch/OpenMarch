@@ -189,9 +189,10 @@ export default class DefaultListeners implements CanvasListeners {
         let isClickingOnControl = false;
 
         if (activeObject && activeObject.hasControls) {
-            // Check if the click is on a control handle using fabric's findControl
+            // Fabric v5 doesn't expose findControl; use internal _findTargetCorner (v5.5.2)
+            // If upgrading to Fabric v6+, switch back to public findControl.
             const pointer = this.canvas.getPointer(evt, true);
-            const controlInfo = (activeObject as any).findControl?.(
+            const controlInfo = (activeObject as any)._findTargetCorner?.(
                 pointer,
                 true,
             );
