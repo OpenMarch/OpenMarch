@@ -415,7 +415,6 @@ describe("Database Repair", () => {
                             }
                         },
                     ),
-                    { numRuns: 10 }, // Reduced for performance and reliability
                 );
             });
         });
@@ -690,7 +689,7 @@ describe("Database Repair", () => {
                                     {
                                         minLength: 1,
                                         maxLength: 5,
-                                        selector: (c) => c,
+                                        selector: (c) => c.toLowerCase(),
                                     },
                                 ),
                             }),
@@ -885,7 +884,6 @@ describe("Database Repair", () => {
                             }
                         },
                     ),
-                    { numRuns: 10 }, // Reduced for performance
                 );
             });
         });
