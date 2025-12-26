@@ -2,6 +2,16 @@ import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 
 /**
+ * Checks if a group contains any CanvasMarcher objects.
+ * Used to determine if marcher-specific transformation logic should apply.
+ */
+const groupContainsMarchers = (group: fabric.Group): boolean => {
+    const objects = group.getObjects?.();
+    if (!Array.isArray(objects)) return false;
+    return objects.some((obj) => obj instanceof CanvasMarcher);
+};
+
+/**
  * Calculates the inverse transform of the group to counteract distortion on child objects.
  * This should be used when you want the children to move with the group but not inherit its
  * scale, rotation, or skew (e.g. dots in a formation).
@@ -20,7 +30,9 @@ const getCounterTransform = (group: fabric.Group) => {
 };
 
 /**
- * Actions that must be taken when a group is rotated
+ * Actions that must be taken when a group is rotated.
+ * Unlike scaling, rotation should keep marchers at their original size and shape.
+ * We only apply the counter-rotation angle so marchers appear upright.
  */
 const rotationSideEffects = (group: fabric.Group) => {
     if (!group || typeof group.getObjects !== "function") return;
@@ -31,11 +43,16 @@ const rotationSideEffects = (group: fabric.Group) => {
 
     for (const object of objects) {
         if (object instanceof CanvasMarcher) {
+            // Apply counter-rotation to keep marchers appearing upright
+            object.angle = decomposed.angle;
+
+            // Apply counter-scale and skew to prevent any distortion during rotation.
+            // This is necessary because the group may have non-1 scale values from
+            // a previous scaling operation that we need to counteract.
             object.scaleX = decomposed.scaleX;
             object.scaleY = decomposed.scaleY;
             object.skewX = decomposed.skewX;
             object.skewY = decomposed.skewY;
-            object.angle = decomposed.angle;
 
             object.updateTextLabelPosition();
         }
@@ -91,6 +108,48 @@ export const handleGroupScaling = (
     const objects = group.getObjects?.();
     if (!Array.isArray(objects)) return;
 
+    // Only apply axis-locking for groups containing marchers (not shapes)
+    const hasMarchers = groupContainsMarchers(group);
+
+    if (hasMarchers) {
+        // Get the corner being dragged from the transform
+        const transform = (group.canvas as any)?._currentTransform;
+        const corner = transform?.corner;
+        const shiftKey = (e.e as MouseEvent)?.shiftKey;
+
+        // Track the scaling corner on first frame
+        if (corner && !(group as any).__scalingCorner) {
+            (group as any).__scalingCorner = corner;
+            (group as any).__originalScaleX = group.scaleX ?? 1;
+            (group as any).__originalScaleY = group.scaleY ?? 1;
+        }
+
+        const scalingCorner = (group as any).__scalingCorner;
+        const originalScaleX = (group as any).__originalScaleX ?? 1;
+        const originalScaleY = (group as any).__originalScaleY ?? 1;
+
+        // Block all scaling when Shift is held on middle handles
+        // Shift+click on scale handles should not be allowed
+        if (
+            shiftKey &&
+            (scalingCorner === "ml" ||
+                scalingCorner === "mr" ||
+                scalingCorner === "mt" ||
+                scalingCorner === "mb")
+        ) {
+            group.scaleX = originalScaleX;
+            group.scaleY = originalScaleY;
+            return; // Don't process any further
+        }
+
+        // For middle handles (without Shift), lock the non-dragged axis
+        if (scalingCorner === "ml" || scalingCorner === "mr") {
+            group.scaleY = originalScaleY;
+        } else if (scalingCorner === "mt" || scalingCorner === "mb") {
+            group.scaleX = originalScaleX;
+        }
+    }
+
     const decomposed = getCounterTransform(group);
 
     for (const object of objects) {
@@ -126,11 +185,26 @@ export const setGroupAttributes = (group: fabric.Group) => {
     group.lockRotation = isLocked; // Lock rotation if locked
     (group as any).locked = isLocked;
 
+    // Disable Shift key uniform scaling - we handle axis locking ourselves
+    (group as any).uniScaleKey = null;
+
+    // Prevent scaling to negative values (flipping) when dragging past center
+    group.lockScalingFlip = true;
+
     if (isLocked) {
         group.evented = false;
     } else {
         group.on("scaling", (e) => handleGroupScaling(e, group));
         group.on("moving", (e) => handleGroupMoving(e, group));
+
+        // Cleanup scaling state when scaling finishes
+        const cleanupScalingState = () => {
+            delete (group as any).__scalingCorner;
+            delete (group as any).__originalScaleX;
+            delete (group as any).__originalScaleY;
+        };
+        group.on("scaled", cleanupScalingState);
+        group.on("modified", cleanupScalingState);
     }
 
     // rotation is handled in handleObjectMoving in Canvas.tsx
