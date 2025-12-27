@@ -168,18 +168,7 @@ export default function FieldPropertiesSelector({
                 </Select>
             </FormField>
             {!onTemplateChange && (
-                <div
-                    hidden={
-                        fieldProperties?.name === currentTemplate?.name ||
-                        (fieldProperties?.width === currentTemplate?.width &&
-                            fieldProperties?.height ===
-                                currentTemplate?.height &&
-                            fieldProperties?.centerFrontPoint.xPixels ===
-                                currentTemplate?.centerFrontPoint.xPixels &&
-                            fieldProperties?.centerFrontPoint.yPixels ===
-                                currentTemplate?.centerFrontPoint.yPixels)
-                    }
-                >
+                <div hidden={fieldProperties?.name === currentTemplate?.name}>
                     <DangerNote>
                         <T keyName="fieldProperties.applyFieldTypeWarning" />
                     </DangerNote>

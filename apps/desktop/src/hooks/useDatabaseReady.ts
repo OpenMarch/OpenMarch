@@ -9,8 +9,14 @@ export const databaseReadyQueryOptions = () =>
     queryOptions({
         queryKey: DATABASE_READY_KEY,
         queryFn: async () => {
+            const isReadyFn = window?.electron?.databaseIsReady;
+            if (typeof isReadyFn !== "function") {
+                // In tests or non-Electron environments, assume ready so queries can run.
+                return true;
+            }
+
             try {
-                return await window.electron.databaseIsReady();
+                return await isReadyFn();
             } catch (error) {
                 console.error("Error checking database ready state:", error);
                 return false;

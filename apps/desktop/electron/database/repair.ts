@@ -74,12 +74,12 @@ export const copyDataFromOriginalDatabase = (
 
             // Get column names from the original table
             const originalColumns = originalDb
-                .prepare(`PRAGMA table_info(${tableName})`)
+                .prepare(`PRAGMA table_info("${tableName}")`)
                 .all() as Array<{ name: string; type: string }>;
 
             // Get column names from the new table
             const newColumns = newDb
-                .prepare(`PRAGMA table_info(${tableName})`)
+                .prepare(`PRAGMA table_info("${tableName}")`)
                 .all() as Array<{ name: string; type: string }>;
 
             // Find common columns between old and new tables

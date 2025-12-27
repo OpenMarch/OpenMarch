@@ -7,7 +7,7 @@ import {
 } from "@openmarch/ui";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 import { WizardFormField } from "@/components/ui/FormField";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 
 const INDOOR_ENSEMBLE_TYPES = [
     "Indoor Percussion",
@@ -20,6 +20,7 @@ const OUTDOOR_ENSEMBLE_TYPES = ["Marching Band", "Drum Corps", "Other"];
 
 export default function EnsembleStep() {
     const { wizardState, updateEnsemble } = useGuidedSetupStore();
+    const { t } = useTranslate();
     const [environment, setEnvironment] = useState<"indoor" | "outdoor">(
         wizardState?.ensemble?.environment || "outdoor",
     );
@@ -79,6 +80,11 @@ export default function EnsembleStep() {
         ? ensembleType
         : availableEnsembleTypes[0];
 
+    const getEnsembleTypeLabel = (type: string) =>
+        t(`wizard.ensemble.types.${type.toLowerCase().replace(/\s+/g, "_")}`, {
+            defaultValue: type,
+        });
+
     return (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
             <WizardFormField
@@ -111,11 +117,13 @@ export default function EnsembleStep() {
                     value={displayedEnsembleType}
                     onValueChange={setEnsembleType}
                 >
-                    <SelectTriggerButton label={displayedEnsembleType} />
+                    <SelectTriggerButton
+                        label={getEnsembleTypeLabel(displayedEnsembleType)}
+                    />
                     <SelectContent>
                         {availableEnsembleTypes.map((type) => (
                             <SelectItem key={type} value={type}>
-                                {type}
+                                {getEnsembleTypeLabel(type)}
                             </SelectItem>
                         ))}
                     </SelectContent>

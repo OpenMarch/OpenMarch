@@ -21,6 +21,8 @@ import type { QueryClient } from "@tanstack/react-query";
 import { createAllUndoTriggers } from "@/db-functions/history";
 import { getMeasures } from "@/db-functions/measures";
 import AudioFile from "@/global/classes/AudioFile";
+import tolgee from "@/global/singletons/Tolgee";
+import { conToastError } from "@/utilities/utils";
 
 const DEFAULT_TEMPO = 120;
 const PAGES_COUNT = 8;
@@ -252,10 +254,10 @@ export async function completeWizard(
             throw new Error("Database is not ready after completing wizard");
         }
 
-        toast.success("Setup complete! Your show is ready.");
+        toast.success(tolgee.t("wizard.completion.success"));
     } catch (error) {
         console.error("Failed to complete wizard:", error);
-        toast.error("Failed to complete setup. Please try again.");
+        conToastError(tolgee.t("wizard.completion.error"), error);
         throw error;
     }
 }
@@ -386,9 +388,7 @@ async function applyMusicSettings(
                 console.warn(
                     "No audio files found in database. Music may not have been saved during upload.",
                 );
-                toast.error(
-                    "Audio file was not saved. Please upload the audio file again after completing the wizard.",
-                );
+                conToastError(tolgee.t("wizard.completion.audioNotSaved"));
             }
         } else if (music && music.method === "xml") {
             // Verify measures exist in database
@@ -397,9 +397,7 @@ async function applyMusicSettings(
                 console.warn(
                     "No measures found in database. Music XML may not have been imported.",
                 );
-                toast.error(
-                    "Music XML was not imported. Please import the Music XML file again after completing the wizard.",
-                );
+                conToastError(tolgee.t("wizard.completion.xmlNotImported"));
             }
         }
     } catch (error) {

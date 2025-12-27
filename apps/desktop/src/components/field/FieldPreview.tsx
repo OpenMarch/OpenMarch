@@ -75,10 +75,7 @@ export default function FieldPreview({
         }
 
         // Prevent default window resize listener from resizing canvas
-        const onWindowResize = (previewCanvas as any)._onWindowResize;
-        if (onWindowResize) {
-            window.removeEventListener("resize", onWindowResize);
-        }
+        previewCanvas.disableWindowResizeHandler();
 
         canvasInstanceRef.current = previewCanvas;
 

@@ -278,8 +278,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
 
     useEffect(() => {
         setSubmitIsDisabled(
-            section === defaultSection(t) ||
-                section === undefined ||
+            section === undefined ||
                 drillPrefix === undefined ||
                 drillOrder === undefined ||
                 sectionError !== "" ||

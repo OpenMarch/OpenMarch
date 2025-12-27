@@ -616,6 +616,7 @@ async function createFileForWizard(filePath: string) {
 
     if (!win) return -1;
 
+    let db: ReturnType<typeof DatabaseServices.connect> | undefined;
     try {
         // Ensure .dots extension
         if (!filePath.endsWith(".dots")) {
@@ -633,7 +634,7 @@ async function createFileForWizard(filePath: string) {
         win?.setTitle("OpenMarch - " + filePath);
 
         // Connect to database and run migrations
-        const db = DatabaseServices.connect();
+        db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
             return -1;
@@ -663,6 +664,9 @@ async function createFileForWizard(filePath: string) {
         DatabaseServices.setDbPath("", false);
         console.error("Error creating database for wizard:", error);
         return -1;
+    } finally {
+        // Ensure database connection is closed to avoid locking the SQLite file
+        db?.close();
     }
 }
 
@@ -1046,3 +1050,6 @@ async function setActiveDb(path: string, isNewFile = false) {
         throw error;
     }
 }
+
+// Export main-process APIs used by other modules
+export { loadDatabaseFile, newFile, saveFile, closeCurrentFile };

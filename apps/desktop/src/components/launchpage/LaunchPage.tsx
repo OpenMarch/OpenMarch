@@ -21,26 +21,35 @@ import Toaster from "../ui/Toaster";
 import GuidedSetupWizard from "../wizard/GuidedSetupWizard";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 
-interface LaunchPageProps {
-    setDatabaseIsReady: (isReady: boolean) => void;
-    wizardMode?: boolean;
-    onWizardComplete?: () => void;
-    onStartWizard?: () => void;
-}
+type LaunchPageProps =
+    | {
+          setDatabaseIsReady: (isReady: boolean) => void;
+          wizardMode: true;
+          onWizardComplete: () => void;
+          onStartWizard: () => void;
+      }
+    | {
+          setDatabaseIsReady: (isReady: boolean) => void;
+          wizardMode?: false;
+          onWizardComplete?: () => void;
+          onStartWizard: () => void;
+      };
 
 interface SidebarProps {
     setDatabaseIsReady: (isReady: boolean) => void;
     selectedTab: string;
     wizardMode: boolean;
-    onStartWizard?: () => void;
+    onStartWizard: () => void;
 }
 
-export default function LaunchPage({
-    setDatabaseIsReady,
-    wizardMode = false,
-    onWizardComplete,
-    onStartWizard,
-}: LaunchPageProps) {
+export default function LaunchPage(props: LaunchPageProps) {
+    const { setDatabaseIsReady, onStartWizard } = props;
+    const wizardMode = props.wizardMode === true;
+    if (wizardMode && !props.onWizardComplete) {
+        throw new Error(
+            "LaunchPage: onWizardComplete is required when wizardMode is true.",
+        );
+    }
     const [selectedTab, setSelectedTab] = useState("files");
 
     return (
@@ -57,7 +66,7 @@ export default function LaunchPage({
                     <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-12">
                         <div className="flex h-full w-full max-w-[600px] flex-col">
                             <GuidedSetupWizard
-                                onComplete={onWizardComplete ?? (() => {})}
+                                onComplete={props.onWizardComplete!}
                             />
                         </div>
                     </div>
@@ -108,9 +117,7 @@ function Sidebar({
         resetWizard();
 
         // Start wizard mode without creating file - file will be created on wizard completion
-        if (onStartWizard) {
-            onStartWizard();
-        }
+        onStartWizard();
     }
 
     async function handleOpenExisting() {

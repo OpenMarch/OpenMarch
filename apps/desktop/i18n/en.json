@@ -882,7 +882,10 @@
             "browse": "Browse",
             "designer": "Designer",
             "client": "Client",
-            "fileExistsWarning": "A file with this name already exists. It will be overwritten when you complete the wizard."
+            "fileExistsWarning": "A file with this name already exists. It will be overwritten when you complete the wizard.",
+            "errors": {
+                "createFailed": "Failed to create database file. Please try again."
+            }
         },
         "ensemble": {
             "environment": "Environment",
@@ -890,7 +893,15 @@
             "type": "Ensemble Type",
             "typeHelper": "Select the type of ensemble you're working with",
             "outdoor": "Outdoor",
-            "indoor": "Indoor"
+            "indoor": "Indoor",
+            "types": {
+                "marching_band": "Marching Band",
+                "drum_corps": "Drum Corps",
+                "indoor_percussion": "Indoor Percussion",
+                "indoor_winds": "Indoor Winds",
+                "winter_guard": "Winter Guard",
+                "other": "Other"
+            }
         },
         "performers": {
             "added": "Added Performers",
@@ -911,7 +922,6 @@
             "startCountHelper": "Number of counts before the show begins",
             "skipDescription": "You can add music later from the music settings."
         }
-        },
-        "unsavedChanges": "You have unsaved changes"
-    }
+    },
+    "unsavedChanges": "You have unsaved changes"
 }

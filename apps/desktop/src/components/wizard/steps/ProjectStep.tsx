@@ -1,13 +1,46 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Input, Button, WarningNote } from "@openmarch/ui";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 import { WizardFormField } from "@/components/ui/FormField";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { FolderOpenIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 
+const normalizePath = (path: string) => path.replace(/\\/g, "/");
+const sanitizeProjectName = (name: string) =>
+    name.trim().replace(/[<>:"/\\|?*]/g, "_");
+const ensureFileLocationHasProjectName = (
+    rawLocation: string,
+    projectName: string,
+    defaultDirectory?: string,
+) => {
+    const sanitizedProjectName = sanitizeProjectName(projectName);
+    const filename = `${sanitizedProjectName}.dots`;
+
+    let finalFileLocation = rawLocation.trim();
+    if (finalFileLocation) {
+        const normalizedPath = normalizePath(finalFileLocation);
+        const pathParts = normalizedPath.split("/");
+        const lastPart = pathParts[pathParts.length - 1];
+
+        if (!lastPart) {
+            pathParts[pathParts.length - 1] = filename;
+        } else if (!lastPart.endsWith(".dots")) {
+            pathParts.push(filename);
+        } else if (!lastPart.startsWith(sanitizedProjectName)) {
+            pathParts[pathParts.length - 1] = filename;
+        }
+        finalFileLocation = pathParts.join("/");
+    } else if (defaultDirectory) {
+        finalFileLocation = `${normalizePath(defaultDirectory)}/${filename}`;
+    }
+
+    return finalFileLocation;
+};
+
 export default function ProjectStep() {
     const { wizardState, updateProject } = useGuidedSetupStore();
+    const { t } = useTranslate();
     const [projectName, setProjectName] = useState<string>(
         wizardState?.project?.projectName || "",
     );
@@ -19,7 +52,7 @@ export default function ProjectStep() {
         const stored = wizardState?.project?.fileLocation;
         if (!stored) return "";
         // If stored location has a filename, extract just the directory
-        const normalizedPath = stored.replace(/\\/g, "/");
+        const normalizedPath = normalizePath(stored);
         const pathParts = normalizedPath.split("/");
         const lastPart = pathParts[pathParts.length - 1];
         // If last part looks like a filename (has .dots extension), remove it
@@ -53,7 +86,7 @@ export default function ProjectStep() {
                 const lastFilePath = await window.electron.databaseGetPath();
                 if (lastFilePath && lastFilePath.trim()) {
                     // Extract directory from the last file path
-                    const normalizedPath = lastFilePath.replace(/\\/g, "/");
+                    const normalizedPath = normalizePath(lastFilePath);
                     const pathParts = normalizedPath.split("/");
                     pathParts.pop(); // Remove filename
                     const directory = pathParts.join("/");
@@ -101,7 +134,7 @@ export default function ProjectStep() {
                 const withExtension = trimmed.endsWith(".dots")
                     ? trimmed
                     : `${trimmed}.dots`;
-                const normalized = withExtension.replace(/\\/g, "/");
+                const normalized = normalizePath(withExtension);
 
                 const [exists, currentPath] = await Promise.all([
                     window.electron.fileExists(withExtension),
@@ -137,7 +170,7 @@ export default function ProjectStep() {
                 return currentLocation;
             }
 
-            const normalizedPath = currentLocation.replace(/\\/g, "/");
+            const normalizedPath = normalizePath(currentLocation);
             const pathParts = normalizedPath.split("/");
             const lastPart = pathParts[pathParts.length - 1];
 
@@ -183,119 +216,61 @@ export default function ProjectStep() {
         }
     };
 
+    const ensureDatabaseFileCreated = useCallback(async () => {
+        if (fileCreatedRef.current || isCreatingFile) return;
+        if (!projectName.trim() || !fileLocation.trim()) return;
+
+        const finalFileLocation = ensureFileLocationHasProjectName(
+            fileLocation,
+            projectName,
+        );
+
+        const dbReady = await window.electron.databaseIsReady();
+        const currentPath = await window.electron.databaseGetPath();
+        const normalizedFinalPath = normalizePath(finalFileLocation);
+        const normalizedCurrentPath = currentPath?.trim().replace(/\\/g, "/");
+
+        if (dbReady && normalizedCurrentPath === normalizedFinalPath) {
+            fileCreatedRef.current = true;
+            return;
+        }
+
+        setIsCreatingFile(true);
+        try {
+            const result =
+                await window.electron.databaseCreateForWizard(
+                    finalFileLocation,
+                );
+            if (result === 200) {
+                fileCreatedRef.current = true;
+                if (finalFileLocation !== fileLocation) {
+                    setFileLocation(finalFileLocation);
+                }
+            } else {
+                console.error("Failed to create database file");
+                toast.error(t("wizard.project.errors.createFailed"));
+            }
+        } catch (error) {
+            console.error("Error creating database file:", error);
+            toast.error(t("wizard.project.errors.createFailed"));
+        } finally {
+            setIsCreatingFile(false);
+        }
+    }, [fileLocation, isCreatingFile, projectName, t]);
+
     // Create database file when both projectName and fileLocation are set
     useEffect(() => {
-        const createDatabaseFile = async () => {
-            // Skip if file already created or currently creating
-            if (fileCreatedRef.current || isCreatingFile) return;
-
-            // Need both project name and file location
-            if (!projectName.trim() || !fileLocation.trim()) return;
-
-            // Ensure fileLocation includes the project name
-            let finalFileLocation = fileLocation.trim();
-            const normalizedPath = finalFileLocation.replace(/\\/g, "/");
-            const pathParts = normalizedPath.split("/");
-            const lastPart = pathParts[pathParts.length - 1];
-            const sanitizedProjectName = projectName
-                .trim()
-                .replace(/[<>:"/\\|?*]/g, "_");
-
-            // Ensure fileLocation ends with .dots
-            if (!lastPart.endsWith(".dots")) {
-                if (lastPart && lastPart.length > 0) {
-                    // It's a directory, append project name
-                    pathParts.push(`${sanitizedProjectName}.dots`);
-                } else {
-                    // Empty last part, just add the filename
-                    pathParts.push(`${sanitizedProjectName}.dots`);
-                }
-                finalFileLocation = pathParts.join("/");
-            } else if (!lastPart.startsWith(sanitizedProjectName)) {
-                // Filename doesn't match project name, update it
-                pathParts[pathParts.length - 1] =
-                    `${sanitizedProjectName}.dots`;
-                finalFileLocation = pathParts.join("/");
-            }
-
-            // Check if database is already ready (file might already exist)
-            const dbReady = await window.electron.databaseIsReady();
-            const currentPath = await window.electron.databaseGetPath();
-            const normalizedFinalPath = finalFileLocation.replace(/\\/g, "/");
-            const normalizedCurrentPath = currentPath
-                ?.trim()
-                .replace(/\\/g, "/");
-
-            // If database is ready and path matches, file is already created
-            if (dbReady && normalizedCurrentPath === normalizedFinalPath) {
-                fileCreatedRef.current = true;
-                return;
-            }
-
-            // Create the file
-            setIsCreatingFile(true);
-            try {
-                const result =
-                    await window.electron.databaseCreateForWizard(
-                        finalFileLocation,
-                    );
-                if (result === 200) {
-                    fileCreatedRef.current = true;
-                    // Update fileLocation in state if it changed
-                    if (finalFileLocation !== fileLocation) {
-                        setFileLocation(finalFileLocation);
-                    }
-                } else {
-                    console.error("Failed to create database file");
-                    toast.error(
-                        "Failed to create database file. Please try again.",
-                    );
-                }
-            } catch (error) {
-                console.error("Error creating database file:", error);
-                toast.error(
-                    "Failed to create database file. Please try again.",
-                );
-            } finally {
-                setIsCreatingFile(false);
-            }
-        };
-
-        void createDatabaseFile();
-    }, [projectName, fileLocation]);
+        void ensureDatabaseFileCreated();
+    }, [ensureDatabaseFileCreated]);
 
     // Update wizard state when values change
     useEffect(() => {
         if (projectName.trim()) {
-            // Ensure fileLocation includes the project name if it's set
-            let finalFileLocation = fileLocation.trim();
-            if (finalFileLocation) {
-                const normalizedPath = finalFileLocation.replace(/\\/g, "/");
-                const pathParts = normalizedPath.split("/");
-                const lastPart = pathParts[pathParts.length - 1];
-                const sanitizedProjectName = projectName
-                    .trim()
-                    .replace(/[<>:"/\\|?*]/g, "_");
-
-                // If last part doesn't end with .dots or doesn't match project name, fix it
-                if (!lastPart.endsWith(".dots")) {
-                    // If it's a directory, append project name
-                    pathParts.push(`${sanitizedProjectName}.dots`);
-                    finalFileLocation = pathParts.join("/");
-                } else if (!lastPart.startsWith(sanitizedProjectName)) {
-                    // If filename doesn't match project name, update it
-                    pathParts[pathParts.length - 1] =
-                        `${sanitizedProjectName}.dots`;
-                    finalFileLocation = pathParts.join("/");
-                }
-            } else if (defaultDirectory) {
-                // If no fileLocation but we have defaultDirectory, construct it
-                const sanitizedProjectName = projectName
-                    .trim()
-                    .replace(/[<>:"/\\|?*]/g, "_");
-                finalFileLocation = `${defaultDirectory}/${sanitizedProjectName}.dots`;
-            }
-
+            const finalFileLocation = ensureFileLocationHasProjectName(
+                fileLocation,
+                projectName,
+                defaultDirectory,
+            );
             updateProject({
                 projectName: projectName.trim(),
                 fileLocation: finalFileLocation || undefined,
