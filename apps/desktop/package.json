@@ -4,8 +4,8 @@
     "description": "Free drill-writing software for the marching arts",
     "version": "0.0.19",
     "main": "dist-electron/main/index.js",
-    "author": "OpenMarch LLC",
-    "email": "contact@openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
+    "url": "https://openmarch.com",
     "license": "AGPL-3.0",
     "private": true,
     "debug": {
