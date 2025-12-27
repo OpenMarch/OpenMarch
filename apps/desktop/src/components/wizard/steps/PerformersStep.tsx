@@ -54,7 +54,7 @@ export default function PerformersStep() {
         }
 
         // Sort marchers within each section by drill_order
-        for (const [section, sectionMarchers] of grouped.entries()) {
+        for (const [, sectionMarchers] of grouped.entries()) {
             sectionMarchers.sort((a, b) => a.drill_order - b.drill_order);
         }
 
