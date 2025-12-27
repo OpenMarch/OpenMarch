@@ -38,7 +38,7 @@ export default function FieldPropertiesSelector({
     const databaseReady = useDatabaseReady();
 
     // Only query field properties if database is ready and no external template provided
-    const { data: fieldProperties } = useQuery(
+    const { data: fieldProperties, isLoading } = useQuery(
         fieldPropertiesQueryOptions(databaseReady && !externalCurrentTemplate),
     );
 
@@ -85,8 +85,12 @@ export default function FieldPropertiesSelector({
 
     // If we have an external template (wizard mode), we don't need fieldProperties
     // If we don't have external template, we need fieldProperties
-    if (!externalCurrentTemplate && !fieldProperties) {
+    if (!externalCurrentTemplate && !fieldProperties && !isLoading) {
         return <div>{t("fieldProperties.errors.notDefined")}</div>;
+    }
+
+    if (isLoading && !externalCurrentTemplate) {
+        return <div>Loading...</div>;
     }
 
     const FormField = onTemplateChange ? WizardFormField : StaticFormField;

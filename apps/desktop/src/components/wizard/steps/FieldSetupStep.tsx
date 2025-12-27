@@ -8,7 +8,7 @@ import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates
 
 export default function FieldSetupStep() {
     const { wizardState, updateField } = useGuidedSetupStore();
-
+    const wizardField = wizardState?.field;
     const environment = wizardState?.ensemble?.environment || "outdoor";
 
     const defaultTemplate =
@@ -17,24 +17,24 @@ export default function FieldSetupStep() {
             : FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
 
     const [currentTemplate, setCurrentTemplate] = useState<FieldProperties>(
-        wizardState?.field?.template || defaultTemplate,
+        wizardField?.template || defaultTemplate,
     );
 
     useEffect(() => {
-        if (!wizardState?.field) {
+        if (!wizardField) {
             setCurrentTemplate(defaultTemplate);
             updateField({ template: defaultTemplate, isCustom: false });
-        } else if (wizardState.field.template) {
-            setCurrentTemplate(wizardState.field.template);
+        } else if (wizardField.template) {
+            setCurrentTemplate(wizardField.template);
         }
-    }, [wizardState, updateField, defaultTemplate]);
+        // updateField is stable (zustand). We intentionally exclude it to avoid effect re-runs.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [wizardField?.template, defaultTemplate]);
 
     const handleTemplateChange = (template: FieldProperties) => {
         setCurrentTemplate(template);
         updateField({ template, isCustom: template.isCustom ?? false });
     };
-
-    if (!currentTemplate) return <div>Loading field properties...</div>;
 
     return (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">

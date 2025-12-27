@@ -64,41 +64,37 @@ export const _combineTimingObjects = (
         isError: workspaceSettingsError,
     } = results[4];
 
+    const shouldSuppressQueryError = (error: Error | undefined): boolean => {
+        const suppressedMessages = [
+            "Database path is empty",
+            "database is locked",
+        ];
+        return suppressedMessages.some((msg) => error?.message?.includes(msg));
+    };
+
     // Log any errors that occurred during data fetching
     // Suppress errors related to database not being ready (expected during wizard setup)
     if (pagesError) {
         const error = results[0].error as Error | undefined;
-        if (
-            !error?.message?.includes("Database path is empty") &&
-            !error?.message?.includes("database is locked")
-        ) {
+        if (!shouldSuppressQueryError(error)) {
             console.error("Pages query error:", results[0]);
         }
     }
     if (measuresError) {
         const error = results[1].error as Error | undefined;
-        if (
-            !error?.message?.includes("Database path is empty") &&
-            !error?.message?.includes("database is locked")
-        ) {
+        if (!shouldSuppressQueryError(error)) {
             console.error("Measures query error:", results[1]);
         }
     }
     if (beatsError) {
         const error = results[2].error as Error | undefined;
-        if (
-            !error?.message?.includes("Database path is empty") &&
-            !error?.message?.includes("database is locked")
-        ) {
+        if (!shouldSuppressQueryError(error)) {
             console.error("Beats query error:", results[2]);
         }
     }
     if (utilityError) {
         const error = results[3].error as Error | undefined;
-        if (
-            !error?.message?.includes("Database path is empty") &&
-            !error?.message?.includes("database is locked")
-        ) {
+        if (!shouldSuppressQueryError(error)) {
             console.error("Utility query error:", results[3]);
         }
     }
@@ -216,9 +212,9 @@ export const useTimingObjects = () => {
     const databaseReady = useDatabaseReady();
     return useQueries({
         queries: [
-            allDatabasePagesQueryOptions(),
-            allDatabaseMeasuresQueryOptions(),
-            allDatabaseBeatsQueryOptions(),
+            allDatabasePagesQueryOptions(databaseReady),
+            allDatabaseMeasuresQueryOptions(databaseReady),
+            allDatabaseBeatsQueryOptions(databaseReady),
             getUtilityQueryOptions(databaseReady),
             workspaceSettingsQueryOptions(databaseReady),
         ],

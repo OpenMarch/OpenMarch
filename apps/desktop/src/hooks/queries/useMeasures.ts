@@ -35,13 +35,14 @@ const measureQueries = {
 /**
  * Query options for getting all measures
  */
-export const allDatabaseMeasuresQueryOptions = () => {
+export const allDatabaseMeasuresQueryOptions = (enabled = true) => {
     return queryOptions<DatabaseMeasure[]>({
         queryKey: measureKeys.all(),
         queryFn: async () => {
             return await measureQueries.getAll(db);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled,
     });
 };
 

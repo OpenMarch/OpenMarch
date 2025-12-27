@@ -126,10 +126,11 @@ interface WizardFormFieldProps {
     children: React.ReactNode;
     helperText?: string | React.ReactNode;
     className?: string;
+    id?: string;
 }
 
 const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
-    ({ label, children, helperText, className }, ref) => {
+    ({ label, children, helperText, className, id }, ref) => {
         return (
             <div
                 className={twMerge(
@@ -138,7 +139,10 @@ const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
                 ref={ref}
             >
                 <div className="flex flex-col gap-6">
-                    <label className="text-body text-text font-medium">
+                    <label
+                        htmlFor={id}
+                        className="text-body text-text font-medium"
+                    >
                         {label}
                     </label>
                     {helperText && (

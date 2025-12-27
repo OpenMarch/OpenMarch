@@ -252,7 +252,6 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 !drillPrefixTouched
             ) {
                 setDrillPrefix(sectionObject.prefix);
-                setDrillPrefixTouched(false);
             }
         }
     }, [section, t, drillPrefix, drillPrefixTouched]);

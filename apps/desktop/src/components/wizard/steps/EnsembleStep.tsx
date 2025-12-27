@@ -75,6 +75,10 @@ export default function EnsembleStep() {
         }
     }, [environment, ensembleType, updateEnsemble, wizardState?.ensemble]);
 
+    const displayedEnsembleType = availableEnsembleTypes.includes(ensembleType)
+        ? ensembleType
+        : availableEnsembleTypes[0];
+
     return (
         <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
             <WizardFormField
@@ -104,20 +108,10 @@ export default function EnsembleStep() {
                 helperText={<T keyName="wizard.ensemble.typeHelper" />}
             >
                 <Select
-                    value={
-                        availableEnsembleTypes.includes(ensembleType)
-                            ? ensembleType
-                            : availableEnsembleTypes[0]
-                    }
+                    value={displayedEnsembleType}
                     onValueChange={setEnsembleType}
                 >
-                    <SelectTriggerButton
-                        label={
-                            availableEnsembleTypes.includes(ensembleType)
-                                ? ensembleType
-                                : availableEnsembleTypes[0]
-                        }
-                    />
+                    <SelectTriggerButton label={displayedEnsembleType} />
                     <SelectContent>
                         {availableEnsembleTypes.map((type) => (
                             <SelectItem key={type} value={type}>

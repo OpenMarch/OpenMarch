@@ -26,6 +26,9 @@ const PAGES_COUNT = 8;
 const COUNTS_PER_PAGE = 16;
 const TOTAL_COUNTS = PAGES_COUNT * COUNTS_PER_PAGE; // 128 counts total
 
+const sanitizeFilename = (name: string): string =>
+    name.trim().replace(/[<>:"/\\|?*]/g, "_");
+
 /**
  * Retry a database operation with exponential backoff to handle SQLITE_BUSY errors
  */
@@ -34,12 +37,10 @@ async function retryWithBackoff<T>(
     maxRetries = 5,
     initialDelay = 50,
 ): Promise<T> {
-    let lastError: Error | undefined;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
             return await operation();
         } catch (error: any) {
-            lastError = error;
             if (
                 error?.code === "SQLITE_BUSY" ||
                 error?.message?.includes("database is locked")
@@ -53,7 +54,8 @@ async function retryWithBackoff<T>(
             throw error;
         }
     }
-    throw lastError || new Error("Operation failed after retries");
+    // This should never be reached since the last attempt will throw
+    throw new Error("Operation failed after retries");
 }
 
 /**
@@ -75,9 +77,9 @@ export async function completeWizard(
                 // Get default documents directory
                 const defaultDir =
                     await window.electron.getDefaultDocumentsPath();
-                const sanitizedProjectName = wizardState.project.projectName
-                    .trim()
-                    .replace(/[<>:"/\\|?*]/g, "_"); // Remove invalid filename characters
+                const sanitizedProjectName = sanitizeFilename(
+                    wizardState.project.projectName,
+                ); // Remove invalid filename characters
                 filePath = `${defaultDir}/${sanitizedProjectName}.dots`;
             } else {
                 // Ensure fileLocation has .dots extension and uses project name
@@ -88,23 +90,21 @@ export async function completeWizard(
 
                 // If last part doesn't end with .dots or doesn't match project name, fix it
                 if (!lastPart.endsWith(".dots")) {
-                    const sanitizedProjectName = wizardState.project.projectName
-                        .trim()
-                        .replace(/[<>:"/\\|?*]/g, "_");
+                    const sanitizedProjectName = sanitizeFilename(
+                        wizardState.project.projectName,
+                    );
                     pathParts[pathParts.length - 1] =
                         `${sanitizedProjectName}.dots`;
                     filePath = pathParts.join("/");
                 } else if (
                     !lastPart.startsWith(
-                        wizardState.project.projectName
-                            .trim()
-                            .replace(/[<>:"/\\|?*]/g, "_"),
+                        sanitizeFilename(wizardState.project.projectName),
                     )
                 ) {
                     // If filename doesn't match project name, update it
-                    const sanitizedProjectName = wizardState.project.projectName
-                        .trim()
-                        .replace(/[<>:"/\\|?*]/g, "_");
+                    const sanitizedProjectName = sanitizeFilename(
+                        wizardState.project.projectName,
+                    );
                     pathParts[pathParts.length - 1] =
                         `${sanitizedProjectName}.dots`;
                     filePath = pathParts.join("/");

@@ -21,6 +21,14 @@ interface WizardLayoutProps {
     isCompleting?: boolean;
 }
 
+const STEP_LABELS: Record<WizardStepId, string> = {
+    project: "Project",
+    ensemble: "Ensemble",
+    field: "Field",
+    performers: "Performers",
+    music: "Music",
+};
+
 export default function WizardLayout({
     currentStepIndex,
     stepTitle,
@@ -48,6 +56,8 @@ export default function WizardLayout({
                                     ? "border-accent bg-accent text-bg-1"
                                     : "border-stroke text-text/60"
                             }`}
+                            aria-label={`${STEP_LABELS[step]} step ${index + 1} of ${WIZARD_STEPS.length}`}
+                            title={STEP_LABELS[step]}
                         >
                             {index + 1}
                         </div>

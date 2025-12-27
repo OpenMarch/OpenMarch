@@ -262,7 +262,7 @@ export default function ProjectStep() {
         };
 
         void createDatabaseFile();
-    }, [projectName, fileLocation, isCreatingFile]);
+    }, [projectName, fileLocation]);
 
     // Update wizard state when values change
     useEffect(() => {

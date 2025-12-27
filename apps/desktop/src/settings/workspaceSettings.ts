@@ -24,6 +24,9 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     audioOffsetSeconds: 0,
     pageNumberOffset: 0,
     measurementOffset: 0,
+    projectName: undefined,
+    designer: undefined,
+    client: undefined,
 };
 
 /**

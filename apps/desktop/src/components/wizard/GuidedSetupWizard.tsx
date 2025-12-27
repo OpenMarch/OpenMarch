@@ -33,8 +33,7 @@ export default function GuidedSetupWizard({
     // Initialize wizard state on mount - always start fresh at step 1
     useEffect(() => {
         setWizardActive(true);
-        // Always reset wizard state and start at step 1 for a fresh setup
-        resetWizard();
+        // Initialize wizard state for a fresh setup
         setWizardState(DEFAULT_WIZARD_STATE);
         setCurrentStepIndex(0);
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -74,7 +73,8 @@ export default function GuidedSetupWizard({
             resetWizard();
             onComplete();
         } catch (error) {
-            // Error handling will be done in completeWizard
+            console.error("Wizard completion failed:", error);
+            // User-facing error handling is done in completeWizard via toast
         } finally {
             setIsCompleting(false);
         }

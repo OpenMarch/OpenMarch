@@ -16,7 +16,6 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
 import { coordinateDataKeys } from "./useCoordinateData";
-import { useDatabaseReady } from "../useDatabaseReady";
 
 const KEY_BASE = "history";
 
@@ -48,7 +47,6 @@ export const canRedoQueryOptions = (enabled = true) =>
 
 export const usePerformHistoryAction = () => {
     const qc = useQueryClient();
-    const databaseReady = useDatabaseReady();
     const { pages } = useTimingObjects();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const selectedMarchersContext = useSelectedMarchers();

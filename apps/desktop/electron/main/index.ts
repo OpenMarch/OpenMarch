@@ -42,6 +42,7 @@ import { repairDatabase } from "../database/repair";
 
 let isQuitting = false;
 const store = new Store();
+const DB_USER_VERSION = 7;
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
@@ -280,6 +281,7 @@ void app.whenReady().then(async () => {
             ? filePath
             : `${filePath}.dots`;
         return fs.existsSync(pathToCheck);
+    });
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             const newPath = await repairDatabase(dbPath);
@@ -641,7 +643,7 @@ export async function createFileForWizard(filePath: string) {
         const migrator = new DrizzleMigrationService(drizzleDb, db);
 
         // Set user version for new file
-        db.pragma("user_version = 7");
+        db.pragma(`user_version = ${DB_USER_VERSION}`);
 
         // Apply migrations
         await migrator.applyPendingMigrations(
@@ -1023,7 +1025,7 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.pragma("user_version = 7");
+            db.pragma(`user_version = ${DB_USER_VERSION}`);
         }
         await migrator.applyPendingMigrations(
             join(app.getAppPath(), "electron", "database", "migrations"),

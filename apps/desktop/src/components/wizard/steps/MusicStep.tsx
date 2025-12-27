@@ -66,12 +66,16 @@ export default function MusicStep() {
 
     // Update wizard state when method changes
     useEffect(() => {
-        const newMusicState = {
-            method,
-            tempo: method === "tempo_only" ? tempo : undefined,
-            startCount: method === "tempo_only" ? startCount : undefined,
-        };
-        updateMusic(newMusicState);
+        const timeoutId = window.setTimeout(() => {
+            const newMusicState = {
+                method,
+                tempo: method === "tempo_only" ? tempo : undefined,
+                startCount: method === "tempo_only" ? startCount : undefined,
+            };
+            updateMusic(newMusicState);
+        }, 200);
+
+        return () => window.clearTimeout(timeoutId);
     }, [method, tempo, startCount, updateMusic]);
 
     // Update wizard state when audio file is selected (for mp3 method)

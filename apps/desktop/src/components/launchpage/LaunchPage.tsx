@@ -28,6 +28,13 @@ interface LaunchPageProps {
     onStartWizard?: () => void;
 }
 
+interface SidebarProps {
+    setDatabaseIsReady: (isReady: boolean) => void;
+    selectedTab: string;
+    wizardMode: boolean;
+    onStartWizard?: () => void;
+}
+
 export default function LaunchPage({
     setDatabaseIsReady,
     wizardMode = false,
@@ -35,12 +42,6 @@ export default function LaunchPage({
     onStartWizard,
 }: LaunchPageProps) {
     const [selectedTab, setSelectedTab] = useState("files");
-
-    const handleWizardComplete = () => {
-        if (onWizardComplete) {
-            onWizardComplete();
-        }
-    };
 
     return (
         <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
@@ -56,7 +57,7 @@ export default function LaunchPage({
                     <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-12">
                         <div className="flex h-full w-full max-w-[600px] flex-col">
                             <GuidedSetupWizard
-                                onComplete={handleWizardComplete}
+                                onComplete={onWizardComplete ?? (() => {})}
                             />
                         </div>
                     </div>
@@ -99,10 +100,7 @@ function Sidebar({
     selectedTab,
     wizardMode,
     onStartWizard,
-}: LaunchPageProps & {
-    selectedTab: string;
-    wizardMode: boolean;
-}) {
+}: SidebarProps) {
     const { resetWizard } = useGuidedSetupStore();
 
     async function handleCreateNew() {

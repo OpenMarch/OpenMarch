@@ -36,51 +36,93 @@ export const useGuidedSetupStore = create<GuidedSetupStoreInterface>()(
             },
 
             updateWizardStep: (step) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, currentStep: step }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updateWizardStep called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: {
+                            ...state.wizardState,
+                            currentStep: step,
+                        },
+                    };
+                });
             },
 
             updateProject: (data) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, project: data }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updateProject called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: { ...state.wizardState, project: data },
+                    };
+                });
             },
 
             updateEnsemble: (data) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, ensemble: data }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updateEnsemble called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: { ...state.wizardState, ensemble: data },
+                    };
+                });
             },
 
             updateField: (data) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, field: data }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updateField called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: { ...state.wizardState, field: data },
+                    };
+                });
             },
 
             updatePerformers: (data) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, performers: data }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updatePerformers called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: {
+                            ...state.wizardState,
+                            performers: data,
+                        },
+                    };
+                });
             },
 
             updateMusic: (data) => {
-                set((state) => ({
-                    wizardState: state.wizardState
-                        ? { ...state.wizardState, music: data }
-                        : null,
-                }));
+                set((state) => {
+                    if (!state.wizardState) {
+                        console.warn(
+                            "[GuidedSetupStore] updateMusic called before wizardState was initialized.",
+                        );
+                        return state;
+                    }
+                    return {
+                        wizardState: { ...state.wizardState, music: data },
+                    };
+                });
             },
 
             setWizardActive: (active) => {

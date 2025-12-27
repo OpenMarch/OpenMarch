@@ -60,44 +60,41 @@ function App() {
         // Only load plugins after database is ready and canvas is available
         if (!databaseIsReady || pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
-        void window.plugins
-            ?.list()
-            .then(async (pluginPaths: string[]) => {
-                for (const path of pluginPaths) {
-                    const pluginName =
-                        path.split(/[/\\]/).pop() || "Unknown Plugin";
-                    try {
-                        const code = await window.plugins.get(path);
+        void window.plugins?.list().then(async (pluginPaths: string[]) => {
+            for (const path of pluginPaths) {
+                const pluginName =
+                    path.split(/[/\\]/).pop() || "Unknown Plugin";
+                try {
+                    const code = await window.plugins.get(path);
 
-                        let metadata = Plugin.getMetadata(code);
+                    let metadata = Plugin.getMetadata(code);
 
-                        if (!metadata) {
-                            throw new Error(
-                                `Plugin ${pluginName} is missing metadata.`,
-                            );
-                        }
-
-                        new Plugin(
-                            metadata.name,
-                            metadata.version,
-                            metadata.description,
-                            metadata.author,
-                            pluginName,
-                        );
-
-                        const script = document.createElement("script");
-                        script.type = "text/javascript";
-                        script.text = code;
-                        document.body.appendChild(script);
-                    } catch (error) {
-                        console.error(
-                            `Failed to load plugin ${pluginName}:`,
-                            error,
+                    if (!metadata) {
+                        throw new Error(
+                            `Plugin ${pluginName} is missing metadata.`,
                         );
                     }
+
+                    new Plugin(
+                        metadata.name,
+                        metadata.version,
+                        metadata.description,
+                        metadata.author,
+                        pluginName,
+                    );
+
+                    const script = document.createElement("script");
+                    script.type = "text/javascript";
+                    script.text = code;
+                    document.body.appendChild(script);
+                } catch (error) {
+                    console.error(
+                        `Failed to load plugin ${pluginName}:`,
+                        error,
+                    );
                 }
-            })
-            .then(() => undefined);
+            }
+        });
     }, [databaseIsReady]);
 
     useEffect(() => {
