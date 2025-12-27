@@ -921,6 +921,28 @@
             "startCount": "Start Count",
             "startCountHelper": "Number of counts before the show begins",
             "skipDescription": "You can add music later from the music settings."
+        },
+        "step": {
+            "project": {
+                "title": "Project Information",
+                "description": "Name your project and choose where to save it."
+            },
+            "ensemble": {
+                "title": "Ensemble",
+                "description": "Select the ensemble environment and type."
+            },
+            "field": {
+                "title": "Field Setup",
+                "description": "Choose a field template or customize dimensions."
+            },
+            "performers": {
+                "title": "Add Performers",
+                "description": "Add performers and assign their drill numbers."
+            },
+            "music": {
+                "title": "Add Music",
+                "description": "Import music or set tempo to align timing."
+            }
         }
     },
     "unsavedChanges": "You have unsaved changes"
