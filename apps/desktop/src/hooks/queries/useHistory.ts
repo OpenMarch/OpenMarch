@@ -16,6 +16,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useTimingObjects } from "../useTimingObjects";
 import { coordinateDataKeys } from "./useCoordinateData";
+import { useDatabaseReady } from "../useDatabaseReady";
 
 const KEY_BASE = "history";
 
@@ -25,28 +26,36 @@ export const historyKeys = {
     canRedo: () => [KEY_BASE, "canRedo"] as const,
 };
 
-export const canUndoQueryOptions = queryOptions({
-    queryKey: historyKeys.canUndo(),
-    queryFn: async () => {
-        const undoStackLength = await getUndoStackLength(db);
-        return undoStackLength > 0;
-    },
-});
+export const canUndoQueryOptions = (enabled = true) =>
+    queryOptions({
+        queryKey: historyKeys.canUndo(),
+        queryFn: async () => {
+            const undoStackLength = await getUndoStackLength(db);
+            return undoStackLength > 0;
+        },
+        enabled,
+    });
 
-export const canRedoQueryOptions = queryOptions({
-    queryKey: historyKeys.canRedo(),
-    queryFn: async () => {
-        const redoStackLength = await getRedoStackLength(db);
-        return redoStackLength > 0;
-    },
-});
+export const canRedoQueryOptions = (enabled = true) =>
+    queryOptions({
+        queryKey: historyKeys.canRedo(),
+        queryFn: async () => {
+            const redoStackLength = await getRedoStackLength(db);
+            return redoStackLength > 0;
+        },
+        enabled,
+    });
 
 export const usePerformHistoryAction = () => {
     const qc = useQueryClient();
+    const databaseReady = useDatabaseReady();
     const { pages } = useTimingObjects();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
-    const { setSelectedMarchers } = useSelectedMarchers()!;
-    const { setSelectedPage } = useSelectedPage()!;
+    const selectedMarchersContext = useSelectedMarchers();
+    const setSelectedMarchers =
+        selectedMarchersContext?.setSelectedMarchers ?? (() => {});
+    const selectedPageContext = useSelectedPage();
+    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
 
     return useMutation({
         mutationFn: (type: "undo" | "redo") => performHistoryAction(type, db),

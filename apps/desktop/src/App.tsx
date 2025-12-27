@@ -195,17 +195,20 @@ function App() {
                     )}
                     {/* Show LaunchPage when no file is selected OR when wizard should show */}
                     {!databaseIsReady || showWizard ? (
-                        <LaunchPage
-                            setDatabaseIsReady={setDatabaseIsReady}
-                            wizardMode={showWizard}
-                            onWizardComplete={() => {
-                                setShowWizard(false);
-                                setDatabaseIsReady(true);
-                            }}
-                            onStartWizard={() => {
-                                setShowWizard(true);
-                            }}
-                        />
+                        <SelectedAudioFileProvider>
+                            <RegisteredActionsHandler />
+                            <LaunchPage
+                                setDatabaseIsReady={setDatabaseIsReady}
+                                wizardMode={showWizard}
+                                onWizardComplete={() => {
+                                    setShowWizard(false);
+                                    setDatabaseIsReady(true);
+                                }}
+                                onStartWizard={() => {
+                                    setShowWizard(true);
+                                }}
+                            />
+                        </SelectedAudioFileProvider>
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

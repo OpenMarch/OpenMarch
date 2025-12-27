@@ -20,6 +20,7 @@ import {
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 interface FieldPropertiesSelectorProps {
     environment?: "indoor" | "outdoor";
@@ -34,21 +35,12 @@ export default function FieldPropertiesSelector({
 }: FieldPropertiesSelectorProps) {
     const queryClient = useQueryClient();
 
-    // Check if database is ready - disable query if not (wizard mode)
-    const [databaseReady, setDatabaseReady] = useState(true);
-    useEffect(() => {
-        const checkDb = async () => {
-            const ready = await window.electron.databaseIsReady();
-            setDatabaseReady(ready);
-        };
-        void checkDb();
-    }, []);
+    const databaseReady = useDatabaseReady();
 
     // Only query field properties if database is ready and no external template provided
-    const { data: fieldProperties } = useQuery({
-        ...fieldPropertiesQueryOptions(),
-        enabled: databaseReady && !externalCurrentTemplate,
-    });
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady && !externalCurrentTemplate),
+    );
 
     const { mutate: setFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
@@ -162,7 +154,7 @@ export default function FieldPropertiesSelector({
                                 </>
                             )}
                             <SelectLabel>Custom</SelectLabel>
-                            {fieldProperties?.isCustom && (
+                            {currentTemplate?.isCustom && (
                                 <SelectItem key={"custom"} value={"Custom"}>
                                     {t("fieldProperties.customFieldName")}
                                 </SelectItem>

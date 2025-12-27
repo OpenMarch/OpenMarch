@@ -842,6 +842,19 @@ export async function insertAudioFile(): Promise<
             error: { message: "insertAudioFile: window not loaded" },
         };
 
+    // Check if database is ready before proceeding
+    const dbReady = DatabaseServices.databaseIsReady();
+    if (!dbReady) {
+        console.error("insertAudioFile: Database is not ready");
+        return {
+            success: false,
+            error: {
+                message:
+                    "Database is not ready. Please ensure a database file is open or complete the wizard setup first.",
+            },
+        };
+    }
+
     try {
         // Open file dialog
         const path = await dialog.showOpenDialog(win, {
@@ -877,6 +890,21 @@ export async function insertAudioFile(): Promise<
             });
         });
 
+        // Double-check database is still ready before inserting
+        const dbStillReady = DatabaseServices.databaseIsReady();
+        if (!dbStillReady) {
+            console.error(
+                "insertAudioFile: Database became unavailable during upload",
+            );
+            return {
+                success: false,
+                error: {
+                    message:
+                        "Database became unavailable. Please try again after ensuring the database file is ready.",
+                },
+            };
+        }
+
         // Insert audio file into database
         const databaseResponse = await DatabaseServices.insertAudioFile({
             id: -1,
@@ -890,6 +918,19 @@ export async function insertAudioFile(): Promise<
             nickname: path.filePaths[0],
             selected: true,
         });
+
+        // Verify the insert was successful
+        if (!databaseResponse.success) {
+            console.error(
+                "insertAudioFile: Failed to insert audio file:",
+                databaseResponse.error,
+            );
+        } else {
+            console.log(
+                "insertAudioFile: Successfully inserted audio file with ID:",
+                databaseResponse.result?.[0]?.id,
+            );
+        }
 
         // Don't reload - let the frontend handle refreshing via React Query/invalidation
         // The RegisteredActionsHandler will refresh the audio files after insertion

@@ -37,11 +37,13 @@ export function SelectedMarchersProvider({
 }) {
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
-    const { selectedPage } = useSelectedPage()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
     const queryClient = useQueryClient();
-    const { data: marcherAppearances } = useQuery(
-        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
-    );
+    const { data: marcherAppearances } = useQuery({
+        ...marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
+        enabled: selectedPage !== null,
+    });
     const hiddenMarcherIds: Set<number> = useMemo(() => {
         if (marcherAppearances == null) return new Set();
         const hiddenMarcherIds = new Set(

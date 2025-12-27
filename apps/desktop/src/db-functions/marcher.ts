@@ -51,13 +51,19 @@ const DEFAULT_STARTING_DATA: StartingData = {
     spacing: 25,
 };
 
-let undoTriggersReady: Promise<void> | null = null;
+// Track undo trigger initialization promises per database connection
+// Using WeakMap ensures each unique db connection gets its own promise
+const undoTriggersReadyMap = new WeakMap<DbConnection, Promise<void>>();
+
 const ensureUndoTriggers = async (db: DbConnection) => {
+    let undoTriggersReady = undoTriggersReadyMap.get(db);
     if (!undoTriggersReady) {
         undoTriggersReady = createAllUndoTriggers(db).catch((error) => {
-            undoTriggersReady = null;
+            // Remove failed promise from map so we can retry
+            undoTriggersReadyMap.delete(db);
             throw error;
         });
+        undoTriggersReadyMap.set(db, undoTriggersReady);
     }
     await undoTriggersReady;
 };

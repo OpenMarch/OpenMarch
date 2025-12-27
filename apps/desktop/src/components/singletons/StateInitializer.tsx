@@ -22,9 +22,17 @@ import {
 function StateInitializer() {
     const queryClient = useQueryClient();
     const { pages } = useTimingObjects();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
+    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
+    const selectionStore = useSelectionStore();
+    const setSelectedShapePageIds =
+        selectionStore?.setSelectedShapePageIds ?? (() => {});
     const { mutate: updateMarcherShape } = useMutation(
         updateShapePagesMutationOptions(queryClient),
     );

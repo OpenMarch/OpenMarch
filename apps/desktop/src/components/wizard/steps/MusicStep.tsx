@@ -6,6 +6,7 @@ import {
     SelectItem,
     SelectTriggerButton,
     Input,
+    WarningNote,
 } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
@@ -19,7 +20,40 @@ export default function MusicStep() {
     const { wizardState, updateMusic } = useGuidedSetupStore();
     const { t } = useTolgee();
     const { selectedAudioFile } = useSelectedAudioFile() || {};
-    const { data: measures } = useQuery(allDatabaseMeasuresQueryOptions());
+    const [databaseReady, setDatabaseReady] = useState(false);
+    const [checkingDatabase, setCheckingDatabase] = useState(true);
+    const { data: measures } = useQuery({
+        ...allDatabaseMeasuresQueryOptions(),
+        enabled: databaseReady,
+    });
+
+    // Check if database is ready before allowing uploads
+    // Poll until database is ready (in case it's still being created in ProjectStep)
+    useEffect(() => {
+        let cancelled = false;
+        const checkDatabase = async () => {
+            setCheckingDatabase(true);
+            // Poll up to 10 times with 500ms delay between checks
+            for (let i = 0; i < 10; i++) {
+                if (cancelled) return;
+                const ready = await window.electron.databaseIsReady();
+                if (ready) {
+                    setDatabaseReady(true);
+                    setCheckingDatabase(false);
+                    return;
+                }
+                // Wait 500ms before checking again
+                await new Promise((resolve) => setTimeout(resolve, 500));
+            }
+            // If we get here, database still isn't ready after 5 seconds
+            setDatabaseReady(false);
+            setCheckingDatabase(false);
+        };
+        void checkDatabase();
+        return () => {
+            cancelled = true;
+        };
+    }, []);
     const [method, setMethod] = useState<"xml" | "mp3" | "tempo_only" | "skip">(
         wizardState?.music?.method || "tempo_only",
     );
@@ -138,13 +172,37 @@ export default function MusicStep() {
 
             {method === "mp3" && (
                 <div className="flex flex-col gap-16">
-                    <AudioSelector />
+                    {checkingDatabase && (
+                        <WarningNote>
+                            Waiting for database to be ready...
+                        </WarningNote>
+                    )}
+                    {!checkingDatabase && !databaseReady && (
+                        <WarningNote>
+                            Database is not ready. Please go back to the Project
+                            step and ensure the project name and file location
+                            are set, then return to this step.
+                        </WarningNote>
+                    )}
+                    {databaseReady && <AudioSelector />}
                 </div>
             )}
 
             {method === "xml" && (
                 <div className="flex flex-col gap-16">
-                    <MusicXmlSelector />
+                    {checkingDatabase && (
+                        <WarningNote>
+                            Waiting for database to be ready...
+                        </WarningNote>
+                    )}
+                    {!checkingDatabase && !databaseReady && (
+                        <WarningNote>
+                            Database is not ready. Please go back to the Project
+                            step and ensure the project name and file location
+                            are set, then return to this step.
+                        </WarningNote>
+                    )}
+                    {databaseReady && <MusicXmlSelector />}
                 </div>
             )}
 

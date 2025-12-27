@@ -105,106 +105,110 @@ export default function PerformersStep() {
     };
 
     return (
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-32">
-            <div className="border-stroke flex flex-col gap-20 border-b pb-32">
-                <h5 className="text-h5 font-medium">
-                    <T keyName="wizard.performers.addNew" />
-                </h5>
-                <NewMarcherForm
-                    disabledProp={false}
-                    hideInfoNote={true}
-                    skipSidebarContent={true}
-                    onMarchersCreate={handleAddMarchers}
-                    existingMarchers={marchers}
-                    wizardMode={true}
-                />
-            </div>
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-32">
+            <div className="grid grid-cols-1 gap-24 lg:grid-cols-2">
+                {/* Left Column - Add Performers Form */}
+                <div className="flex flex-col gap-20">
+                    <h5 className="text-h5 font-medium">
+                        <T keyName="wizard.performers.addNew" />
+                    </h5>
+                    <NewMarcherForm
+                        disabledProp={false}
+                        hideInfoNote={true}
+                        skipSidebarContent={true}
+                        onMarchersCreate={handleAddMarchers}
+                        existingMarchers={marchers}
+                        wizardMode={true}
+                    />
+                </div>
 
-            <div className="flex flex-col gap-20">
-                <h5 className="text-h5 font-medium">
-                    <T keyName="wizard.performers.added" />
-                </h5>
-                {!marchers || marchers.length === 0 ? (
-                    <div className="rounded-12 bg-fg-1 border-stroke border p-20">
-                        <p className="text-body text-text/60 leading-relaxed">
-                            <T keyName="wizard.performers.noneAdded" />
-                        </p>
-                    </div>
-                ) : (
-                    <div className="flex max-h-[400px] flex-col gap-12 overflow-y-auto">
-                        {sortedSections.map((section) => {
-                            if (!section) return null;
-                            const sectionMarchers =
-                                marchersBySection.get(section.name) || [];
-                            const count = sectionMarchers?.length || 0;
-                            const isOpen = openSections.has(section.name);
-                            const sectionLabel = getTranslatedSectionName(
-                                section.name,
-                                t,
-                            );
+                {/* Right Column - Added Performers List */}
+                <div className="flex flex-col gap-20">
+                    <h5 className="text-h5 font-medium">
+                        <T keyName="wizard.performers.added" />
+                    </h5>
+                    {!marchers || marchers.length === 0 ? (
+                        <div className="rounded-12 bg-fg-1 border-stroke border p-20">
+                            <p className="text-body text-text/60 leading-relaxed">
+                                <T keyName="wizard.performers.noneAdded" />
+                            </p>
+                        </div>
+                    ) : (
+                        <div className="flex max-h-[500px] flex-col gap-12 overflow-y-auto">
+                            {sortedSections.map((section) => {
+                                if (!section) return null;
+                                const sectionMarchers =
+                                    marchersBySection.get(section.name) || [];
+                                const count = sectionMarchers?.length || 0;
+                                const isOpen = openSections.has(section.name);
+                                const sectionLabel = getTranslatedSectionName(
+                                    section.name,
+                                    t,
+                                );
 
-                            return (
-                                <RadixCollapsible.Root
-                                    key={section.name}
-                                    open={isOpen}
-                                    onOpenChange={() =>
-                                        toggleSection(section.name)
-                                    }
-                                >
-                                    <RadixCollapsible.Trigger className="border-stroke focus-visible:border-accent hover:bg-fg-2 rounded-8 bg-fg-1 flex w-full items-center justify-between gap-8 border px-20 py-16 duration-150 ease-out">
-                                        <div className="flex items-center gap-10">
-                                            <span className="text-body font-medium">
-                                                {sectionLabel}
-                                            </span>
-                                            <span className="text-sub text-text/60">
-                                                ({count})
-                                            </span>
-                                        </div>
-                                        {isOpen ? (
-                                            <CaretUpIcon size={20} />
-                                        ) : (
-                                            <CaretDownIcon size={20} />
-                                        )}
-                                    </RadixCollapsible.Trigger>
-                                    <RadixCollapsible.Content className="bg-fg-1 border-stroke rounded-8 mt-8 border p-12">
-                                        <div className="flex flex-col gap-10">
-                                            {(sectionMarchers || []).map(
-                                                (marcher: Marcher) => (
-                                                    <div
-                                                        key={marcher.id}
-                                                        className="rounded-6 border-stroke bg-fg-2 hover:bg-fg-1 flex items-center justify-between gap-8 border px-16 py-12 duration-150 ease-out"
-                                                    >
-                                                        <span className="text-body">
-                                                            {getMarcherDisplayName(
-                                                                marcher,
-                                                            )}
-                                                        </span>
-                                                        <Button
-                                                            variant="secondary"
-                                                            size="compact"
-                                                            content="icon"
-                                                            onClick={() =>
-                                                                handleDeleteMarcher(
-                                                                    marcher.id,
-                                                                )
-                                                            }
-                                                            className="text-red hover:text-red/80"
-                                                            aria-label={`Delete ${getMarcherDisplayName(marcher)}`}
-                                                        >
-                                                            <TrashIcon
-                                                                size={18}
-                                                            />
-                                                        </Button>
-                                                    </div>
-                                                ),
+                                return (
+                                    <RadixCollapsible.Root
+                                        key={section.name}
+                                        open={isOpen}
+                                        onOpenChange={() =>
+                                            toggleSection(section.name)
+                                        }
+                                    >
+                                        <RadixCollapsible.Trigger className="border-stroke focus-visible:border-accent hover:bg-fg-2 rounded-8 bg-fg-1 flex w-full items-center justify-between gap-8 border px-20 py-16 duration-150 ease-out">
+                                            <div className="flex items-center gap-10">
+                                                <span className="text-body font-medium">
+                                                    {sectionLabel}
+                                                </span>
+                                                <span className="text-sub text-text/60">
+                                                    ({count})
+                                                </span>
+                                            </div>
+                                            {isOpen ? (
+                                                <CaretUpIcon size={20} />
+                                            ) : (
+                                                <CaretDownIcon size={20} />
                                             )}
-                                        </div>
-                                    </RadixCollapsible.Content>
-                                </RadixCollapsible.Root>
-                            );
-                        })}
-                    </div>
-                )}
+                                        </RadixCollapsible.Trigger>
+                                        <RadixCollapsible.Content className="bg-fg-1 border-stroke rounded-8 mt-8 border p-12">
+                                            <div className="flex flex-col gap-10">
+                                                {(sectionMarchers || []).map(
+                                                    (marcher: Marcher) => (
+                                                        <div
+                                                            key={marcher.id}
+                                                            className="rounded-6 border-stroke bg-fg-2 hover:bg-fg-1 flex items-center justify-between gap-8 border px-16 py-12 duration-150 ease-out"
+                                                        >
+                                                            <span className="text-body">
+                                                                {getMarcherDisplayName(
+                                                                    marcher,
+                                                                )}
+                                                            </span>
+                                                            <Button
+                                                                variant="secondary"
+                                                                size="compact"
+                                                                content="icon"
+                                                                onClick={() =>
+                                                                    handleDeleteMarcher(
+                                                                        marcher.id,
+                                                                    )
+                                                                }
+                                                                className="text-red hover:text-red/80"
+                                                                aria-label={`Delete ${getMarcherDisplayName(marcher)}`}
+                                                            >
+                                                                <TrashIcon
+                                                                    size={18}
+                                                                />
+                                                            </Button>
+                                                        </div>
+                                                    ),
+                                                )}
+                                            </div>
+                                        </RadixCollapsible.Content>
+                                    </RadixCollapsible.Root>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );

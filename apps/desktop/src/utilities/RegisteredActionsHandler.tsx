@@ -31,6 +31,7 @@ import {
     canUndoQueryOptions,
     canRedoQueryOptions,
 } from "@/hooks/queries/useHistory";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -528,8 +529,11 @@ function RegisteredActionsHandler() {
         selectedPageContext?.setSelectedPage ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjects()!;
-    const { isPlaying, setIsPlaying } = useIsPlaying()!;
-    const { toggleMetronome } = useMetronomeStore()!;
+    const isPlayingContext = useIsPlaying();
+    const isPlaying = isPlayingContext?.isPlaying ?? false;
+    const setIsPlaying = isPlayingContext?.setIsPlaying ?? (() => {});
+    const metronomeStore = useMetronomeStore();
+    const toggleMetronome = metronomeStore?.toggleMetronome ?? (() => {});
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
@@ -546,21 +550,37 @@ function RegisteredActionsHandler() {
         updateMarcherPagesMutationOptions(queryClient),
     );
     const { mutate: createMarcherShape } = useCreateMarcherShape();
-    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
-    const { setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { data: canUndo } = useQuery(canUndoQueryOptions);
-    const { data: canRedo } = useQuery(canRedoQueryOptions);
-    const { uiSettings, setUiSettings } = useUiSettingsStore()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const selectedMarchersContext = useSelectedMarchers();
+    const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
+    const setSelectedMarchers =
+        selectedMarchersContext?.setSelectedMarchers ?? (() => {});
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
+    const databaseReady = useDatabaseReady();
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady),
+    );
+    const { data: canUndo } = useQuery(canUndoQueryOptions(databaseReady));
+    const { data: canRedo } = useQuery(canRedoQueryOptions(databaseReady));
+    const uiSettingsStore = useUiSettingsStore();
+    const uiSettings = uiSettingsStore?.uiSettings;
+    const setUiSettings = uiSettingsStore?.setUiSettings ?? (() => {});
+    const selectionStore = useSelectionStore();
+    const setSelectedShapePageIds =
+        selectionStore?.setSelectedShapePageIds ?? (() => {});
     const isPerformingHistoryAction = useRef(false);
-    const {
-        resetAlignmentEvent,
-        setAlignmentEvent,
-        setAlignmentEventMarchers,
-        alignmentEventNewMarcherPages,
-        alignmentEventMarchers,
-    } = useAlignmentEventStore()!;
+    const alignmentEventStore = useAlignmentEventStore();
+    const resetAlignmentEvent =
+        alignmentEventStore?.resetAlignmentEvent ?? (() => {});
+    const setAlignmentEvent =
+        alignmentEventStore?.setAlignmentEvent ?? (() => {});
+    const setAlignmentEventMarchers =
+        alignmentEventStore?.setAlignmentEventMarchers ?? (() => {});
+    const alignmentEventNewMarcherPages =
+        alignmentEventStore?.alignmentEventNewMarcherPages ?? [];
+    const alignmentEventMarchers =
+        alignmentEventStore?.alignmentEventMarchers ?? [];
     const { mutateAsync: performHistoryAction } = usePerformHistoryAction();
     const {
         mutate: updateSelectedMarchers,
@@ -614,9 +634,19 @@ function RegisteredActionsHandler() {
                     void window.electron.databaseCreate();
                     break;
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
-                    void window.electron
-                        .launchInsertAudioFileDialogue()
-                        .then((response) => {
+                    // Check if database is ready before attempting upload
+                    window.electron
+                        .databaseIsReady()
+                        .then(async (dbReady) => {
+                            if (!dbReady) {
+                                toast.error(
+                                    "Database is not ready. Please ensure a database file is open or complete the wizard setup first.",
+                                );
+                                return;
+                            }
+
+                            const response =
+                                await window.electron.launchInsertAudioFileDialogue();
                             if (response?.success) {
                                 // Refresh selected audio file
                                 AudioFile.getSelectedAudioFile().then(
@@ -635,7 +665,31 @@ function RegisteredActionsHandler() {
                                 window.dispatchEvent(
                                     new CustomEvent("audioFilesUpdated"),
                                 );
+                                toast.success(
+                                    "Audio file uploaded successfully",
+                                );
+                            } else {
+                                // Show error message from response
+                                const errorMessage =
+                                    response?.error?.message ||
+                                    "Failed to upload audio file";
+                                toast.error(errorMessage);
+                                console.error(
+                                    "Error uploading audio file:",
+                                    response?.error,
+                                );
                             }
+                        })
+                        .catch((error) => {
+                            console.error(
+                                "Error checking database or uploading audio file:",
+                                error,
+                            );
+                            toast.error(
+                                error instanceof Error
+                                    ? error.message
+                                    : "Failed to upload audio file",
+                            );
                         });
                     break;
                 case RegisteredActionsEnum.launchImportMusicXmlFileDialogue:
@@ -688,27 +742,32 @@ function RegisteredActionsHandler() {
                     break;
                 /****************** Navigation and playback ******************/
                 case RegisteredActionsEnum.nextPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage && !isPlaying) setSelectedPage(nextPage);
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const lastPage = pages[pages.length - 1];
                     if (lastPage && !isPlaying) setSelectedPage(lastPage);
                     break;
                 }
                 case RegisteredActionsEnum.previousPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (previousPage && !isPlaying)
                         setSelectedPage(previousPage);
                     break;
                 }
                 case RegisteredActionsEnum.firstPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const firstPage = pages[0];
                     if (firstPage && !isPlaying) setSelectedPage(firstPage);
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
                     if (nextPage) setIsPlaying(!isPlaying);
                     break;
@@ -720,6 +779,7 @@ function RegisteredActionsHandler() {
 
                 /****************** Batch Editing ******************/
                 case RegisteredActionsEnum.setAllMarchersToPreviousPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
@@ -749,6 +809,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToPreviousPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const previousPage = getPreviousPage(selectedPage, pages);
                     if (!previousPage || !previousMarcherPages) {
                         toast.error(t("actions.batchEdit.noPreviousPage"));
@@ -789,6 +850,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setAllMarchersToNextPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));
@@ -817,6 +879,7 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.setSelectedMarchersToNextPage: {
+                    if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
                     if (!nextPage || !nextMarcherPages) {
                         toast.error(t("actions.batchEdit.noNextPage"));

@@ -23,7 +23,11 @@ import { T, useTolgee } from "@tolgee/react";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
-    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
     const { t } = useTolgee();
 
     const refreshAudioFiles = useCallback(() => {

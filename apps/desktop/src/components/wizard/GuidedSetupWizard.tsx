@@ -174,7 +174,7 @@ export default function GuidedSetupWizard({
             stepDescription={getStepDescription(currentStep)}
             onNext={handleNext}
             onBack={handleBack}
-            canGoNext={canGoNext() && !isCompleting}
+            canGoNext={!!(canGoNext() && !isCompleting)}
             canGoBack={!isFirstStep}
             isLastStep={isLastStep}
             onComplete={handleComplete}

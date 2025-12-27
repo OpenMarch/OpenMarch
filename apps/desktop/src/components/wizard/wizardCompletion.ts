@@ -18,6 +18,8 @@ import type { WizardState } from "./types";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { QueryClient } from "@tanstack/react-query";
 import { createAllUndoTriggers } from "@/db-functions/history";
+import { getMeasures } from "@/db-functions/measures";
+import AudioFile from "@/global/classes/AudioFile";
 
 const DEFAULT_TEMPO = 120;
 const PAGES_COUNT = 8;
@@ -346,8 +348,31 @@ async function applyMusicSettings(
                 throw new Error("Failed to verify default tempo was saved");
             }
         }
-        // For XML and MP3, the files are already imported during the MusicStep
-        // No additional action needed here
+
+        // For XML and MP3, verify that files were actually saved
+        if (music && music.method === "mp3") {
+            // Verify audio file exists in database
+            const audioFiles = await AudioFile.getAudioFilesDetails();
+            if (audioFiles.length === 0) {
+                console.warn(
+                    "No audio files found in database. Music may not have been saved during upload.",
+                );
+                toast.error(
+                    "Audio file was not saved. Please upload the audio file again after completing the wizard.",
+                );
+            }
+        } else if (music && music.method === "xml") {
+            // Verify measures exist in database
+            const measures = await getMeasures({ db });
+            if (measures.length === 0) {
+                console.warn(
+                    "No measures found in database. Music XML may not have been imported.",
+                );
+                toast.error(
+                    "Music XML was not imported. Please import the Music XML file again after completing the wizard.",
+                );
+            }
+        }
     } catch (error) {
         console.error("Error applying music settings:", error);
         throw error;
