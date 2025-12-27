@@ -1,4 +1,4 @@
-import { IPath } from "@openmarch/path-utility";
+import { IPath } from "@openmarch/core";
 
 type Coordinate = { x: number; y: number };
 export type CoordinateDefinition = {

@@ -1,0 +1,71 @@
+---
+title: "Repairing Your Database"
+description: "How to repair your database file if you encounter errors"
+sidebar:
+  order: 102
+---
+
+import { Steps } from "@astrojs/starlight/components";
+
+If you're seeing errors like "Error updating {'{'}something{'}'}" in OpenMarch, or you see an error message in the console like:
+
+```
+Error updating pages Error: Group before and after do not match. Expected {number} but got {number - 1}.
+The expected group is greater, meaning that the function didn't perform any database actions on tables that are tracked by undo/redo history triggers
+```
+
+This indicates your database file may have become corrupted or out of sync. OpenMarch includes a database repair tool that can fix these issues.
+
+## When to use database repair
+
+Use the repair tool if you encounter:
+
+- **Error messages** like "Error updating pages", "Error updating beats", or similar errors when trying to modify your drill
+- **Console errors** about group mismatches between before and after states in undo/redo history
+- **General database corruption** or unexpected behavior that prevents you from editing your file
+
+## How to repair your database
+
+<Steps>
+
+1. **Open Settings** - Click on the `File` menu in the top bar, then select `Settings`
+
+2. **Navigate to the repair section** - In the settings panel, find the "Repair DOTS file" button
+
+3. **Start the repair** - Click the "Repair DOTS file" button. A confirmation dialog will appear explaining that:
+   - A new database file will be created with "- FIXED" appended to the filename
+   - All your data will be copied to the new file with the latest schema
+   - Undo/redo history will not be copied
+
+4. **Confirm the repair** - Click "Repair" in the confirmation dialog. The repair process may take a moment depending on the size of your file
+
+5. **Open the repaired file** - Once the repair completes, OpenMarch will automatically reload and open the repaired file (the one with "- FIXED" in the name). Your original file remains unchanged as a backup
+
+</Steps>
+
+## What gets copied
+
+The repair process copies all your drill data:
+
+- ✅ Marchers and sections
+- ✅ Pages and beats
+- ✅ All coordinate data
+- ✅ Field properties
+- ✅ Workspace settings
+- ❌ Undo/redo history (this is reset)
+
+## Your original file is safe
+
+The repair tool creates a **new file** with "- FIXED" added to the filename. Your original `.dots` file is never modified, so you can always go back to it if needed.
+
+For example, if your file is named `my-show.dots`, the repaired file will be named `my-show - FIXED.dots`.
+
+## Still having issues?
+
+If the repair tool doesn't resolve your issue, or if you encounter errors during the repair process:
+
+- Reach out on our [Discord](https://discord.openmarch.com)
+- Submit a [GitHub issue](https://github.com/OpenMarch/OpenMarch/issues)
+- Email us at [contact@openmarch.com](mailto:contact@openmarch.com)
+
+Please include details about what error messages you're seeing and what you were trying to do when the error occurred.

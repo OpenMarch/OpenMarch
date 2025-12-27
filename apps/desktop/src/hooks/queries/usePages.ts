@@ -208,7 +208,7 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
         onSuccess: async (_, variables) => {
-            toast.success(tolgee.t("page.deletedSuccessfully"));
+            toast.success(tolgee.t("pages.deletedSuccessfully"));
             // Invalidate all page queries
             void invalidatePageQueries(qc);
         },

@@ -157,6 +157,8 @@ const APP_API = {
         ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
     fileExists: (filePath: string) =>
         ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
+    repairDatabase: (dbPath: string) =>
+        ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
 
     // Wizard

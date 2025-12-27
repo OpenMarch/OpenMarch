@@ -2,6 +2,8 @@ import MouseSettings from "./MouseSettings";
 import GeneralSettings from "./GeneralSettings";
 import PluginsContents from "./plugins/Plugins";
 import PrivacySettings from "./PrivacySettings";
+import DeveloperSettings from "./DeveloperSettings";
+import DatabaseRepairSettings from "./DatabaseRepairSettings";
 import { T } from "@tolgee/react";
 
 export default function SettingsContent() {
@@ -23,6 +25,14 @@ export default function SettingsContent() {
                 <T keyName="settings.privacy" />
             </h3>
             <PrivacySettings />
+            <h3 className="text-h3">
+                <T keyName="settings.developer" />
+            </h3>
+            <DeveloperSettings />
+            <h3 className="text-h3">
+                <T keyName="settings.database" />
+            </h3>
+            <DatabaseRepairSettings />
         </div>
     );
 }

@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import { IControllableSegment } from "@openmarch/path-utility";
+import { IControllableSegment } from "@openmarch/core";
 import OpenMarchCanvas from "./OpenMarchCanvas";
 import { rgbaToString } from "@openmarch/core";
 

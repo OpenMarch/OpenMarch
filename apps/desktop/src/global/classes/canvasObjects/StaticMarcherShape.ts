@@ -7,7 +7,7 @@ import { Coordinate, SvgCommandEnum } from "./SvgCommand";
 import { ShapePath } from "./ShapePath";
 import { ShapePointController } from "./ShapePointController";
 import { roundCoordinatesHandler } from "./handlers/RoundCoordinates";
-import { Path } from "@openmarch/path-utility";
+import { Path } from "@openmarch/core";
 
 /**
  * An SVG point in the StaticMarcherShape path.

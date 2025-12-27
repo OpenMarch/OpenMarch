@@ -6,8 +6,8 @@
             "cancelUpdates": "Cancelar atualizações para os marchadores",
             "distributeHorizontally": "Distribuir marchadores uniformemente na horizontal",
             "distributeVertically": "Distribuir marchadores uniformemente na vertical",
-            "flipHorizontal": "",
-            "flipVertical": "",
+            "flipHorizontal": "Virar marchadores na horizontal",
+            "flipVertical": "Inverter marchantes verticalmente",
             "lockX": "Travar eixo X",
             "lockXOff": "Habilitar movimento em X",
             "lockXOn": "Bloquear movimento X",
@@ -26,17 +26,17 @@
             "setSelectedToNext": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a próxima página",
             "setSelectedToNextSuccess": "{count, plural, one {Sucesso ao definir # coordenada de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} other {Sucesso ao definir # coordenadas de marcha na página {currentPage} para as coordenadas da próxima página {nextPage}} }",
             "setSelectedToPrevious": "Defina as coordenadas do(s) marcador(es) selecionado(s) para a página anterior",
-            "setSelectedToPreviousSuccess": "\"{count} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {currentPage} foi definida com sucesso para as coordenadas da página anterior {previousPage}\""
+            "setSelectedToPreviousSuccess": "{count, plural, other {\"'{count} coordenada{{count, plural, one {} other {s}}} dos marchadores na página {currentPage} foi definida com sucesso para as coordenadas da página anterior {previousPage}'\"}}"
         },
         "cursor": {
             "defaultMode": "Definir modo do cursor como padrão",
             "lineMode": "Criar uma linha com os selecionados"
         },
         "edit": {
-            "redo": "Refazer",
-            "undo": "Desfazer",
+            "noRedoAvailable": "Nenhuma ação para refazer",
             "noUndoAvailable": "Nenhuma ação para desfazer",
-            "noRedoAvailable": "Nenhuma ação para refazer"
+            "redo": "Refazer",
+            "undo": "Desfazer"
         },
         "file": {
             "importMusicXml": "Importar arquivo MusicXML para obter compassos",
@@ -109,7 +109,7 @@
             }
         },
         "context": {
-            "error": "Falha ao inicializar contexto de áudio"
+            "error": "Falha ao inicializar o contexto de áudio"
         },
         "decode": {
             "error": "Falha ao decodificar arquivo de áudio"
@@ -186,6 +186,7 @@
         "exportPDFSuccess": "Exportado com sucesso como PDF!",
         "exportSuccess": "{value, plural, one {Coordenadas exportadas com sucesso para {count} caminhante!} other {Coordenadas exportadas com sucesso para {count} caminhantes!} }",
         "fieldProperties": "Propriedades do Campo: {status}",
+        "fieldPropertiesNotLoaded": "Propriedades do campo não carregadas",
         "fieldPropertiesRequired": "As propriedades do campo são obrigatórias para exportação",
         "frontToBackHeader": "Frente para Trás",
         "funPhrase": {
@@ -205,16 +206,14 @@
         "generatingPDF": "Gerando arquivo PDF para: {drillNumber}",
         "includeMeasures": "Incluir medidas",
         "includeNotesAppendix": "Incluir páginas de apêndice de notas",
+        "includeNotesAppendixTooltip": "Adicionar páginas em formato retrato com apêndice listando notas para cada conjunto.",
+        "includeNotesAppendixTooltipDescription": "Notas em linha abaixo dos gráficos são truncadas para se ajustarem à página. O apêndice de notas inclui o texto completo das notas em todas as páginas que as tenham.",
         "individualCharts": "Gráficos de Perfuração Individuais",
         "individualChartsTooltip": "Crie PDFs de gráficos detalhados personalizados para cada integrante.",
         "individualChartsTooltipDescription": "Se isso não estiver marcado, será criado um PDF de gráfico de perfuração de visão geral.",
-        "includeNotesAppendixTooltip": "Adiciona páginas de apêndice em modo retrato listando as notas de cada set.",
-        "includeNotesAppendixTooltipDescription": "As notas exibidas sob os gráficos são truncadas para caber na página. O apêndice de notas inclui o texto completo das notas para cada página que possui notas.",
         "marcher": "Marcher: {status}",
+        "marcherPagesNotLoaded": "Páginas de marchador não carregadas",
         "marchersNotLoaded": "Marchadores não carregados",
-        "marcherPagesNotLoaded": "Páginas de marchadores não carregadas",
-        "fieldPropertiesNotLoaded": "Propriedades do campo não carregadas",
-        "sectionAppearancesNotLoaded": "Aparências de seção não carregadas",
         "measuresHeader": "Medida",
         "noFieldProperties": "Nenhuma propriedade de campo fornecida",
         "noMarcher": "Nenhum marchador fornecido",
@@ -231,6 +230,7 @@
         "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Layout de quarto de página",
         "roundingDenominator": "Arredondamento de coordenadas:",
+        "sectionAppearancesNotLoaded": "Aparências da seção não carregadas",
         "selectRoundingDenominator": "Selecionar arredondamento",
         "sideToSideHeader": "Lado a Lado",
         "svgExportFailed": "Exportação SVG para {drillNumber} falhou com erro: {error}",
@@ -361,17 +361,17 @@
             "xCheckpoints": "Pontos de Verificação X",
             "yCheckpoints": "Pontos de Verificação Y"
         },
-        "themeSubsections": {
-            "grid": "Grade",
-            "labels": "Rótulos",
-            "pathways": "Caminhos",
-            "marchers": "Marchadores"
-        },
         "tabs": {
             "checkpoints": "Pontos de Verificação",
             "general": "Geral",
             "image": "Imagem",
             "theme": "Tema"
+        },
+        "themeSubsections": {
+            "grid": "Grade",
+            "labels": "Rótulos",
+            "marchers": "Marchadores",
+            "pathways": "Caminhos"
         },
         "title": "Propriedades do Campo",
         "tooltips": {
@@ -428,6 +428,7 @@
             "createLine": "Criar Linha",
             "drillNumber": "Número do Furo",
             "errorLoadingCoords": "Erro ao carregar coordenadas",
+            "loading": "Carregando marchador",
             "maxStepSize": "Maior tamanho do passo",
             "minStepSize": "Menor tamanho do passo",
             "name": "Nome",
@@ -440,6 +441,8 @@
         },
         "page": {
             "counts": "Contagens",
+            "deletedFailed": "Falha na exclusão da página",
+            "deletedSuccessfully": "Página excluída com sucesso",
             "measures": "Medidas",
             "notes": "Notas",
             "notesPlaceholder": "Adicionar notas para esta página...",
@@ -448,9 +451,7 @@
                 "success": "Página dividida com sucesso"
             },
             "subset": "Subconjunto",
-            "title": "Página {pageNumber}",
-            "deletedSuccessfully": "Página deletada com sucesso",
-            "deletedFailed": "Exclusão de página falhou"
+            "title": "Página {pageNumber}"
         },
         "shape": {
             "addSegmentButton": "Adicionar",
@@ -471,17 +472,17 @@
             "segments": {
                 "title": "Segmentos"
             },
+            "selectTab": "Selecionar",
+            "shapesTab": "Formas",
             "successfullyCopied": "Forma copiada com sucesso para a página {pageName}",
             "ungroupShapeButton": "Desagrupar",
             "ungroupShapeTooltip": "Excluir esta forma desta página. Não moverá marchadores de sua posição atual",
-            "viewTab": "Visualizar",
-            "shapesTab": "Formas",
-            "selectTab": "Selecionar"
+            "viewTab": "Visualizar"
         },
         "shapes": {
-            "title": "Formas",
+            "moreShapesComingSoon": "Mais formas em breve!",
             "selectShape": "Selecionar Forma",
-            "moreShapesComingSoon": "Mais formas em breve!"
+            "title": "Formas"
         },
         "title": "Inspetor"
     },
@@ -492,6 +493,7 @@
             "failedToOpen": "Falha ao abrir arquivo",
             "failedToRemoveRecent": "Falha ao remover arquivo da lista de recentes",
             "fieldPreview": "Pré-visualização do Campo",
+            "movedOrMissing": "Arquivo movido ou ausente",
             "openFile": "Abrir Arquivo",
             "removeFile": "Remover dos arquivos recentes",
             "title": "Arquivos Recentes"
@@ -499,10 +501,6 @@
         "learn": {
             "guides": {
                 "title": "Guias"
-            },
-            "videoGuides": {
-                "title": "Guias em Vídeo",
-                "description": "Assista a guias em vídeo para aprender a usar o OpenMarch."
             },
             "title": "Aprender",
             "troubleshooting": {
@@ -512,6 +510,10 @@
                 "refresh": "Atualize a página",
                 "refresh.description": "Se tiver dúvidas, atualize a página (Ctrl/Cmd + R). Se o OpenMarch parecer quebrado, atualizar geralmente resolve o problema.",
                 "title": "Dicas de Solução de Problemas"
+            },
+            "videoGuides": {
+                "description": "Assista a guias em vídeo para aprender a usar o OpenMarch.",
+                "title": "Guias de Vídeo"
             }
         },
         "merch": "Obtenha OpenMarch Merch!",
@@ -541,39 +543,40 @@
         "editButton": "Editar Marchadores",
         "list": {
             "addSectionStyle": "Adicionar Estilo de Seção",
-            "addTagAppearance": "Adicionar aparência de etiqueta",
-            "createTagsFirst": "Crie tags primeiro no editor de marchadores para adicionar aparências de tags.",
+            "addTagAppearance": "Adicionar Aparência de Tag",
+            "allSections": "Todas as Seções",
+            "createTagsFirst": "Primeiro, crie tags no inspetor de marchadores para adicionar aparências de tags.",
             "deleteSectionStyle": "Excluir este estilo de seção",
-            "none": "Nenhum",
             "discardChanges": "Descartar Alterações",
             "drillNumberTitle": "#",
             "fillColor": "Cor de Preenchimento",
             "nameTitle": "Nome",
             "noMarchers": "Nenhum marchador criado ainda. Por que você não cria um?",
+            "none": "Nenhum",
             "noSectionStyles": "Nenhum estilo de seção definido ainda. Adicione um para personalizar como cada seção aparece.",
             "outlineColor": "Cor do Contorno",
             "pendingChanges": "Os valores abaixo podem não ser aplicados até que seja feito um recarregamento",
             "saveChanges": "Salvar Alterações",
+            "sectionsInShow": "Seções no Espetáculo",
             "sectionStyles": "Estilos da Seção",
-            "sectionsInShow": "Seções no Show",
             "sectionTitle": "Seção",
             "selectSection": "Seção",
-            "shape": "Forma",
-            "allSections": "Todas as Seções"
+            "shape": "Forma"
         },
         "listTitle": "Lista",
+        "marcherAppearance": "Aparência do Marchador",
         "quantity": "Quantidade",
         "section": "Seção",
-        "sectionText": "Seção",
         "sectionError": {
             "chooseSection": "Por favor, escolha uma seção"
         },
-        "marcherAppearance": "Aparência dos marchadores",
+        "sectionStyles": "Estilos da Seção",
+        "sectionText": "Seção",
         "tagText": "Etiqueta",
         "title": "Marchadores"
     },
     "music": {
-        "accent": "Acento na primeira batida",
+        "accent": "Acentuar o primeiro compasso",
         "addNewTempoGroupAfter": "Adicionar um novo grupo de tempo após este",
         "addTempoGroup": "Adicionar Novo Grupo",
         "audio": "Áudio",
@@ -595,7 +598,7 @@
         "endTempo": "Tempo Final",
         "endTempoPlaceholder": "Opcional",
         "endTempoTooltip": "O novo grupo irá gradualmente em direção ao tempo final, mas não o alcançará.\nIsto é para criar uma transição suave para um novo grupo.",
-        "general": "Em geral",
+        "general": "Geral",
         "import": "Importar",
         "importAudioFile": "Importar arquivo de áudio",
         "importButton": "Importar Arquivo MusicXML",
@@ -612,14 +615,14 @@
         "nameDescription": "Letra ou identificador de ensaio",
         "namePlaceholder": "Opcional",
         "numberOfMeasures": "Número de Compassos *",
-        "onlyClickOnMeasure": "Basta clicar na medida",
+        "onlyClickOnMeasure": "Clique apenas na medida",
         "onOff": "Ligado/Desligado",
         "rehearsalLetterOrIdentifier": "Letra ou identificador de ensaio",
         "saveChanges": "Salvar Alterações",
         "seeDocs": "Ver documentos",
-        "select": "Selecione",
+        "select": "Selecionar",
         "selectPattern": "Selecione um padrão",
-        "sharp": "Afiada",
+        "sharp": "Sustenido",
         "smooth": "Suave",
         "standard": "Padrão",
         "startTempo": "Tempo Inicial *",
@@ -634,15 +637,22 @@
         "undoWithCtrlZ": "Esta ação é reversível com Ctrl + Z",
         "volume": "Volume"
     },
+    "pages": {
+        "createFailed": "Falha ao criar página - {erro}",
+        "createLastPageFailed": "Falha ao criar a última página - {erro}",
+        "deletedSuccessfully": "Página excluída com sucesso",
+        "deleteFailed": "Falha ao excluir página - {erro}",
+        "updateFailed": "Falha ao atualizar página - {erro}"
+    },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
         "family": {
-            "woodwind": "Madeiras",
-            "brass": "Metais",
             "battery": "Bateria",
+            "brass": "Latão",
             "guard": "Guarda",
-            "other": "Outro",
-            "pit": "Fosso"
+            "other": "Família Outros",
+            "pit": "Poço",
+            "woodwind": "Madeira"
         },
         "guard": {
             "colorGuard": "Guarda de Cor",
@@ -686,6 +696,8 @@
         }
     },
     "settings": {
+        "developer": "Configurações do Desenvolvedor",
+        "developer.refreshNotice": "Por favor, <a>recarregue o aplicativo</a> para atualizar as configurações.",
         "general": "Geral",
         "general.appearance": "Aparência",
         "general.appearance.dark": "Escuro",
@@ -693,6 +705,7 @@
         "general.language": "Idioma",
         "general.showFullDatabasePath": "Mostrar caminho completo do arquivo",
         "mouse": "Mouse e Trackpad",
+        "mouse.panSensitivity": "Sensibilidade de panorâmica",
         "mouse.trackpadMode": "Modo Trackpad (recomendado para macOS)",
         "mouse.trackpadPanSensitivity": "Sensibilidade de panorâmica do trackpad",
         "mouse.zoomSensitivity": "Sensibilidade de zoom",
@@ -723,7 +736,18 @@
         "privacy.analytics.enabled": "Você está compartilhando análises de uso. Obrigado por nos ajudar a melhorar o OpenMarch para todos.",
         "privacy.analytics.feedback.link": "enviar feedback",
         "privacy.analytics.toggle": "Ativar análises",
-        "title": "Configurações"
+        "title": "Configurações",
+        "tolgeeApiKeyPlaceholder": "Chave de API Tolgee",
+        "tolgeeDevToolsToggle": "Tradução de Contexto em Tolgee",
+        "database": "Banco de dados",
+        "repairDotsFile": "Reparar arquivo DOTS",
+        "repairDotsFile.title": "Reparar arquivo DOTS",
+        "repairDotsFile.description": "Isso criará um novo arquivo de banco de dados com '- FIXED' anexado ao nome do arquivo. O processo de reparação copiará todos os dados do banco de dados atual para um novo com o esquema mais recente. O histórico (desfazer/refazer) não será copiado.",
+        "repairDotsFile.confirm": "Reparar",
+        "repairDotsFile.cancel": "Cancelar",
+        "repairDotsFile.repairing": "Reparando...",
+        "repairDotsFile.success": "Banco de dados reparado com sucesso. Recarregando...",
+        "repairDotsFile.error": "Erro ao reparar o banco de dados: {error}"
     },
     "shapes": {
         "circle": "Círculo",
@@ -731,12 +755,16 @@
         "triangle": "Triângulo",
         "x": "X"
     },
+    "tags": {
+        "title": "Etiquetas"
+    },
     "tempoGroup": {
         "createBeatsError": "Erro ao criar beats",
         "createNewBeatsError": "Erro ao criar novos beats",
         "deletedSuccessfully": "Grupo de tempo excluído com sucesso",
         "deleteFailed": "Falha ao excluir grupo de tempo",
         "differentBeatsError": "Grupo de tempo tem número diferente de batidas. Isso não deveria acontecer. Por favor, entre em contato conosco!",
+        "errorUpdatingTempoGroup": "Erro ao atualizar grupo de tempo",
         "noMeasures": "Grupo de tempo não tem medidas"
     },
     "timeline": {
@@ -782,6 +810,18 @@
             "toNextPagePositions": "...para posições da próxima página",
             "toPreviousPagePositions": "...para posições anteriores de página"
         },
+        "select": {
+            "noDrillPrefixesToSelect": "Nenhum prefixo de perfuração encontrado para selecionar",
+            "noSectionsToSelect": "Nenhuma seção encontrada para selecionar",
+            "noTagsToSelect": "Nenhuma etiqueta encontrada para selecionar",
+            "selectBy": {
+                "drillPrefix": "Prefixo de Ordem",
+                "family": "Família",
+                "section": "Seção",
+                "tag": "Etiqueta"
+            },
+            "selectByText": "Selecionar por"
+        },
         "settings": "Configurações do App",
         "view": {
             "gridLines": "Linhas de Grade",
@@ -789,18 +829,6 @@
             "nextPaths": "Próximos Caminhos",
             "previousPaths": "Caminhos Anteriores",
             "uiSettingsToolbar": "Barra de Ferramentas de Configurações da UI"
-        },
-        "select": {
-            "selectByText": "Selecionar por",
-            "selectBy": {
-                "section": "Seção",
-                "drillPrefix": "Prefixo de Ordem",
-                "family": "Família",
-                "tag": "Etiqueta"
-            },
-            "noSectionsToSelect": "Nenhuma seção encontrada para selecionar",
-            "noTagsToSelect": "Nenhuma etiqueta encontrada para selecionar",
-            "noDrillPrefixesToSelect": "Nenhum prefixo de ordem encontrado para selecionar"
         }
     },
     "versionCheck": {
@@ -821,24 +849,24 @@
         "title": "Bem-vindo ao OpenMarch"
     },
     "workspaceSettings": {
-        "audioOffsetSeconds": "Segundos de Compensação de Áudio",
+        "audioOffsetSeconds": "Deslocamento de Áudio",
         "cancel": "Cancelar",
-        "defaultBeatsPerMeasure": "Batidas por Compasso Padrão",
-        "defaultNewPageCounts": "Contagens de Página Nova Padrão",
+        "defaultBeatsPerMeasure": "Batidas Padrão por Compasso",
+        "defaultNewPageCounts": "Contadores Padrão de Novas Páginas",
         "defaultTempo": "Tempo Padrão",
         "loadingSettings": "Carregando configurações do espaço de trabalho...",
-        "measurementOffset": "Compensação de Número de Compasso",
+        "measurementOffset": "Compensação de Número de Medida",
         "noSettingsFound": "Nenhuma configuração de espaço de trabalho encontrada",
         "pageNumberOffset": "Compensação de Número de Página",
         "resetToDefaults": "Redefinir para Padrões",
         "saveChanges": "Salvar Alterações",
         "title": "Configurações do Espaço de Trabalho",
-        "unsavedChanges": "Você tem alterações não salvas",
         "units": {
-            "bpm": "BPM",
             "beats": "batidas",
+            "bpm": "BPM",
             "counts": "contagens",
             "seconds": "segundos"
-        }
+        },
+        "unsavedChanges": "Você tem alterações não salvas"
     }
 }

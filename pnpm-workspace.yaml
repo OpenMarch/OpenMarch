@@ -4,7 +4,6 @@ packages:
 onlyBuiltDependencies:
   - "@sentry/cli"
   - "@tailwindcss/oxide"
-  - "@openmarch/path-utility"
   - better-sqlite3
   - canvas
   - core-js
