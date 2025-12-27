@@ -9,6 +9,7 @@ import PerformersStep from "./steps/PerformersStep";
 import MusicStep from "./steps/MusicStep";
 import { completeWizard } from "./wizardCompletion";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTranslate } from "@tolgee/react";
 
 interface GuidedSetupWizardProps {
     onComplete: () => void;
@@ -18,6 +19,7 @@ export default function GuidedSetupWizard({
     onComplete,
 }: GuidedSetupWizardProps) {
     const queryClient = useQueryClient();
+    const { t } = useTranslate();
     const {
         wizardState,
         setWizardState,
@@ -120,34 +122,32 @@ export default function GuidedSetupWizard({
         }
     };
 
+    const stepTitleFallbacks: Record<WizardStepId, string> = {
+        project: "Project Information",
+        ensemble: "Ensemble",
+        field: "Field Setup",
+        performers: "Add Performers",
+        music: "Add Music",
+    };
+
     const getStepTitle = (step: WizardStepId): string => {
-        switch (step) {
-            case "project":
-                return "Project Information";
-            case "ensemble":
-                return "Ensemble";
-            case "field":
-                return "Field Setup";
-            case "performers":
-                return "Add Performers";
-            case "music":
-                return "Add Music";
-        }
+        return t(`wizard.step.${step}.title`, {
+            defaultValue: stepTitleFallbacks[step],
+        });
+    };
+
+    const stepDescriptionFallbacks: Record<WizardStepId, string> = {
+        project: "Enter your project details",
+        ensemble: "Select your ensemble type and environment",
+        field: "Choose a field template or customize your field",
+        performers: "Add performers to your show",
+        music: "Import music or set tempo (optional)",
     };
 
     const getStepDescription = (step: WizardStepId): string | undefined => {
-        switch (step) {
-            case "project":
-                return "Enter your project details";
-            case "ensemble":
-                return "Select your ensemble type and environment";
-            case "field":
-                return "Choose a field template or customize your field";
-            case "performers":
-                return "Add performers to your show";
-            case "music":
-                return "Import music or set tempo (optional)";
-        }
+        return t(`wizard.step.${step}.description`, {
+            defaultValue: stepDescriptionFallbacks[step],
+        });
     };
 
     const renderStepContent = () => {

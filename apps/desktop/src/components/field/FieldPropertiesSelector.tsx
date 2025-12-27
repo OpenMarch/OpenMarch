@@ -128,9 +128,9 @@ export default function FieldPropertiesSelector({
                                 <>
                                     <SelectLabel>Football</SelectLabel>
                                     {Object.values(FootballTemplates).map(
-                                        (template, index) => (
+                                        (template) => (
                                             <SelectItem
-                                                key={index}
+                                                key={template.name}
                                                 value={template.name}
                                             >
                                                 {template.name}
@@ -145,9 +145,9 @@ export default function FieldPropertiesSelector({
                                 <>
                                     <SelectLabel>Indoor</SelectLabel>
                                     {Object.values(IndoorTemplates).map(
-                                        (template, index) => (
+                                        (template) => (
                                             <SelectItem
-                                                key={index}
+                                                key={template.name}
                                                 value={template.name}
                                             >
                                                 {template.name}

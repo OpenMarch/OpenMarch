@@ -6,6 +6,7 @@ import { updateFieldProperties } from "@/global/classes/FieldProperties";
 import {
     updateWorkspaceSettingsParsed,
     getWorkspaceSettingsParsed,
+    getWorkspaceSettingsJSON,
 } from "@/db-functions/workspaceSettings";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import {
@@ -66,6 +67,15 @@ export async function completeWizard(
     wizardState: WizardState,
     queryClient: QueryClient,
 ): Promise<void> {
+    const isTriggerAlreadyExistsError = (error: unknown) => {
+        const message = (error as { message?: string } | null | undefined)
+            ?.message;
+        return (
+            typeof message === "string" &&
+            message.toLowerCase().includes("already exists")
+        );
+    };
+
     try {
         // 0. Verify file exists and is ready, create if needed
         if (wizardState.project?.projectName) {
@@ -143,8 +153,17 @@ export async function completeWizard(
                     await createAllUndoTriggers(db);
                     console.log("History triggers set up successfully");
                 } catch (error) {
-                    console.error("Error setting up history triggers:", error);
-                    // Don't throw here - triggers might already exist
+                    if (isTriggerAlreadyExistsError(error)) {
+                        console.warn(
+                            "History triggers already exist; continuing",
+                        );
+                    } else {
+                        console.error(
+                            "Error setting up history triggers:",
+                            error,
+                        );
+                        throw error;
+                    }
                 }
             } else {
                 console.log(
@@ -161,8 +180,17 @@ export async function completeWizard(
                         "History triggers verified/set up successfully",
                     );
                 } catch (error) {
-                    console.error("Error setting up history triggers:", error);
-                    // Don't throw here - triggers might already exist
+                    if (isTriggerAlreadyExistsError(error)) {
+                        console.warn(
+                            "History triggers already exist; continuing",
+                        );
+                    } else {
+                        console.error(
+                            "Error setting up history triggers:",
+                            error,
+                        );
+                        throw error;
+                    }
                 }
             }
         } else {
@@ -190,9 +218,6 @@ export async function completeWizard(
         });
         console.log("Music settings applied successfully");
 
-        // Small delay between operations
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
         // 4. Apply field properties
         console.log("Applying field properties...");
         await retryWithBackoff(async () => {
@@ -207,18 +232,12 @@ export async function completeWizard(
         });
         console.log("Field properties applied successfully");
 
-        // Small delay to ensure field properties transaction completes
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
         // 5. Create beats and pages (performers need pages to exist)
         console.log("Creating beats and pages...");
         await retryWithBackoff(async () => {
             await createBeatsAndPages(queryClient);
         });
         console.log("Beats and pages created successfully");
-
-        // Small delay to ensure all database transactions complete before creating performers
-        await new Promise((resolve) => setTimeout(resolve, 200));
 
         // 6. Create performers in database (if any were added)
         console.log("Applying performers settings...");
@@ -307,7 +326,17 @@ async function applyMusicSettings(
     try {
         // Always set a default tempo if none exists (needed for beats)
         const currentSettings = await getWorkspaceSettingsParsed({ db });
-        const needsTempoUpdate = !currentSettings?.defaultTempo;
+
+        // Detect whether defaultTempo was explicitly set in raw settings.
+        // If the key is missing/null in the stored JSON, we should initialize it.
+        const rawSettingsJson = await getWorkspaceSettingsJSON({ db });
+        const rawSettings = JSON.parse(rawSettingsJson) ?? {};
+        const hasDefaultTempoKey = Object.prototype.hasOwnProperty.call(
+            rawSettings,
+            "defaultTempo",
+        );
+        const needsTempoUpdate =
+            !hasDefaultTempoKey || rawSettings.defaultTempo == null;
 
         if (music && music.method === "tempo_only" && music.tempo) {
             // Update workspace settings with user-specified tempo
@@ -405,7 +434,7 @@ async function applyPerformersSettings(
 
         // Invalidate marchers query to refresh the UI
         await queryClient.invalidateQueries({
-            queryKey: ["marchers"],
+            queryKey: allMarchersQueryOptions().queryKey,
         });
 
         // Verify marchers were created by refetching
@@ -460,7 +489,7 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
 
         // Refetch beats to get the latest data
         await queryClient.invalidateQueries({
-            queryKey: ["beats"],
+            queryKey: allDatabaseBeatsQueryOptions().queryKey,
         });
     }
 
@@ -519,7 +548,7 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
 
         // Invalidate pages query
         await queryClient.invalidateQueries({
-            queryKey: ["pages"],
+            queryKey: allDatabasePagesQueryOptions().queryKey,
         });
     }
 }

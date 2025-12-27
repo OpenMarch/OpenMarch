@@ -153,42 +153,31 @@ function Sidebar({
                     </Button>
                 </div>
                 {!wizardMode && (
-                    <div className="flex flex-col">
+                    <div className="flex min-w-0 flex-col">
                         <Tabs.Trigger value="files">
                             <ListItem selected={selectedTab === "files"}>
-                                <FolderIcon size={24} />
-                                <T keyName="launchpage.files.title" />
+                                <FolderIcon
+                                    size={24}
+                                    className="flex-shrink-0"
+                                />
+                                <span className="min-w-0 break-words">
+                                    <T keyName="launchpage.files.title" />
+                                </span>
                             </ListItem>
                         </Tabs.Trigger>
                         <Tabs.Trigger value="learn">
                             <ListItem selected={selectedTab === "learn"}>
-                                <LightbulbIcon size={24} />
-                                <T keyName="launchpage.learn.title" />
+                                <LightbulbIcon
+                                    size={24}
+                                    className="flex-shrink-0"
+                                />
+                                <span className="min-w-0 break-words">
+                                    <T keyName="launchpage.learn.title" />
+                                </span>
                             </ListItem>
                         </Tabs.Trigger>
                     </div>
                 )}
-                <div className="flex min-w-0 flex-col">
-                    <Tabs.Trigger value="files">
-                        <ListItem selected={selectedTab === "files"}>
-                            <FolderIcon size={24} className="flex-shrink-0" />
-                            <span className="min-w-0 break-words">
-                                <T keyName="launchpage.files.title" />
-                            </span>
-                        </ListItem>
-                    </Tabs.Trigger>
-                    <Tabs.Trigger value="learn">
-                        <ListItem selected={selectedTab === "learn"}>
-                            <LightbulbIcon
-                                size={24}
-                                className="flex-shrink-0"
-                            />
-                            <span className="min-w-0 break-words">
-                                <T keyName="launchpage.learn.title" />
-                            </span>
-                        </ListItem>
-                    </Tabs.Trigger>
-                </div>
             </section>
             <section className="flex flex-col gap-8">
                 <div className="flex flex-col">
@@ -236,7 +225,7 @@ function Sidebar({
                 {!wizardMode && (
                     <>
                         <hr className="border-stroke w-full border" />
-                        <div className="flex flex-col">
+                        <div className="flex min-w-0 flex-col">
                             <Tabs.Trigger value="settings">
                                 <ListItem selected={selectedTab === "settings"}>
                                     <GearSixIcon size={24} />
@@ -246,17 +235,6 @@ function Sidebar({
                         </div>
                     </>
                 )}
-                <hr className="border-stroke w-full border" />
-                <div className="flex min-w-0 flex-col">
-                    <Tabs.Trigger value="settings">
-                        <ListItem selected={selectedTab === "settings"}>
-                            <GearSixIcon size={24} className="flex-shrink-0" />
-                            <span className="min-w-0 break-words">
-                                <T keyName="launchpage.settings.title" />
-                            </span>
-                        </ListItem>
-                    </Tabs.Trigger>
-                </div>
             </section>
         </>
     );

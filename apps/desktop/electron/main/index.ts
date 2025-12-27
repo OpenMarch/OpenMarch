@@ -581,7 +581,7 @@ ipcMain.handle("open-win", (_, arg) => {
  * @param filePath The path where the file should be created
  * @returns 200 for success, -1 for failure
  */
-export async function createFileAtPath(filePath: string) {
+async function createFileAtPath(filePath: string) {
     console.log("createFileAtPath:", filePath);
 
     if (!filePath) return -1;
@@ -609,7 +609,7 @@ export async function createFileAtPath(filePath: string) {
  * @param filePath The path where the file should be created
  * @returns 200 for success, -1 for failure
  */
-export async function createFileForWizard(filePath: string) {
+async function createFileForWizard(filePath: string) {
     console.log("createFileForWizard:", filePath);
 
     if (!filePath) return -1;
@@ -671,7 +671,7 @@ export async function createFileForWizard(filePath: string) {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function newFile() {
+async function newFile() {
     console.log("newFile");
 
     if (!win) return -1;
@@ -708,7 +708,7 @@ export async function newFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function saveFile() {
+async function saveFile() {
     console.log("saveFile");
 
     if (!win) return -1;
@@ -743,7 +743,7 @@ export async function saveFile() {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function loadDatabaseFile() {
+async function loadDatabaseFile() {
     console.log("loadDatabaseFile");
 
     if (!win) return -1;
@@ -812,7 +812,7 @@ function requestSvgBeforeClose(win: BrowserWindow): Promise<string> {
  *
  * @returns 200 for success, -1 for failure
  */
-export async function closeCurrentFile(isAppQuitting = false) {
+async function closeCurrentFile(isAppQuitting = false) {
     console.log("closeCurrentFile called. isAppQuitting:", isAppQuitting);
     // console.trace();
 
@@ -844,7 +844,7 @@ export async function closeCurrentFile(isAppQuitting = false) {
  *
  * @returns 200 for success, -1 for failure (TODO, this function's return value is always error)
  */
-export async function insertAudioFile(): Promise<
+async function insertAudioFile(): Promise<
     DatabaseServices.LegacyDatabaseResponse<AudioFile[]>
 > {
     console.log("insertAudioFile");

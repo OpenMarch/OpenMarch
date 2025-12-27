@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 import NewMarcherForm from "@/components/marcher/NewMarcherForm";
 import { T, useTolgee } from "@tolgee/react";
@@ -12,18 +12,40 @@ import {
 } from "@/global/classes/Sections";
 import { NewMarcherArgs } from "@/db-functions";
 
+type WizardMarcher = Marcher & { tempId: string };
+
 export default function PerformersStep() {
     const { wizardState, updatePerformers } = useGuidedSetupStore();
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const { t } = useTolgee();
 
+    // Ensure each marcher has a stable tempId
+    useEffect(() => {
+        const currentPerformers = wizardState?.performers;
+        const currentMarchers = currentPerformers?.marchers || [];
+        const needsIds = currentMarchers.some((m) => !m.tempId);
+        if (!needsIds) return;
+
+        const marchersWithIds = currentMarchers.map((m) => ({
+            ...m,
+            tempId: m.tempId ?? crypto.randomUUID(),
+        }));
+
+        updatePerformers({
+            method: currentPerformers?.method,
+            marchers: marchersWithIds,
+        });
+    }, [wizardState?.performers, updatePerformers]);
+
     // Use marchers from wizard state instead of DB
-    const marchers = useMemo(() => {
+    const marchers = useMemo<WizardMarcher[]>(() => {
         return (wizardState?.performers?.marchers || []).map((m, index) => {
+            const tempId =
+                m.tempId ?? `${m.drill_prefix}-${m.drill_order}-${index}`;
             // Create temporary Marcher objects for display
-            // We use index as ID since they don't have real IDs yet
-            const marcher: Marcher = {
+            const marcher: WizardMarcher = {
                 id: index,
+                tempId,
                 section: m.section,
                 drill_prefix: m.drill_prefix,
                 drill_order: m.drill_order,
@@ -42,9 +64,9 @@ export default function PerformersStep() {
     // Group marchers by section
     const marchersBySection = useMemo(() => {
         if (!marchers || marchers.length === 0)
-            return new Map<string, Marcher[]>();
+            return new Map<string, WizardMarcher[]>();
 
-        const grouped = new Map<string, Marcher[]>();
+        const grouped = new Map<string, WizardMarcher[]>();
         for (const marcher of marchers) {
             const section = marcher.section;
             if (!grouped.has(section)) {
@@ -89,17 +111,23 @@ export default function PerformersStep() {
 
     const handleAddMarchers = (newMarchers: NewMarcherArgs[]) => {
         const currentMarchers = wizardState?.performers?.marchers || [];
+        const marchersWithIds = newMarchers.map((m) => ({
+            ...m,
+            tempId: crypto.randomUUID(),
+        }));
         updatePerformers({
-            marchers: [...currentMarchers, ...newMarchers],
+            method: wizardState?.performers?.method,
+            marchers: [...currentMarchers, ...marchersWithIds],
         });
     };
 
-    const handleDeleteMarcher = (marcherIndex: number) => {
+    const handleDeleteMarcher = (marcherId: string) => {
         const currentMarchers = wizardState?.performers?.marchers || [];
         const newMarchers = currentMarchers.filter(
-            (_, index) => index !== marcherIndex,
+            (marcher) => marcher.tempId !== marcherId,
         );
         updatePerformers({
+            method: wizardState?.performers?.method,
             marchers: newMarchers,
         });
     };
@@ -172,9 +200,11 @@ export default function PerformersStep() {
                                         <RadixCollapsible.Content className="bg-fg-1 border-stroke rounded-8 mt-8 border p-12">
                                             <div className="flex flex-col gap-10">
                                                 {(sectionMarchers || []).map(
-                                                    (marcher: Marcher) => (
+                                                    (
+                                                        marcher: WizardMarcher,
+                                                    ) => (
                                                         <div
-                                                            key={marcher.id}
+                                                            key={marcher.tempId}
                                                             className="rounded-6 border-stroke bg-fg-2 hover:bg-fg-1 flex items-center justify-between gap-8 border px-16 py-12 duration-150 ease-out"
                                                         >
                                                             <span className="text-body">
@@ -188,7 +218,7 @@ export default function PerformersStep() {
                                                                 content="icon"
                                                                 onClick={() =>
                                                                     handleDeleteMarcher(
-                                                                        marcher.id,
+                                                                        marcher.tempId,
                                                                     )
                                                                 }
                                                                 className="text-red hover:text-red/80"

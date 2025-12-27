@@ -7,7 +7,7 @@ import { useRef, useEffect } from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 
-interface registeredActionButtonProps
+interface RegisteredActionButtonProps
     extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     registeredAction: RegisteredAction;
     instructionalString?: string;
@@ -35,7 +35,7 @@ export default function RegisteredActionButton({
     showTooltip = true,
     tooltipPosition = "top",
     ...rest
-}: registeredActionButtonProps) {
+}: RegisteredActionButtonProps) {
     const { linkRegisteredAction, removeRegisteredAction } =
         useRegisteredActionsStore();
     const buttonRef = useRef<HTMLButtonElement>(null);

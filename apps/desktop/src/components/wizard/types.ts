@@ -27,7 +27,7 @@ export interface FieldData {
 
 export interface PerformersData {
     method?: "add" | "skip";
-    marchers: NewMarcherArgs[];
+    marchers: (NewMarcherArgs & { tempId?: string })[];
 }
 
 export interface MusicData {
