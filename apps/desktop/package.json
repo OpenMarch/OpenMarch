@@ -5,6 +5,7 @@
     "version": "0.0.19",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC",
+    "email": "contact@openmarch.com",
     "license": "AGPL-3.0",
     "private": true,
     "debug": {
