@@ -87,14 +87,6 @@
             },
         ],
     },
-    snap: {
-        publish: [
-            {
-                provider: "snapStore",
-                channel: "stable",
-            },
-        ],
-    },
     files: ["!**/node_modules/canvas/**"],
     publish: [
         {
