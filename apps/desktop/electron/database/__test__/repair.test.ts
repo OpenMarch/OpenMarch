@@ -701,8 +701,9 @@ describe("Database Repair", () => {
                             },
                         ),
                         async (tables) => {
-                            // Filter out SQL reserved keywords
+                            // Filter out SQL reserved keywords and "id" (already used as primary key)
                             const sqlKeywords = new Set([
+                                "id",
                                 "select",
                                 "from",
                                 "where",
@@ -738,6 +739,7 @@ describe("Database Repair", () => {
                                 "on",
                                 "union",
                                 "distinct",
+                                "all",
                                 "case",
                                 "when",
                                 "then",
