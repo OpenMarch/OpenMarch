@@ -1,4 +1,5 @@
 import { ReactNode, createContext, useContext, useState } from "react";
+import { analytics } from "@/utilities/analytics";
 
 // Define the type for the context value
 type IsPlayingContextProps = {
@@ -16,7 +17,12 @@ export function IsPlayingProvider({ children }: { children: ReactNode }) {
     // Create the context value object
     const contextValue: IsPlayingContextProps = {
         isPlaying,
-        setIsPlaying,
+        setIsPlaying: (newIsPlaying) => {
+            if (newIsPlaying !== isPlaying) {
+                analytics.trackPlaybackState(newIsPlaying);
+            }
+            setIsPlaying(newIsPlaying);
+        },
     };
 
     return (

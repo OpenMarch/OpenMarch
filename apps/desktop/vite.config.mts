@@ -102,5 +102,8 @@ export default defineConfig(({ command }) => {
                 };
             })(),
         clearScreen: false,
+        define: {
+            "import.meta.env.PACKAGE_VERSION": JSON.stringify(pkg.version),
+        },
     };
 });

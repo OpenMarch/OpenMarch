@@ -32,6 +32,7 @@ import {
     canRedoQueryOptions,
 } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { analytics } from "@/utilities/analytics";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -625,12 +626,15 @@ function RegisteredActionsHandler() {
             // Check if this is an electron action
             switch (action) {
                 case RegisteredActionsEnum.launchLoadFileDialogue:
+                    analytics.trackFileOperation("load");
                     void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
+                    analytics.trackFileOperation("save");
                     void window.electron.databaseSave();
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
+                    analytics.trackFileOperation("new");
                     void window.electron.databaseCreate();
                     break;
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
@@ -658,6 +662,7 @@ function RegisteredActionsHandler() {
                                         setSelectedAudioFile(
                                             selectedAudioFileWithoutAudio,
                                         );
+                                        analytics.trackMusicAdded(audioFile);
                                     },
                                 );
                                 // Send event to refresh audio files list
@@ -722,6 +727,7 @@ function RegisteredActionsHandler() {
                     break;
                 case RegisteredActionsEnum.performUndo:
                     if (canUndo) {
+                        analytics.trackUndoRedo("undo");
                         if (!isPerformingHistoryAction.current) {
                             isPerformingHistoryAction.current = true;
                             void performHistoryAction("undo").finally(() => {
@@ -732,6 +738,7 @@ function RegisteredActionsHandler() {
                     break;
                 case RegisteredActionsEnum.performRedo:
                     if (canRedo) {
+                        analytics.trackUndoRedo("redo");
                         if (!isPerformingHistoryAction.current) {
                             isPerformingHistoryAction.current = true;
                             void performHistoryAction("redo").finally(() => {
@@ -788,6 +795,10 @@ function RegisteredActionsHandler() {
 
                     const previousMarcherPagesArray =
                         Object.values(previousMarcherPages);
+                    analytics.trackBatchOperation(
+                        "setAllMarchersToPreviousPage",
+                        previousMarcherPagesArray.length,
+                    );
                     const changes = previousMarcherPagesArray.map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
@@ -825,6 +836,10 @@ function RegisteredActionsHandler() {
                         .filter(Boolean);
 
                     if (filteredPreviousMarcherPages.length > 0) {
+                        analytics.trackBatchOperation(
+                            "setSelectedMarchersToPreviousPage",
+                            filteredPreviousMarcherPages.length,
+                        );
                         const changes = filteredPreviousMarcherPages.map(
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
@@ -858,6 +873,10 @@ function RegisteredActionsHandler() {
                     }
                     const nextMarcherPagesArray =
                         Object.values(nextMarcherPages);
+                    analytics.trackBatchOperation(
+                        "setAllMarchersToNextPage",
+                        nextMarcherPagesArray.length,
+                    );
                     const changes = nextMarcherPagesArray.map(
                         (marcherPage) => ({
                             marcher_id: marcherPage.marcher_id,
@@ -893,6 +912,10 @@ function RegisteredActionsHandler() {
                         .filter(Boolean);
 
                     if (nextPageMarcherPages.length > 0) {
+                        analytics.trackBatchOperation(
+                            "setSelectedMarchersToNextPage",
+                            nextPageMarcherPages.length,
+                        );
                         const changes = nextPageMarcherPages.map(
                             (marcherPage) => ({
                                 marcher_id: marcherPage.marcher_id,
@@ -1016,6 +1039,9 @@ function RegisteredActionsHandler() {
                     );
                     break;
                 case RegisteredActionsEnum.alignVertically: {
+                    analytics.trackEditorAction("alignVertically", {
+                        count: selectedMarchers.length,
+                    });
                     const alignedCoords = CoordinateActions.alignVertically({
                         marcherPages: getSelectedMarcherPages(),
                     });
@@ -1023,6 +1049,9 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.alignHorizontally: {
+                    analytics.trackEditorAction("alignHorizontally", {
+                        count: selectedMarchers.length,
+                    });
                     const alignedCoords = CoordinateActions.alignHorizontally({
                         marcherPages: getSelectedMarcherPages(),
                     });
@@ -1070,6 +1099,7 @@ function RegisteredActionsHandler() {
                         toast.error(t("actions.swap.mustSelectTwo"));
                         return;
                     }
+                    analytics.trackEditorAction("swapMarchers");
                     swapMarchers({
                         pageId: selectedPage.id,
                         marcher1Id: selectedMarchers[0].id,
@@ -1130,6 +1160,9 @@ function RegisteredActionsHandler() {
                     break;
                 }
                 case RegisteredActionsEnum.createMarcherShape: {
+                    analytics.trackEditorAction("createMarcherShape", {
+                        count: alignmentEventNewMarcherPages.length,
+                    });
                     const firstMarcherPage = alignmentEventNewMarcherPages[0];
                     const lastMarcherPage =
                         alignmentEventNewMarcherPages[
@@ -1177,6 +1210,9 @@ function RegisteredActionsHandler() {
 
                 /****************** Shapes ******************/
                 case RegisteredActionsEnum.createCircle: {
+                    analytics.trackEditorAction("createCircle", {
+                        count: selectedMarchers.length,
+                    });
                     updateSelectedMarchers(({ currentCoordinates }) => {
                         const updatedCoordinates = createCircle(
                             currentCoordinates.map((mp) => ({

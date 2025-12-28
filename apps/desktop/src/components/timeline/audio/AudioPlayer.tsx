@@ -17,6 +17,7 @@ import { useQuery } from "@tanstack/react-query";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import { CircleNotchIcon } from "@phosphor-icons/react";
+import { analytics } from "@/utilities/analytics";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -116,6 +117,25 @@ export default function AudioPlayer() {
     // AudioContext state management
     const [audioContext, setAudioContext] = useState<AudioContext | null>(null);
     const [playbackTimestamp, setPlaybackTimestamp] = useState<number>(0);
+
+    // Track playback analytics
+    const playbackStartTime = useRef<number | null>(null);
+    useEffect(() => {
+        if (isPlaying) {
+            playbackStartTime.current = Date.now();
+            analytics.trackPlaybackStart(selectedPage?.timestamp || 0, false);
+        } else {
+            if (playbackStartTime.current) {
+                const duration =
+                    (Date.now() - playbackStartTime.current) / 1000;
+                analytics.trackPlaybackStop(
+                    duration,
+                    selectedPage?.timestamp || 0,
+                );
+                playbackStartTime.current = null;
+            }
+        }
+    }, [isPlaying, selectedPage?.timestamp]);
 
     // Set up AudioContext on the first mount
     useEffect(() => {

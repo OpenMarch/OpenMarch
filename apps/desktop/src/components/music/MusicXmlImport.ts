@@ -36,6 +36,10 @@ export type MusicXmlImportData = {
 export type ImportResult = {
     success: boolean;
     message: string;
+    stats?: {
+        measure_count: number;
+        tempo_group_count: number;
+    };
 };
 
 // generates standard 120bpm 4/4 measures
@@ -170,6 +174,10 @@ export const _importMusicXmlFile = async ({
                 message: tolgee.t("music.importSuccess", {
                     fileName: file.name,
                 }),
+                stats: {
+                    measure_count: newMeasures.length,
+                    tempo_group_count: 0, // Not implemented yet
+                },
             };
         },
     );

@@ -4,6 +4,7 @@ import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import { useTimingObjects } from "@/hooks";
 import { useImportMusicXml } from "./MusicXmlImport";
+import { analytics } from "@/utilities/analytics";
 
 export default function MusicXmlSelector() {
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -31,6 +32,9 @@ export default function MusicXmlSelector() {
 
         if (result.success) {
             toast.success(result.message);
+            if (result.stats) {
+                analytics.trackMusicXmlImported(result.stats);
+            }
         }
 
         // Clear the file input

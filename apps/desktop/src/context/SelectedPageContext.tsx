@@ -9,6 +9,7 @@ import {
 } from "react";
 import Page from "@/global/classes/Page";
 import { useTimingObjects } from "@/hooks";
+import { analytics } from "@/utilities/analytics";
 
 // Define the type for the context value
 type SelectedPageContextProps = {
@@ -55,13 +56,17 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const setSelectedPageFromId = useCallback(
         (newPage: { id: number }) => {
             const page = pages.find((p) => p.id === newPage.id);
-            if (page) setSelectedPage(page);
-            else
+            if (page) {
+                if (selectedPage?.id !== page.id) {
+                    analytics.trackSelectionChanged("page", 1);
+                }
+                setSelectedPage(page);
+            } else
                 console.warn(
                     `Page with id ${newPage.id} not found. Not setting selected page.`,
                 );
         },
-        [pages],
+        [pages, selectedPage],
     );
 
     // Create the context value object

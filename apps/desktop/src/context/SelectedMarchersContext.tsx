@@ -12,6 +12,7 @@ import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { useSelectedPage } from "./SelectedPageContext";
 import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
 import { appearanceIsHidden } from "@/entity-components/appearance";
+import { analytics } from "@/utilities/analytics";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -87,7 +88,14 @@ export function SelectedMarchersProvider({
     // Create the context value object
     const contextValue: SelectedMarcherContextProps = {
         selectedMarchers,
-        setSelectedMarchers,
+        setSelectedMarchers: (newMarchers) => {
+            const currentIds = new Set(selectedMarchers.map((m) => m.id));
+            const newIds = new Set(newMarchers.map((m) => m.id));
+            if (!setsAreEqual(currentIds, newIds)) {
+                analytics.trackSelectionChanged("marcher", newMarchers.length);
+            }
+            setSelectedMarchers(newMarchers);
+        },
     };
 
     return (

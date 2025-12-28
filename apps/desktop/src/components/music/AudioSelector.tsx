@@ -20,6 +20,7 @@ import RegisteredActionButton from "../RegisteredActionButton";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { T, useTolgee } from "@tolgee/react";
+import { analytics } from "@/utilities/analytics";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
@@ -42,6 +43,7 @@ export default function AudioSelector() {
             AudioFile.setSelectedAudioFile(selectedAudioFileId).then(
                 (audioFile) => {
                     setSelectedAudioFile(audioFile);
+                    analytics.trackMusicSelected(audioFile);
                 },
             );
         },

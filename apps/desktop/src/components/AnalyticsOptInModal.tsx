@@ -4,6 +4,7 @@ import * as Sentry from "@sentry/electron/renderer";
 import { useState, useEffect } from "react";
 import AnalyticsMessage from "./launchpage/settings/AnalyticsMessage";
 import { T } from "@tolgee/react";
+import { initializeUserTracking } from "@/utilities/analytics";
 
 interface AnalyticsOptInModalProps {
     onChoice: (hasOptedIn: boolean) => void;
@@ -46,13 +47,15 @@ export default function AnalyticsOptInModal({
         };
     }, [onChoice, posthog]);
 
-    const handleOptIn = () => {
+    const handleOptIn = async () => {
         posthog.opt_in_capturing();
         Sentry.init({
             dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
             enabled: true,
         });
         window.electron.send("settings:set", { optOutAnalytics: false });
+        // Initialize user tracking after opting in
+        await initializeUserTracking();
         onChoice(true);
         window.location.reload();
     };

@@ -22,6 +22,7 @@ import { db } from "@/global/database/db";
 import { QueryClient, mutationOptions } from "@tanstack/react-query";
 import { tagKeys, invalidateTagQueries } from "./queries";
 import { conToastError } from "@/utilities/utils";
+import { analytics } from "@/utilities/analytics";
 
 // ============================================================================
 // TAGS MUTATIONS
@@ -33,8 +34,9 @@ import { conToastError } from "@/utilities/utils";
 export const createTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newTags: NewTagArgs[]) => createTags({ db, newTags }),
-        onSuccess: async (_) => {
+        onSuccess: async (result) => {
             invalidateTagQueries(qc);
+            result.forEach((tag) => analytics.trackTagCreated(tag));
         },
         onError: (e, variables) => {
             conToastError("Error creating tags", e, variables);
@@ -95,8 +97,11 @@ export const createTagAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newItems: NewTagAppearanceArgs[]) =>
             createTagAppearances({ db, newItems }),
-        onSuccess: async (_) => {
+        onSuccess: async (result) => {
             invalidateTagQueries(qc);
+            result.forEach((ta) =>
+                analytics.trackTagApplied(ta.tag_id, "page", ta.start_page_id),
+            );
         },
         onError: (e, variables) => {
             conToastError("Error creating tag appearances", e, variables);
@@ -184,8 +189,18 @@ export const createNewTagFromMarcherIdsMutationOptions = (qc: QueryClient) => {
             marcherIds: Set<number>;
             tagName: string | null;
         }) => createNewTagFromMarcherIds({ db, ...args }),
-        onSuccess: async (_) => {
+        onSuccess: async (result, variables) => {
             invalidateTagQueries(qc);
+            if (result) {
+                analytics.trackTagCreated(result.newTag);
+                variables.marcherIds.forEach((marcherId) => {
+                    analytics.trackTagApplied(
+                        result.newTag.id,
+                        "marcher",
+                        marcherId,
+                    );
+                });
+            }
         },
         onError: (e, variables) => {
             conToastError(
@@ -204,8 +219,11 @@ export const createMarcherTagsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newMarcherTags: NewMarcherTagArgs[]) =>
             createMarcherTags({ db, newMarcherTags }),
-        onSuccess: async (_) => {
+        onSuccess: async (result) => {
             invalidateTagQueries(qc);
+            result.forEach((mt) =>
+                analytics.trackTagApplied(mt.tag_id, "marcher", mt.marcher_id),
+            );
         },
         onError: (e, variables) => {
             conToastError("Error creating marcher tags", e, variables);

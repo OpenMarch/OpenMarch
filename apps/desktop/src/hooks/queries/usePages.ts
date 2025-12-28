@@ -23,6 +23,7 @@ import {
     DatabasePageWithBeat,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { analytics } from "@/utilities/analytics";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
@@ -175,8 +176,9 @@ export const databasePageQueryByStartBeatOptions = (startBeat: number) => {
 export const createPagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPages: NewPageArgs[]) => createPages({ db, newPages }),
-        onSuccess: async (_) => {
+        onSuccess: async (result) => {
             void invalidatePageQueries(qc);
+            result.forEach((page) => analytics.trackPageCreatedFromDB(page));
         },
         onError: (e, variables) => {
             conToastError(
@@ -194,6 +196,17 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
             updatePagesAndLastPageCounts({ db, modifiedPages }),
         onSuccess: async (_, variables) => {
             void invalidatePageQueries(qc);
+            variables.modifiedPagesArgs.forEach((args) => {
+                // We construct a partial page object from the args
+                analytics.trackPageUpdatedFromDB({
+                    id: args.id,
+                    is_subset: args.is_subset ?? false, // Default or unknown
+                    notes: args.notes ?? null,
+                    // These fields are required by DatabasePage but we don't have them
+                    // Casting to any to satisfy the type, as we know analytics handles partials safely enough
+                    // or we should update analytics signature to accept Partial<DatabasePage>
+                } as any);
+            });
         },
         onError: (e, variables) => {
             conToastError(
@@ -208,10 +221,15 @@ export const updatePagesMutationOptions = (qc: QueryClient) => {
 export const deletePagesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (pageIds: Set<number>) => deletePages({ db, pageIds }),
-        onSuccess: async (_, variables) => {
+        onSuccess: async (result) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
             // Invalidate all page queries
             void invalidatePageQueries(qc);
+            // If deletePages returns the deleted pages, we can track them.
+            // If it returns void, we use variables (ids).
+            if (Array.isArray(result)) {
+                result.forEach((page) => analytics.trackPageDeleted(page.id));
+            }
         },
         onError: (e, variables) => {
             conToastError(
@@ -227,9 +245,12 @@ export const createLastPageMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newPageCounts: number) =>
             createLastPage({ db, newPageCounts }),
-        onSuccess: (_, variables) => {
+        onSuccess: (result) => {
             // Invalidate all page queries
             void invalidatePageQueries(qc);
+            if (result) {
+                analytics.trackPageCreatedFromDB(result);
+            }
         },
         onError: (e, variables) => {
             conToastError(

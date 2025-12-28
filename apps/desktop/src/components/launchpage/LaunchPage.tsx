@@ -20,6 +20,7 @@ import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
 import GuidedSetupWizard from "../wizard/GuidedSetupWizard";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
+import { analytics } from "@/utilities/analytics";
 
 type LaunchPageProps =
     | {
@@ -115,12 +116,14 @@ function Sidebar({
     async function handleCreateNew() {
         // Reset wizard state to ensure a fresh start
         resetWizard();
+        analytics.trackProjectEvent("create", "wizard");
 
         // Start wizard mode without creating file - file will be created on wizard completion
         onStartWizard();
     }
 
     async function handleOpenExisting() {
+        analytics.trackProjectEvent("open", "file_picker");
         try {
             const dataBaseIsReady = await window.electron.databaseLoad();
 

@@ -10,6 +10,7 @@ import MusicStep from "./steps/MusicStep";
 import { completeWizard } from "./wizardCompletion";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
+import { analytics } from "@/utilities/analytics";
 
 interface GuidedSetupWizardProps {
     onComplete: () => void;
@@ -38,6 +39,7 @@ export default function GuidedSetupWizard({
         // Initialize wizard state for a fresh setup
         setWizardState(DEFAULT_WIZARD_STATE);
         setCurrentStepIndex(0);
+        analytics.trackWizardStart();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []); // Only run on mount
 
@@ -52,6 +54,7 @@ export default function GuidedSetupWizard({
         if (currentStepIndex < WIZARD_STEPS.length - 1) {
             const nextIndex = currentStepIndex + 1;
             const nextStep = WIZARD_STEPS[nextIndex];
+            analytics.trackWizardStep(currentStep, currentStepIndex, "next");
             setCurrentStepIndex(nextIndex);
             updateWizardStep(nextStep);
         }
@@ -61,6 +64,7 @@ export default function GuidedSetupWizard({
         if (currentStepIndex > 0) {
             const prevIndex = currentStepIndex - 1;
             const prevStep = WIZARD_STEPS[prevIndex];
+            analytics.trackWizardStep(currentStep, currentStepIndex, "back");
             setCurrentStepIndex(prevIndex);
             updateWizardStep(prevStep);
         }
@@ -72,6 +76,7 @@ export default function GuidedSetupWizard({
         setIsCompleting(true);
         try {
             await completeWizard(effectiveWizardState, queryClient);
+            analytics.trackWizardComplete();
             resetWizard();
             onComplete();
         } catch (error) {
@@ -83,6 +88,7 @@ export default function GuidedSetupWizard({
     };
 
     const handleSkip = () => {
+        analytics.trackWizardStep(currentStep, currentStepIndex, "skip");
         // If skipping performers step, mark it as skipped
         if (currentStep === "performers") {
             updatePerformers({ method: "skip", marchers: [] });

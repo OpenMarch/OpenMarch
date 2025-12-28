@@ -22,6 +22,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { invalidateByPage } from "./sharedInvalidators";
+import { analytics } from "@/utilities/analytics";
 
 const KEY_BASE = "shape_pages";
 
@@ -109,6 +110,10 @@ export const updateShapePagesMutationOptions = (qc: QueryClient) => {
                 queryKey: [KEY_BASE],
             });
             invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
+
+            result.forEach((shape) => {
+                analytics.trackShapeUpdated(shape);
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error updating shape pages`, e, variables);
@@ -125,6 +130,10 @@ export const deleteShapePagesMutationOptions = (qc: QueryClient) => {
                 queryKey: [KEY_BASE],
             });
             invalidateByPage(qc, new Set(result.map((m) => m.page_id)));
+
+            result.forEach((shape) => {
+                analytics.trackShapeDeleted(shape.id);
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error deleting shape pages`, e, variables);
@@ -141,11 +150,14 @@ export const copyShapePageToPageMutationOptions = (qc: QueryClient) => {
             shapePageId: number;
             targetPageId: number;
         }) => copyShapePageToPage({ db, shapePageId, targetPageId }),
-        onSuccess: (_, variables) => {
+        onSuccess: (result, variables) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
             invalidateByPage(qc, new Set([variables.targetPageId]));
+
+            // Since we're copying, this is effectively a creation event
+            analytics.trackShapeCreated(result);
 
             toast.success(tolgee.t("inspector.shape.successfullyCopied"));
         },

@@ -10,6 +10,7 @@ import posthog, { type PostHogConfig } from "posthog-js";
 import { PostHogProvider } from "posthog-js/react";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
+import { initializeUserTracking } from "./utilities/analytics";
 
 // Check for Playwright session from either build-time or runtime environment
 const isPlaywrightSession =
@@ -30,6 +31,14 @@ const options: Partial<PostHogConfig> = {
 
 if (import.meta.env.VITE_PUBLIC_POSTHOG_KEY) {
     posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
+
+    // Initialize user tracking after PostHog is loaded
+    // Use a small delay to ensure PostHog is fully initialized
+    setTimeout(() => {
+        if (posthog.__loaded && !posthog.has_opted_out_capturing()) {
+            void initializeUserTracking();
+        }
+    }, 100);
 }
 
 // Load saved language from electron store on app start

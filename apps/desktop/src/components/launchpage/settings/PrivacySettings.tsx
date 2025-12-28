@@ -5,6 +5,7 @@ import { usePostHog } from "posthog-js/react";
 import { useState, useEffect } from "react";
 import { T } from "@tolgee/react";
 import * as Sentry from "@sentry/electron/renderer";
+import { initializeUserTracking } from "@/utilities/analytics";
 
 export default function PrivacySettings() {
     const posthog = usePostHog();
@@ -56,13 +57,15 @@ export default function PrivacySettings() {
                     <Switch
                         id="share-usage-analytics"
                         checked={!hasOptedOut}
-                        onCheckedChange={(checked) => {
+                        onCheckedChange={async (checked) => {
                             if (checked) {
                                 posthog.opt_in_capturing();
                                 Sentry.init({
                                     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
                                     enabled: true,
                                 });
+                                // Initialize user tracking after opting in
+                                await initializeUserTracking();
                             } else {
                                 posthog.opt_out_capturing();
                                 Sentry.init({

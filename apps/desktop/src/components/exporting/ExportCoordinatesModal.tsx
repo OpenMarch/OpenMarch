@@ -50,6 +50,7 @@ import {
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
+import { analytics } from "@/utilities/analytics";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -88,6 +89,7 @@ function CoordinateSheetExport() {
     const handleExport = useCallback(async () => {
         setIsLoading(true);
         setProgress(0);
+        analytics.trackExportStart("coordinate_sheets");
 
         // Fun marching band phrases that rotate during export
         const funPhrases = [
@@ -330,6 +332,10 @@ function CoordinateSheetExport() {
             if (!result.success) {
                 if (result.cancelled) {
                     // User cancelled the export dialog - don't show error
+                    analytics.trackExportFailed(
+                        "coordinate_sheets",
+                        "cancelled",
+                    );
                     return;
                 }
                 throw new Error(result.error);
@@ -337,6 +343,10 @@ function CoordinateSheetExport() {
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
+            analytics.trackExportComplete(
+                "coordinate_sheets",
+                groupedSheets.length,
+            );
 
             // Add success toast message
             toast.success(
@@ -378,6 +388,10 @@ function CoordinateSheetExport() {
         } catch (error) {
             console.error("Export error:", error);
             setCurrentStep(t("exportCoordinates.exportFailed"));
+            analytics.trackExportFailed(
+                "coordinate_sheets",
+                error instanceof Error ? error.message : "Unknown error",
+            );
             toast.error(
                 t("exportCoordinates.exportFailedToast", {
                     error:
@@ -801,6 +815,9 @@ function DrillChartExport() {
         isCancelled.current = false;
         setIsLoading(true);
         setProgress(0);
+        analytics.trackExportStart("drill_charts", {
+            individual_charts: individualCharts,
+        });
 
         assert(
             marcherPagesLoaded,
@@ -879,6 +896,7 @@ function DrillChartExport() {
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
+            analytics.trackExportComplete("drill_charts", SVGs.length);
 
             // Prompt user to open the export directory
             toast.success(
@@ -904,6 +922,10 @@ function DrillChartExport() {
                 </span>,
             );
         } catch (error) {
+            analytics.trackExportFailed(
+                "drill_charts",
+                error instanceof Error ? error.message : "Unknown error",
+            );
             toast.error(
                 t("exportCoordinates.pdfExportFailed", {
                     error:
