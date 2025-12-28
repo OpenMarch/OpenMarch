@@ -125,6 +125,23 @@ jobs:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
+      - name: Promote snap to stable channel
+        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+        shell: bash
+        run: |
+          # Get the latest revision for this architecture
+          ARCH=$(dpkg --print-architecture)
+          REVISION=$(snapcraft list-revisions openmarch --arch=$ARCH | head -n 2 | tail -n 1 | awk '{print $1}')
+          if [ -n "$REVISION" ]; then
+            echo "Promoting revision $REVISION to stable channel for arch $ARCH"
+            snapcraft release openmarch "$REVISION" stable
+          else
+            echo "No revision found to promote"
+            exit 1
+          fi
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         if: always() # Upload even if previous steps fail

@@ -84,6 +84,7 @@ words:
   - openmarch
   - openmarchdev
   - overscan
+  - pacman
   - pagewidth
   - paperplane
   - pfps
@@ -176,6 +177,7 @@ ignorePaths:
   - apps/desktop/e2e/Dockerfile
   - "**/dist-electron/**"
   - "**/wasm/pkg/**"
+  - "**/release/**"
   - "*.svg"
   - "*.musicxml"
   - pnpm-workspace.yaml
