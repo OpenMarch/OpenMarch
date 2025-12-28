@@ -7,12 +7,11 @@ import {
     SelectGroup,
     SelectItem,
     SelectTriggerButton,
-    Button,
     DangerNote,
     SelectLabel,
     SelectSeparator,
 } from "@openmarch/ui";
-import { StaticFormField } from "../ui/FormField";
+import { StaticFormField, WizardFormField } from "../ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
@@ -21,118 +20,160 @@ import {
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
-export default function FieldPropertiesSelector() {
+interface FieldPropertiesSelectorProps {
+    environment?: "indoor" | "outdoor";
+    onTemplateChange?: (template: FieldProperties) => void;
+    currentTemplate?: FieldProperties;
+}
+
+export default function FieldPropertiesSelector({
+    environment,
+    onTemplateChange,
+    currentTemplate: externalCurrentTemplate,
+}: FieldPropertiesSelectorProps) {
     const queryClient = useQueryClient();
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+
+    const databaseReady = useDatabaseReady();
+
+    // Only query field properties if database is ready and no external template provided
+    const { data: fieldProperties, isLoading } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady && !externalCurrentTemplate),
+    );
+
     const { mutate: setFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
-    const [currentTemplate, setCurrentTemplate] = useState<
+    const [internalCurrentTemplate, setInternalCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);
     const selectRef = useRef<HTMLButtonElement>(null);
     const { t } = useTolgee();
 
-    const handleFieldTypeChange = useCallback((value: string) => {
-        const template = Object.values(FieldPropertiesTemplates).find(
-            (FieldPropertiesTemplate) => FieldPropertiesTemplate.name === value,
-        );
-        if (!template) console.error("Template not found", value);
+    // Use external template if provided, otherwise use internal state
+    const currentTemplate = externalCurrentTemplate || internalCurrentTemplate;
 
-        setCurrentTemplate(template);
-    }, []);
+    const handleFieldTypeChange = useCallback(
+        (value: string) => {
+            const template = Object.values(FieldPropertiesTemplates).find(
+                (FieldPropertiesTemplate) =>
+                    FieldPropertiesTemplate.name === value,
+            );
+            if (!template) {
+                console.error("Template not found", value);
+                return;
+            }
 
-    const applyChanges = useCallback(() => {
-        if (currentTemplate) setFieldProperties(currentTemplate);
-    }, [currentTemplate, setFieldProperties]);
+            // If onTemplateChange callback is provided (wizard mode), use it instead of mutating DB
+            if (onTemplateChange) {
+                onTemplateChange(template);
+            } else {
+                // Normal mode: update database
+                setInternalCurrentTemplate(template);
+                setFieldProperties(template);
+            }
+        },
+        [setFieldProperties, onTemplateChange],
+    );
 
     useEffect(() => {
-        setCurrentTemplate(fieldProperties);
-    }, [fieldProperties]);
+        if (!externalCurrentTemplate && fieldProperties) {
+            setInternalCurrentTemplate(fieldProperties);
+        }
+    }, [fieldProperties, externalCurrentTemplate]);
 
-    if (!fieldProperties)
+    // If we have an external template (wizard mode), we don't need fieldProperties
+    // If we don't have external template, we need fieldProperties
+    if (!externalCurrentTemplate && !fieldProperties && !isLoading) {
         return <div>{t("fieldProperties.errors.notDefined")}</div>;
+    }
+
+    if (isLoading && !externalCurrentTemplate) {
+        return <div>Loading...</div>;
+    }
+
+    const FormField = onTemplateChange ? WizardFormField : StaticFormField;
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
-            <div className="flex w-full min-w-0 flex-col gap-16">
-                <StaticFormField
-                    label={t("fieldProperties.fieldTemplate.label")}
-                >
-                    <Select
-                        onValueChange={handleFieldTypeChange}
-                        defaultValue={
-                            fieldProperties.isCustom
-                                ? "Custom"
-                                : fieldProperties.name
-                        }
-                        ref={selectRef}
-                    >
-                        <SelectTriggerButton
-                            label={
-                                fieldProperties.name ||
-                                t("fieldProperties.fieldType.label")
-                            }
-                        />
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>Football</SelectLabel>
-                                {Object.entries(FootballTemplates).map(
-                                    (template, index) => (
-                                        <SelectItem
-                                            key={index}
-                                            value={template[1].name}
-                                        >
-                                            {template[1].name}
-                                        </SelectItem>
-                                    ),
-                                )}
-                                <SelectSeparator />
-                                <SelectLabel>Indoor</SelectLabel>
-                                {Object.entries(IndoorTemplates).map(
-                                    (template, index) => (
-                                        <SelectItem
-                                            key={index}
-                                            value={template[1].name}
-                                        >
-                                            {template[1].name}
-                                        </SelectItem>
-                                    ),
-                                )}
-                                <SelectSeparator />
-                                <SelectLabel>Custom</SelectLabel>
-                                {fieldProperties.isCustom && (
-                                    <SelectItem key={"custom"} value={"Custom"}>
-                                        {t("fieldProperties.customFieldName")}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </StaticFormField>
-                <Button
-                    className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
-                    onClick={applyChanges}
-                >
-                    <T keyName="fieldProperties.applyFieldType" />
-                </Button>
-            </div>
-            <div
-                hidden={
-                    fieldProperties?.name === currentTemplate?.name ||
-                    (fieldProperties?.width === currentTemplate?.width &&
-                        fieldProperties?.height === currentTemplate?.height &&
-                        fieldProperties?.centerFrontPoint.xPixels ===
-                            currentTemplate?.centerFrontPoint.xPixels &&
-                        fieldProperties?.centerFrontPoint.yPixels ===
-                            currentTemplate?.centerFrontPoint.yPixels)
-                }
+            <FormField
+                label={t("fieldProperties.fieldTemplate.label")}
+                {...(onTemplateChange && {
+                    helperText: t("fieldProperties.fieldTemplate.helper"),
+                })}
             >
-                <DangerNote>
-                    <T keyName="fieldProperties.applyFieldTypeWarning" />
-                </DangerNote>
-            </div>
+                <Select
+                    onValueChange={handleFieldTypeChange}
+                    value={
+                        currentTemplate?.isCustom
+                            ? "Custom"
+                            : currentTemplate?.name ||
+                              fieldProperties?.name ||
+                              ""
+                    }
+                    ref={selectRef}
+                >
+                    <SelectTriggerButton
+                        label={
+                            currentTemplate?.name ||
+                            fieldProperties?.name ||
+                            t("fieldProperties.fieldType.label")
+                        }
+                    />
+                    <SelectContent>
+                        <SelectGroup>
+                            {(environment === undefined ||
+                                environment === "outdoor") && (
+                                <>
+                                    <SelectLabel>Football</SelectLabel>
+                                    {Object.values(FootballTemplates).map(
+                                        (template) => (
+                                            <SelectItem
+                                                key={template.name}
+                                                value={template.name}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                    <SelectSeparator />
+                                </>
+                            )}
+                            {(environment === undefined ||
+                                environment === "indoor") && (
+                                <>
+                                    <SelectLabel>Indoor</SelectLabel>
+                                    {Object.values(IndoorTemplates).map(
+                                        (template) => (
+                                            <SelectItem
+                                                key={template.name}
+                                                value={template.name}
+                                            >
+                                                {template.name}
+                                            </SelectItem>
+                                        ),
+                                    )}
+                                    <SelectSeparator />
+                                </>
+                            )}
+                            <SelectLabel>Custom</SelectLabel>
+                            {currentTemplate?.isCustom && (
+                                <SelectItem key={"custom"} value={"Custom"}>
+                                    {t("fieldProperties.customFieldName")}
+                                </SelectItem>
+                            )}
+                        </SelectGroup>
+                    </SelectContent>
+                </Select>
+            </FormField>
+            {!onTemplateChange && (
+                <div hidden={fieldProperties?.name === currentTemplate?.name}>
+                    <DangerNote>
+                        <T keyName="fieldProperties.applyFieldTypeWarning" />
+                    </DangerNote>
+                </div>
+            )}
         </div>
     );
 }

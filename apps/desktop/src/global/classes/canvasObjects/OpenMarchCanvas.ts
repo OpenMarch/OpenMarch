@@ -771,12 +771,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.setupAdvancedEventListeners();
     }
 
-    /** Clean up DOM listeners and observers; call when tearing down the canvas */
-    public dispose(): fabric.Canvas {
+    /** Public helper to disable the internal window resize listener */
+    public disableWindowResizeHandler(): void {
         if (this._onWindowResize) {
             window.removeEventListener("resize", this._onWindowResize);
             this._onWindowResize = null;
         }
+    }
+
+    /** Clean up DOM listeners and observers; call when tearing down the canvas */
+    public dispose(): fabric.Canvas {
+        this.disableWindowResizeHandler();
         if (this._viewportResizeObserver) {
             this._viewportResizeObserver.disconnect();
             this._viewportResizeObserver = null;

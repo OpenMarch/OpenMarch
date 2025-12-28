@@ -48,16 +48,17 @@ const beatQueries = {
 /**
  * Query options for the beats query
  *
- * @param args - the filters to use for the query, or the beat id to fetch
+ * @param enabled - whether the query should run
  * @returns
  */
-export const allDatabaseBeatsQueryOptions = () => {
+export const allDatabaseBeatsQueryOptions = (enabled = true) => {
     return queryOptions<DatabaseBeat[]>({
         queryKey: beatKeys.all(),
         queryFn: async () => {
             return await beatQueries.getAll(db);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled,
     });
 };
 

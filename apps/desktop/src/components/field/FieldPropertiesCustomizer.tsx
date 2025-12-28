@@ -1778,15 +1778,27 @@ function ThemeTab({
     );
 }
 
-export default function FieldPropertiesCustomizer() {
+interface FieldPropertiesCustomizerProps {
+    currentTemplate?: FieldProperties; // For wizard mode
+}
+
+export default function FieldPropertiesCustomizer({
+    currentTemplate,
+}: FieldPropertiesCustomizerProps = {}) {
     const { t } = useTolgee();
     const queryClient = useQueryClient();
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    // Disable query if currentTemplate is provided (wizard mode)
+    const { data: fieldProperties } = useQuery({
+        ...fieldPropertiesQueryOptions(),
+        enabled: !currentTemplate,
+    });
     const { mutate: updateFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
     const [currentFieldProperties, setCurrentFieldProperties] =
-        useState<FieldProperties>(fieldProperties ?? defaultFieldProperties);
+        useState<FieldProperties>(
+            currentTemplate ?? fieldProperties ?? defaultFieldProperties,
+        );
     const [measurementSystem, setMeasurementSystem] =
         useState<MeasurementSystem>(currentFieldProperties.measurementSystem);
     const stepSizeInputRef = useRef<HTMLInputElement>(null);
@@ -1974,11 +1986,13 @@ export default function FieldPropertiesCustomizer() {
     };
 
     useEffect(() => {
-        setCurrentFieldProperties(
-            fieldProperties ?? currentFieldProperties ?? defaultFieldProperties,
-        );
+        // In wizard mode, use currentTemplate; otherwise use fieldProperties from query
+        const source = currentTemplate ?? fieldProperties;
+        if (source) {
+            setCurrentFieldProperties(source);
+        }
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fieldProperties]);
+    }, [fieldProperties, currentTemplate]);
 
     useEffect(() => {
         if (currentFieldProperties.measurementSystem !== measurementSystem) {

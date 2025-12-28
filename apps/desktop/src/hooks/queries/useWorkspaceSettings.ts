@@ -41,23 +41,25 @@ const workspaceSettingsMutations = {
 /**
  * Query options for fetching workspace settings
  */
-export const workspaceSettingsQueryOptions = () => ({
+export const workspaceSettingsQueryOptions = (enabled = true) => ({
     queryKey: workspaceSettingsKeys.detail(),
     queryFn: async () => {
         return await workspaceSettingsQueries.get();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled,
 });
 
 /**
  * Query options for fetching workspace settings as JSON
  */
-export const workspaceSettingsJSONQueryOptions = () => ({
+export const workspaceSettingsJSONQueryOptions = (enabled = true) => ({
     queryKey: [...workspaceSettingsKeys.detail(), "json"],
     queryFn: async () => {
         return await workspaceSettingsQueries.getJSON();
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled,
 });
 
 /**

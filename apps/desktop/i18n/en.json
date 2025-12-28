@@ -290,7 +290,8 @@
             "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
         },
         "fieldTemplate": {
-            "label": "Field Template"
+            "label": "Field Template",
+            "helper": "Choose a template that matches your performance space"
         },
         "fieldType": {
             "label": "Field type"
@@ -540,6 +541,7 @@
             "exists": "This drill number already exists"
         },
         "drillPrefix": "Drill Prefix",
+        "prefixChangedWarning": "Changing the prefix from the section default will create marchers with a different prefix. Marchers with different prefixes in the same section are treated separately.",
         "editButton": "Edit Marchers",
         "list": {
             "addSectionStyle": "Add Section Style",
@@ -866,7 +868,82 @@
             "bpm": "BPM",
             "counts": "counts",
             "seconds": "seconds"
+        }
+    },
+    "wizard": {
+        "title": "Guided Setup",
+        "back": "Back",
+        "next": "Next",
+        "complete": "Complete",
+        "skip": "Skip",
+        "project": {
+            "projectName": "Project Name",
+            "fileLocation": "File Location",
+            "browse": "Browse",
+            "designer": "Designer",
+            "client": "Client",
+            "fileExistsWarning": "A file with this name already exists. It will be overwritten when you complete the wizard.",
+            "errors": {
+                "createFailed": "Failed to create database file. Please try again."
+            }
         },
-        "unsavedChanges": "You have unsaved changes"
-    }
+        "ensemble": {
+            "environment": "Environment",
+            "environmentHelper": "Choose whether this is an indoor or outdoor performance space",
+            "type": "Ensemble Type",
+            "typeHelper": "Select the type of ensemble you're working with",
+            "outdoor": "Outdoor",
+            "indoor": "Indoor",
+            "types": {
+                "marching_band": "Marching Band",
+                "drum_corps": "Drum Corps",
+                "indoor_percussion": "Indoor Percussion",
+                "indoor_winds": "Indoor Winds",
+                "winter_guard": "Winter Guard",
+                "other": "Other"
+            }
+        },
+        "performers": {
+            "added": "Added Performers",
+            "noneAdded": "No performers added yet. Add at least one performer to continue.",
+            "addNew": "Add New Performer",
+            "remove": "Remove"
+        },
+        "music": {
+            "method": "Music Setup Method",
+            "methodHelper": "Choose how you want to set up timing for your show",
+            "tempoOnly": "Tempo Only",
+            "musicXml": "Import MusicXML",
+            "audioFile": "Import Audio File",
+            "skip": "Skip for Now",
+            "tempo": "Tempo (BPM)",
+            "tempoHelper": "Set the beats per minute for your show",
+            "startCount": "Start Count",
+            "startCountHelper": "Number of counts before the show begins",
+            "skipDescription": "You can add music later from the music settings."
+        },
+        "step": {
+            "project": {
+                "title": "Project Information",
+                "description": "Name your project and choose where to save it."
+            },
+            "ensemble": {
+                "title": "Ensemble",
+                "description": "Select the ensemble environment and type."
+            },
+            "field": {
+                "title": "Field Setup",
+                "description": "Choose a field template or customize dimensions."
+            },
+            "performers": {
+                "title": "Add Performers",
+                "description": "Add performers and assign their drill numbers."
+            },
+            "music": {
+                "title": "Add Music",
+                "description": "Import music or set tempo to align timing."
+            }
+        }
+    },
+    "unsavedChanges": "You have unsaved changes"
 }

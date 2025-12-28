@@ -22,9 +22,17 @@ import {
 function StateInitializer() {
     const queryClient = useQueryClient();
     const { pages } = useTimingObjects();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
+    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
+    const selectionStore = useSelectionStore();
+    const setSelectedShapePageIds =
+        selectionStore?.setSelectedShapePageIds ?? (() => {});
     const { mutate: updateMarcherShape } = useMutation(
         updateShapePagesMutationOptions(queryClient),
     );
@@ -69,9 +77,15 @@ function StateInitializer() {
 
     /*******************************************************************/
 
-    // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
+    // Select Page 1 (not Page 0) if none are selected. Intended to activate at the initial loading of a webpage
+    // Page 0 is the "start" page, Page 1 is the first actual drill page
     useEffect(() => {
-        if (selectedPage == null && pages.length > 0) setSelectedPage(pages[0]);
+        if (selectedPage == null && pages.length > 0) {
+            // Find Page 1 (id === 1) or fall back to first non-zero page, or pages[0] if no other option
+            const page1 = pages.find((p) => p.id === 1);
+            const firstNonZeroPage = pages.find((p) => p.id !== 0);
+            setSelectedPage(page1 || firstNonZeroPage || pages[0]);
+        }
     }, [pages, selectedPage, setSelectedPage]);
 
     // Select the currently selected audio file
