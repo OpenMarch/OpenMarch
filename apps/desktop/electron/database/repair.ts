@@ -74,12 +74,12 @@ export const copyDataFromOriginalDatabase = (
 
             // Get column names from the original table
             const originalColumns = originalDb
-                .prepare(`PRAGMA table_info(${tableName})`)
+                .prepare(`PRAGMA table_info("${tableName}")`)
                 .all() as Array<{ name: string; type: string }>;
 
             // Get column names from the new table
             const newColumns = newDb
-                .prepare(`PRAGMA table_info(${tableName})`)
+                .prepare(`PRAGMA table_info("${tableName}")`)
                 .all() as Array<{ name: string; type: string }>;
 
             // Find common columns between old and new tables
@@ -165,6 +165,15 @@ export const copyFieldPropertiesFromOriginalDatabase = (
     updateStmt.run(...values);
 };
 
+export const removeOrphanMarcherPages = (db: Database.Database): void => {
+    db.prepare(
+        `DELETE FROM marcher_pages WHERE marcher_id NOT IN (SELECT id FROM marchers)`,
+    ).run();
+    db.prepare(
+        `DELETE FROM marcher_pages WHERE page_id NOT IN (SELECT id FROM pages)`,
+    ).run();
+};
+
 export const repairDatabase = async (originalDbPath: string) => {
     // 1. Create paths for temp and final database files
     const originalPathObj = path.parse(originalDbPath);
@@ -200,6 +209,9 @@ export const repairDatabase = async (originalDbPath: string) => {
 
         // Turn foreign keys back on
         newDb.pragma("foreign_keys = ON");
+
+        // Remove orphaned marcher_pages entries
+        removeOrphanMarcherPages(newDb);
     } catch (error) {
         // If anything fails, delete the temp file
         if (fs.existsSync(tempDbPath)) {
