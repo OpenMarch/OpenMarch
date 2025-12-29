@@ -96,6 +96,50 @@ export class ShapePointController extends fabric.Circle {
         // Create the new listeners
         this.on("moving", this.moveHandler.bind(this));
         this.on("modified", this.modifiedHandler.bind(this));
+        this.on("deselected", this.deselectedHandler.bind(this));
+        this.on("mousedown", this.mousedownHandler.bind(this));
+    }
+
+    /**
+     * Handles mousedown on the control point.
+     * Prevents Shift+click from triggering multi-selection behavior.
+     */
+    mousedownHandler(e: fabric.IEvent<MouseEvent>) {
+        // If Shift is held, prevent it from affecting the click behavior
+        // Control points should always be single-select, no multi-selection
+        if (e.e?.shiftKey && this.canvas) {
+            // Ensure only this control point is selected
+            this.canvas.setActiveObject(this);
+            e.e.stopPropagation?.();
+        }
+    }
+
+    /**
+     * Handles deselection of the control point.
+     * If the user clicks outside the shape (not on another control point or the shape path),
+     * disable the parent shape's control.
+     */
+    deselectedHandler() {
+        if (!this.canvas) return;
+
+        const activeObject = this.canvas.getActiveObject();
+
+        // If clicking on another control point of the same shape, don't disable
+        if (
+            activeObject instanceof ShapePointController &&
+            this.marcherShape.controlPoints.includes(activeObject)
+        ) {
+            return;
+        }
+
+        // If clicking on the shape path itself, don't disable
+        if (activeObject === this.marcherShape.shapePath) {
+            return;
+        }
+
+        // Otherwise, disable control on the parent shape
+        this.marcherShape.disableControl();
+        this.canvas.requestRenderAll();
     }
 
     destroy() {
