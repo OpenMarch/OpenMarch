@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type Beat from "@/global/classes/Beat";
+import { durationToTempo } from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
@@ -415,7 +416,9 @@ const BeatContextMenuContent = ({
     onClose: () => void;
     beatIdsOnPages: Set<number>;
 }) => {
-    const [duration, setDuration] = useState(beat.duration.toString());
+    // Convert duration to BPM for display
+    const initialTempo = durationToTempo(beat.duration);
+    const [tempo, setTempo] = useState(initialTempo.toString());
     const queryClient = useQueryClient();
     const mutation = useMutation(updateBeatsMutationOptions(queryClient));
     const createBeatMutation = useMutation(
@@ -425,15 +428,18 @@ const BeatContextMenuContent = ({
         deleteBeatsMutationOptions(queryClient),
     );
 
-    const saveDuration = () => {
-        const newDuration = parseFloat(duration);
+    const saveTempo = () => {
+        const newTempo = parseFloat(tempo);
 
-        if (isNaN(newDuration) || newDuration <= 0) {
-            // Reset to original value if invalid, truncate to 6 digits
-            const truncated = Math.floor(beat.duration * 1000000) / 1000000;
-            setDuration(truncated.toString());
+        if (isNaN(newTempo) || newTempo <= 0) {
+            // Reset to original value if invalid
+            const currentTempo = durationToTempo(beat.duration);
+            setTempo(currentTempo.toString());
             return;
         }
+
+        // Convert BPM to duration: duration = 60 / BPM
+        const newDuration = 60 / newTempo;
 
         // Truncate to 6 decimal places
         const truncatedDuration = Math.floor(newDuration * 1000000) / 1000000;
@@ -461,44 +467,18 @@ const BeatContextMenuContent = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
-            saveDuration();
+            saveTempo();
         }
     };
 
     const handleBlur = () => {
-        saveDuration();
+        saveTempo();
     };
 
-    // Calculate step based on least significant digit of current duration
-    const getStep = (dur: number): number => {
-        // Truncate to 6 decimal places by converting to integer
-        const integerPart = Math.floor(dur * 1000000);
-
-        // Find the least significant non-zero digit
-        // Work backwards from the rightmost digit
-        let temp = integerPart;
-
-        // Check each digit from right to left (up to 6 decimal places)
-        for (let i = 0; i < 6; i++) {
-            const digit = temp % 10;
-            if (digit !== 0) {
-                // Found the least significant non-zero digit at position i
-                // Step should be 10^(-(6-i)) since we're working with 6 decimal places
-                return Math.pow(10, -(6 - i));
-            }
-            temp = Math.floor(temp / 10);
-        }
-
-        // If all digits are zero (unlikely but handle it), default to 0.000001
-        return 0.000001;
-    };
-
-    const step = useMemo(() => getStep(beat.duration), [beat.duration]);
-
-    // Update duration when beat changes, truncate to 6 digits
+    // Update tempo when beat changes
     useEffect(() => {
-        const truncated = Math.floor(beat.duration * 1000000) / 1000000;
-        setDuration(truncated.toString());
+        const currentTempo = durationToTempo(beat.duration);
+        setTempo(currentTempo.toString());
     }, [beat.duration]);
 
     const handleCreateBeat = () => {
@@ -520,19 +500,19 @@ const BeatContextMenuContent = ({
     return (
         <div className="flex flex-col gap-8" aria-label="Beat context menu">
             <h4 className="text-text-subtitle text-sm">Beat</h4>
-            <label className="text-text text-body">Duration</label>
+            <label className="text-text text-body">Tempo</label>
             <UnitInput
                 type="number"
-                step={step}
-                min="0.1"
-                value={duration}
-                onChange={(e) => setDuration(e.target.value)}
+                step={0.1}
+                min={1}
+                value={tempo}
+                onChange={(e) => setTempo(e.target.value)}
                 onKeyDown={handleKeyDown}
                 onBlur={handleBlur}
                 disabled={mutation.isPending}
                 className="w-full"
-                unit="seconds"
-                decimalPrecision={6}
+                unit="BPM"
+                decimalPrecision={3}
                 autoFocus
             />
             <div className="flex justify-between text-xs">
