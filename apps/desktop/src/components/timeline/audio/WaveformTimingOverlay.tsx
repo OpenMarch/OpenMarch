@@ -4,12 +4,22 @@ import type Measure from "@/global/classes/Measure";
 import clsx from "clsx";
 import * as Popover from "@radix-ui/react-popover";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateBeatsMutationOptions } from "@/hooks/queries/useBeats";
-import { Input } from "@openmarch/ui";
+import {
+    createBeatsMutationOptions,
+    deleteBeatsMutationOptions,
+    updateBeatsMutationOptions,
+} from "@/hooks/queries/useBeats";
+import {
+    createMeasuresMutationOptions,
+    updateMeasuresMutationOptions,
+} from "@/hooks/queries/useMeasures";
+import { Button, Input, UnitInput } from "@openmarch/ui";
+import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 
 interface WaveformTimingOverlayProps {
     beats: Beat[];
     measures: Measure[];
+    beatIdsOnPages: Set<number>;
     duration: number;
     pixelsPerSecond: number;
     height: number;
@@ -32,6 +42,7 @@ const clamp = (value: number, min: number, max: number) =>
 export default function WaveformTimingOverlay({
     beats,
     measures,
+    beatIdsOnPages,
     duration,
     pixelsPerSecond,
     height,
@@ -42,6 +53,9 @@ export default function WaveformTimingOverlay({
         start: 0,
         end: duration,
     });
+    const beatIdsWithMeasures = useMemo(() => {
+        return new Set(measures.map((measure) => measure.startBeat.id));
+    }, [measures]);
 
     const pxPerSecond = useMemo(
         () => (pixelsPerSecond > 0 ? pixelsPerSecond : 0),
@@ -130,9 +144,16 @@ export default function WaveformTimingOverlay({
         return beats.filter(
             (beat) =>
                 beat.timestamp >= visibleRange.start &&
-                beat.timestamp <= visibleRange.end,
+                beat.timestamp <= visibleRange.end &&
+                !beatIdsWithMeasures.has(beat.id),
         );
-    }, [beats, visibleRange, pxPerSecond]);
+    }, [
+        pxPerSecond,
+        beats,
+        visibleRange.start,
+        visibleRange.end,
+        beatIdsWithMeasures,
+    ]);
 
     if (pxPerSecond <= 0 || width <= 0 || height <= 0) {
         return null;
@@ -153,19 +174,25 @@ export default function WaveformTimingOverlay({
                         : measure.number.toString();
 
                     return (
-                        <div key={`measure-${measure.id}`}>
-                            <div
-                                className={clsx(
-                                    "absolute top-0 bottom-0 -translate-x-1/2 rounded-full",
-                                    isRehearsalMark
-                                        ? "bg-[var(--color-accent)]"
-                                        : "bg-[rgb(180,180,180)] dark:bg-[rgb(90,90,90)]",
-                                )}
-                                style={{
-                                    left: x,
-                                    width: isRehearsalMark ? 2 : 1,
-                                }}
-                            />
+                        <>
+                            <BeatOrMeasureContextMenu
+                                beat={beat}
+                                beatIdsOnPages={beatIdsOnPages}
+                                measure={measure}
+                                key={`measure-${measure.id}`}
+                            >
+                                <div
+                                    className={clsx(
+                                        "hover:bg-accent pointer-events-auto absolute top-0 bottom-0 -translate-x-1/2 cursor-pointer rounded-full",
+                                        isRehearsalMark
+                                            ? "w-2 bg-[var(--color-accent)] hover:w-8"
+                                            : "w-1 bg-[rgb(180,180,180)] hover:w-4 dark:bg-[rgb(90,90,90)]",
+                                    )}
+                                    style={{
+                                        left: x,
+                                    }}
+                                />
+                            </BeatOrMeasureContextMenu>
                             <div
                                 className="absolute top-0 font-mono whitespace-nowrap"
                                 style={{ left: x }}
@@ -181,7 +208,7 @@ export default function WaveformTimingOverlay({
                                     {label}
                                 </span>
                             </div>
-                        </div>
+                        </>
                     );
                 })}
 
@@ -190,6 +217,7 @@ export default function WaveformTimingOverlay({
                     return (
                         <BeatOrMeasureContextMenu
                             beat={beat}
+                            beatIdsOnPages={beatIdsOnPages}
                             measure={null}
                             key={`beat-${beat.id}`}
                         >
@@ -199,7 +227,6 @@ export default function WaveformTimingOverlay({
                                 style={{
                                     left: x,
                                     top: 0,
-                                    // width: 1,
                                     height: beatMarkerHeight,
                                 }}
                             />
@@ -214,16 +241,15 @@ export default function WaveformTimingOverlay({
 const BeatOrMeasureContextMenu = ({
     beat,
     measure,
+    beatIdsOnPages,
     children,
 }: {
     beat: Beat;
     measure: Measure | null;
+    beatIdsOnPages: Set<number>;
     children: React.ReactNode;
 }) => {
     const [open, setOpen] = useState(false);
-    const [duration, setDuration] = useState(beat.duration.toString());
-    const queryClient = useQueryClient();
-    const mutation = useMutation(updateBeatsMutationOptions(queryClient));
 
     const handleClick = (e: React.MouseEvent) => {
         // Only handle left click (button 0)
@@ -240,6 +266,165 @@ const BeatOrMeasureContextMenu = ({
         setOpen(true);
     };
 
+    return (
+        <Popover.Root open={open} onOpenChange={setOpen}>
+            <Popover.Trigger
+                asChild
+                onClick={handleClick}
+                onContextMenu={handleContextMenu}
+            >
+                {children}
+            </Popover.Trigger>
+            <Popover.Portal>
+                <Popover.Content
+                    className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md"
+                    sideOffset={5}
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                >
+                    <div className="flex flex-col gap-16">
+                        <MeasureContextMenuContent
+                            beat={beat}
+                            measure={measure}
+                            onClose={() => setOpen(false)}
+                        />
+                        <BeatContextMenuContent
+                            beat={beat}
+                            beatIdsOnPages={beatIdsOnPages}
+                            onClose={() => setOpen(false)}
+                        />
+                    </div>
+                </Popover.Content>
+            </Popover.Portal>
+        </Popover.Root>
+    );
+};
+
+const MeasureContextMenuContent = ({
+    beat,
+    measure,
+    onClose,
+}: {
+    beat: Beat;
+    measure: Measure | null;
+    onClose: () => void;
+}) => {
+    const [rehearsalMark, setRehearsalMark] = useState(
+        measure?.rehearsalMark ?? "",
+    );
+    const rehearsalMarkInputRef = useRef<HTMLInputElement>(null);
+    const queryClient = useQueryClient();
+    const updateMeasureMutation = useMutation(
+        updateMeasuresMutationOptions(queryClient),
+    );
+    const createMeasureMutation = useMutation(
+        createMeasuresMutationOptions(queryClient),
+    );
+
+    // Update rehearsal mark when measure changes
+    useEffect(() => {
+        setRehearsalMark(measure?.rehearsalMark ?? "");
+    }, [measure?.rehearsalMark]);
+
+    const handleCreateMeasure = () => {
+        createMeasureMutation.mutate([
+            {
+                start_beat: beat.id,
+                rehearsal_mark: null,
+            },
+        ]);
+        onClose();
+    };
+
+    const handleRehearsalMarkBlur = () => {
+        if (!measure) return;
+
+        const trimmedMark = rehearsalMark.trim();
+        const currentMark = measure.rehearsalMark?.trim() ?? "";
+
+        // Only update if the value has changed
+        if (trimmedMark === currentMark) {
+            return;
+        }
+
+        updateMeasureMutation.mutate(
+            [
+                {
+                    id: measure.id,
+                    rehearsal_mark: trimmedMark || null,
+                },
+            ],
+            {
+                onSuccess: () => {
+                    onClose();
+                },
+            },
+        );
+    };
+
+    return (
+        <div className="flex flex-col gap-8" aria-label="Measure context menu">
+            <h4 className="text-text-subtitle text-sm">Measure</h4>
+
+            {measure ? (
+                <>
+                    <label className="text-text text-body">
+                        Rehearsal Mark
+                    </label>
+                    <Input
+                        ref={rehearsalMarkInputRef}
+                        type="text"
+                        value={rehearsalMark}
+                        onChange={(e) => setRehearsalMark(e.target.value)}
+                        onBlur={handleRehearsalMarkBlur}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                        }}
+                        onMouseDown={(e) => {
+                            e.currentTarget.focus();
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        disabled={updateMeasureMutation.isPending}
+                    />
+                </>
+            ) : (
+                <Button
+                    variant="secondary"
+                    className="w-full justify-center text-xs"
+                    size="compact"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={handleCreateMeasure}
+                    disabled={createMeasureMutation.isPending}
+                >
+                    <PlusIcon /> Create Measure
+                </Button>
+            )}
+        </div>
+    );
+};
+
+const BeatContextMenuContent = ({
+    beat,
+    onClose,
+    beatIdsOnPages,
+}: {
+    beat: Beat;
+    onClose: () => void;
+    beatIdsOnPages: Set<number>;
+}) => {
+    const [duration, setDuration] = useState(beat.duration.toString());
+    const queryClient = useQueryClient();
+    const mutation = useMutation(updateBeatsMutationOptions(queryClient));
+    const createBeatMutation = useMutation(
+        createBeatsMutationOptions(queryClient),
+    );
+    const deleteBeatMutation = useMutation(
+        deleteBeatsMutationOptions(queryClient),
+    );
+
     const saveDuration = () => {
         const newDuration = parseFloat(duration);
 
@@ -254,7 +439,7 @@ const BeatOrMeasureContextMenu = ({
         const truncatedDuration = Math.floor(newDuration * 1000000) / 1000000;
 
         if (truncatedDuration === beat.duration) {
-            setOpen(false);
+            onClose();
             return;
         }
 
@@ -267,7 +452,7 @@ const BeatOrMeasureContextMenu = ({
             ],
             {
                 onSuccess: () => {
-                    setOpen(false);
+                    onClose();
                 },
             },
         );
@@ -316,39 +501,71 @@ const BeatOrMeasureContextMenu = ({
         setDuration(truncated.toString());
     }, [beat.duration]);
 
+    const handleCreateBeat = () => {
+        createBeatMutation.mutate({
+            newBeats: [
+                {
+                    duration: beat.duration,
+                    include_in_measure: true,
+                },
+            ],
+            startingPosition: beat.position,
+        });
+    };
+
+    const handleDeleteBeat = () => {
+        deleteBeatMutation.mutate(new Set([beat.id]));
+    };
+
     return (
-        <Popover.Root open={open} onOpenChange={setOpen}>
-            <Popover.Trigger
-                asChild
-                onClick={handleClick}
-                onContextMenu={handleContextMenu}
-            >
-                {children}
-            </Popover.Trigger>
-            <Popover.Portal>
-                <Popover.Content
-                    className="bg-modal text-text rounded-6 border-stroke shadow-modal z-50 m-6 flex flex-col gap-8 border p-16 py-12 backdrop-blur-md"
-                    sideOffset={5}
+        <div className="flex flex-col gap-8" aria-label="Beat context menu">
+            <h4 className="text-text-subtitle text-sm">Beat</h4>
+            <label className="text-text text-body">Duration</label>
+            <UnitInput
+                type="number"
+                step={step}
+                min="0.1"
+                value={duration}
+                onChange={(e) => setDuration(e.target.value)}
+                onKeyDown={handleKeyDown}
+                onBlur={handleBlur}
+                disabled={mutation.isPending}
+                className="w-full"
+                unit="seconds"
+                decimalPrecision={6}
+                autoFocus
+            />
+            <div className="flex justify-between text-xs">
+                <Button
+                    variant="red"
+                    size="compact"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={handleDeleteBeat}
+                    disabled={mutation.isPending || beatIdsOnPages.has(beat.id)}
                 >
-                    <div className="flex flex-col gap-4">
-                        <label className="text-body text-text">
-                            Duration (seconds)
-                        </label>
-                        <Input
-                            type="number"
-                            step={step}
-                            min="0.1"
-                            value={duration}
-                            onChange={(e) => setDuration(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            onBlur={handleBlur}
-                            disabled={mutation.isPending}
-                            className="w-full"
-                            autoFocus
-                        />
-                    </div>
-                </Popover.Content>
-            </Popover.Portal>
-        </Popover.Root>
+                    <TrashIcon />
+                </Button>
+                <Button
+                    variant="primary"
+                    size="compact"
+                    tooltipText={
+                        beatIdsOnPages.has(beat.id)
+                            ? "Beats on pages cannot be deleted"
+                            : undefined
+                    }
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={handleCreateBeat}
+                    disabled={mutation.isPending}
+                >
+                    <PlusIcon /> Add Beat
+                </Button>
+            </div>
+        </div>
     );
 };
