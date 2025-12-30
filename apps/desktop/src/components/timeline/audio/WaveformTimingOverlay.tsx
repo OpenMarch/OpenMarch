@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import React, {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+} from "react";
 import type Beat from "@/global/classes/Beat";
 import { durationToTempo } from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
@@ -175,12 +181,11 @@ export default function WaveformTimingOverlay({
                         : measure.number.toString();
 
                     return (
-                        <>
+                        <React.Fragment key={`measure-${measure.id}`}>
                             <BeatOrMeasureContextMenu
                                 beat={beat}
                                 beatIdsOnPages={beatIdsOnPages}
                                 measure={measure}
-                                key={`measure-${measure.id}`}
                             >
                                 <div
                                     className={clsx(
@@ -209,7 +214,7 @@ export default function WaveformTimingOverlay({
                                     {label}
                                 </span>
                             </div>
-                        </>
+                        </React.Fragment>
                     );
                 })}
 
