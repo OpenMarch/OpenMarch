@@ -512,7 +512,6 @@ const BeatContextMenuContent = ({
                 disabled={mutation.isPending}
                 className="w-full"
                 unit="BPM"
-                decimalPrecision={3}
                 autoFocus
             />
             <div className="flex justify-between text-xs">
