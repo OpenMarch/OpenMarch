@@ -282,6 +282,7 @@ export default class CanvasMarcher
             | AppearanceComponentOptional
             | AppearanceComponentOptional[],
         options: { requestRenderAll: boolean } = { requestRenderAll: false },
+        labelColor?: RgbaColor,
     ) {
         // Normalize to array
         const appearances = Array.isArray(appearancesInput)
@@ -316,6 +317,9 @@ export default class CanvasMarcher
         else {
             labelVisible = true;
         }
+
+        if (labelColor) this.textLabel.set({ fill: rgbaToString(labelColor) });
+
         // Update visibility of the marcher marker
         this.set({ visible } as Partial<this>);
         this.dotObject.set({ visible });
