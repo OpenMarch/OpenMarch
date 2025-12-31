@@ -7,7 +7,9 @@ import {
     getMeasureById,
     getMeasuresByStartBeat,
     getBeatIdsByMeasureId,
+    deleteMeasuresAndBeatsInTransaction,
 } from "../measures";
+import { createPages, getBeats, transactionWithHistory } from "@/db-functions";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import * as fc from "fast-check";
@@ -110,7 +112,7 @@ describeDbTests("measures", (it) => {
             ])("$description", ({ newMeasures }) => {
                 testWithHistory(
                     "should create measures",
-                    async ({ db, beats }) => {
+                    async ({ db, beats: _beats }) => {
                         const result = await createMeasures({
                             db,
                             newItems: newMeasures,
@@ -144,7 +146,7 @@ describeDbTests("measures", (it) => {
         describe("insert with existing measures", () => {
             testWithHistory(
                 "should create additional measures when measures already exist",
-                async ({ db, beats }) => {
+                async ({ db, beats: _beats }) => {
                     // Create initial measures
                     const initialMeasures = [
                         {
@@ -212,7 +214,7 @@ describeDbTests("measures", (it) => {
         describe("edge cases", () => {
             testWithHistory(
                 "should handle empty array",
-                async ({ db, beats }) => {
+                async ({ db, beats: _beats }) => {
                     // Empty array
                     const result = await createMeasures({
                         db,
@@ -226,57 +228,60 @@ describeDbTests("measures", (it) => {
     });
 
     describe("getMeasures", () => {
-        testWithHistory("should get all measures", async ({ db, beats }) => {
-            // Initially no measures
-            let measures = await getMeasures({ db });
-            expect(measures).toHaveLength(0);
+        testWithHistory(
+            "should get all measures",
+            async ({ db, beats: _beats }) => {
+                // Initially no measures
+                let measures = await getMeasures({ db });
+                expect(measures).toHaveLength(0);
 
-            // Create some measures
-            const newMeasures = [
-                {
-                    start_beat: 1,
-                    rehearsal_mark: "A",
-                    notes: null,
-                },
-                {
-                    start_beat: 4,
-                    rehearsal_mark: "B",
-                    notes: "second measure",
-                },
-                {
-                    start_beat: 8,
-                    rehearsal_mark: null,
-                    notes: "third measure",
-                },
-            ];
+                // Create some measures
+                const newMeasures = [
+                    {
+                        start_beat: 1,
+                        rehearsal_mark: "A",
+                        notes: null,
+                    },
+                    {
+                        start_beat: 4,
+                        rehearsal_mark: "B",
+                        notes: "second measure",
+                    },
+                    {
+                        start_beat: 8,
+                        rehearsal_mark: null,
+                        notes: "third measure",
+                    },
+                ];
 
-            await createMeasures({
-                db,
-                newItems: newMeasures,
-            });
+                await createMeasures({
+                    db,
+                    newItems: newMeasures,
+                });
 
-            // Get all measures
-            measures = await getMeasures({ db });
-            expect(measures).toHaveLength(3);
+                // Get all measures
+                measures = await getMeasures({ db });
+                expect(measures).toHaveLength(3);
 
-            // Verify each measure matches the expected data
-            for (let i = 0; i < newMeasures.length; i++) {
-                const measure = measures[i];
-                const expectedMeasure = newMeasures[i];
+                // Verify each measure matches the expected data
+                for (let i = 0; i < newMeasures.length; i++) {
+                    const measure = measures[i];
+                    const expectedMeasure = newMeasures[i];
 
-                expect(measure.start_beat).toBe(expectedMeasure.start_beat);
-                expect(measure.rehearsal_mark).toBe(
-                    expectedMeasure.rehearsal_mark,
-                );
-                expect(measure.notes).toBe(expectedMeasure.notes);
-            }
-        });
+                    expect(measure.start_beat).toBe(expectedMeasure.start_beat);
+                    expect(measure.rehearsal_mark).toBe(
+                        expectedMeasure.rehearsal_mark,
+                    );
+                    expect(measure.notes).toBe(expectedMeasure.notes);
+                }
+            },
+        );
     });
 
     describe("getMeasureById", () => {
         testWithHistory(
             "should get measure by ID and return undefined for non-existent ID",
-            async ({ db, beats }) => {
+            async ({ db, beats: _beats }) => {
                 // Create a measure
                 const newMeasures = [
                     {
@@ -323,7 +328,7 @@ describeDbTests("measures", (it) => {
     describe("getMeasuresByStartBeat", () => {
         testWithHistory(
             "should get measures by start beat",
-            async ({ db, beats }) => {
+            async ({ db, beats: _beats }) => {
                 // Create measures with different start beats
                 const newMeasures = [
                     {
@@ -385,108 +390,113 @@ describeDbTests("measures", (it) => {
     });
 
     describe("updateMeasures", () => {
-        testWithHistory("should update measures", async ({ db, beats }) => {
-            // Create initial measures
-            const newMeasures = [
-                {
-                    start_beat: 1,
-                    rehearsal_mark: "A",
-                    notes: null,
-                },
-                {
-                    start_beat: 4,
-                    rehearsal_mark: "B",
-                    notes: "original notes",
-                },
-                {
-                    start_beat: 8,
-                    rehearsal_mark: null,
-                    notes: null,
-                },
-            ];
+        testWithHistory(
+            "should update measures",
+            async ({ db, beats: _beats }) => {
+                // Create initial measures
+                const newMeasures = [
+                    {
+                        start_beat: 1,
+                        rehearsal_mark: "A",
+                        notes: null,
+                    },
+                    {
+                        start_beat: 4,
+                        rehearsal_mark: "B",
+                        notes: "original notes",
+                    },
+                    {
+                        start_beat: 8,
+                        rehearsal_mark: null,
+                        notes: null,
+                    },
+                ];
 
-            const createdMeasures = await createMeasures({
-                db,
-                newItems: newMeasures,
-            });
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: newMeasures,
+                });
 
-            // Update measures
-            const modifiedMeasures = [
-                {
-                    id: createdMeasures[0].id,
-                    start_beat: 2, // Change start beat
-                    rehearsal_mark: "A'", // Change rehearsal mark
-                    notes: "updated notes", // Add notes
-                },
-                {
-                    id: createdMeasures[1].id,
-                    rehearsal_mark: "B'", // Change rehearsal mark
-                    notes: "updated notes", // Change notes
-                    // Don't change start_beat
-                },
-                {
-                    id: createdMeasures[2].id,
-                    start_beat: 9, // Change start beat
-                    rehearsal_mark: "C", // Add rehearsal mark
-                    // Don't change notes
-                },
-            ];
+                // Update measures
+                const modifiedMeasures = [
+                    {
+                        id: createdMeasures[0].id,
+                        start_beat: 2, // Change start beat
+                        rehearsal_mark: "A'", // Change rehearsal mark
+                        notes: "updated notes", // Add notes
+                    },
+                    {
+                        id: createdMeasures[1].id,
+                        rehearsal_mark: "B'", // Change rehearsal mark
+                        notes: "updated notes", // Change notes
+                        // Don't change start_beat
+                    },
+                    {
+                        id: createdMeasures[2].id,
+                        start_beat: 9, // Change start beat
+                        rehearsal_mark: "C", // Add rehearsal mark
+                        // Don't change notes
+                    },
+                ];
 
-            const updatedMeasures = await updateMeasures({
-                db,
-                modifiedItems: modifiedMeasures,
-            });
+                const updatedMeasures = await updateMeasures({
+                    db,
+                    modifiedItems: modifiedMeasures,
+                });
 
-            expect(updatedMeasures).toHaveLength(3);
+                expect(updatedMeasures).toHaveLength(3);
 
-            // Verify each updated measure matches the expected changes
-            for (let i = 0; i < modifiedMeasures.length; i++) {
-                const updatedMeasure = updatedMeasures[i];
-                const expectedMeasure = modifiedMeasures[i];
-                const originalMeasure = createdMeasures[i];
+                // Verify each updated measure matches the expected changes
+                for (let i = 0; i < modifiedMeasures.length; i++) {
+                    const updatedMeasure = updatedMeasures[i];
+                    const expectedMeasure = modifiedMeasures[i];
+                    const originalMeasure = createdMeasures[i];
 
-                expect(updatedMeasure.id).toBe(expectedMeasure.id);
-                // If start_beat wasn't modified, it should retain the original value
-                expect(updatedMeasure.start_beat).toBe(
-                    expectedMeasure.start_beat ?? originalMeasure.start_beat,
-                );
-                expect(updatedMeasure.rehearsal_mark).toBe(
-                    expectedMeasure.rehearsal_mark,
-                );
-                expect(updatedMeasure.notes ?? null).toBe(
-                    expectedMeasure.notes ?? null,
-                );
-            }
+                    expect(updatedMeasure.id).toBe(expectedMeasure.id);
+                    // If start_beat wasn't modified, it should retain the original value
+                    expect(updatedMeasure.start_beat).toBe(
+                        expectedMeasure.start_beat ??
+                            originalMeasure.start_beat,
+                    );
+                    expect(updatedMeasure.rehearsal_mark).toBe(
+                        expectedMeasure.rehearsal_mark,
+                    );
+                    expect(updatedMeasure.notes ?? null).toBe(
+                        expectedMeasure.notes ?? null,
+                    );
+                }
 
-            // Verify the measures were actually updated in the database
-            const retrievedMeasures = await getMeasures({ db });
-            expect(retrievedMeasures).toHaveLength(3);
+                // Verify the measures were actually updated in the database
+                const retrievedMeasures = await getMeasures({ db });
+                expect(retrievedMeasures).toHaveLength(3);
 
-            // Verify each retrieved measure has the correct updated values
-            for (const retrievedMeasure of retrievedMeasures) {
-                const modifiedMeasure = modifiedMeasures.find(
-                    (m) => m.id === retrievedMeasure.id,
-                );
-                const originalMeasure = createdMeasures.find(
-                    (m) => m.id === retrievedMeasure.id,
-                );
-                // If start_beat wasn't modified, it should retain the original value
-                expect(retrievedMeasure.start_beat).toBe(
-                    modifiedMeasure!.start_beat ?? originalMeasure!.start_beat,
-                );
-                expect(retrievedMeasure.rehearsal_mark).toBe(
-                    modifiedMeasure!.rehearsal_mark,
-                );
-                expect(retrievedMeasure.notes ?? null).toBe(
-                    modifiedMeasure!.notes ?? null,
-                );
-            }
-        });
+                // Verify each retrieved measure has the correct updated values
+                for (const retrievedMeasure of retrievedMeasures) {
+                    const modifiedMeasure = modifiedMeasures.find(
+                        (m) => m.id === retrievedMeasure.id,
+                    );
+                    const originalMeasure = createdMeasures.find(
+                        (m) => m.id === retrievedMeasure.id,
+                    );
+                    // If start_beat wasn't modified, it should retain the original value
+                    expect(retrievedMeasure.start_beat).toBe(
+                        modifiedMeasure!.start_beat ??
+                            originalMeasure!.start_beat,
+                    );
+                    expect(retrievedMeasure.rehearsal_mark).toBe(
+                        modifiedMeasure!.rehearsal_mark,
+                    );
+                    expect(retrievedMeasure.notes ?? null).toBe(
+                        modifiedMeasure!.notes ?? null,
+                    );
+                }
+            },
+        );
 
         describe("edge cases", () => {
             testWithHistory(
                 "should throw error when updating non-existent measure",
-                async ({ db, beats }) => {
+                async ({ db, beats: _beats }) => {
                     // Update non-existent measure
                     const modifiedMeasures = [
                         {
@@ -509,67 +519,70 @@ describeDbTests("measures", (it) => {
     });
 
     describe("deleteMeasures", () => {
-        testWithHistory("should delete measures", async ({ db, beats }) => {
-            // Create measures
-            const newMeasures = [
-                {
-                    start_beat: 1,
-                    rehearsal_mark: "A",
-                    notes: null,
-                },
-                {
-                    start_beat: 4,
-                    rehearsal_mark: "B",
-                    notes: "second measure",
-                },
-                {
-                    start_beat: 8,
-                    rehearsal_mark: "C",
-                    notes: "third measure",
-                },
-                {
-                    start_beat: 12,
-                    rehearsal_mark: "D",
-                    notes: "fourth measure",
-                },
-            ];
+        testWithHistory(
+            "should delete measures",
+            async ({ db, beats: _beats }) => {
+                // Create measures
+                const newMeasures = [
+                    {
+                        start_beat: 1,
+                        rehearsal_mark: "A",
+                        notes: null,
+                    },
+                    {
+                        start_beat: 4,
+                        rehearsal_mark: "B",
+                        notes: "second measure",
+                    },
+                    {
+                        start_beat: 8,
+                        rehearsal_mark: "C",
+                        notes: "third measure",
+                    },
+                    {
+                        start_beat: 12,
+                        rehearsal_mark: "D",
+                        notes: "fourth measure",
+                    },
+                ];
 
-            const createdMeasures = await createMeasures({
-                db,
-                newItems: newMeasures,
-            });
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: newMeasures,
+                });
 
-            // Delete some measures
-            const measuresToDelete = new Set([
-                createdMeasures[0].id,
-                createdMeasures[2].id,
-            ]);
+                // Delete some measures
+                const measuresToDelete = new Set([
+                    createdMeasures[0].id,
+                    createdMeasures[2].id,
+                ]);
 
-            const deletedMeasures = await deleteMeasures({
-                db,
-                itemIds: measuresToDelete,
-            });
+                const deletedMeasures = await deleteMeasures({
+                    db,
+                    itemIds: measuresToDelete,
+                });
 
-            expect(deletedMeasures).toHaveLength(2);
+                expect(deletedMeasures).toHaveLength(2);
 
-            // Verify the correct measures were deleted
-            const deletedIds = deletedMeasures.map((m) => m.id);
-            expect(deletedIds).toContain(createdMeasures[0].id);
-            expect(deletedIds).toContain(createdMeasures[2].id);
+                // Verify the correct measures were deleted
+                const deletedIds = deletedMeasures.map((m) => m.id);
+                expect(deletedIds).toContain(createdMeasures[0].id);
+                expect(deletedIds).toContain(createdMeasures[2].id);
 
-            // Verify remaining measures
-            const remainingMeasures = await getMeasures({ db });
-            expect(remainingMeasures).toHaveLength(2);
+                // Verify remaining measures
+                const remainingMeasures = await getMeasures({ db });
+                expect(remainingMeasures).toHaveLength(2);
 
-            const remainingIds = remainingMeasures.map((m) => m.id);
-            expect(remainingIds).toContain(createdMeasures[1].id);
-            expect(remainingIds).toContain(createdMeasures[3].id);
-        });
+                const remainingIds = remainingMeasures.map((m) => m.id);
+                expect(remainingIds).toContain(createdMeasures[1].id);
+                expect(remainingIds).toContain(createdMeasures[3].id);
+            },
+        );
 
         describe("edge cases", () => {
             testWithHistory(
                 "should handle deleting non-existent measures",
-                async ({ db, beats }) => {
+                async ({ db, beats: _beats }) => {
                     // Delete non-existent measures
                     const nonExistentIds = new Set([99999, 99998]);
 
@@ -584,7 +597,7 @@ describeDbTests("measures", (it) => {
 
             testWithHistory(
                 "should handle deleting empty set",
-                async ({ db, beats }) => {
+                async ({ db, beats: _beats }) => {
                     // Delete empty set
                     const emptySet = new Set<number>();
 
@@ -602,7 +615,7 @@ describeDbTests("measures", (it) => {
     describe("integration tests", () => {
         testWithHistory(
             "should handle create, update, and delete operations together",
-            async ({ db, beats }) => {
+            async ({ db, beats: _beats }) => {
                 // Create measures
                 const newMeasures = [
                     {
@@ -1030,22 +1043,289 @@ describeDbTests("measures", (it) => {
 
     describe("deleteMeasuresAndBeatsInTransaction", () => {
         testWithHistory(
-            "should delete measures and beats in transaction",
-            async ({ db, beats }) => {
-                // Create measures
-                const newMeasures = [
-                    {
-                        start_beat: 1,
-                        rehearsal_mark: "A",
-                        notes: null,
+            "should delete a single measure and its beats",
+            async ({ db, beats: _beats }) => {
+                // Create 3 measures at positions 1, 4, 8
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1, rehearsal_mark: "A", notes: null },
+                        { start_beat: 4, rehearsal_mark: "B", notes: null },
+                        { start_beat: 8, rehearsal_mark: "C", notes: null },
+                    ],
+                });
+
+                // Get the beat IDs for the middle measure before deletion
+                const middleMeasureBeatIds = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[1].id,
+                });
+                const initialBeats = await getBeats({ db });
+
+                // Delete the middle measure (position 4)
+                await transactionWithHistory(
+                    db,
+                    "deleteMeasuresAndBeats",
+                    async (tx) => {
+                        await deleteMeasuresAndBeatsInTransaction({
+                            measureIds: new Set([createdMeasures[1].id]),
+                            tx,
+                        });
                     },
-                    {
-                        start_beat: 4,
-                        rehearsal_mark: "B",
-                        notes: "second measure",
-                    },
-                ];
+                );
+
+                // Verify measure is deleted
+                const remainingMeasures = await getMeasures({ db });
+                expect(remainingMeasures).toHaveLength(2);
+                expect(remainingMeasures.map((m) => m.id)).not.toContain(
+                    createdMeasures[1].id,
+                );
+
+                // Verify beats are deleted
+                const remainingBeats = await getBeats({ db });
+                expect(remainingBeats.length).toBe(
+                    initialBeats.length - middleMeasureBeatIds.size,
+                );
+
+                // Verify the deleted beats are gone
+                for (const beatId of middleMeasureBeatIds) {
+                    expect(remainingBeats.map((b) => b.id)).not.toContain(
+                        beatId,
+                    );
+                }
             },
         );
+
+        testWithHistory(
+            "should delete multiple measures and their beats",
+            async ({ db, beats: _beats }) => {
+                // Create 4 measures
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1, rehearsal_mark: "A", notes: null },
+                        { start_beat: 4, rehearsal_mark: "B", notes: null },
+                        { start_beat: 8, rehearsal_mark: "C", notes: null },
+                        { start_beat: 12, rehearsal_mark: "D", notes: null },
+                    ],
+                });
+
+                // Get beat IDs for measures to delete
+                const measure1BeatIds = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[0].id,
+                });
+                const measure3BeatIds = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[2].id,
+                });
+                const initialBeats = await getBeats({ db });
+
+                // Delete first and third measures
+                await transactionWithHistory(
+                    db,
+                    "deleteMeasuresAndBeats",
+                    async (tx) => {
+                        await deleteMeasuresAndBeatsInTransaction({
+                            measureIds: new Set([
+                                createdMeasures[0].id,
+                                createdMeasures[2].id,
+                            ]),
+                            tx,
+                        });
+                    },
+                );
+
+                // Verify measures are deleted
+                const remainingMeasures = await getMeasures({ db });
+                expect(remainingMeasures).toHaveLength(2);
+                expect(remainingMeasures.map((m) => m.id)).toEqual(
+                    expect.arrayContaining([
+                        createdMeasures[1].id,
+                        createdMeasures[3].id,
+                    ]),
+                );
+
+                // Verify beats are deleted
+                const remainingBeats = await getBeats({ db });
+                expect(remainingBeats.length).toBe(
+                    initialBeats.length -
+                        measure1BeatIds.size -
+                        measure3BeatIds.size,
+                );
+            },
+        );
+
+        testWithHistory(
+            "should delete last measure and all remaining beats",
+            async ({ db, beats: _beats }) => {
+                // Create 3 measures
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1, rehearsal_mark: "A", notes: null },
+                        { start_beat: 4, rehearsal_mark: "B", notes: null },
+                        { start_beat: 8, rehearsal_mark: "C", notes: null },
+                    ],
+                });
+
+                // Get beat IDs for last measure (includes all beats to end)
+                const lastMeasureBeatIds = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[2].id,
+                });
+                const initialBeats = await getBeats({ db });
+
+                // Delete the last measure
+                await transactionWithHistory(
+                    db,
+                    "deleteMeasuresAndBeats",
+                    async (tx) => {
+                        await deleteMeasuresAndBeatsInTransaction({
+                            measureIds: new Set([createdMeasures[2].id]),
+                            tx,
+                        });
+                    },
+                );
+
+                // Verify measure is deleted
+                const remainingMeasures = await getMeasures({ db });
+                expect(remainingMeasures).toHaveLength(2);
+
+                // Verify beats are deleted
+                const remainingBeats = await getBeats({ db });
+                expect(remainingBeats.length).toBe(
+                    initialBeats.length - lastMeasureBeatIds.size,
+                );
+
+                // Last beat should now be at position 7 (just before deleted measure)
+                const lastRemainingBeat =
+                    remainingBeats[remainingBeats.length - 1];
+                expect(lastRemainingBeat.position).toBeLessThan(8);
+            },
+        );
+
+        describe.each([
+            {
+                description: "single measure with page on same beat",
+                measures: [{ start_beat: 1, rehearsal_mark: "A", notes: null }],
+                pageStartBeat: 1,
+            },
+            {
+                description: "two measures with page on first measure start",
+                measures: [
+                    { start_beat: 1, rehearsal_mark: "A", notes: null },
+                    { start_beat: 8, rehearsal_mark: "B", notes: null },
+                ],
+                pageStartBeat: 1,
+            },
+            {
+                description:
+                    "two measures with page in middle of first measure",
+                measures: [
+                    { start_beat: 1, rehearsal_mark: "A", notes: null },
+                    { start_beat: 8, rehearsal_mark: "B", notes: null },
+                ],
+                pageStartBeat: 4,
+            },
+            {
+                description: "two measures with page at end of first measure",
+                measures: [
+                    { start_beat: 1, rehearsal_mark: "A", notes: null },
+                    { start_beat: 8, rehearsal_mark: "B", notes: null },
+                ],
+                pageStartBeat: 7,
+            },
+        ])(
+            "error on page on beat: $description",
+            ({ measures, pageStartBeat }) => {
+                testWithHistory("", async ({ db, beats: _beats }) => {
+                    await createMeasures({
+                        db,
+                        newItems: measures,
+                    });
+                    await createPages({
+                        db,
+                        newPages: [
+                            {
+                                start_beat: pageStartBeat,
+                                is_subset: false,
+                                notes: null,
+                            },
+                        ],
+                    });
+
+                    await expect(
+                        db.transaction(async (tx) => {
+                            await deleteMeasuresAndBeatsInTransaction({
+                                measureIds: new Set([1]),
+                                tx,
+                            });
+                        }),
+                    ).rejects.toThrow();
+                });
+            },
+        );
+
+        describe("edge cases", () => {
+            // This test doesn't use testWithHistory since empty set makes no changes
+            it("should handle empty set of measure IDs", async ({
+                db,
+                beats: _beats,
+            }) => {
+                // Create some measures
+                await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1, rehearsal_mark: "A", notes: null },
+                        { start_beat: 4, rehearsal_mark: "B", notes: null },
+                    ],
+                });
+
+                const initialMeasures = await getMeasures({ db });
+                const initialBeats = await getBeats({ db });
+
+                // Delete with empty set - use db.transaction since no history changes expected
+                await db.transaction(async (tx) => {
+                    await deleteMeasuresAndBeatsInTransaction({
+                        measureIds: new Set(),
+                        tx,
+                    });
+                });
+
+                // Verify nothing changed
+                const remainingMeasures = await getMeasures({ db });
+                const remainingBeats = await getBeats({ db });
+                expect(remainingMeasures).toHaveLength(initialMeasures.length);
+                expect(remainingBeats).toHaveLength(initialBeats.length);
+            });
+
+            testWithHistory(
+                "should throw error for non-existent measure ID",
+                async ({ db, beats: _beats }) => {
+                    // Create some measures
+                    await createMeasures({
+                        db,
+                        newItems: [
+                            { start_beat: 1, rehearsal_mark: "A", notes: null },
+                        ],
+                    });
+
+                    // Try to delete non-existent measure
+                    await expect(
+                        transactionWithHistory(
+                            db,
+                            "deleteMeasuresAndBeats",
+                            async (tx) => {
+                                await deleteMeasuresAndBeatsInTransaction({
+                                    measureIds: new Set([99999]),
+                                    tx,
+                                });
+                            },
+                        ),
+                    ).rejects.toThrow();
+                },
+            );
+        });
     });
 });

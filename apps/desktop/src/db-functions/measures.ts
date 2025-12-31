@@ -2,6 +2,7 @@ import { eq, gt, inArray, and, isNotNull, gte, lt } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
+    deleteBeatsInTransaction,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -128,7 +129,7 @@ export async function createMeasures({
     db: DbConnection;
 }): Promise<DatabaseMeasure[]> {
     if (newItems.length === 0) {
-        console.log("No new measures to create");
+        console.debug("No new measures to create");
         return [];
     }
 
@@ -308,22 +309,33 @@ export const getBeatIdsByMeasureId = async ({
     return new Set(beatIds.map((b) => b.beat_id));
 };
 
-// export const deleteMeasuresAndBeatsInTransaction = async ({
-//     measureIds,
-//     tx,
-// }: {
-//     measureIds: Set<number>;
-//     tx: DbTransaction;
-// }): Promise<{ measures: DatabaseMeasure[]; beats: DatabaseBeat[] }> => {
-//     const measures = await tx.query.measures.findMany({
-//         where: inArray(schema.measures.id, Array.from(measureIds)),
-//     });
+export const deleteMeasuresAndBeatsInTransaction = async ({
+    measureIds,
+    tx,
+}: {
+    measureIds: Set<number>;
+    tx: DbTransaction;
+}): Promise<void> => {
+    const fetchedBeatIds: number[] = [];
 
-//     const beats = await tx.query.beats.findMany({
-//         where: inArray(schema.beats.id, Array.from(beatIds)),
-//     });
-//     return {
-//         measures: measures.map(realDatabaseMeasureToDatabaseMeasure),
-//         beats: beats.map(realDatabaseBeatToDatabaseBeat),
-//     };
-// };
+    for (const measureId of measureIds) {
+        const beatIds = await getBeatIdsByMeasureId({
+            db: tx,
+            measureId,
+        });
+        fetchedBeatIds.push(...Array.from(beatIds));
+    }
+    const uniqueBeatIds = new Set(fetchedBeatIds);
+
+    // delete measures first to avoid foreign key constraints
+    await deleteMeasuresInTransaction({
+        itemIds: measureIds,
+        tx,
+    });
+
+    // delete beats
+    await deleteBeatsInTransaction({
+        beatIds: uniqueBeatIds,
+        tx,
+    });
+};
