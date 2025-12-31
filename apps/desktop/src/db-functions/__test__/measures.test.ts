@@ -1,6 +1,7 @@
 import { describe, expect } from "vitest";
 import {
     createMeasures,
+    createMeasuresAndBeatsInTransaction,
     updateMeasures,
     deleteMeasures,
     getMeasures,
@@ -1324,6 +1325,376 @@ describeDbTests("measures", (it) => {
                             },
                         ),
                     ).rejects.toThrow();
+                },
+            );
+        });
+    });
+
+    describe("createMeasuresAndBeatsInTransaction", () => {
+        describe("single measure creation", () => {
+            testWithHistory(
+                "should create a single measure with one beat",
+                async ({ db, beats: _beats }) => {
+                    const initialBeats = await getBeats({ db });
+                    const initialMeasures = await getMeasures({ db });
+
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Verify beats were created
+                    const finalBeats = await getBeats({ db });
+                    expect(finalBeats.length).toBe(initialBeats.length + 1);
+
+                    // Verify measure was created
+                    const finalMeasures = await getMeasures({ db });
+                    expect(finalMeasures.length).toBe(
+                        initialMeasures.length + 1,
+                    );
+
+                    // Verify the returned data
+                    expect(result.createdBeats.length).toBe(1);
+                    expect(result.createdMeasures.length).toBe(1);
+
+                    // Verify the measure references the created beat
+                    const createdMeasure = result.createdMeasures[0];
+                    const createdBeat = result.createdBeats[0];
+                    expect(createdMeasure.start_beat).toBe(createdBeat.id);
+                },
+            );
+
+            testWithHistory(
+                "should create a single measure with multiple beats",
+                async ({ db, beats: _beats }) => {
+                    const initialBeats = await getBeats({ db });
+                    const initialMeasures = await getMeasures({ db });
+
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                ],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Verify 4 beats were created
+                    const finalBeats = await getBeats({ db });
+                    expect(finalBeats.length).toBe(initialBeats.length + 4);
+
+                    // Verify 1 measure was created
+                    const finalMeasures = await getMeasures({ db });
+                    expect(finalMeasures.length).toBe(
+                        initialMeasures.length + 1,
+                    );
+
+                    // Verify returned data
+                    expect(result.createdBeats.length).toBe(4);
+                    expect(result.createdMeasures.length).toBe(1);
+
+                    // Verify the measure references the first created beat (lowest position)
+                    const createdMeasure = result.createdMeasures[0];
+                    const firstBeat = result.createdBeats.reduce((acc, beat) =>
+                        acc.position < beat.position ? acc : beat,
+                    );
+                    expect(createdMeasure.start_beat).toBe(firstBeat.id);
+                },
+            );
+
+            testWithHistory(
+                "should create beats with include_in_measure set to true",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }, { duration: 2 }],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Verify all created beats have include_in_measure = true
+                    for (const beat of result.createdBeats) {
+                        expect(beat.include_in_measure).toBe(true);
+                    }
+                },
+            );
+
+            testWithHistory(
+                "should create beats with correct durations",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [
+                                    { duration: 0.5 },
+                                    { duration: 1 },
+                                    { duration: 1.5 },
+                                ],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    const sortedBeats = result.createdBeats.sort(
+                        (a, b) => a.position - b.position,
+                    );
+                    expect(sortedBeats[0].duration).toBe(0.5);
+                    expect(sortedBeats[1].duration).toBe(1);
+                    expect(sortedBeats[2].duration).toBe(1.5);
+                },
+            );
+        });
+
+        describe("multiple measure creation", () => {
+            testWithHistory(
+                "should create multiple measures with quantity parameter",
+                async ({ db, beats: _beats }) => {
+                    const initialBeats = await getBeats({ db });
+                    const initialMeasures = await getMeasures({ db });
+
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }, { duration: 1 }],
+                                startingPosition: 50,
+                                quantity: 3,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Verify 6 beats were created (2 per measure * 3 measures)
+                    const finalBeats = await getBeats({ db });
+                    expect(finalBeats.length).toBe(initialBeats.length + 6);
+
+                    // Verify 3 measures were created
+                    const finalMeasures = await getMeasures({ db });
+                    expect(finalMeasures.length).toBe(
+                        initialMeasures.length + 3,
+                    );
+
+                    // Verify returned data
+                    expect(result.createdBeats.length).toBe(6);
+                    expect(result.createdMeasures.length).toBe(3);
+                },
+            );
+
+            testWithHistory(
+                "should create 4 measures with 4 beats each",
+                async ({ db, beats: _beats }) => {
+                    const initialBeats = await getBeats({ db });
+                    const initialMeasures = await getMeasures({ db });
+
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                    { duration: 1 },
+                                ],
+                                startingPosition: 50,
+                                quantity: 4,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Verify 16 beats were created (4 per measure * 4 measures)
+                    const finalBeats = await getBeats({ db });
+                    expect(finalBeats.length).toBe(initialBeats.length + 16);
+
+                    // Verify 4 measures were created
+                    const finalMeasures = await getMeasures({ db });
+                    expect(finalMeasures.length).toBe(
+                        initialMeasures.length + 4,
+                    );
+
+                    expect(result.createdBeats.length).toBe(16);
+                    expect(result.createdMeasures.length).toBe(4);
+                },
+            );
+        });
+
+        describe("starting position behavior", () => {
+            testWithHistory(
+                "should insert beats after the specified starting position",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }],
+                                startingPosition: 25,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // createBeatsInTransaction inserts after startingPosition, so position is startingPosition + 1
+                    expect(result.createdBeats[0].position).toBe(26);
+                },
+            );
+
+            testWithHistory(
+                "should insert beats at position 1 when startingPosition is 0",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }],
+                                startingPosition: 0,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // createBeatsInTransaction inserts after startingPosition, so position is 1
+                    expect(result.createdBeats[0].position).toBe(1);
+                },
+            );
+        });
+
+        describe("edge cases", () => {
+            // This test doesn't use testWithHistory since quantity=0 makes no changes
+            it("should handle quantity of 0 gracefully", async ({
+                db,
+                beats: _beats,
+            }) => {
+                const initialBeats = await getBeats({ db });
+                const initialMeasures = await getMeasures({ db });
+
+                const result = await db.transaction(async (tx) => {
+                    return await createMeasuresAndBeatsInTransaction({
+                        beatArgs: [{ duration: 1 }],
+                        startingPosition: 50,
+                        quantity: 0,
+                        tx,
+                    });
+                });
+
+                // No beats or measures should be created
+                const finalBeats = await getBeats({ db });
+                const finalMeasures = await getMeasures({ db });
+                expect(finalBeats.length).toBe(initialBeats.length);
+                expect(finalMeasures.length).toBe(initialMeasures.length);
+
+                expect(result.createdBeats.length).toBe(0);
+                expect(result.createdMeasures.length).toBe(0);
+            });
+
+            testWithHistory(
+                "should create measure with rehearsal_mark and notes as null",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    const createdMeasure = result.createdMeasures[0];
+                    expect(createdMeasure.rehearsal_mark).toBeNull();
+                    expect(createdMeasure.notes).toBeNull();
+                },
+            );
+
+            testWithHistory(
+                "should allow beats with notes",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [
+                                    { duration: 1, notes: "First beat" },
+                                    { duration: 1, notes: "Second beat" },
+                                ],
+                                startingPosition: 50,
+                                quantity: 1,
+                                tx,
+                            });
+                        },
+                    );
+
+                    const sortedBeats = result.createdBeats.sort(
+                        (a, b) => a.position - b.position,
+                    );
+                    expect(sortedBeats[0].notes).toBe("First beat");
+                    expect(sortedBeats[1].notes).toBe("Second beat");
+                },
+            );
+        });
+
+        describe("measure-beat relationship", () => {
+            testWithHistory(
+                "each measure should reference its first beat",
+                async ({ db, beats: _beats }) => {
+                    const result = await transactionWithHistory(
+                        db,
+                        "createMeasuresAndBeats",
+                        async (tx) => {
+                            return await createMeasuresAndBeatsInTransaction({
+                                beatArgs: [{ duration: 1 }, { duration: 1 }],
+                                startingPosition: 50,
+                                quantity: 2,
+                                tx,
+                            });
+                        },
+                    );
+
+                    // Get all measures and verify each references a valid beat
+                    for (const measure of result.createdMeasures) {
+                        const referencedBeatId = measure.start_beat;
+                        const beatExists = result.createdBeats.some(
+                            (b) => b.id === referencedBeatId,
+                        );
+                        expect(beatExists).toBe(true);
+                    }
                 },
             );
         });

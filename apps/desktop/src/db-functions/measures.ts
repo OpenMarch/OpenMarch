@@ -1,8 +1,11 @@
 import { eq, gt, inArray, and, isNotNull, gte, lt } from "drizzle-orm";
 import {
+    createBeatsInTransaction,
+    DatabaseBeat,
     DbConnection,
     DbTransaction,
     deleteBeatsInTransaction,
+    NewBeatArgs,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -255,6 +258,78 @@ export const deleteMeasuresInTransaction = async ({
         .returning();
 
     return deletedItems.map(realDatabaseMeasureToDatabaseMeasure);
+};
+
+/**
+ * Mutation to create beats with an accompanying measure at the first created beat.
+ *
+ * To create multiple measures, use the quantity parameter.
+ *
+ * ```ts
+ * // Creates one measure with two beats
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 1,
+ *   startingPosition: 1,
+ * })
+ *
+ * // Creates four measures with two beats each, eight total beats created
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 4,
+ *   startingPosition: 1,
+ * })
+ * ```
+ */
+export const createMeasuresAndBeatsInTransaction = async ({
+    beatArgs,
+    startingPosition,
+    quantity = 1,
+    tx,
+}: {
+    beatArgs: Omit<NewBeatArgs, "include_in_measure">[];
+    startingPosition: number;
+    quantity?: number;
+    tx: DbTransaction;
+}): Promise<{
+    createdMeasures: DatabaseMeasure[];
+    createdBeats: DatabaseBeat[];
+}> => {
+    const allCreatedMeasures: DatabaseMeasure[] = [];
+    const allCreatedBeats: DatabaseBeat[] = [];
+    for (let i = 0; i < quantity; i++) {
+        const newBeats = await createBeatsInTransaction({
+            tx,
+            newBeats: beatArgs.map((b) => ({
+                ...b,
+                include_in_measure: true,
+            })),
+            // Don't need to increment starting position, as we're creating the same number of beats each time
+            startingPosition,
+        });
+        if (newBeats.length === 0) throw new Error("Failed to create beats");
+
+        const firstCreatedBeat = newBeats.reduce((acc, beat) => {
+            return acc.position < beat.position ? acc : beat;
+        }, newBeats[0]);
+
+        const newMeasures = await createMeasuresInTransaction({
+            tx,
+            newItems: [
+                {
+                    start_beat: firstCreatedBeat.id,
+                    rehearsal_mark: null,
+                    notes: null,
+                },
+            ],
+        });
+        allCreatedMeasures.push(...newMeasures);
+        allCreatedBeats.push(...newBeats);
+    }
+    return {
+        createdMeasures: allCreatedMeasures,
+        createdBeats: allCreatedBeats,
+    };
 };
 
 /**
