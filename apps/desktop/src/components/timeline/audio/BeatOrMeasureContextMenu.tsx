@@ -12,7 +12,10 @@ import { Input, Button, UnitInput } from "@openmarch/ui";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+
+// Module-level state to track the currently open menu
+let currentOpenMenu: (() => void) | null = null;
 
 const BeatOrMeasureContextMenu = ({
     beat,
@@ -26,10 +29,26 @@ const BeatOrMeasureContextMenu = ({
     children: React.ReactNode;
 }) => {
     const [open, setOpen] = useState(false);
+    const closeRef = useRef<(() => void) | null>(null);
+
+    const handleClose = useCallback(() => {
+        setOpen(false);
+        // Clear the reference if this menu was the currently open one
+        if (currentOpenMenu === closeRef.current) {
+            currentOpenMenu = null;
+        }
+    }, []);
 
     const handleClick = (e: React.MouseEvent) => {
         // Only handle left click (button 0)
         if (e.button === 0 || e.type === "click") {
+            // Close any currently open menu
+            if (currentOpenMenu) {
+                currentOpenMenu();
+            }
+            // Set this menu as the currently open one
+            closeRef.current = handleClose;
+            currentOpenMenu = handleClose;
             setOpen(true);
         }
     };
@@ -41,7 +60,7 @@ const BeatOrMeasureContextMenu = ({
             if (e.key === "Escape") {
                 e.preventDefault();
                 e.stopPropagation();
-                setOpen(false);
+                handleClose();
             }
         };
 
@@ -49,7 +68,16 @@ const BeatOrMeasureContextMenu = ({
         return () => {
             window.removeEventListener("keydown", handleKeyDown);
         };
-    }, [open]);
+    }, [open, handleClose]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (currentOpenMenu === closeRef.current) {
+                currentOpenMenu = null;
+            }
+        };
+    }, []);
 
     // const handleContextMenu = (e: React.MouseEvent) => {
     //     e.preventDefault();
@@ -58,7 +86,14 @@ const BeatOrMeasureContextMenu = ({
     // };
 
     return (
-        <Popover.Root open={open}>
+        <Popover.Root
+            open={open}
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    handleClose();
+                }
+            }}
+        >
             <Popover.Trigger asChild onClick={handleClick}>
                 {children}
             </Popover.Trigger>
@@ -72,12 +107,12 @@ const BeatOrMeasureContextMenu = ({
                         <MeasureContextMenuContent
                             beat={beat}
                             measure={measure}
-                            closeParent={() => setOpen(false)}
+                            closeParent={handleClose}
                         />
                         <BeatContextMenuContent
                             beat={beat}
                             beatIdsOnPages={beatIdsOnPages}
-                            closeParent={() => setOpen(false)}
+                            closeParent={handleClose}
                         />
                     </div>
                 </Popover.Content>
@@ -304,7 +339,6 @@ const BeatContextMenuContent = ({
 
     return (
         <div className="flex flex-col gap-8" aria-label="Beat context menu">
-            <h4 className="text-text-subtitle text-sm">Beat</h4>
             <label className="text-text text-body">Tempo</label>
             <UnitInput
                 type="number"
