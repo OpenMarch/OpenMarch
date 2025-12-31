@@ -6,9 +6,11 @@ import {
     getMeasures,
     getMeasureById,
     getMeasuresByStartBeat,
+    getBeatIdsByMeasureId,
 } from "../measures";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
+import * as fc from "fast-check";
 
 describeDbTests("measures", (it) => {
     const testWithHistory = getTestWithHistory(it, [
@@ -665,6 +667,384 @@ describeDbTests("measures", (it) => {
                 );
                 expect(updatedMeasure!.rehearsal_mark).toBe("B'");
                 expect(updatedMeasure!.notes).toBe("updated verse");
+            },
+        );
+    });
+
+    describe("getBeatIdsByMeasureId", () => {
+        describe("basic tests", () => {
+            it("single measure returns all beats from start position to end", async ({
+                db,
+                beats,
+            }) => {
+                // beats fixture has 97 beats with positions 0-96
+                // Create a single measure starting at beat 1 (position 1)
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [{ start_beat: 1 }],
+                });
+
+                const result = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[0].id,
+                });
+
+                // Should return all beats from position 1 onwards (beats 1-96)
+                // Beat 0 is at position 0, which is before measure start
+                const allBeats = await db.query.beats.findMany({});
+                const expectedBeatIds = new Set(
+                    allBeats.filter((b) => b.position >= 1).map((b) => b.id),
+                );
+
+                expect(result).toEqual(expectedBeatIds);
+                expect(result.size).toBe(96); // beats 1-96
+            });
+
+            it("first measure returns beats up to second measure", async ({
+                db,
+                beats,
+            }) => {
+                // Create two measures
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1 }, // position 1
+                        { start_beat: 5 }, // position 5
+                    ],
+                });
+
+                const result = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[0].id,
+                });
+
+                // First measure should have beats at positions 1, 2, 3, 4 (not 5)
+                const allBeats = await db.query.beats.findMany({});
+                const expectedBeatIds = new Set(
+                    allBeats
+                        .filter((b) => b.position >= 1 && b.position < 5)
+                        .map((b) => b.id),
+                );
+
+                expect(result).toEqual(expectedBeatIds);
+                expect(result.size).toBe(4);
+            });
+
+            it("last measure returns all remaining beats", async ({
+                db,
+                beats,
+            }) => {
+                // Create two measures
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1 }, // position 1
+                        { start_beat: 90 }, // position 90
+                    ],
+                });
+
+                const result = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[1].id,
+                });
+
+                // Last measure should have all beats from position 90 to 96
+                const allBeats = await db.query.beats.findMany({});
+                const expectedBeatIds = new Set(
+                    allBeats.filter((b) => b.position >= 90).map((b) => b.id),
+                );
+
+                expect(result).toEqual(expectedBeatIds);
+                expect(result.size).toBe(7); // positions 90-96
+            });
+
+            it("middle measure returns beats between adjacent measures", async ({
+                db,
+                beats,
+            }) => {
+                // Create three measures
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1 }, // position 1
+                        { start_beat: 10 }, // position 10
+                        { start_beat: 20 }, // position 20
+                    ],
+                });
+
+                const result = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[1].id,
+                });
+
+                // Middle measure should have beats at positions 10-19
+                const allBeats = await db.query.beats.findMany({});
+                const expectedBeatIds = new Set(
+                    allBeats
+                        .filter((b) => b.position >= 10 && b.position < 20)
+                        .map((b) => b.id),
+                );
+
+                expect(result).toEqual(expectedBeatIds);
+                expect(result.size).toBe(10);
+            });
+
+            it("throws error for non-existent measure", async ({
+                db,
+                beats,
+            }) => {
+                await expect(
+                    getBeatIdsByMeasureId({
+                        db,
+                        measureId: 99999,
+                    }),
+                ).rejects.toThrow("Measure ID 99999 does not exist");
+            });
+
+            it("measure with single beat returns only that beat", async ({
+                db,
+                beats,
+            }) => {
+                // Create two measures where the first has only one beat
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: [
+                        { start_beat: 1 }, // position 1
+                        { start_beat: 2 }, // position 2 (immediately after)
+                    ],
+                });
+
+                const result = await getBeatIdsByMeasureId({
+                    db,
+                    measureId: createdMeasures[0].id,
+                });
+
+                // First measure should have only beat at position 1
+                expect(result.size).toBe(1);
+                expect(result.has(1)).toBe(true);
+            });
+        });
+
+        describe("property-based tests", () => {
+            it("returned beat IDs are valid and within measure bounds", async ({
+                db,
+                beats,
+            }) => {
+                const allBeats = await db.query.beats.findMany({});
+                const validBeatIds = new Set(allBeats.map((b) => b.id));
+                const beatPositionById = new Map(
+                    allBeats.map((b) => [b.id, b.position]),
+                );
+
+                // Generate random measure start positions (sorted, unique)
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.uniqueArray(fc.integer({ min: 1, max: 90 }), {
+                            minLength: 1,
+                            maxLength: 5,
+                        }),
+                        async (startPositions) => {
+                            // Sort positions to create ordered measures
+                            const sortedPositions = [...startPositions].sort(
+                                (a, b) => a - b,
+                            );
+
+                            // Create measures at these positions
+                            const createdMeasures = await createMeasures({
+                                db,
+                                newItems: sortedPositions.map((pos) => ({
+                                    start_beat: pos,
+                                })),
+                            });
+
+                            // Test each measure
+                            for (let i = 0; i < createdMeasures.length; i++) {
+                                const measure = createdMeasures[i];
+                                const result = await getBeatIdsByMeasureId({
+                                    db,
+                                    measureId: measure.id,
+                                });
+
+                                const measureStartPos = sortedPositions[i];
+                                const nextMeasureStartPos =
+                                    i < sortedPositions.length - 1
+                                        ? sortedPositions[i + 1]
+                                        : Infinity;
+
+                                // All returned beat IDs should be valid
+                                for (const beatId of result) {
+                                    expect(validBeatIds.has(beatId)).toBe(true);
+                                }
+
+                                // All returned beats should be within bounds
+                                for (const beatId of result) {
+                                    const pos = beatPositionById.get(beatId)!;
+                                    expect(pos).toBeGreaterThanOrEqual(
+                                        measureStartPos,
+                                    );
+                                    expect(pos).toBeLessThan(
+                                        nextMeasureStartPos,
+                                    );
+                                }
+                            }
+
+                            // Cleanup: delete created measures
+                            await deleteMeasures({
+                                db,
+                                itemIds: new Set(
+                                    createdMeasures.map((m) => m.id),
+                                ),
+                            });
+                        },
+                    ),
+                    { numRuns: 20 },
+                );
+            });
+
+            it("measures do not share beats - no overlap", async ({
+                db,
+                beats,
+            }) => {
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.uniqueArray(fc.integer({ min: 1, max: 80 }), {
+                            minLength: 2,
+                            maxLength: 5,
+                        }),
+                        async (startPositions) => {
+                            const sortedPositions = [...startPositions].sort(
+                                (a, b) => a - b,
+                            );
+
+                            const createdMeasures = await createMeasures({
+                                db,
+                                newItems: sortedPositions.map((pos) => ({
+                                    start_beat: pos,
+                                })),
+                            });
+
+                            // Get beat IDs for all measures
+                            const beatIdsByMeasure: Set<number>[] = [];
+                            for (const measure of createdMeasures) {
+                                const result = await getBeatIdsByMeasureId({
+                                    db,
+                                    measureId: measure.id,
+                                });
+                                beatIdsByMeasure.push(result);
+                            }
+
+                            // Check no overlap between any two measures
+                            for (let i = 0; i < beatIdsByMeasure.length; i++) {
+                                for (
+                                    let j = i + 1;
+                                    j < beatIdsByMeasure.length;
+                                    j++
+                                ) {
+                                    const intersection = new Set(
+                                        [...beatIdsByMeasure[i]].filter((id) =>
+                                            beatIdsByMeasure[j].has(id),
+                                        ),
+                                    );
+                                    expect(
+                                        intersection.size,
+                                        `Measures ${i} and ${j} should not share beats`,
+                                    ).toBe(0);
+                                }
+                            }
+
+                            // Cleanup
+                            await deleteMeasures({
+                                db,
+                                itemIds: new Set(
+                                    createdMeasures.map((m) => m.id),
+                                ),
+                            });
+                        },
+                    ),
+                    { numRuns: 20 },
+                );
+            });
+
+            it("union of all measures covers all beats from first measure to end", async ({
+                db,
+                beats,
+            }) => {
+                const allBeats = await db.query.beats.findMany({});
+
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.uniqueArray(fc.integer({ min: 1, max: 50 }), {
+                            minLength: 1,
+                            maxLength: 5,
+                        }),
+                        async (startPositions) => {
+                            const sortedPositions = [...startPositions].sort(
+                                (a, b) => a - b,
+                            );
+
+                            const createdMeasures = await createMeasures({
+                                db,
+                                newItems: sortedPositions.map((pos) => ({
+                                    start_beat: pos,
+                                })),
+                            });
+
+                            // Collect all beat IDs from all measures
+                            const allMeasureBeatIds = new Set<number>();
+                            for (const measure of createdMeasures) {
+                                const result = await getBeatIdsByMeasureId({
+                                    db,
+                                    measureId: measure.id,
+                                });
+                                result.forEach((id) =>
+                                    allMeasureBeatIds.add(id),
+                                );
+                            }
+
+                            // Should cover all beats from first measure position to end
+                            const firstMeasurePos = sortedPositions[0];
+                            const expectedBeatIds = new Set(
+                                allBeats
+                                    .filter(
+                                        (b) => b.position >= firstMeasurePos,
+                                    )
+                                    .map((b) => b.id),
+                            );
+
+                            expect(allMeasureBeatIds).toEqual(expectedBeatIds);
+
+                            // Cleanup
+                            await deleteMeasures({
+                                db,
+                                itemIds: new Set(
+                                    createdMeasures.map((m) => m.id),
+                                ),
+                            });
+                        },
+                    ),
+                    { numRuns: 20 },
+                );
+            });
+        });
+    });
+
+    describe("deleteMeasuresAndBeatsInTransaction", () => {
+        testWithHistory(
+            "should delete measures and beats in transaction",
+            async ({ db, beats }) => {
+                // Create measures
+                const newMeasures = [
+                    {
+                        start_beat: 1,
+                        rehearsal_mark: "A",
+                        notes: null,
+                    },
+                    {
+                        start_beat: 4,
+                        rehearsal_mark: "B",
+                        notes: "second measure",
+                    },
+                ];
             },
         );
     });

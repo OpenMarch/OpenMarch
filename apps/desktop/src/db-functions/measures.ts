@@ -1,4 +1,4 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq, gt, inArray, and, isNotNull, gte, lt } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -221,6 +221,13 @@ export async function deleteMeasures({
 }): Promise<DatabaseMeasure[]> {
     if (itemIds.size === 0) return [];
 
+    // Check if any of the measures actually exist before using transactionWithHistory
+    const existingMeasures = await db.query.measures.findMany({
+        where: inArray(schema.measures.id, Array.from(itemIds)),
+    });
+
+    if (existingMeasures.length === 0) return [];
+
     const response = await transactionWithHistory(
         db,
         "deleteMeasures",
@@ -248,3 +255,75 @@ export const deleteMeasuresInTransaction = async ({
 
     return deletedItems.map(realDatabaseMeasureToDatabaseMeasure);
 };
+
+/**
+ * @param db - The database connection or transaction
+ * @param measureId - The ID of the measure to get the beat IDs for
+ * @returns A set of beat IDs that are in the measure
+ */
+export const getBeatIdsByMeasureId = async ({
+    db,
+    measureId,
+}: {
+    db: DbConnection | DbTransaction;
+    measureId: number;
+}): Promise<Set<number>> => {
+    const measureTimingObject = await db
+        .select()
+        .from(schema.timing_objects)
+        .where(eq(schema.timing_objects.measure_id, measureId))
+        .get();
+    if (measureTimingObject == null)
+        throw new Error(`Measure ID ${measureId} does not exist`);
+
+    const nextMeasureTimingObject = await db
+        .select()
+        .from(schema.timing_objects)
+        .where(
+            and(
+                gt(
+                    schema.timing_objects.position,
+                    measureTimingObject.position,
+                ),
+                isNotNull(schema.timing_objects.measure_id),
+            ),
+        )
+        .get();
+
+    // If there is no next measure, return all beats for the rest of the show
+    // If there is a next measure, return all beats for the current measure up to the next measure
+    const whereClauses =
+        nextMeasureTimingObject == null
+            ? gte(schema.beats.position, measureTimingObject.position)
+            : and(
+                  gte(schema.beats.position, measureTimingObject.position),
+                  lt(schema.beats.position, nextMeasureTimingObject.position),
+              );
+    const beatIds = await db
+        .select({ beat_id: schema.beats.id })
+        .from(schema.beats)
+        .where(whereClauses)
+        .all();
+
+    return new Set(beatIds.map((b) => b.beat_id));
+};
+
+// export const deleteMeasuresAndBeatsInTransaction = async ({
+//     measureIds,
+//     tx,
+// }: {
+//     measureIds: Set<number>;
+//     tx: DbTransaction;
+// }): Promise<{ measures: DatabaseMeasure[]; beats: DatabaseBeat[] }> => {
+//     const measures = await tx.query.measures.findMany({
+//         where: inArray(schema.measures.id, Array.from(measureIds)),
+//     });
+
+//     const beats = await tx.query.beats.findMany({
+//         where: inArray(schema.beats.id, Array.from(beatIds)),
+//     });
+//     return {
+//         measures: measures.map(realDatabaseMeasureToDatabaseMeasure),
+//         beats: beats.map(realDatabaseBeatToDatabaseBeat),
+//     };
+// };
