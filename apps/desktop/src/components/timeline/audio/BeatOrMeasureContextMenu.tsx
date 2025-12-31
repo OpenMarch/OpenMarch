@@ -7,6 +7,7 @@ import {
     createBeatsMutationOptions,
     deleteBeatsMutationOptions,
 } from "@/hooks/queries";
+import { conToastError } from "@/utilities/utils";
 import { Input, Button, UnitInput } from "@openmarch/ui";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import * as Popover from "@radix-ui/react-popover";
@@ -29,25 +30,36 @@ const BeatOrMeasureContextMenu = ({
     const handleClick = (e: React.MouseEvent) => {
         // Only handle left click (button 0)
         if (e.button === 0 || e.type === "click") {
-            e.preventDefault();
-            e.stopPropagation();
             setOpen(true);
         }
     };
 
-    const handleContextMenu = (e: React.MouseEvent) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(true);
-    };
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                e.preventDefault();
+                e.stopPropagation();
+                setOpen(false);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+        };
+    }, [open]);
+
+    // const handleContextMenu = (e: React.MouseEvent) => {
+    //     e.preventDefault();
+    //     e.stopPropagation();
+    //     setOpen(true);
+    // };
 
     return (
-        <Popover.Root open={open} onOpenChange={setOpen}>
-            <Popover.Trigger
-                asChild
-                onClick={handleClick}
-                onContextMenu={handleContextMenu}
-            >
+        <Popover.Root open={open}>
+            <Popover.Trigger asChild onClick={handleClick}>
                 {children}
             </Popover.Trigger>
             <Popover.Portal>
@@ -60,12 +72,12 @@ const BeatOrMeasureContextMenu = ({
                         <MeasureContextMenuContent
                             beat={beat}
                             measure={measure}
-                            onClose={() => setOpen(false)}
+                            closeParent={() => setOpen(false)}
                         />
                         <BeatContextMenuContent
                             beat={beat}
                             beatIdsOnPages={beatIdsOnPages}
-                            onClose={() => setOpen(false)}
+                            closeParent={() => setOpen(false)}
                         />
                     </div>
                 </Popover.Content>
@@ -77,11 +89,11 @@ const BeatOrMeasureContextMenu = ({
 const MeasureContextMenuContent = ({
     beat,
     measure,
-    onClose,
+    closeParent,
 }: {
     beat: Beat;
     measure: Measure | null;
-    onClose: () => void;
+    closeParent: () => void;
 }) => {
     const [rehearsalMark, setRehearsalMark] = useState(
         measure?.rehearsalMark ?? "",
@@ -107,10 +119,10 @@ const MeasureContextMenuContent = ({
                 rehearsal_mark: null,
             },
         ]);
-        onClose();
+        closeParent();
     };
 
-    const handleRehearsalMarkBlur = () => {
+    const saveRehearsalMark = () => {
         if (!measure) return;
 
         const trimmedMark = rehearsalMark.trim();
@@ -130,10 +142,23 @@ const MeasureContextMenuContent = ({
             ],
             {
                 onSuccess: () => {
-                    onClose();
+                    closeParent();
+                },
+                onError: (error) => {
+                    conToastError("Error saving rehearsal mark", error);
                 },
             },
         );
+    };
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            e.stopPropagation();
+            saveRehearsalMark();
+            // Call this to ensure the parent is closed
+            closeParent();
+        }
     };
 
     return (
@@ -150,7 +175,8 @@ const MeasureContextMenuContent = ({
                         type="text"
                         value={rehearsalMark}
                         onChange={(e) => setRehearsalMark(e.target.value)}
-                        onBlur={handleRehearsalMarkBlur}
+                        onBlur={saveRehearsalMark}
+                        onKeyDown={handleKeyDown}
                         onClick={(e) => {
                             e.stopPropagation();
                         }}
@@ -183,11 +209,11 @@ const MeasureContextMenuContent = ({
 
 const BeatContextMenuContent = ({
     beat,
-    onClose,
+    closeParent,
     beatIdsOnPages,
 }: {
     beat: Beat;
-    onClose: () => void;
+    closeParent: () => void;
     beatIdsOnPages: Set<number>;
 }) => {
     // Convert duration to BPM for display
@@ -219,7 +245,6 @@ const BeatContextMenuContent = ({
         const truncatedDuration = Math.floor(newDuration * 1000000) / 1000000;
 
         if (truncatedDuration === beat.duration) {
-            onClose();
             return;
         }
 
@@ -232,7 +257,10 @@ const BeatContextMenuContent = ({
             ],
             {
                 onSuccess: () => {
-                    onClose();
+                    closeParent();
+                },
+                onError: (error) => {
+                    conToastError("Error saving tempo", error);
                 },
             },
         );
@@ -241,7 +269,10 @@ const BeatContextMenuContent = ({
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === "Enter") {
             e.preventDefault();
+            e.stopPropagation();
             saveTempo();
+            // Call this to ensure the parent is closed
+            closeParent();
         }
     };
 
