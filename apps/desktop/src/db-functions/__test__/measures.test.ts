@@ -1206,7 +1206,7 @@ describeDbTests("measures", (it) => {
             },
         );
 
-        describe.each([
+        testWithHistory.only.for([
             {
                 description: "single measure with page on same beat",
                 measures: [{ start_beat: 1, rehearsal_mark: "A", notes: null }],
@@ -1239,32 +1239,37 @@ describeDbTests("measures", (it) => {
             },
         ])(
             "error on page on beat: $description",
-            ({ measures, pageStartBeat }) => {
-                testWithHistory("", async ({ db, beats: _beats }) => {
-                    await createMeasures({
-                        db,
-                        newItems: measures,
-                    });
-                    await createPages({
-                        db,
-                        newPages: [
-                            {
-                                start_beat: pageStartBeat,
-                                is_subset: false,
-                                notes: null,
-                            },
-                        ],
-                    });
+            async ({ measures, pageStartBeat }, { db, beats: _beats }) => {
+                const createdMeasures = await createMeasures({
+                    db,
+                    newItems: measures,
+                });
+                await createPages({
+                    db,
+                    newPages: [
+                        {
+                            start_beat: pageStartBeat,
+                            is_subset: false,
+                            notes: null,
+                        },
+                    ],
+                });
 
-                    await expect(
-                        db.transaction(async (tx) => {
+                await expect(
+                    transactionWithHistory(
+                        db,
+                        "deleteMeasuresAndBeats",
+                        async (tx) => {
                             await deleteMeasuresAndBeatsInTransaction({
-                                measureIds: new Set([1]),
+                                measureIds: new Set(
+                                    createdMeasures.map((m) => m.id),
+                                ),
                                 tx,
                             });
-                        }),
-                    ).rejects.toThrow();
-                });
+                        },
+                    ),
+                ).rejects.toThrow();
+                console.log();
             },
         );
 

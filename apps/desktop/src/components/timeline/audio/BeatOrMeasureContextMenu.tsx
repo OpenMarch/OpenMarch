@@ -332,12 +332,25 @@ const BeatButtons = ({
     );
 
     const handleCreateMeasure = () => {
-        createMeasure([
+        createMeasure(
+            [
+                {
+                    start_beat: beat.id,
+                    rehearsal_mark: null,
+                },
+            ],
             {
-                start_beat: beat.id,
-                rehearsal_mark: null,
+                onSuccess: () => {
+                    closeParent();
+                },
+                onError: (error) => {
+                    conToastError(
+                        tolgee.t("audio.contextMenu.beat.errorCreatingMeasure"),
+                        error,
+                    );
+                },
             },
-        ]);
+        );
     };
 
     const handleCreateBeat = () => {
