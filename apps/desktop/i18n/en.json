@@ -101,7 +101,12 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error creating beats"
+                "error": "Error creating beats",
+                "success": "Beats created successfully"
+            },
+            "replace": {
+                "error": "Error replacing beats",
+                "success": "Beats replaced successfully"
             },
             "save": {
                 "error": "Error creating new beats",
