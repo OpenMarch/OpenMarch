@@ -44,11 +44,13 @@ export const transactionWithHistory = async <T>(
     funcName: string,
     func: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> => {
-    return await db.transaction(async (tx) => {
+    const output = await db.transaction(async (tx) => {
         const startMessage = `=========== start ${funcName} ============`;
+        let result: T;
         if (window.electron) void window.electron?.log("info", startMessage);
         // eslint-disable-next-line no-console
         else console.log(startMessage);
+        let error: Error | undefined;
 
         try {
             await incrementHistoryGroupInTransaction(tx, "undo");
@@ -81,7 +83,7 @@ export const transactionWithHistory = async <T>(
             assert(groupBefore != null, "Group before is undefined");
 
             // Execute the function
-            const result = await func(tx);
+            result = await func(tx);
 
             const groupAfter =
                 (
@@ -129,13 +131,19 @@ export const transactionWithHistory = async <T>(
              *    - Are there triggers for the table that the function is performing actions on?
              *    - Do the functions actually perform actions on the database?
              */
-
-            return result;
+        } catch (err: any) {
+            // Remove the items from the history tables that were added by the transaction
+            error = err as Error;
+            console.debug("Rolling back history state");
         } finally {
             const endMessage = `=========== end ${funcName} ============\n`;
             mainProcessLog("info", endMessage);
         }
+        if (error) throw error;
+
+        return result!;
     });
+    return output;
 };
 
 type HistoryType = "undo" | "redo";
