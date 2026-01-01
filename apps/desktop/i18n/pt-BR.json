@@ -133,6 +133,33 @@
         },
         "tapTempo": {
             "label": "Toque Tempo"
+        },
+        "contextMenu": {
+            "rehearsalMark": {
+                "label": "Marca de Ensaio",
+                "errorSaving": "Erro ao salvar a marca de ensaio"
+            },
+            "tempo": {
+                "label": "Tempo",
+                "firstBeatTempo": "Tempo do primeiro ritmo",
+                "errorSaving": "Erro ao salvar o tempo"
+            },
+            "beat": {
+                "markAsMeasure": "Marcar como Compasso",
+                "addBeat": "Adicionar Ritmo",
+                "cannotDeleteOnPage": "Ritmos em páginas não podem ser excluídos",
+                "errorCreating": "Erro ao criar ritmo",
+                "errorDeleting": "Erro ao excluir ritmo"
+            },
+            "measure": {
+                "removeMarking": "Remover Marca de Compasso",
+                "addMeasure": "Adicionar Compasso",
+                "cannotDeleteOnPage": "Ritmos em páginas não podem ser excluídos",
+                "errorDeletingMeasureAndBeats": "Erro ao excluir compasso e ritmos",
+                "errorRemovingMarking": "Erro ao remover a marca de compasso",
+                "errorCreatingMeasureAndBeats": "Erro ao criar compasso e ritmos"
+            },
+            "ariaLabel": "Menu contextual de ritmo"
         }
     },
     "colorPicker": {
@@ -643,6 +670,11 @@
         "deletedSuccessfully": "Página excluída com sucesso",
         "deleteFailed": "Falha ao excluir página - {erro}",
         "updateFailed": "Falha ao atualizar página - {erro}"
+    },
+    "measures": {
+        "createFailed": "Falha ao criar compassos - {erro}",
+        "deleteFailed": "Falha ao excluir compassos - {erro}",
+        "updateFailed": "Falha ao atualizar compassos - {erro}"
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",

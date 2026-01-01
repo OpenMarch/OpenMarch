@@ -133,6 +133,33 @@
         },
         "tapTempo": {
             "label": "Tocar Tempo"
+        },
+        "contextMenu": {
+            "rehearsalMark": {
+                "label": "Marca de Ensayo",
+                "errorSaving": "Error al guardar la marca de ensayo"
+            },
+            "tempo": {
+                "label": "Tempo",
+                "firstBeatTempo": "Tempo del primer ritmo",
+                "errorSaving": "Error al guardar el tempo"
+            },
+            "beat": {
+                "markAsMeasure": "Marcar como Compás",
+                "addBeat": "Agregar Ritmo",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorCreating": "Error al crear ritmo",
+                "errorDeleting": "Error al eliminar ritmo"
+            },
+            "measure": {
+                "removeMarking": "Quitar Marca de Compás",
+                "addMeasure": "Agregar Compás",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorDeletingMeasureAndBeats": "Error al eliminar compás y ritmos",
+                "errorRemovingMarking": "Error al quitar la marca de compás",
+                "errorCreatingMeasureAndBeats": "Error al crear compás y ritmos"
+            },
+            "ariaLabel": "Menú contextual de ritmo"
         }
     },
     "colorPicker": {
@@ -643,6 +670,11 @@
         "deletedSuccessfully": "Página eliminada exitosamente",
         "deleteFailed": "Error al eliminar la página - {error}",
         "updateFailed": "Error al actualizar la página - {error}"
+    },
+    "measures": {
+        "createFailed": "Error al crear compases - {error}",
+        "deleteFailed": "Error al eliminar compases - {error}",
+        "updateFailed": "Error al actualizar compases - {error}"
     },
     "section": {
         "drumMajor": "Director de Percusión",

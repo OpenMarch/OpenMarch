@@ -16,6 +16,7 @@ import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useTolgee, T } from "@tolgee/react";
 
 // Module-level state to track the currently open menu
 let currentOpenMenu: (() => void) | null = null;
@@ -129,6 +130,7 @@ const RehearsalMarkInput = ({
         measure?.rehearsalMark ?? "",
     );
     const queryClient = useQueryClient();
+    const tolgee = useTolgee();
     const updateMeasureMutation = useMutation(
         updateMeasuresMutationOptions(queryClient),
     );
@@ -161,7 +163,10 @@ const RehearsalMarkInput = ({
                     closeParent();
                 },
                 onError: (error) => {
-                    conToastError("Error saving rehearsal mark", error);
+                    conToastError(
+                        tolgee.t("audio.contextMenu.rehearsalMark.errorSaving"),
+                        error,
+                    );
                 },
             },
         );
@@ -179,7 +184,9 @@ const RehearsalMarkInput = ({
 
     return (
         <>
-            <label className="text-text text-body">Rehearsal Mark</label>
+            <label className="text-text text-body">
+                <T keyName="audio.contextMenu.rehearsalMark.label" />
+            </label>
             <Input
                 type="text"
                 value={rehearsalMark}
@@ -201,9 +208,11 @@ const RehearsalMarkInput = ({
 };
 
 const TempoInput = ({
+    hasMeasure,
     beat,
     closeParent,
 }: {
+    hasMeasure: boolean;
     beat: Beat;
     closeParent: () => void;
 }) => {
@@ -211,6 +220,7 @@ const TempoInput = ({
     const initialTempo = durationToTempo(beat.duration);
     const [tempo, setTempo] = useState(initialTempo.toString());
     const queryClient = useQueryClient();
+    const tolgee = useTolgee();
     const mutation = useMutation(updateBeatsMutationOptions(queryClient));
 
     const saveTempo = () => {
@@ -245,7 +255,10 @@ const TempoInput = ({
                     closeParent();
                 },
                 onError: (error) => {
-                    conToastError("Error saving tempo", error);
+                    conToastError(
+                        tolgee.t("audio.contextMenu.tempo.errorSaving"),
+                        error,
+                    );
                 },
             },
         );
@@ -271,7 +284,15 @@ const TempoInput = ({
 
     return (
         <>
-            <label className="text-text text-body">Tempo</label>
+            <label className="text-text text-body">
+                <T
+                    keyName={
+                        hasMeasure
+                            ? "audio.contextMenu.tempo.firstBeatTempo"
+                            : "audio.contextMenu.tempo.label"
+                    }
+                />
+            </label>
             <UnitInput
                 type="number"
                 step={1}
@@ -299,6 +320,7 @@ const BeatButtons = ({
     closeParent: () => void;
 }) => {
     const queryClient = useQueryClient();
+    const tolgee = useTolgee();
     const { mutate: createBeat, isPending: isCreatingBeat } = useMutation(
         createBeatsMutationOptions(queryClient),
     );
@@ -334,7 +356,10 @@ const BeatButtons = ({
                     closeParent();
                 },
                 onError: (error) => {
-                    conToastError("Error creating beat", error);
+                    conToastError(
+                        tolgee.t("audio.contextMenu.beat.errorCreating"),
+                        error,
+                    );
                 },
             },
         );
@@ -346,7 +371,10 @@ const BeatButtons = ({
                 closeParent();
             },
             onError: (error) => {
-                conToastError("Error deleting beat", error);
+                conToastError(
+                    tolgee.t("audio.contextMenu.beat.errorDeleting"),
+                    error,
+                );
             },
         });
     };
@@ -363,7 +391,7 @@ const BeatButtons = ({
                 onClick={handleCreateMeasure}
                 disabled={isCreatingMeasure}
             >
-                Mark as Measure
+                <T keyName="audio.contextMenu.beat.markAsMeasure" />
             </Button>
             <div className="flex justify-between">
                 <Button
@@ -371,7 +399,9 @@ const BeatButtons = ({
                     size="compact"
                     tooltipText={
                         beatIsOnPage
-                            ? "Beats on pages cannot be deleted"
+                            ? tolgee.t(
+                                  "audio.contextMenu.beat.cannotDeleteOnPage",
+                              )
                             : undefined
                     }
                     onMouseDown={(e) => {
@@ -393,7 +423,7 @@ const BeatButtons = ({
                     onClick={handleCreateBeat}
                     disabled={isCreatingBeat}
                 >
-                    <PlusIcon /> Add Beat
+                    <PlusIcon /> <T keyName="audio.contextMenu.beat.addBeat" />
                 </Button>
             </div>
         </>
@@ -410,6 +440,7 @@ const MeasureButtons = ({
     closeParent: () => void;
 }) => {
     const queryClient = useQueryClient();
+    const tolgee = useTolgee();
     const {
         mutate: createMeasuresAndBeats,
         isPending: isCreatingMeasuresAndBeats,
@@ -433,7 +464,12 @@ const MeasureButtons = ({
                 closeParent();
             },
             onError: (error) => {
-                conToastError("Error deleting measure and beats", error);
+                conToastError(
+                    tolgee.t(
+                        "audio.contextMenu.measure.errorDeletingMeasureAndBeats",
+                    ),
+                    error,
+                );
             },
         });
     };
@@ -444,7 +480,10 @@ const MeasureButtons = ({
                 closeParent();
             },
             onError: (error) => {
-                conToastError("Error removing measure marking", error);
+                conToastError(
+                    tolgee.t("audio.contextMenu.measure.errorRemovingMarking"),
+                    error,
+                );
             },
         });
     };
@@ -463,7 +502,12 @@ const MeasureButtons = ({
                     closeParent();
                 },
                 onError: (error) => {
-                    conToastError("Error creating measure and beats", error);
+                    conToastError(
+                        tolgee.t(
+                            "audio.contextMenu.measure.errorCreatingMeasureAndBeats",
+                        ),
+                        error,
+                    );
                 },
             },
         );
@@ -482,7 +526,7 @@ const MeasureButtons = ({
                 onClick={handleRemoveMeasureMarking}
                 disabled={disabled}
             >
-                Remove Measure Marking
+                <T keyName="audio.contextMenu.measure.removeMarking" />
             </Button>
             <div className="flex justify-between">
                 <Button
@@ -490,7 +534,9 @@ const MeasureButtons = ({
                     size="compact"
                     tooltipText={
                         anyMeasureBeatOnPage
-                            ? "Beats on pages cannot be deleted"
+                            ? tolgee.t(
+                                  "audio.contextMenu.measure.cannotDeleteOnPage",
+                              )
                             : undefined
                     }
                     onMouseDown={(e) => {
@@ -514,7 +560,8 @@ const MeasureButtons = ({
                     onClick={handleCreateMeasureAndBeats}
                     disabled={disabled}
                 >
-                    <PlusIcon /> Add Measure
+                    <PlusIcon />{" "}
+                    <T keyName="audio.contextMenu.measure.addMeasure" />
                 </Button>
             </div>
         </>
@@ -532,10 +579,18 @@ const ContextMenuContent = ({
     closeParent: () => void;
     beatIdsOnPages: Set<number>;
 }) => {
+    const tolgee = useTolgee();
     return (
-        <div className="flex flex-col gap-8" aria-label="Beat context menu">
+        <div
+            className="flex flex-col gap-8"
+            aria-label={tolgee.t("audio.contextMenu.ariaLabel")}
+        >
             <RehearsalMarkInput measure={measure} closeParent={closeParent} />
-            <TempoInput beat={beat} closeParent={closeParent} />
+            <TempoInput
+                beat={beat}
+                closeParent={closeParent}
+                hasMeasure={measure != null}
+            />
             {measure ? (
                 <MeasureButtons
                     measure={measure}

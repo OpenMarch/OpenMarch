@@ -133,6 +133,33 @@
         },
         "tapTempo": {
             "label": "Tap Tempo"
+        },
+        "contextMenu": {
+            "rehearsalMark": {
+                "label": "Rehearsal Mark",
+                "errorSaving": "Error saving rehearsal mark"
+            },
+            "tempo": {
+                "label": "Tempo",
+                "firstBeatTempo": "First beat tempo",
+                "errorSaving": "Error saving tempo"
+            },
+            "beat": {
+                "markAsMeasure": "Mark as Measure",
+                "addBeat": "Add Beat",
+                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "errorCreating": "Error creating beat",
+                "errorDeleting": "Error deleting beat"
+            },
+            "measure": {
+                "removeMarking": "Remove Measure Marking",
+                "addMeasure": "Add Measure",
+                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "errorDeletingMeasureAndBeats": "Error deleting measure and beats",
+                "errorRemovingMarking": "Error removing measure marking",
+                "errorCreatingMeasureAndBeats": "Error creating measure and beats"
+            },
+            "ariaLabel": "Beat context menu"
         }
     },
     "colorPicker": {
@@ -643,6 +670,11 @@
         "deletedSuccessfully": "Page deleted successfully",
         "deleteFailed": "Failed to delete page - {error}",
         "updateFailed": "Failed to update page - {error}"
+    },
+    "measures": {
+        "createFailed": "Failed to create measures - {error}",
+        "deleteFailed": "Failed to delete measures - {error}",
+        "updateFailed": "Failed to update measures - {error}"
     },
     "section": {
         "drumMajor": "Drum Major",

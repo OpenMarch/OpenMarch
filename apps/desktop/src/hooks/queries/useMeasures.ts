@@ -22,6 +22,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { beatKeys } from "./useBeats";
+import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "measures";
 
@@ -65,7 +66,11 @@ export const createMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.createFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -127,7 +132,11 @@ export const createMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.createFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -150,7 +159,11 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.updateFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -165,7 +178,11 @@ export const deleteMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -197,7 +214,11 @@ export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
                 });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
