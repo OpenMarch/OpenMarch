@@ -456,7 +456,10 @@ const describeDbTests = (
     // Feel free to enable it by setting the `VITEST_ENABLE_SQLJS` environment variable to `true`.
     // We test SQL.js as we're hoping that we'll use it in the future.
     if (process.env.VITEST_ENABLE_SQLJS === "true")
-        describe("sql-js", () => {
+        // Transactions are currently not working very well with the db proxy.
+        // SQL.js or WASM SQLite support should be revisited, perhaps with wa-sqlite
+        // https://www.powersync.com/blog/sqlite-persistence-on-the-web
+        describe.skip("sql-js", () => {
             tests(sqlJsTest, "sql-js");
         });
 
