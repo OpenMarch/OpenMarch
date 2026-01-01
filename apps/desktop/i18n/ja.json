@@ -133,6 +133,33 @@
         },
         "tapTempo": {
             "label": "テンポ を タップ"
+        },
+        "contextMenu": {
+            "rehearsalMark": {
+                "label": "リハーサル マーク",
+                "errorSaving": "リハーサル マーク の 保存 エラー"
+            },
+            "tempo": {
+                "label": "テンポ",
+                "firstBeatTempo": "最初のビートのテンポ",
+                "errorSaving": "テンポ の 保存 エラー"
+            },
+            "beat": {
+                "markAsMeasure": "小節としてマーク",
+                "addBeat": "ビートを追加",
+                "cannotDeleteOnPage": "ページ上のビートは削除できません",
+                "errorCreating": "ビート の 作成 エラー",
+                "errorDeleting": "ビート の 削除 エラー"
+            },
+            "measure": {
+                "removeMarking": "小節マーキングを削除",
+                "addMeasure": "小節を追加",
+                "cannotDeleteOnPage": "ページ上のビートは削除できません",
+                "errorDeletingMeasureAndBeats": "小節 と ビート の 削除 エラー",
+                "errorRemovingMarking": "小節 マーキング の 削除 エラー",
+                "errorCreatingMeasureAndBeats": "小節 と ビート の 作成 エラー"
+            },
+            "ariaLabel": "ビート コンテキスト メニュー"
         }
     },
     "colorPicker": {
@@ -643,6 +670,11 @@
         "deletedSuccessfully": "ページ が正常に削除されました",
         "deleteFailed": "ページの削除に失敗しました - {error}",
         "updateFailed": "ページの更新に失敗しました - {error}"
+    },
+    "measures": {
+        "createFailed": "小節の作成に失敗しました - {error}",
+        "deleteFailed": "小節の削除に失敗しました - {error}",
+        "updateFailed": "小節の更新に失敗しました - {error}"
     },
     "section": {
         "drumMajor": "ドラム メジャー",

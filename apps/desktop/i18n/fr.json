@@ -133,6 +133,33 @@
         },
         "tapTempo": {
             "label": "Tapez le Tempo"
+        },
+        "contextMenu": {
+            "rehearsalMark": {
+                "label": "Marque de répétition",
+                "errorSaving": "Erreur lors de l'enregistrement de la marque de répétition"
+            },
+            "tempo": {
+                "label": "Tempo",
+                "firstBeatTempo": "Tempo du premier temps",
+                "errorSaving": "Erreur lors de l'enregistrement du tempo"
+            },
+            "beat": {
+                "markAsMeasure": "Marquer comme mesure",
+                "addBeat": "Ajouter un temps",
+                "cannotDeleteOnPage": "Les temps sur les pages ne peuvent pas être supprimés",
+                "errorCreating": "Erreur lors de la création du temps",
+                "errorDeleting": "Erreur lors de la suppression du temps"
+            },
+            "measure": {
+                "removeMarking": "Supprimer la marque de mesure",
+                "addMeasure": "Ajouter une mesure",
+                "cannotDeleteOnPage": "Les temps sur les pages ne peuvent pas être supprimés",
+                "errorDeletingMeasureAndBeats": "Erreur lors de la suppression de la mesure et des temps",
+                "errorRemovingMarking": "Erreur lors de la suppression de la marque de mesure",
+                "errorCreatingMeasureAndBeats": "Erreur lors de la création de la mesure et des temps"
+            },
+            "ariaLabel": "Menu contextuel du temps"
         }
     },
     "colorPicker": {
@@ -642,6 +669,11 @@
         "deletedSuccessfully": "Page supprimée avec succès",
         "deleteFailed": "Échec de la suppression de la page - {error}",
         "updateFailed": "Échec de la mise à jour de la page - {error}"
+    },
+    "measures": {
+        "createFailed": "Échec de la création des mesures - {error}",
+        "deleteFailed": "Échec de la suppression des mesures - {error}",
+        "updateFailed": "Échec de la mise à jour des mesures - {error}"
     },
     "section": {
         "drumMajor": "Chef d'orchestre",

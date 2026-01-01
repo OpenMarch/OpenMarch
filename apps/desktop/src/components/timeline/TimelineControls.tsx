@@ -188,7 +188,7 @@ function PlaybackControls() {
 
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.playPause}
-                className="focus-visible:outline-accent focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                className="focus-visible:outline-accent focus-visible:outline-2 focus-visible:outline-offset-2"
                 disabled={
                     !selectedPage ||
                     (!isPlaying && selectedPage.nextPageId === null)

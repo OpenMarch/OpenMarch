@@ -12,25 +12,10 @@ import {
     performUndo,
     transactionWithHistory,
 } from "../history";
-import { sql } from "drizzle-orm";
+import { inArray, notInArray, sql, eq } from "drizzle-orm";
+import { DbTransaction } from "../types";
 
 describeDbTests("transactionWithHistory", (baseIt) => {
-    // const it = baseIt.extend<{
-    //     db: DbConnection;
-    // }>({
-    //     db: async ({ db }, use) => {
-    //         await db
-    //             .insert(schema.history_stats)
-    //             .values({
-    //                 group_limit: 500,
-    //                 cur_undo_group: 0,
-    //                 cur_redo_group: 0,
-    //             })
-    //             .run();
-    //         await use(db);
-    //     },
-    // });
-
     describe.each([1])("when starting undo group at %s", (initialGroup) => {
         baseIt("should increment undo group", async ({ db }) => {
             const startGroup = await db.query.history_stats.findFirst({
@@ -72,33 +57,6 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
         db: DbConnection;
     }>({
         db: async ({ db }, use) => {
-            // const tablesNotToDelete = [
-            //     "history_undo",
-            //     "history_redo",
-            //     "history_stats",
-            // ];
-            // const getTable = async () =>
-            //     (await db.all(
-            //         sql.raw(
-            //             `SELECT name FROM sqlite_master WHERE type='table' AND name NOT IN (${tablesNotToDelete.map((t) => `'${t}'`).join(",")}) LIMIT 1`,
-            //         ),
-            //     )) as { name: string }[];
-
-            // while (true) {
-            //     const table = await getTable();
-            //     if (table.length === 0) {
-            //         break;
-            //     }
-            //     try {
-            //         await db.run(`DROP TABLE IF EXISTS "${table[0].name}"`);
-            //     } catch (error) {
-            //         console.error(
-            //             `Error dropping table ${table[0].name}:`,
-            //             error,
-            //         );
-            //         throw error;
-            //     }
-            // }
             await use(db);
         },
     });
@@ -2595,7 +2553,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
 
             // Size should have increased significantly
             expect(sizeAfterAdding).toBeGreaterThan(initialSize);
-            console.log(
+            console.debug(
                 `History size increased from ${initialSize} to ${sizeAfterAdding} bytes`,
             );
         });
@@ -2623,4 +2581,388 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             expect(size2).toBe(size3);
         });
     });
+});
+
+export const _getHistoryState = async (
+    db: DbConnection,
+): Promise<HistoryState> => {
+    const undoSequences = (
+        await db
+            .select({ sequence: schema.history_undo.sequence })
+            .from(schema.history_undo)
+            .all()
+    ).map((row) => row.sequence);
+    const redoSequences = (
+        await db
+            .select({ sequence: schema.history_redo.sequence })
+            .from(schema.history_redo)
+            .all()
+    ).map((row) => row.sequence);
+    let historyStats = await db.query.history_stats.findFirst();
+    if (!historyStats == null) {
+        await db
+            .insert(schema.history_stats)
+            .values({
+                id: 1,
+                cur_undo_group: 0,
+                cur_redo_group: 0,
+                group_limit: 500,
+            })
+            .run();
+        historyStats = await db.query.history_stats.findFirst()!;
+    }
+    return {
+        undoSequences,
+        redoSequences,
+        historyStats: historyStats!,
+    };
+};
+
+type HistoryState = {
+    undoSequences: number[];
+    redoSequences: number[];
+    historyStats: typeof schema.history_stats.$inferSelect;
+};
+/**
+ * Reverts history state by deleting the undo and redo sequences and resetting the history stats to the previous state.
+ * This is only destructive and cannot re-add removed sequences
+ */
+export const _revertHistoryState = async (
+    db: DbConnection | DbTransaction,
+    historyState: HistoryState,
+) => {
+    await db
+        .delete(schema.history_undo)
+        .where(
+            notInArray(
+                schema.history_undo.sequence,
+                historyState.undoSequences,
+            ),
+        );
+    await db
+        .delete(schema.history_redo)
+        .where(
+            notInArray(
+                schema.history_redo.sequence,
+                historyState.redoSequences,
+            ),
+        );
+    await db
+        .update(schema.history_stats)
+        .set({
+            cur_undo_group: historyState.historyStats.cur_undo_group,
+            cur_redo_group: historyState.historyStats.cur_redo_group,
+        })
+        .where(eq(schema.history_stats.id, 1));
+};
+
+describeDbTests("history state", (itWithDb) => {
+    itWithDb(
+        "should get the history state with empty history tables",
+        async ({ db }) => {
+            const historyState = await _getHistoryState(db);
+            expect(historyState.undoSequences).toBeDefined();
+            expect(historyState.undoSequences).toHaveLength(0);
+            expect(historyState.redoSequences).toBeDefined();
+            expect(historyState.redoSequences).toHaveLength(0);
+            // Undo and redo group start at 1 for legacy reasons
+            expect(historyState.historyStats.cur_undo_group).toBe(1);
+            expect(historyState.historyStats.cur_redo_group).toBe(1);
+            expect(historyState.historyStats.group_limit).toBe(500);
+        },
+    );
+
+    itWithDb(
+        "should get the history state with non-empty history tables",
+        async ({ db }) => {
+            await transactionWithHistory(db, "test", async (tx) => {
+                await tx.insert(schema.beats).values({
+                    duration: 0.5,
+                    position: 1,
+                });
+                await tx.insert(schema.beats).values({
+                    duration: 0.6,
+                    position: 1,
+                });
+            });
+
+            const historyState = await _getHistoryState(db);
+            expect(historyState.undoSequences).toBeDefined();
+            expect(historyState.undoSequences).toHaveLength(2);
+            expect(historyState.redoSequences).toBeDefined();
+            expect(historyState.redoSequences).toHaveLength(0);
+            expect(historyState.historyStats.cur_undo_group).toBe(2);
+            // Should be zero. I think it starts at 1, but redo group is turned into 0 when the first action
+            expect(historyState.historyStats.cur_redo_group).toBe(0);
+        },
+    );
+
+    itWithDb("should revert the history state", async ({ db }) => {
+        const historyStateBefore = await _getHistoryState(db);
+
+        await transactionWithHistory(db, "test", async (tx) => {
+            await tx.insert(schema.beats).values({
+                duration: 0.5,
+                position: 1,
+            });
+            await tx.insert(schema.beats).values({
+                duration: 0.6,
+                position: 1,
+            });
+        });
+        await transactionWithHistory(db, "test", async (tx) => {
+            await tx.insert(schema.beats).values({
+                duration: 0.7,
+                position: 1,
+            });
+            await tx.insert(schema.beats).values({
+                duration: 0.8,
+                position: 1,
+            });
+        });
+
+        const historyStateAfter = await _getHistoryState(db);
+        expect(historyStateAfter.undoSequences).not.toEqual(
+            historyStateBefore.undoSequences,
+        );
+        expect(
+            historyStateAfter.redoSequences,
+            "Redo sequences should be the same",
+        ).toEqual(historyStateBefore.redoSequences);
+        expect(historyStateAfter.historyStats).not.toEqual(
+            historyStateBefore.historyStats,
+        );
+
+        // Revert the history state
+        await _revertHistoryState(db, historyStateBefore);
+        const historyStateAfterRevert = await _getHistoryState(db);
+        expect(historyStateAfterRevert).toEqual(historyStateBefore);
+    });
+});
+
+describeDbTests("transaction with history", (itWithDb) => {
+    const insertBeat = async (
+        tx: DbConnection | DbTransaction,
+        duration: number | null = 0.5,
+    ) =>
+        await tx.insert(schema.beats).values({
+            duration: duration as number,
+            position: 1,
+        });
+    const getBeats = async (db: DbConnection | DbTransaction) =>
+        await db.select().from(schema.beats);
+    const assertHistoryLength = async (
+        db: DbConnection | DbTransaction,
+        length: number,
+        message?: string,
+    ) => {
+        const history = await db.select().from(schema.history_undo);
+        expect(history, message).toHaveLength(length);
+    };
+
+    itWithDb("should throw an error on DB error", async ({ db }) => {
+        const startBeats = await getBeats(db);
+        // should not throw an error
+        await transactionWithHistory(db, "test", async (tx) => {
+            await insertBeat(tx, 0.5);
+        });
+
+        const currentValues = await getBeats(db);
+        expect(currentValues).toHaveLength(startBeats.length + 1);
+        expect(currentValues[currentValues.length - 1].duration).toBe(0.5);
+
+        const errorFunction = async () => {
+            await insertBeat(db, null);
+        };
+        // Db function should throw an error
+        await expect(
+            errorFunction(),
+            "Db function should throw an error",
+        ).rejects.toThrow();
+        expect(await getBeats(db)).toHaveLength(currentValues.length);
+
+        // transaction should throw an error
+        await expect(
+            transactionWithHistory(
+                db,
+                "test transaction with history and error",
+                errorFunction,
+            ),
+            "Transaction should throw an error",
+        ).rejects.toThrow();
+        expect(await getBeats(db)).toHaveLength(currentValues.length);
+    });
+
+    itWithDb(
+        "should throw an error an error, revert transaction, and revert history on error in transaction",
+        async ({ db }) => {
+            await assertHistoryLength(db, 0);
+
+            // should not throw an error
+            const startBeats = await getBeats(db);
+            await transactionWithHistory(db, "test", async (tx) => {
+                await insertBeat(tx, 0.5);
+            });
+            const endBeats = await getBeats(db);
+            expect(endBeats).toHaveLength(startBeats.length + 1);
+            expect(endBeats[endBeats.length - 1].duration).toBe(0.5);
+            await assertHistoryLength(db, 1);
+            const historyStateBefore = await _getHistoryState(db);
+
+            const validateStateDidNotChange = async (
+                functionDescription: string,
+            ) => {
+                const currentBeats = await getBeats(db);
+                expect(
+                    currentBeats,
+                    "Number of beats should not have changed after - " +
+                        functionDescription,
+                ).toHaveLength(endBeats.length);
+                expect(
+                    currentBeats[currentBeats.length - 1].position,
+                    "Position should not have changed after - " +
+                        functionDescription,
+                ).toBe(1);
+                expect(
+                    currentBeats[currentBeats.length - 1].duration,
+                    "Duration should not have changed after - " +
+                        functionDescription,
+                ).toBe(0.5);
+
+                const currentHistoryState = await _getHistoryState(db);
+                expect(
+                    currentHistoryState,
+                    "History state should not have changed after - " +
+                        functionDescription,
+                ).toEqual(historyStateBefore);
+            };
+            await validateStateDidNotChange(
+                "successful transaction with history",
+            );
+
+            const errorFunction = async () => {
+                await insertBeat(db, null);
+            };
+            // Db function should throw an error
+            await expect(
+                errorFunction(),
+                "Db function should throw an error",
+            ).rejects.toThrow();
+            await validateStateDidNotChange("error in db function");
+
+            // transaction should throw an error
+            await expect(
+                transactionWithHistory(db, "test", errorFunction),
+                "Transaction should throw an error",
+            ).rejects.toThrow();
+            await validateStateDidNotChange("error in transaction");
+        },
+    );
+
+    itWithDb(
+        "multiple transaction function should throw an error an error, revert transaction, and revert history on error in transaction",
+        async ({ db }) => {
+            const assertHistoryLength = async (
+                length: number,
+                message?: string,
+            ) => {
+                const history = await db.select().from(schema.history_undo);
+                expect(history, message).toHaveLength(length);
+            };
+            await assertHistoryLength(0);
+
+            const insertBeat = async (
+                tx: DbTransaction,
+                duration: number | null = 0.5,
+            ) =>
+                await tx.insert(schema.beats).values({
+                    duration: duration as number,
+                    position: 1,
+                });
+            const getBeats = async () => await db.select().from(schema.beats);
+
+            const startBeats = await getBeats();
+            // should not throw an error
+            await transactionWithHistory(db, "test", async (tx) => {
+                await insertBeat(tx);
+            });
+            await assertHistoryLength(1);
+            const endBeats = await getBeats();
+            expect(endBeats).toHaveLength(startBeats.length + 1);
+
+            const validateStateDidNotChange = async (
+                functionDescription: string,
+            ) => {
+                const currentBeats = await getBeats();
+                expect(
+                    currentBeats,
+                    "Number of beats should not have changed after - " +
+                        functionDescription,
+                ).toHaveLength(endBeats.length);
+                expect(
+                    currentBeats[currentBeats.length - 1].position,
+                    "Position should not have changed after - " +
+                        functionDescription,
+                ).toBe(1);
+                expect(
+                    currentBeats[currentBeats.length - 1].duration,
+                    "Duration should not have changed after - " +
+                        functionDescription,
+                ).toBe(0.5);
+
+                await assertHistoryLength(
+                    1,
+                    "History length should not change after - " +
+                        functionDescription,
+                );
+            };
+
+            const historyStateBefore = await _getHistoryState(db);
+            // Expect transaction to successfully add values
+            await db.transaction(async (tx) => {
+                await insertBeat(tx, 0.5);
+                await insertBeat(tx, 0.5);
+            });
+            const beatsAfterSuccessfulTransaction = await getBeats();
+            expect(beatsAfterSuccessfulTransaction).toHaveLength(
+                endBeats.length + 2,
+            );
+            // delete the last two beats
+            const beatsToDelete = beatsAfterSuccessfulTransaction.slice(-2);
+            await db.delete(schema.beats).where(
+                inArray(
+                    schema.beats.id,
+                    beatsToDelete.map((beat) => beat.id),
+                ),
+            );
+            const beatsAfterDeletion = await getBeats();
+            expect(beatsAfterDeletion).toHaveLength(endBeats.length);
+            await _revertHistoryState(db, historyStateBefore);
+            await validateStateDidNotChange("transaction with history");
+
+            // transaction should throw an error and revert items in transactions
+            await expect(
+                transactionWithHistory(db, "test", async (tx) => {
+                    await insertBeat(tx, 0.123);
+                    await insertBeat(tx, 1.12342311);
+                    // should throw an error
+                    await insertBeat(tx, null);
+                    await insertBeat(tx, 0.5);
+                }),
+                "transaction should throw an NOT NULL error",
+            ).rejects.toThrow();
+            await validateStateDidNotChange("transaction with NOT NULL error");
+
+            // transaction should throw an error and revert items in transactions
+            await expect(
+                transactionWithHistory(db, "test", async (tx) => {
+                    await insertBeat(tx, 0.5);
+                    await insertBeat(tx, 2.12342311);
+                    throw new Error("test error");
+                }),
+                "transaction should throw a manual error",
+            ).rejects.toThrow();
+            await validateStateDidNotChange("transaction with manual error");
+        },
+    );
 });

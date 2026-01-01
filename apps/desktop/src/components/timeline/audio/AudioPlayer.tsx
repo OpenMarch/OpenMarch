@@ -91,6 +91,9 @@ export default function AudioPlayer() {
     // Metronome state management
     const { isMetronomeOn, accentFirstBeat, firstBeatOnly, volume, beatStyle } =
         useMetronomeStore();
+    const beatIdsOnPages = useMemo(() => {
+        return new Set(pages.map((page) => page.beats[0].id));
+    }, [pages]);
 
     // Audio playback state management
     const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
@@ -581,6 +584,7 @@ export default function AudioPlayer() {
                 <WaveformTimingOverlay
                     beats={beats}
                     measures={measures}
+                    beatIdsOnPages={beatIdsOnPages}
                     duration={renderedDuration}
                     pixelsPerSecond={uiSettings.timelinePixelsPerSecond}
                     height={WAVEFORM_HEIGHT}
