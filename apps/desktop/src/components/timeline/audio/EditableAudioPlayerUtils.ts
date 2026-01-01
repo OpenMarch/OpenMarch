@@ -7,6 +7,7 @@ import { transactionWithHistory } from "@/db-functions";
 import {
     createBeatsInTransaction,
     deleteBeatsInTransaction,
+    FIRST_BEAT_ID,
 } from "@/db-functions/beat";
 import {
     createMeasuresInTransaction,
@@ -353,7 +354,11 @@ export const _performDatabaseOperations = async ({
     const measureIdsToDelete = new Set(
         oldMeasures.map((measure) => measure.id),
     );
-    const beatIdsToDelete = new Set(oldBeats.map((beat) => beat.id));
+    const beatIdsToDelete = new Set(
+        oldBeats
+            .filter((beat) => beat.id !== FIRST_BEAT_ID)
+            .map((beat) => beat.id),
+    );
 
     await transactionWithHistory(db, "replaceAllBeatObjects", async (tx) => {
         // Update pages

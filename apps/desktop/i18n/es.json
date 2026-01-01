@@ -101,7 +101,12 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error al crear ritmos"
+                "error": "Error al crear ritmos",
+                "success": "Ritmos creados con éxito"
+            },
+            "replace": {
+                "error": "Error al reemplazar ritmos",
+                "success": "Ritmos reemplazados con éxito"
             },
             "save": {
                 "error": "Error al crear nuevos ritmos",

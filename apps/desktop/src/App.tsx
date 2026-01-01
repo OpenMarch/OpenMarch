@@ -19,6 +19,7 @@ import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
+import FocusNotice from "./components/FocusNotice";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
@@ -31,6 +32,7 @@ import { db } from "./global/database/db";
 import { historyKeys } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
+import clsx from "clsx";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -48,7 +50,10 @@ function App() {
     const [analyticsConsent, setAnalyticsConsent] = useState<boolean | null>(
         null,
     );
-    const { fetchUiSettings } = useUiSettingsStore();
+    const {
+        fetchUiSettings,
+        uiSettings: { focussedComponent },
+    } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
 
@@ -61,14 +66,14 @@ function App() {
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
-        console.log("Loading plugins...");
+        console.debug("Loading plugins...");
         void window.plugins
             ?.list()
             .then(async (pluginPaths: string[]) => {
                 for (const path of pluginPaths) {
                     const pluginName =
                         path.split(/[/\\]/).pop() || "Unknown Plugin";
-                    console.log(`Loading plugin: ${pluginName}`);
+                    console.debug(`Loading plugin: ${pluginName}`);
                     try {
                         const code = await window.plugins.get(path);
 
@@ -101,7 +106,7 @@ function App() {
                 }
             })
             .then(() => {
-                console.log("All plugins loaded.");
+                console.debug("All plugins loaded.");
             });
     }, []);
 
@@ -181,6 +186,10 @@ function App() {
         void injectTolgeeApiKey();
     }, []);
 
+    const timelineFocussedClass = clsx({
+        "opacity-30": focussedComponent === "timeline",
+    });
+
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
@@ -215,6 +224,7 @@ function App() {
                                             <RegisteredActionsHandler />
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />
+                                            <FocusNotice />
                                             <div
                                                 id="app"
                                                 className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
@@ -223,8 +233,19 @@ function App() {
                                                     id="workspace"
                                                     className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                                 >
-                                                    <Toolbar />
-                                                    <div className="relative flex h-full min-h-0 min-w-0 gap-8">
+                                                    <div
+                                                        className={
+                                                            timelineFocussedClass
+                                                        }
+                                                    >
+                                                        <Toolbar />
+                                                    </div>
+                                                    <div
+                                                        className={clsx(
+                                                            "relative flex h-full min-h-0 min-w-0 gap-8",
+                                                            timelineFocussedClass,
+                                                        )}
+                                                    >
                                                         {!isFullscreen && (
                                                             <>
                                                                 <Sidebar />
@@ -242,7 +263,15 @@ function App() {
                                                     </div>
                                                     <TimelineContainer />
                                                 </div>
-                                                {!isFullscreen && <Inspector />}
+                                                {!isFullscreen && (
+                                                    <div
+                                                        className={
+                                                            timelineFocussedClass
+                                                        }
+                                                    >
+                                                        <Inspector />
+                                                    </div>
+                                                )}
                                             </div>
                                             <Toaster />
                                         </SelectedAudioFileProvider>
