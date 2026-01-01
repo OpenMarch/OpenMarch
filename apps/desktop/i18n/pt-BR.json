@@ -672,9 +672,9 @@
         "updateFailed": "Falha ao atualizar página - {erro}"
     },
     "measures": {
-        "createFailed": "Falha ao criar compassos - {erro}",
-        "deleteFailed": "Falha ao excluir compassos - {erro}",
-        "updateFailed": "Falha ao atualizar compassos - {erro}"
+        "createFailed": "Falha ao criar compassos - {error}",
+        "deleteFailed": "Falha ao excluir compassos - {error}",
+        "updateFailed": "Falha ao atualizar compassos - {error}"
     },
     "section": {
         "drumMajor": "Mestre de Cerimônias",
