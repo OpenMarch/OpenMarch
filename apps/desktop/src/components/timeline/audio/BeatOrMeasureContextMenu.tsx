@@ -6,6 +6,9 @@ import {
     updateBeatsMutationOptions,
     createBeatsMutationOptions,
     deleteBeatsMutationOptions,
+    createMeasuresAndBeatsMutationOptions,
+    deleteMeasuresAndBeatsMutationOptions,
+    deleteMeasuresMutationOptions,
 } from "@/hooks/queries";
 import { conToastError } from "@/utilities/utils";
 import { Input, Button, UnitInput } from "@openmarch/ui";
@@ -103,59 +106,37 @@ const BeatOrMeasureContextMenu = ({
                     sideOffset={5}
                     onOpenAutoFocus={(e) => e.preventDefault()}
                 >
-                    <div className="flex flex-col gap-16">
-                        <MeasureContextMenuContent
-                            beat={beat}
-                            measure={measure}
-                            closeParent={handleClose}
-                        />
-                        <BeatContextMenuContent
-                            beat={beat}
-                            beatIdsOnPages={beatIdsOnPages}
-                            closeParent={handleClose}
-                        />
-                    </div>
+                    <ContextMenuContent
+                        beat={beat}
+                        measure={measure}
+                        beatIdsOnPages={beatIdsOnPages}
+                        closeParent={handleClose}
+                    />
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>
     );
 };
 
-const MeasureContextMenuContent = ({
-    beat,
+const RehearsalMarkInput = ({
     measure,
     closeParent,
 }: {
-    beat: Beat;
     measure: Measure | null;
     closeParent: () => void;
 }) => {
     const [rehearsalMark, setRehearsalMark] = useState(
         measure?.rehearsalMark ?? "",
     );
-    const rehearsalMarkInputRef = useRef<HTMLInputElement>(null);
     const queryClient = useQueryClient();
     const updateMeasureMutation = useMutation(
         updateMeasuresMutationOptions(queryClient),
-    );
-    const createMeasureMutation = useMutation(
-        createMeasuresMutationOptions(queryClient),
     );
 
     // Update rehearsal mark when measure changes
     useEffect(() => {
         setRehearsalMark(measure?.rehearsalMark ?? "");
     }, [measure?.rehearsalMark]);
-
-    const handleCreateMeasure = () => {
-        createMeasureMutation.mutate([
-            {
-                start_beat: beat.id,
-                rehearsal_mark: null,
-            },
-        ]);
-        closeParent();
-    };
 
     const saveRehearsalMark = () => {
         if (!measure) return;
@@ -191,77 +172,46 @@ const MeasureContextMenuContent = ({
             e.preventDefault();
             e.stopPropagation();
             saveRehearsalMark();
-            // Call this to ensure the parent is closed
-            closeParent();
         }
     };
 
-    return (
-        <div className="flex flex-col gap-8" aria-label="Measure context menu">
-            <h4 className="text-text-subtitle text-sm">Measure</h4>
+    if (!measure) return null;
 
-            {measure ? (
-                <>
-                    <label className="text-text text-body">
-                        Rehearsal Mark
-                    </label>
-                    <Input
-                        ref={rehearsalMarkInputRef}
-                        type="text"
-                        value={rehearsalMark}
-                        onChange={(e) => setRehearsalMark(e.target.value)}
-                        onBlur={saveRehearsalMark}
-                        onKeyDown={handleKeyDown}
-                        onClick={(e) => {
-                            e.stopPropagation();
-                        }}
-                        onMouseDown={(e) => {
-                            e.currentTarget.focus();
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }}
-                        disabled={updateMeasureMutation.isPending}
-                    />
-                </>
-            ) : (
-                <Button
-                    variant="secondary"
-                    className="w-full justify-center text-xs"
-                    size="compact"
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    onClick={handleCreateMeasure}
-                    disabled={createMeasureMutation.isPending}
-                >
-                    <PlusIcon /> Create Measure
-                </Button>
-            )}
-        </div>
+    return (
+        <>
+            <label className="text-text text-body">Rehearsal Mark</label>
+            <Input
+                type="text"
+                value={rehearsalMark}
+                onChange={(e) => setRehearsalMark(e.target.value)}
+                onBlur={saveRehearsalMark}
+                onKeyDown={handleKeyDown}
+                onClick={(e) => {
+                    e.stopPropagation();
+                }}
+                onMouseDown={(e) => {
+                    e.currentTarget.focus();
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                disabled={updateMeasureMutation.isPending}
+            />
+        </>
     );
 };
 
-const BeatContextMenuContent = ({
+const TempoInput = ({
     beat,
     closeParent,
-    beatIdsOnPages,
 }: {
     beat: Beat;
     closeParent: () => void;
-    beatIdsOnPages: Set<number>;
 }) => {
     // Convert duration to BPM for display
     const initialTempo = durationToTempo(beat.duration);
     const [tempo, setTempo] = useState(initialTempo.toString());
     const queryClient = useQueryClient();
     const mutation = useMutation(updateBeatsMutationOptions(queryClient));
-    const createBeatMutation = useMutation(
-        createBeatsMutationOptions(queryClient),
-    );
-    const deleteBeatMutation = useMutation(
-        deleteBeatsMutationOptions(queryClient),
-    );
 
     const saveTempo = () => {
         const newTempo = parseFloat(tempo);
@@ -306,8 +256,6 @@ const BeatContextMenuContent = ({
             e.preventDefault();
             e.stopPropagation();
             saveTempo();
-            // Call this to ensure the parent is closed
-            closeParent();
         }
     };
 
@@ -321,28 +269,12 @@ const BeatContextMenuContent = ({
         setTempo(currentTempo.toString());
     }, [beat.duration]);
 
-    const handleCreateBeat = () => {
-        createBeatMutation.mutate({
-            newBeats: [
-                {
-                    duration: beat.duration,
-                    include_in_measure: true,
-                },
-            ],
-            startingPosition: beat.position,
-        });
-    };
-
-    const handleDeleteBeat = () => {
-        deleteBeatMutation.mutate(new Set([beat.id]));
-    };
-
     return (
-        <div className="flex flex-col gap-8" aria-label="Beat context menu">
+        <>
             <label className="text-text text-body">Tempo</label>
             <UnitInput
                 type="number"
-                step={0.1}
+                step={1}
                 min={1}
                 value={tempo}
                 onChange={(e) => setTempo(e.target.value)}
@@ -353,24 +285,92 @@ const BeatContextMenuContent = ({
                 unit="BPM"
                 autoFocus
             />
-            <div className="flex justify-between text-xs">
+        </>
+    );
+};
+
+const BeatButtons = ({
+    beat,
+    beatIsOnPage,
+    closeParent,
+}: {
+    beat: Beat;
+    beatIsOnPage: boolean;
+    closeParent: () => void;
+}) => {
+    const queryClient = useQueryClient();
+    const { mutate: createBeat, isPending: isCreatingBeat } = useMutation(
+        createBeatsMutationOptions(queryClient),
+    );
+    const { mutate: deleteBeat, isPending: isDeletingBeat } = useMutation(
+        deleteBeatsMutationOptions(queryClient),
+    );
+    const { mutate: createMeasure, isPending: isCreatingMeasure } = useMutation(
+        createMeasuresMutationOptions(queryClient),
+    );
+
+    const handleCreateMeasure = () => {
+        createMeasure([
+            {
+                start_beat: beat.id,
+                rehearsal_mark: null,
+            },
+        ]);
+    };
+
+    const handleCreateBeat = () => {
+        createBeat(
+            {
+                newBeats: [
+                    {
+                        duration: beat.duration,
+                        include_in_measure: true,
+                    },
+                ],
+                startingPosition: beat.position,
+            },
+            {
+                onSuccess: () => {
+                    closeParent();
+                },
+                onError: (error) => {
+                    conToastError("Error creating beat", error);
+                },
+            },
+        );
+    };
+
+    const handleDeleteBeat = () => {
+        deleteBeat(new Set([beat.id]), {
+            onSuccess: () => {
+                closeParent();
+            },
+            onError: (error) => {
+                conToastError("Error deleting beat", error);
+            },
+        });
+    };
+    return (
+        <>
+            <Button
+                variant="secondary"
+                className="mt-8 w-full justify-center"
+                size="compact"
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                onClick={handleCreateMeasure}
+                disabled={isCreatingMeasure}
+            >
+                Mark as Measure
+            </Button>
+            <div className="flex justify-between">
                 <Button
                     variant="red"
                     size="compact"
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    onClick={handleDeleteBeat}
-                    disabled={mutation.isPending || beatIdsOnPages.has(beat.id)}
-                >
-                    <TrashIcon />
-                </Button>
-                <Button
-                    variant="primary"
-                    size="compact"
                     tooltipText={
-                        beatIdsOnPages.has(beat.id)
+                        beatIsOnPage
                             ? "Beats on pages cannot be deleted"
                             : undefined
                     }
@@ -378,12 +378,179 @@ const BeatContextMenuContent = ({
                         e.preventDefault();
                         e.stopPropagation();
                     }}
+                    onClick={handleDeleteBeat}
+                    disabled={isDeletingBeat || beatIsOnPage}
+                >
+                    <TrashIcon />
+                </Button>
+                <Button
+                    variant="primary"
+                    size="compact"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
                     onClick={handleCreateBeat}
-                    disabled={mutation.isPending}
+                    disabled={isCreatingBeat}
                 >
                     <PlusIcon /> Add Beat
                 </Button>
             </div>
+        </>
+    );
+};
+
+const MeasureButtons = ({
+    measure,
+    anyMeasureBeatOnPage,
+    closeParent,
+}: {
+    measure: Pick<Measure, "id" | "beats">;
+    anyMeasureBeatOnPage: boolean;
+    closeParent: () => void;
+}) => {
+    const queryClient = useQueryClient();
+    const {
+        mutate: createMeasuresAndBeats,
+        isPending: isCreatingMeasuresAndBeats,
+    } = useMutation(createMeasuresAndBeatsMutationOptions(queryClient));
+
+    const {
+        mutate: deleteMeasuresAndBeats,
+        isPending: isDeletingMeasuresAndBeats,
+    } = useMutation(deleteMeasuresAndBeatsMutationOptions(queryClient));
+    const { mutate: deleteMeasures, isPending: isDeletingMeasures } =
+        useMutation(deleteMeasuresMutationOptions(queryClient));
+
+    const disabled =
+        isCreatingMeasuresAndBeats ||
+        isDeletingMeasuresAndBeats ||
+        isDeletingMeasures;
+
+    const handleDeleteMeasureAndBeats = () => {
+        deleteMeasuresAndBeats(new Set([measure.id]), {
+            onSuccess: () => {
+                closeParent();
+            },
+            onError: (error) => {
+                conToastError("Error deleting measure and beats", error);
+            },
+        });
+    };
+
+    const handleRemoveMeasureMarking = () => {
+        deleteMeasures(new Set([measure.id]), {
+            onSuccess: () => {
+                closeParent();
+            },
+            onError: (error) => {
+                conToastError("Error removing measure marking", error);
+            },
+        });
+    };
+
+    const handleCreateMeasureAndBeats = () => {
+        createMeasuresAndBeats(
+            {
+                beatArgs: measure.beats.map((b) => ({
+                    duration: b.duration,
+                })),
+                startingPosition:
+                    measure.beats[measure.beats.length - 1].position,
+            },
+            {
+                onSuccess: () => {
+                    closeParent();
+                },
+                onError: (error) => {
+                    conToastError("Error creating measure and beats", error);
+                },
+            },
+        );
+    };
+
+    return (
+        <>
+            <Button
+                variant="secondary"
+                className="mt-8 w-full justify-center"
+                size="compact"
+                onMouseDown={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }}
+                onClick={handleRemoveMeasureMarking}
+                disabled={disabled}
+            >
+                Remove Measure Marking
+            </Button>
+            <div className="flex justify-between">
+                <Button
+                    variant="red"
+                    size="compact"
+                    tooltipText={
+                        anyMeasureBeatOnPage
+                            ? "Beats on pages cannot be deleted"
+                            : undefined
+                    }
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={handleDeleteMeasureAndBeats}
+                    disabled={
+                        isDeletingMeasuresAndBeats || anyMeasureBeatOnPage
+                    }
+                >
+                    <TrashIcon />
+                </Button>
+                <Button
+                    variant="primary"
+                    size="compact"
+                    onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    onClick={handleCreateMeasureAndBeats}
+                    disabled={disabled}
+                >
+                    <PlusIcon /> Add Measure
+                </Button>
+            </div>
+        </>
+    );
+};
+
+const ContextMenuContent = ({
+    beat,
+    measure,
+    closeParent,
+    beatIdsOnPages,
+}: {
+    beat: Beat;
+    measure: Measure | null;
+    closeParent: () => void;
+    beatIdsOnPages: Set<number>;
+}) => {
+    return (
+        <div className="flex flex-col gap-8" aria-label="Beat context menu">
+            <RehearsalMarkInput measure={measure} closeParent={closeParent} />
+            <TempoInput beat={beat} closeParent={closeParent} />
+            {measure ? (
+                <MeasureButtons
+                    measure={measure}
+                    anyMeasureBeatOnPage={measure.beats.some((b) =>
+                        beatIdsOnPages.has(b.id),
+                    )}
+                    closeParent={closeParent}
+                />
+            ) : (
+                <BeatButtons
+                    beat={beat}
+                    beatIsOnPage={beatIdsOnPages.has(beat.id)}
+                    closeParent={closeParent}
+                />
+            )}
         </div>
     );
 };

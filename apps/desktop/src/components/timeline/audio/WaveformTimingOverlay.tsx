@@ -9,6 +9,7 @@ import type Beat from "@/global/classes/Beat";
 import type Measure from "@/global/classes/Measure";
 import clsx from "clsx";
 import BeatOrMeasureContextMenu from "./BeatOrMeasureContextMenu";
+import { FIRST_BEAT_ID } from "@/db-functions";
 
 interface WaveformTimingOverlayProps {
     beats: Beat[];
@@ -206,6 +207,7 @@ export default function WaveformTimingOverlay({
                 })}
 
                 {visibleBeats.map((beat) => {
+                    if (beat.id === FIRST_BEAT_ID) return undefined;
                     const x = beat.timestamp * pxPerSecond;
                     return (
                         <BeatOrMeasureContextMenu
