@@ -10,7 +10,12 @@ import {
     getBeatIdsByMeasureId,
     deleteMeasuresAndBeatsInTransaction,
 } from "../measures";
-import { createPages, getBeats, transactionWithHistory } from "@/db-functions";
+import {
+    createPages,
+    getBeats,
+    getPages,
+    transactionWithHistory,
+} from "@/db-functions";
 import { describeDbTests, schema } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 import * as fc from "fast-check";
@@ -1206,7 +1211,8 @@ describeDbTests("measures", (it) => {
             },
         );
 
-        testWithHistory.only.for([
+        // Do not use testWithHistory here. It does not work for this test.
+        it.for([
             {
                 description: "single measure with page on same beat",
                 measures: [{ start_beat: 1, rehearsal_mark: "A", notes: null }],
@@ -1254,6 +1260,10 @@ describeDbTests("measures", (it) => {
                         },
                     ],
                 });
+                const measuresBefore = await getMeasures({ db });
+                const beatsBefore = await getBeats({ db });
+                const pagesBefore = await getPages({ db });
+                const undoRowsBefore = await db.query.history_undo.findMany();
 
                 await expect(
                     transactionWithHistory(
@@ -1269,7 +1279,13 @@ describeDbTests("measures", (it) => {
                         },
                     ),
                 ).rejects.toThrow();
-                console.log();
+
+                expect(measuresBefore).toEqual(await getMeasures({ db }));
+                expect(beatsBefore).toEqual(await getBeats({ db }));
+                expect(pagesBefore).toEqual(await getPages({ db }));
+                expect(undoRowsBefore).toEqual(
+                    await db.query.history_undo.findMany(),
+                );
             },
         );
 
