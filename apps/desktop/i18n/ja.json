@@ -293,6 +293,7 @@
         "checkpoint": {
             "created": "{axis} チェックポイントが {steps} ステップで作成されました",
             "delete": "削除",
+            "deleteTooltip": "このチェックポイントをフィールドから削除",
             "deleted": "{axis} チェックポイントが {steps} ステップで削除されました - \"{name}\"",
             "fieldLabel": "フィールド ラベル",
             "fieldLabelTooltip": "フィールドに表示されるラベル (例: yard marker)",
@@ -417,6 +418,7 @@
             "leftAbbreviation": "例: \" S1 \", \" AL \" 、 \" SR \" （ \" Side 1 \" 、 \" Audience Left \" または \" Stage Right \" の省略形）",
             "measurementSystem": "測定 システム。段階 的な サイズ を 決める 単位。進み戻り できる",
             "resetTheme": "テーマを デフォルト値 にリセット",
+            "resetToDefault": "デフォルトにリセット",
             "rightAbbreviation": "例:「S 2」、「AR」または「SL」（「Side 2」、「Audience Right」または「Stage Left」の省略形）",
             "stepsFromFrontToAwayLabelBottom": "前 サイドライン から アウェイ ナンバー の 外側 （後 サイドライン に 近い） まで の ステップ 数",
             "stepsFromFrontToAwayLabelTop": "前 サイドライン から アウェイ ナンバー の 内側 （フィールド の 中心 に 近い方） まで の ステップ 数",

@@ -293,6 +293,7 @@
         "checkpoint": {
             "created": "\"{axis}-checkpoint em {steps} etapas criado\"",
             "delete": "Excluir",
+            "deleteTooltip": "Excluir este ponto de verificação do campo",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
             "fieldLabel": "Rótulo de Campo",
             "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
@@ -417,6 +418,7 @@
             "leftAbbreviation": "Ex.: \"S1\", \"EP\" ou \"DP\" (abreviação de \"Lado 1\", \"Esquerda da Plateia\" ou \"Direita do Palco\")",
             "measurementSystem": "A unidade de medida para definir o tamanho do passo. Pode ir e voltar",
             "resetTheme": "Redefinir o tema para os valores padrão",
+            "resetToDefault": "Redefinir para o padrão",
             "rightAbbreviation": "Ex.: \"S2\", \"DP\" ou \"EP\" (abreviação de \"Lado 2\", \"Direita da Plateia\" ou \"Esquerda do Palco\")",
             "stepsFromFrontToAwayLabelBottom": "Número de passos da linha lateral da frente até o lado de fora do número visitante (mais próximo à linha lateral de trás)",
             "stepsFromFrontToAwayLabelTop": "Número de passos da linha lateral da frente para o interior do número visitante (mais próximo ao centro do campo)",
