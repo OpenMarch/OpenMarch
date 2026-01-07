@@ -1,11 +1,11 @@
 import { Checkpoint } from "@openmarch/core";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { CaretDownIcon, CaretUpIcon } from "@phosphor-icons/react";
 import { Input, Button, Switch } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import FormField from "../../ui/FormField";
-import { inputClassname } from "./utils";
+import { inputClassname, blurOnEnterFunc as blurOnEnter } from "./utils";
 
 interface CheckpointEditorProps {
     checkpoint: Checkpoint;
@@ -26,20 +26,6 @@ export function CheckpointEditor({
 }: CheckpointEditorProps) {
     const { t } = useTolgee();
     const [open, setOpen] = useState(false);
-
-    /**
-     * A callback function that blurs the current input element when the "Enter" key is pressed.
-     * This is used to handle the behavior of the input field when the user presses the "Enter" key,
-     * ensuring that the focus is removed from the input.
-     **/
-    const blurOnEnter = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === "Enter") {
-                e.currentTarget.blur();
-            }
-        },
-        [],
-    );
 
     return (
         <RadixCollapsible.Root
@@ -249,7 +235,9 @@ export function CheckpointEditor({
                         variant="red"
                         size="compact"
                         className="mx-12 mt-6 mb-8 self-end"
-                        tooltipText="Delete this checkpoint from the field"
+                        tooltipText={t(
+                            "fieldProperties.checkpoint.deleteTooltip",
+                        )}
                         tooltipSide="right"
                         type="button"
                         onClick={() => {

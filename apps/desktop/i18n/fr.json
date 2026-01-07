@@ -293,6 +293,7 @@
         "checkpoint": {
             "created": "\"{axis}-point de contrôle à {steps} étapes créé\"",
             "delete": "Supprimer",
+            "deleteTooltip": "Supprimer ce point de contrôle du terrain",
             "deleted": "\"{axis}-point de contrôle à {steps} étapes supprimé - \"{name}\"",
             "fieldLabel": "Étiquette de point de cheminement",
             "fieldLabelTooltip": "\"L'étiquette à afficher sur le champ (c'est-à-dire, les repères de terrain)\"",
@@ -416,6 +417,7 @@
             "leftAbbreviation": "Par ex. \"S1\", \"AG\" ou \"SD\" (abréviation de \"Côté 1\", \"Audience Gauche\" ou \"Scène Droite\")",
             "measurementSystem": "L'unité de mesure pour définir la taille de pas. Peut aller et venir",
             "resetTheme": "Réinitialiser le thème aux valeurs par défaut",
+            "resetToDefault": "Réinitialiser par défaut",
             "rightAbbreviation": "Par ex. \"S2\", \"AD\" ou \"SG\" (abréviation de \"Côté 2\", \"Audience Droite\" ou \"Scène Gauche\")",
             "stepsFromFrontToAwayLabelBottom": "Nombre de pas depuis la ligne de touche avant jusqu'à l'extérieur du numéro extérieur (plus proche de la ligne de touche arrière)",
             "stepsFromFrontToAwayLabelTop": "Nombre de pas depuis la ligne de touche avant jusqu'à l'intérieur du numéro extérieur (plus proche du centre du terrain)",

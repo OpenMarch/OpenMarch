@@ -293,6 +293,7 @@
         "checkpoint": {
             "created": "{axis}-checkpoint at {steps} steps created",
             "delete": "Delete",
+            "deleteTooltip": "Delete this checkpoint from the field",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
@@ -417,6 +418,7 @@
             "leftAbbreviation": "E.g. \"S1\", \"AL\" or \"SR\" (short for \"Side 1\", \"Audience Left\" or \"Stage Right\")",
             "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
             "resetTheme": "Reset the theme to the default values",
+            "resetToDefault": "Reset to default",
             "rightAbbreviation": "E.g. \"S2\", \"AR\" or \"SL\" (short for \"Side 2\", \"Audience Right\" or \"Stage Left\")",
             "stepsFromFrontToAwayLabelBottom": "Number of steps from the front sideline to the outside of the away number (closer to the back sideline)",
             "stepsFromFrontToAwayLabelTop": "Number of steps from the front sideline to the inside of the away number (closer to the center of the field)",

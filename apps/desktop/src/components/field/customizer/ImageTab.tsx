@@ -10,9 +10,13 @@ import {
 } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import FormField from "../../ui/FormField";
-import { ImageTabProps } from "./types";
 import { inputClassname } from "./utils";
 import clsx from "clsx";
+
+interface ImageTabProps {
+    currentFieldProperties: FieldProperties;
+    updateFieldProperties: (props: FieldProperties) => void;
+}
 
 export function ImageTab({
     currentFieldProperties,

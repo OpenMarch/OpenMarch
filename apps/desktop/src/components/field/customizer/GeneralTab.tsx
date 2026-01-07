@@ -9,9 +9,17 @@ import {
 } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import clsx from "clsx";
-import FormField from "../../ui/FormField";
-import { GeneralTabProps } from "./types";
+import FormField from "@/components/ui/FormField";
 import { inputClassname } from "./utils";
+
+interface GeneralTabProps {
+    currentFieldProperties: FieldProperties;
+    updateFieldProperties: (props: FieldProperties) => void;
+    fieldProperties: FieldProperties | undefined;
+    measurementSystem: MeasurementSystem;
+    stepSizeInputRef: React.RefObject<HTMLInputElement | null>;
+    blurOnEnter: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+}
 
 export function GeneralTab({
     currentFieldProperties,
