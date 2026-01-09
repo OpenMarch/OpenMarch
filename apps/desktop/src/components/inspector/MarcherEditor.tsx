@@ -604,6 +604,15 @@ function MarcherEditor() {
         );
     }
 
+    const xCheckpoint = (rCoords: ReadableCoords) =>
+        rCoords.xCheckpoint.terseName ||
+        rCoords.xCheckpoint.name ||
+        `X-Checkpoint ${rCoords.xCheckpoint.id.toString()}`;
+    const yCheckpoint = (rCoords: ReadableCoords) =>
+        rCoords.yCheckpoint.terseName ||
+        rCoords.yCheckpoint.name ||
+        `Y-Checkpoint ${rCoords.yCheckpoint.id.toString()}`;
+
     return (
         <>
             {selectedMarchers.length > 0 && fieldProperties && (
@@ -786,33 +795,19 @@ function MarcherEditor() {
                                             </Select>
                                             <Select
                                                 disabled
-                                                value={
-                                                    rCoords.xCheckpoint
-                                                        .terseName ||
-                                                    rCoords.xCheckpoint.name
-                                                }
+                                                value={xCheckpoint(rCoords)}
                                             >
                                                 <SelectTriggerCompact
-                                                    label={
-                                                        rCoords.xCheckpoint
-                                                            .terseName ||
-                                                        rCoords.xCheckpoint.name
-                                                    }
+                                                    label={xCheckpoint(rCoords)}
                                                     className="disabled:cursor-auto disabled:opacity-100"
                                                 />
                                                 <SelectContent>
                                                     <SelectItem
-                                                        value={
-                                                            rCoords.xCheckpoint
-                                                                .terseName ||
-                                                            rCoords.xCheckpoint
-                                                                .name
-                                                        }
+                                                        value={xCheckpoint(
+                                                            rCoords,
+                                                        )}
                                                     >
-                                                        {rCoords.xCheckpoint
-                                                            .terseName ||
-                                                            rCoords.xCheckpoint
-                                                                .name}
+                                                        {xCheckpoint(rCoords)}
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -896,33 +891,19 @@ function MarcherEditor() {
                                             </Select>
                                             <Select
                                                 disabled
-                                                value={
-                                                    rCoords.yCheckpoint
-                                                        .terseName ||
-                                                    rCoords.yCheckpoint.name
-                                                }
+                                                value={yCheckpoint(rCoords)}
                                             >
                                                 <SelectTriggerCompact
-                                                    label={
-                                                        rCoords.yCheckpoint
-                                                            .terseName ||
-                                                        rCoords.yCheckpoint.name
-                                                    }
+                                                    label={yCheckpoint(rCoords)}
                                                     className="disabled:cursor-auto disabled:opacity-100"
                                                 />
                                                 <SelectContent>
                                                     <SelectItem
-                                                        value={
-                                                            rCoords.yCheckpoint
-                                                                .terseName ||
-                                                            rCoords.yCheckpoint
-                                                                .name
-                                                        }
+                                                        value={yCheckpoint(
+                                                            rCoords,
+                                                        )}
                                                     >
-                                                        {rCoords.yCheckpoint
-                                                            .terseName ||
-                                                            rCoords.yCheckpoint
-                                                                .name}
+                                                        {yCheckpoint(rCoords)}
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
