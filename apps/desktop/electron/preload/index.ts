@@ -1,10 +1,23 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
-import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
+import {
+    contextBridge,
+    ipcRenderer,
+    IpcRendererEvent,
+    SaveDialogOptions,
+} from "electron";
 import * as DbServices from "electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "electron/main/services/recent-files-service";
+import type {
+    AuthState,
+    AuthError,
+    LoginResult,
+    LogoutResult,
+    AccessTokenResult,
+} from "electron/main/auth/types";
+import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -273,6 +286,51 @@ const APP_API = {
     // Shell
     openExternal: (url: string) =>
         ipcRenderer.invoke("shell:openExternal", url),
+    // Authentication
+    auth: {
+        /** Initiates OAuth login flow - opens browser to Clerk */
+        login: () =>
+            ipcRenderer.invoke(AUTH_IPC_CHANNELS.LOGIN) as Promise<LoginResult>,
+
+        /** Logs out and clears all tokens */
+        logout: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.LOGOUT,
+            ) as Promise<LogoutResult>,
+
+        /** Gets the current authentication state */
+        getState: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.GET_STATE,
+            ) as Promise<AuthState>,
+
+        /** Gets a valid access token (auto-refreshes if needed) */
+        getAccessToken: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.GET_ACCESS_TOKEN,
+            ) as Promise<AccessTokenResult>,
+
+        /** Subscribes to auth state changes */
+        onStateChanged: (callback: (state: AuthState) => void) => {
+            const handler = (_event: IpcRendererEvent, state: AuthState) =>
+                callback(state);
+            ipcRenderer.on(AUTH_IPC_CHANNELS.STATE_CHANGED, handler);
+            return () =>
+                ipcRenderer.removeListener(
+                    AUTH_IPC_CHANNELS.STATE_CHANGED,
+                    handler,
+                );
+        },
+
+        /** Subscribes to auth errors */
+        onError: (callback: (error: AuthError) => void) => {
+            const handler = (_event: IpcRendererEvent, error: AuthError) =>
+                callback(error);
+            ipcRenderer.on(AUTH_IPC_CHANNELS.ERROR, handler);
+            return () =>
+                ipcRenderer.removeListener(AUTH_IPC_CHANNELS.ERROR, handler);
+        },
+    },
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

@@ -29,6 +29,13 @@
                 rank: "Default",
             },
         ],
+        // Custom protocol handler for OAuth callbacks
+        protocols: [
+            {
+                name: "OpenMarch Auth",
+                schemes: ["openmarch"],
+            },
+        ],
     },
     dmg: {
         background: "./build/installerBackground.png",
@@ -74,6 +81,8 @@
         perMachine: false,
         allowToChangeInstallationDirectory: true,
         deleteAppDataOnUninstall: true,
+        // Custom installer script for protocol handler registration
+        include: "./build/installer.nsh",
     },
 
     linux: {
@@ -86,6 +95,8 @@
                 name: "OpenMarch DOTS File",
             },
         ],
+        // Custom protocol handler for OAuth callbacks
+        mimeTypes: ["x-scheme-handler/openmarch"],
     },
     files: ["!**/node_modules/canvas/**"],
     publish: [

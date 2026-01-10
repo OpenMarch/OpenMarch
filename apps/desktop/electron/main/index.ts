@@ -29,6 +29,11 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import {
+    initAuthBeforeReady,
+    initAuthAfterReady,
+    handleAuthSecondInstance,
+} from "./auth";
 
 // The built directory structure
 //
@@ -98,6 +103,9 @@ if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 
 // Set application name for Windows 10+ notifications
 if (process.platform === "win32") app.setAppUserModelId(app.getName());
+
+// Initialize auth protocol handler before app is ready
+initAuthBeforeReady();
 
 if (!app.requestSingleInstanceLock()) {
     app.quit();
@@ -306,6 +314,9 @@ void app.whenReady().then(async () => {
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
+
+    // Initialize auth module after window is created
+    initAuthAfterReady(() => win);
 });
 
 function initGetters() {
@@ -374,9 +385,12 @@ app.on("open-file", async (event, path) => {
 //   });
 // }
 
-app.on("second-instance", () => {
-    if (win) {
-        // Focus on the main window if the user tried to open another
+app.on("second-instance", (_event, commandLine) => {
+    // First check if this is an auth callback (Windows/Linux)
+    const isAuthCallback = handleAuthSecondInstance(commandLine, () => win);
+
+    // If not an auth callback, just focus the window
+    if (!isAuthCallback && win) {
         if (win.isMinimized()) win.restore();
         win.focus();
     }
@@ -520,13 +534,7 @@ ipcMain.handle(
     },
 );
 
-app.on("second-instance", () => {
-    if (win) {
-        // Focus on the main window if the user tried to open another
-        if (win.isMinimized()) win.restore();
-        win.focus();
-    }
-});
+// Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
     const allWindows = BrowserWindow.getAllWindows();
