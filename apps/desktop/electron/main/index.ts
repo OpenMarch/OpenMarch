@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     app,
     BrowserWindow,
@@ -70,6 +71,20 @@ ipcMain.handle("env:get", () => {
         isCI: !!process.env.CI,
         isPlaywrightSession: !!process.env.PLAYWRIGHT_SESSION,
     };
+});
+
+ipcMain.handle("shell:openExternal", async (_, url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`Unsafe URL protocol: ${parsedUrl.protocol}`);
+        }
+        await shell.openExternal(url);
+    } catch (error) {
+        console.error("Error opening external URL:", error);
+        throw error;
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");

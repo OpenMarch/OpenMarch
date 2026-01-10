@@ -697,7 +697,7 @@ describe("Database Repair", () => {
                             {
                                 minLength: 1,
                                 maxLength: 10,
-                                selector: (t) => t.tableName,
+                                selector: (t) => t.tableName.toLowerCase(),
                             },
                         ),
                         async (tables) => {
@@ -792,7 +792,17 @@ describe("Database Repair", () => {
                                 `);
 
                                 // Create tables in both databases
+                                // Track case-insensitive table names to prevent SQLite conflicts
+                                const createdTables = new Set<string>();
                                 for (const table of tables) {
+                                    const tableNameLower =
+                                        table.tableName.toLowerCase();
+                                    // Skip if we've already created a table with this name (case-insensitive)
+                                    if (createdTables.has(tableNameLower)) {
+                                        continue;
+                                    }
+                                    createdTables.add(tableNameLower);
+
                                     const commonColsDef = table.commonColumns
                                         .map((col) => `"${col}" TEXT`)
                                         .join(", ");
@@ -830,6 +840,13 @@ describe("Database Repair", () => {
 
                                 // Verify data was copied correctly
                                 for (const table of tables) {
+                                    const tableNameLower =
+                                        table.tableName.toLowerCase();
+                                    // Skip verification for tables that were skipped due to case-insensitive duplicates
+                                    if (!createdTables.has(tableNameLower)) {
+                                        continue;
+                                    }
+
                                     const originalRows = originalDb
                                         .prepare(
                                             `SELECT * FROM "${table.tableName}"`,
