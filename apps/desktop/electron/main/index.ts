@@ -22,6 +22,7 @@ import {
     clearRecentFiles,
     updateRecentFileSvgPreview,
 } from "./services/recent-files-service";
+import { uploadDatabaseToServer } from "./services/upload-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
@@ -290,6 +291,12 @@ void app.whenReady().then(async () => {
             console.error("Error repairing database:", error);
             throw error;
         }
+    });
+    ipcMain.handle("database:upload", async () => {
+        return await uploadDatabaseToServer((progress) => {
+            // Send progress updates to renderer
+            win?.webContents.send("database:upload-progress", progress);
+        });
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 
