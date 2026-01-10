@@ -3,6 +3,7 @@ import * as fs from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
 import * as DatabaseServices from "../../database/database.services";
+import { getValidAccessToken } from "../auth/token-manager";
 
 export interface UploadResult {
     success: boolean;
@@ -76,14 +77,24 @@ async function uploadFileToServer(
         progress: 0,
     });
 
+    // Get valid access token for authentication
+    const accessToken = await getValidAccessToken();
+    if (!accessToken) {
+        return {
+            success: false,
+            error: "Authentication required. Please sign in to upload files.",
+        };
+    }
+
     const formData = new FormData();
     // Convert Buffer to Uint8Array then to Blob for FormData compatibility
     const uint8Array = new Uint8Array(fileBuffer);
     const blob = new Blob([uint8Array], { type: "application/octet-stream" });
     formData.append("file", blob, fileName);
 
-    const uploadEndpoint =
-        process.env.UPLOAD_ENDPOINT || "https://api.example.com/upload";
+    const uploadEndpoint = process.env.UPLOAD_ENDPOINT;
+
+    if (!uploadEndpoint) throw new Error("Upload endpoint is not set");
 
     onProgress?.({
         status: "progress",
@@ -93,6 +104,9 @@ async function uploadFileToServer(
 
     const response = await fetch(uploadEndpoint, {
         method: "POST",
+        headers: {
+            Authorization: `Bearer ${accessToken}`,
+        },
         body: formData,
     });
 

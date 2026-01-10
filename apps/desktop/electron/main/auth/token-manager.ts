@@ -175,7 +175,15 @@ export function validateState(receivedState: string): PendingAuthFlow | null {
 }
 
 /**
- * Gets a valid access token, refreshing if necessary.
+ * Gets a valid token for API authentication, refreshing if necessary.
+ *
+ * Returns the ID token (JWT) instead of the access token because:
+ * - Clerk's Ruby SDK verify_token() method expects a JWT with 'sub' claim
+ * - The ID token is a JWT with user claims including 'sub' (subject/user ID)
+ * - OAuth access tokens may be opaque and not directly verifiable by verify_token()
+ *
+ * Note: The token expiration check uses the access token's expiration time,
+ * but we return the ID token which typically has a similar or shorter lifespan.
  */
 export async function getValidAccessToken(): Promise<string | null> {
     const tokens = getStoredTokens();
@@ -196,13 +204,15 @@ export async function getValidAccessToken(): Promise<string | null> {
                 clearTokens();
                 return null;
             }
-            return tokens.accessToken;
+            // Return ID token for Rails SDK verification (JWT with sub claim)
+            return tokens.idToken;
         }
 
         try {
             const newTokens = await onTokenRefresh(tokens);
             storeTokens(newTokens);
-            return newTokens.accessToken;
+            // Return ID token for Rails SDK verification (JWT with sub claim)
+            return newTokens.idToken;
         } catch (error) {
             console.error("[Auth] Failed to refresh token:", error);
 
@@ -212,12 +222,14 @@ export async function getValidAccessToken(): Promise<string | null> {
                 return null;
             }
 
-            // Token not yet expired, return current one
-            return tokens.accessToken;
+            // Token not yet expired, return current ID token
+            return tokens.idToken;
         }
     }
 
-    return tokens.accessToken;
+    // Return ID token for Rails SDK verification (JWT with sub claim)
+    // The ID token is a JWT that Clerk's Ruby SDK verify_token() can verify
+    return tokens.idToken;
 }
 
 /**
