@@ -243,6 +243,21 @@ export const _calculateMapAllTagAppearanceIdsByPageId = ({
         appearancesByTagId[appearance.tag_id].push(appearance);
     }
 
+    // Track the earliest start page order for each unique appearance ID
+    // This handles the case where the same appearance ID appears with different start_page_ids
+    const earliestStartOrderByAppearanceId: Record<number, number> = {};
+    for (const appearance of tagAppearances) {
+        const startPageOrder = pageIdToOrder[appearance.start_page_id];
+        if (startPageOrder === undefined) continue;
+
+        if (
+            earliestStartOrderByAppearanceId[appearance.id] === undefined ||
+            startPageOrder < earliestStartOrderByAppearanceId[appearance.id]
+        ) {
+            earliestStartOrderByAppearanceId[appearance.id] = startPageOrder;
+        }
+    }
+
     // For each tag, sort its appearances by page order and determine which pages they apply to
     for (const appearances of Object.values(appearancesByTagId)) {
         // Sort appearances by the order of their start_page_id
@@ -257,20 +272,26 @@ export const _calculateMapAllTagAppearanceIdsByPageId = ({
             const currentAppearance = sortedAppearances[i];
             const nextAppearance = sortedAppearances[i + 1];
 
-            const startPageOrder =
-                pageIdToOrder[currentAppearance.start_page_id];
-            if (startPageOrder === undefined) continue;
+            // Use the earliest start page order for this appearance ID
+            // This ensures an appearance ID never appears before any of its start_page_ids
+            const effectiveStartPageOrder =
+                earliestStartOrderByAppearanceId[currentAppearance.id];
+            if (effectiveStartPageOrder === undefined) continue;
 
             // Determine the end page order (exclusive)
-            const endPageOrder = nextAppearance
-                ? pageIdToOrder[nextAppearance.start_page_id]
-                : pagesInOrder.length;
+            // Find the next appearance of the same tag that starts later
+            let endPageOrder = pagesInOrder.length;
+            if (nextAppearance) {
+                const nextStartOrder =
+                    pageIdToOrder[nextAppearance.start_page_id];
+                if (nextStartOrder !== undefined) {
+                    endPageOrder = nextStartOrder;
+                }
+            }
 
-            if (endPageOrder === undefined) continue;
-
-            // Add this appearance to all pages from start to end (exclusive)
+            // Add this appearance to all pages from the effective start to end (exclusive)
             for (
-                let pageOrder = startPageOrder;
+                let pageOrder = effectiveStartPageOrder;
                 pageOrder < endPageOrder;
                 pageOrder++
             ) {
