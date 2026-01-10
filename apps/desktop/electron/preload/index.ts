@@ -269,6 +269,10 @@ const APP_API = {
         message: string,
         ...args: any[]
     ) => ipcRenderer.invoke("log:print", level, message, ...args),
+
+    // Shell
+    openExternal: (url: string) =>
+        ipcRenderer.invoke("shell:openExternal", url),
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);
