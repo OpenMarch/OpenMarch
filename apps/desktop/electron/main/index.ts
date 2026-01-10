@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     app,
     BrowserWindow,
@@ -73,7 +74,17 @@ ipcMain.handle("env:get", () => {
 });
 
 ipcMain.handle("shell:openExternal", async (_, url: string) => {
-    await shell.openExternal(url);
+    try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`Unsafe URL protocol: ${parsedUrl.protocol}`);
+        }
+        await shell.openExternal(url);
+    } catch (error) {
+        console.error("Error opening external URL:", error);
+        throw error;
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
