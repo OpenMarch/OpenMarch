@@ -2,8 +2,11 @@ import Database from "better-sqlite3";
 import * as fs from "fs";
 import { join } from "path";
 import { tmpdir } from "os";
+import { eq, sql } from "drizzle-orm";
+import { getOrm, schema } from "../../database/db";
 import * as DatabaseServices from "../../database/database.services";
-import { getValidAccessToken } from "../auth/token-manager";
+import { authenticatedFetch } from "./api-client";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 
 export interface UploadResult {
     success: boolean;
@@ -44,24 +47,45 @@ function validateDatabasePath(dbPath: string): UploadResult | null {
 /**
  * Clears sensitive data from the temporary database and vacuums it.
  */
-function clearDatabaseData(tempDb: Database.Database): void {
+function clearDatabaseData(orm: ReturnType<typeof getOrm>): void {
     // Clear history_undo table
-    const clearUndoHistory = tempDb.prepare(`DELETE FROM history_undo`);
-    clearUndoHistory.run();
+    orm.delete(schema.history_undo).run();
 
     // Clear audio_files table
-    const clearAudioFiles = tempDb.prepare(`DELETE FROM audio_files`);
-    clearAudioFiles.run();
+    orm.delete(schema.audio_files).run();
 
     // Clear field_properties.image column
-    const clearImageData = tempDb.prepare(
-        `UPDATE field_properties SET image = NULL WHERE id = 1`,
-    );
-    clearImageData.run();
+    orm.update(schema.field_properties)
+        .set({ image: null })
+        .where(eq(schema.field_properties.id, 1))
+        .run();
 
     // Vacuum the database
-    tempDb.exec("VACUUM");
+    orm.run(sql.raw("VACUUM"));
 }
+
+const getOtmIds = async (
+    orm: ReturnType<typeof getOrm>,
+): Promise<{
+    otmEnsembleId: string | undefined;
+    otmProductionId: string | undefined;
+}> => {
+    const workspaceSettings = await orm.query.workspace_settings.findFirst({
+        columns: {
+            json_data: true,
+        },
+    });
+    if (workspaceSettings == null)
+        return { otmEnsembleId: undefined, otmProductionId: undefined };
+
+    const workspaceSettingsJson = workspaceSettingsSchema.parse(
+        JSON.parse(workspaceSettings.json_data),
+    );
+    return {
+        otmEnsembleId: workspaceSettingsJson.otmEnsembleId,
+        otmProductionId: workspaceSettingsJson.otmProductionId,
+    };
+};
 
 /**
  * Uploads the file buffer to the server endpoint.
@@ -77,24 +101,11 @@ async function uploadFileToServer(
         progress: 0,
     });
 
-    // Get valid access token for authentication
-    const accessToken = await getValidAccessToken();
-    if (!accessToken) {
-        return {
-            success: false,
-            error: "Authentication required. Please sign in to upload files.",
-        };
-    }
-
     const formData = new FormData();
     // Convert Buffer to Uint8Array then to Blob for FormData compatibility
     const uint8Array = new Uint8Array(fileBuffer);
     const blob = new Blob([uint8Array], { type: "application/octet-stream" });
     formData.append("file", blob, fileName);
-
-    const uploadEndpoint = process.env.UPLOAD_ENDPOINT;
-
-    if (!uploadEndpoint) throw new Error("Upload endpoint is not set");
 
     onProgress?.({
         status: "progress",
@@ -102,13 +113,20 @@ async function uploadFileToServer(
         progress: 10,
     });
 
-    const response = await fetch(uploadEndpoint, {
-        method: "POST",
-        headers: {
-            Authorization: `Bearer ${accessToken}`,
-        },
-        body: formData,
-    });
+    let response: Response;
+    try {
+        response = await authenticatedFetch("", {
+            method: "POST",
+            body: formData,
+        });
+    } catch (error) {
+        const errorMessage =
+            error instanceof Error ? error.message : String(error);
+        return {
+            success: false,
+            error: `Upload failed: ${errorMessage}`,
+        };
+    }
 
     onProgress?.({
         status: "progress",
@@ -152,7 +170,8 @@ function prepareDatabaseForUpload(
     });
     const tempDb = new Database(tempFilePath);
     try {
-        clearDatabaseData(tempDb);
+        const orm = getOrm(tempDb);
+        clearDatabaseData(orm);
     } finally {
         tempDb.close();
     }

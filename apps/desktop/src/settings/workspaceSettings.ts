@@ -7,6 +7,10 @@ export const workspaceSettingsSchema = z.object({
     audioOffsetSeconds: z.float64().default(0),
     pageNumberOffset: z.int().default(0),
     measurementOffset: z.int().default(1),
+
+    // Mobile export settings
+    otmEnsembleId: z.string().optional(),
+    otmProductionId: z.string().optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;

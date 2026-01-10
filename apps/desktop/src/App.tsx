@@ -25,7 +25,11 @@ import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+    QueryCache,
+    QueryClient,
+    QueryClientProvider,
+} from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
@@ -40,6 +44,13 @@ export const queryClient = new QueryClient({
             networkMode: "offlineFirst",
         },
     },
+    queryCache: new QueryCache({
+        onError: (_error, query) => {
+            if (query?.meta?.errorMessage) {
+                console.error(query.meta.errorMessage);
+            }
+        },
+    }),
 });
 
 function App() {
@@ -60,6 +71,7 @@ function App() {
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
     if (isCodegen) {
+        // eslint-disable-next-line no-console
         console.log("🎭 React app running in Playwright Codegen mode");
     }
 
