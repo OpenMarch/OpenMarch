@@ -116,6 +116,33 @@
         "context": {
             "error": "Error al inicializar el contexto de audio"
         },
+        "contextMenu": {
+            "ariaLabel": "Menú contextual de ritmo",
+            "beat": {
+                "addBeat": "Agregar Ritmo",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorCreating": "Error al crear ritmo",
+                "errorDeleting": "Error al eliminar ritmo",
+                "markAsMeasure": "Marcar como Compás"
+            },
+            "measure": {
+                "addMeasure": "Agregar Compás",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorCreatingMeasureAndBeats": "Error al crear compás y ritmos",
+                "errorDeletingMeasureAndBeats": "Error al eliminar compás y ritmos",
+                "errorRemovingMarking": "Error al quitar la marca de compás",
+                "removeMarking": "Quitar Marca de Compás"
+            },
+            "rehearsalMark": {
+                "errorSaving": "Error al guardar la marca de ensayo",
+                "label": "Marca de Ensayo"
+            },
+            "tempo": {
+                "errorSaving": "Error al guardar el tempo",
+                "firstBeatTempo": "Tempo del primer ritmo",
+                "label": "Tempo"
+            }
+        },
         "decode": {
             "error": "Error al decodificar archivo de audio"
         },
@@ -138,33 +165,6 @@
         },
         "tapTempo": {
             "label": "Tocar Tempo"
-        },
-        "contextMenu": {
-            "rehearsalMark": {
-                "label": "Marca de Ensayo",
-                "errorSaving": "Error al guardar la marca de ensayo"
-            },
-            "tempo": {
-                "label": "Tempo",
-                "firstBeatTempo": "Tempo del primer ritmo",
-                "errorSaving": "Error al guardar el tempo"
-            },
-            "beat": {
-                "markAsMeasure": "Marcar como Compás",
-                "addBeat": "Agregar Ritmo",
-                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
-                "errorCreating": "Error al crear ritmo",
-                "errorDeleting": "Error al eliminar ritmo"
-            },
-            "measure": {
-                "removeMarking": "Quitar Marca de Compás",
-                "addMeasure": "Agregar Compás",
-                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
-                "errorDeletingMeasureAndBeats": "Error al eliminar compás y ritmos",
-                "errorRemovingMarking": "Error al quitar la marca de compás",
-                "errorCreatingMeasureAndBeats": "Error al crear compás y ritmos"
-            },
-            "ariaLabel": "Menú contextual de ritmo"
         }
     },
     "colorPicker": {
@@ -293,8 +293,8 @@
         "checkpoint": {
             "created": "{axis}-punto de control creado en {steps} pasos",
             "delete": "Eliminar",
-            "deleteTooltip": "Eliminar este punto de control del campo",
             "deleted": "{axis}-punto de control eliminado en {steps} pasos - \"{name}\"",
+            "deleteTooltip": "Eliminar este punto de control del campo",
             "fieldLabel": "Etiqueta de Campo",
             "fieldLabelTooltip": "La etiqueta para aparecer en el campo (es decir, las marcas de yarda)",
             "name": "Nombre",
@@ -609,6 +609,11 @@
         "tagText": "Etiqueta",
         "title": "Marchadores"
     },
+    "measures": {
+        "createFailed": "Error al crear compases - {error}",
+        "deleteFailed": "Error al eliminar compases - {error}",
+        "updateFailed": "Error al actualizar compases - {error}"
+    },
     "music": {
         "accent": "Acentuar primer compás",
         "addNewTempoGroupAfter": "Añadir un nuevo grupo de tempo después de este",
@@ -678,11 +683,6 @@
         "deleteFailed": "Error al eliminar la página - {error}",
         "updateFailed": "Error al actualizar la página - {error}"
     },
-    "measures": {
-        "createFailed": "Error al crear compases - {error}",
-        "deleteFailed": "Error al eliminar compases - {error}",
-        "updateFailed": "Error al actualizar compases - {error}"
-    },
     "section": {
         "drumMajor": "Director de Percusión",
         "family": {
@@ -735,6 +735,7 @@
         }
     },
     "settings": {
+        "database": "Base de datos",
         "developer": "Configuración de Desarrollador",
         "developer.refreshNotice": "Por favor, <a>recarga la aplicación</a> para actualizar la configuración.",
         "general": "General",
@@ -775,18 +776,17 @@
         "privacy.analytics.enabled": "Estás compartiendo análisis de uso. Gracias por ayudarnos a mejorar OpenMarch para todos.",
         "privacy.analytics.feedback.link": "enviar comentarios",
         "privacy.analytics.toggle": "Habilitar analíticas",
-        "title": "Configuración",
-        "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
-        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee",
-        "database": "Base de datos",
         "repairDotsFile": "Reparar archivo DOTS",
-        "repairDotsFile.title": "Reparar archivo DOTS",
-        "repairDotsFile.description": "Esto creará un nuevo archivo de base de datos con '- FIXED' añadido al nombre del archivo. El proceso de reparación copiará todos los datos de la base de datos actual a una nueva con el esquema más reciente. El historial (deshacer/rehacer) no se copiará.",
-        "repairDotsFile.confirm": "Reparar",
         "repairDotsFile.cancel": "Cancelar",
+        "repairDotsFile.confirm": "Reparar",
+        "repairDotsFile.description": "Esto creará un nuevo archivo de base de datos con '- FIXED' añadido al nombre del archivo. El proceso de reparación copiará todos los datos de la base de datos actual a una nueva con el esquema más reciente. El historial (deshacer/rehacer) no se copiará.",
+        "repairDotsFile.error": "Error al reparar la base de datos: {error}",
         "repairDotsFile.repairing": "Reparando...",
         "repairDotsFile.success": "Base de datos reparada exitosamente. Recargando...",
-        "repairDotsFile.error": "Error al reparar la base de datos: {error}"
+        "repairDotsFile.title": "Reparar archivo DOTS",
+        "title": "Configuración",
+        "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
+        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee"
     },
     "shapes": {
         "circle": "Círculo",

@@ -116,6 +116,33 @@
         "context": {
             "error": "オーディオ コンテキストの初期化に失敗しました"
         },
+        "contextMenu": {
+            "ariaLabel": "ビート コンテキスト メニュー",
+            "beat": {
+                "addBeat": "ビートを追加",
+                "cannotDeleteOnPage": "ページ上のビートは削除できません",
+                "errorCreating": "ビート の 作成 エラー",
+                "errorDeleting": "ビート の 削除 エラー",
+                "markAsMeasure": "小節としてマーク"
+            },
+            "measure": {
+                "addMeasure": "小節を追加",
+                "cannotDeleteOnPage": "ページ上のビートは削除できません",
+                "errorCreatingMeasureAndBeats": "小節 と ビート の 作成 エラー",
+                "errorDeletingMeasureAndBeats": "小節 と ビート の 削除 エラー",
+                "errorRemovingMarking": "小節 マーキング の 削除 エラー",
+                "removeMarking": "小節マーキングを削除"
+            },
+            "rehearsalMark": {
+                "errorSaving": "リハーサル マーク の 保存 エラー",
+                "label": "リハーサル マーク"
+            },
+            "tempo": {
+                "errorSaving": "テンポ の 保存 エラー",
+                "firstBeatTempo": "最初のビートのテンポ",
+                "label": "テンポ"
+            }
+        },
         "decode": {
             "error": "オーディオファイル をデコードできませんでした"
         },
@@ -138,33 +165,6 @@
         },
         "tapTempo": {
             "label": "テンポ を タップ"
-        },
-        "contextMenu": {
-            "rehearsalMark": {
-                "label": "リハーサル マーク",
-                "errorSaving": "リハーサル マーク の 保存 エラー"
-            },
-            "tempo": {
-                "label": "テンポ",
-                "firstBeatTempo": "最初のビートのテンポ",
-                "errorSaving": "テンポ の 保存 エラー"
-            },
-            "beat": {
-                "markAsMeasure": "小節としてマーク",
-                "addBeat": "ビートを追加",
-                "cannotDeleteOnPage": "ページ上のビートは削除できません",
-                "errorCreating": "ビート の 作成 エラー",
-                "errorDeleting": "ビート の 削除 エラー"
-            },
-            "measure": {
-                "removeMarking": "小節マーキングを削除",
-                "addMeasure": "小節を追加",
-                "cannotDeleteOnPage": "ページ上のビートは削除できません",
-                "errorDeletingMeasureAndBeats": "小節 と ビート の 削除 エラー",
-                "errorRemovingMarking": "小節 マーキング の 削除 エラー",
-                "errorCreatingMeasureAndBeats": "小節 と ビート の 作成 エラー"
-            },
-            "ariaLabel": "ビート コンテキスト メニュー"
         }
     },
     "colorPicker": {
@@ -293,8 +293,8 @@
         "checkpoint": {
             "created": "{axis} チェックポイントが {steps} ステップで作成されました",
             "delete": "削除",
-            "deleteTooltip": "このチェックポイントをフィールドから削除",
             "deleted": "{axis} チェックポイントが {steps} ステップで削除されました - \"{name}\"",
+            "deleteTooltip": "このチェックポイントをフィールドから削除",
             "fieldLabel": "フィールド ラベル",
             "fieldLabelTooltip": "フィールドに表示されるラベル (例: yard marker)",
             "name": "名前",
@@ -609,6 +609,11 @@
         "tagText": "タグ",
         "title": "マーチャーズ"
     },
+    "measures": {
+        "createFailed": "小節の作成に失敗しました - {error}",
+        "deleteFailed": "小節の削除に失敗しました - {error}",
+        "updateFailed": "小節の更新に失敗しました - {error}"
+    },
     "music": {
         "accent": "最初のビートにアクセント",
         "addNewTempoGroupAfter": "この後に新しいテンポ グループを追加",
@@ -678,11 +683,6 @@
         "deleteFailed": "ページの削除に失敗しました - {error}",
         "updateFailed": "ページの更新に失敗しました - {error}"
     },
-    "measures": {
-        "createFailed": "小節の作成に失敗しました - {error}",
-        "deleteFailed": "小節の削除に失敗しました - {error}",
-        "updateFailed": "小節の更新に失敗しました - {error}"
-    },
     "section": {
         "drumMajor": "ドラム メジャー",
         "family": {
@@ -735,6 +735,7 @@
         }
     },
     "settings": {
+        "database": "データベース",
         "developer": "開発者設定",
         "developer.refreshNotice": "設定を更新するにはアプ リを <a>再読み込みしてください</a>。",
         "general": "一般",
@@ -775,18 +776,17 @@
         "privacy.analytics.enabled": "使用状況分析情報を共有しています。OpenMarch の改善にご協力いただきありがとうございます。",
         "privacy.analytics.feedback.link": "フィードバック を 提出",
         "privacy.analytics.toggle": "アナリティクスを有効にする",
-        "title": "設定",
-        "tolgeeApiKeyPlaceholder": "Tolgee API キー",
-        "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳",
-        "database": "データベース",
         "repairDotsFile": "DOTS ファイルを修復",
-        "repairDotsFile.title": "DOTS ファイルを修復",
-        "repairDotsFile.description": "これにより、ファイル名に「- FIXED」が追加された新しいデータベースファイルが作成されます。修復プロセスは、現在のデータベースからすべてのデータを最新のスキーマを持つ新しいデータベースにコピーします。履歴（元に戻す/やり直す）はコピーされません。",
-        "repairDotsFile.confirm": "修復",
         "repairDotsFile.cancel": "キャンセル",
+        "repairDotsFile.confirm": "修復",
+        "repairDotsFile.description": "これにより、ファイル名に「- FIXED」が追加された新しいデータベースファイルが作成されます。修復プロセスは、現在のデータベースからすべてのデータを最新のスキーマを持つ新しいデータベースにコピーします。履歴（元に戻す/やり直す）はコピーされません。",
+        "repairDotsFile.error": "データベースの修復中にエラーが発生しました: {error}",
         "repairDotsFile.repairing": "修復中...",
         "repairDotsFile.success": "データベースが正常に修復されました。再読み込み中...",
-        "repairDotsFile.error": "データベースの修復中にエラーが発生しました: {error}"
+        "repairDotsFile.title": "DOTS ファイルを修復",
+        "title": "設定",
+        "tolgeeApiKeyPlaceholder": "Tolgee API キー",
+        "tolgeeDevToolsToggle": "Tolgee インコンテキスト 翻訳"
     },
     "shapes": {
         "circle": "円",
