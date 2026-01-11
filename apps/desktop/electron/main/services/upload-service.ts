@@ -6,7 +6,7 @@ import { eq, sql } from "drizzle-orm";
 import { getOrm, schema } from "../../database/db";
 import * as DatabaseServices from "../../database/database.services";
 import { authenticatedFetch } from "./api-client";
-import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
+import { workspaceSettingsSchema } from "../../../src/settings/workspaceSettings";
 
 export interface UploadResult {
     success: boolean;
