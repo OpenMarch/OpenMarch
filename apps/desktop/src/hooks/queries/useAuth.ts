@@ -9,6 +9,7 @@ import { useAuthStore } from "@/stores/AuthStore";
 import type { AuthState } from "../../../electron/main/auth/types";
 
 const KEY_BASE = "auth";
+export const NEEDS_AUTH_BASE_QUERY_KEY = "needs-auth" as const;
 
 /**
  * Query key factory for auth queries.
@@ -84,6 +85,11 @@ export function useAuth() {
                 setAuthState(state);
                 // Also update React Query cache
                 queryClient.setQueryData(authKeys.state(), state);
+
+                // Invalidate all queries that require auth
+                void queryClient.invalidateQueries({
+                    queryKey: [NEEDS_AUTH_BASE_QUERY_KEY],
+                });
             },
         );
 
@@ -160,7 +166,7 @@ export function useAuth() {
     return {
         // State
         isAuthenticated: authState.isAuthenticated,
-        isLoading: authState.isLoading || queryLoading,
+        isLoading: queryLoading,
         user: authState.user,
         error: authState.error,
 

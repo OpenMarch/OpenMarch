@@ -64,27 +64,20 @@ function clearDatabaseData(orm: ReturnType<typeof getOrm>): void {
     orm.run(sql.raw("VACUUM"));
 }
 
-const getOtmIds = async (
+const getOtmProductionId = async (
     orm: ReturnType<typeof getOrm>,
-): Promise<{
-    otmEnsembleId: string | undefined;
-    otmProductionId: string | undefined;
-}> => {
+): Promise<string | undefined> => {
     const workspaceSettings = await orm.query.workspace_settings.findFirst({
         columns: {
             json_data: true,
         },
     });
-    if (workspaceSettings == null)
-        return { otmEnsembleId: undefined, otmProductionId: undefined };
+    if (workspaceSettings == null) return undefined;
 
     const workspaceSettingsJson = workspaceSettingsSchema.parse(
         JSON.parse(workspaceSettings.json_data),
     );
-    return {
-        otmEnsembleId: workspaceSettingsJson.otmEnsembleId,
-        otmProductionId: workspaceSettingsJson.otmProductionId,
-    };
+    return workspaceSettingsJson.otmProductionId;
 };
 
 /**

@@ -41,7 +41,7 @@ import clsx from "clsx";
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            networkMode: "offlineFirst",
+            networkMode: "always",
         },
     },
     queryCache: new QueryCache({

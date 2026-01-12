@@ -3,8 +3,13 @@
  * Shows sign in button when not authenticated, or user avatar with dropdown when authenticated.
  */
 
-import { SignIn, SignOut, User, Spinner } from "@phosphor-icons/react";
-import { Button } from "@openmarch/ui";
+import {
+    SignInIcon,
+    SignOutIcon,
+    UserIcon,
+    SpinnerIcon,
+} from "@phosphor-icons/react";
+import { Button, type ButtonProps } from "@openmarch/ui";
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -12,7 +17,32 @@ import {
     DropdownMenuTrigger,
     DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
+import { twMerge } from "tailwind-merge";
 import { useAuth } from "@/hooks/queries/useAuth";
+
+export const SignInButton = ({
+    className,
+    ...buttonProps
+}: Omit<ButtonProps, "children" | "disabled" | "onClick">) => {
+    const { login, isLoggingIn } = useAuth();
+
+    return (
+        <Button
+            aria-label="Sign in"
+            className={twMerge("gap-8", className)}
+            onClick={login}
+            disabled={isLoggingIn}
+            {...buttonProps}
+        >
+            {isLoggingIn ? (
+                <SpinnerIcon className="animate-spin" size={16} />
+            ) : (
+                <SignInIcon size={16} />
+            )}
+            <span>Sign In</span>
+        </Button>
+    );
+};
 
 /**
  * AuthButton component that displays authentication state and actions.
@@ -27,14 +57,13 @@ import { useAuth } from "@/hooks/queries/useAuth";
  * ```
  */
 export function AuthButton() {
-    const { isAuthenticated, isLoading, user, login, logout, isLoggingIn } =
-        useAuth();
+    const { isAuthenticated, isLoading, user, logout } = useAuth();
 
     // Loading state
     if (isLoading) {
         return (
             <div className="flex h-32 w-32 items-center justify-center">
-                <Spinner
+                <SpinnerIcon
                     className="text-text-subtitle animate-spin"
                     size={20}
                 />
@@ -44,22 +73,7 @@ export function AuthButton() {
 
     // Not authenticated - show sign in button
     if (!isAuthenticated) {
-        return (
-            <Button
-                variant="secondary"
-                size="compact"
-                onClick={login}
-                disabled={isLoggingIn}
-                className="gap-8"
-            >
-                {isLoggingIn ? (
-                    <Spinner className="animate-spin" size={16} />
-                ) : (
-                    <SignIn size={16} />
-                )}
-                <span>Sign In</span>
-            </Button>
-        );
+        return <SignInButton variant="secondary" size="compact" />;
     }
 
     // Authenticated - show user avatar with dropdown
@@ -105,7 +119,7 @@ export function AuthButton() {
                             />
                         ) : (
                             <div className="bg-accent/20 text-accent flex h-40 w-40 items-center justify-center rounded-full">
-                                <User size={24} />
+                                <UserIcon size={24} />
                             </div>
                         )}
                         <div className="flex flex-col">
@@ -128,7 +142,7 @@ export function AuthButton() {
                     onClick={logout}
                     className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
                 >
-                    <SignOut size={16} />
+                    <SignOutIcon size={16} />
                     <span>Sign Out</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>

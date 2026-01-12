@@ -2,21 +2,18 @@
  * React Query hooks for fetching and creating productions from the OpenMarch API.
  */
 
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
+import { queryOptions, useQuery } from "@tanstack/react-query";
 import {
-    queryOptions,
-    mutationOptions,
-    useQuery,
-    useMutation,
-    useQueryClient,
-    QueryClient,
-} from "@tanstack/react-query";
-import { useAccessToken } from "../../hooks/queries/useAuth";
-import { apiGet, apiPostFormData } from "@/api/api-client";
-import { DEFAULT_STALE_TIME } from "../../hooks/queries/constants";
+    NEEDS_AUTH_BASE_QUERY_KEY,
+    useAccessToken,
+} from "@/hooks/queries/useAuth";
+import { apiGet } from "@/api/api-client";
+import { DEFAULT_STALE_TIME } from "@/hooks/queries/constants";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
-import { ensembleKeys } from "./useEnsembles";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import { OTM_BASE_QUERY_KEY } from "./constants";
 
 const KEY_BASE = "productions";
 
@@ -41,6 +38,16 @@ export interface ProductionAudioFile {
 }
 
 /**
+ * Serialized revision preview data structure matching the Rails controller response.
+ */
+export interface RevisionPreview {
+    id: number;
+    pushed_at: string;
+    show_data_url: string | null;
+    active: boolean;
+}
+
+/**
  * Serialized production data structure matching the Rails controller response.
  */
 export interface Production {
@@ -48,6 +55,7 @@ export interface Production {
     name: string;
     dots_sqlite_url: string | null;
     background_image_url: string | null;
+    active_revision: RevisionPreview | null;
     audio_files: ProductionAudioFile[];
     created_at: string;
     updated_at: string;
@@ -61,20 +69,27 @@ interface ProductionsResponse {
 }
 
 /**
- * API response structure for production create.
- */
-interface ProductionCreateResponse {
-    production: Production;
-}
-
-/**
  * Query key factory for productions.
  */
 export const productionKeys = {
-    all: () => [KEY_BASE] as const,
+    all: () =>
+        [NEEDS_AUTH_BASE_QUERY_KEY, OTM_BASE_QUERY_KEY, KEY_BASE] as const,
     byEnsemble: (ensembleId: number) =>
-        [KEY_BASE, "ensemble", ensembleId] as const,
-    byId: (productionId: number) => [KEY_BASE, "id", productionId] as const,
+        [
+            NEEDS_AUTH_BASE_QUERY_KEY,
+            OTM_BASE_QUERY_KEY,
+            KEY_BASE,
+            "ensemble",
+            ensembleId,
+        ] as const,
+    byId: (productionId: string | undefined) =>
+        [
+            NEEDS_AUTH_BASE_QUERY_KEY,
+            OTM_BASE_QUERY_KEY,
+            KEY_BASE,
+            "id",
+            productionId,
+        ] as const,
 };
 
 /**
@@ -153,109 +168,50 @@ export function useProductions(ensembleId: number) {
     return query;
 }
 
-/**
- * Parameters for creating a new production.
- */
-export interface CreateProductionParams {
-    ensembleId: number;
-    dotsFile: File;
-    name?: string;
-}
-
-/**
- * Mutation options for creating a production.
- */
-export const createProductionMutationOptions = (
-    qc: QueryClient,
+export const _productionQueryOptions = (
+    productionId: string | undefined,
     getAccessToken: () => Promise<string | null>,
 ) => {
-    return mutationOptions({
-        mutationFn: async ({
-            ensembleId,
-            dotsFile,
-            name,
-        }: CreateProductionParams): Promise<Production> => {
+    return queryOptions<Production>({
+        queryKey: productionKeys.byId(productionId),
+        queryFn: async (): Promise<Production> => {
             const token = await getAccessToken();
             if (!token) {
                 throw new Error("Authentication token is required");
             }
-
-            const formData = new FormData();
-            formData.append("dots_file", dotsFile);
-            if (name) {
-                formData.append("name", name);
-            }
-
-            const response = await apiPostFormData<ProductionCreateResponse>(
-                `v1/ensembles/${ensembleId}/productions`,
-                formData,
+            const response = await apiGet<Production>(
+                `v1/productions/${productionId}`,
                 token,
             );
-
-            return response.production;
+            return response;
         },
-        onSuccess: (data, variables) => {
-            // Invalidate productions list for this ensemble
-            void qc.invalidateQueries({
-                queryKey: productionKeys.byEnsemble(variables.ensembleId),
-            });
-            // Also invalidate ensembles list to update production count
-            void qc.invalidateQueries({
-                queryKey: ensembleKeys.all(),
-            });
-        },
-        onError: (error, variables) => {
-            conToastError(
-                tolgee.t("productions.createFailed", {
-                    defaultValue: "Failed to create production",
-                    error:
-                        error instanceof Error ? error.message : String(error),
-                }),
-                error,
-                variables,
-            );
-        },
+        enabled: productionId != null,
+        staleTime: undefined, // go stale immediately
+        networkMode: "online",
     });
 };
 
 /**
- * Hook for creating a new production.
- *
- * @example
- * ```tsx
- * function CreateProductionForm({ ensembleId }: { ensembleId: number }) {
- *     const createProduction = useCreateProduction();
- *
- *     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
- *         e.preventDefault();
- *         const formData = new FormData(e.currentTarget);
- *         const dotsFile = formData.get('dots_file') as File;
- *         const name = formData.get('name') as string;
- *
- *         createProduction.mutate({
- *             ensembleId,
- *             dotsFile,
- *             name: name || undefined,
- *         });
- *     };
- *
- *     return (
- *         <form onSubmit={handleSubmit}>
- *             <input type="file" name="dots_file" accept=".dots" required />
- *             <input type="text" name="name" placeholder="Production name (optional)" />
- *             <button type="submit" disabled={createProduction.isPending}>
- *                 {createProduction.isPending ? 'Creating...' : 'Create Production'}
- *             </button>
- *         </form>
- *     );
- * }
- * ```
+ * The ID of the current OTM production this file is attached to.
  */
-export function useCreateProduction() {
-    const queryClient = useQueryClient();
-    const { getAccessToken } = useAccessToken();
-
-    return useMutation(
-        createProductionMutationOptions(queryClient, getAccessToken),
+export const useOtmProductionId = (): string | undefined => {
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
     );
+    return useMemo(
+        () => workspaceSettings?.otmProductionId,
+        [workspaceSettings],
+    );
+};
+
+/**
+ * Fetch the the current production based on the OTM Production ID from the workspace settings.
+ */
+export function useCurrentProduction() {
+    const { getAccessToken } = useAccessToken();
+    const productionId = useOtmProductionId();
+
+    return useQuery({
+        ..._productionQueryOptions(productionId, getAccessToken),
+    });
 }

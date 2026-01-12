@@ -54,6 +54,10 @@ export default defineConfig({
                     autogenerate: { directory: "about" },
                 },
                 {
+                    label: "Mobile",
+                    autogenerate: { directory: "mobile" },
+                },
+                {
                     label: "Developers",
                     autogenerate: { directory: "developers" },
                 },

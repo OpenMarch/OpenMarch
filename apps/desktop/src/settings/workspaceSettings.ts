@@ -9,7 +9,6 @@ export const workspaceSettingsSchema = z.object({
     measurementOffset: z.int().default(1),
 
     // Mobile export settings
-    otmEnsembleId: z.string().optional(),
     otmProductionId: z.string().optional(),
 });
 
