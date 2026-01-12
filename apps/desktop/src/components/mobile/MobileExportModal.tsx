@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback, useEffect } from "react";
 import { DeviceMobileIcon, XIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -56,23 +56,17 @@ function useMobileExportValidation(): AlertState {
         let output: AlertState = { type: null };
 
         // Validation order matters - check in priority order
-        switch (true) {
-            case !isSignedIn:
-                output = { type: "not-signed-in" };
-                break;
-            case !hasProductionId && !hasEnsembles:
-                output = { type: "signed-in-no-ensembles" };
-                break;
-            case hasError:
-                output = { type: "error" };
-                break;
-            case !hasAccess && hasProductionId:
-                output = { type: "no-access" };
-                break;
-            default:
-                // All validations passed
-                output = { type: null };
-                break;
+        if (!isSignedIn) {
+            output = { type: "not-signed-in" };
+        } else if (!hasProductionId && !hasEnsembles) {
+            output = { type: "signed-in-no-ensembles" };
+        } else if (hasError) {
+            output = { type: "error" };
+        } else if (!hasAccess && hasProductionId) {
+            output = { type: "no-access" };
+        } else {
+            // All validations passed
+            output = { type: null };
         }
 
         return output;
@@ -315,6 +309,20 @@ function ProductionDefinedButNotSignedIn({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const { isAuthenticated } = useAuth();
+    const { setContent, isOpen, toggleOpen } = useSidebarModalStore();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            onOpenChange(false);
+            // Set sidebar content and open it
+            setContent(<MobileExportModalContents />, "mobile-export");
+            if (!isOpen) {
+                toggleOpen();
+            }
+        }
+    }, [isAuthenticated, onOpenChange, setContent, isOpen, toggleOpen]);
+
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -326,9 +334,7 @@ function ProductionDefinedButNotSignedIn({
                     <AlertDialogCancel asChild>
                         <Button variant="secondary">Dismiss</Button>
                     </AlertDialogCancel>
-                    <AlertDialogAction>
-                        <SignInButton />
-                    </AlertDialogAction>
+                    <SignInButton />
                 </div>
             </AlertDialogContent>
         </AlertDialog>
