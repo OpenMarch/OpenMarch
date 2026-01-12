@@ -1,13 +1,19 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Button } from "@openmarch/ui";
 import {
-    XIcon,
+    Button,
+    DialogTrigger,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+} from "@openmarch/ui";
+import {
     CircleNotchIcon,
     CheckCircleIcon,
     WarningCircleIcon,
+    GearSixIcon,
 } from "@phosphor-icons/react";
-import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { toast } from "sonner";
+import DetachButton from "./DetachButton";
 
 type UploadStatus = "idle" | "loading" | "progress" | "error" | "success";
 
@@ -22,7 +28,6 @@ interface UploadProgress {
  * Mobile Export View - The main export functionality
  */
 export default function MobileExportView() {
-    const { toggleOpen } = useSidebarModalStore();
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const [uploadProgress, setUploadProgress] = useState<number>(0);
     const [uploadMessage, setUploadMessage] = useState<string>("");
@@ -88,16 +93,7 @@ export default function MobileExportView() {
 
     return (
         <section className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Export to Mobile</h4>
-                <button
-                    onClick={toggleOpen}
-                    className="hover:text-red duration-150 ease-out"
-                >
-                    <XIcon size={24} />
-                </button>
-            </header>
-
+            <MobileExportSettingsDialog />
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
                 <div className="flex flex-col gap-12">
                     <Button
@@ -172,3 +168,22 @@ export default function MobileExportView() {
         </section>
     );
 }
+
+const MobileExportSettingsDialog = () => {
+    return (
+        <Dialog>
+            <DialogTrigger asChild className="self-end">
+                <Button size="compact" variant="secondary">
+                    <GearSixIcon /> Settings
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-[32rem]">
+                <DialogTitle>Export Settings</DialogTitle>
+                <div className="flex flex-col gap-16">
+                    {/* Settings content will go here */}
+                    <DetachButton variant="secondary" />
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};

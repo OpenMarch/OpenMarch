@@ -7,6 +7,7 @@ import { NEEDS_AUTH_BASE_QUERY_KEY } from "../../../hooks/queries/useAuth";
 import { apiGet } from "@/api/api-client";
 import { DEFAULT_STALE_TIME } from "../../../hooks/queries/constants";
 import { OTM_BASE_QUERY_KEY } from "./constants";
+import { ProductionPreview } from "./useProductions";
 
 const KEY_BASE = "ensembles";
 
@@ -20,6 +21,7 @@ export interface Ensemble {
     performers_count: number;
     created_at: string;
     updated_at: string;
+    productions: ProductionPreview[];
 }
 
 /**
