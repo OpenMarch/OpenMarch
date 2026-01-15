@@ -17,10 +17,10 @@ jobs:
     strategy:
       matrix:
         os:
-          - macos-latest
-          - macos-15-intel # x86 (Intel) macOS
-          - ubuntu-latest
-          - ubuntu-24.04-arm
+          # - macos-latest
+          # - macos-15-intel # x86 (Intel) macOS
+          # - ubuntu-latest
+          # - ubuntu-24.04-arm
           - windows-latest # (don't release, just build artifacts)
 
     steps:
@@ -97,9 +97,8 @@ jobs:
         run: |
           sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
 
-      - name: Build/release Electron app (except windows)
+      - name: Build/release Electron app
         uses: ./actions/desktop-deploy
-        if: ${{ !startsWith(matrix.os, 'windows') }}
         with:
           # GitHub token, automatically provided to the action
           # (No need to define this secret in the repo settings)
