@@ -11,17 +11,152 @@ permissions:
   contents: write # Required for creating releases
 
 jobs:
-  build-and-release:
+  # build-and-release:
+  #   runs-on: ${{ matrix.os }}
+
+  #   strategy:
+  #     matrix:
+  #       os:
+  #         - macos-latest
+  #         - macos-15-intel # x86 (Intel) macOS
+  #         - ubuntu-latest
+  #         - ubuntu-24.04-arm
+  #         - windows-latest # (don't release, just build artifacts)
+
+  #   steps:
+  #     - name: Check out Git repository
+  #       uses: actions/checkout@v4
+
+  #     - name: Determine if releasing
+  #       id: release
+  #       shell: bash
+  #       run: |
+  #         if [[ "${GITHUB_REF}" =~ ^refs/tags/v ]]; then
+  #           echo "RELEASE=true" >> $GITHUB_OUTPUT
+  #         else
+  #           echo "RELEASE=false" >> $GITHUB_OUTPUT
+  #         fi
+
+  #     - name: Debug release output
+  #       run: |
+  #         echo "GITHUB_REF=${GITHUB_REF}"
+  #         echo "RELEASE=${{ steps.release.outputs.RELEASE }}"
+
+  #     - name: Install Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22
+
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v4.1.0
+
+  #     ############ LINUX ############
+  #     - name: Install Snapcraft (Ubuntu)
+  #       if: startsWith(matrix.os, 'ubuntu')
+  #       run: sudo snap install snapcraft --classic
+
+  #     - name: Install Snapcraft (Ubuntu ARM)
+  #       if: matrix.os == 'ubuntu-24.04-arm'
+  #       run: sudo snap install lxd
+
+  #     - name: Setup LXD (Ubuntu ARM)
+  #       if: matrix.os == 'ubuntu-24.04-arm'
+  #       uses: canonical/setup-lxd@main
+
+  #     - name: Validate Snapcraft credentials on Linux release
+  #       if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+  #       run: snapcraft whoami -q
+  #       env:
+  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+  #     ############ MACOS ############
+  #     - name: Prepare for app notarization
+  #       if: ${{ startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true' }}
+  #       run: |
+  #         mkdir -p ~/private_keys/
+  #         echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
+
+  #     - name: Create Sentry env file
+  #       working-directory: apps/desktop
+  #       shell: bash
+  #       run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+  #     - name: Install pnpm dependencies
+  #       run: pnpm install
+  #       env:
+  #         CI: true
+  #         ADBLOCK: true
+
+  #     - name: Build for production
+  #       run: pnpm run build
+
+  #     - name: Replace package name in package.json - ubuntu
+  #       working-directory: apps/desktop
+  #       if: startsWith(matrix.os, 'ubuntu')
+  #       # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
+  #       run: |
+  #         sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
+
+  #     - name: Build/release Electron app
+  #       uses: ./actions/desktop-deploy
+  #       with:
+  #         # GitHub token, automatically provided to the action
+  #         # (No need to define this secret in the repo settings)
+  #         github_token: ${{ secrets.github_token }}
+  #         # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
+  #         release: ${{ steps.release.outputs.RELEASE }}
+  #         mac_certs: ${{ secrets.mac_certs }}
+  #         mac_certs_password: ${{ secrets.mac_certs_password }}
+  #         max_attempts: 5
+  #       env:
+  #         # Not needed since not building on windows
+  #         # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
+  #         APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
+  #         APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
+  #         APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
+  #         # also put in camelCase for electron/notarize
+  #         appleApiKey: "~/private_keys/apple_api_key.p8"
+  #         appleApiKeyId: ${{ secrets.apple_api_key_id }}
+  #         appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
+  #         CSC_IDENTITY_AUTO_DISCOVERY: "${{ steps.release.outputs.RELEASE == 'true' }}"
+  #         # For releasing
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+  #         SNAPCRAFT_BUILD_ENVIRONMENT: lxd
+
+  #     - name: Promote snap to stable channel
+  #       if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+  #       shell: bash
+  #       run: |
+  #         # Get the latest revision for this architecture
+  #         ARCH=$(dpkg --print-architecture)
+  #         REVISION=$(snapcraft list-revisions openmarch --arch=$ARCH | head -n 2 | tail -n 1 | awk '{print $1}')
+  #         if [ -n "$REVISION" ]; then
+  #           echo "Promoting revision $REVISION to stable channel for arch $ARCH"
+  #           snapcraft release openmarch "$REVISION" stable
+  #         else
+  #           echo "No revision found to promote"
+  #           exit 1
+  #         fi
+  #       env:
+  #         SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+  #     - name: Upload build artifacts
+  #       uses: actions/upload-artifact@v4
+  #       if: always() # Upload even if previous steps fail
+  #       with:
+  #         name: ${{ matrix.os }}-artifacts
+  #         path: apps/desktop/release/*
+  #         retention-days: 30
+  #         if-no-files-found: warn
+
+  windows-build-and-release:
     runs-on: ${{ matrix.os }}
 
     strategy:
       matrix:
         os:
-          # - macos-latest
-          # - macos-15-intel # x86 (Intel) macOS
-          # - ubuntu-latest
-          # - ubuntu-24.04-arm
-          - windows-latest # (don't release, just build artifacts)
+          - windows-latest
 
     steps:
       - name: Check out Git repository
@@ -29,18 +164,19 @@ jobs:
 
       - name: Determine if releasing
         id: release
-        shell: bash
+        shell: pwsh
         run: |
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/v ]]; then
-            echo "RELEASE=true" >> $GITHUB_OUTPUT
-          else
-            echo "RELEASE=false" >> $GITHUB_OUTPUT
-          fi
+          if ($env:GITHUB_REF -match '^refs/tags/v') {
+            "RELEASE=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          } else {
+            "RELEASE=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          }
 
       - name: Debug release output
+        shell: pwsh
         run: |
-          echo "GITHUB_REF=${GITHUB_REF}"
-          echo "RELEASE=${{ steps.release.outputs.RELEASE }}"
+          Write-Output "GITHUB_REF=$env:GITHUB_REF"
+          Write-Output "RELEASE=${{ steps.release.outputs.RELEASE }}"
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -49,32 +185,6 @@ jobs:
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
-
-      ############ LINUX ############
-      - name: Install Snapcraft (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
-        run: sudo snap install snapcraft --classic
-
-      - name: Install Snapcraft (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd
-
-      - name: Setup LXD (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        uses: canonical/setup-lxd@main
-
-      - name: Validate Snapcraft credentials on Linux release
-        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
-        run: snapcraft whoami -q
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-
-      ############ MACOS ############
-      - name: Prepare for app notarization
-        if: ${{ startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true' }}
-        run: |
-          mkdir -p ~/private_keys/
-          echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
 
       - name: Create Sentry env file
         working-directory: apps/desktop
@@ -90,56 +200,16 @@ jobs:
       - name: Build for production
         run: pnpm run build
 
-      - name: Replace package name in package.json - ubuntu
-        working-directory: apps/desktop
-        if: startsWith(matrix.os, 'ubuntu')
-        # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
+      - name: Build/release Electron app for Windows
         run: |
-          sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
-
-      - name: Build/release Electron app
-        uses: ./actions/desktop-deploy
-        with:
-          # GitHub token, automatically provided to the action
-          # (No need to define this secret in the repo settings)
-          github_token: ${{ secrets.github_token }}
-          # If the commit is tagged with a version (e.g. "v1.0.0"), release the app after building
-          release: ${{ steps.release.outputs.RELEASE }}
-          mac_certs: ${{ secrets.mac_certs }}
-          mac_certs_password: ${{ secrets.mac_certs_password }}
-          max_attempts: 5
+          cd apps/desktop
+          pnpm exec .\node_modules\.bin\electron-builder -w --publish=${{ steps.release.outputs.RELEASE == 'true' && 'always' || 'never' }}
         env:
           # Not needed since not building on windows
           # PKG_CONFIG_PATH: "C:\\msys64\\mingw64\\lib\\pkgconfig"
-          APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
-          APPLE_API_KEY_ID: ${{ secrets.apple_api_key_id }}
-          APPLE_API_ISSUER: ${{ secrets.apple_api_key_issuer }}
-          # also put in camelCase for electron/notarize
-          appleApiKey: "~/private_keys/apple_api_key.p8"
-          appleApiKeyId: ${{ secrets.apple_api_key_id }}
-          appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "${{ steps.release.outputs.RELEASE == 'true' }}"
-          # For releasing
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
-          SNAPCRAFT_BUILD_ENVIRONMENT: lxd
-
-      - name: Promote snap to stable channel
-        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
-        shell: bash
-        run: |
-          # Get the latest revision for this architecture
-          ARCH=$(dpkg --print-architecture)
-          REVISION=$(snapcraft list-revisions openmarch --arch=$ARCH | head -n 2 | tail -n 1 | awk '{print $1}')
-          if [ -n "$REVISION" ]; then
-            echo "Promoting revision $REVISION to stable channel for arch $ARCH"
-            snapcraft release openmarch "$REVISION" stable
-          else
-            echo "No revision found to promote"
-            exit 1
-          fi
-        env:
-          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+          AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
