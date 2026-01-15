@@ -151,6 +151,7 @@ jobs:
       matrix:
         os:
           - windows-latest
+          - windows-11-arm
 
     steps:
       - name: Check out Git repository
