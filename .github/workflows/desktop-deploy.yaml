@@ -198,7 +198,7 @@ jobs:
           ADBLOCK: true
 
       - name: Build for production
-        run: pnpm run build --filter=\!@openmarch/website
+        run: pnpm run build --filter "!@openmarch/website"
 
       - name: Build/release Electron app for Windows
         run: |
