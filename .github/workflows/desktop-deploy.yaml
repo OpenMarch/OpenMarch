@@ -145,14 +145,7 @@ jobs:
           if-no-files-found: warn
 
   windows-build-and-release:
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os:
-          - windows-latest
-          - windows-11-arm
-
+    runs-on: windows-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
