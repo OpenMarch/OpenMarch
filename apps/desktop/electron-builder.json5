@@ -55,7 +55,7 @@
         artifactName: "${productName}_${buildVersion}.${ext}",
         azureSignOptions: {
             publisherName: "OpenMarch LLC",
-            endpoint: "https://ensures.codesigning.azure.net/",
+            endpoint: "https://eus.codesigning.azure.net",
             certificateProfileName: "OpenMarch-Desktop",
             codeSigningAccountName: "openmarch-desktop",
         },
