@@ -272,6 +272,22 @@
         "unsortedSection": "Unsorted",
         "useXYHeaders": "Use X/Y headers"
     },
+    "ensembles": {
+        "attached": "(Attached)",
+        "attachDialog": {
+            "attach": "Attach",
+            "cancel": "Cancel",
+            "description": "Attach this .dots file to this production? This will allow you to upload from this file into the the OpenMarch - On the Move mobile app.",
+            "title": "Attach to Production"
+        },
+        "createdAtHeader": "Created At",
+        "empty": "No ensembles found. Create one above!",
+        "error": "Error loading ensembles",
+        "loading": "Loading ensembles...",
+        "nameHeader": "Name",
+        "performersHeader": "Performers",
+        "productionsHeader": "Productions"
+    },
     "field": {
         "general": {
             "exportField": "Export Field",

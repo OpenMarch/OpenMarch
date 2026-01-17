@@ -12,7 +12,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
         <input
             className={twMerge(
                 clsx(
-                    `rounded-6 border-stroke bg-fg-2 box-border min-h-0 items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "h-[1.625rem] px-8 py-[4px]" : "h-[2.5rem] px-16"} text-body text-text placeholder-text-text-subtitle placeholder:text-body focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
+                    `rounded-6 border-stroke bg-fg-2 box-border min-h-0 items-center border whitespace-nowrap focus-visible:outline-none ${compact ? "h-[1.625rem] px-8 py-[4px]" : "h-[2.5rem] px-16"} text-body text-text placeholder:text-text-subtitle focus:border-accent disabled:cursor-not-allowed disabled:opacity-50`,
                     className,
                 ),
             )}

@@ -272,6 +272,22 @@
         "unsortedSection": "Sin ordenar",
         "useXYHeaders": "Usar encabezados X/Y"
     },
+    "ensembles": {
+        "attached": "(Adjunto)",
+        "attachDialog": {
+            "attach": "Adjuntar",
+            "cancel": "Cancelar",
+            "description": "\u00bfAdjuntar este archivo .dots a esta producci\u00f3n? Esto permitir\u00e1 subir desde este archivo a la app m\u00f3vil OpenMarch - On the Move.",
+            "title": "Adjuntar a producci\u00f3n"
+        },
+        "createdAtHeader": "Creado el",
+        "empty": "No se encontraron conjuntos. \u00a1Crea uno arriba!",
+        "error": "Error al cargar los conjuntos",
+        "loading": "Cargando conjuntos...",
+        "nameHeader": "Nombre",
+        "performersHeader": "Int\u00e9rpretes",
+        "productionsHeader": "Producciones"
+    },
     "field": {
         "general": {
             "exportField": "Exportar campo",

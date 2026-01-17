@@ -272,6 +272,22 @@
         "unsortedSection": "未分類",
         "useXYHeaders": "X/Y ヘッダーを使用"
     },
+    "ensembles": {
+        "attached": "(添付済み)",
+        "attachDialog": {
+            "attach": "添付",
+            "cancel": "キャンセル",
+            "description": "この .dots ファイルをこのプロダクションに添付しますか？このファイルから OpenMarch - On the Move モバイルアプリにアップロードできるようになります。",
+            "title": "プロダクションに添付"
+        },
+        "createdAtHeader": "作成日",
+        "empty": "アンサンブルが見つかりません。上で作成してください！",
+        "error": "アンサンブルの読み込みに失敗しました",
+        "loading": "アンサンブルを読み込み中...",
+        "nameHeader": "名前",
+        "performersHeader": "出演者",
+        "productionsHeader": "プロダクション"
+    },
     "field": {
         "general": {
             "exportField": "フィールドをエクスポート",

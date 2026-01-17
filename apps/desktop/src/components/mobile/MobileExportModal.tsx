@@ -46,6 +46,8 @@ function useMobileExportValidation(): AlertState {
     const { data: currentProduction, error: currentProductionError } =
         useCurrentProduction();
 
+    console.log(currentProduction);
+
     return useMemo(() => {
         const isSignedIn = isAuthenticated;
         const hasProductionId = !!productionId;
@@ -171,12 +173,29 @@ function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { data: currentProduction } = useCurrentProduction();
 
-    const heading = "Export to Mobile";
+    const heading = currentProduction ? (
+        <div className="">
+            <h4
+                className="text-h4 mb-8 leading-none"
+                aria-label={"current production name"}
+            >
+                {currentProduction.name}
+            </h4>
+            <h5
+                className="text-body text-text-subtitle"
+                aria-label={"current ensemble name"}
+            >
+                {currentProduction.ensemble.name}
+            </h5>
+        </div>
+    ) : (
+        <h4 className="text-h4 leading-none">Export to Mobile</h4>
+    );
 
     return (
         <section className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
-            <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">{heading}</h4>
+            <header className="flex items-start justify-between gap-24">
+                {heading}
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
@@ -188,7 +207,9 @@ function MobileExportModalContents() {
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
                 <div className="flex flex-col gap-12">
                     {currentProduction ? (
-                        <MobileExportView />
+                        <MobileExportView
+                            currentProduction={currentProduction}
+                        />
                     ) : (
                         <EnsembleList />
                     )}

@@ -57,6 +57,7 @@ export interface Production {
     background_image_url: string | null;
     active_revision: RevisionPreview | null;
     audio_files: ProductionAudioFile[];
+    ensemble: { id: number; name: string };
     created_at: string;
     updated_at: string;
 }
@@ -179,11 +180,11 @@ export const _productionQueryOptions = (
             if (!token) {
                 throw new Error("Authentication token is required");
             }
-            const response = await apiGet<Production>(
+            const response = await apiGet<{ production: Production }>(
                 `v1/productions/${productionId}`,
                 token,
             );
-            return response;
+            return response.production;
         },
         enabled: productionId != null,
         staleTime: undefined, // go stale immediately
