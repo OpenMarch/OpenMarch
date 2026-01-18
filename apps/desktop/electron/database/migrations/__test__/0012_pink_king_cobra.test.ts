@@ -580,10 +580,10 @@ describe("Migration 0012_pink_king_cobra", () => {
             // Verify foreign keys are enabled
             const fkEnabled = (
                 db.prepare("PRAGMA foreign_keys").get() as {
-                    foreign_keys: string;
+                    foreign_keys: number;
                 }
             ).foreign_keys;
-            if (fkEnabled !== "1") {
+            if (fkEnabled !== 1) {
                 throw new Error("Failed to re-enable foreign keys");
             }
 
@@ -628,10 +628,10 @@ describe("Migration 0012_pink_king_cobra", () => {
             // Final verification that foreign keys are still enabled
             const fkStillEnabled = (
                 db.prepare("PRAGMA foreign_keys").get() as {
-                    foreign_keys: string;
+                    foreign_keys: number;
                 }
             ).foreign_keys;
-            if (fkStillEnabled !== "1") {
+            if (fkStillEnabled !== 1) {
                 throw new Error("Foreign keys were disabled after setup");
             }
         }
