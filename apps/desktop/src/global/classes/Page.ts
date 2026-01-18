@@ -115,8 +115,20 @@ export const getLastPage = (allPages: Page[]): Page => {
  *
  * @returns A string representing the measure range for the page.
  */
-export const measureRangeString = (page: Page): string => {
-    if (!page.measures || page.measures.length === 0) {
+export const measureRangeString = (
+    page: {
+        measures: { number: number; counts: number }[] | null;
+        measureBeatToStartOn: number | null;
+        measureBeatToEndOn: number | null;
+    } | null,
+): string => {
+    if (
+        page == null ||
+        page.measures == null ||
+        page.measures.length === 0 ||
+        page.measureBeatToStartOn == null ||
+        page.measureBeatToEndOn == null
+    ) {
         return "-";
     }
     try {
@@ -130,7 +142,7 @@ export const measureRangeString = (page: Page): string => {
                 : `${firstMeasure.number}(${page.measureBeatToStartOn})`;
         const beatToEndOn = page.measureBeatToEndOn;
         const lastMeasureString =
-            beatToEndOn === 0
+            beatToEndOn === lastMeasure.counts
                 ? lastMeasure.number.toString()
                 : `${lastMeasure.number}(${beatToEndOn})`;
 
@@ -218,6 +230,14 @@ export const splitName = (
 /** A type that stores a beat with the index that it occurs in a list with all beats */
 type BeatWithIndex = Beat & { index: number };
 
+export type FromDatabasePagesArgs = {
+    databasePages: DatabasePage[];
+    allMeasures: Measure[];
+    allBeats: Beat[];
+    lastPageCounts: number;
+    pageNumberOffset?: number;
+};
+
 /**
  * Converts the pages from the database (which are stored as a linked list) to Page objects.
  *
@@ -231,13 +251,7 @@ export function fromDatabasePages({
     allBeats,
     lastPageCounts,
     pageNumberOffset = 0,
-}: {
-    databasePages: DatabasePage[];
-    allMeasures: Measure[];
-    allBeats: Beat[];
-    lastPageCounts: number;
-    pageNumberOffset?: number;
-}): Page[] {
+}: FromDatabasePagesArgs): Page[] {
     if (databasePages.length === 0) return [];
     const sortedBeats = allBeats.sort((a, b) => a.position - b.position);
     const beatMap = new Map<number, BeatWithIndex>(
