@@ -9,7 +9,6 @@ import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
-import { handleSqlProxyWithDb } from "../database.services";
 
 /**
  * Service for handling Drizzle migrations at runtime

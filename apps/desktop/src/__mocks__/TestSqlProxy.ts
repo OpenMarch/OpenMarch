@@ -20,7 +20,10 @@ export class TestSqlProxy {
         const orm = getOrm(this.db);
         const migrator = new DrizzleMigrationService(orm, this.db);
         await migrator.applyPendingMigrations();
-        await DrizzleMigrationService.initializeDatabase(this.db as any, this.db);
+        await DrizzleMigrationService.initializeDatabase(
+            this.db as any,
+            this.db,
+        );
     }
 
     async handleSqlProxy(
