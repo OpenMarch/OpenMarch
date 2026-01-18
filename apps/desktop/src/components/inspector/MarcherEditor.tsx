@@ -185,19 +185,23 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(horizontalStepInterval);
 
+            if (!fieldProperties) return currentCoordinates;
+
             if (!stepValue) {
-                if (!fieldProperties) return currentCoordinates;
                 return evenlyDistributeHorizontally({
                     coordinates: currentCoordinates,
                     fieldProperties,
                 });
             }
 
-            if (!fieldProperties) return currentCoordinates;
             const interval = stepValue * fieldProperties.pixelsPerStep;
-            const startingX = Number(currentCoordinates[0]?.x ?? 0);
+            const leftToRightMarchers = currentCoordinates.sort(
+                (a, b) => a.x - b.x,
+            );
+            if (leftToRightMarchers.length === 0) return currentCoordinates;
 
-            return currentCoordinates.map((coordinate, index) => ({
+            const startingX = Number(leftToRightMarchers[0].x);
+            return leftToRightMarchers.map((coordinate, index) => ({
                 ...coordinate,
                 x: startingX + index * interval,
             }));
@@ -214,19 +218,23 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(verticalStepInterval);
 
+            if (!fieldProperties) return currentCoordinates;
+
             if (!stepValue) {
-                if (!fieldProperties) return currentCoordinates;
                 return evenlyDistributeVertically({
                     coordinates: currentCoordinates,
                     fieldProperties,
                 });
             }
 
-            if (!fieldProperties) return currentCoordinates;
             const interval = stepValue * fieldProperties.pixelsPerStep;
-            const startingY = Number(currentCoordinates[0]?.y ?? 0);
+            const topToBottomMarchers = currentCoordinates.sort(
+                (a, b) => a.y - b.y,
+            );
+            if (topToBottomMarchers.length === 0) return currentCoordinates;
 
-            return currentCoordinates.map((coordinate, index) => ({
+            const startingY = Number(topToBottomMarchers[0].y);
+            return topToBottomMarchers.map((coordinate, index) => ({
                 ...coordinate,
                 y: startingY + index * interval,
             }));
