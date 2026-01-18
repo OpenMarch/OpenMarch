@@ -1,6 +1,5 @@
 import { ipcMain } from "electron";
 import Database from "libsql";
-import AsyncDatabase from "libsql/promise";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import AudioFile, {
@@ -81,12 +80,12 @@ export function connect() {
     }
     try {
         const dbPath = DB_PATH;
-        return Database(dbPath, { verbose: console.log });
+        return new Database(dbPath, { verbose: console.log });
     } catch (error: any) {
         console.error(error);
 
         throw new Error(
-            "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
+            "Failed to connect to database: " + error.message,
             error,
         );
     }
