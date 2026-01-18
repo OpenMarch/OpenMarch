@@ -5,6 +5,7 @@ import * as DbServices from "electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "electron/main/services/recent-files-service";
+import { HistoryResponse } from "@/db-functions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -211,10 +212,9 @@ const APP_API = {
 
     // History
     /** Activates on undo or redo. */
-    onHistoryAction: (callback: (args: DbServices.HistoryResponse) => void) =>
-        ipcRenderer.on(
-            "history:action",
-            (event, args: DbServices.HistoryResponse) => callback(args),
+    onHistoryAction: (callback: (args: HistoryResponse) => void) =>
+        ipcRenderer.on("history:action", (event, args: HistoryResponse) =>
+            callback(args),
         ),
     removeHistoryActionListener: () =>
         ipcRenderer.removeAllListeners("history:action"),

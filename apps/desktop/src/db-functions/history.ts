@@ -506,7 +506,7 @@ async function createTriggers(
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
     const isViteTest = typeof process !== "undefined" && process.env.VITEST;
-    if (isViteTest) db.run(sql.raw(insertTrigger));
+    if (isViteTest) await db.run(sql.raw(insertTrigger));
     else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
@@ -520,7 +520,7 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    if (isViteTest) db.run(sql.raw(updateTrigger));
+    if (isViteTest) await db.run(sql.raw(updateTrigger));
     else await window.electron.unsafeSqlProxy(updateTrigger);
 
     // DELETE trigger
@@ -536,7 +536,7 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    if (isViteTest) db.run(sql.raw(deleteTrigger));
+    if (isViteTest) await db.run(sql.raw(deleteTrigger));
     else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 

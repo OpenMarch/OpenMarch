@@ -1,7 +1,7 @@
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { getOrm } from "../../electron/database/db";
 import { DrizzleMigrationService } from "../../electron/database/services/DrizzleMigrationService";
-import { _handleSqlProxyWithDb } from "../../electron/database/database.services";
+import { handleSqlProxyWithDb } from "../../electron/database/database.services";
 
 /**
  * Test SQL Proxy implementation for unit tests
@@ -12,15 +12,15 @@ export class TestSqlProxy {
 
     constructor() {
         this.db = new Database(":memory:");
-        this.db.pragma("foreign_keys = ON");
-        this.db.pragma("user_version = 7");
+        this.db.prepare("PRAGMA foreign_keys = ON").run();
+        this.db.prepare("PRAGMA user_version = 7").run();
     }
 
     async initializeSchema() {
         const orm = getOrm(this.db);
         const migrator = new DrizzleMigrationService(orm, this.db);
         await migrator.applyPendingMigrations();
-        await migrator.initializeDatabase(this.db as any);
+        await DrizzleMigrationService.initializeDatabase(this.db as any, this.db);
     }
 
     async handleSqlProxy(
@@ -28,7 +28,7 @@ export class TestSqlProxy {
         params: any[],
         method: "all" | "run" | "get" | "values",
     ) {
-        return _handleSqlProxyWithDb(this.db, sql, params, method);
+        return handleSqlProxyWithDb(this.db, sql, params, method);
     }
 }
 

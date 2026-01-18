@@ -1,11 +1,27 @@
-import { BetterSQLite3Database, drizzle } from "drizzle-orm/better-sqlite3";
+import { drizzle, type SqliteRemoteDatabase } from "drizzle-orm/sqlite-proxy";
 import * as schema from "./migrations/schema";
-import { Database } from "better-sqlite3";
+import type { Database } from "libsql";
+import { handleSqlProxyWithDb } from "./database.services";
 
-export type DB = BetterSQLite3Database<typeof schema>;
+export type DB = SqliteRemoteDatabase<typeof schema>;
 
-export function getOrm(db: Database): DB {
-    return drizzle({ client: db, schema, casing: "snake_case", logger: true });
-}
+export const getOrm = (db: Database): DB =>
+    drizzle(
+        async (sql, params, method) => {
+            try {
+                const result = await handleSqlProxyWithDb(
+                    db,
+                    sql,
+                    params,
+                    method,
+                );
+                return result;
+            } catch (error: any) {
+                console.error("Error from SQLite proxy:", error);
+                throw error;
+            }
+        },
+        { schema, casing: "snake_case" },
+    );
 
 export { schema };
