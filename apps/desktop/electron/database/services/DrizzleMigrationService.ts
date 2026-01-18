@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 import { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
@@ -28,8 +29,10 @@ export class DrizzleMigrationService {
     // User version 7 is an artifact of the previous migration system
     // but we will keep it at 7 to indicate we are on drizzle
     private async canApplyMigrations(): Promise<boolean> {
-        const userVersion = this.rawDb.pragma("user_version", { simple: true });
-        return userVersion === 7;
+        const userVersion = this.rawDb.pragma("user_version", {
+            simple: true,
+        }) as { user_version: number };
+        return userVersion.user_version === 7;
     }
 
     /**

@@ -1,5 +1,7 @@
+/* eslint-disable no-console */
 import { ipcMain } from "electron";
-import Database from "better-sqlite3";
+import Database from "libsql";
+import AsyncDatabase from "libsql/promise";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import * as History from "./database.history.legacy";
@@ -95,7 +97,7 @@ export function connect() {
         console.error(error);
 
         throw new Error(
-            "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
+            "Failed to connect to database: " + error.message,
             error,
         );
     }
@@ -111,16 +113,16 @@ export function connect() {
  * https://orm.drizzle.team/docs/connect-drizzle-proxy
  */
 export async function handleSqlProxyWithDb(
-    db: Database.Database,
+    db: AsyncDatabase,
     sql: string,
     params: any[],
     method: "all" | "run" | "get" | "values",
 ) {
     try {
         // prevent multiple queries
-        const sqlBody = sql.replace(/;/g, "");
+        const sqlBody = sql.replace(/;\s*$/, "");
 
-        const result = db.prepare(sqlBody);
+        const result = await db.prepare(sqlBody);
 
         let rows: any;
 
@@ -128,7 +130,9 @@ export async function handleSqlProxyWithDb(
             case "all": {
                 // Drizzle's mapResultRow expects all results to be arrays
                 // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().all(...params) as any[][];
+                const rawValues = (await result
+                    .raw()
+                    .all(...params)) as any[][];
                 // Return the raw arrays directly - Drizzle's mapResultRow expects arrays
                 rows = rawValues;
 
@@ -140,7 +144,7 @@ export async function handleSqlProxyWithDb(
             case "get": {
                 // Drizzle's mapResultRow expects all results to be arrays
                 // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().get(...params) as any[];
+                const rawValues = (await result.raw().get(...params)) as any[];
                 // Return the raw array directly - Drizzle's mapResultRow expects an array
                 rows = rawValues;
 
@@ -150,7 +154,7 @@ export async function handleSqlProxyWithDb(
                 return resultObj2;
             }
             case "run":
-                rows = result.run(...params);
+                rows = await result.run(...params);
 
                 return {
                     rows: [], // no data returned for run
@@ -164,7 +168,7 @@ export async function handleSqlProxyWithDb(
     }
 }
 
-async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
+async function handleUnsafeSqlProxyWithDb(db: AsyncDatabase, sql: string) {
     return await db.exec(sql);
 }
 
@@ -195,7 +199,7 @@ async function handleSqlProxy(
         }
 
         return await handleSqlProxyWithDb(
-            persistentConnection,
+            persistentConnection as unknown as any, // Do this to cast better-sqlite3 to libsql
             sql,
             params,
             method,
@@ -209,7 +213,10 @@ async function handleSqlProxy(
 /** Directly executes the SQL query without any parameters */
 async function handleUnsafeSqlProxy(_: any, sql: string) {
     try {
-        return await handleUnsafeSqlProxyWithDb(connect(), sql);
+        return await handleUnsafeSqlProxyWithDb(
+            connect() as unknown as any,
+            sql,
+        );
     } catch (error: any) {
         console.error("Error from unsafe SQL proxy:", error);
         throw error;

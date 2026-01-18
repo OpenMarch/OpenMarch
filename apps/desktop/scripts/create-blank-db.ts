@@ -1,6 +1,6 @@
-#!/usr/bin/env node
+/* eslint-disable no-console */
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { join } from "path";
 import * as fs from "fs";
 import { getOrm } from "../electron/database/db";

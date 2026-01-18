@@ -30,61 +30,36 @@ Most of the directories like `stores`, `context`, and `database` also have a `__
 
 ## Running Tests
 
-Since Electron must rebuild `better-sqlite3` (the package used to interact with the database), we must follow a few steps when transitioning between running automated tests and running the app.
+### Unit tests
 
-### Prepare for testing
+```bash
+pnpm run test
+```
 
-These steps only apply for tests involving database interactions.
-You don't need to rebuild any packages if you're only testing frontend components.
-If you don't, though, the entire test suite will not pass.
+#### Unit tests with history
 
-> For frontend specific tests, ignore the steps below and just run `npm run test`.
->
-> Using the `Vitest` extension in VSCode is also handy.
+These tests simulate a handful of undo/redo operations after each test and assure the database is in the correct state with the right number of undo groups.
+While these tests run in CI, they disabled by default as they are quite slow. But you can run them like this:
 
-<Steps>
+```bash
+cd apps/desktop
+pnpm run test:history
+```
 
-1. Close the app if it's running
-1. Rebuild the `better-sqlite3` package
+### End to end tests
 
-   ```bash
-   npm run test:prepare
-   ```
+```bash
+cd apps/desktop
+pnpm run e2e
+```
 
-   - This will rebuild `better-sqlite3` to run on the same version of Node.js that the rest of the packages are on
+#### Generate your own E2E tests
 
-1. If the tests didn't start, run them again
+This will launch Playwright's code generation tool to help you out.
 
-   ```bash
-   npm run test
-   ```
+```bash
+cd apps/desktop
+pnpm run e2e:codegen
+```
 
-1. You can see other test scripts in the `package.json`
-
-</Steps>
-
-### Running the app after testing
-
-Since we rebuilt `better-sqlite3` with `npm`, we must rebuild it so that it can run in our Electron main process.
-
-> Also do this if you ever see this error. It indicates that `better-sqlite3` has not been rebuilt with the same version of Node.js as the Electron main process:
->
-> ```
-> Failed to connect to database:
-> PLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this
-> ```
-
-<Steps>
-
-1. Stop any tests if they are running.
-1. Rebuild `better-sqlite3` for Electron
-
-   ```bash
-   npm run app:prepare
-   ```
-
-   - This will rebuild `better-sqlite3` to run on the same version of Node.js that the Electron main process is on
-
-1. The app should launch on its own, but if it doesn't you can run `npm run dev` to launch it.
-
-</Steps>
+Then you can follow the instructions in the [E2E testing guide](./e2e.md) to write your own tests.

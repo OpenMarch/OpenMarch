@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -81,8 +81,10 @@ describe("Database Repair", () => {
 
             await initializeAndMigrateDatabase(db);
 
-            const userVersion = db.pragma("user_version", { simple: true });
-            expect(userVersion).toBe(7);
+            const userVersion = db.pragma("user_version", { simple: true }) as {
+                user_version: number;
+            };
+            expect(userVersion.user_version).toBe(7);
 
             db.close();
             fs.unlinkSync(dbPath);
@@ -973,8 +975,8 @@ describe("Database Repair", () => {
             // Verify the database was initialized correctly
             const userVersion = fixedDb.pragma("user_version", {
                 simple: true,
-            });
-            expect(userVersion).toBe(7);
+            }) as { user_version: number };
+            expect(userVersion.user_version).toBe(7);
 
             // Verify migrations were applied
             const orm = getOrm(fixedDb);
@@ -1058,8 +1060,8 @@ describe("Database Repair", () => {
             const fixedDb = new Database(fixedPath);
             const userVersion = fixedDb.pragma("user_version", {
                 simple: true,
-            });
-            expect(userVersion).toBe(7);
+            }) as { user_version: number };
+            expect(userVersion.user_version).toBe(7);
 
             fixedDb.close();
             fs.unlinkSync(fixedPath);
@@ -1174,8 +1176,8 @@ describe("Database Repair", () => {
             // Verify user version
             const userVersion = fixedDb.pragma("user_version", {
                 simple: true,
-            });
-            expect(userVersion).toBe(7);
+            }) as { user_version: number };
+            expect(userVersion.user_version).toBe(7);
 
             // Verify migrations were applied
             const orm = getOrm(fixedDb);
@@ -1216,8 +1218,8 @@ describe("Database Repair", () => {
             const fixedDb = new Database(fixedPath);
             const userVersion = fixedDb.pragma("user_version", {
                 simple: true,
-            });
-            expect(userVersion).toBe(7); // Should be a valid database, not "old content"
+            }) as { user_version: number };
+            expect(userVersion.user_version).toBe(7); // Should be a valid database, not "old content"
 
             fixedDb.close();
             fs.unlinkSync(fixedPath);

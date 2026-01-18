@@ -506,7 +506,7 @@ async function createTriggers(
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
     const isViteTest = typeof process !== "undefined" && process.env.VITEST;
-    if (isViteTest) db.run(sql.raw(insertTrigger));
+    if (isViteTest) await db.run(sql.raw(insertTrigger));
     else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
@@ -520,7 +520,7 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    if (isViteTest) db.run(sql.raw(updateTrigger));
+    if (isViteTest) await db.run(sql.raw(updateTrigger));
     else await window.electron.unsafeSqlProxy(updateTrigger);
 
     // DELETE trigger
@@ -536,7 +536,7 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    if (isViteTest) db.run(sql.raw(deleteTrigger));
+    if (isViteTest) await db.run(sql.raw(deleteTrigger));
     else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 
@@ -715,7 +715,7 @@ async function executeHistoryAction(
             /// Execute all of the SQL statements in the current history group
             await db.transaction(async (tx) => {
                 for (const sqlStatement of sqlStatements)
-                    await tx.run(sqlStatement);
+                    await tx.run(sql.raw(sqlStatement));
             });
         } catch (err: any) {
             error = err;
@@ -790,12 +790,16 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * @returns The current undo group number in the history stats table
  */
 export async function getCurrentUndoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
+    const result = await db.get(
         sql.raw(`
         SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
     `),
-    )) as { cur_undo_group: number };
-    return result.cur_undo_group;
+    );
+    // Handle both tuple and object formats
+    if (Array.isArray(result)) {
+        return result[0] as number;
+    }
+    return (result as { cur_undo_group: number })?.cur_undo_group;
 }
 
 /**
@@ -902,14 +906,16 @@ export async function flattenUndoGroupsAbove(
  */
 export async function calculateHistorySize(db: DbConnection | DB) {
     // Get average SQL statement length
-    const getSqlLength = async (tableName: string): Promise<number> => {
+    const getSqlLength = async (
+        tableName: "history_undo" | "history_redo",
+    ): Promise<number> => {
         const rows = (await db.all(
-            sql.raw(`SELECT sql FROM ${tableName}`),
-        )) as HistoryTableRow[];
+            sql`SELECT sql FROM ${schema[tableName]}`,
+        )) as [string][];
 
         if (rows.length === 0) return 0;
 
-        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
+        const totalLength = rows.reduce((sum, row) => sum + row[0].length, 0);
         return totalLength;
     };
 

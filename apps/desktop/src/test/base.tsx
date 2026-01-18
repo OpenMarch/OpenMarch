@@ -1,8 +1,8 @@
+/* eslint-disable no-console */
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
-import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
-import Database, { RunResult } from "better-sqlite3";
+import Database from "libsql";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
@@ -10,9 +10,12 @@ import * as mockDataMarchersAndPages from "./mock-data/marchers-and-pages.mjs";
 import * as mockDataMarchers from "./mock-data/marchers.mjs";
 import * as mockDataPages from "./mock-data/pages.mjs";
 import * as mockDataBeats from "./mock-data/beats.mjs";
-import { SQLiteTransaction, BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
-import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
-import { createAllUndoTriggers, dropAllUndoTriggers } from "@/db-functions";
+import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
+import {
+    createAllUndoTriggers,
+    DbConnection,
+    dropAllUndoTriggers,
+} from "@/db-functions";
 import {
     handleSqlProxyWithDbBetterSqlite,
     handleSqlProxyWithDbSqlJs,
@@ -42,11 +45,6 @@ export const seedObj = Array.from({ length: SEED_AMOUNT }, (_, i) => ({
     seed: i,
 }));
 
-type DbConnection = BaseSQLiteDatabase<
-    "async",
-    RunResult | void | SqliteRemoteResult<unknown>,
-    typeof schema
->;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
     const taskId = task.id.startsWith("-") ? task.id.slice(1) : task.id;
     return path.resolve(`${taskId}.tmp.dots`);
@@ -338,7 +336,7 @@ const sqlJsTest: TestAPI<DbTestAPI> = baseFixture.extend<{ db: DbConnection }>({
 });
 
 /**
- * Test fixture for better-sqlite3 database with proxy
+ * Test fixture for better-sqlite3 (actually libsql) database with proxy
  *
  * This is used with a proxy, rather than a direct database connection, as that is how it is used in the app.
  */
@@ -361,48 +359,25 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
 
         const db = new Database(tempDatabaseFile);
 
-        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
+        setUpGlobalMocks(
+            db as unknown as any,
+            handleSqlProxyWithDbBetterSqlite,
+        );
         await use(
             sqliteProxyDrizzle(
                 async (sql, params, method) =>
-                    handleSqlProxyWithDbBetterSqlite(db, sql, params, method),
+                    handleSqlProxyWithDbBetterSqlite(
+                        db as unknown as any,
+                        sql,
+                        params,
+                        method,
+                    ),
                 {
                     schema,
                     casing: "snake_case",
                     logger: true,
                 },
             ) as unknown as DbConnection,
-        );
-        db.close();
-    },
-});
-
-const betterSqliteTestDirect: TestAPI<DbTestAPI> = baseFixture.extend<{
-    db: DbConnection;
-}>({
-    db: async ({ task }, use) => {
-        // setup the fixture before each test function
-        const tempDatabaseFile = getTempDotsPath(task);
-
-        try {
-            new Database(":memory:");
-        } catch (error) {
-            console.error(
-                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for Node by running 'pnpm run test:prepare'\n",
-                error,
-            );
-            throw error;
-        }
-
-        const db = new Database(tempDatabaseFile);
-
-        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
-        await use(
-            betterSqliteDrizzle(db, {
-                schema,
-                casing: "snake_case",
-                logger: true,
-            }) as unknown as DbConnection,
         );
         db.close();
     },
@@ -421,7 +396,7 @@ const transaction = (
 
 type DbTestsFunc = (
     it: TestAPI<DbTestAPI>,
-    dbType: "sql-js" | "better-sqlite3",
+    dbType: "sql-js" | "libsql",
 ) => void;
 
 /**
@@ -436,20 +411,17 @@ type DbTestsFunc = (
  */
 const describeDbTests = (
     name: string,
-    tests: (
-        it: TestAPI<DbTestAPI>,
-        dbType: "sql-js" | "better-sqlite3",
-    ) => void,
+    tests: (it: TestAPI<DbTestAPI>, dbType: "sql-js" | "libsql") => void,
 ) => {
-    // We test better-sqlite3 with a proxy, as that is how it is used in the app.
+    // We test better-sqlite3 (actually libsql) with a proxy, as that is how it is used in the app.
     if (process.env.VITEST_DISABLE_BETTER_SQLITE_PROXY !== "true")
-        describe("better-sqlite3", () => {
-            tests(betterSqliteTestWithProxy, "better-sqlite3");
+        describe("libsql", () => {
+            tests(betterSqliteTestWithProxy, "libsql");
         });
     else
         // specifically skip the better-sqlite3 tests so it's visible that they're disabled
-        describe.skip("better-sqlite3", () => {
-            tests(betterSqliteTestWithProxy, "better-sqlite3");
+        describe.skip("libsql", () => {
+            tests(betterSqliteTestWithProxy, "libsql");
         });
 
     // SQL.js is disabled by default just to remove redundancy. It is run in CI.
@@ -462,17 +434,10 @@ const describeDbTests = (
         describe.skip("sql-js", () => {
             tests(sqlJsTest, "sql-js");
         });
-
-    // Not really needed, but keeping it here for reference
-    if (process.env.VITEST_ENABLE_BETTER_SQLITE_DIRECT === "true")
-        describe("better-sqlite3", () => {
-            tests(betterSqliteTestDirect, "better-sqlite3");
-        });
 };
 
 export {
     sqlJsTest,
-    betterSqliteTestDirect,
     betterSqliteTestWithProxy,
     describeDbTests,
     type DbTestsFunc,

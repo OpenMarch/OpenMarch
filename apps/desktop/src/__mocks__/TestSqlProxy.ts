@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { getOrm } from "../../electron/database/db";
 import { DrizzleMigrationService } from "../../electron/database/services/DrizzleMigrationService";
 import { _handleSqlProxyWithDb } from "../../electron/database/database.services";

@@ -1,12 +1,12 @@
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { DbTransaction } from "../types";
 
 describe("validate transaction functionality", () => {
     describe("raw drivers", () => {
-        describe("better-sqlite3", () => {
+        describe("libsql", () => {
             it("should throw an error if the transaction fails", async () => {
                 const db = new Database(":memory:");
                 db.exec("CREATE TABLE test (name TEXT NOT NULL)");

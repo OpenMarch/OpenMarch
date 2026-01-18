@@ -1,5 +1,5 @@
 import { Constants } from "../../src/global/Constants";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { DB, getOrm } from "./db";
 import { desc, not, inArray, sql } from "drizzle-orm";
 import * as schema from "./migrations/schema";

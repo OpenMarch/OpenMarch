@@ -1,4 +1,4 @@
-import Database, { RunResult } from "better-sqlite3";
+import Database, { RunResult } from "libsql";
 import { getOrm, schema } from "../../db";
 import { DrizzleMigrationService } from "@/../electron/database/services/DrizzleMigrationService";
 import { BaseSQLiteDatabase } from "drizzle-orm/sqlite-core";
@@ -39,7 +39,7 @@ export const initTestDatabaseOrm = async (): Promise<DbConnection> => {
     }
     const db = new Database(":memory:");
 
-    const orm = (await betterSqliteDrizzle(db, {
+    const orm = (await betterSqliteDrizzle(db as any, {
         schema,
         casing: "snake_case",
         logger: true,

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines-per-function */
 import { rmSync } from "node:fs";
 import path from "node:path";
 import { defineConfig } from "vite";
@@ -52,7 +53,7 @@ export default defineConfig(({ command }) => {
                             outDir: "dist-electron/main",
                             rollupOptions: {
                                 external: [
-                                    "better-sqlite3",
+                                    "libsql",
                                     "electron",
                                     "node",
                                 ].concat(
