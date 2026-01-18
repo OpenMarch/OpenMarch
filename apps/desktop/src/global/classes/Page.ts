@@ -9,7 +9,8 @@ import {
     NewPageArgs,
 } from "@/db-functions";
 import { ModifyPagesRequest } from "@/hooks/queries/usePages";
-
+import { measureRangeString as _measureRangeString } from "./Page.utils";
+export const measureRangeString = _measureRangeString;
 interface Page {
     /** The id of the page in the database
      *
@@ -102,113 +103,6 @@ export const getLastPage = (allPages: Page[]): Page => {
         return nearestLastPage;
     });
 };
-
-/**
- * Generates a string representation of the measure range for the page.
- * If the page starts on the first beat, the measure number is returned.
- * Otherwise, the measure number and the starting beat are returned.
- * The last measure number and ending beat are also included in the string if the page ends in the middle of a measure.
- *
- * E.g. "1 - 2" means the page starts on the first beat of m1 and goes through m2 to the start of m3.
- *
- * E.g. "1(2) - 3(4)" means the page starts on the second beat of m1 and goes up to the fourth beat of m3.
- *
- * @returns A string representing the measure range for the page.
- */
-export const measureRangeString = (
-    page: {
-        measures: { number: number; counts: number }[] | null;
-        measureBeatToStartOn: number | null;
-        measureBeatToEndOn: number | null;
-    } | null,
-): string => {
-    if (
-        page == null ||
-        page.measures == null ||
-        page.measures.length === 0 ||
-        page.measureBeatToStartOn == null ||
-        page.measureBeatToEndOn == null
-    ) {
-        return "-";
-    }
-    try {
-        const firstMeasure = page.measures[0];
-        const lastMeasure = page.measures[page.measures.length - 1];
-
-        // If the page starts on the first measure, just return the measure number. Otherwise, return the measure number and the beat.
-        const firstMeasureString =
-            page.measureBeatToStartOn === 1
-                ? firstMeasure.number.toString()
-                : `${firstMeasure.number}(${page.measureBeatToStartOn})`;
-        const beatToEndOn = page.measureBeatToEndOn;
-        const lastMeasureString =
-            beatToEndOn === lastMeasure.counts
-                ? lastMeasure.number.toString()
-                : `${lastMeasure.number}(${beatToEndOn})`;
-
-        if (firstMeasureString === lastMeasureString) return firstMeasureString;
-        return `${firstMeasureString} → ${lastMeasureString}`;
-    } catch (err) {
-        return "N/A";
-    }
-};
-
-//     /**
-//      * Gets the beat number of the last measure that the page goes until.
-//      * This is calculated by taking the total big beats of all measures, subtracting the start beat offset,
-//      * and then subtracting the total counts of the page to get the remaining beats.
-//      *
-//      * E.g. if the page has 7 counts and has two 4/4 measures, the beat to end on is 4 because
-//      *
-//      * @returns The beat number of the last measure that the page goes until.
-//      */
-//     public get measureBeatToEndOn() {
-//         const totalMeasureBigBeats = this.measures.reduce(
-//             (total, measure) => total + measure.getBigBeats(),
-//             0,
-//         );
-//         const missingBeats =
-//             totalMeasureBigBeats -
-//             this.counts -
-//             (this.measureBeatToStartOn - 1);
-//         if (missingBeats === 0) return 0;
-
-//         const lastMeasure = this.measures[this.measures.length - 1];
-//         return lastMeasure.getBigBeats() - missingBeats;
-//     }
-
-//     /**
-//      * Retrieves the next Page based on this Page and the list of all Pages.
-//      * If the current Page is the last Page, null is returned.
-//      *
-//      * @param allPages - The list of all Pages.
-//      * @returns The next Page or null if the current Page is the last Page.
-//      * @throws If the current Page is not found in the list of all Pages.
-//      */
-//     getNextPage(allPages: Page[]): Page | null {
-//         if (!allPages || allPages.length === 0 || !this.nextPageId === null)
-//             return null;
-
-//         const pagesMap = new Map<number, Page>(
-//             allPages.map((page) => [page.id, page]),
-//         );
-//         if (!pagesMap.has(this.id)) {
-//             throw new Error(
-//                 `Current page "id=${this.id}" not found in list of all pages.`,
-//             );
-//         }
-
-//         // There is no next page
-//         if (this.nextPageId === null) return null;
-
-//         const nextPage = pagesMap.get(this.nextPageId);
-//         if (!nextPage) {
-//             throw new Error(
-//                 `Next page "id=${this.nextPageId}" not found in list of all pages.`,
-//             );
-//         }
-//         return nextPage;
-//     }
 
 /**
  * Splits a page name into its number and subset letter.

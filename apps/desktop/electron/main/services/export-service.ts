@@ -7,13 +7,12 @@ import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
-import Page, {
-    measureRangeString as baseMeasureRangeString,
-} from "../../../src/global/classes/Page";
+import Page from "../../../src/global/classes/Page";
 import sanitizeHtml from "sanitize-html";
 
 import Store from "electron-store";
 import { getOrmConnection } from "../../database/database.services";
+import { measureRangeString as _measureRangeString } from "../../../src/global/classes/Page.utils";
 
 const store = new Store();
 
@@ -180,7 +179,7 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 const measureRangeString = (page: Page): string => {
     try {
         if (!page.measures || page.measures.length === 0) return "START";
-        else return baseMeasureRangeString(page);
+        else return _measureRangeString(page);
     } catch (err) {
         return "N/A";
     }
