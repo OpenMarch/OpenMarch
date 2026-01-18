@@ -52,7 +52,6 @@ export default defineConfig(({ command }) => {
                             outDir: "dist-electron/main",
                             rollupOptions: {
                                 external: [
-                                    "better-sqlite3",
                                     "electron",
                                     "node",
                                 ].concat(

@@ -19,7 +19,6 @@
     },
     "scripts": {
         "dev": "pnpm run apply-styles && vite",
-        "app:prepare": "electron-rebuild -f -w better-sqlite3",
         "postinstall": "electron-builder install-app-deps",
         "build": "pnpm run apply-styles && tsc && vite build",
         "build:electron": "pnpm run apply-styles && tsc && vite build && electron-builder --dir",
@@ -32,12 +31,11 @@
         "test": "vitest run --silent",
         "test:history": "VITEST_ENABLE_HISTORY=true VITEST_ENABLE_SQLJS=true vitest run",
         "test:watch": "vitest",
-        "test:prepare": "pnpm rebuild better-sqlite3",
         "test:coverage": "pnpm test -- --coverage",
         "test:clearCache": "vitest --clearCache",
         "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
-        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && pnpm rebuild better-sqlite3 && drizzle-kit generate && tsx scripts/create-blank-db.ts"
+        "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts"
     },
     "dependencies": {
         "@dnd-kit/core": "^6.3.1",
