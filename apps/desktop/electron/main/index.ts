@@ -886,14 +886,14 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.pragma("user_version = 7");
+            db.prepare("PRAGMA user_version = 7").run();
         }
         await migrator.applyPendingMigrations(
             join(app.getAppPath(), "electron", "database", "migrations"),
         );
 
         if (isNewFile) {
-            await migrator.initializeDatabase(drizzleDb);
+            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
         }
 
         store.set("databasePath", path); // Save current db path

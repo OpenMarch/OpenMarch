@@ -5,7 +5,6 @@
 This is our main desktop drill writing app. [openmarch.com](https://openmarch.com)
 
 ```bash
-pnpm desktop app:prepare
 pnpm desktop dev
 ```
 

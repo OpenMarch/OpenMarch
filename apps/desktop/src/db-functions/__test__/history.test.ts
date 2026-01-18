@@ -5,14 +5,12 @@ import {
     createUndoTriggers,
     flattenUndoGroupsAbove,
     getCurrentUndoGroup,
-    HistoryStatsRow,
-    HistoryTableRow,
     incrementUndoGroup,
     performRedo,
     performUndo,
     transactionWithHistory,
 } from "../history";
-import { inArray, notInArray, sql, eq } from "drizzle-orm";
+import { inArray, notInArray, sql, eq, asc } from "drizzle-orm";
 import { DbTransaction } from "../types";
 
 describeDbTests("transactionWithHistory", (baseIt) => {
@@ -306,16 +304,16 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                         ),
                     );
 
-                    const currentValue = async () =>
-                        (
-                            (await db.get(
-                                sql.raw(
-                                    "SELECT test_value FROM test_table WHERE id = 1;",
-                                ),
-                            )) as {
-                                test_value: string;
-                            }
-                        ).test_value;
+                    const currentValue = async () => {
+                        try {
+                            const result = (await db.get(
+                                "SELECT test_value FROM test_table WHERE id = 1;",
+                            )) as [test_value: string];
+                            return result[0];
+                        } catch (e) {
+                            return undefined;
+                        }
+                    };
 
                     // Create undo triggers for the test table
                     await createUndoTriggers(db, "test_table");
@@ -365,7 +363,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should undo groups of updates correctly", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -449,12 +447,12 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                             sql.raw(`SELECT * FROM test_table ORDER BY id`),
                         )) as Row[];
                     let expectedValues: Row[] = [
-                        { id: 1, test_value: "g1-0 - second updated value" },
-                        { id: 2, test_value: "g1-1 - second updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - second updated value"],
+                        [2, "g1-1 - second updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -471,48 +469,48 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                     expect(response.error).toBeUndefined();
 
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
                     await performUndo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - initial value" },
-                        { id: 5, test_value: "g3-1 - initial value" },
-                        { id: 6, test_value: "g3-2 - initial value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - initial value"],
+                        [5, "g3-1 - initial value"],
+                        [6, "g3-2 - initial value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
                     await performUndo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - initial value" },
-                        { id: 4, test_value: "g3-0 - initial value" },
-                        { id: 5, test_value: "g3-1 - initial value" },
-                        { id: 6, test_value: "g3-2 - initial value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - initial value"],
+                        [4, "g3-0 - initial value"],
+                        [5, "g3-1 - initial value"],
+                        [6, "g3-2 - initial value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
                     await performUndo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - initial value" },
-                        { id: 2, test_value: "g1-1 - initial value" },
-                        { id: 3, test_value: "g2-0 - initial value" },
-                        { id: 4, test_value: "g3-0 - initial value" },
-                        { id: 5, test_value: "g3-1 - initial value" },
-                        { id: 6, test_value: "g3-2 - initial value" },
+                        [1, "g1-0 - initial value"],
+                        [2, "g1-1 - initial value"],
+                        [3, "g2-0 - initial value"],
+                        [4, "g3-0 - initial value"],
+                        [5, "g3-1 - initial value"],
+                        [6, "g3-2 - initial value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -536,13 +534,10 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
 
                     const currentValue = async () => {
                         try {
-                            return (
-                                (await db.get(
-                                    "SELECT test_value FROM test_table WHERE id = 1;",
-                                )) as {
-                                    test_value: string;
-                                }
-                            ).test_value;
+                            const result = (await db.get(
+                                "SELECT test_value FROM test_table WHERE id = 1;",
+                            )) as [test_value: string];
+                            return result[0];
                         } catch (e) {
                             return undefined;
                         }
@@ -581,7 +576,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should undo groups of deletes correctly", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -673,31 +668,31 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                     expect(response.error).toBeUndefined();
 
                     let expectedValues = [
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
                     await performUndo(db);
                     expectedValues = [
-                        { id: 3, test_value: "g2-0" },
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [3, "g2-0"],
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute the undo action again
                     await performUndo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0" },
-                        { id: 2, test_value: "g1-1" },
-                        { id: 3, test_value: "g2-0" },
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [1, "g1-0"],
+                        [2, "g1-1"],
+                        [3, "g2-0"],
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -777,7 +772,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should all a redo correctly from undoing an insert action", async ({
                     db,
                 }) => {
-                    type Row = { id: number; value: string };
+                    type Row = [id: number, value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -804,8 +799,8 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                             sql.raw("SELECT * FROM test_table"),
                         )) as Row[];
                     const completeRows = [
-                        { id: 1, value: "test value" },
-                        { id: 2, value: "another value" },
+                        [1, "test value"],
+                        [2, "another value"],
                     ];
                     expect(await allRows()).toEqual(completeRows);
 
@@ -1012,16 +1007,14 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                         "CREATE TABLE test_table (id INTEGER PRIMARY KEY, test_value TEXT);",
                     );
 
-                    const currentValue = async () =>
-                        (
-                            (await db.get(
-                                sql.raw(
-                                    "SELECT test_value FROM test_table WHERE id = 1;",
-                                ),
-                            )) as {
-                                test_value: string;
-                            }
-                        ).test_value;
+                    const currentValue = async () => {
+                        const result = (await db.get(
+                            sql.raw(
+                                "SELECT test_value FROM test_table WHERE id = 1;",
+                            ),
+                        )) as [test_value: string];
+                        return result[0];
+                    };
 
                     // Create undo triggers for the test table
                     await createUndoTriggers(db, "test_table");
@@ -1068,7 +1061,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should undo groups of updates correctly", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -1154,12 +1147,12 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                             sql.raw(`SELECT * FROM test_table ORDER BY id`),
                         )) as Row[];
                     let expectedValues: Row[] = [
-                        { id: 1, test_value: "g1-0 - second updated value" },
-                        { id: 2, test_value: "g1-1 - second updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - second updated value"],
+                        [2, "g1-1 - second updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -1172,45 +1165,45 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                     // Execute a redo action
                     await performRedo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - initial value" },
-                        { id: 4, test_value: "g3-0 - initial value" },
-                        { id: 5, test_value: "g3-1 - initial value" },
-                        { id: 6, test_value: "g3-2 - initial value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - initial value"],
+                        [4, "g3-0 - initial value"],
+                        [5, "g3-1 - initial value"],
+                        [6, "g3-2 - initial value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     await performRedo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - initial value" },
-                        { id: 5, test_value: "g3-1 - initial value" },
-                        { id: 6, test_value: "g3-2 - initial value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - initial value"],
+                        [5, "g3-1 - initial value"],
+                        [6, "g3-2 - initial value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     await performRedo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - updated value" },
-                        { id: 2, test_value: "g1-1 - updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - updated value"],
+                        [2, "g1-1 - updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     await performRedo(db);
                     expectedValues = [
-                        { id: 1, test_value: "g1-0 - second updated value" },
-                        { id: 2, test_value: "g1-1 - second updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - second updated value"],
+                        [2, "g1-1 - second updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -1223,7 +1216,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should have no redo operations after inserting a new undo entry after UPDATE", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -1323,12 +1316,12 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                             sql.raw(`SELECT * FROM test_table ORDER BY id`),
                         )) as Row[];
                     let expectedValues: Row[] = [
-                        { id: 1, test_value: "g1-0 - second updated value" },
-                        { id: 2, test_value: "g1-1 - second updated value" },
-                        { id: 3, test_value: "g2-0 - updated value" },
-                        { id: 4, test_value: "g3-0 - updated value" },
-                        { id: 5, test_value: "g3-1 - updated value" },
-                        { id: 6, test_value: "g3-2 - updated value" },
+                        [1, "g1-0 - second updated value"],
+                        [2, "g1-1 - second updated value"],
+                        [3, "g2-0 - updated value"],
+                        [4, "g3-0 - updated value"],
+                        [5, "g3-1 - updated value"],
+                        [6, "g3-2 - updated value"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -1365,13 +1358,10 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
 
                     const currentValue = async () => {
                         try {
-                            return (
-                                (await db.get(
-                                    "SELECT test_value FROM test_table WHERE id = 1;",
-                                )) as {
-                                    test_value: string;
-                                }
-                            ).test_value;
+                            const result = (await db.get(
+                                "SELECT test_value FROM test_table WHERE id = 1;",
+                            )) as [test_value: string];
+                            return result[0];
                         } catch (e) {
                             return undefined;
                         }
@@ -1411,7 +1401,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should undo groups of deletes correctly", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -1494,30 +1484,30 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                     await performUndo(db);
                     await performUndo(db);
                     let expectedValues = [
-                        { id: 1, test_value: "g1-0" },
-                        { id: 2, test_value: "g1-1" },
-                        { id: 3, test_value: "g2-0" },
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [1, "g1-0"],
+                        [2, "g1-1"],
+                        [3, "g2-0"],
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     // Execute three redo actions
                     await performRedo(db);
                     expectedValues = [
-                        { id: 3, test_value: "g2-0" },
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [3, "g2-0"],
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
                     await performRedo(db);
                     expectedValues = [
-                        { id: 4, test_value: "g3-0" },
-                        { id: 5, test_value: "g3-1" },
-                        { id: 6, test_value: "g3-2" },
+                        [4, "g3-0"],
+                        [5, "g3-1"],
+                        [6, "g3-2"],
                     ];
                     expect(await allRows()).toEqual(expectedValues);
 
@@ -1533,7 +1523,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
                 it("should have no redo operations after inserting a new undo entry after DELETE", async ({
                     db,
                 }) => {
-                    type Row = { id: number; test_value: string };
+                    type Row = [id: number, test_value: string];
                     // Create history tables and test table
                     await db.run(
                         sql.raw(
@@ -1764,8 +1754,8 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             await performUndo(db);
             let result = (await db.get(
                 sql`SELECT age FROM users WHERE name = ${"Alice"}`,
-            )) as { age: number };
-            expect(result.age).toBe(28);
+            )) as [age: number];
+            expect(result[0]).toBe(28);
 
             // Undo order insertion and check if the table is empty
             await performUndo(db);
@@ -1863,9 +1853,9 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             await performUndo(db);
 
             let user = (await db.get(
-                sql`SELECT * FROM users WHERE name = ${"Frank"}`,
+                sql`SELECT email FROM users WHERE name = ${"Frank"}`,
             )) as any;
-            expect(user.email).toBe("frank@example.com"); // Should be the original email
+            expect(user[0]).toBe("frank@example.com"); // Should be the original email
 
             await performRedo(db);
             let orders = await db.all(sql.raw("SELECT * FROM orders"));
@@ -1874,21 +1864,30 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
     });
 
     describe("Limit Tests", async () => {
-        const groupLimit = async (db: DbConnection) =>
-            (
-                (await db.get(`SELECT group_limit FROM ${"history_stats"}`)) as
-                    | HistoryStatsRow
-                    | undefined
-            )?.group_limit;
+        const groupLimit = async (db: DbConnection): Promise<number> => {
+            const result = await db.query.history_stats.findFirst({
+                columns: {
+                    group_limit: true,
+                },
+            });
+            return result?.group_limit ?? 0;
+        };
 
-        const undoGroups = async (db: DbConnection) =>
-            (
-                (await db.all(
-                    sql.raw(
-                        `SELECT * FROM ${"history_undo"} GROUP BY "history_group" ORDER BY "history_group" ASC`,
-                    ),
-                )) as HistoryTableRow[]
-            ).map((row) => row.history_group);
+        const undoGroups = async (db: DbConnection): Promise<number[]> => {
+            const result = await db
+                .select()
+                .from(schema.history_undo)
+                .groupBy(schema.history_undo.history_group)
+                .orderBy(asc(schema.history_undo.history_group));
+            return result.map((row) => row.history_group);
+        };
+        // (
+        //     (await db.all(
+        //         sql.raw(
+        //             `SELECT * FROM ${"history_undo"} GROUP BY "history_group" ORDER BY "history_group" ASC`,
+        //         ),
+        //     )) as HistoryTableRow[]
+        // ).map((row) => row.history_group);
 
         it.for([
             {
@@ -2191,8 +2190,8 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             let specialResult = (await db.get(
                 "SELECT description FROM special_characters_test WHERE id = 1",
             )) as any;
-            expect(reservedResult.group).toBe("Group1");
-            expect(specialResult.description).toBe(
+            expect(reservedResult[0]).toBe("Group1");
+            expect(specialResult[0]).toBe(
                 '"Complex value (with) {all} kinds [of] special characters!"',
             );
 
@@ -2205,7 +2204,7 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
             specialResult = await db.all(
                 "SELECT * FROM special_characters_test",
             );
-            expect(reservedResult.group).toBe("UpdatedGroup");
+            expect(reservedResult[0]).toBe("UpdatedGroup");
             expect(specialResult.length).toBe(0); // The row should be deleted
         });
 
@@ -2479,14 +2478,12 @@ describeDbTests("History Tables and Triggers", async (baseIt) => {
           FROM ${"history_undo"}
           GROUP BY group_category
         `),
-            )) as { group_category: string; count: number }[];
+            )) as [group_category: string, count: number][];
 
-            const belowOrEqual = result.find(
-                (r) => r.group_category === "below_or_equal",
-            );
-            const above = result.find((r) => r.group_category === "above");
+            const belowOrEqual = result.find((r) => r[0] === "below_or_equal");
+            const above = result.find((r) => r[0] === "above");
 
-            expect(belowOrEqual?.count || 0).toBe(100);
+            expect(belowOrEqual?.[1] || 0).toBe(100);
             expect(above).toBeUndefined(); // No groups should be above 3000
         });
     });

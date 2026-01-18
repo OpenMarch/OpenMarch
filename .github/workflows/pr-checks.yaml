@@ -58,9 +58,6 @@ jobs:
       - name: Build project
         run: pnpm run build
 
-      - name: Test Prepare (for desktop)
-        run: pnpm desktop test:prepare
-
       - name: Test all packages
         run: pnpm run test
 

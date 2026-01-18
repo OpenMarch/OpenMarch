@@ -1,16 +1,14 @@
-import { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
-import { migrate } from "drizzle-orm/better-sqlite3/migrator";
-import Database from "better-sqlite3";
+/* eslint-disable no-console */
+import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
+import Database from "libsql";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
 import FieldPropertiesTemplates from "../../../src/global/classes/FieldProperties.templates";
 import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
-import { DbConnection } from "../tables/__test__/testUtils";
 import { sql } from "drizzle-orm";
-
-export type DB = BetterSQLite3Database<typeof schema> | DbConnection;
+import { DB } from "../db";
 
 /**
  * Service for handling Drizzle migrations at runtime
@@ -28,7 +26,11 @@ export class DrizzleMigrationService {
     // User version 7 is an artifact of the previous migration system
     // but we will keep it at 7 to indicate we are on drizzle
     private async canApplyMigrations(): Promise<boolean> {
-        const userVersion = this.rawDb.pragma("user_version", { simple: true });
+        const userVersion = (
+            this.rawDb.prepare("PRAGMA user_version").get() as {
+                user_version: number;
+            }
+        ).user_version;
         return userVersion === 7;
     }
 
@@ -53,34 +55,34 @@ export class DrizzleMigrationService {
         try {
             // console.log("Dropping history triggers...");
             // await dropAllUndoTriggers(this.db);
-            await dropAllTriggers(this.db);
-            console.log("Disabling foreign key checks...");
-            this.rawDb.pragma("foreign_keys = OFF");
 
             console.log("Applying pending Drizzle migrations...");
 
-            if (this.db instanceof BetterSQLite3Database) {
-                await migrate(this.db, {
+            await migrate(
+                this.db,
+                async (queries) => {
+                    console.log("Disabling foreign key checks...");
+                    dropAllTriggers(this.rawDb);
+                    for (const query of queries) {
+                        this.rawDb.exec("PRAGMA foreign_keys = OFF");
+                        this.rawDb.exec(query);
+                    }
+                    createAllTriggers(this.rawDb);
+
+                    console.log("Recreating triggers...");
+                    console.log("Enabling foreign key checks...");
+                    this.rawDb.prepare("PRAGMA foreign_keys = ON").run();
+                },
+                {
                     migrationsFolder: folder,
                     migrationsTable: "__drizzle_migrations",
-                });
-            } else {
-                throw new Error(
-                    "Drizzle migrations are not supported for this database",
-                );
-            }
+                },
+            );
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {
             console.error("Error applying Drizzle migrations:", error);
             throw error;
-        } finally {
-            // console.log("Recreating history triggers...");
-            // await createAllUndoTriggers(this.db);
-            console.log("Recreating triggers...");
-            await createAllTriggers(this.db);
-            console.log("Enabling foreign key checks...");
-            this.rawDb.pragma("foreign_keys = ON");
         }
     }
 
@@ -134,7 +136,7 @@ export class DrizzleMigrationService {
     }
 
     /** Run any ts migrations that are not in drizzle */
-    async initializeDatabase(db: DbConnection | DB) {
+    static async initializeDatabase(db: DB, rawDb: Database.Database) {
         await db.run(sql`PRAGMA user_version = 7`);
 
         // Easier to do this here than in the migration
@@ -156,6 +158,6 @@ export class DrizzleMigrationService {
         });
 
         // await createAllUndoTriggers(db);
-        await createAllTriggers(db);
+        await createAllTriggers(rawDb);
     }
 }
