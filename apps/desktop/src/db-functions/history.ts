@@ -790,12 +790,12 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * @returns The current undo group number in the history stats table
  */
 export async function getCurrentUndoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_undo_group: number };
-    return result.cur_undo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_undo_group: true,
+        },
+    });
+    return result?.cur_undo_group ?? 0;
 }
 
 /**
@@ -803,12 +803,12 @@ export async function getCurrentUndoGroup(db: DbConnection | DB) {
  * @returns The current redo group number in the history stats table
  */
 export async function getCurrentRedoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_redo_group: number };
-    return result.cur_redo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_redo_group: true,
+        },
+    });
+    return result?.cur_redo_group ?? 0;
 }
 
 export async function getUndoStackLength(db: DbConnection): Promise<number> {
@@ -905,11 +905,14 @@ export async function calculateHistorySize(db: DbConnection | DB) {
     const getSqlLength = async (tableName: string): Promise<number> => {
         const rows = (await db.all(
             sql.raw(`SELECT sql FROM ${tableName}`),
-        )) as HistoryTableRow[];
+        )) as string[][];
 
         if (rows.length === 0) return 0;
 
-        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
+        const totalLength = rows.reduce(
+            (sum, row) => sum + (row[0]?.length ?? 0),
+            0,
+        );
         return totalLength;
     };
 
