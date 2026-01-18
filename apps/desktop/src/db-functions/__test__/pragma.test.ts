@@ -44,7 +44,7 @@ describe("Pragma", () => {
         it("should be able to get the foreign keys status", async () => {
             const result = (
                 db.prepare("PRAGMA foreign_keys").get() as {
-                    foreign_keys: string;
+                    foreign_keys: number;
                 }
             ).foreign_keys;
             expect(result).toBe(1);
@@ -54,7 +54,7 @@ describe("Pragma", () => {
             db.prepare("PRAGMA foreign_keys = OFF").run();
             const result = (
                 db.prepare("PRAGMA foreign_keys").get() as {
-                    foreign_keys: string;
+                    foreign_keys: number;
                 }
             ).foreign_keys;
             expect(result).toBe(0);
@@ -62,7 +62,7 @@ describe("Pragma", () => {
             db.prepare("PRAGMA foreign_keys = ON").run();
             const result2 = (
                 db.prepare("PRAGMA foreign_keys").get() as {
-                    foreign_keys: string;
+                    foreign_keys: number;
                 }
             ).foreign_keys;
             expect(result2).toBe(1);
