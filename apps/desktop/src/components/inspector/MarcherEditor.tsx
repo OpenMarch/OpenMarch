@@ -424,9 +424,6 @@ function MarcherEditor() {
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
-    const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
-    );
     const { data: previousMarcherPages } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
     );
@@ -536,15 +533,14 @@ function MarcherEditor() {
             !marcherPagesLoaded ||
             !previousMarcherPages ||
             !selectedPage ||
-            !fieldProperties ||
-            !nextMarcherPages
+            !fieldProperties
         )
             return undefined;
 
         return StepSize.getMinAndMaxStepSizesForMarchers({
             marchers: selectedMarchers,
-            startingMarcherPages: marcherPages,
-            endingMarcherPages: nextMarcherPages,
+            startingMarcherPages: previousMarcherPages,
+            endingMarcherPages: marcherPages,
             page: selectedPage,
             fieldProperties,
         });
@@ -555,7 +551,6 @@ function MarcherEditor() {
         selectedPage,
         fieldProperties,
         marcherPages,
-        nextMarcherPages,
     ]);
 
     const resetForm = useCallback(() => {
