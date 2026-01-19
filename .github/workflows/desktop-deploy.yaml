@@ -86,7 +86,7 @@ jobs:
           CI: true
           ADBLOCK: true
 
-      - name: Ensure libsql platform modules are installed
+      - name: Ensure libsql platform modules are installed and dereferenced
         working-directory: apps/desktop
         if: startsWith(matrix.os, 'macos')
         run: |
@@ -96,12 +96,50 @@ jobs:
           else
             PLATFORM_MODULE="@libsql/darwin-x64"
           fi
-          if [ ! -d "node_modules/$PLATFORM_MODULE" ] && [ ! -d "../../node_modules/$PLATFORM_MODULE" ]; then
+
+          # Check in both local and root node_modules
+          MODULE_PATH=""
+          if [ -d "node_modules/$PLATFORM_MODULE" ]; then
+            MODULE_PATH="node_modules/$PLATFORM_MODULE"
+          elif [ -d "../../node_modules/$PLATFORM_MODULE" ]; then
+            MODULE_PATH="../../node_modules/$PLATFORM_MODULE"
+          fi
+
+          if [ -z "$MODULE_PATH" ]; then
             echo "Warning: $PLATFORM_MODULE not found, installing..."
             pnpm add $PLATFORM_MODULE@0.5.22 --save-optional || pnpm install --force
+            # Re-check after install
+            if [ -d "node_modules/$PLATFORM_MODULE" ]; then
+              MODULE_PATH="node_modules/$PLATFORM_MODULE"
+            elif [ -d "../../node_modules/$PLATFORM_MODULE" ]; then
+              MODULE_PATH="../../node_modules/$PLATFORM_MODULE"
+            fi
           fi
-          echo "Verifying libsql modules:"
-          ls -la node_modules/@libsql/ 2>/dev/null || ls -la ../../node_modules/@libsql/ 2>/dev/null || echo "No @libsql modules found in expected locations"
+
+          if [ -n "$MODULE_PATH" ]; then
+            echo "Found $PLATFORM_MODULE at: $MODULE_PATH"
+            # Check if it's a symlink
+            if [ -L "$MODULE_PATH" ]; then
+              echo "Warning: $PLATFORM_MODULE is a symlink. Dereferencing for electron-builder..."
+              TARGET=$(readlink -f "$MODULE_PATH")
+              echo "Symlink target: $TARGET"
+              # Copy actual files to replace symlink (electron-builder needs real files)
+              rm "$MODULE_PATH"
+              cp -r "$TARGET" "$MODULE_PATH"
+              echo "Replaced symlink with actual files"
+            fi
+            # Verify it's now a real directory
+            if [ -d "$MODULE_PATH" ] && [ ! -L "$MODULE_PATH" ]; then
+              echo "✓ $PLATFORM_MODULE is a real directory (not a symlink)"
+              ls -la "$MODULE_PATH" | head -5
+            fi
+          else
+            echo "Error: Could not find $PLATFORM_MODULE after installation attempt"
+            exit 1
+          fi
+
+          echo "Verifying all @libsql modules:"
+          ls -la node_modules/@libsql/ 2>/dev/null || ls -la ../../node_modules/@libsql/ 2>/dev/null || echo "No @libsql modules found"
 
       - name: Build for production
         run: pnpm run build --filter=\!@openmarch/website
