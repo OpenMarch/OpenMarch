@@ -57,7 +57,6 @@ export default defineConfig(({ command }) => {
                                     "node",
                                     "libsql",
                                     "@libsql/client",
-                                    /^@libsql\/.+$/,
                                 ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
@@ -68,7 +67,7 @@ export default defineConfig(({ command }) => {
                             },
                             commonjsOptions: {
                                 dynamicRequireTargets: [
-                                    /^@libsql\/.+$/,
+                                    "@libsql/client",
                                 ],
                             },
                         },
