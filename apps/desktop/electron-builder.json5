@@ -17,7 +17,8 @@
         "dist-electron",
         "dist",
         "node_modules",
-        "node_modules/@libsql/*/*.node",
+        "node_modules/@libsql/**",
+        "!**/node_modules/canvas/**",
     ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
@@ -97,7 +98,6 @@
             },
         ],
     },
-    files: ["!**/node_modules/canvas/**"],
     publish: [
         {
             provider: "github",
