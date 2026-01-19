@@ -43,7 +43,6 @@
         "@dnd-kit/utilities": "^3.2.2",
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
-        "@libsql/client": "^0.17.0",
         "@openmarch/core": "workspace:*",
         "@openmarch/metronome": "workspace:*",
         "@openmarch/musicxml-parser": "workspace:*",
