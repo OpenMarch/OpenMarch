@@ -5,7 +5,11 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    asarUnpack: ["**/*.node"],
+    asarUnpack: [
+        "**/*.node",
+        "**/node_modules/libsql",
+        "**/node_modules/@libsql/**",
+    ],
     directories: {
         output: "release/${buildVersion}",
     },
