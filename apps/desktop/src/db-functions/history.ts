@@ -506,7 +506,7 @@ async function createTriggers(
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
     const isViteTest = typeof process !== "undefined" && process.env.VITEST;
-    if (isViteTest) db.run(sql.raw(insertTrigger));
+    if (isViteTest) await db.run(sql.raw(insertTrigger));
     else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
@@ -520,7 +520,7 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    if (isViteTest) db.run(sql.raw(updateTrigger));
+    if (isViteTest) await db.run(sql.raw(updateTrigger));
     else await window.electron.unsafeSqlProxy(updateTrigger);
 
     // DELETE trigger
@@ -536,7 +536,7 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    if (isViteTest) db.run(sql.raw(deleteTrigger));
+    if (isViteTest) await db.run(sql.raw(deleteTrigger));
     else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 
@@ -790,12 +790,12 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * @returns The current undo group number in the history stats table
  */
 export async function getCurrentUndoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_undo_group: number };
-    return result.cur_undo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_undo_group: true,
+        },
+    });
+    return result?.cur_undo_group ?? 0;
 }
 
 /**
@@ -803,12 +803,12 @@ export async function getCurrentUndoGroup(db: DbConnection | DB) {
  * @returns The current redo group number in the history stats table
  */
 export async function getCurrentRedoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_redo_group: number };
-    return result.cur_redo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_redo_group: true,
+        },
+    });
+    return result?.cur_redo_group ?? 0;
 }
 
 export async function getUndoStackLength(db: DbConnection): Promise<number> {
@@ -905,11 +905,14 @@ export async function calculateHistorySize(db: DbConnection | DB) {
     const getSqlLength = async (tableName: string): Promise<number> => {
         const rows = (await db.all(
             sql.raw(`SELECT sql FROM ${tableName}`),
-        )) as HistoryTableRow[];
+        )) as string[][];
 
         if (rows.length === 0) return 0;
 
-        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
+        const totalLength = rows.reduce(
+            (sum, row) => sum + (row[0]?.length ?? 0),
+            0,
+        );
         return totalLength;
     };
 

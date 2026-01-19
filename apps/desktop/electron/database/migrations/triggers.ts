@@ -1,6 +1,4 @@
-import { DbConnection } from "../tables/__test__/testUtils";
-import { DB } from "../db";
-import { sql } from "drizzle-orm";
+import Database from "libsql";
 
 const triggers = {
     prevent_first_beat_modification: `
@@ -57,10 +55,10 @@ const triggers = {
  * Drops all triggers from the database.
  * @param db - The database instance to drop triggers from.
  */
-export const dropAllTriggers = async (db: DbConnection | DB) => {
+export const dropAllTriggers = (dbConnection: Database.Database) => {
     for (const [name] of Object.entries(triggers)) {
         try {
-            await db.run(sql.raw(`DROP TRIGGER IF EXISTS ${name}`));
+            dbConnection.exec(`DROP TRIGGER IF EXISTS ${name}`);
         } catch (error) {
             console.error(`Error dropping trigger ${name}:`, error);
             throw error;
@@ -72,10 +70,10 @@ export const dropAllTriggers = async (db: DbConnection | DB) => {
  * Creates all triggers in the database.
  * @param db - The database instance to create triggers in.
  */
-export const createAllTriggers = async (db: DbConnection | DB) => {
+export const createAllTriggers = (dbConnection: Database.Database) => {
     for (const [name, trigger] of Object.entries(triggers)) {
         try {
-            await db.run(sql.raw(`${trigger}`));
+            dbConnection.exec(`${trigger}`);
         } catch (error) {
             console.error(`Error creating trigger ${name}:`, error);
             throw error;

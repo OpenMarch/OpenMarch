@@ -5,6 +5,7 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
+    asarUnpack: ["**/*.node"],
     directories: {
         output: "release/${buildVersion}",
     },
@@ -60,11 +61,11 @@
     win: {
         target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
-
-        signtoolOptions: {
-            certificateSubjectName: "Open Source Developer, Alexander Dumouchelle",
-            timeStampServer: "http://time.certum.pl/",
-            signingHashAlgorithms: ["sha256"],
+        azureSignOptions: {
+            publisherName: "OpenMarch LLC",
+            endpoint: "https://eus.codesigning.azure.net",
+            certificateProfileName: "OpenMarch-Desktop",
+            codeSigningAccountName: "openmarch-desktop",
         },
         fileAssociations: [
             {

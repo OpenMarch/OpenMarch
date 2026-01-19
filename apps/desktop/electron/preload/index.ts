@@ -18,6 +18,7 @@ import type {
     AccessTokenResult,
 } from "electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
+import { HistoryResponse } from "@/db-functions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],
@@ -224,10 +225,9 @@ const APP_API = {
 
     // History
     /** Activates on undo or redo. */
-    onHistoryAction: (callback: (args: DbServices.HistoryResponse) => void) =>
-        ipcRenderer.on(
-            "history:action",
-            (event, args: DbServices.HistoryResponse) => callback(args),
+    onHistoryAction: (callback: (args: HistoryResponse) => void) =>
+        ipcRenderer.on("history:action", (event, args: HistoryResponse) =>
+            callback(args),
         ),
     removeHistoryActionListener: () =>
         ipcRenderer.removeAllListeners("history:action"),
