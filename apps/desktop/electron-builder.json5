@@ -5,6 +5,7 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
+    asarUnpack: ["**/*.node"],
     directories: {
         output: "release/${buildVersion}",
     },
