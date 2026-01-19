@@ -86,6 +86,23 @@ jobs:
           CI: true
           ADBLOCK: true
 
+      - name: Ensure libsql platform modules are installed
+        working-directory: apps/desktop
+        if: startsWith(matrix.os, 'macos')
+        run: |
+          # Verify @libsql platform-specific modules are installed
+          if [ "$(uname -m)" = "arm64" ]; then
+            PLATFORM_MODULE="@libsql/darwin-arm64"
+          else
+            PLATFORM_MODULE="@libsql/darwin-x64"
+          fi
+          if [ ! -d "node_modules/$PLATFORM_MODULE" ] && [ ! -d "../../node_modules/$PLATFORM_MODULE" ]; then
+            echo "Warning: $PLATFORM_MODULE not found, installing..."
+            pnpm add $PLATFORM_MODULE@0.5.22 --save-optional || pnpm install --force
+          fi
+          echo "Verifying libsql modules:"
+          ls -la node_modules/@libsql/ 2>/dev/null || ls -la ../../node_modules/@libsql/ 2>/dev/null || echo "No @libsql modules found in expected locations"
+
       - name: Build for production
         run: pnpm run build --filter=\!@openmarch/website
 
@@ -145,6 +162,7 @@ jobs:
           if-no-files-found: warn
 
   windows-build-and-release:
+    if: false
     runs-on: windows-latest
     steps:
       - name: Check out Git repository
