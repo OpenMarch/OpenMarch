@@ -13,7 +13,12 @@
     directories: {
         output: "release/${buildVersion}",
     },
-    files: ["dist-electron", "dist"],
+    files: [
+        "dist-electron",
+        "dist",
+        "node_modules",
+        "node_modules/@libsql/*/*.node",
+    ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
     mac: {
