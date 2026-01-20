@@ -229,10 +229,7 @@ jobs:
           cd apps/desktop
           pnpm exec .\node_modules\.bin\electron-builder -w --publish=never
         env:
-          # No code signing on PRs
-          AZURE_TENANT_ID: ""
-          AZURE_CLIENT_ID: ""
-          AZURE_CLIENT_SECRET: ""
+          CSC_IDENTITY_AUTO_DISCOVERY: false # Skip code signing on PRs
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -264,12 +261,12 @@ jobs:
           echo "desktop-build-windows: ${{ needs.desktop-build-windows.result }}"
 
           # Fail if any job failed (skipped jobs are OK)
-          if [[ "${{ needs.basic-checks.result }}" == "failure" ]] || \
-             [[ "${{ needs.test.result }}" == "failure" ]] || \
-             [[ "${{ needs.desktop-e2e.result }}" == "failure" ]] || \
-             [[ "${{ needs.desktop-build.result }}" == "failure" ]] || \
-             [[ "${{ needs.desktop-build-windows.result }}" == "failure" ]]; then
-            echo "One or more jobs failed"
+          if [[ "${{ needs.basic-checks.result }}" != "success" && "${{ needs.basic-checks.result }}" != "skipped" ]] || \
+             [[ "${{ needs.test.result }}" != "success" && "${{ needs.test.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-e2e.result }}" != "success" && "${{ needs.desktop-e2e.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-build.result }}" != "success" && "${{ needs.desktop-build.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-build-windows.result }}" != "success" && "${{ needs.desktop-build-windows.result }}" != "skipped" ]]; then
+            echo "One or more jobs failed or were cancelled"
             exit 1
           fi
 
