@@ -81,14 +81,13 @@ jobs:
         run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
 
       - name: Install pnpm dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install
         env:
-          CI: false
+          CI: true
+          ADBLOCK: true
 
       - name: Build for production
         run: pnpm run build --filter=\!@openmarch/website
-        env:
-          CI: false
 
       - name: Replace package name in package.json - ubuntu
         working-directory: apps/desktop
@@ -181,14 +180,13 @@ jobs:
         run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
 
       - name: Install pnpm dependencies
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install
         env:
-          CI: false
+          CI: true
+          ADBLOCK: true
 
       - name: Build for production
         run: pnpm run build --filter "!@openmarch/website"
-        env:
-          CI: false
 
       - name: Build/release Electron app for Windows
         run: |
