@@ -85,25 +85,6 @@ jobs:
         env:
           CI: false
 
-      - name: Ensure all @libsql platform packages are installed
-        working-directory: apps/desktop
-        run: |
-          # Install all platform-specific @libsql packages without modifying package.json
-          # This ensures they're available for Electron bundling across all platforms
-          # We use --no-save to avoid modifying package.json
-          pnpm add --no-save \
-            @libsql/darwin-arm64@0.5.22 \
-            @libsql/darwin-x64@0.5.22 \
-            @libsql/linux-arm-gnueabihf@0.5.22 \
-            @libsql/linux-arm-musleabihf@0.5.22 \
-            @libsql/linux-arm64-gnu@0.5.22 \
-            @libsql/linux-arm64-musl@0.5.22 \
-            @libsql/linux-x64-gnu@0.5.22 \
-            @libsql/linux-x64-musl@0.5.22 \
-            @libsql/win32-x64-msvc@0.5.22 || true
-        env:
-          CI: false
-
       - name: Build for production
         run: pnpm run build --filter=\!@openmarch/website
         env:
@@ -203,27 +184,6 @@ jobs:
         run: pnpm install --no-frozen-lockfile
         env:
           CI: false
-
-      - name: Ensure all @libsql platform packages are installed
-        working-directory: apps/desktop
-        shell: pwsh
-        run: |
-          # Install all platform-specific @libsql packages without modifying package.json
-          # This ensures they're available for Electron bundling across all platforms
-          # We use --no-save to avoid modifying package.json
-          pnpm add --no-save `
-            @libsql/darwin-arm64@0.5.22 `
-            @libsql/darwin-x64@0.5.22 `
-            @libsql/linux-arm-gnueabihf@0.5.22 `
-            @libsql/linux-arm-musleabihf@0.5.22 `
-            @libsql/linux-arm64-gnu@0.5.22 `
-            @libsql/linux-arm64-musl@0.5.22 `
-            @libsql/linux-x64-gnu@0.5.22 `
-            @libsql/linux-x64-musl@0.5.22 `
-            @libsql/win32-x64-msvc@0.5.22
-        env:
-          CI: false
-        continue-on-error: true
 
       - name: Build for production
         run: pnpm run build --filter "!@openmarch/website"
