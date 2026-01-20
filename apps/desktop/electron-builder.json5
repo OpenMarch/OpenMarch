@@ -18,6 +18,7 @@
         "dist",
         "node_modules",
         "node_modules/@libsql/**",
+        "electron/database/migrations",
         "!**/node_modules/canvas/**",
     ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
