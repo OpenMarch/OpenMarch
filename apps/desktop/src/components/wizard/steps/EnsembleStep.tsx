@@ -19,7 +19,8 @@ const INDOOR_ENSEMBLE_TYPES = [
 const OUTDOOR_ENSEMBLE_TYPES = ["Marching Band", "Drum Corps", "Other"];
 
 export default function EnsembleStep() {
-    const { wizardState, updateEnsemble } = useGuidedSetupStore();
+    const wizardState = useGuidedSetupStore((state) => state.wizardState);
+    const updateEnsemble = useGuidedSetupStore((state) => state.updateEnsemble);
     const { t } = useTranslate();
     const [environment, setEnvironment] = useState<"indoor" | "outdoor">(
         wizardState?.ensemble?.environment || "outdoor",

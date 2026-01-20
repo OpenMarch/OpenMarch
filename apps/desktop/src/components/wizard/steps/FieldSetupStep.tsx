@@ -7,7 +7,8 @@ import { FieldProperties } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 export default function FieldSetupStep() {
-    const { wizardState, updateField } = useGuidedSetupStore();
+    const wizardState = useGuidedSetupStore((state) => state.wizardState);
+    const updateField = useGuidedSetupStore((state) => state.updateField);
     const wizardField = wizardState?.field;
     const environment = wizardState?.ensemble?.environment || "outdoor";
 

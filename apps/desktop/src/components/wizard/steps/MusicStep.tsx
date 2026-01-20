@@ -17,7 +17,8 @@ import { useQuery } from "@tanstack/react-query";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
 
 export default function MusicStep() {
-    const { wizardState, updateMusic } = useGuidedSetupStore();
+    const wizardState = useGuidedSetupStore((state) => state.wizardState);
+    const updateMusic = useGuidedSetupStore((state) => state.updateMusic);
     const { t } = useTolgee();
     const { selectedAudioFile } = useSelectedAudioFile() || {};
     const [databaseReady, setDatabaseReady] = useState(false);

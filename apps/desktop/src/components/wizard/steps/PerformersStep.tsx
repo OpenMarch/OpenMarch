@@ -15,7 +15,10 @@ import { NewMarcherArgs } from "@/db-functions";
 type WizardMarcher = Marcher & { tempId: string };
 
 export default function PerformersStep() {
-    const { wizardState, updatePerformers } = useGuidedSetupStore();
+    const wizardState = useGuidedSetupStore((state) => state.wizardState);
+    const updatePerformers = useGuidedSetupStore(
+        (state) => state.updatePerformers,
+    );
     const [openSections, setOpenSections] = useState<Set<string>>(new Set());
     const { t } = useTolgee();
 

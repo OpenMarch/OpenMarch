@@ -39,7 +39,8 @@ const ensureFileLocationHasProjectName = (
 };
 
 export default function ProjectStep() {
-    const { wizardState, updateProject } = useGuidedSetupStore();
+    const wizardState = useGuidedSetupStore((state) => state.wizardState);
+    const updateProject = useGuidedSetupStore((state) => state.updateProject);
     const { t } = useTranslate();
     const [projectName, setProjectName] = useState<string>(
         wizardState?.project?.projectName || "",
