@@ -170,7 +170,7 @@ jobs:
       - name: Build/release Electron app for Windows
         run: |
           cd apps/desktop
-          pnpm exec .\node_modules\.bin\electron-builder -w --publish=always
+          pnpm exec .\node_modules\.bin\electron-builder -w --publish=always --config electron-builder-sign.json5
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
