@@ -10,11 +10,13 @@ import {
     canUndoQueryOptions,
     usePerformHistoryAction,
 } from "@/hooks/queries/useHistory";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 export default function FileControls() {
     const { isFullscreen } = useFullscreenStore();
-    const { data: canUndo } = useQuery(canUndoQueryOptions);
-    const { data: canRedo } = useQuery(canRedoQueryOptions);
+    const databaseReady = useDatabaseReady();
+    const { data: canUndo } = useQuery(canUndoQueryOptions(databaseReady));
+    const { data: canRedo } = useQuery(canRedoQueryOptions(databaseReady));
     const { mutate: performHistoryAction } = usePerformHistoryAction();
 
     return (

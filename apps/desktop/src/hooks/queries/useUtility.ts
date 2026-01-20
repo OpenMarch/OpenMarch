@@ -28,11 +28,12 @@ const utilityQueries = {
 /**
  * Query options for getting the utility record
  */
-export const getUtilityQueryOptions = () =>
+export const getUtilityQueryOptions = (enabled = true) =>
     queryOptions<DatabaseUtility | undefined>({
         queryKey: utilityKeys.all(),
         queryFn: () => utilityQueries.get(db),
         staleTime: DEFAULT_STALE_TIME,
+        enabled,
     });
 
 /**

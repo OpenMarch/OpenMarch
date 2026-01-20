@@ -27,7 +27,8 @@
         "format:check": "prettier --check .",
         "fix": "turbo run fix",
         "spellcheck": "turbo run spellcheck && cspell .",
-        "prepare": "husky"
+        "prepare": "husky",
+        "postinstall": "pnpm --filter @openmarch/desktop run app:prepare"
     },
     "devDependencies": {
         "@tanstack/eslint-plugin-query": "^5.89.0",

@@ -56,15 +56,14 @@ function App() {
     } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
+    const [showWizard, setShowWizard] = useState(false);
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
-    if (isCodegen) {
-        console.log("🎭 React app running in Playwright Codegen mode");
-    }
 
     useEffect(() => {
-        if (pluginsLoadedRef.current) return;
+        // Only load plugins after database is ready and canvas is available
+        if (!databaseIsReady || pluginsLoadedRef.current) return;
         pluginsLoadedRef.current = true;
         console.debug("Loading plugins...");
         void window.plugins
@@ -108,13 +107,35 @@ function App() {
             .then(() => {
                 console.debug("All plugins loaded.");
             });
-    }, []);
+    }, [databaseIsReady]);
 
     useEffect(() => {
-        // Check if database is ready
-        void window.electron.databaseIsReady().then((result: boolean) => {
-            setDatabaseIsReady(result);
-        });
+        // Check if database is ready and wizard flag
+        const checkDatabaseAndWizard = async () => {
+            try {
+                // Check for wizard flag first (even if database is not ready)
+                const shouldShowWizard =
+                    await window.electron.wizardShouldShow();
+                if (shouldShowWizard) {
+                    // Wizard should show - set showWizard and don't set databaseIsReady yet
+                    setShowWizard(true);
+                    setDatabaseIsReady(false);
+                    return;
+                }
+
+                const dbReady = await window.electron.databaseIsReady();
+                if (dbReady) {
+                    // Database is ready and no wizard - proceed normally
+                    setDatabaseIsReady(true);
+                } else {
+                    // Database not ready - show launch page
+                    setDatabaseIsReady(false);
+                }
+            } catch (error) {
+                console.error("App: Error checking database/wizard:", error);
+            }
+        };
+        void checkDatabaseAndWizard();
     }, []);
 
     useEffect(() => {
@@ -208,9 +229,25 @@ function App() {
                             🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
                         </div>
                     )}
-                    {/* Always show LaunchPage when no file is selected, regardless of database state */}
-                    {!databaseIsReady ? (
-                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                    {/* Show LaunchPage when no file is selected OR when wizard should show */}
+                    {!databaseIsReady || showWizard ? (
+                        <SelectedAudioFileProvider>
+                            <RegisteredActionsHandler />
+                            <LaunchPage
+                                setDatabaseIsReady={setDatabaseIsReady}
+                                wizardMode={showWizard}
+                                onWizardComplete={() => {
+                                    setShowWizard(false);
+                                    setDatabaseIsReady(true);
+                                }}
+                                onStartWizard={() => {
+                                    setShowWizard(true);
+                                }}
+                                onExitWizard={() => {
+                                    setShowWizard(false);
+                                }}
+                            />
+                        </SelectedAudioFileProvider>
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

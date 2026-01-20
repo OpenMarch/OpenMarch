@@ -33,7 +33,7 @@ const fieldPropertiesMutations = {
 /**
  * Query options for fetching field properties
  */
-export const fieldPropertiesQueryOptions = () => ({
+export const fieldPropertiesQueryOptions = (enabled = true) => ({
     queryKey: fieldPropertiesKeys.detail(),
     queryFn: async () => {
         const fieldProperties = await fieldPropertiesQueries.get();
@@ -41,6 +41,7 @@ export const fieldPropertiesQueryOptions = () => ({
         return fieldProperties;
     },
     staleTime: DEFAULT_STALE_TIME,
+    enabled,
 });
 
 /**

@@ -29,6 +29,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 /**
  * The field/stage UI of OpenMarch
@@ -77,8 +78,11 @@ export default function Canvas({
         updateMarcherPagesMutationOptions(queryClient),
     );
     const { setSelectedShapePageIds } = useSelectionStore()!;
+    const databaseReady = useDatabaseReady();
 
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady),
+    );
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,

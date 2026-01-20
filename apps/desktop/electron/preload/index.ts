@@ -150,9 +150,21 @@ const APP_API = {
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    databaseCreateAtPath: (filePath: string) =>
+        ipcRenderer.invoke("database:createAtPath", filePath),
+    databaseCreateForWizard: (filePath: string) =>
+        ipcRenderer.invoke("database:createForWizard", filePath),
+    getDefaultDocumentsPath: () =>
+        ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
+    fileExists: (filePath: string) =>
+        ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+
+    // Wizard
+    wizardShouldShow: () =>
+        ipcRenderer.invoke("wizard:shouldShow") as Promise<boolean>,
 
     // SVG Generation
     onGetSvgForClose: (callback: () => Promise<string>) => {
@@ -174,7 +186,7 @@ const APP_API = {
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
 
     showSaveDialog: (options: SaveDialogOptions) =>
-        ipcRenderer.invoke("show-save-dialog", options),
+        ipcRenderer.invoke("dialog:showSaveDialog", options),
 
     export: {
         pdf: (params: {

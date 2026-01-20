@@ -20,11 +20,13 @@ import {
     usePerformHistoryAction,
 } from "@/hooks/queries/useHistory";
 import { useQuery } from "@tanstack/react-query";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 export function FileTab() {
     const { isFullscreen } = useFullscreenStore();
-    const { data: canUndo } = useQuery(canUndoQueryOptions);
-    const { data: canRedo } = useQuery(canRedoQueryOptions);
+    const databaseReady = useDatabaseReady();
+    const { data: canUndo } = useQuery(canUndoQueryOptions(databaseReady));
+    const { data: canRedo } = useQuery(canRedoQueryOptions(databaseReady));
     const { mutate: performHistoryAction } = usePerformHistoryAction();
     return (
         <div className="flex w-full flex-wrap gap-8">

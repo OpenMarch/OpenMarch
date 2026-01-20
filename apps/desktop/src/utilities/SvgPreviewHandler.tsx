@@ -11,6 +11,7 @@ import {
 import type MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import { useTimingObjects } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
 
@@ -19,9 +20,12 @@ const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
  */
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
+    const databaseReady = useDatabaseReady();
 
     // Get current values
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady),
+    );
     const { pages = [] } = useTimingObjects() ?? {};
     const { data: marcherPages } = useQuery(
         // This might be overkill
