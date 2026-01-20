@@ -8,6 +8,21 @@ permissions:
   contents: read
 
 jobs:
+  # Detect which files changed to conditionally skip jobs
+  check-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      desktop: ${{ steps.filter.outputs.desktop }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            desktop:
+              - '**/*'
+              - '!apps/website/**'
+
   basic-checks:
     strategy:
       matrix:
@@ -15,7 +30,6 @@ jobs:
           - format:check
           - lint
           - spellcheck
-          - build
       fail-fast: false
     runs-on: ubuntu-latest
     steps:
@@ -36,11 +50,9 @@ jobs:
         run: pnpm run ${{ matrix.pnpm-script}}
 
   test:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
     runs-on: ubuntu-latest
-
-    permissions:
-      contents: read
-
     steps:
       - uses: actions/checkout@v4
 
@@ -65,16 +77,10 @@ jobs:
         working-directory: apps/desktop
         run: pnpm run test:history $(find . -type f -name "*.test.*" -exec grep -l "getTestWithHistory" {} +) --silent
 
-      # - name: "Upload Coverage"
-      #   uses: actions/upload-artifact@v4
-      #   with:
-      #       name: coverage-${{ matrix.artifact }}
-      #       path: coverage
-
   desktop-e2e:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
     runs-on: macos-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -109,3 +115,160 @@ jobs:
           name: desktop-playwright-report-${{ github.run_number }}
           path: apps/desktop/playwright-report/
           retention-days: 30
+
+  desktop-build:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os:
+          - macos-latest
+          - macos-15-intel # x86 (Intel) macOS
+          - ubuntu-latest
+          - ubuntu-24.04-arm
+
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      ############ LINUX ############
+      - name: Install Snapcraft (Ubuntu)
+        if: startsWith(matrix.os, 'ubuntu')
+        run: sudo snap install snapcraft --classic
+
+      - name: Install Snapcraft (Ubuntu ARM)
+        if: matrix.os == 'ubuntu-24.04-arm'
+        run: sudo snap install lxd
+
+      - name: Setup LXD (Ubuntu ARM)
+        if: matrix.os == 'ubuntu-24.04-arm'
+        uses: canonical/setup-lxd@main
+
+      - name: Create Sentry env file
+        working-directory: apps/desktop
+        shell: bash
+        run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+      - name: Install pnpm dependencies
+        run: pnpm install
+        env:
+          CI: true
+          ADBLOCK: true
+
+      - name: Build for production
+        run: pnpm run build --filter=\!@openmarch/website
+
+      - name: Replace package name in package.json - ubuntu
+        working-directory: apps/desktop
+        if: startsWith(matrix.os, 'ubuntu')
+        # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
+        run: |
+          sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
+
+      - name: Build Electron app (no release)
+        uses: ./actions/desktop-deploy
+        with:
+          github_token: ${{ secrets.github_token }}
+          release: false
+          mac_certs: ${{ secrets.mac_certs }}
+          mac_certs_password: ${{ secrets.mac_certs_password }}
+          max_attempts: 3
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false # No code signing on PRs
+          SNAPCRAFT_BUILD_ENVIRONMENT: lxd
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ${{ matrix.os }}-artifacts-pr-${{ github.event.pull_request.number }}
+          path: apps/desktop/release/*
+          retention-days: 7
+          if-no-files-found: warn
+
+  desktop-build-windows:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4.1.0
+
+      - name: Create Sentry env file
+        working-directory: apps/desktop
+        shell: bash
+        run: echo "SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}" > .env.sentry-build-plugin
+
+      - name: Install pnpm dependencies
+        run: pnpm install
+        env:
+          CI: true
+          ADBLOCK: true
+
+      - name: Build for production
+        run: pnpm run build --filter "!@openmarch/website"
+
+      - name: Build Electron app for Windows (no release)
+        run: |
+          cd apps/desktop
+          pnpm exec .\node_modules\.bin\electron-builder -w --publish=never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false # Skip code signing on PRs
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-latest-artifacts-pr-${{ github.event.pull_request.number }}
+          path: apps/desktop/release/*
+          retention-days: 7
+          if-no-files-found: warn
+
+  # Summary job for required status checks
+  # Mark THIS job as required in GitHub branch protection settings
+  all-checks-passed:
+    runs-on: ubuntu-latest
+    if: always()
+    needs:
+      - basic-checks
+      - test
+      - desktop-e2e
+      - desktop-build
+      - desktop-build-windows
+    steps:
+      - name: Check all job results
+        run: |
+          echo "basic-checks: ${{ needs.basic-checks.result }}"
+          echo "test: ${{ needs.test.result }}"
+          echo "desktop-e2e: ${{ needs.desktop-e2e.result }}"
+          echo "desktop-build: ${{ needs.desktop-build.result }}"
+          echo "desktop-build-windows: ${{ needs.desktop-build-windows.result }}"
+
+          # Fail if any job failed (skipped jobs are OK)
+          if [[ "${{ needs.basic-checks.result }}" != "success" && "${{ needs.basic-checks.result }}" != "skipped" ]] || \
+             [[ "${{ needs.test.result }}" != "success" && "${{ needs.test.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-e2e.result }}" != "success" && "${{ needs.desktop-e2e.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-build.result }}" != "success" && "${{ needs.desktop-build.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-build-windows.result }}" != "success" && "${{ needs.desktop-build-windows.result }}" != "skipped" ]]; then
+            echo "One or more jobs failed or were cancelled"
+            exit 1
+          fi
+
+          echo "All required checks passed or were skipped"

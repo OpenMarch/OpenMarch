@@ -1,11 +1,8 @@
-name: Build/release
+name: Desktop Release
 
 on:
-  pull_request:
-    branches: ["main"]
   push:
     tags: [v*]
-    branches: ["main"]
 
 permissions:
   contents: write # Required for creating releases
@@ -26,20 +23,10 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Determine if releasing
-        id: release
-        shell: bash
-        run: |
-          if [[ "${GITHUB_REF}" =~ ^refs/tags/v ]]; then
-            echo "RELEASE=true" >> $GITHUB_OUTPUT
-          else
-            echo "RELEASE=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Debug release output
         run: |
           echo "GITHUB_REF=${GITHUB_REF}"
-          echo "RELEASE=${{ steps.release.outputs.RELEASE }}"
+          echo "Releasing version tag"
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -63,17 +50,19 @@ jobs:
         uses: canonical/setup-lxd@main
 
       - name: Validate Snapcraft credentials on Linux release
-        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+        if: startsWith(matrix.os, 'ubuntu')
         run: snapcraft whoami -q
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
 
       ############ MACOS ############
       - name: Prepare for app notarization
-        if: ${{ startsWith(matrix.os, 'macos') && steps.release.outputs.RELEASE == 'true' }}
+        if: startsWith(matrix.os, 'macos')
         run: |
           mkdir -p ~/private_keys/
           echo '${{ secrets.apple_api_key }}' > ~/private_keys/apple_api_key.p8
+
+      ###############################
 
       - name: Create Sentry env file
         working-directory: apps/desktop
@@ -100,7 +89,7 @@ jobs:
         uses: ./actions/desktop-deploy
         with:
           github_token: ${{ secrets.github_token }}
-          release: ${{ steps.release.outputs.RELEASE }}
+          release: true
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
           max_attempts: 5
@@ -112,14 +101,14 @@ jobs:
           appleApiKey: "~/private_keys/apple_api_key.p8"
           appleApiKeyId: ${{ secrets.apple_api_key_id }}
           appleApiIssuer: ${{ secrets.apple_api_key_issuer }}
-          CSC_IDENTITY_AUTO_DISCOVERY: "${{ steps.release.outputs.RELEASE == 'true' }}"
+          CSC_IDENTITY_AUTO_DISCOVERY: true
           # For releasing
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
       - name: Promote snap to stable channel
-        if: startsWith(matrix.os, 'ubuntu') && steps.release.outputs.RELEASE == 'true'
+        if: startsWith(matrix.os, 'ubuntu')
         shell: bash
         run: |
           # Get the latest revision for this architecture
@@ -150,21 +139,11 @@ jobs:
       - name: Check out Git repository
         uses: actions/checkout@v4
 
-      - name: Determine if releasing
-        id: release
-        shell: pwsh
-        run: |
-          if ($env:GITHUB_REF -match '^refs/tags/v') {
-            "RELEASE=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          } else {
-            "RELEASE=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
-          }
-
       - name: Debug release output
         shell: pwsh
         run: |
           Write-Output "GITHUB_REF=$env:GITHUB_REF"
-          Write-Output "RELEASE=${{ steps.release.outputs.RELEASE }}"
+          Write-Output "Releasing version tag"
 
       - name: Install Node.js
         uses: actions/setup-node@v4
@@ -191,7 +170,7 @@ jobs:
       - name: Build/release Electron app for Windows
         run: |
           cd apps/desktop
-          pnpm exec .\node_modules\.bin\electron-builder -w --publish=${{ steps.release.outputs.RELEASE == 'true' && 'always' || 'never' }}
+          pnpm exec .\node_modules\.bin\electron-builder -w --publish=always --config electron-builder-sign.json5
         env:
           AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}

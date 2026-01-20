@@ -54,12 +54,8 @@
     win: {
         target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
-        azureSignOptions: {
-            publisherName: "OpenMarch LLC",
-            endpoint: "https://eus.codesigning.azure.net",
-            certificateProfileName: "OpenMarch-Desktop",
-            codeSigningAccountName: "openmarch-desktop",
-        },
+        // Note: Azure signing is configured in electron-builder-sign.json5
+        // which extends this config and is only used for signed releases
         fileAssociations: [
             {
                 ext: "dots",
