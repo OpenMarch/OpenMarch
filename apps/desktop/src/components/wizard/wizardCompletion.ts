@@ -133,7 +133,7 @@ export async function completeWizard(
 
             if (!dbReady || normalizedCurrentPath !== normalizedFilePath) {
                 // File wasn't created yet or wrong file is open, create it now
-                console.log("Creating database file at:", filePath);
+                // console.log("Creating database file at:", filePath);
                 const result =
                     await window.electron.databaseCreateForWizard(filePath);
                 if (result !== 200) {
@@ -150,15 +150,15 @@ export async function completeWizard(
                 }
                 // Ensure undo/redo history triggers are set up
                 // This is critical for the history system to work correctly
-                console.log("Setting up undo/redo history triggers...");
+                // console.log("Setting up undo/redo history triggers...");
                 try {
                     await createAllUndoTriggers(db);
-                    console.log("History triggers set up successfully");
+                    // console.log("History triggers set up successfully");
                 } catch (error) {
                     if (isTriggerAlreadyExistsError(error)) {
-                        console.warn(
-                            "History triggers already exist; continuing",
-                        );
+                        // console.warn(
+                        //     "History triggers already exist; continuing",
+                        // );
                     } else {
                         console.error(
                             "Error setting up history triggers:",
@@ -168,24 +168,24 @@ export async function completeWizard(
                     }
                 }
             } else {
-                console.log(
-                    "Database file already exists and is ready:",
-                    filePath,
-                );
+                // console.log(
+                //     "Database file already exists and is ready:",
+                //     filePath,
+                // );
                 // Ensure undo/redo history triggers are set up even if file already exists
-                console.log(
-                    "Verifying undo/redo history triggers are set up...",
-                );
+                // console.log(
+                //     "Verifying undo/redo history triggers are set up...",
+                // );
                 try {
                     await createAllUndoTriggers(db);
-                    console.log(
-                        "History triggers verified/set up successfully",
-                    );
+                    // console.log(
+                    //     "History triggers verified/set up successfully",
+                    // );
                 } catch (error) {
                     if (isTriggerAlreadyExistsError(error)) {
-                        console.warn(
-                            "History triggers already exist; continuing",
-                        );
+                        // console.warn(
+                        //     "History triggers already exist; continuing",
+                        // );
                     } else {
                         console.error(
                             "Error setting up history triggers:",
@@ -200,28 +200,28 @@ export async function completeWizard(
         }
 
         // 1. Apply project settings
-        console.log("Applying project settings...");
+        // console.log("Applying project settings...");
         await retryWithBackoff(async () => {
             await applyProjectSettings(wizardState.project, queryClient);
         });
-        console.log("Project settings applied successfully");
+        // console.log("Project settings applied successfully");
 
         // 2. Apply ensemble settings (extend workspace settings schema if needed)
         // For now, we'll store ensemble data in workspace settings JSON
         // Note: This requires extending the workspace settings schema
-        console.log("Applying ensemble settings...");
+        // console.log("Applying ensemble settings...");
         await applyEnsembleSettings(wizardState.ensemble, queryClient);
-        console.log("Ensemble settings applied successfully");
+        // console.log("Ensemble settings applied successfully");
 
         // 3. Apply music settings FIRST (tempo needed for beats)
-        console.log("Applying music settings...");
+        // console.log("Applying music settings...");
         await retryWithBackoff(async () => {
             await applyMusicSettings(wizardState.music, queryClient);
         });
-        console.log("Music settings applied successfully");
+        // console.log("Music settings applied successfully");
 
         // 4. Apply field properties
-        console.log("Applying field properties...");
+        // console.log("Applying field properties...");
         await retryWithBackoff(async () => {
             if (wizardState.field) {
                 await updateFieldProperties(wizardState.field.template);
@@ -232,21 +232,21 @@ export async function completeWizard(
                 await updateFieldProperties(defaultTemplate);
             }
         });
-        console.log("Field properties applied successfully");
+        // console.log("Field properties applied successfully");
 
         // 5. Create beats and pages (performers need pages to exist)
-        console.log("Creating beats and pages...");
+        // console.log("Creating beats and pages...");
         await retryWithBackoff(async () => {
             await createBeatsAndPages(queryClient);
         });
-        console.log("Beats and pages created successfully");
+        // console.log("Beats and pages created successfully");
 
         // 6. Create performers in database (if any were added)
-        console.log("Applying performers settings...");
+        // console.log("Applying performers settings...");
         await retryWithBackoff(async () => {
             await applyPerformersSettings(wizardState.performers, queryClient);
         });
-        console.log("Performers settings applied successfully");
+        // console.log("Performers settings applied successfully");
 
         // Verify database is ready before completing
         const finalDbReady = await window.electron.databaseIsReady();
@@ -270,7 +270,7 @@ async function applyProjectSettings(
     queryClient: QueryClient,
 ): Promise<void> {
     if (!project || !project.projectName) {
-        console.warn("No project data to apply");
+        // console.warn("No project data to apply");
         return;
     }
 
@@ -385,18 +385,18 @@ async function applyMusicSettings(
             // Verify audio file exists in database
             const audioFiles = await AudioFile.getAudioFilesDetails();
             if (audioFiles.length === 0) {
-                console.warn(
-                    "No audio files found in database. Music may not have been saved during upload.",
-                );
+                // console.warn(
+                //     "No audio files found in database. Music may not have been saved during upload.",
+                // );
                 conToastError(tolgee.t("wizard.completion.audioNotSaved"));
             }
         } else if (music && music.method === "xml") {
             // Verify measures exist in database
             const measures = await getMeasures({ db });
             if (measures.length === 0) {
-                console.warn(
-                    "No measures found in database. Music XML may not have been imported.",
-                );
+                // console.warn(
+                //     "No measures found in database. Music XML may not have been imported.",
+                // );
                 conToastError(tolgee.t("wizard.completion.xmlNotImported"));
             }
         }
@@ -419,12 +419,19 @@ async function applyPerformersSettings(
         !performers.marchers ||
         performers.marchers.length === 0
     ) {
-        console.log("No performers to add");
+        // console.log("No performers to add");
         return;
     }
 
+    // Ensure method is set to "add" if it's undefined but we have marchers
+    if (!performers.method && performers.marchers.length > 0) {
+        // console.warn(
+        //     "Performers method was undefined but marchers exist. Defaulting to 'add'.",
+        // );
+    }
+
     try {
-        console.log(`Creating ${performers.marchers.length} marchers...`);
+        // console.log(`Creating ${performers.marchers.length} marchers...`);
         await createMarchers({
             db,
             newMarchers: performers.marchers,
@@ -442,9 +449,9 @@ async function applyPerformersSettings(
         if (!allMarchers || allMarchers.length < performers.marchers.length) {
             throw new Error("Failed to verify all marchers were created");
         }
-        console.log(
-            `Successfully created ${performers.marchers.length} marchers`,
-        );
+        // console.log(
+        //     `Successfully created ${performers.marchers.length} marchers`,
+        // );
     } catch (error) {
         console.error("Error applying performers settings:", error);
         throw error;

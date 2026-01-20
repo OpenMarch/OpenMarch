@@ -667,7 +667,7 @@ async function createFileForWizard(filePath: string) {
         );
 
         // Initialize database (create default data)
-        await migrator.initializeDatabase(drizzleDb);
+        await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
 
         // Add to recent files
         addRecentFile(filePath);

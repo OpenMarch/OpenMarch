@@ -914,7 +914,14 @@
         "back": "Back",
         "next": "Next",
         "complete": "Complete",
+        "completing": "Completing...",
         "skip": "Skip",
+        "exitConfirm": {
+            "title": "Exit Wizard?",
+            "description": "You have unsaved progress. Are you sure you want to exit? All your progress will be lost.",
+            "cancel": "Cancel",
+            "confirm": "Exit"
+        },
         "project": {
             "projectName": "Project Name",
             "fileLocation": "File Location",

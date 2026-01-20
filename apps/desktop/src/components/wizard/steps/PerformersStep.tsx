@@ -32,7 +32,7 @@ export default function PerformersStep() {
         }));
 
         updatePerformers({
-            method: currentPerformers?.method,
+            method: currentPerformers?.method || "add",
             marchers: marchersWithIds,
         });
     }, [wizardState?.performers, updatePerformers]);
@@ -116,7 +116,7 @@ export default function PerformersStep() {
             tempId: crypto.randomUUID(),
         }));
         updatePerformers({
-            method: wizardState?.performers?.method,
+            method: "add",
             marchers: [...currentMarchers, ...marchersWithIds],
         });
     };
@@ -127,7 +127,7 @@ export default function PerformersStep() {
             (marcher) => marcher.tempId !== marcherId,
         );
         updatePerformers({
-            method: wizardState?.performers?.method,
+            method: "add",
             marchers: newMarchers,
         });
     };

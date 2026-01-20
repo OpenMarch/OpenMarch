@@ -20,6 +20,7 @@ import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
 import GuidedSetupWizard from "../wizard/GuidedSetupWizard";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
+import ErrorBoundary from "@/ErrorBoundary";
 
 type LaunchPageProps =
     | {
@@ -74,10 +75,12 @@ export default function LaunchPage(props: LaunchPageProps) {
                     />
                     <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-12">
                         <div className="flex h-full w-full max-w-[600px] flex-col">
-                            <GuidedSetupWizard
-                                onComplete={props.onWizardComplete!}
-                                onExitWizard={onExitWizard!}
-                            />
+                            <ErrorBoundary>
+                                <GuidedSetupWizard
+                                    onComplete={props.onWizardComplete!}
+                                    onExitWizard={onExitWizard!}
+                                />
+                            </ErrorBoundary>
                         </div>
                     </div>
                 </div>

@@ -1,15 +1,34 @@
-import { useState, useEffect } from "react";
+import {
+    useState,
+    useEffect,
+    useCallback,
+    useMemo,
+    lazy,
+    Suspense,
+} from "react";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
 import { WIZARD_STEPS, DEFAULT_WIZARD_STATE, type WizardStepId } from "./types";
 import WizardLayout from "./WizardLayout";
-import ProjectStep from "./steps/ProjectStep";
-import EnsembleStep from "./steps/EnsembleStep";
-import FieldSetupStep from "./steps/FieldSetupStep";
-import PerformersStep from "./steps/PerformersStep";
-import MusicStep from "./steps/MusicStep";
 import { completeWizard } from "./wizardCompletion";
 import { useQueryClient } from "@tanstack/react-query";
-import { useTranslate } from "@tolgee/react";
+import { useTranslate, T } from "@tolgee/react";
+import {
+    AlertDialog,
+    AlertDialogContent,
+    AlertDialogTitle,
+    AlertDialogDescription,
+    AlertDialogCancel,
+    AlertDialogAction,
+    Button,
+} from "@openmarch/ui";
+import { useWizardValidation } from "./hooks/useWizardValidation";
+
+// Lazy load step components for better performance
+const ProjectStep = lazy(() => import("./steps/ProjectStep"));
+const EnsembleStep = lazy(() => import("./steps/EnsembleStep"));
+const FieldSetupStep = lazy(() => import("./steps/FieldSetupStep"));
+const PerformersStep = lazy(() => import("./steps/PerformersStep"));
+const MusicStep = lazy(() => import("./steps/MusicStep"));
 
 interface GuidedSetupWizardProps {
     onComplete: () => void;
@@ -33,6 +52,10 @@ export default function GuidedSetupWizard({
 
     const [currentStepIndex, setCurrentStepIndex] = useState(0);
     const [isCompleting, setIsCompleting] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
+    const [completedSteps, setCompletedSteps] = useState<ReadonlySet<number>>(
+        () => new Set(),
+    );
 
     // Initialize wizard state on mount - always start fresh at step 1
     useEffect(() => {
@@ -44,32 +67,53 @@ export default function GuidedSetupWizard({
     }, []); // Only run on mount
 
     // Ensure wizardState is initialized even if store doesn't have it
-    const effectiveWizardState = wizardState || DEFAULT_WIZARD_STATE;
+    const effectiveWizardState = useMemo(
+        () => wizardState || DEFAULT_WIZARD_STATE,
+        [wizardState],
+    );
 
     const currentStep: WizardStepId = WIZARD_STEPS[currentStepIndex];
     const isLastStep = currentStepIndex === WIZARD_STEPS.length - 1;
     const isFirstStep = currentStepIndex === 0;
 
-    const handleNext = () => {
+    const canGoNext = useWizardValidation(effectiveWizardState, currentStep);
+
+    const handleStepChange = useCallback(
+        (index: number, step: WizardStepId) => {
+            setCurrentStepIndex(index);
+            updateWizardStep(step);
+            // Mark previous step as completed when moving forward
+            if (index > currentStepIndex) {
+                setCompletedSteps((prev) => {
+                    const next = new Set(prev);
+                    next.add(currentStepIndex);
+                    return next;
+                });
+            }
+        },
+        [currentStepIndex, updateWizardStep],
+    );
+
+    const handleNext = useCallback(() => {
         if (currentStepIndex < WIZARD_STEPS.length - 1) {
-            const nextIndex = currentStepIndex + 1;
-            const nextStep = WIZARD_STEPS[nextIndex];
-            setCurrentStepIndex(nextIndex);
-            updateWizardStep(nextStep);
+            handleStepChange(
+                currentStepIndex + 1,
+                WIZARD_STEPS[currentStepIndex + 1],
+            );
         }
-    };
+    }, [currentStepIndex, handleStepChange]);
 
-    const handleBack = () => {
+    const handleBack = useCallback(() => {
         if (currentStepIndex > 0) {
-            const prevIndex = currentStepIndex - 1;
-            const prevStep = WIZARD_STEPS[prevIndex];
-            setCurrentStepIndex(prevIndex);
-            updateWizardStep(prevStep);
+            handleStepChange(
+                currentStepIndex - 1,
+                WIZARD_STEPS[currentStepIndex - 1],
+            );
         }
-    };
+    }, [currentStepIndex, handleStepChange]);
 
-    const handleComplete = async () => {
-        if (!effectiveWizardState) return;
+    const handleComplete = useCallback(async () => {
+        if (!effectiveWizardState || isCompleting) return;
 
         setIsCompleting(true);
         try {
@@ -82,119 +126,164 @@ export default function GuidedSetupWizard({
         } finally {
             setIsCompleting(false);
         }
-    };
+    }, [
+        effectiveWizardState,
+        isCompleting,
+        queryClient,
+        resetWizard,
+        onComplete,
+    ]);
 
-    const handleSkip = () => {
-        // If skipping performers step, mark it as skipped
+    const handleSkip = useCallback(() => {
         if (currentStep === "performers") {
             updatePerformers({ method: "skip", marchers: [] });
         }
-
         if (isLastStep) {
             void handleComplete();
         } else {
             handleNext();
         }
-    };
+    }, [currentStep, isLastStep, handleComplete, handleNext, updatePerformers]);
 
-    const canGoNext = () => {
-        if (!effectiveWizardState) return false;
-
-        switch (currentStep) {
-            case "project":
-                return (
-                    effectiveWizardState.project !== null &&
-                    effectiveWizardState.project?.projectName?.trim().length >
-                        0 &&
-                    effectiveWizardState.project?.fileLocation &&
-                    effectiveWizardState.project.fileLocation.trim().length > 0
-                );
-            case "ensemble":
-                return effectiveWizardState.ensemble !== null;
-            case "field":
-                return effectiveWizardState.field !== null;
-            case "performers":
-                // Performers step is optional, can always proceed
-                return true;
-            case "music":
-                // Music step is optional, can always proceed
-                return true;
-            default:
-                return false;
-        }
-    };
-
-    const stepTitleFallbacks: Record<WizardStepId, string> = {
+    const STEP_TITLE_FALLBACKS: Readonly<Record<WizardStepId, string>> = {
         project: "Project Information",
         ensemble: "Ensemble",
         field: "Field Setup",
         performers: "Add Performers",
         music: "Add Music",
-    };
+    } as const;
 
-    const getStepTitle = (step: WizardStepId): string => {
-        return t(`wizard.step.${step}.title`, {
-            defaultValue: stepTitleFallbacks[step],
-        });
-    };
-
-    const stepDescriptionFallbacks: Record<WizardStepId, string> = {
+    const STEP_DESCRIPTION_FALLBACKS: Readonly<Record<WizardStepId, string>> = {
         project: "Enter your project details",
         ensemble: "Select your ensemble type and environment",
         field: "Choose a field template or customize your field",
         performers: "Add performers to your show",
         music: "Import music or set tempo (optional)",
-    };
+    } as const;
 
-    const getStepDescription = (step: WizardStepId): string | undefined => {
-        return t(`wizard.step.${step}.description`, {
-            defaultValue: stepDescriptionFallbacks[step],
-        });
-    };
+    const stepTitle = useMemo(
+        () =>
+            t(`wizard.step.${currentStep}.title`, {
+                defaultValue: STEP_TITLE_FALLBACKS[currentStep],
+            }),
+        [t, currentStep],
+    );
 
-    const renderStepContent = () => {
+    const stepDescription = useMemo(
+        () =>
+            t(`wizard.step.${currentStep}.description`, {
+                defaultValue: STEP_DESCRIPTION_FALLBACKS[currentStep],
+            }),
+        [t, currentStep],
+    );
+
+    const stepContent = useMemo(() => {
         if (!effectiveWizardState) return null;
 
-        switch (currentStep) {
-            case "project":
-                return <ProjectStep />;
-            case "ensemble":
-                return <EnsembleStep />;
-            case "field":
-                return <FieldSetupStep />;
-            case "performers":
-                return <PerformersStep />;
-            case "music":
-                return <MusicStep />;
-        }
-    };
+        const StepComponent = {
+            project: ProjectStep,
+            ensemble: EnsembleStep,
+            field: FieldSetupStep,
+            performers: PerformersStep,
+            music: MusicStep,
+        }[currentStep];
 
-    const handleExitWizard = () => {
+        return StepComponent ? (
+            <Suspense fallback={<div>Loading step...</div>}>
+                <StepComponent />
+            </Suspense>
+        ) : null;
+    }, [currentStep, effectiveWizardState]);
+
+    const hasProgress = useMemo(
+        () =>
+            effectiveWizardState?.project !== null ||
+            effectiveWizardState?.ensemble !== null ||
+            effectiveWizardState?.field !== null ||
+            effectiveWizardState?.performers !== null ||
+            effectiveWizardState?.music !== null,
+        [effectiveWizardState],
+    );
+
+    const handleExitWizard = useCallback(() => {
+        if (hasProgress) {
+            setShowExitConfirm(true);
+        } else {
+            resetWizard();
+            onExitWizard();
+        }
+    }, [hasProgress, resetWizard, onExitWizard]);
+
+    const confirmExit = useCallback(() => {
         resetWizard();
+        setShowExitConfirm(false);
         onExitWizard();
-    };
+    }, [resetWizard, onExitWizard]);
+
+    const cancelExit = useCallback(() => {
+        setShowExitConfirm(false);
+    }, []);
+
+    const canSkip = useMemo(
+        () => currentStep === "music" || currentStep === "performers",
+        [currentStep],
+    );
 
     return (
-        <WizardLayout
-            currentStepIndex={currentStepIndex}
-            stepTitle={getStepTitle(currentStep)}
-            stepDescription={getStepDescription(currentStep)}
-            onNext={handleNext}
-            onBack={handleBack}
-            canGoNext={!!(canGoNext() && !isCompleting)}
-            canGoBack={!isFirstStep}
-            isLastStep={isLastStep}
-            onComplete={handleComplete}
-            onSkip={
-                currentStep === "music" || currentStep === "performers"
-                    ? handleSkip
-                    : undefined
-            }
-            canSkip={currentStep === "music" || currentStep === "performers"}
-            isCompleting={isCompleting}
-            onExitWizard={handleExitWizard}
-        >
-            {renderStepContent()}
-        </WizardLayout>
+        <>
+            <WizardLayout
+                currentStepIndex={currentStepIndex}
+                stepTitle={stepTitle}
+                stepDescription={stepDescription}
+                onNext={handleNext}
+                onBack={handleBack}
+                canGoNext={canGoNext && !isCompleting}
+                canGoBack={!isFirstStep}
+                isLastStep={isLastStep}
+                onComplete={handleComplete}
+                onSkip={canSkip ? handleSkip : undefined}
+                canSkip={canSkip}
+                isCompleting={isCompleting}
+                onExitWizard={handleExitWizard}
+                completedSteps={completedSteps}
+            >
+                {stepContent}
+            </WizardLayout>
+
+            {/* Exit confirmation dialog */}
+            <AlertDialog
+                open={showExitConfirm}
+                onOpenChange={setShowExitConfirm}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        <T keyName="wizard.exitConfirm.title" />
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <T keyName="wizard.exitConfirm.description" />
+                    </AlertDialogDescription>
+                    <div className="flex justify-end gap-8">
+                        <AlertDialogCancel>
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={cancelExit}
+                            >
+                                <T keyName="wizard.exitConfirm.cancel" />
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="red"
+                                size="compact"
+                                onClick={confirmExit}
+                            >
+                                <T keyName="wizard.exitConfirm.confirm" />
+                            </Button>
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
