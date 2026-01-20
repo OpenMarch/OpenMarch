@@ -379,6 +379,34 @@ importers:
       vitest:
         specifier: ^4.0.0
         version: 4.0.17(@opentelemetry/api@1.9.0)(@types/node@20.19.30)(@vitest/ui@4.0.17)(jiti@2.6.1)(jsdom@24.1.3(canvas@3.2.1(patch_hash=cbe6ad11ca8470108282514a34931732726ed7ea9376666ba672d81e688df32f)))(lightningcss@1.30.2)(tsx@4.21.0)(yaml@2.8.2)
+    optionalDependencies:
+      '@libsql/darwin-arm64':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/darwin-x64':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-arm-gnueabihf':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-arm-musleabihf':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-arm64-gnu':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-arm64-musl':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-x64-gnu':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/linux-x64-musl':
+        specifier: 0.5.22
+        version: 0.5.22
+      '@libsql/win32-x64-msvc':
+        specifier: 0.5.22
+        version: 0.5.22
 
   apps/website:
     dependencies:

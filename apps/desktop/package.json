@@ -142,6 +142,17 @@
         "vite-plugin-electron-renderer": "^0.14.6",
         "vitest": "^4.0.0"
     },
+    "optionalDependencies": {
+        "@libsql/darwin-arm64": "0.5.22",
+        "@libsql/darwin-x64": "0.5.22",
+        "@libsql/linux-arm-gnueabihf": "0.5.22",
+        "@libsql/linux-arm-musleabihf": "0.5.22",
+        "@libsql/linux-arm64-gnu": "0.5.22",
+        "@libsql/linux-arm64-musl": "0.5.22",
+        "@libsql/linux-x64-gnu": "0.5.22",
+        "@libsql/linux-x64-musl": "0.5.22",
+        "@libsql/win32-x64-msvc": "0.5.22"
+    },
     "engines": {
         "node": "22"
     }
