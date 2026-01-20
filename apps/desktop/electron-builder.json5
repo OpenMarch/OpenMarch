@@ -5,11 +5,22 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    asarUnpack: ["**/*.node"],
+    asarUnpack: [
+        "**/*.node",
+        "**/node_modules/libsql",
+        "**/node_modules/@libsql/**",
+    ],
     directories: {
         output: "release/${buildVersion}",
     },
-    files: ["dist-electron", "dist"],
+    files: [
+        "dist-electron",
+        "dist",
+        "node_modules",
+        "node_modules/@libsql/**",
+        "electron/database/migrations",
+        "!**/node_modules/canvas/**",
+    ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
     mac: {
@@ -84,7 +95,6 @@
             },
         ],
     },
-    files: ["!**/node_modules/canvas/**"],
     publish: [
         {
             provider: "github",

@@ -8,6 +8,8 @@ onlyBuiltDependencies:
   - core-js
   - electron
   - esbuild
+  - libsql
+  - "@libsql/client"
   - sharp
 patchedDependencies:
   canvas: patches/canvas.patch
