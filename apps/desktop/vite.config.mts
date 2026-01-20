@@ -66,9 +66,7 @@ export default defineConfig(({ command }) => {
                                 ),
                             },
                             commonjsOptions: {
-                                dynamicRequireTargets: [
-                                    "@libsql/client",
-                                ],
+                                dynamicRequireTargets: ["@libsql/client"],
                             },
                         },
                     },
