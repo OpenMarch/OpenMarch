@@ -19,6 +19,7 @@
         "paths": {
             "@/*": ["src/*"]
         },
+        "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]
     },
     "include": ["src", "electron", "e2e"],

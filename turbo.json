@@ -8,10 +8,6 @@
             "dependsOn": ["build", "^build"],
             "outputs": []
         },
-        "test:prepare": {
-            "dependsOn": ["build", "^build"],
-            "outputs": []
-        },
         "test:coverage": {
             "dependsOn": ["build", "^build"],
             "outputs": []
@@ -32,9 +28,6 @@
         "spellcheck": {
             "outputs": [],
             "cache": false
-        },
-        "app:prepare": {
-            "outputs": []
         },
         "format": {
             "outputs": [],

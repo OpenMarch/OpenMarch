@@ -1,6 +1,6 @@
 import { schema } from "@/global/database/db";
 import { DbConnection } from "@/test/base";
-import { RunResult } from "better-sqlite3";
+import { RunResult } from "libsql";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
 import { ExtractTablesWithRelations } from "drizzle-orm/relations";

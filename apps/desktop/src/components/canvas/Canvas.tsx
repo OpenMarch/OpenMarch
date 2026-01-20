@@ -317,13 +317,23 @@ export default function Canvas({
             if (!visualGroup || !appearancesForMarcher) return;
 
             const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(appearancesForMarcher, {
-                requestRenderAll: false,
-            });
+            canvasMarcher.setAppearance(
+                appearancesForMarcher,
+                {
+                    requestRenderAll: false,
+                },
+                fieldProperties?.theme.defaultMarcher.label,
+            );
         });
 
         canvas.requestRenderAll();
-    }, [canvas, marchers, marcherAppearances, marcherVisuals]);
+    }, [
+        canvas,
+        marchers,
+        marcherAppearances,
+        marcherVisuals,
+        fieldProperties?.theme.defaultMarcher.label,
+    ]);
 
     // Setters for alignmentEvent state
     useEffect(() => {

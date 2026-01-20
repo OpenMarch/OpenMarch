@@ -25,8 +25,6 @@ We are using a monorepo with Turbo, pnpm, and Node.js 22. Here are the main comm
 # Install packages
 pnpm install
 
-# Prepare electron app
-pnpm desktop app:prepare
 # Run electron & vite
 pnpm desktop dev
 

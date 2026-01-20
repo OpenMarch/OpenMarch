@@ -45,6 +45,10 @@ import { normalizeVolume } from "./volume";
 export default function EditableAudioPlayer() {
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
+    const setCanvasFocussed = () =>
+        useUiSettingsStore.setState((state) => ({
+            uiSettings: { ...state.uiSettings, focussedComponent: "canvas" },
+        }));
     // We'll use beats later for creating regions based on timing objects
     const { beats, pages, measures, utility, fetchTimingObjects } =
         useTimingObjects();
@@ -189,7 +193,7 @@ export default function EditableAudioPlayer() {
                         newCounts: eventNum,
                         currentTime,
                     });
-                    console.log("temporary measures", updatedMeasures);
+                    console.debug("temporary measures", updatedMeasures);
                     setTemporaryMeasures(updatedMeasures);
 
                     timingMarkersPlugin.current?.updateTimingMarkers(
@@ -339,6 +343,14 @@ export default function EditableAudioPlayer() {
                             className="w-fit min-w-0 whitespace-nowrap"
                         >
                             <T keyName="audio.tapNewTempo.label" />
+                        </Button>
+                        <Button
+                            onClick={() => setCanvasFocussed()}
+                            size={"compact"}
+                            variant="secondary"
+                            className="w-fit min-w-0 whitespace-nowrap"
+                        >
+                            <T keyName="audio.tapNewTempo.exit" />
                         </Button>
                     </div>
                 ) : (

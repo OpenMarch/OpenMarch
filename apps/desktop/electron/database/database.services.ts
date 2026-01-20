@@ -1,8 +1,7 @@
 import { ipcMain } from "electron";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
-import * as History from "./database.history.legacy";
 import AudioFile, {
     ModifiedAudioFileArgs,
 } from "../../src/global/classes/AudioFile";
@@ -22,19 +21,6 @@ export class LegacyDatabaseResponse<T> {
         this.result = result;
         this.error = error;
     }
-}
-
-/**
- * History response customized for the OpenMarch database.
- */
-export interface HistoryResponse extends History.HistoryResponse {
-    /** The ids of the marchers that were modified from this history action */
-    marcherIds: number[];
-    /**
-     * The id of the page that was modified from this history action.
-     * If multiple, it chooses the page with the highest id
-     */
-    pageId?: number;
 }
 
 /* ============================ DATABASE ============================ */
@@ -59,7 +45,11 @@ export function setDbPath(path: string, isNewFile = false) {
     DB_PATH = path;
     const db = connect();
 
-    const user_version = db.pragma("user_version", { simple: true });
+    const user_version = (
+        db.prepare("PRAGMA user_version").get() as {
+            user_version: number;
+        }
+    ).user_version;
     if (user_version === -1) {
         return failedDb(
             `setDbPath: user_version is -1, meaning the database was not created successfully`,
@@ -95,12 +85,12 @@ export function connect() {
     }
     try {
         const dbPath = DB_PATH;
-        return Database(dbPath, { verbose: console.log });
+        return new Database(dbPath, { verbose: console.log });
     } catch (error: any) {
         console.error(error);
 
         throw new Error(
-            "Failed to connect to database:\nPLEASE RUN 'node_modules/.bin/electron-rebuild -f -w better-sqlite3' to resolve this",
+            "Failed to connect to database: " + error.message,
             error,
         );
     }
@@ -123,9 +113,9 @@ export async function handleSqlProxyWithDb(
 ) {
     try {
         // prevent multiple queries
-        const sqlBody = sql.replace(/;/g, "");
+        // const sqlBody = sql.replace(/;/g, "");
 
-        const result = db.prepare(sqlBody);
+        const result = db.prepare(sql);
 
         let rows: any;
 
@@ -160,6 +150,15 @@ export async function handleSqlProxyWithDb(
                 return {
                     rows: [], // no data returned for run
                 };
+            case "values": {
+                // values() returns raw array values, similar to all() but used by migrator
+                const rawValues = result.raw().all(...params) as any[][];
+                rows = rawValues;
+
+                return {
+                    rows: rows || [],
+                };
+            }
             default:
                 throw new Error(`Unknown method: ${method}`);
         }
@@ -197,7 +196,7 @@ async function handleSqlProxy(
 
         if (!persistentConnection) {
             persistentConnection = connect();
-            persistentConnection.pragma("foreign_keys = ON");
+            persistentConnection.prepare("PRAGMA foreign_keys = ON").run();
             persistentConnectionPath = DB_PATH;
         }
 
@@ -222,9 +221,6 @@ async function handleUnsafeSqlProxy(_: any, sql: string) {
         throw error;
     }
 }
-
-// exported for use in tests
-export const _handleSqlProxyWithDb = handleSqlProxyWithDb;
 
 /**
  * Handlers for the app api.
@@ -322,7 +318,6 @@ async function setSelectAudioFile(
     audioFileId: number,
 ): Promise<AudioFile | null> {
     const db = connect();
-    History.incrementUndoGroup(db);
     const stmt = db.prepare(
         `UPDATE ${Constants.AudioFilesTableName} SET selected = 0`,
     );
@@ -332,7 +327,6 @@ async function setSelectAudioFile(
     );
     await selectStmt.run({ audioFileId });
     const result = await getSelectedAudioFile(db);
-    History.incrementUndoGroup(db);
     db.close();
     return result as AudioFile;
 }
@@ -347,7 +341,6 @@ export async function insertAudioFile(
     stmt.run();
     let output: LegacyDatabaseResponse<AudioFile[]> = { success: false };
     try {
-        History.incrementUndoGroup(db);
         const insertStmt = db.prepare(`
                 INSERT INTO ${Constants.AudioFilesTableName} (
                     data,
@@ -386,7 +379,6 @@ export async function insertAudioFile(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
-        History.incrementUndoGroup(db);
         db.close();
     }
     return output;
@@ -404,7 +396,6 @@ async function updateAudioFiles(
     const db = connect();
     let output: LegacyDatabaseResponse<AudioFile[]> = { success: true };
     try {
-        History.incrementUndoGroup(db);
         for (const audioFileUpdate of audioFileUpdates) {
             // Generate the SET clause of the SQL query
             const setClause = Object.keys(audioFileUpdate)
@@ -457,7 +448,6 @@ async function updateAudioFiles(
             error: { message: error.message, stack: error.stack },
         };
     } finally {
-        History.incrementUndoGroup(db);
         db.close();
     }
     return output;

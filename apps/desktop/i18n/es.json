@@ -101,7 +101,12 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error al crear ritmos"
+                "error": "Error al crear ritmos",
+                "success": "Ritmos creados con éxito"
+            },
+            "replace": {
+                "error": "Error al reemplazar ritmos",
+                "success": "Ritmos reemplazados con éxito"
             },
             "save": {
                 "error": "Error al crear nuevos ritmos",
@@ -110,6 +115,33 @@
         },
         "context": {
             "error": "Error al inicializar el contexto de audio"
+        },
+        "contextMenu": {
+            "ariaLabel": "Menú contextual de ritmo",
+            "beat": {
+                "addBeat": "Agregar Ritmo",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorCreating": "Error al crear ritmo",
+                "errorDeleting": "Error al eliminar ritmo",
+                "markAsMeasure": "Marcar como Compás"
+            },
+            "measure": {
+                "addMeasure": "Agregar Compás",
+                "cannotDeleteOnPage": "Los ritmos en páginas no se pueden eliminar",
+                "errorCreatingMeasureAndBeats": "Error al crear compás y ritmos",
+                "errorDeletingMeasureAndBeats": "Error al eliminar compás y ritmos",
+                "errorRemovingMarking": "Error al quitar la marca de compás",
+                "removeMarking": "Quitar Marca de Compás"
+            },
+            "rehearsalMark": {
+                "errorSaving": "Error al guardar la marca de ensayo",
+                "label": "Marca de Ensayo"
+            },
+            "tempo": {
+                "errorSaving": "Error al guardar el tempo",
+                "firstBeatTempo": "Tempo del primer ritmo",
+                "label": "Tempo"
+            }
         },
         "decode": {
             "error": "Error al decodificar archivo de audio"
@@ -262,6 +294,7 @@
             "created": "{axis}-punto de control creado en {steps} pasos",
             "delete": "Eliminar",
             "deleted": "{axis}-punto de control eliminado en {steps} pasos - \"{name}\"",
+            "deleteTooltip": "Eliminar este punto de control del campo",
             "fieldLabel": "Etiqueta de Campo",
             "fieldLabelTooltip": "La etiqueta para aparecer en el campo (es decir, las marcas de yarda)",
             "name": "Nombre",
@@ -385,6 +418,7 @@
             "leftAbbreviation": "P. ej. \"S1\", \"IP\" o \"ED\" (abreviatura de \"Lado 1\", \"Izquierda del público\" o \"Escenario derecho\")",
             "measurementSystem": "La unidad de medida para definir el tamaño del paso. Se puede ir hacia adelante y hacia atrás",
             "resetTheme": "Restablecer el tema a los valores predeterminados",
+            "resetToDefault": "Restablecer al predeterminado",
             "rightAbbreviation": "P. ej. \"S2\", \"AR\" o \"IS\" (abreviatura de \"Lado 2\", \"Derecha del público\" o \"Izquierda del escenario\")",
             "stepsFromFrontToAwayLabelBottom": "Número de pasos desde la línea lateral delantera hasta el exterior del número visitante (más cerca de la línea de fondo)",
             "stepsFromFrontToAwayLabelTop": "Número de pasos desde la línea lateral delantera hasta el interior del número visitante (más cerca del centro del campo)",
@@ -575,6 +609,11 @@
         "tagText": "Etiqueta",
         "title": "Marchadores"
     },
+    "measures": {
+        "createFailed": "Error al crear compases - {error}",
+        "deleteFailed": "Error al eliminar compases - {error}",
+        "updateFailed": "Error al actualizar compases - {error}"
+    },
     "music": {
         "accent": "Acentuar primer compás",
         "addNewTempoGroupAfter": "Añadir un nuevo grupo de tempo después de este",
@@ -696,6 +735,7 @@
         }
     },
     "settings": {
+        "database": "Base de datos",
         "developer": "Configuración de Desarrollador",
         "developer.refreshNotice": "Por favor, <a>recarga la aplicación</a> para actualizar la configuración.",
         "general": "General",
@@ -736,18 +776,17 @@
         "privacy.analytics.enabled": "Estás compartiendo análisis de uso. Gracias por ayudarnos a mejorar OpenMarch para todos.",
         "privacy.analytics.feedback.link": "enviar comentarios",
         "privacy.analytics.toggle": "Habilitar analíticas",
-        "title": "Configuración",
-        "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
-        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee",
-        "database": "Base de datos",
         "repairDotsFile": "Reparar archivo DOTS",
-        "repairDotsFile.title": "Reparar archivo DOTS",
-        "repairDotsFile.description": "Esto creará un nuevo archivo de base de datos con '- FIXED' añadido al nombre del archivo. El proceso de reparación copiará todos los datos de la base de datos actual a una nueva con el esquema más reciente. El historial (deshacer/rehacer) no se copiará.",
-        "repairDotsFile.confirm": "Reparar",
         "repairDotsFile.cancel": "Cancelar",
+        "repairDotsFile.confirm": "Reparar",
+        "repairDotsFile.description": "Esto creará un nuevo archivo de base de datos con '- FIXED' añadido al nombre del archivo. El proceso de reparación copiará todos los datos de la base de datos actual a una nueva con el esquema más reciente. El historial (deshacer/rehacer) no se copiará.",
+        "repairDotsFile.error": "Error al reparar la base de datos: {error}",
         "repairDotsFile.repairing": "Reparando...",
         "repairDotsFile.success": "Base de datos reparada exitosamente. Recargando...",
-        "repairDotsFile.error": "Error al reparar la base de datos: {error}"
+        "repairDotsFile.title": "Reparar archivo DOTS",
+        "title": "Configuración",
+        "tolgeeApiKeyPlaceholder": "Clave API de Tolgee",
+        "tolgeeDevToolsToggle": "Traducción en Contexto Tolgee"
     },
     "shapes": {
         "circle": "Círculo",

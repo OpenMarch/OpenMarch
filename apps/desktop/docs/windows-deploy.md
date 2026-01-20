@@ -24,9 +24,6 @@
 gh repo clone OpenMarch/OpenMarch
 cd OpenMarch
 
-# Change to the desktop folder
-cd apps/desktop
-
 pnpm i
 
 # Build for production

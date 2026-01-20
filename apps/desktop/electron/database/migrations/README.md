@@ -17,7 +17,7 @@ If you added or modified columns in existing tables, you may need to manually ed
 I.e. if I add a column `last_name` to the `marchers` table, the new migration sql may try to copy that value from the old table, even though it doesn't exist.
 This will cause `SQLITE no such column` errors if not fixed.
 
-**VERY IMPORTANT** - Check that the new database actually works - Launch OpenMarch via `pnpm run app:prepare` and `pnpm run dev` and try to open an old `.dots` file - Validate no errors are thrown
+**VERY IMPORTANT** - Check that the new database actually works - Launch OpenMarch via `pnpm run dev` and try to open an old `.dots` file - Validate no errors are thrown
 
 ## Pushing changes
 

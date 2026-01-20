@@ -16,6 +16,19 @@
             "stopAll": true
         }
     ],
+    "tasks": [
+        {
+            "label": "Format Current File",
+            "type": "shell",
+            "command": "pnpm exec prettier --write ${file}",
+            "group": "format",
+            "presentation": {
+                "reveal": "always",
+                "group": "",
+                "order": 1
+            }
+        },
+    ],
     "configurations": [
         {
             "name": "Debug Playwright Tests",

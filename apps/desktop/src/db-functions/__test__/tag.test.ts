@@ -187,7 +187,6 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             });
                         },
                     ),
-                    { numRuns: 100 },
                 );
             });
 
@@ -228,7 +227,6 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             });
                         },
                     ),
-                    { numRuns: 100 },
                 );
             });
 
@@ -279,7 +277,6 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             });
                         },
                     ),
-                    { numRuns: 100 },
                 );
             });
         });
@@ -502,7 +499,6 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             }
                         },
                     ),
-                    { numRuns: 100 },
                 );
             });
         });
@@ -591,7 +587,6 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             });
                         },
                     ),
-                    { numRuns: 100 },
                 );
             });
 

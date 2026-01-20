@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import Database from "better-sqlite3";
+import Database from "libsql";
 import * as fs from "fs";
 import * as path from "path";
 import { app } from "electron";
@@ -10,7 +10,7 @@ export const initializeAndMigrateDatabase = async (
     newDb: Database.Database,
 ): Promise<void> => {
     // Set user version to 7 (indicates Drizzle migration system)
-    newDb.pragma("user_version = 7");
+    newDb.prepare("PRAGMA user_version = 7").run();
 
     const drizzleDb = getOrm(newDb);
     const migrator = new DrizzleMigrationService(drizzleDb, newDb);
@@ -23,7 +23,7 @@ export const initializeAndMigrateDatabase = async (
         "migrations",
     );
     await migrator.applyPendingMigrations(migrationsFolder);
-    await migrator.initializeDatabase(drizzleDb);
+    await DrizzleMigrationService.initializeDatabase(drizzleDb, newDb);
 };
 
 export const copyDataFromOriginalDatabase = (
@@ -165,6 +165,15 @@ export const copyFieldPropertiesFromOriginalDatabase = (
     updateStmt.run(...values);
 };
 
+export const removeOrphanMarcherPages = (db: Database.Database): void => {
+    db.prepare(
+        `DELETE FROM marcher_pages WHERE marcher_id NOT IN (SELECT id FROM marchers)`,
+    ).run();
+    db.prepare(
+        `DELETE FROM marcher_pages WHERE page_id NOT IN (SELECT id FROM pages)`,
+    ).run();
+};
+
 export const repairDatabase = async (originalDbPath: string) => {
     // 1. Create paths for temp and final database files
     const originalPathObj = path.parse(originalDbPath);
@@ -193,13 +202,16 @@ export const repairDatabase = async (originalDbPath: string) => {
         await initializeAndMigrateDatabase(newDb);
 
         // Turn off foreign keys for data copying
-        newDb.pragma("foreign_keys = OFF");
+        newDb.prepare("PRAGMA foreign_keys = OFF").run();
 
         // Copy data from original database
         copyDataFromOriginalDatabase(originalDb, newDb, originalDbPath);
 
         // Turn foreign keys back on
-        newDb.pragma("foreign_keys = ON");
+        newDb.prepare("PRAGMA foreign_keys = ON").run();
+
+        // Remove orphaned marcher_pages entries
+        removeOrphanMarcherPages(newDb);
     } catch (error) {
         // If anything fails, delete the temp file
         if (fs.existsSync(tempDbPath)) {
