@@ -60,9 +60,6 @@ export default function MusicStep() {
     const [tempo, setTempo] = useState<number>(
         wizardState?.music?.tempo || 120,
     );
-    const [startCount, setStartCount] = useState<number>(
-        wizardState?.music?.startCount || 1,
-    );
 
     // Update wizard state when method changes
     useEffect(() => {
@@ -70,13 +67,12 @@ export default function MusicStep() {
             const newMusicState = {
                 method,
                 tempo: method === "tempo_only" ? tempo : undefined,
-                startCount: method === "tempo_only" ? startCount : undefined,
             };
             updateMusic(newMusicState);
         }, 200);
 
         return () => window.clearTimeout(timeoutId);
-    }, [method, tempo, startCount, updateMusic]);
+    }, [method, tempo, updateMusic]);
 
     // Update wizard state when audio file is selected (for mp3 method)
     useEffect(() => {
@@ -152,22 +148,6 @@ export default function MusicStep() {
                             }
                             min={1}
                             max={300}
-                            className="w-full"
-                        />
-                    </WizardFormField>
-                    <WizardFormField
-                        label={<T keyName="wizard.music.startCount" />}
-                        helperText={
-                            <T keyName="wizard.music.startCountHelper" />
-                        }
-                    >
-                        <Input
-                            type="number"
-                            value={startCount}
-                            onChange={(e) =>
-                                setStartCount(parseInt(e.target.value) || 1)
-                            }
-                            min={1}
                             className="w-full"
                         />
                     </WizardFormField>

@@ -33,7 +33,6 @@ export interface PerformersData {
 export interface MusicData {
     method: "xml" | "mp3" | "tempo_only" | "skip";
     tempo?: number;
-    startCount?: number;
 }
 
 export interface WizardState {

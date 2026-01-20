@@ -964,8 +964,6 @@
             "skip": "Skip for Now",
             "tempo": "Tempo (BPM)",
             "tempoHelper": "Set the beats per minute for your show",
-            "startCount": "Start Count",
-            "startCountHelper": "Number of counts before the show begins",
             "skipDescription": "You can add music later from the music settings."
         },
         "step": {
