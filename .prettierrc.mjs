@@ -5,7 +5,11 @@
 const config = {
     tabWidth: 4,
     useTabs: false,
-    plugins: ["prettier-plugin-tailwindcss", "prettier-plugin-astro"],
+    // prettier-plugin-tailwindcss MUST be loaded last
+    plugins: [
+        "prettier-plugin-astro",
+        "prettier-plugin-tailwindcss", // MUST be last
+    ],
     overrides: [
         {
             files: ["*.md", "*.mdx", "*.yaml"],

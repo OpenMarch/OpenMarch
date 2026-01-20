@@ -12,14 +12,38 @@ interface UseWizardKeyboardProps {
     isNavigating: () => boolean;
 }
 
-const INPUT_TAGS = new Set(["INPUT", "TEXTAREA"]);
+const INPUT_TAGS = new Set(["INPUT", "TEXTAREA", "BUTTON", "SELECT"]);
+const INTERACTIVE_ROLES = new Set([
+    "button",
+    "link",
+    "menuitem",
+    "option",
+    "combobox",
+    "listbox",
+    "treeitem",
+]);
 
 function isInputElement(element: HTMLElement): boolean {
-    return (
+    if (
         INPUT_TAGS.has(element.tagName) ||
         element.isContentEditable ||
         element.closest("input, textarea, [contenteditable]") !== null
-    );
+    ) {
+        return true;
+    }
+
+    // Check for anchor elements with href
+    if (element.tagName === "A" && element.hasAttribute("href")) {
+        return true;
+    }
+
+    // Check for interactive ARIA roles
+    const role = element.getAttribute("role");
+    if (role && INTERACTIVE_ROLES.has(role.toLowerCase())) {
+        return true;
+    }
+
+    return false;
 }
 
 export function useWizardKeyboard({

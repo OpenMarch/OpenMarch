@@ -178,7 +178,7 @@ export default function GuidedSetupWizard({
     );
 
     const stepContent = useMemo(() => {
-        if (!effectiveWizardState) return null;
+        if (wizardState === null || wizardState === undefined) return null;
 
         const StepComponent = {
             project: ProjectStep,
@@ -193,7 +193,7 @@ export default function GuidedSetupWizard({
                 <StepComponent />
             </Suspense>
         ) : null;
-    }, [currentStep, effectiveWizardState]);
+    }, [currentStep, wizardState]);
 
     const hasProgress = useMemo(
         () =>

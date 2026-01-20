@@ -1,6 +1,13 @@
 import { db } from "@/global/database/db";
-import { createBeats } from "@/db-functions/beat";
-import { createPages } from "@/db-functions/page";
+import { schema } from "@/global/database/db";
+import { asc } from "drizzle-orm";
+import {
+    createBeats,
+    createBeatsInTransaction,
+    realDatabaseBeatToDatabaseBeat,
+} from "@/db-functions/beat";
+import { createPages, createPagesInTransaction } from "@/db-functions/page";
+import { transactionWithHistory } from "@/db-functions/history";
 import { createMarchers } from "@/db-functions/marcher";
 import { updateFieldProperties } from "@/global/classes/FieldProperties";
 import {
@@ -480,35 +487,16 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
     // That's TOTAL_COUNTS + 1 beats total
     const beatsNeeded = Math.max(0, TOTAL_COUNTS + 1 - currentBeats.length);
 
-    if (beatsNeeded > 0) {
-        // Create the needed beats
-        const newBeats = Array.from({ length: beatsNeeded }, () => ({
-            duration: beatDuration,
-            include_in_measure: true,
-        }));
+    // Prepare beats data
+    const newBeats =
+        beatsNeeded > 0
+            ? Array.from({ length: beatsNeeded }, () => ({
+                  duration: beatDuration,
+                  include_in_measure: true,
+              }))
+            : [];
 
-        await createBeats({
-            db,
-            newBeats,
-        });
-
-        // Refetch beats to get the latest data
-        await queryClient.invalidateQueries({
-            queryKey: allDatabaseBeatsQueryOptions().queryKey,
-        });
-    }
-
-    // Refetch beats to ensure we have the latest data
-    const updatedBeats = await queryClient.fetchQuery(
-        allDatabaseBeatsQueryOptions(),
-    );
-
-    // Sort beats by position
-    const sortedBeats = updatedBeats
-        .sort((a, b) => a.position - b.position)
-        .map((beat) => ({ id: beat.id, position: beat.position }));
-
-    // Check existing pages
+    // Get existing pages to determine which pages need to be created
     const existingPages = await queryClient.fetchQuery(
         allDatabasePagesQueryOptions(),
     );
@@ -517,43 +505,88 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
         existingPages.map((p) => [p.start_beat, p.id]),
     );
 
-    // Create pages starting at beat positions 0, 16, 32, 48, 64, 80, 96, 112
-    // Page 0 already exists (FIRST_PAGE_ID = 0), so we create pages 1-7
-    const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
-
+    // Calculate expected beat positions for validation
+    // We need to validate that beats exist at positions 0, 16, 32, 48, 64, 80, 96, 112
+    // before starting the transaction
+    const expectedBeatPositions: number[] = [];
     for (let i = 1; i < PAGES_COUNT; i++) {
-        const beatPosition = i * COUNTS_PER_PAGE; // 16, 32, 48, 64, 80, 96, 112
-        const beatObj = sortedBeats.find((b) => b.position === beatPosition);
-
-        if (!beatObj) {
-            console.error(
-                `Missing beat at position ${beatPosition} for page ${i}`,
-            );
-            throw new Error(
-                `Missing beat at position ${beatPosition} for page ${i}`,
-            );
-        }
-
-        // Check if page already exists at this start_beat
-        if (pageByStartBeat.has(beatObj.id)) {
-            continue;
-        }
-
-        newPagesArgs.push({
-            start_beat: beatObj.id,
-            is_subset: false,
-        });
+        expectedBeatPositions.push(i * COUNTS_PER_PAGE);
     }
 
-    if (newPagesArgs.length > 0) {
-        await createPages({
-            db,
-            newPages: newPagesArgs,
+    // Validate that we'll have enough beats after creation
+    // This validation happens before the transaction
+    const totalBeatsAfterCreation = currentBeats.length + beatsNeeded;
+    const maxPositionNeeded = Math.max(...expectedBeatPositions, 0);
+    if (totalBeatsAfterCreation < maxPositionNeeded + 1) {
+        throw new Error(
+            `Insufficient beats: need at least ${maxPositionNeeded + 1} beats but will only have ${totalBeatsAfterCreation}`,
+        );
+    }
+
+    // Perform both operations in a single transaction
+    await transactionWithHistory(db, "createBeatsAndPages", async (tx) => {
+        // Create beats if needed
+        if (newBeats.length > 0) {
+            await createBeatsInTransaction({
+                tx,
+                newBeats,
+            });
+        }
+
+        // Get updated beats within the transaction
+        const updatedBeatsRaw = await tx.query.beats.findMany({
+            orderBy: asc(schema.beats.position),
         });
 
-        // Invalidate pages query
-        await queryClient.invalidateQueries({
-            queryKey: allDatabasePagesQueryOptions().queryKey,
-        });
-    }
+        // Convert to DatabaseBeat format and sort by position
+        const updatedBeats = updatedBeatsRaw.map(
+            realDatabaseBeatToDatabaseBeat,
+        );
+        const sortedBeats = updatedBeats.map((beat) => ({
+            id: beat.id,
+            position: beat.position,
+        }));
+
+        // Build pages args
+        const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
+
+        for (let i = 1; i < PAGES_COUNT; i++) {
+            const beatPosition = i * COUNTS_PER_PAGE; // 16, 32, 48, 64, 80, 96, 112
+            const beatObj = sortedBeats.find(
+                (b) => b.position === beatPosition,
+            );
+
+            if (!beatObj) {
+                throw new Error(
+                    `Missing beat at position ${beatPosition} for page ${i}`,
+                );
+            }
+
+            // Check if page already exists at this start_beat
+            if (pageByStartBeat.has(beatObj.id)) {
+                continue;
+            }
+
+            newPagesArgs.push({
+                start_beat: beatObj.id,
+                is_subset: false,
+            });
+        }
+
+        // Create pages if needed
+        if (newPagesArgs.length > 0) {
+            await createPagesInTransaction({
+                tx,
+                newPages: newPagesArgs,
+            });
+        }
+    });
+
+    // Invalidate queries after successful transaction
+    await queryClient.invalidateQueries({
+        queryKey: allDatabaseBeatsQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: allDatabasePagesQueryOptions().queryKey,
+    });
 }

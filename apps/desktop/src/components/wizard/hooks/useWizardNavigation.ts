@@ -53,10 +53,14 @@ export function useWizardNavigation({
         }
     }, [currentStepIndex, navigateToStep]);
 
-    const handleComplete = useCallback(() => {
+    const handleComplete = useCallback(async () => {
         if (isNavigatingRef.current || isCompleting) return;
         isNavigatingRef.current = true;
-        onComplete?.();
+        try {
+            await onComplete?.();
+        } finally {
+            isNavigatingRef.current = false;
+        }
     }, [isCompleting, onComplete]);
 
     return {
