@@ -27,12 +27,14 @@ type LaunchPageProps =
           wizardMode: true;
           onWizardComplete: () => void;
           onStartWizard: () => void;
+          onExitWizard: () => void;
       }
     | {
           setDatabaseIsReady: (isReady: boolean) => void;
           wizardMode?: false;
           onWizardComplete?: () => void;
           onStartWizard: () => void;
+          onExitWizard?: () => void;
       };
 
 interface SidebarProps {
@@ -40,14 +42,20 @@ interface SidebarProps {
     selectedTab: string;
     wizardMode: boolean;
     onStartWizard: () => void;
+    onExitWizard?: () => void;
 }
 
 export default function LaunchPage(props: LaunchPageProps) {
-    const { setDatabaseIsReady, onStartWizard } = props;
+    const { setDatabaseIsReady, onStartWizard, onExitWizard } = props;
     const wizardMode = props.wizardMode === true;
     if (wizardMode && !props.onWizardComplete) {
         throw new Error(
             "LaunchPage: onWizardComplete is required when wizardMode is true.",
+        );
+    }
+    if (wizardMode && !onExitWizard) {
+        throw new Error(
+            "LaunchPage: onExitWizard is required when wizardMode is true.",
         );
     }
     const [selectedTab, setSelectedTab] = useState("files");
@@ -62,11 +70,13 @@ export default function LaunchPage(props: LaunchPageProps) {
                         selectedTab={selectedTab}
                         wizardMode={wizardMode}
                         onStartWizard={onStartWizard}
+                        onExitWizard={onExitWizard!}
                     />
                     <div className="flex w-full min-w-0 flex-col items-center overflow-y-auto p-12">
                         <div className="flex h-full w-full max-w-[600px] flex-col">
                             <GuidedSetupWizard
                                 onComplete={props.onWizardComplete!}
+                                onExitWizard={onExitWizard!}
                             />
                         </div>
                     </div>
@@ -109,6 +119,7 @@ function Sidebar({
     selectedTab,
     wizardMode,
     onStartWizard,
+    onExitWizard,
 }: SidebarProps) {
     const { resetWizard } = useGuidedSetupStore();
 

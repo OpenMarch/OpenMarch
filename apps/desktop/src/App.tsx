@@ -227,6 +227,9 @@ function App() {
                                 onStartWizard={() => {
                                     setShowWizard(true);
                                 }}
+                                onExitWizard={() => {
+                                    setShowWizard(false);
+                                }}
                             />
                         </SelectedAudioFileProvider>
                     ) : (

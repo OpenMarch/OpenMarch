@@ -13,10 +13,12 @@ import { useTranslate } from "@tolgee/react";
 
 interface GuidedSetupWizardProps {
     onComplete: () => void;
+    onExitWizard: () => void;
 }
 
 export default function GuidedSetupWizard({
     onComplete,
+    onExitWizard,
 }: GuidedSetupWizardProps) {
     const queryClient = useQueryClient();
     const { t } = useTranslate();
@@ -167,6 +169,11 @@ export default function GuidedSetupWizard({
         }
     };
 
+    const handleExitWizard = () => {
+        resetWizard();
+        onExitWizard();
+    };
+
     return (
         <WizardLayout
             currentStepIndex={currentStepIndex}
@@ -185,6 +192,7 @@ export default function GuidedSetupWizard({
             }
             canSkip={currentStep === "music" || currentStep === "performers"}
             isCompleting={isCompleting}
+            onExitWizard={handleExitWizard}
         >
             {renderStepContent()}
         </WizardLayout>

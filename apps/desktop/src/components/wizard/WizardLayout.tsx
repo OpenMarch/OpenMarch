@@ -1,7 +1,11 @@
 import { ReactNode } from "react";
 import { Button } from "@openmarch/ui";
 import { T } from "@tolgee/react";
-import { CaretLeftIcon, CaretRightIcon } from "@phosphor-icons/react";
+import {
+    ArrowLeftIcon,
+    CaretLeftIcon,
+    CaretRightIcon,
+} from "@phosphor-icons/react";
 import type { WizardStepId } from "./types";
 import { WIZARD_STEPS } from "./types";
 
@@ -19,6 +23,7 @@ interface WizardLayoutProps {
     onSkip?: () => void;
     canSkip?: boolean;
     isCompleting?: boolean;
+    onExitWizard?: () => void;
 }
 
 const STEP_LABELS: Record<WizardStepId, string> = {
@@ -43,6 +48,7 @@ export default function WizardLayout({
     onSkip,
     canSkip = false,
     isCompleting = false,
+    onExitWizard,
 }: WizardLayoutProps) {
     return (
         <div className="flex h-full min-h-0 w-full flex-col">
@@ -105,6 +111,16 @@ export default function WizardLayout({
                         {canSkip && onSkip && (
                             <Button variant="secondary" onClick={onSkip}>
                                 <T keyName="wizard.skip" />
+                            </Button>
+                        )}
+                        {onExitWizard && (
+                            <Button
+                                variant="secondary"
+                                onClick={onExitWizard}
+                                className="flex items-center gap-8"
+                            >
+                                <ArrowLeftIcon size={20} />
+                                <T keyName="wizard.back" />
                             </Button>
                         )}
                     </div>
