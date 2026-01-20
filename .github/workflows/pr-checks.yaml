@@ -12,16 +12,17 @@ jobs:
   check-changes:
     runs-on: ubuntu-latest
     outputs:
-      desktop: ${{ steps.filter.outputs.desktop }}
+      desktop: ${{ steps.filter.outputs.website_docs_only == 'false' }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            desktop:
-              - '**/*'
-              - '!apps/website/**'
+            website_docs_only:
+              - 'apps/website/**/*.md'
+              - 'apps/website/**/*.mdx'
+              - 'apps/website/src/constants.ts'
 
   basic-checks:
     strategy:
