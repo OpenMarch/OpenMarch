@@ -575,6 +575,7 @@
         },
         "drillPrefix": "Drill Prefix",
         "editButton": "Edit Marchers",
+        "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
@@ -599,6 +600,9 @@
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
+        "name": "Name",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes for this marcher...",
         "quantity": "Quantity",
         "section": "Section",
         "sectionError": {
@@ -608,7 +612,8 @@
         "sectionText": "Section",
         "tagText": "Tag",
         "title": "Marchers",
-        "updateButton": "Update Marcher"
+        "updateButton": "Update Marcher",
+        "year": "Year"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",

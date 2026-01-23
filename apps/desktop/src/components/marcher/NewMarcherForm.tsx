@@ -14,6 +14,7 @@ import {
     InfoNote,
     Button,
     Input,
+    TextArea,
 } from "@openmarch/ui";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MarcherListContents } from "./MarchersModal";
@@ -45,8 +46,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     id,
 }: NewMarcherFormProps) => {
     const [section, setSection] = useState<string>();
+    const [marcherName, setMarcherName] = useState<string>("");
+    const [marcherYear, setMarcherYear] = useState<string>("");
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
+    const [marcherNotes, setMarcherNotes] = useState<string>("");
     const [quantity, setQuantity] = useState<number>(1);
     const [sectionError, setSectionError] = useState<string>("");
     const [drillPrefixError, setDrillPrefixError] = useState<string>("");
@@ -107,8 +111,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 const updatedMarchers: ModifiedMarcherArgs[] = [];
 
                 existingMarcher.section = section || "Other";
+                existingMarcher.name = marcherName;
+                existingMarcher.year = marcherYear;
                 existingMarcher.drill_prefix = drillPrefix;
                 existingMarcher.drill_order = drillOrder;
+                existingMarcher.notes = marcherNotes;
 
                 updatedMarchers.push(existingMarcher);
 
@@ -241,8 +248,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     useEffect(() => {
         if (existingMarcher) {
             setSection(existingMarcher.section);
+            setMarcherName(existingMarcher.name || "");
+            setMarcherYear(existingMarcher.year || "");
             setDrillPrefix(existingMarcher.drill_prefix);
             setDrillOrder(existingMarcher.drill_order);
+            setMarcherNotes(existingMarcher.notes || "");
         }
     }, [existingMarcher]);
 
@@ -312,6 +322,34 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                         </SelectContent>
                     </Select>
                 </FormField>
+                {existingMarcher && (
+                    <>
+                        <FormField label={t("marchers.name")}>
+                            <Input
+                                type="text"
+                                placeholder="-"
+                                aria-label="Marcher name input"
+                                title="Marcher name input"
+                                onChange={(event) =>
+                                    setMarcherName(event.target.value)
+                                }
+                                value={marcherName}
+                            />
+                        </FormField>
+                        <FormField label={t("marchers.year")}>
+                            <Input
+                                type="text"
+                                placeholder="-"
+                                aria-label="Marcher year input"
+                                title="Marcher year input"
+                                onChange={(event) =>
+                                    setMarcherYear(event.target.value)
+                                }
+                                value={marcherYear}
+                            />
+                        </FormField>
+                    </>
+                )}
                 <FormField label={t("marchers.drillPrefix")}>
                     <Input
                         type="text"
@@ -332,6 +370,21 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                         maxLength={3}
                     />
                 </FormField>
+                {existingMarcher && (
+                    <FormField label={t("marchers.notes")}>
+                        <TextArea
+                            className="max-w-[60%]"
+                            rows={5}
+                            placeholder={t("marchers.notesPlaceholder")}
+                            aria-label="Marcher notes input"
+                            title="Marcher notes input"
+                            onChange={(event) =>
+                                setMarcherNotes(event.target.value)
+                            }
+                            value={marcherNotes}
+                        />
+                    </FormField>
+                )}
             </div>
 
             <div className="flex flex-col gap-8">
