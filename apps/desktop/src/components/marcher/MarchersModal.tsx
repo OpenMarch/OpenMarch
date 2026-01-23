@@ -81,7 +81,13 @@ export function MarcherNewFormContents(props: NewMarcherFormProps) {
                         <CaretLeftIcon size={24} />
                     </button>
                     <h4 className="text-h4 leading-none">
-                        <T keyName="marchers.addMarchers" />
+                        <T
+                            keyName={
+                                props.id
+                                    ? "marchers.editMarcher"
+                                    : "marchers.addMarchers"
+                            }
+                        />
                     </h4>
                 </div>
                 <button
