@@ -187,7 +187,10 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     };
 
     const resetDrillOrder = useCallback(() => {
-        if (existingMarcher) return drillOrder;
+        if (existingMarcher) {
+            setDrillOrder(existingMarcher.drill_order);
+            return existingMarcher.drill_order;
+        }
 
         // this is an object to avoid an unsafe reference warning
         const i = { newOrder: 1 };
@@ -204,7 +207,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         const newDrillOrder = i.newOrder;
         setDrillOrder(newDrillOrder);
         return newDrillOrder;
-    }, [existingMarcher, drillOrder, marchers, drillPrefix]);
+    }, [existingMarcher, marchers, drillPrefix]);
 
     function makeButtonString(quantity: number, section: string | undefined) {
         if (section === t("section.other") || section === undefined) {
