@@ -11,7 +11,7 @@ import { ListFormProps } from "../../global/Interfaces";
 import Marcher from "@/global/classes/Marcher";
 import { SECTIONS, getTranslatedSectionName } from "@/global/classes/Sections";
 import { Button } from "@openmarch/ui";
-import { TrashIcon } from "@phosphor-icons/react";
+import { PencilIcon, TrashIcon } from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { Input } from "@openmarch/ui";
 import FormButtons from "../FormButtons";
@@ -30,6 +30,7 @@ import {
     updateMarchersMutationOptions,
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs } from "@/db-functions";
+import { MarcherNewFormContents } from "./MarchersModal";
 
 type SectionOption = {
     value: string;
@@ -425,6 +426,8 @@ function MarcherRow({
         sectionLabelMap[marcher.section] ||
         selectPlaceholder;
 
+    const { setContent } = useSidebarModalStore();
+
     return (
         <div
             data-testid={`marcher row`}
@@ -491,14 +494,28 @@ function MarcherRow({
                     </p>
                 )}
                 {isEditing && (
-                    <Button
-                        variant="red"
-                        size="compact"
-                        content="icon"
-                        onClick={() => onDelete(marcher.id)}
-                    >
-                        <TrashIcon size={18} />
-                    </Button>
+                    <>
+                        <Button
+                            size="compact"
+                            content="icon"
+                            onClick={() => {
+                                setContent(
+                                    <MarcherNewFormContents id={marcher.id} />,
+                                    "marchers",
+                                );
+                            }}
+                        >
+                            <PencilIcon size={18} />
+                        </Button>
+                        <Button
+                            variant="red"
+                            size="compact"
+                            content="icon"
+                            onClick={() => onDelete(marcher.id)}
+                        >
+                            <TrashIcon size={18} />
+                        </Button>
+                    </>
                 )}
             </div>
         </div>

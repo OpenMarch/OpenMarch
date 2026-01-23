@@ -607,7 +607,8 @@
         "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
-        "title": "Marchers"
+        "title": "Marchers",
+        "updateButton": "Update Marcher"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",
