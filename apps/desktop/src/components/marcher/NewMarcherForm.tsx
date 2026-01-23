@@ -46,11 +46,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     id,
 }: NewMarcherFormProps) => {
     const [section, setSection] = useState<string>();
-    const [marcherName, setMarcherName] = useState<string>("");
-    const [marcherYear, setMarcherYear] = useState<string>("");
+    const [name, setName] = useState<string>("");
+    const [year, setYear] = useState<string>("");
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
-    const [marcherNotes, setMarcherNotes] = useState<string>("");
+    const [notes, setNotes] = useState<string>("");
     const [quantity, setQuantity] = useState<number>(1);
     const [sectionError, setSectionError] = useState<string>("");
     const [drillPrefixError, setDrillPrefixError] = useState<string>("");
@@ -110,14 +110,21 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             if (existingMarcher) {
                 const updatedMarchers: ModifiedMarcherArgs[] = [];
 
-                existingMarcher.section = section || "Other";
-                existingMarcher.name = marcherName;
-                existingMarcher.year = marcherYear;
-                existingMarcher.drill_prefix = drillPrefix;
-                existingMarcher.drill_order = drillOrder;
-                existingMarcher.notes = marcherNotes;
+                // existingMarcher.section = section || "Other";
+                // existingMarcher.name = name;
+                // existingMarcher.year = year;
+                // existingMarcher.drill_prefix = drillPrefix;
+                // existingMarcher.drill_order = drillOrder;
+                // existingMarcher.notes = notes;
 
-                updatedMarchers.push(existingMarcher);
+                updatedMarchers.push({
+                    id: existingMarcher.id,
+                    name,
+                    year,
+                    drill_prefix: drillPrefix,
+                    drill_order: drillOrder,
+                    notes,
+                });
 
                 updateMarchers(updatedMarchers);
             } else {
@@ -248,11 +255,11 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     useEffect(() => {
         if (existingMarcher) {
             setSection(existingMarcher.section);
-            setMarcherName(existingMarcher.name || "");
-            setMarcherYear(existingMarcher.year || "");
+            setName(existingMarcher.name || "");
+            setYear(existingMarcher.year || "");
             setDrillPrefix(existingMarcher.drill_prefix);
             setDrillOrder(existingMarcher.drill_order);
-            setMarcherNotes(existingMarcher.notes || "");
+            setNotes(existingMarcher.notes || "");
         }
     }, [existingMarcher]);
 
@@ -298,7 +305,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 )}
                 <FormField label={t("marchers.section")}>
                     <Select
-                        value={existingMarcher?.section ?? section}
+                        value={section}
                         onValueChange={handleSectionChange}
                         required
                     >
@@ -331,9 +338,9 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                                 aria-label="Marcher name input"
                                 title="Marcher name input"
                                 onChange={(event) =>
-                                    setMarcherName(event.target.value)
+                                    setName(event.target.value)
                                 }
-                                value={marcherName}
+                                value={name}
                             />
                         </FormField>
                         <FormField label={t("marchers.year")}>
@@ -343,9 +350,9 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                                 aria-label="Marcher year input"
                                 title="Marcher year input"
                                 onChange={(event) =>
-                                    setMarcherYear(event.target.value)
+                                    setYear(event.target.value)
                                 }
-                                value={marcherYear}
+                                value={year}
                             />
                         </FormField>
                     </>
@@ -378,10 +385,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                             placeholder={t("marchers.notesPlaceholder")}
                             aria-label="Marcher notes input"
                             title="Marcher notes input"
-                            onChange={(event) =>
-                                setMarcherNotes(event.target.value)
-                            }
-                            value={marcherNotes}
+                            onChange={(event) => setNotes(event.target.value)}
+                            value={notes}
                         />
                     </FormField>
                 )}

@@ -498,6 +498,7 @@ function MarcherRow({
                         <Button
                             size="compact"
                             content="icon"
+                            type="button"
                             onClick={() => {
                                 setContent(
                                     <MarcherNewFormContents id={marcher.id} />,
@@ -511,6 +512,7 @@ function MarcherRow({
                             variant="red"
                             size="compact"
                             content="icon"
+                            type="button"
                             onClick={() => onDelete(marcher.id)}
                         >
                             <TrashIcon size={18} />
