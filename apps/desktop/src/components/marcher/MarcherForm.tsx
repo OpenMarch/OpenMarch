@@ -149,8 +149,10 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     const handleSectionChange = (value: string) => {
         const selectedSectionObject = getSectionObjectByName(value);
         if (selectedSectionObject) {
+            const prevSection = section;
             setSection(selectedSectionObject.name);
             setDrillPrefix(selectedSectionObject.prefix);
+            if (prevSection !== selectedSectionObject.name) resetDrillOrder(); // Need to reset order number if section was changed
             setSectionError("");
         } else {
             console.error("Section not found");
@@ -198,7 +200,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     };
 
     const resetDrillOrder = useCallback(() => {
-        if (existingMarcher) {
+        if (existingMarcher && existingMarcher.section === section) {
             setDrillOrder(existingMarcher.drill_order);
             return existingMarcher.drill_order;
         }
@@ -218,7 +220,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         const newDrillOrder = i.newOrder;
         setDrillOrder(newDrillOrder);
         return newDrillOrder;
-    }, [existingMarcher, marchers, drillPrefix]);
+    }, [existingMarcher, section, marchers, drillPrefix]);
 
     function makeButtonString(quantity: number, section: string | undefined) {
         if (section === t("section.other") || section === undefined) {
