@@ -262,8 +262,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
 
     useEffect(() => {
         setSubmitIsDisabled(
-            section === defaultSection(t) ||
-                section === undefined ||
+            section === undefined ||
                 drillPrefix === undefined ||
                 drillOrder === undefined ||
                 sectionError !== "" ||
