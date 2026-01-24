@@ -45,13 +45,13 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     disabledProp = false,
     marcherIdToEdit,
 }: MarcherFormProps) => {
+    const [quantity, setQuantity] = useState<number>(1);
     const [section, setSection] = useState<string>();
     const [name, setName] = useState<string>("");
     const [year, setYear] = useState<string>("");
     const [drillPrefix, setDrillPrefix] = useState<string>(defaultDrillPrefix);
     const [drillOrder, setDrillOrder] = useState<number>(defaultDrillOrder);
     const [notes, setNotes] = useState<string>("");
-    const [quantity, setQuantity] = useState<number>(1);
     const [sectionError, setSectionError] = useState<string>("");
     const [drillPrefixError, setDrillPrefixError] = useState<string>("");
     const [drillPrefixTouched, setDrillPrefixTouched] =
@@ -70,9 +70,10 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     const { setContent } = useSidebarModalStore();
 
     // Fetch existing marcher in edit mode
-    const { data: existingMarcher } = useQuery(
-        marcherQueryByIdOptions(marcherIdToEdit ?? -1),
-    );
+    const { data: existingMarcher } = useQuery({
+        ...marcherQueryByIdOptions(marcherIdToEdit ?? -1),
+        enabled: marcherIdToEdit !== undefined,
+    });
 
     const { t } = useTolgee();
 
@@ -81,10 +82,13 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     }, [t]);
 
     const resetForm = () => {
+        setQuantity(1);
         setSection(defaultSection(t));
+        setName("");
+        setYear("");
         setDrillPrefix(defaultDrillPrefix);
         setDrillOrder(defaultDrillOrder);
-        setQuantity(1);
+        setNotes("");
         setSectionError("");
         setDrillPrefixError("");
         setDrillPrefixTouched(false);
@@ -143,7 +147,6 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     };
 
     const handleSectionChange = (value: string) => {
-        setSection(defaultSection(t));
         const selectedSectionObject = getSectionObjectByName(value);
         if (selectedSectionObject) {
             setSection(selectedSectionObject.name);
@@ -151,6 +154,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
             setSectionError("");
         } else {
             console.error("Section not found");
+            setSection(defaultSection(t));
             setSectionError(t("marchers.sectionError.chooseSection"));
         }
     };
