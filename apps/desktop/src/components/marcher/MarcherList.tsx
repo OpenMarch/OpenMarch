@@ -30,7 +30,7 @@ import {
     updateMarchersMutationOptions,
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs } from "@/db-functions";
-import { MarcherNewFormContents } from "./MarchersModal";
+import { MarcherFormContents } from "./MarchersModal";
 
 type SectionOption = {
     value: string;
@@ -501,7 +501,9 @@ function MarcherRow({
                             type="button"
                             onClick={() => {
                                 setContent(
-                                    <MarcherNewFormContents id={marcher.id} />,
+                                    <MarcherFormContents
+                                        marcherIdToEdit={marcher.id}
+                                    />,
                                     "marchers",
                                 );
                             }}

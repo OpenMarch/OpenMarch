@@ -29,9 +29,9 @@ import {
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs, NewMarcherArgs } from "@/db-functions";
 
-export interface NewMarcherFormProps {
+export interface MarcherFormProps {
     disabledProp?: boolean;
-    id?: number;
+    marcherIdToEdit?: number;
 }
 
 const defaultSection = (t: (key: string) => string) =>
@@ -41,10 +41,10 @@ const defaultDrillPrefix = "-";
 const defaultDrillOrder = 1;
 
 // eslint-disable-next-line react/prop-types, max-lines-per-function
-const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
+const MarcherForm: React.FC<MarcherFormProps> = ({
     disabledProp = false,
-    id,
-}: NewMarcherFormProps) => {
+    marcherIdToEdit,
+}: MarcherFormProps) => {
     const [section, setSection] = useState<string>();
     const [name, setName] = useState<string>("");
     const [year, setYear] = useState<string>("");
@@ -71,7 +71,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
 
     // Fetch existing marcher in edit mode
     const { data: existingMarcher } = useQuery(
-        marcherQueryByIdOptions(id ?? -1),
+        marcherQueryByIdOptions(marcherIdToEdit ?? -1),
     );
 
     const { t } = useTolgee();
@@ -108,25 +108,17 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         // if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
         if (!submitIsDisabled) {
             if (existingMarcher) {
-                const updatedMarchers: ModifiedMarcherArgs[] = [];
-
-                // existingMarcher.section = section || "Other";
-                // existingMarcher.name = name;
-                // existingMarcher.year = year;
-                // existingMarcher.drill_prefix = drillPrefix;
-                // existingMarcher.drill_order = drillOrder;
-                // existingMarcher.notes = notes;
-
-                updatedMarchers.push({
+                const updatedMarcher: ModifiedMarcherArgs = {
                     id: existingMarcher.id,
+                    section: section || "Other",
                     name,
                     year,
                     drill_prefix: drillPrefix,
                     drill_order: drillOrder,
                     notes,
-                });
+                };
 
-                updateMarchers(updatedMarchers);
+                updateMarchers([updatedMarcher]);
             } else {
                 const newMarchers: NewMarcherArgs[] = [];
                 for (let i = 0; i < quantity; i++) {
@@ -182,7 +174,8 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
             if (
                 existingMarchers.some(
                     (marcher: Marcher) =>
-                        marcher.drill_order === drillOrder && marcher.id !== id,
+                        marcher.drill_order === drillOrder &&
+                        marcher.id !== marcherIdToEdit,
                 )
             ) {
                 setDrillOrderError(t("marchers.drillOrderError.exists"));
@@ -190,7 +183,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
                 setDrillOrderError("");
             }
         },
-        [marchers, id, drillPrefix, t],
+        [marchers, marcherIdToEdit, drillPrefix, t],
     );
 
     const handleQuantityChange = (
@@ -245,7 +238,7 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
         } else if (drillPrefixTouched) {
             setDrillPrefixError("Please enter a drill prefix");
         }
-    }, [drillPrefix, drillPrefixTouched, id, marchers, resetDrillOrder]);
+    }, [drillPrefix, drillPrefixTouched, resetDrillOrder]);
 
     useEffect(() => {
         validateDrillOrder(resetDrillOrder());
@@ -412,4 +405,4 @@ const NewMarcherForm: React.FC<NewMarcherFormProps> = ({
     );
 };
 
-export default NewMarcherForm;
+export default MarcherForm;

@@ -1,7 +1,7 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import MarcherList from "./MarcherList";
-import NewMarcherForm, { NewMarcherFormProps } from "./NewMarcherForm";
+import MarcherForm, { MarcherFormProps } from "./MarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
@@ -42,7 +42,7 @@ export function MarcherListContents() {
                     </Button>
                     <Button
                         onClick={() => {
-                            setContent(<MarcherNewFormContents />, "marchers");
+                            setContent(<MarcherFormContents />, "marchers");
                         }}
                         size="compact"
                     >
@@ -65,7 +65,7 @@ export function MarcherListContents() {
 }
 
 // Marcher add form
-export function MarcherNewFormContents(props: NewMarcherFormProps) {
+export function MarcherFormContents(props: MarcherFormProps) {
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
@@ -83,7 +83,7 @@ export function MarcherNewFormContents(props: NewMarcherFormProps) {
                     <h4 className="text-h4 leading-none">
                         <T
                             keyName={
-                                props.id
+                                props.marcherIdToEdit
                                     ? "marchers.editMarcher"
                                     : "marchers.addMarchers"
                             }
@@ -99,7 +99,7 @@ export function MarcherNewFormContents(props: NewMarcherFormProps) {
             </header>
 
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
-                <NewMarcherForm {...props} />
+                <MarcherForm {...props} />
             </div>
         </div>
     );
