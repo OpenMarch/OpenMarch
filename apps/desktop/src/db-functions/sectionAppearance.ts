@@ -57,14 +57,12 @@ const newSectionAppearanceArgsToRealNewSectionAppearanceArgs = (
     };
 };
 
-export interface ModifiedSectionAppearanceArgs
-    extends AppearanceComponentOptional {
+export interface ModifiedSectionAppearanceArgs extends AppearanceComponentOptional {
     id: number;
     section?: string;
 }
 
-interface RealModifiedSectionAppearanceArgs
-    extends AppearanceComponentRawOptional {
+interface RealModifiedSectionAppearanceArgs extends AppearanceComponentRawOptional {
     id: number;
     section?: string;
 }
