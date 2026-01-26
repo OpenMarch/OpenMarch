@@ -232,8 +232,7 @@ export const useSelectionListeners = ({
         )) {
             deselectObjects(selectableClass);
         }
-        setSelectedShapePageIds([]);
-    }, [setSelectedMarchers, setSelectedShapePageIds]);
+    }, [setSelectedMarchers]);
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {

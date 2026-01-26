@@ -224,43 +224,6 @@ export class StaticMarcherShape {
     }
 
     /**
-     * Handles the selection of the shape path.
-     * When the shape path is clicked, this enables the shape's control points
-     * while keeping the shape path selected so it can be moved.
-     */
-    selectedHandler() {
-        if (!this.canvas) return;
-
-        // Enable control directly - this shows control points and enables editing
-        // The shape path stays as the active object so it can be dragged
-        this.enableControl();
-        this.canvas.requestRenderAll();
-    }
-
-    /**
-     * Handles the deselection of the shape path.
-     * When the shape path is deselected, this hides the control points,
-     * unless a control point of this shape is now being selected.
-     */
-    deselectedHandler() {
-        if (!this.canvas) return;
-
-        // Check if a control point of this shape is now the active object
-        // If so, don't disable control - the user is interacting with the shape
-        const activeObject = this.canvas.getActiveObject();
-        if (
-            activeObject instanceof ShapePointController &&
-            this.controlPoints.includes(activeObject)
-        ) {
-            return; // Don't disable - user clicked on our control point
-        }
-
-        // Disable control - hides control points but shape stays clickable
-        this.disableControl();
-        this.canvas.requestRenderAll();
-    }
-
-    /**
      * Updates the StaticMarcherShape with a new SVG path.
      * This method converts the SVG path string into an array of VanillaPoint objects,
      * which are then used to recreate the shape path on the canvas.
@@ -321,8 +284,6 @@ export class StaticMarcherShape {
         this.canvas.add(this._shapePath);
         this._shapePath.on("moving", this.moveHandler.bind(this));
         this._shapePath.on("modified", this.modifiedHandler.bind(this));
-        this._shapePath.on("selected", this.selectedHandler.bind(this));
-        this._shapePath.on("deselected", this.deselectedHandler.bind(this));
 
         this.canvas.sendCanvasMarchersToFront();
         this.bringControlPointsToFront();

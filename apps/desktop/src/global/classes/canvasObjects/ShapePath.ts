@@ -41,11 +41,9 @@ export class ShapePath extends fabric.Path {
         this.stroke = rgbaToString(ShapePath.fieldTheme.tempPath);
         this.strokeWidth = 1;
         this.strokeDashArray = [5, 3];
-        // Keep selectable = true so users can still click on the shape to select it
-        // Only the control points and visual styling are "disabled"
-        this.selectable = true;
+        this.selectable = false;
         this.backgroundColor = "transparent";
-        this.hoverCursor = "pointer";
+        this.hoverCursor = "default";
     }
 
     get points(): ShapePoint[] {
