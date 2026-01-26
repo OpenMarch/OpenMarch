@@ -1,0 +1,31 @@
+---
+description: Check pre-commit hook permissions when commits bypass formatting
+alwaysApply: false
+---
+
+# Pre-commit Hook Troubleshooting
+
+If formatting issues are getting through to CI despite lint-staged being configured:
+
+1. **Check if pre-commit hook is executable:**
+
+   ```bash
+
+   ls -la .husky/pre-commit
+   ```
+
+2. **If not executable (`-rw-r--r--` instead of `-rwxr-xr-x`):**
+
+   ```bash
+
+   chmod +x .husky/pre-commit
+   ```
+
+3. **Reinstall husky hooks:**
+
+   ```bash
+   
+   pnpm exec husky
+   ```
+
+The hook is tracked as executable in git (100755), but local filesystems can sometimes strip the permission.
