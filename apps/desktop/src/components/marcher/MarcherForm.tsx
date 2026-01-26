@@ -74,6 +74,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         ...marcherQueryByIdOptions(marcherIdToEdit ?? -1),
         enabled: marcherIdToEdit !== undefined,
     });
+    const isEditMode = marcherIdToEdit !== undefined;
+    const isEditReady = !isEditMode || !!existingMarcher;
 
     const { t } = useTolgee();
 
@@ -110,8 +112,8 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         );
 
         // if (!drillOrderError && section && drillPrefix && drillOrder && quantity) {
-        if (!submitIsDisabled) {
-            if (existingMarcher) {
+        if (!submitIsDisabled && isEditReady) {
+            if (isEditMode && existingMarcher) {
                 const updatedMarcher: ModifiedMarcherArgs = {
                     id: existingMarcher.id,
                     section: section || "Other",
@@ -123,7 +125,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                 };
 
                 updateMarchers([updatedMarcher]);
-            } else {
+            } else if (!isEditMode) {
                 const newMarchers: NewMarcherArgs[] = [];
                 for (let i = 0; i < quantity; i++) {
                     // Check to see if the drill order already exists
@@ -223,11 +225,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     }, [existingMarcher, section, marchers, drillPrefix]);
 
     function makeButtonString(quantity: number, section: string | undefined) {
-        if (section === t("section.other") || section === undefined) {
-            return t("marchers.createButton", { quantity });
-        }
-
-        if (existingMarcher) {
+        if (isEditMode) {
             return t("marchers.updateButton");
         }
 
@@ -284,12 +282,12 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     return (
         <Form.Root
             onSubmit={handleSubmit}
-            id="newMarcherForm"
+            id="marcherForm"
             ref={formRef}
             className="flex h-full flex-col gap-16"
         >
             <div className="flex flex-col gap-16">
-                {!existingMarcher && (
+                {!isEditMode && (
                     <FormField label={t("marchers.quantity")}>
                         <Input
                             type="number"
@@ -327,7 +325,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                         </SelectContent>
                     </Select>
                 </FormField>
-                {existingMarcher && (
+                {isEditMode && existingMarcher && (
                     <>
                         <FormField label={t("marchers.name")}>
                             <Input
@@ -375,7 +373,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                         maxLength={3}
                     />
                 </FormField>
-                {existingMarcher && (
+                {isEditMode && existingMarcher && (
                     <FormField label={t("marchers.notes")}>
                         <TextArea
                             className="max-w-[60%]"
@@ -395,7 +393,7 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                     type="submit"
                     className="w-full"
                     aria-label="Create Marcher Button"
-                    disabled={submitIsDisabled || disabledProp}
+                    disabled={submitIsDisabled || disabledProp || !isEditReady}
                 >
                     {makeButtonString(
                         quantity,
