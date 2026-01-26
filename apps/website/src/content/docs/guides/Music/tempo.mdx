@@ -9,30 +9,18 @@ import { LinkCard, CardGrid, Aside } from "@astrojs/starlight/components";
 import {
   MusicNotesIcon,
   RewindIcon,
+  TrashIcon,
   PencilSimpleIcon,
   PlayIcon,
   PauseIcon,
 } from "@phosphor-icons/react";
 
-<Aside type="tip" title="Define your tempos first">
-
-We **highly recommend** defining all of your tempos _before_ you start creating pages and writing drill.
-Our tempo group editing is currently very limited. Changing the tempo may force you to delete pages.
-
-We are working on it! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
-
-</Aside>
-
-<Aside type="caution" title="Tempo drift">
-
-The tempo alignment currently tends to drift when playing long show chunks.
-Quickly pausing and playing typically syncs the music back up.
-
-We are working to fix this! (Issue [#432](https://github.com/OpenMarch/OpenMarch/issues/432))
-
-</Aside>
-
 Defining tempos in OpenMarch is how we keep the drill aligned with the music.
+
+Tempo and timing data **sits on top of** the music file you import.
+Once there's timing data in a show, pages can be lined up the music effortlessly, without having to worry about timestamps or manual alignment.
+We give you a handful of ways to customize and tweak the timing data to your liking, so you can start designing your drill as fast as possible.
+
 There are two ways to define tempos -
 
 <CardGrid>
@@ -49,13 +37,15 @@ There are two ways to define tempos -
   />
 </CardGrid>
 
-## What is a tempo group?
+## Tempo groups
+
+### What is a tempo group?
 
 Tempo groups are collections of measures that have the same time signature and tempo
 
 Groups that have the same time signature and tempo are combined into a single group, unless the second group has a name. (I.e. `A` or `Closer`)
 
-## Creating tempo groups
+### Creating tempo
 
 <iframe
   style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
@@ -67,7 +57,7 @@ Groups that have the same time signature and tempo are combined into a single gr
   allowfullscreen
 ></iframe>
 
-### Manually creating a new tempo group
+#### Manually creating a new tempo group
 
 Open the <span style={{ display: "inline-flex", gap: "0.25rem" }}><MusicNotesIcon /> </span> `Music` tab and you will see the following form -
 
@@ -86,7 +76,7 @@ When creating a tempo group, you have the following options -
 - **Number of measures**: The amount of times this tempo group should repeat
   - Note, if an `End tempo` is provided, this will stretch the tempo change over the number of measures
 
-#### Mixed meters
+##### Mixed meters
 
 <Steps>
 
@@ -108,7 +98,7 @@ A few notes on mixed meters:
 - The only supported mixed meters are meters that mix any pattern of `2` and `3` eighth note groupings
   - You may go all the way up to `30/8`, if you every want a mixed meter of `3+2+3+3+3+3+3+2+3+2+3` or any other permutation
 
-### Importing a MusicXML file
+#### Importing a MusicXML file
 
 <Aside type="caution" title="Experimental">
 
@@ -130,7 +120,7 @@ To import a `MusicXML` file, follow these steps:
 
 ![Importing a MusicXML file example](/docs/guides/music/import-musicxml.gif)
 
-### Tapping tempo
+#### Tapping tempo
 
 <iframe
   style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
@@ -183,7 +173,7 @@ To exit the tap tempo session at any time and cancel the process, press <kbd>Esc
 
 </Aside>
 
-## Editing a tempo group
+### Editing tempo
 
 <iframe
   style={{ width: "100%", height: "100%", aspectRatio: "16/9" }}
@@ -197,27 +187,28 @@ To exit the tap tempo session at any time and cancel the process, press <kbd>Esc
 
 <Aside type="caution" title="Editing limitation">
 
-Currently, only the `Name` and `Start tempo` can be edited.
-We are working to expand this functionality! (Issue [#512](https://github.com/OpenMarch/OpenMarch/issues/512))
+Currently, only the `Name` and `Start tempo` can be edited in the tempo group editor.
+To have more precise editing, follow the instructions in the [Fine-grained tempo editing](#fine-grained-tempo-editing-on-the-timeline) section.
 
 </Aside>
-### Simple Groups
+
+#### Simple Groups
 
 **Simple groups** are tempo groups that maintain a consistent tempo.
 These can be mixed or simple meters.
 
 ![Editing a simple tempo group](/docs/guides/music/simple-group-edit.gif)
 
-### Custom groups
+#### Custom groups
 
 **Custom groups** are groups where each beat's tempo is defined individually.
 These groups are always a single measure.
 
 ![Editing a custom tempo group](/docs/guides/music/custom-group-edit.gif)
 
-## Deleting a tempo group
+### Deleting a tempo group
 
-To delete a tempo group, simply click the trash icon in the tempo group's menu.
+To delete a tempo group, simply click the trash <span style={{ display: "inline-flex", gap: "0.25rem" }}><TrashIcon /> </span> icon in the tempo group's menu.
 When you see the confirmation dialog, click `Delete` to delete the tempo group.
 
 <Aside type="caution" title="Deleting tempo groups">
@@ -229,11 +220,130 @@ We are working on a better way! (Issue [#512](https://github.com/OpenMarch/OpenM
 
 </Aside>
 
+## Fine-grained tempo editing on the timeline
+
+Often, the tempo group editor may not give you enough options to get the tempo you want, especially after you've already put a bunch of tempo groups in.
+To get your timing exactly right, you can click on the beats in the timeline to adjust the duration of each one, or add/delete individual beats.
+For measures, you can add or delete measures or change the rehearsal mark.
+Any measure can have a rehearsal mark for easy identification. (E.g. `A`, `Closer`, etc.)
+
+> From a development standpoint, this is difficult because of the complexity with how pages attach to beats.
+> This is likely a solvable issue, but there are many edge cases to consider.
+>
+> This fine-grained editor should be enough for most use cases. But, as always, let us know if you have any suggestions!
+
+For the following examples, we'll assume we made a handful of tempo groups and are now trying to fine-tune the timing:
+
+- **Start** - 32 Measure of 4/4 at 120 BPM
+- **Letter B** - 16 Measure of 4/4 at 132 BPM -
+- **Letter C** - 16 Measure of 4/4 at 180 BPM -
+
+![Example tempo groups](/docs/guides/music/example-tempo-groups.png)
+
+### Adding or removing a rehearsal mark
+
+Notice how we forgot to add **Letter A** to the tempo groups, and now we can't easily edit it.
+Assuming **Letter A** is at measure 17, we can right click on the measure in the timeline and change the rehearsal mark to **A**.
+
+![Adding a rehearsal mark](/docs/guides/music/add-rehearsal-mark.gif)
+
+Now, if we look in the tempo group editor, we can see that **Letter A** has been added to the tempo groups:
+
+![Example tempo groups with rehearsal mark](/docs/guides/music/tempo-after-letter-a.png)
+
+The same process can be used to add or remove a rehearsal mark for any measure:
+
+![Removing a rehearsal mark](/docs/guides/music/remove-rehearsal-mark.gif)
+
+### Adding or deleting measures
+
+To add or delete a measure, click on the measure in the timeline and select "Add measure" or "Delete measure".
+This will delete the measure and all of the beats that belong to it.
+
+![Adding or deleting a measure](/docs/guides/music/add-or-delete-measure.gif)
+
+Notice how the measure numbers after **Letter A** have been incremented by 1, signifying that a new measure has been added.
+
+#### Deleting a measure with a page that starts on it
+
+**Note** - you cannot delete measures if a page _starts_ on that measure or any of the beats in the measure.
+To delete these, you must first delete the page that starts on that measure or its beats.
+
+<Aside type="note" title="'Starts on' can be a bit confusing">
+
+A page that "starts on" beat is the page that _will begin_ to play when the beat is reached.
+
+E.g. I'm viewing `Page 3` which ended on `Measure 8`, and I'm about to play `Page 3A`which is 6 counts long.
+In this case,`Page 3A`would start on`Measure 8`. Meaning, if I want to delete `Measure 8`, I must first delete `Page 3A`.
+
+The GIFs below illustrate this example.
+
+</Aside>
+
+![Deleting a measure with a page that starts on it](/docs/guides/music/delete-measure-on-page.gif)
+
+The same is true for pages that start in the middle of a measure:
+
+![Deleting a page that starts in the middle of a measure](/docs/guides/music/delete-page-in-middle-of-measure.gif)
+
+### Adding or deleting an individual beat
+
+If you need to just add a single beat, rather than an entire measure, you can do so by clicking on any beat within a measure that isn't the first beat and pressing the `Add Beat` button.
+The beat that is added will be the same tempo as the beat you clicked on.
+
+To remove a single beat, simply click on a beat that isn't the first beat in a measure and press the trash <span style={{ display: "inline-flex", gap: "0.25rem" }}><TrashIcon /> </span> icon.
+The restriction of a page starting on a beat is still in place.
+
+![Adding or deleting an individual beat](/docs/guides/music/add-or-delete-individual-beat.gif)
+
+### Adjusting the tempo of a beat
+
+To adjust the duration or tempo of a beat, click on the beat in the timeline and adjust the tempo.
+Press <kbd>Enter</kbd> to save the changes or <kbd>Esc</kbd> to cancel.
+
+![Adjusting the tempo of a beat](/docs/guides/music/adjust-beat-tempo.gif)
+
+Notice in the `Tempo Group` editor, this measure has turned into a "Custom" group.
+This happens when not all beats in the measure have the same tempo.
+
+![Custom tempo group](/docs/guides/music/custom-tempo-group-example.png)
+
+<Aside type="note" title="You can only edit one beat at a time on the timeline">
+
+Whether you're in the middle of a measure or on the start of it, editing the tempo of a beat will only edit _that_ beat, not the whole measure or the beats around it.
+
+To adjust the tempo of one or many measures, use the `Tempo Group` editor - [editing Tempo Groups](#editing-tempo)
+
+</Aside>
+
+### Converting a beat to a measure and vice versa
+
+Measures are really just flags that say "this beat is the start of a measure".
+This means, you can define a new measure by adding a measure marking to a beat.
+
+In a similar vein, you can convert a measure to a beat by removing the measure marking from the beat.
+**Note** - turning a measure with a rehearsal mark into a beat will remove the rehearsal mark.
+
+![Converting between beats and measures](/docs/guides/music/convert-between-beat-and-measure.gif)
+
 ## Toggling the Metronome
 
 To toggle the metronome, click the metronome icon in the sidebar, find General, and toggle "On/Off". Alternatively, you can toggle the metronome by clicking the metronome icon in the Timeline palette in the bottom-left corner.
 
 ![Toggling the Metronome](/docs/guides/music/toggle-metronome.gif)
+
+## How does timing data work under the hood?
+
+When it comes to tempo and timing OpenMarch has one goal - **make it easy for you, the designer, to line up your pages with the music.**
+To achieve this mission while keeping things simple, OpenMarch only stores timing data in the form of `Beats`.
+Each `Beat` has a duration in seconds.
+Adding up the durations of the `Beats` in the show is how we get the timestamps.
+
+You might think "why not just store tempos with flags at certain tempo changes?"
+This was the original implementation we had, but we found that it had too many edge cases and was too complex to maintain.
+
+This `Beat` system is much simpler from a development perspective and can easily be abstracted into digestible tempo representations for the designer.
+I.e. during a gradual tempo change, designers have absolute control over how each beat changes over time
 
 ## FAQs
 

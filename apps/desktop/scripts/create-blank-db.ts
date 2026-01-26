@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import Database from "better-sqlite3";
+import Database from "libsql";
 import { join } from "path";
 import * as fs from "fs";
 import { getOrm } from "../electron/database/db";
@@ -27,7 +27,7 @@ async function createDatabase() {
         const db = new Database(DATABASE_PATH);
 
         // Set user version to 7 (indicates Drizzle migration system)
-        db.pragma("user_version = 7");
+        db.prepare("PRAGMA user_version = 7").run();
 
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
@@ -35,7 +35,7 @@ async function createDatabase() {
         await migrator.applyPendingMigrations(
             join(__dirname, "../electron", "database", "migrations"),
         );
-        await migrator.initializeDatabase(drizzleDb);
+        await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
 
         db.close();
     } catch (error) {

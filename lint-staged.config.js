@@ -4,7 +4,7 @@ module.exports = {
         "eslint --fix",
         "prettier --write --ignore-unknown",
     ],
-    "*.{json,md,mdx}": [
+    "*.{json,yml,yaml,json5,md,mdx,mdc}": [
         "cspell --no-must-find-files",
         "prettier --write --ignore-unknown",
     ],

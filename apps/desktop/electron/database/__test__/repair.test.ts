@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -9,6 +9,7 @@ import {
     copyDataFromOriginalDatabase,
     copyFieldPropertiesFromOriginalDatabase,
     repairDatabase,
+    removeOrphanMarcherPages,
 } from "../repair";
 import { getOrm } from "../db";
 import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
@@ -24,11 +25,11 @@ describe("Database Repair", () => {
         // resolves to the correct migrations folder
         // __dirname is electron/database/__test__, so go up 3 levels to get to apps/desktop
         const appRoot = path.resolve(__dirname, "../../..");
-        if (!("getAppPath" in app)) {
+        if (app && !("getAppPath" in app)) {
             (app as { getAppPath: () => string }).getAppPath = vi.fn(() => {
                 return appRoot;
             });
-        } else {
+        } else if (app) {
             vi.mocked(app.getAppPath as () => string).mockReturnValue(appRoot);
         }
 
@@ -80,7 +81,11 @@ describe("Database Repair", () => {
 
             await initializeAndMigrateDatabase(db);
 
-            const userVersion = db.pragma("user_version", { simple: true });
+            const userVersion = (
+                db.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
             expect(userVersion).toBe(7);
 
             db.close();
@@ -415,7 +420,6 @@ describe("Database Repair", () => {
                             }
                         },
                     ),
-                    { numRuns: 10 }, // Reduced for performance and reliability
                 );
             });
         });
@@ -690,19 +694,20 @@ describe("Database Repair", () => {
                                     {
                                         minLength: 1,
                                         maxLength: 5,
-                                        selector: (c) => c,
+                                        selector: (c) => c.toLowerCase(),
                                     },
                                 ),
                             }),
                             {
                                 minLength: 1,
                                 maxLength: 10,
-                                selector: (t) => t.tableName,
+                                selector: (t) => t.tableName.toLowerCase(),
                             },
                         ),
                         async (tables) => {
-                            // Filter out SQL reserved keywords
+                            // Filter out SQL reserved keywords and "id" (already used as primary key)
                             const sqlKeywords = new Set([
+                                "id",
                                 "select",
                                 "from",
                                 "where",
@@ -738,6 +743,7 @@ describe("Database Repair", () => {
                                 "on",
                                 "union",
                                 "distinct",
+                                "all",
                                 "case",
                                 "when",
                                 "then",
@@ -790,7 +796,17 @@ describe("Database Repair", () => {
                                 `);
 
                                 // Create tables in both databases
+                                // Track case-insensitive table names to prevent SQLite conflicts
+                                const createdTables = new Set<string>();
                                 for (const table of tables) {
+                                    const tableNameLower =
+                                        table.tableName.toLowerCase();
+                                    // Skip if we've already created a table with this name (case-insensitive)
+                                    if (createdTables.has(tableNameLower)) {
+                                        continue;
+                                    }
+                                    createdTables.add(tableNameLower);
+
                                     const commonColsDef = table.commonColumns
                                         .map((col) => `"${col}" TEXT`)
                                         .join(", ");
@@ -828,6 +844,13 @@ describe("Database Repair", () => {
 
                                 // Verify data was copied correctly
                                 for (const table of tables) {
+                                    const tableNameLower =
+                                        table.tableName.toLowerCase();
+                                    // Skip verification for tables that were skipped due to case-insensitive duplicates
+                                    if (!createdTables.has(tableNameLower)) {
+                                        continue;
+                                    }
+
                                     const originalRows = originalDb
                                         .prepare(
                                             `SELECT * FROM "${table.tableName}"`,
@@ -885,7 +908,6 @@ describe("Database Repair", () => {
                             }
                         },
                     ),
-                    { numRuns: 10 }, // Reduced for performance
                 );
             });
         });
@@ -953,9 +975,11 @@ describe("Database Repair", () => {
             const fixedDb = new Database(fixedPath);
 
             // Verify the database was initialized correctly
-            const userVersion = fixedDb.pragma("user_version", {
-                simple: true,
-            });
+            const userVersion = (
+                fixedDb.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
             expect(userVersion).toBe(7);
 
             // Verify migrations were applied
@@ -1038,9 +1062,11 @@ describe("Database Repair", () => {
 
             // Verify it's a valid database
             const fixedDb = new Database(fixedPath);
-            const userVersion = fixedDb.pragma("user_version", {
-                simple: true,
-            });
+            const userVersion = (
+                fixedDb.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
             expect(userVersion).toBe(7);
 
             fixedDb.close();
@@ -1154,9 +1180,11 @@ describe("Database Repair", () => {
             expect(tables.length).toBeGreaterThan(0);
 
             // Verify user version
-            const userVersion = fixedDb.pragma("user_version", {
-                simple: true,
-            });
+            const userVersion = (
+                fixedDb.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
             expect(userVersion).toBe(7);
 
             // Verify migrations were applied
@@ -1196,14 +1224,1017 @@ describe("Database Repair", () => {
             // Old file should be replaced
             expect(fs.existsSync(fixedPath)).toBe(true);
             const fixedDb = new Database(fixedPath);
-            const userVersion = fixedDb.pragma("user_version", {
-                simple: true,
-            });
+            const userVersion = (
+                fixedDb.prepare("PRAGMA user_version").get() as {
+                    user_version: number;
+                }
+            ).user_version;
             expect(userVersion).toBe(7); // Should be a valid database, not "old content"
 
             fixedDb.close();
             fs.unlinkSync(fixedPath);
             fs.unlinkSync(originalDbPath);
+        });
+    });
+
+    describe("removeOrphanMarcherPages", () => {
+        it("should remove marcher_pages with invalid marcher_id", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert valid data
+            db.exec(`
+                INSERT INTO marchers (id, name, section, drill_prefix, drill_order)
+                VALUES (1, 'Marcher 1', 'Brass', 'T', 1),
+                       (2, 'Marcher 2', 'Brass', 'T', 2);
+                INSERT INTO pages (id, start_beat, is_subset)
+                VALUES (1, 0, 0),
+                       (2, 4, 0);
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y)
+                VALUES (1, 1, 1, 10.0, 20.0),
+                       (2, 2, 1, 15.0, 25.0),
+                       (3, 999, 1, 20.0, 30.0),  -- Invalid marcher_id
+                       (4, 1, 2, 25.0, 35.0);
+            `);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(4);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify orphaned marcher_pages were removed
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(3);
+
+            const remaining = db
+                .prepare("SELECT id FROM marcher_pages ORDER BY id")
+                .all() as Array<{ id: number }>;
+            expect(remaining.map((r) => r.id)).toEqual([1, 2, 4]);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should remove marcher_pages with invalid page_id", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert valid data
+            db.exec(`
+                INSERT INTO marchers (id, name, section, drill_prefix, drill_order)
+                VALUES (1, 'Marcher 1', 'Brass', 'T', 1),
+                       (2, 'Marcher 2', 'Brass', 'T', 2);
+                INSERT INTO pages (id, start_beat, is_subset)
+                VALUES (1, 0, 0),
+                       (2, 4, 0);
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y)
+                VALUES (1, 1, 1, 10.0, 20.0),
+                       (2, 2, 1, 15.0, 25.0),
+                       (3, 1, 999, 20.0, 30.0),  -- Invalid page_id
+                       (4, 1, 2, 25.0, 35.0);
+            `);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(4);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify orphaned marcher_pages were removed
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(3);
+
+            const remaining = db
+                .prepare("SELECT id FROM marcher_pages ORDER BY id")
+                .all() as Array<{ id: number }>;
+            expect(remaining.map((r) => r.id)).toEqual([1, 2, 4]);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should remove marcher_pages with both invalid marcher_id and page_id", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert valid data
+            db.exec(`
+                INSERT INTO marchers (id, name, section, drill_prefix, drill_order)
+                VALUES (1, 'Marcher 1', 'Brass', 'T', 1);
+                INSERT INTO pages (id, start_beat, is_subset)
+                VALUES (1, 0, 0);
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y)
+                VALUES (1, 1, 1, 10.0, 20.0),
+                       (2, 999, 1, 15.0, 25.0),      -- Invalid marcher_id
+                       (3, 1, 999, 20.0, 30.0),      -- Invalid page_id
+                       (4, 888, 777, 25.0, 35.0);   -- Both invalid
+            `);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(4);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify all orphaned marcher_pages were removed
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(1);
+
+            const remaining = db
+                .prepare("SELECT id FROM marcher_pages")
+                .get() as { id: number };
+            expect(remaining.id).toBe(1);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should keep all valid marcher_pages", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert valid data
+            db.exec(`
+                INSERT INTO marchers (id, name, section, drill_prefix, drill_order)
+                VALUES (1, 'Marcher 1', 'Brass', 'T', 1),
+                       (2, 'Marcher 2', 'Brass', 'T', 2),
+                       (3, 'Marcher 3', 'Brass', 'T', 3);
+                INSERT INTO pages (id, start_beat, is_subset)
+                VALUES (1, 0, 0),
+                       (2, 4, 0),
+                       (3, 8, 0);
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y)
+                VALUES (1, 1, 1, 10.0, 20.0),
+                       (2, 1, 2, 15.0, 25.0),
+                       (3, 2, 1, 20.0, 30.0),
+                       (4, 2, 3, 25.0, 35.0),
+                       (5, 3, 2, 30.0, 40.0);
+            `);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(5);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify all valid marcher_pages remain
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(5);
+
+            const remaining = db
+                .prepare("SELECT id FROM marcher_pages ORDER BY id")
+                .all() as Array<{ id: number }>;
+            expect(remaining.map((r) => r.id)).toEqual([1, 2, 3, 4, 5]);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should handle empty marcher_pages table", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Run the function on empty table
+            removeOrphanMarcherPages(db);
+
+            // Verify table is still empty
+            const count = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(count.count).toBe(0);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should handle empty marchers and pages tables", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert orphaned marcher_pages
+            db.exec(`
+                INSERT INTO marcher_pages (id, marcher_id, page_id, x, y)
+                VALUES (1, 1, 1, 10.0, 20.0),
+                       (2, 2, 2, 15.0, 25.0);
+            `);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(2);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify all orphaned marcher_pages were removed
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(0);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        it("should handle multiple orphaned records efficiently", () => {
+            const dbPath = path.join(tempDir, "test.db");
+            const db = new Database(dbPath);
+
+            // Create tables
+            db.exec(`
+                CREATE TABLE marchers (
+                    id INTEGER PRIMARY KEY,
+                    name TEXT,
+                    section TEXT NOT NULL,
+                    drill_prefix TEXT NOT NULL,
+                    drill_order INTEGER NOT NULL
+                );
+                CREATE TABLE pages (
+                    id INTEGER PRIMARY KEY,
+                    start_beat INTEGER NOT NULL,
+                    is_subset INTEGER NOT NULL DEFAULT 0
+                );
+                CREATE TABLE marcher_pages (
+                    id INTEGER PRIMARY KEY,
+                    marcher_id INTEGER NOT NULL,
+                    page_id INTEGER NOT NULL,
+                    x REAL NOT NULL,
+                    y REAL NOT NULL
+                );
+            `);
+
+            // Insert one valid marcher and page
+            db.exec(`
+                INSERT INTO marchers (id, name, section, drill_prefix, drill_order)
+                VALUES (1, 'Marcher 1', 'Brass', 'T', 1);
+                INSERT INTO pages (id, start_beat, is_subset)
+                VALUES (1, 0, 0);
+            `);
+
+            // Insert many orphaned marcher_pages
+            const stmt = db.prepare(
+                "INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (?, ?, ?, ?, ?)",
+            );
+            const insertMany = db.transaction((marcherPages) => {
+                for (const mp of marcherPages) {
+                    stmt.run(mp.id, mp.marcher_id, mp.page_id, mp.x, mp.y);
+                }
+            });
+
+            const marcherPages = [];
+            // Add one valid entry
+            marcherPages.push({
+                id: 1,
+                marcher_id: 1,
+                page_id: 1,
+                x: 10.0,
+                y: 20.0,
+            });
+            // Add 50 orphaned entries
+            for (let i = 2; i <= 51; i++) {
+                marcherPages.push({
+                    id: i,
+                    marcher_id: i + 100, // Invalid marcher_id
+                    page_id: i + 200, // Invalid page_id
+                    x: 10.0 * i,
+                    y: 20.0 * i,
+                });
+            }
+
+            insertMany(marcherPages);
+
+            // Verify initial state
+            const beforeCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(beforeCount.count).toBe(51);
+
+            // Run the function
+            removeOrphanMarcherPages(db);
+
+            // Verify only valid entry remains
+            const afterCount = db
+                .prepare("SELECT COUNT(*) as count FROM marcher_pages")
+                .get() as { count: number };
+            expect(afterCount.count).toBe(1);
+
+            const remaining = db
+                .prepare("SELECT id FROM marcher_pages")
+                .get() as { id: number };
+            expect(remaining.id).toBe(1);
+
+            db.close();
+            fs.unlinkSync(dbPath);
+        });
+
+        describe("property-based tests with fast-check", () => {
+            it("should remove all orphaned marcher_pages regardless of data distribution", async () => {
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.record({
+                            marcherIds: fc.uniqueArray(
+                                fc.integer({ min: 1, max: 100 }),
+                                {
+                                    minLength: 0,
+                                    maxLength: 20,
+                                },
+                            ),
+                            pageIds: fc.uniqueArray(
+                                fc.integer({ min: 1, max: 100 }),
+                                {
+                                    minLength: 0,
+                                    maxLength: 20,
+                                },
+                            ),
+                            marcherPages: fc.array(
+                                fc.record({
+                                    id: fc.integer({ min: 1, max: 1000 }),
+                                    marcher_id: fc.integer({
+                                        min: 1,
+                                        max: 150,
+                                    }),
+                                    page_id: fc.integer({ min: 1, max: 150 }),
+                                    x: fc.float({ min: -1000, max: 1000 }),
+                                    y: fc.float({ min: -1000, max: 1000 }),
+                                }),
+                                { minLength: 0, maxLength: 50 },
+                            ),
+                        }),
+                        async ({ marcherIds, pageIds, marcherPages }) => {
+                            const dbPath = path.join(
+                                tempDir,
+                                `test-${Date.now()}-${Math.random()}.db`,
+                            );
+                            const db = new Database(dbPath);
+
+                            try {
+                                // Create tables
+                                db.exec(`
+                                CREATE TABLE marchers (
+                                    id INTEGER PRIMARY KEY,
+                                    name TEXT,
+                                    section TEXT NOT NULL,
+                                    drill_prefix TEXT NOT NULL,
+                                    drill_order INTEGER NOT NULL
+                                );
+                                CREATE TABLE pages (
+                                    id INTEGER PRIMARY KEY,
+                                    start_beat INTEGER NOT NULL,
+                                    is_subset INTEGER NOT NULL DEFAULT 0
+                                );
+                                CREATE TABLE marcher_pages (
+                                    id INTEGER PRIMARY KEY,
+                                    marcher_id INTEGER NOT NULL,
+                                    page_id INTEGER NOT NULL,
+                                    x REAL NOT NULL,
+                                    y REAL NOT NULL
+                                );
+                            `);
+
+                                // Insert marchers
+                                const insertMarcher = db.prepare(
+                                    "INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (?, ?, ?, ?, ?)",
+                                );
+                                marcherIds.forEach((id, index) => {
+                                    insertMarcher.run(
+                                        id,
+                                        `Marcher ${id}`,
+                                        "Brass",
+                                        "T",
+                                        index + 1,
+                                    );
+                                });
+
+                                // Insert pages
+                                const insertPage = db.prepare(
+                                    "INSERT INTO pages (id, start_beat, is_subset) VALUES (?, ?, ?)",
+                                );
+                                pageIds.forEach((id, index) => {
+                                    insertPage.run(id, index * 4, 0);
+                                });
+
+                                // Insert marcher_pages
+                                const insertMarcherPage = db.prepare(
+                                    "INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (?, ?, ?, ?, ?)",
+                                );
+                                const uniqueMarcherPageIds = new Set<number>();
+                                for (const mp of marcherPages) {
+                                    // Ensure unique IDs to avoid constraint violations
+                                    if (!uniqueMarcherPageIds.has(mp.id)) {
+                                        uniqueMarcherPageIds.add(mp.id);
+                                        try {
+                                            insertMarcherPage.run(
+                                                mp.id,
+                                                mp.marcher_id,
+                                                mp.page_id,
+                                                mp.x,
+                                                mp.y,
+                                            );
+                                        } catch {
+                                            // Skip if there's a constraint violation
+                                        }
+                                    }
+                                }
+
+                                // Get all marcher_pages before
+                                const before = db
+                                    .prepare(
+                                        "SELECT id, marcher_id, page_id FROM marcher_pages",
+                                    )
+                                    .all() as Array<{
+                                    id: number;
+                                    marcher_id: number;
+                                    page_id: number;
+                                }>;
+
+                                // Calculate which should remain (valid foreign keys)
+                                const validMarcherIds = new Set(marcherIds);
+                                const validPageIds = new Set(pageIds);
+                                const expectedValid = before.filter(
+                                    (mp) =>
+                                        validMarcherIds.has(mp.marcher_id) &&
+                                        validPageIds.has(mp.page_id),
+                                );
+
+                                // Run the function
+                                removeOrphanMarcherPages(db);
+
+                                // Get all marcher_pages after
+                                const after = db
+                                    .prepare(
+                                        "SELECT id, marcher_id, page_id FROM marcher_pages",
+                                    )
+                                    .all() as Array<{
+                                    id: number;
+                                    marcher_id: number;
+                                    page_id: number;
+                                }>;
+
+                                // Verify only valid entries remain
+                                expect(after.length).toBe(expectedValid.length);
+                                const afterIds = new Set(
+                                    after.map((mp) => mp.id),
+                                );
+                                for (const valid of expectedValid) {
+                                    expect(afterIds.has(valid.id)).toBe(true);
+                                }
+
+                                // Verify all remaining entries have valid foreign keys
+                                for (const mp of after) {
+                                    expect(
+                                        validMarcherIds.has(mp.marcher_id),
+                                    ).toBe(true);
+                                    expect(validPageIds.has(mp.page_id)).toBe(
+                                        true,
+                                    );
+                                }
+
+                                db.close();
+                                fs.unlinkSync(dbPath);
+                            } catch (error) {
+                                try {
+                                    db.close();
+                                    if (fs.existsSync(dbPath)) {
+                                        fs.unlinkSync(dbPath);
+                                    }
+                                } catch {
+                                    // Ignore cleanup errors
+                                }
+                                throw error;
+                            }
+                        },
+                    ),
+                );
+            });
+
+            it("should preserve all valid marcher_pages and remove all orphans", async () => {
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.record({
+                            numMarchers: fc.integer({ min: 1, max: 30 }),
+                            numPages: fc.integer({ min: 1, max: 30 }),
+                            numMarcherPages: fc.integer({ min: 0, max: 100 }),
+                            orphanRatio: fc.float({ min: 0, max: 1 }),
+                        }),
+                        async ({
+                            numMarchers,
+                            numPages,
+                            numMarcherPages,
+                            orphanRatio,
+                        }) => {
+                            const dbPath = path.join(
+                                tempDir,
+                                `test-${Date.now()}-${Math.random()}.db`,
+                            );
+                            const db = new Database(dbPath);
+
+                            try {
+                                // Create tables
+                                db.exec(`
+                                CREATE TABLE marchers (
+                                    id INTEGER PRIMARY KEY,
+                                    name TEXT,
+                                    section TEXT NOT NULL,
+                                    drill_prefix TEXT NOT NULL,
+                                    drill_order INTEGER NOT NULL
+                                );
+                                CREATE TABLE pages (
+                                    id INTEGER PRIMARY KEY,
+                                    start_beat INTEGER NOT NULL,
+                                    is_subset INTEGER NOT NULL DEFAULT 0
+                                );
+                                CREATE TABLE marcher_pages (
+                                    id INTEGER PRIMARY KEY,
+                                    marcher_id INTEGER NOT NULL,
+                                    page_id INTEGER NOT NULL,
+                                    x REAL NOT NULL,
+                                    y REAL NOT NULL
+                                );
+                            `);
+
+                                // Create marchers
+                                const marcherIds: number[] = [];
+                                const insertMarcher = db.prepare(
+                                    "INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (?, ?, ?, ?, ?)",
+                                );
+                                for (let i = 1; i <= numMarchers; i++) {
+                                    marcherIds.push(i);
+                                    insertMarcher.run(
+                                        i,
+                                        `Marcher ${i}`,
+                                        "Brass",
+                                        "T",
+                                        i,
+                                    );
+                                }
+
+                                // Create pages
+                                const pageIds: number[] = [];
+                                const insertPage = db.prepare(
+                                    "INSERT INTO pages (id, start_beat, is_subset) VALUES (?, ?, ?)",
+                                );
+                                for (let i = 1; i <= numPages; i++) {
+                                    pageIds.push(i);
+                                    insertPage.run(i, (i - 1) * 4, 0);
+                                }
+
+                                // Create marcher_pages with mix of valid and orphaned entries
+                                const insertMarcherPage = db.prepare(
+                                    "INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (?, ?, ?, ?, ?)",
+                                );
+                                const validMarcherPageIds = new Set<number>();
+                                let idCounter = 1;
+
+                                for (let i = 0; i < numMarcherPages; i++) {
+                                    // Use deterministic logic: approximately orphanRatio fraction should be orphaned
+                                    // This creates a deterministic pattern that respects the orphanRatio parameter
+                                    const shouldBeOrphan =
+                                        i / numMarcherPages < orphanRatio;
+                                    let marcher_id: number;
+                                    let page_id: number;
+
+                                    if (shouldBeOrphan) {
+                                        // Create orphaned entry - alternate between invalid marcher_id and invalid page_id
+                                        if (i % 2 === 0) {
+                                            // Invalid marcher_id
+                                            marcher_id = numMarchers + 1 + i;
+                                            page_id =
+                                                pageIds[i % pageIds.length] ||
+                                                pageIds[0] ||
+                                                1;
+                                        } else {
+                                            // Invalid page_id
+                                            marcher_id =
+                                                marcherIds[
+                                                    i % marcherIds.length
+                                                ] ||
+                                                marcherIds[0] ||
+                                                1;
+                                            page_id = numPages + 1 + i;
+                                        }
+                                    } else {
+                                        // Valid entry - use deterministic selection based on index
+                                        marcher_id =
+                                            marcherIds[i % marcherIds.length] ||
+                                            marcherIds[0] ||
+                                            1;
+                                        page_id =
+                                            pageIds[i % pageIds.length] ||
+                                            pageIds[0] ||
+                                            1;
+                                    }
+
+                                    if (!validMarcherPageIds.has(idCounter)) {
+                                        validMarcherPageIds.add(idCounter);
+                                        try {
+                                            insertMarcherPage.run(
+                                                idCounter,
+                                                marcher_id,
+                                                page_id,
+                                                i * 10.0,
+                                                i * 20.0,
+                                            );
+                                        } catch {
+                                            // Skip constraint violations
+                                        }
+                                    }
+                                    idCounter++;
+                                }
+
+                                // Count valid entries
+                                const validMarcherIds = new Set(marcherIds);
+                                const validPageIds = new Set(pageIds);
+                                const before = db
+                                    .prepare(
+                                        "SELECT id, marcher_id, page_id FROM marcher_pages",
+                                    )
+                                    .all() as Array<{
+                                    id: number;
+                                    marcher_id: number;
+                                    page_id: number;
+                                }>;
+                                const expectedValidCount = before.filter(
+                                    (mp) =>
+                                        validMarcherIds.has(mp.marcher_id) &&
+                                        validPageIds.has(mp.page_id),
+                                ).length;
+
+                                // Run the function
+                                removeOrphanMarcherPages(db);
+
+                                // Verify count
+                                const after = db
+                                    .prepare(
+                                        "SELECT COUNT(*) as count FROM marcher_pages",
+                                    )
+                                    .get() as { count: number };
+                                expect(after.count).toBe(expectedValidCount);
+
+                                // Verify all remaining are valid
+                                const remaining = db
+                                    .prepare(
+                                        "SELECT marcher_id, page_id FROM marcher_pages",
+                                    )
+                                    .all() as Array<{
+                                    marcher_id: number;
+                                    page_id: number;
+                                }>;
+                                for (const mp of remaining) {
+                                    expect(
+                                        validMarcherIds.has(mp.marcher_id),
+                                    ).toBe(true);
+                                    expect(validPageIds.has(mp.page_id)).toBe(
+                                        true,
+                                    );
+                                }
+
+                                db.close();
+                                fs.unlinkSync(dbPath);
+                            } catch (error) {
+                                try {
+                                    db.close();
+                                    if (fs.existsSync(dbPath)) {
+                                        fs.unlinkSync(dbPath);
+                                    }
+                                } catch {
+                                    // Ignore cleanup errors
+                                }
+                                throw error;
+                            }
+                        },
+                    ),
+                );
+            });
+
+            it("should be idempotent - running twice should have the same result", async () => {
+                await fc.assert(
+                    fc.asyncProperty(
+                        fc.record({
+                            marcherIds: fc.uniqueArray(
+                                fc.integer({ min: 1, max: 50 }),
+                                {
+                                    minLength: 1,
+                                    maxLength: 15,
+                                },
+                            ),
+                            pageIds: fc.uniqueArray(
+                                fc.integer({ min: 1, max: 50 }),
+                                {
+                                    minLength: 1,
+                                    maxLength: 15,
+                                },
+                            ),
+                            marcherPages: fc.array(
+                                fc.record({
+                                    id: fc.integer({ min: 1, max: 500 }),
+                                    marcher_id: fc.integer({
+                                        min: 1,
+                                        max: 100,
+                                    }),
+                                    page_id: fc.integer({ min: 1, max: 100 }),
+                                    x: fc.float({ min: -500, max: 500 }),
+                                    y: fc.float({ min: -500, max: 500 }),
+                                }),
+                                { minLength: 1, maxLength: 30 },
+                            ),
+                        }),
+                        async ({ marcherIds, pageIds, marcherPages }) => {
+                            const dbPath1 = path.join(
+                                tempDir,
+                                `test1-${Date.now()}-${Math.random()}.db`,
+                            );
+                            const dbPath2 = path.join(
+                                tempDir,
+                                `test2-${Date.now()}-${Math.random()}.db`,
+                            );
+                            const db1 = new Database(dbPath1);
+                            const db2 = new Database(dbPath2);
+
+                            try {
+                                const setupDb = (db: Database.Database) => {
+                                    db.exec(`
+                                    CREATE TABLE marchers (
+                                        id INTEGER PRIMARY KEY,
+                                        name TEXT,
+                                        section TEXT NOT NULL,
+                                        drill_prefix TEXT NOT NULL,
+                                        drill_order INTEGER NOT NULL
+                                    );
+                                    CREATE TABLE pages (
+                                        id INTEGER PRIMARY KEY,
+                                        start_beat INTEGER NOT NULL,
+                                        is_subset INTEGER NOT NULL DEFAULT 0
+                                    );
+                                    CREATE TABLE marcher_pages (
+                                        id INTEGER PRIMARY KEY,
+                                        marcher_id INTEGER NOT NULL,
+                                        page_id INTEGER NOT NULL,
+                                        x REAL NOT NULL,
+                                        y REAL NOT NULL
+                                    );
+                                `);
+
+                                    const insertMarcher = db.prepare(
+                                        "INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (?, ?, ?, ?, ?)",
+                                    );
+                                    marcherIds.forEach((id, index) => {
+                                        insertMarcher.run(
+                                            id,
+                                            `Marcher ${id}`,
+                                            "Brass",
+                                            "T",
+                                            index + 1,
+                                        );
+                                    });
+
+                                    const insertPage = db.prepare(
+                                        "INSERT INTO pages (id, start_beat, is_subset) VALUES (?, ?, ?)",
+                                    );
+                                    pageIds.forEach((id, index) => {
+                                        insertPage.run(id, index * 4, 0);
+                                    });
+
+                                    const insertMarcherPage = db.prepare(
+                                        "INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (?, ?, ?, ?, ?)",
+                                    );
+                                    const uniqueIds = new Set<number>();
+                                    for (const mp of marcherPages) {
+                                        if (!uniqueIds.has(mp.id)) {
+                                            uniqueIds.add(mp.id);
+                                            try {
+                                                insertMarcherPage.run(
+                                                    mp.id,
+                                                    mp.marcher_id,
+                                                    mp.page_id,
+                                                    mp.x,
+                                                    mp.y,
+                                                );
+                                            } catch {
+                                                // Skip constraint violations
+                                            }
+                                        }
+                                    }
+                                };
+
+                                setupDb(db1);
+                                setupDb(db2);
+
+                                // Run function once on db1
+                                removeOrphanMarcherPages(db1);
+                                const result1 = db1
+                                    .prepare(
+                                        "SELECT id, marcher_id, page_id, x, y FROM marcher_pages ORDER BY id",
+                                    )
+                                    .all() as Array<{
+                                    id: number;
+                                    marcher_id: number;
+                                    page_id: number;
+                                    x: number;
+                                    y: number;
+                                }>;
+
+                                // Run function twice on db2
+                                removeOrphanMarcherPages(db2);
+                                removeOrphanMarcherPages(db2);
+                                const result2 = db2
+                                    .prepare(
+                                        "SELECT id, marcher_id, page_id, x, y FROM marcher_pages ORDER BY id",
+                                    )
+                                    .all() as Array<{
+                                    id: number;
+                                    marcher_id: number;
+                                    page_id: number;
+                                    x: number;
+                                    y: number;
+                                }>;
+
+                                // Results should be identical
+                                expect(result1.length).toBe(result2.length);
+                                expect(result1).toEqual(result2);
+
+                                db1.close();
+                                db2.close();
+                                fs.unlinkSync(dbPath1);
+                                fs.unlinkSync(dbPath2);
+                            } catch (error) {
+                                try {
+                                    db1.close();
+                                    db2.close();
+                                    if (fs.existsSync(dbPath1)) {
+                                        fs.unlinkSync(dbPath1);
+                                    }
+                                    if (fs.existsSync(dbPath2)) {
+                                        fs.unlinkSync(dbPath2);
+                                    }
+                                } catch {
+                                    // Ignore cleanup errors
+                                }
+                                throw error;
+                            }
+                        },
+                    ),
+                );
+            });
         });
     });
 });

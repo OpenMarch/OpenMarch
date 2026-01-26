@@ -101,7 +101,12 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Erreur de création des beats"
+                "error": "Erreur de création des beats",
+                "success": "Beats créés avec succès"
+            },
+            "replace": {
+                "error": "Erreur de remplacement des beats",
+                "success": "Beats remplacés avec succès"
             },
             "save": {
                 "error": "Erreur de création de nouveaux beats",
@@ -110,6 +115,33 @@
         },
         "context": {
             "error": "Échec de l'initialisation du contexte audio"
+        },
+        "contextMenu": {
+            "ariaLabel": "Menu contextuel du temps",
+            "beat": {
+                "addBeat": "Ajouter un temps",
+                "cannotDeleteOnPage": "Les temps sur les pages ne peuvent pas être supprimés",
+                "errorCreating": "Erreur lors de la création du temps",
+                "errorDeleting": "Erreur lors de la suppression du temps",
+                "markAsMeasure": "Marquer comme mesure"
+            },
+            "measure": {
+                "addMeasure": "Ajouter une mesure",
+                "cannotDeleteOnPage": "Les temps sur les pages ne peuvent pas être supprimés",
+                "errorCreatingMeasureAndBeats": "Erreur lors de la création de la mesure et des temps",
+                "errorDeletingMeasureAndBeats": "Erreur lors de la suppression de la mesure et des temps",
+                "errorRemovingMarking": "Erreur lors de la suppression de la marque de mesure",
+                "removeMarking": "Supprimer la marque de mesure"
+            },
+            "rehearsalMark": {
+                "errorSaving": "Erreur lors de l'enregistrement de la marque de répétition",
+                "label": "Marque de répétition"
+            },
+            "tempo": {
+                "errorSaving": "Erreur lors de l'enregistrement du tempo",
+                "firstBeatTempo": "Tempo du premier temps",
+                "label": "Tempo"
+            }
         },
         "decode": {
             "error": "Échec du décodage du fichier audio"
@@ -262,6 +294,7 @@
             "created": "\"{axis}-point de contrôle à {steps} étapes créé\"",
             "delete": "Supprimer",
             "deleted": "\"{axis}-point de contrôle à {steps} étapes supprimé - \"{name}\"",
+            "deleteTooltip": "Supprimer ce point de contrôle du terrain",
             "fieldLabel": "Étiquette de point de cheminement",
             "fieldLabelTooltip": "\"L'étiquette à afficher sur le champ (c'est-à-dire, les repères de terrain)\"",
             "name": "Nom",
@@ -325,6 +358,7 @@
             "rightAbbreviation": "Abréviation droite",
             "secondaryLines": "Lignes secondaires",
             "shapes": "Formes",
+            "shapeType": "Type de forme",
             "showBackgroundImage": "Afficher l'image d'arrière-plan",
             "stepsFromFrontToAwayLabelBottom": "Étiquettes étape de face à partir à bas",
             "stepsFromFrontToAwayLabelTop": "Étiquettes étape de face à partir à haut",
@@ -384,6 +418,7 @@
             "leftAbbreviation": "Par ex. \"S1\", \"AG\" ou \"SD\" (abréviation de \"Côté 1\", \"Audience Gauche\" ou \"Scène Droite\")",
             "measurementSystem": "L'unité de mesure pour définir la taille de pas. Peut aller et venir",
             "resetTheme": "Réinitialiser le thème aux valeurs par défaut",
+            "resetToDefault": "Réinitialiser par défaut",
             "rightAbbreviation": "Par ex. \"S2\", \"AD\" ou \"SG\" (abréviation de \"Côté 2\", \"Audience Droite\" ou \"Scène Gauche\")",
             "stepsFromFrontToAwayLabelBottom": "Nombre de pas depuis la ligne de touche avant jusqu'à l'extérieur du numéro extérieur (plus proche de la ligne de touche arrière)",
             "stepsFromFrontToAwayLabelTop": "Nombre de pas depuis la ligne de touche avant jusqu'à l'intérieur du numéro extérieur (plus proche du centre du terrain)",
@@ -574,6 +609,11 @@
         "tagText": "Étiquette",
         "title": "Marcheurs"
     },
+    "measures": {
+        "createFailed": "Échec de la création des mesures - {error}",
+        "deleteFailed": "Échec de la suppression des mesures - {error}",
+        "updateFailed": "Échec de la mise à jour des mesures - {error}"
+    },
     "music": {
         "accent": "Accentuer le premier temps",
         "addNewTempoGroupAfter": "Ajouter un nouveau groupe de tempo après celui-ci",
@@ -695,6 +735,7 @@
         }
     },
     "settings": {
+        "database": "Base de données",
         "developer": "Paramètres du développeur",
         "developer.refreshNotice": "Veuillez <a>recharger l'application</a> pour mettre à jour les paramètres.",
         "general": "Général",
@@ -735,18 +776,17 @@
         "privacy.analytics.enabled": "Vous partagez des analyses d'utilisation. Merci de nous aider à améliorer OpenMarch pour tous.",
         "privacy.analytics.feedback.link": "soumettre les commentaires",
         "privacy.analytics.toggle": "Activer l'analyse",
-        "title": "Paramètres",
-        "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
-        "tolgeeDevToolsToggle": "Tolgee Traduction In-Context",
-        "database": "Base de données",
         "repairDotsFile": "Réparer le fichier DOTS",
-        "repairDotsFile.title": "Réparer le fichier DOTS",
-        "repairDotsFile.description": "Cela créera un nouveau fichier de base de données avec '- FIXED' ajouté au nom du fichier. Le processus de réparation copiera toutes les données de la base de données actuelle vers une nouvelle avec le schéma le plus récent. L'historique (annuler/refaire) ne sera pas copié.",
-        "repairDotsFile.confirm": "Réparer",
         "repairDotsFile.cancel": "Annuler",
+        "repairDotsFile.confirm": "Réparer",
+        "repairDotsFile.description": "Cela créera un nouveau fichier de base de données avec '- FIXED' ajouté au nom du fichier. Le processus de réparation copiera toutes les données de la base de données actuelle vers une nouvelle avec le schéma le plus récent. L'historique (annuler/refaire) ne sera pas copié.",
+        "repairDotsFile.error": "Erreur lors de la réparation de la base de données: {error}",
         "repairDotsFile.repairing": "Réparation...",
         "repairDotsFile.success": "Base de données réparée avec succès. Rechargement...",
-        "repairDotsFile.error": "Erreur lors de la réparation de la base de données: {error}"
+        "repairDotsFile.title": "Réparer le fichier DOTS",
+        "title": "Paramètres",
+        "tolgeeApiKeyPlaceholder": "Clé API Tolgee",
+        "tolgeeDevToolsToggle": "Tolgee Traduction In-Context"
     },
     "shapes": {
         "circle": "Cercle",

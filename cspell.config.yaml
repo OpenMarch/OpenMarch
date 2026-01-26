@@ -38,7 +38,10 @@ words:
   - dbstat
   - DELME
   - Dhruva
+  - DMEA
   - dorico
+  - dorny
+  - dpkg
   - drumline
   - dukc
   - Dumouchelle
@@ -60,6 +63,7 @@ words:
   - idioma
   - Invalidators
   - launchpage
+  - libsql
   - lightridge
   - localappdata
   - Macbook's
@@ -84,6 +88,7 @@ words:
   - openmarch
   - openmarchdev
   - overscan
+  - pacman
   - pagewidth
   - paperplane
   - pfps
@@ -91,6 +96,7 @@ words:
   - posthog
   - Pressable
   - PWDEBUG
+  - pwsh
   - Rcoords
   - rgba
   - ritardandos
@@ -176,6 +182,7 @@ ignorePaths:
   - apps/desktop/e2e/Dockerfile
   - "**/dist-electron/**"
   - "**/wasm/pkg/**"
+  - "**/release/**"
   - "*.svg"
   - "*.musicxml"
   - pnpm-workspace.yaml

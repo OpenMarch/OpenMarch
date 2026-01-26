@@ -29,6 +29,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 
 /**
  * The field/stage UI of OpenMarch
@@ -96,7 +97,7 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
-    useRenderMarcherShapes({ canvas, selectedPage });
+    useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -313,13 +314,23 @@ export default function Canvas({
             if (!visualGroup || !appearancesForMarcher) return;
 
             const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(appearancesForMarcher, {
-                requestRenderAll: false,
-            });
+            canvasMarcher.setAppearance(
+                appearancesForMarcher,
+                {
+                    requestRenderAll: false,
+                },
+                fieldProperties?.theme.defaultMarcher.label,
+            );
         });
 
         canvas.requestRenderAll();
-    }, [canvas, marchers, marcherAppearances, marcherVisuals]);
+    }, [
+        canvas,
+        marchers,
+        marcherAppearances,
+        marcherVisuals,
+        fieldProperties?.theme.defaultMarcher.label,
+    ]);
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -467,6 +478,14 @@ export default function Canvas({
     }, [canvas, centerAndFitCanvas, isFullscreen]);
 
     /* --------------------------Animation Functions-------------------------- */
+
+    // This effect ensures that when the animation is playing, the shape paths
+    // are removed from the canvas.
+    useEffect(() => {
+        if (canvas && isPlaying && selectedPage) {
+            canvas.removeAllObjectsByType(ShapePath);
+        }
+    }, [canvas, isPlaying, selectedPage]);
 
     // This effect ensures that when the animation is paused, the marchers are
     // rendered at their final positions for the selected page.

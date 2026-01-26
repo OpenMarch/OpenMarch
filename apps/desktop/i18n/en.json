@@ -101,7 +101,12 @@
     "audio": {
         "beats": {
             "create": {
-                "error": "Error creating beats"
+                "error": "Error creating beats",
+                "success": "Beats created successfully"
+            },
+            "replace": {
+                "error": "Error replacing beats",
+                "success": "Beats replaced successfully"
             },
             "save": {
                 "error": "Error creating new beats",
@@ -110,6 +115,33 @@
         },
         "context": {
             "error": "Failed to initialize audio context"
+        },
+        "contextMenu": {
+            "ariaLabel": "Beat context menu",
+            "beat": {
+                "addBeat": "Add Beat",
+                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "errorCreating": "Error creating beat",
+                "errorDeleting": "Error deleting beat",
+                "markAsMeasure": "Mark as Measure"
+            },
+            "measure": {
+                "addMeasure": "Add Measure",
+                "cannotDeleteOnPage": "Beats on pages cannot be deleted",
+                "errorCreatingMeasureAndBeats": "Error creating measure and beats",
+                "errorDeletingMeasureAndBeats": "Error deleting measure and beats",
+                "errorRemovingMarking": "Error removing measure marking",
+                "removeMarking": "Remove Measure Marking"
+            },
+            "rehearsalMark": {
+                "errorSaving": "Error saving rehearsal mark",
+                "label": "Rehearsal Mark"
+            },
+            "tempo": {
+                "errorSaving": "Error saving tempo",
+                "firstBeatTempo": "First beat tempo",
+                "label": "Tempo"
+            }
         },
         "decode": {
             "error": "Failed to decode audio file"
@@ -262,6 +294,7 @@
             "created": "{axis}-checkpoint at {steps} steps created",
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
+            "deleteTooltip": "Delete this checkpoint from the field",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
             "name": "Name",
@@ -385,6 +418,7 @@
             "leftAbbreviation": "E.g. \"S1\", \"AL\" or \"SR\" (short for \"Side 1\", \"Audience Left\" or \"Stage Right\")",
             "measurementSystem": "The unit of measurement to define the step size in. Can go back and forth",
             "resetTheme": "Reset the theme to the default values",
+            "resetToDefault": "Reset to default",
             "rightAbbreviation": "E.g. \"S2\", \"AR\" or \"SL\" (short for \"Side 2\", \"Audience Right\" or \"Stage Left\")",
             "stepsFromFrontToAwayLabelBottom": "Number of steps from the front sideline to the outside of the away number (closer to the back sideline)",
             "stepsFromFrontToAwayLabelTop": "Number of steps from the front sideline to the inside of the away number (closer to the center of the field)",
@@ -575,6 +609,11 @@
         "tagText": "Tag",
         "title": "Marchers"
     },
+    "measures": {
+        "createFailed": "Failed to create measures - {error}",
+        "deleteFailed": "Failed to delete measures - {error}",
+        "updateFailed": "Failed to update measures - {error}"
+    },
     "music": {
         "accent": "Accent first beat",
         "addNewTempoGroupAfter": "Add a new tempo group after this one",
@@ -696,6 +735,7 @@
         }
     },
     "settings": {
+        "database": "Database",
         "developer": "Developer Settings",
         "developer.refreshNotice": "Please <a>reload the app</a> to update settings.",
         "general": "General",
@@ -736,18 +776,17 @@
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
         "privacy.analytics.feedback.link": "submit feedback",
         "privacy.analytics.toggle": "Enable analytics",
-        "title": "Settings",
-        "tolgeeApiKeyPlaceholder": "Tolgee API Key",
-        "tolgeeDevToolsToggle": "Tolgee In-Context Translating",
-        "database": "Database",
         "repairDotsFile": "Repair DOTS file",
-        "repairDotsFile.title": "Repair DOTS file",
-        "repairDotsFile.description": "This will create a new database file with '- FIXED' appended to the filename. The repair process will copy all data from the current database to a new one with the latest schema. History (undo/redo) will not be copied.",
-        "repairDotsFile.confirm": "Repair",
         "repairDotsFile.cancel": "Cancel",
+        "repairDotsFile.confirm": "Repair",
+        "repairDotsFile.description": "This will create a new database file with '- FIXED' appended to the filename. The repair process will copy all data from the current database to a new one with the latest schema. History (undo/redo) will not be copied.",
+        "repairDotsFile.error": "Error repairing database: {error}",
         "repairDotsFile.repairing": "Repairing...",
         "repairDotsFile.success": "Database repaired successfully. Reloading...",
-        "repairDotsFile.error": "Error repairing database: {error}"
+        "repairDotsFile.title": "Repair DOTS file",
+        "title": "Settings",
+        "tolgeeApiKeyPlaceholder": "Tolgee API Key",
+        "tolgeeDevToolsToggle": "Tolgee In-Context Translating"
     },
     "shapes": {
         "circle": "Circle",

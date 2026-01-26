@@ -9,6 +9,7 @@ import { sentryVitePlugin } from "@sentry/vite-plugin";
 import tailwindcss from "@tailwindcss/vite";
 
 // https://vitejs.dev/config/
+// eslint-disable-next-line max-lines-per-function
 export default defineConfig(({ command }) => {
     rmSync("dist-electron", { recursive: true, force: true });
 
@@ -52,9 +53,10 @@ export default defineConfig(({ command }) => {
                             outDir: "dist-electron/main",
                             rollupOptions: {
                                 external: [
-                                    "better-sqlite3",
                                     "electron",
                                     "node",
+                                    "libsql",
+                                    "@libsql/client",
                                 ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
@@ -62,6 +64,9 @@ export default defineConfig(({ command }) => {
                                             : {},
                                     ),
                                 ),
+                            },
+                            commonjsOptions: {
+                                dynamicRequireTargets: ["@libsql/client"],
                             },
                         },
                     },

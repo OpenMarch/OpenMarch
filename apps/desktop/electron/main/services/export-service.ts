@@ -7,11 +7,12 @@ import sanitize from "sanitize-filename";
 import PDFDocument from "pdfkit";
 // @ts-ignore - svg-to-pdfkit doesn't have types
 import SVGtoPDF from "svg-to-pdfkit";
-import Page from "@/global/classes/Page";
+import Page from "../../../src/global/classes/Page";
 import sanitizeHtml from "sanitize-html";
 
 import Store from "electron-store";
 import { getOrmConnection } from "../../database/database.services";
+import { measureRangeString as _measureRangeString } from "../../../src/global/classes/Page.utils";
 
 const store = new Store();
 
@@ -176,26 +177,9 @@ function chunkArray<T>(array: T[], size: number): T[][] {
 
 // Modified from Page.ts for export purposes
 const measureRangeString = (page: Page): string => {
-    if (!page.measures || page.measures.length === 0) {
-        return "START";
-    }
     try {
-        const firstMeasure = page.measures[0];
-        const lastMeasure = page.measures[page.measures.length - 1];
-
-        // If the page starts on the first measure, just return the measure number. Otherwise, return the measure number and the beat.
-        const firstMeasureString =
-            page.measureBeatToStartOn === 1
-                ? firstMeasure.number.toString()
-                : `${firstMeasure.number}(${page.measureBeatToStartOn})`;
-        const beatToEndOn = page.measureBeatToEndOn;
-        const lastMeasureString =
-            beatToEndOn === 0
-                ? lastMeasure.number.toString()
-                : `${lastMeasure.number}(${beatToEndOn})`;
-
-        if (firstMeasureString === lastMeasureString) return firstMeasureString;
-        return `${firstMeasureString} -> ${lastMeasureString}`;
+        if (!page.measures || page.measures.length === 0) return "START";
+        else return _measureRangeString(page);
     } catch (err) {
         return "N/A";
     }

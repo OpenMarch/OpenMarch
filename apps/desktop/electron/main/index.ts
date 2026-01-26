@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     app,
     BrowserWindow,
@@ -70,6 +71,20 @@ ipcMain.handle("env:get", () => {
         isCI: !!process.env.CI,
         isPlaywrightSession: !!process.env.PLAYWRIGHT_SESSION,
     };
+});
+
+ipcMain.handle("shell:openExternal", async (_, url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`Unsafe URL protocol: ${parsedUrl.protocol}`);
+        }
+        await shell.openExternal(url);
+    } catch (error) {
+        console.error("Error opening external URL:", error);
+        throw error;
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
@@ -835,12 +850,19 @@ async function setActiveDb(path: string, isNewFile = false) {
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
 
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
+
         // If this isn't a new file, create backups before applying migrations
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
             );
-            if (migrator.hasPendingMigrations()) {
+            if (migrator.hasPendingMigrations(migrationsFolder)) {
                 const backupDir = join(app.getPath("userData"), "backups");
                 if (!fs.existsSync(backupDir)) {
                     fs.mkdirSync(backupDir);
@@ -871,14 +893,12 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.pragma("user_version = 7");
+            db.prepare("PRAGMA user_version = 7").run();
         }
-        await migrator.applyPendingMigrations(
-            join(app.getAppPath(), "electron", "database", "migrations"),
-        );
+        await migrator.applyPendingMigrations(migrationsFolder);
 
         if (isNewFile) {
-            await migrator.initializeDatabase(drizzleDb);
+            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
         }
 
         store.set("databasePath", path); // Save current db path

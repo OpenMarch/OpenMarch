@@ -74,7 +74,9 @@ export default function TimelineContainer() {
 
     return (
         <div className="flex gap-8">
-            <TimelineControls />
+            {uiSettings.focussedComponent !== "timeline" && (
+                <TimelineControls />
+            )}
             {isFullscreen && <PerspectiveSlider />}
             <div
                 ref={timelineRef}
