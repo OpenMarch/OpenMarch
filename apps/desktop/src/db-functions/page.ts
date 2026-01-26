@@ -708,19 +708,14 @@ const _fillBeatsOfCurrentLastPage = async ({
         // Check if the last page is already filled
         lastBeatOfPage = await getLastBeatOfPage(lastPage.start_beat_id);
         if (!lastBeatOfPage) {
-            // There is not enough beats to fill the current last page. Fill the last page
-            for (let i = 0; i < currentLastPageCounts; i++) {
-                // Just filling with the lastPageCounts is a bit sloppy, but it's guaranteed to fill the last page
-                await createBeatsInTransaction({
-                    tx,
-                    newBeats: [
-                        {
-                            duration: defaultDuration,
-                            include_in_measure: true,
-                        },
-                    ],
-                });
-            }
+            // There are not enough beats to fill the current last page. Create all at once for better performance.
+            await createBeatsInTransaction({
+                tx,
+                newBeats: Array.from({ length: currentLastPageCounts }, () => ({
+                    duration: defaultDuration,
+                    include_in_measure: true,
+                })),
+            });
             lastBeatOfPage = await getLastBeatOfPage(lastPage.start_beat_id);
         }
     } else {
@@ -811,16 +806,15 @@ export const _fillAndGetBeatToStartOn = async ({
     const neededBeats = newLastPageCounts;
 
     if (availableBeats < neededBeats) {
-        // Create the missing beats
+        // Create all missing beats in one call for better performance
         const beatsToCreate = neededBeats - availableBeats;
-        for (let i = 0; i < beatsToCreate; i++) {
-            await createBeatsInTransaction({
-                tx,
-                newBeats: [
-                    { duration: defaultDuration, include_in_measure: true },
-                ],
-            });
-        }
+        await createBeatsInTransaction({
+            tx,
+            newBeats: Array.from({ length: beatsToCreate }, () => ({
+                duration: defaultDuration,
+                include_in_measure: true,
+            })),
+        });
     }
 
     const beatToStartNewLastPageOn = await tx
@@ -877,6 +871,36 @@ const _getNextBeatToStartOn = async ({
     newPageCounts: number;
     createNewBeats: boolean;
 }): Promise<{ id: number }> => {
+    // First get the beat object from the beat ID to access its position
+    const lastPageBeat = await tx.query.beats.findFirst({
+        where: eq(schema.beats.id, lastPage.start_beat_id),
+    });
+    if (!lastPageBeat) throw new Error("Last page beat not found");
+
+    // Page 0 has 0 counts by definition, so find the first beat after it
+    if (lastPage.id === FIRST_PAGE_ID) {
+        if (createNewBeats) {
+            const nextBeat = await _fillAndGetBeatToStartOn({
+                tx,
+                lastPage,
+                currentLastPageCounts: 0,
+                newLastPageCounts: newPageCounts,
+            });
+            if (!nextBeat) throw new Error("Next beat not found");
+            return nextBeat;
+        } else {
+            // Find the first beat after page 0's beat (position > 0)
+            const nextBeat = await tx.query.beats.findFirst({
+                where: gt(schema.beats.position, lastPageBeat.position),
+                orderBy: asc(schema.beats.position),
+            });
+            if (!nextBeat)
+                throw new Error("Not enough beats to create a new page");
+            return nextBeat;
+        }
+    }
+
+    // Normal case: lastPage is not page 0
     if (createNewBeats) {
         const nextBeat = await _fillAndGetBeatToStartOn({
             tx,
@@ -887,12 +911,6 @@ const _getNextBeatToStartOn = async ({
         if (!nextBeat) throw new Error("Next beat not found");
         return nextBeat;
     } else {
-        // First get the beat object from the beat ID to access its position
-        const lastPageBeat = await tx.query.beats.findFirst({
-            where: eq(schema.beats.id, lastPage.start_beat_id),
-        });
-        if (!lastPageBeat) throw new Error("Last page beat not found");
-
         const nextBeat = await tx.query.beats.findFirst({
             where: (table, { gte }) =>
                 gte(table.position, lastPageBeat.position),

@@ -515,7 +515,19 @@ export default function AudioPlayer() {
         return lastMeasure.timestamp + lastMeasure.duration;
     }, [measures]);
 
-    const renderedDuration = Math.max(audioDuration, measuresDuration);
+    const beatsDuration = useMemo(() => {
+        if (!beats.length) {
+            return 0;
+        }
+        const lastBeat = beats[beats.length - 1];
+        return lastBeat.timestamp + lastBeat.duration;
+    }, [beats]);
+
+    const renderedDuration = Math.max(
+        audioDuration,
+        measuresDuration,
+        beatsDuration,
+    );
 
     const audioWaveformWidth = useMemo(() => {
         if (audioDuration <= 0) return 0;

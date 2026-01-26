@@ -1,5 +1,5 @@
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { Button } from "@openmarch/ui";
+import { getButtonClassName } from "@openmarch/ui";
 import RegisteredActionButton from "./RegisteredActionButton";
 import { RegisteredActionsObjects } from "@/utilities/RegisteredActionsHandler";
 import { InfoIcon } from "@phosphor-icons/react";
@@ -25,10 +25,12 @@ export default function FocusNotice() {
             </div>
             <RegisteredActionButton
                 registeredAction={RegisteredActionsObjects.focusCanvas}
+                className={getButtonClassName({
+                    size: "compact",
+                    variant: "secondary",
+                })}
             >
-                <Button size="compact" variant="secondary">
-                    Exit Timeline Focus
-                </Button>
+                Exit Timeline Focus
             </RegisteredActionButton>
         </div>
     );

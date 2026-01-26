@@ -336,9 +336,7 @@ export async function getResolvedTagAppearancesByPageId({
 }): Promise<TagAppearance[]> {
     const tagAppearanceIds = tagAppearanceIdsByPageId.get(pageId);
     if (!tagAppearanceIds) {
-        console.debug(
-            `No tag appearance IDs found for page ID ${pageId}. This should never happen.`,
-        );
+        // This can happen when a new page is created and the map hasn't been recalculated yet
         return [];
     }
     const result = await db.query.tag_appearances.findMany({

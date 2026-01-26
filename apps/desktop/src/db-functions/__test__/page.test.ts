@@ -1856,6 +1856,97 @@ describeDbTests("pages", (it) => {
                 },
             );
         });
+
+        describe("creating page 1 from page 0 with existing beats (ghost beats bug fix)", () => {
+            it("should start page 1 at beat position 1, not at utility.last_page_counts", async ({
+                db,
+            }) => {
+                // Setup: Create beats at positions 1-10 (position 0 already exists)
+                for (let i = 0; i < 10; i++) {
+                    await createBeats({
+                        db,
+                        newBeats: [{ duration: 0.5, include_in_measure: true }],
+                    });
+                }
+
+                // Verify only page 0 exists
+                const pagesBeforeCreate = await db.query.pages.findMany();
+                expect(pagesBeforeCreate).toHaveLength(1);
+                expect(pagesBeforeCreate[0].id).toBe(FIRST_PAGE_ID);
+
+                // Set utility.last_page_counts to 8 (this is the bug trigger)
+                await db
+                    .update(schema.utility)
+                    .set({ last_page_counts: 8 })
+                    .where(eq(schema.utility.id, 0));
+
+                // Create page 1 WITHOUT creating new beats (using existing beats)
+                const createdPage = await createLastPage({
+                    db,
+                    newPageCounts: 4,
+                    createNewBeats: false, // This is the code path that had the bug
+                });
+
+                // Verify page 1 was created
+                expect(createdPage).toBeDefined();
+                expect(createdPage.id).not.toBe(FIRST_PAGE_ID);
+
+                // Get the beat that page 1 starts on
+                const page1Beat = await db.query.beats.findFirst({
+                    where: eq(schema.beats.id, createdPage.start_beat),
+                });
+
+                // THE FIX: Page 1 should start at beat position 1, NOT position 8
+                // Before the fix, it would start at position 8 (utility.last_page_counts)
+                // leaving beats 1-7 as "ghost beats" with no page covering them
+                expect(page1Beat).toBeDefined();
+                expect(page1Beat!.position).toBe(1);
+            });
+
+            it("should not create ghost beats between page 0 and page 1", async ({
+                db,
+            }) => {
+                // Setup: Create beats at positions 1-10
+                for (let i = 0; i < 10; i++) {
+                    await createBeats({
+                        db,
+                        newBeats: [{ duration: 0.5, include_in_measure: true }],
+                    });
+                }
+
+                // Set utility.last_page_counts to a high number
+                await db
+                    .update(schema.utility)
+                    .set({ last_page_counts: 8 })
+                    .where(eq(schema.utility.id, 0));
+
+                // Create page 1
+                await createLastPage({
+                    db,
+                    newPageCounts: 4,
+                    createNewBeats: false,
+                });
+
+                // Get all pages ordered by beat position
+                const pagesWithBeats = await db
+                    .select({
+                        page_id: schema.pages.id,
+                        beat_position: schema.beats.position,
+                    })
+                    .from(schema.pages)
+                    .innerJoin(
+                        schema.beats,
+                        eq(schema.pages.start_beat, schema.beats.id),
+                    )
+                    .orderBy(asc(schema.beats.position))
+                    .all();
+
+                // Page 0 starts at position 0, page 1 should start at position 1
+                expect(pagesWithBeats).toHaveLength(2);
+                expect(pagesWithBeats[0].beat_position).toBe(0); // Page 0
+                expect(pagesWithBeats[1].beat_position).toBe(1); // Page 1 (not 8!)
+            });
+        });
     });
 
     describe("create beats to fill last page", () => {

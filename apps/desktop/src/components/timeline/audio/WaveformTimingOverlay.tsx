@@ -228,6 +228,31 @@ export default function WaveformTimingOverlay({
                         </BeatOrMeasureContextMenu>
                     );
                 })}
+
+                {/* End-of-timeline marker - placeholder at the end of the last beat */}
+                {beats.length > 0 &&
+                    (() => {
+                        const lastBeat = beats[beats.length - 1];
+                        const endX =
+                            (lastBeat.timestamp + lastBeat.duration) *
+                            pxPerSecond;
+                        if (
+                            endX < visibleRange.start * pxPerSecond ||
+                            endX > visibleRange.end * pxPerSecond
+                        ) {
+                            return null;
+                        }
+                        return (
+                            <div
+                                className="pointer-events-none absolute w-1 -translate-x-1/2 rounded-full bg-[rgb(180,180,180)] dark:bg-[rgb(90,90,90)]"
+                                style={{
+                                    left: endX,
+                                    top: 0,
+                                    height: beatMarkerHeight,
+                                }}
+                            />
+                        );
+                    })()}
             </div>
         </div>
     );

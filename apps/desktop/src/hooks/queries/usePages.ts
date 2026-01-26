@@ -62,6 +62,11 @@ export const invalidatePageQueries = async (qc: QueryClient) => {
     void qc.invalidateQueries({
         queryKey: coordinateDataKeys.all,
     });
+    // Tag appearance IDs by page ID depends on pages, so invalidate it too (non-blocking)
+    // Using inline key to avoid circular dependency with tags/queries.ts
+    void qc.invalidateQueries({
+        queryKey: ["tag_appearances", "page"],
+    });
 };
 
 const pageQueries = {
