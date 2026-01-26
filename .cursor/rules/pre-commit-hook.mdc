@@ -1,5 +1,4 @@
 ---
-alwaysApply: true
 description: Check pre-commit hook permissions when commits bypass formatting
 alwaysApply: false
 ---

@@ -208,6 +208,11 @@ export async function updateMarcherPages({
     db: DbConnection;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
 }): Promise<number[]> {
+    // Early return if no marcher pages to update
+    if (modifiedMarcherPages.length === 0) {
+        return [];
+    }
+
     const transactionResult = await transactionWithHistory(
         db,
         "updateMarcherPages",
