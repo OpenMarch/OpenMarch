@@ -1514,6 +1514,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this._backgroundImage.left = this._bgImageValues.left;
                 this._backgroundImage.top = this._bgImageValues.top;
             }
+            this._backgroundImage.opacity =
+                this.fieldProperties.backgroundImageOpacity;
             fieldArray.push(this._backgroundImage);
         }
 
@@ -2203,6 +2205,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     selectable: false,
                     hoverCursor: "default",
                     evented: false,
+                    opacity: this.fieldProperties.backgroundImageOpacity,
                 });
 
                 const imgAspectRatio = img.width / img.height;
