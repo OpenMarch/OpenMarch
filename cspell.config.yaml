@@ -160,6 +160,8 @@ words:
   - zier
   - Zingali
   - 日本語
+  - rwxr
+  - rw-r
 ignorePaths:
   - node_modules/**
   - "**/node_modules/**"
