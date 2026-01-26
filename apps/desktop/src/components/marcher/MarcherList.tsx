@@ -187,7 +187,7 @@ export default function MarcherList({
                 }}
                 className="text-body text-text flex h-full flex-col gap-16 select-text"
             >
-                <div className="flex w-full items-center justify-between">
+                <div className="flex h-32 w-full items-center justify-between">
                     <p className="text-body text-text">
                         <T keyName="marchers.listTitle" />
                     </p>
