@@ -331,6 +331,7 @@
         "general": "General",
         "labels": {
             "background": "Fondo",
+            "backgroundImageOpacity": "Opacidad de la imagen de fondo",
             "backgroundImageRatio": "Proporción de imagen de fondo",
             "bottom": "Inferior",
             "conformingMethod": "Método de Conformación",

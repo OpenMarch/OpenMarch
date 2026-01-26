@@ -331,6 +331,7 @@
         "general": "General",
         "labels": {
             "background": "Background",
+            "backgroundImageOpacity": "Background Image Opacity",
             "backgroundImageRatio": "Background Image Ratio",
             "bottom": "Bottom",
             "conformingMethod": "Conforming Method",
