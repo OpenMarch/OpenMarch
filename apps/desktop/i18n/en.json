@@ -447,7 +447,8 @@
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "discardChanges": "Discard Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
