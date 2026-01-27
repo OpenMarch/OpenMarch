@@ -443,6 +443,11 @@ export default function Canvas({
 
         if (!isFullscreen) {
             setPerspective(0);
+            // Recalculate canvas size and center after exiting fullscreen
+            setTimeout(() => {
+                canvas.refreshCanvasSize();
+                canvas.centerAtBaseZoom();
+            }, 100);
         }
     }, [
         isFullscreen,
