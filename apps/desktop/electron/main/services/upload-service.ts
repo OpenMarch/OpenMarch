@@ -1,12 +1,7 @@
-import Database from "better-sqlite3";
-import * as fs from "fs";
-import { join } from "path";
-import { tmpdir } from "os";
-import { eq, sql } from "drizzle-orm";
-import { getOrm, schema } from "../../database/db";
-import * as DatabaseServices from "../../database/database.services";
 import { authenticatedFetch } from "./api-client";
 import { workspaceSettingsSchema } from "../../../src/settings/workspaceSettings";
+import { DB } from "electron/database/db";
+import { toCompressedOpenMarchBytes } from "./dots-to-om";
 
 export interface UploadResult {
     success: boolean;
@@ -23,51 +18,8 @@ export interface UploadProgress {
 
 export type UploadProgressCallback = (progress: UploadProgress) => void;
 
-/**
- * Validates that a database path exists and is accessible.
- */
-function validateDatabasePath(dbPath: string): UploadResult | null {
-    if (!dbPath || dbPath.length === 0) {
-        return {
-            success: false,
-            error: "No database is currently open",
-        };
-    }
-
-    if (!fs.existsSync(dbPath)) {
-        return {
-            success: false,
-            error: `Database file does not exist at path: ${dbPath}`,
-        };
-    }
-
-    return null;
-}
-
-/**
- * Clears sensitive data from the temporary database and vacuums it.
- */
-function clearDatabaseData(orm: ReturnType<typeof getOrm>): void {
-    // Clear history_undo table
-    orm.delete(schema.history_undo).run();
-
-    // Clear audio_files table
-    orm.delete(schema.audio_files).run();
-
-    // Clear field_properties.image column
-    orm.update(schema.field_properties)
-        .set({ image: null })
-        .where(eq(schema.field_properties.id, 1))
-        .run();
-
-    // Vacuum the database
-    orm.run(sql.raw("VACUUM"));
-}
-
-const getOtmProductionId = async (
-    orm: ReturnType<typeof getOrm>,
-): Promise<string | undefined> => {
-    const workspaceSettings = await orm.query.workspace_settings.findFirst({
+const getOtmProductionId = async (db: DB): Promise<string | undefined> => {
+    const workspaceSettings = await db.query.workspace_settings.findFirst({
         columns: {
             json_data: true,
         },
@@ -80,14 +32,24 @@ const getOtmProductionId = async (
     return workspaceSettingsJson.otmProductionId;
 };
 
+const SHOW_DATA_FILENAME = "show_data.gz";
+
 /**
- * Uploads the file buffer to the server endpoint.
+ * Creates a production revision on the server (om-online API).
+ * POST /api/editor/v1/productions/:production_id/revisions
+ * Params: show_data (file), set_active (optional boolean).
  */
-async function uploadFileToServer(
-    fileBuffer: Buffer,
-    fileName: string,
-    onProgress?: UploadProgressCallback,
-): Promise<UploadResult> {
+async function createRevisionOnServer({
+    productionId,
+    data,
+    setActive = true,
+    onProgress,
+}: {
+    productionId: string;
+    data: Uint8Array;
+    setActive?: boolean;
+    onProgress?: UploadProgressCallback;
+}): Promise<UploadResult> {
     onProgress?.({
         status: "progress",
         message: "Uploading file...",
@@ -95,10 +57,12 @@ async function uploadFileToServer(
     });
 
     const formData = new FormData();
-    // Convert Buffer to Uint8Array then to Blob for FormData compatibility
-    const uint8Array = new Uint8Array(fileBuffer);
-    const blob = new Blob([uint8Array], { type: "application/octet-stream" });
-    formData.append("file", blob, fileName);
+    // Copy into ArrayBuffer so Blob accepts it (avoids Uint8Array<ArrayBufferLike> vs BlobPart)
+    const buffer = new ArrayBuffer(data.length);
+    new Uint8Array(buffer).set(data);
+    const blob = new Blob([buffer], { type: "application/gzip" });
+    formData.append("show_data", blob, SHOW_DATA_FILENAME);
+    formData.append("set_active", setActive ? "true" : "false");
 
     onProgress?.({
         status: "progress",
@@ -106,9 +70,10 @@ async function uploadFileToServer(
         progress: 10,
     });
 
+    const path = `api/editor/v1/productions/${productionId}/revisions`;
     let response: Response;
     try {
-        response = await authenticatedFetch("", {
+        response = await authenticatedFetch(path, {
             method: "POST",
             body: formData,
         });
@@ -137,37 +102,8 @@ async function uploadFileToServer(
 
     return {
         success: true,
-        message: "Database uploaded successfully",
+        message: "Revision created successfully",
     };
-}
-
-/**
- * Prepares the database for upload by creating a temporary copy and clearing sensitive data.
- */
-function prepareDatabaseForUpload(
-    dbPath: string,
-    tempFilePath: string,
-    onProgress?: UploadProgressCallback,
-): void {
-    onProgress?.({
-        status: "progress",
-        message: "Creating temporary copy...",
-        progress: 5,
-    });
-    fs.copyFileSync(dbPath, tempFilePath);
-
-    onProgress?.({
-        status: "progress",
-        message: "Clearing sensitive data...",
-        progress: 20,
-    });
-    const tempDb = new Database(tempFilePath);
-    try {
-        const orm = getOrm(tempDb);
-        clearDatabaseData(orm);
-    } finally {
-        tempDb.close();
-    }
 }
 
 /**
@@ -179,45 +115,33 @@ function prepareDatabaseForUpload(
  * @returns UploadResult indicating success or failure
  */
 export async function uploadDatabaseToServer(
+    dbConnection: DB,
     onProgress?: UploadProgressCallback,
 ): Promise<UploadResult> {
-    const dbPath = DatabaseServices.getDbPath();
-
-    onProgress?.({
-        status: "loading",
-        message: "Validating database...",
-    });
-
-    const validationError = validateDatabasePath(dbPath);
-    if (validationError) {
-        onProgress?.({
-            status: "error",
-            error: validationError.error,
-        });
-        return validationError;
-    }
-
-    const timestamp = Date.now();
-    const tempFileName = `upload-temp-${timestamp}.dots`;
-    const tempFilePath = join(tmpdir(), tempFileName);
-    let tempFileCreated = false;
-
     try {
-        prepareDatabaseForUpload(dbPath, tempFilePath, onProgress);
-        tempFileCreated = true;
+        const productionId = await getOtmProductionId(dbConnection);
+        if (!productionId) {
+            const errorResult: UploadResult = {
+                success: false,
+                error: "No OTM production linked. Set OTM production in workspace settings.",
+            };
+            onProgress?.({ status: "error", error: errorResult.error });
+            return errorResult;
+        }
 
         onProgress?.({
             status: "progress",
             message: "Reading file...",
             progress: 30,
         });
+        const omzBytes = await toCompressedOpenMarchBytes(dbConnection);
 
-        const fileBuffer = fs.readFileSync(tempFilePath);
-        const result = await uploadFileToServer(
-            fileBuffer,
-            tempFileName,
+        const result = await createRevisionOnServer({
+            productionId,
+            data: omzBytes,
+            setActive: true,
             onProgress,
-        );
+        });
 
         if (result.success) {
             onProgress?.({
@@ -244,17 +168,5 @@ export async function uploadDatabaseToServer(
             error: errorResult.error,
         });
         return errorResult;
-    } finally {
-        if (tempFileCreated && fs.existsSync(tempFilePath)) {
-            try {
-                fs.unlinkSync(tempFilePath);
-            } catch (cleanupError) {
-                console.error(
-                    "Failed to delete temporary file:",
-                    tempFilePath,
-                    cleanupError,
-                );
-            }
-        }
     }
 }

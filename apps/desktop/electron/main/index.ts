@@ -35,6 +35,7 @@ import {
     initAuthAfterReady,
     handleAuthSecondInstance,
 } from "./auth";
+import { getOrmConnection } from "../database/database.services";
 
 // The built directory structure
 //
@@ -293,7 +294,7 @@ void app.whenReady().then(async () => {
         }
     });
     ipcMain.handle("database:upload", async () => {
-        return await uploadDatabaseToServer((progress) => {
+        return await uploadDatabaseToServer(getOrmConnection(), (progress) => {
             // Send progress updates to renderer
             win?.webContents.send("database:upload-progress", progress);
         });

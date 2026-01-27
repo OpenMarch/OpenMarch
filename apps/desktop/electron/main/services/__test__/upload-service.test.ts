@@ -1,479 +1,203 @@
-import { beforeEach, afterEach, describe, expect, it, vi } from "vitest";
-import Database from "better-sqlite3";
-import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
-import { uploadDatabaseToServer } from "../upload-service";
-import * as DatabaseServices from "../../../database/database.services";
-import Constants from "../../../../src/global/Constants";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import type { DB } from "../../../database/db";
+import {
+    uploadDatabaseToServer,
+    type UploadProgressCallback,
+} from "../upload-service";
 
-describe("Upload Service", () => {
-    let tempDir: string;
-    let testDbPath: string;
-    let originalGetDbPath: typeof DatabaseServices.getDbPath;
-    let originalFetch: typeof global.fetch;
+// Fake gzipped blob – we only care that it's some bytes; dots-to-om tests real structure.
+const FAKE_GZIPPED_BLOB = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00]);
 
+// Minimal workspace settings JSON that parses and includes otmProductionId when linked
+const workspaceJson = (otmProductionId?: string) =>
+    JSON.stringify({
+        defaultBeatsPerMeasure: 4,
+        defaultTempo: 120,
+        defaultNewPageCounts: 16,
+        audioOffsetSeconds: 0,
+        pageNumberOffset: 0,
+        measurementOffset: 1,
+        ...(otmProductionId != null && { otmProductionId }),
+    });
+
+const mockAuthenticatedFetch = vi.fn();
+const mockToCompressedOpenMarchBytes = vi.fn();
+
+vi.mock("../api-client", () => ({
+    authenticatedFetch: (path: string, options: RequestInit) =>
+        mockAuthenticatedFetch(path, options),
+}));
+
+vi.mock("../dots-to-om", () => ({
+    toCompressedOpenMarchBytes: (db: unknown) =>
+        mockToCompressedOpenMarchBytes(db),
+}));
+
+function fakeDb(
+    workspaceFindFirst: () => Promise<{ json_data: string } | null>,
+) {
+    return {
+        query: {
+            workspace_settings: {
+                findFirst: vi.fn().mockImplementation(workspaceFindFirst),
+            },
+        },
+    } as unknown as DB;
+}
+
+describe("upload-service", () => {
     beforeEach(() => {
-        // Create a temporary directory for test databases
-        tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "upload-test-"));
-        testDbPath = path.join(tempDir, "test.dots");
-
-        // Create a test database with required tables
-        const db = new Database(testDbPath);
-        db.exec(`
-            CREATE TABLE ${Constants.UndoHistoryTableName} (
-                id INTEGER PRIMARY KEY,
-                history_group INTEGER,
-                sql_statement TEXT
-            );
-
-            CREATE TABLE ${Constants.AudioFilesTableName} (
-                id INTEGER PRIMARY KEY,
-                path TEXT NOT NULL,
-                nickname TEXT,
-                data BLOB,
-                selected INTEGER NOT NULL DEFAULT 0,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                updated_at TEXT DEFAULT CURRENT_TIMESTAMP
-            );
-
-            CREATE TABLE field_properties (
-                id INTEGER PRIMARY KEY CHECK (id = 1),
-                json_data TEXT NOT NULL,
-                image BLOB
-            );
-        `);
-
-        // Insert test data
-        db.exec(`
-            INSERT INTO ${Constants.UndoHistoryTableName} (id, history_group, sql_statement)
-            VALUES
-                (1, 1, 'SELECT * FROM test'),
-                (2, 1, 'INSERT INTO test VALUES (1)');
-
-            INSERT INTO ${Constants.AudioFilesTableName} (id, path, nickname, data, selected)
-            VALUES
-                (1, '/path/to/audio1.mp3', 'Audio 1', X'010203', 1),
-                (2, '/path/to/audio2.mp3', 'Audio 2', X'040506', 0);
-
-            INSERT INTO field_properties (id, json_data, image)
-            VALUES (1, '{"test": "data"}', X'FFD8FFE0');
-        `);
-
-        db.close();
-
-        // Mock DatabaseServices.getDbPath to return our test database path
-        originalGetDbPath = DatabaseServices.getDbPath;
-        vi.spyOn(DatabaseServices, "getDbPath").mockReturnValue(testDbPath);
-
-        // Mock fetch globally for upload tests
-        originalFetch = global.fetch;
-        global.fetch = vi.fn();
-
-        // Mock console methods to reduce noise in test output
-        vi.spyOn(console, "log").mockImplementation(() => {});
-        vi.spyOn(console, "error").mockImplementation(() => {});
+        vi.clearAllMocks();
+        mockToCompressedOpenMarchBytes.mockResolvedValue(FAKE_GZIPPED_BLOB);
     });
 
     afterEach(() => {
-        // Restore original functions
-        vi.restoreAllMocks();
-        global.fetch = originalFetch;
-
-        // Clean up temporary files and directories
-        try {
-            const files = fs.readdirSync(tempDir);
-            for (const file of files) {
-                fs.unlinkSync(path.join(tempDir, file));
-            }
-            fs.rmdirSync(tempDir);
-        } catch (error) {
-            // Ignore cleanup errors
-        }
+        vi.resetAllMocks();
     });
 
-    describe("Successful upload flow", () => {
-        it("should successfully upload database after clearing data", async () => {
-            // Mock successful fetch response
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: true,
-                status: 200,
-                text: async () => "OK",
-            });
+    describe("uploadDatabaseToServer", () => {
+        it("returns error when no OTM production is linked", async () => {
+            const db = fakeDb(async () => null);
+            mockAuthenticatedFetch.mockResolvedValue({ ok: true });
 
-            const result = await uploadDatabaseToServer();
+            const result = await uploadDatabaseToServer(db);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("No OTM production linked");
+            expect(mockToCompressedOpenMarchBytes).not.toHaveBeenCalled();
+            expect(mockAuthenticatedFetch).not.toHaveBeenCalled();
+        });
+
+        it("returns error when workspace has no otmProductionId", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson(),
+            }));
+            mockAuthenticatedFetch.mockResolvedValue({ ok: true });
+
+            const result = await uploadDatabaseToServer(db);
+
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("No OTM production linked");
+            expect(mockToCompressedOpenMarchBytes).not.toHaveBeenCalled();
+            expect(mockAuthenticatedFetch).not.toHaveBeenCalled();
+        });
+
+        it("returns success when production is linked and server returns created", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-123"),
+            }));
+            mockAuthenticatedFetch.mockResolvedValue({ ok: true });
+
+            const result = await uploadDatabaseToServer(db);
 
             expect(result.success).toBe(true);
-            expect(result.message).toBe("Database uploaded successfully");
-            expect(result.error).toBeUndefined();
-            expect(global.fetch).toHaveBeenCalledTimes(1);
+            expect(result.message).toBe("Revision created successfully");
+            expect(mockToCompressedOpenMarchBytes).toHaveBeenCalledWith(db);
+            expect(mockAuthenticatedFetch).toHaveBeenCalledWith(
+                "api/editor/v1/productions/prod-123/revisions",
+                expect.objectContaining({
+                    method: "POST",
+                    body: expect.any(FormData),
+                }),
+            );
         });
 
-        it("should create a temporary file with correct naming", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: true,
-                status: 200,
-                text: async () => "OK",
-            });
-
-            await uploadDatabaseToServer();
-
-            // Check that fetch was called with FormData containing a file
-            const fetchCall = (global.fetch as ReturnType<typeof vi.fn>).mock
-                .calls[0];
-            expect(fetchCall).toBeDefined();
-            expect(fetchCall[1].body).toBeInstanceOf(FormData);
-        });
-
-        it("should clear history_undo table in temporary database", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-                async (url: string | URL, init?: RequestInit) => {
-                    // Intercept the FormData to get the file before it's cleaned up
-                    if (init?.body instanceof FormData) {
-                        const fileEntry = init.body.get("file");
-                        if (fileEntry) {
-                            // Handle File, Blob, or Buffer
-                            let arrayBuffer: ArrayBuffer;
-                            if (
-                                fileEntry instanceof File ||
-                                fileEntry instanceof Blob
-                            ) {
-                                arrayBuffer = await fileEntry.arrayBuffer();
-                            } else if (fileEntry instanceof ArrayBuffer) {
-                                arrayBuffer = fileEntry;
-                            } else {
-                                // It's a Buffer or similar
-                                arrayBuffer = (fileEntry as any).buffer;
-                            }
-
-                            const tempDbPath = path.join(
-                                tempDir,
-                                "verify-temp.dots",
-                            );
-                            fs.writeFileSync(
-                                tempDbPath,
-                                Buffer.from(arrayBuffer),
-                            );
-
-                            // Verify that history_undo table is cleared
-                            const verifyDb = new Database(tempDbPath);
-                            const undoCount = verifyDb
-                                .prepare(
-                                    `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName}`,
-                                )
-                                .get() as { count: number };
-                            expect(undoCount.count).toBe(0);
-                            verifyDb.close();
-
-                            // Clean up
-                            fs.unlinkSync(tempDbPath);
-                        }
-                    }
-
-                    return {
-                        ok: true,
-                        status: 200,
-                        text: async () => "OK",
-                    };
-                },
+        it("returns error when toCompressedOpenMarchBytes throws", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-123"),
+            }));
+            mockToCompressedOpenMarchBytes.mockRejectedValue(
+                new Error("Db is not open"),
             );
 
-            await uploadDatabaseToServer();
-
-            expect(global.fetch).toHaveBeenCalled();
-        });
-
-        it("should clear audio_files table in temporary database", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-                async (url: string | URL, init?: RequestInit) => {
-                    // Intercept the FormData to get the file before it's cleaned up
-                    if (init?.body instanceof FormData) {
-                        const fileEntry = init.body.get("file");
-                        if (fileEntry) {
-                            // Handle File, Blob, or Buffer
-                            let arrayBuffer: ArrayBuffer;
-                            if (
-                                fileEntry instanceof File ||
-                                fileEntry instanceof Blob
-                            ) {
-                                arrayBuffer = await fileEntry.arrayBuffer();
-                            } else if (fileEntry instanceof ArrayBuffer) {
-                                arrayBuffer = fileEntry;
-                            } else {
-                                // It's a Buffer or similar
-                                arrayBuffer = (fileEntry as any).buffer;
-                            }
-
-                            const tempDbPath = path.join(
-                                tempDir,
-                                "verify-temp.dots",
-                            );
-                            fs.writeFileSync(
-                                tempDbPath,
-                                Buffer.from(arrayBuffer),
-                            );
-
-                            // Verify that audio_files table is cleared
-                            const verifyDb = new Database(tempDbPath);
-                            const audioCount = verifyDb
-                                .prepare(
-                                    `SELECT COUNT(*) as count FROM ${Constants.AudioFilesTableName}`,
-                                )
-                                .get() as { count: number };
-                            expect(audioCount.count).toBe(0);
-                            verifyDb.close();
-
-                            // Clean up
-                            fs.unlinkSync(tempDbPath);
-                        }
-                    }
-
-                    return {
-                        ok: true,
-                        status: 200,
-                        text: async () => "OK",
-                    };
-                },
-            );
-
-            // Verify original database has audio files
-            const originalDb = new Database(testDbPath);
-            const originalAudioCount = originalDb
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.AudioFilesTableName}`,
-                )
-                .get() as { count: number };
-            expect(originalAudioCount.count).toBe(2);
-            originalDb.close();
-
-            await uploadDatabaseToServer();
-
-            expect(global.fetch).toHaveBeenCalled();
-        });
-
-        it("should clear field_properties.image column in temporary database", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockImplementation(
-                async (url: string | URL, init?: RequestInit) => {
-                    // Intercept the FormData to get the file before it's cleaned up
-                    if (init?.body instanceof FormData) {
-                        const fileEntry = init.body.get("file");
-                        if (fileEntry) {
-                            // Handle File, Blob, or Buffer
-                            let arrayBuffer: ArrayBuffer;
-                            if (
-                                fileEntry instanceof File ||
-                                fileEntry instanceof Blob
-                            ) {
-                                arrayBuffer = await fileEntry.arrayBuffer();
-                            } else if (fileEntry instanceof ArrayBuffer) {
-                                arrayBuffer = fileEntry;
-                            } else {
-                                // It's a Buffer or similar
-                                arrayBuffer = (fileEntry as any).buffer;
-                            }
-
-                            const tempDbPath = path.join(
-                                tempDir,
-                                "verify-temp.dots",
-                            );
-                            fs.writeFileSync(
-                                tempDbPath,
-                                Buffer.from(arrayBuffer),
-                            );
-
-                            // Verify that field_properties.image is cleared (NULL)
-                            const verifyDb = new Database(tempDbPath);
-                            const fieldProps = verifyDb
-                                .prepare(
-                                    "SELECT image FROM field_properties WHERE id = 1",
-                                )
-                                .get() as { image: Buffer | null };
-                            expect(fieldProps.image).toBeNull();
-                            verifyDb.close();
-
-                            // Clean up
-                            fs.unlinkSync(tempDbPath);
-                        }
-                    }
-
-                    return {
-                        ok: true,
-                        status: 200,
-                        text: async () => "OK",
-                    };
-                },
-            );
-
-            // Verify original database has image data
-            const originalDb = new Database(testDbPath);
-            const originalFieldProps = originalDb
-                .prepare("SELECT image FROM field_properties WHERE id = 1")
-                .get() as { image: Buffer | null };
-            expect(originalFieldProps.image).not.toBeNull();
-            originalDb.close();
-
-            await uploadDatabaseToServer();
-
-            expect(global.fetch).toHaveBeenCalled();
-        });
-
-        it("should execute VACUUM on temporary database", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: true,
-                status: 200,
-                text: async () => "OK",
-            });
-
-            await uploadDatabaseToServer();
-
-            // VACUUM execution is verified by the fact that the upload succeeds
-            // since VACUUM must complete before the database is closed
-            expect(global.fetch).toHaveBeenCalled();
-        });
-    });
-
-    describe("Error handling", () => {
-        it("should return error when no database is open", async () => {
-            vi.spyOn(DatabaseServices, "getDbPath").mockReturnValue("");
-
-            const result = await uploadDatabaseToServer();
-
-            expect(result.success).toBe(false);
-            expect(result.error).toBe("No database is currently open");
-            expect(global.fetch).not.toHaveBeenCalled();
-        });
-
-        it("should return error when database file does not exist", async () => {
-            vi.spyOn(DatabaseServices, "getDbPath").mockReturnValue(
-                "/nonexistent/path.dots",
-            );
-
-            const result = await uploadDatabaseToServer();
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain("Database file does not exist");
-            expect(global.fetch).not.toHaveBeenCalled();
-        });
-
-        it("should return error when fetch fails", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-                new Error("Network error"),
-            );
-
-            const result = await uploadDatabaseToServer();
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain("Upload failed: Network error");
-        });
-
-        it("should return error when upload returns non-ok response", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: false,
-                status: 500,
-                text: async () => "Internal Server Error",
-            });
-
-            const result = await uploadDatabaseToServer();
-
-            expect(result.success).toBe(false);
-            expect(result.error).toContain("Upload failed with status 500");
-        });
-
-        it("should return error when database operations fail", async () => {
-            // Create a corrupted database path
-            const corruptedDbPath = path.join(tempDir, "corrupted.dots");
-            fs.writeFileSync(corruptedDbPath, "not a database");
-
-            vi.spyOn(DatabaseServices, "getDbPath").mockReturnValue(
-                corruptedDbPath,
-            );
-
-            const result = await uploadDatabaseToServer();
+            const result = await uploadDatabaseToServer(db);
 
             expect(result.success).toBe(false);
             expect(result.error).toContain("Upload failed");
-        });
-    });
-
-    describe("Cleanup", () => {
-        it("should clean up temporary file after successful upload", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: true,
-                status: 200,
-                text: async () => "OK",
-            });
-
-            await uploadDatabaseToServer();
-
-            // Check that no temp files remain in the temp directory
-            const tempFiles = fs
-                .readdirSync(os.tmpdir())
-                .filter((file) => file.startsWith("upload-temp-"));
-            // We can't check for exact cleanup since the file name includes timestamp
-            // But we can verify the upload succeeded, which means cleanup happened
-            expect(global.fetch).toHaveBeenCalled();
+            expect(result.error).toContain("Db is not open");
+            expect(mockAuthenticatedFetch).not.toHaveBeenCalled();
         });
 
-        it("should clean up temporary file even on upload failure", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockRejectedValue(
-                new Error("Upload failed"),
+        it("returns error when authenticatedFetch throws", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-123"),
+            }));
+            mockAuthenticatedFetch.mockRejectedValue(
+                new Error("Network error"),
             );
 
-            await uploadDatabaseToServer();
+            const result = await uploadDatabaseToServer(db);
 
-            // Verify that cleanup was attempted (file should not exist)
-            // The fact that the error was caught and returned means cleanup happened
-            expect(global.fetch).toHaveBeenCalled();
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("Upload failed");
+            expect(result.error).toContain("Network error");
         });
-    });
 
-    describe("Database operations on temporary copy", () => {
-        it("should not modify the original database", async () => {
-            (global.fetch as ReturnType<typeof vi.fn>).mockResolvedValue({
-                ok: true,
-                status: 200,
-                text: async () => "OK",
+        it("returns error when response is not ok", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-123"),
+            }));
+            mockAuthenticatedFetch.mockResolvedValue({
+                ok: false,
+                status: 422,
+                text: () => Promise.resolve("Unprocessable entity"),
             });
 
-            // Get original state
-            const originalDb = new Database(testDbPath);
-            const originalUndoCount = originalDb
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName}`,
-                )
-                .get() as { count: number };
-            const originalAudioCount = originalDb
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.AudioFilesTableName}`,
-                )
-                .get() as { count: number };
-            const originalImage = originalDb
-                .prepare("SELECT image FROM field_properties WHERE id = 1")
-                .get() as { image: Buffer | null };
-            originalDb.close();
+            const result = await uploadDatabaseToServer(db);
 
-            await uploadDatabaseToServer();
+            expect(result.success).toBe(false);
+            expect(result.error).toContain("422");
+            expect(result.error).toContain("Unprocessable entity");
+        });
 
-            // Verify original database is unchanged
-            const verifyDb = new Database(testDbPath);
-            const verifyUndoCount = verifyDb
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.UndoHistoryTableName}`,
-                )
-                .get() as { count: number };
-            const verifyAudioCount = verifyDb
-                .prepare(
-                    `SELECT COUNT(*) as count FROM ${Constants.AudioFilesTableName}`,
-                )
-                .get() as { count: number };
-            const verifyImage = verifyDb
-                .prepare("SELECT image FROM field_properties WHERE id = 1")
-                .get() as { image: Buffer | null };
-            verifyDb.close();
+        it("invokes onProgress with error when no production is linked", async () => {
+            const db = fakeDb(async () => null);
+            const onProgress = vi.fn() as UploadProgressCallback;
 
-            expect(verifyUndoCount.count).toBe(originalUndoCount.count);
-            expect(verifyAudioCount.count).toBe(originalAudioCount.count);
-            expect(verifyImage.image).toEqual(originalImage.image);
+            await uploadDatabaseToServer(db, onProgress);
+
+            expect(onProgress).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: "error",
+                    error: expect.stringContaining("No OTM production linked"),
+                }),
+            );
+        });
+
+        it("invokes onProgress with success when upload succeeds", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-456"),
+            }));
+            mockAuthenticatedFetch.mockResolvedValue({ ok: true });
+            const onProgress = vi.fn() as UploadProgressCallback;
+
+            await uploadDatabaseToServer(db, onProgress);
+
+            expect(onProgress).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: "success",
+                    message: "Revision created successfully",
+                }),
+            );
+        });
+
+        it("sends show_data and set_active in request body", async () => {
+            const db = fakeDb(async () => ({
+                json_data: workspaceJson("prod-789"),
+            }));
+            let capturedBody: FormData | undefined;
+            mockAuthenticatedFetch.mockImplementation(
+                (path: string, options: RequestInit) => {
+                    capturedBody = options.body as FormData;
+                    return Promise.resolve({ ok: true });
+                },
+            );
+
+            await uploadDatabaseToServer(db);
+
+            expect(capturedBody).toBeDefined();
+            expect(capturedBody!.get("show_data")).toBeDefined();
+            expect(capturedBody!.get("set_active")).toBe("true");
         });
     });
 });

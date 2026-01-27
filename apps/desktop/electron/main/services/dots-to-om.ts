@@ -11,7 +11,7 @@ import {
     type OpenMarchSchemaType,
     toOpenMarchFile,
 } from "@openmarch/schema";
-import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
+import { FieldPropertiesSchema } from "../../../src/components/field/fieldPropertiesSchema";
 import { getOrmConnection } from "../../database/database.services";
 import { FieldProperties } from "@openmarch/core";
 import { DB, schema } from "../../database/db";
@@ -357,7 +357,7 @@ export async function toOpenMarchSchema(db: DB): Promise<OpenMarchSchemaType> {
  * @throws "Db is not open" if no show is open
  * @throws ZodError (or formatted error) if built data fails schema validation
  */
-export async function toCompressedOpenMarchBytes(db: DB) {
+export async function toCompressedOpenMarchBytes(db: DB): Promise<Uint8Array> {
     const schema = await toOpenMarchSchema(db);
     return toOpenMarchFile(schema, { compressed: true });
 }
