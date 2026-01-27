@@ -2,6 +2,7 @@
  * API client utilities for making authenticated requests to the OpenMarch API from the main process.
  */
 
+import { OPENMARCH_API_ENDPOINT } from "../../../src/global/Constants";
 import { getValidAccessToken } from "../auth/token-manager";
 
 /**
@@ -9,14 +10,10 @@ import { getValidAccessToken } from "../auth/token-manager";
  * @throws {Error} If OPENMARCH_API_ENDPOINT is not defined
  */
 function getApiEndpoint(): string {
-    const endpoint = process.env.OPENMARCH_API_ENDPOINT;
-    if (!endpoint) {
-        throw new Error(
-            "OPENMARCH_API_ENDPOINT environment variable is not defined",
-        );
-    }
     // Remove trailing slash if present
-    return endpoint.endsWith("/") ? endpoint.slice(0, -1) : endpoint;
+    return OPENMARCH_API_ENDPOINT.endsWith("/")
+        ? OPENMARCH_API_ENDPOINT.slice(0, -1)
+        : OPENMARCH_API_ENDPOINT;
 }
 
 /**

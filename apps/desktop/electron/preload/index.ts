@@ -262,8 +262,8 @@ const APP_API = {
         ) as Promise<AudioFile | null>,
 
     // Database Upload
-    uploadDatabase: () =>
-        ipcRenderer.invoke("database:upload") as Promise<{
+    uploadDatabase: (title?: string) =>
+        ipcRenderer.invoke("database:upload", title ?? "") as Promise<{
             success: boolean;
             error?: string;
             message?: string;

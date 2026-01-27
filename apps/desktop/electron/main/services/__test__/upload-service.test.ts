@@ -154,7 +154,7 @@ describe("upload-service", () => {
             const db = fakeDb(async () => null);
             const onProgress = vi.fn() as UploadProgressCallback;
 
-            await uploadDatabaseToServer(db, onProgress);
+            await uploadDatabaseToServer(db, undefined, onProgress);
 
             expect(onProgress).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -171,7 +171,7 @@ describe("upload-service", () => {
             mockAuthenticatedFetch.mockResolvedValue({ ok: true });
             const onProgress = vi.fn() as UploadProgressCallback;
 
-            await uploadDatabaseToServer(db, onProgress);
+            await uploadDatabaseToServer(db, undefined, onProgress);
 
             expect(onProgress).toHaveBeenCalledWith(
                 expect.objectContaining({

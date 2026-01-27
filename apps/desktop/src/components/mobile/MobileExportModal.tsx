@@ -20,8 +20,13 @@ import {
     AlertDialogAction,
 } from "@openmarch/ui";
 import { SignInButton } from "../auth/AuthButton";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hasAnyEnsemblesQueryOptions } from "./queries/useEnsembles";
+import {
+    updateWorkspaceSettingsMutationOptions,
+    workspaceSettingsQueryOptions,
+} from "@/hooks/queries/useWorkspaceSettings";
+import { conToastError } from "@/utilities/utils";
 
 type AlertState = {
     type:
@@ -285,6 +290,28 @@ function ProductionNotFound({
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }) {
+    const queryClient = useQueryClient();
+    const { mutate: updateWorkspaceSettings, isPending } = useMutation(
+        updateWorkspaceSettingsMutationOptions(queryClient),
+    );
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
+    );
+
+    const handleDetach = () => {
+        if (!workspaceSettings) {
+            conToastError(
+                "Failed to detach file from production",
+                new Error("Workspace settings not found"),
+            );
+            return;
+        }
+        updateWorkspaceSettings(
+            { ...workspaceSettings, otmProductionId: undefined },
+            { onSuccess: () => onOpenChange(false) },
+        );
+    };
+
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
             <AlertDialogContent>
@@ -315,7 +342,13 @@ function ProductionNotFound({
                         </Button>
                     </AlertDialogCancel>
                     <AlertDialogAction>
-                        <Button variant="red">Detach from production</Button>
+                        <Button
+                            variant="red"
+                            onClick={handleDetach}
+                            disabled={isPending}
+                        >
+                            Detach from production
+                        </Button>
                     </AlertDialogAction>
                 </div>
             </AlertDialogContent>

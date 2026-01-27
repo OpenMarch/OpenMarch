@@ -2,20 +2,13 @@
  * API client utilities for making authenticated requests to the OpenMarch API.
  */
 
+import { OPENMARCH_API_ENDPOINT } from "@/global/Constants";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-/**
- * Gets the API endpoint from environment variable.
- * @throws {Error} If VITE_OPENMARCH_API_ENDPOINT is not defined
- */
 function getApiEndpoint(): string {
-    const endpoint = import.meta.env.VITE_OPENMARCH_API_ENDPOINT;
-    if (!endpoint) {
-        throw new Error(
-            "VITE_OPENMARCH_API_ENDPOINT environment variable is not defined",
-        );
-    }
-    return endpoint;
+    return OPENMARCH_API_ENDPOINT.endsWith("/")
+        ? OPENMARCH_API_ENDPOINT.slice(0, -1)
+        : OPENMARCH_API_ENDPOINT;
 }
 
 /**

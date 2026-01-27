@@ -293,11 +293,15 @@ void app.whenReady().then(async () => {
             throw error;
         }
     });
-    ipcMain.handle("database:upload", async () => {
-        return await uploadDatabaseToServer(getOrmConnection(), (progress) => {
-            // Send progress updates to renderer
-            win?.webContents.send("database:upload-progress", progress);
-        });
+    ipcMain.handle("database:upload", async (_, title: string) => {
+        return await uploadDatabaseToServer(
+            getOrmConnection(),
+            title,
+            (progress) => {
+                // Send progress updates to renderer
+                win?.webContents.send("database:upload-progress", progress);
+            },
+        );
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 

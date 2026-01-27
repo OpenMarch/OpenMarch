@@ -37,17 +37,19 @@ const SHOW_DATA_FILENAME = "show_data.gz";
 /**
  * Creates a production revision on the server (om-online API).
  * POST /api/editor/v1/productions/:production_id/revisions
- * Params: show_data (file), set_active (optional boolean).
+ * Params: show_data (file), set_active (optional boolean), title (optional string).
  */
 async function createRevisionOnServer({
     productionId,
     data,
     setActive = true,
+    title,
     onProgress,
 }: {
     productionId: string;
     data: Uint8Array;
     setActive?: boolean;
+    title?: string;
     onProgress?: UploadProgressCallback;
 }): Promise<UploadResult> {
     onProgress?.({
@@ -63,6 +65,9 @@ async function createRevisionOnServer({
     const blob = new Blob([buffer], { type: "application/gzip" });
     formData.append("show_data", blob, SHOW_DATA_FILENAME);
     formData.append("set_active", setActive ? "true" : "false");
+    if (title != null && title.trim() !== "") {
+        formData.append("title", title.trim());
+    }
 
     onProgress?.({
         status: "progress",
@@ -70,7 +75,7 @@ async function createRevisionOnServer({
         progress: 10,
     });
 
-    const path = `api/editor/v1/productions/${productionId}/revisions`;
+    const path = `/v1/productions/${productionId}/revisions`;
     let response: Response;
     try {
         response = await authenticatedFetch(path, {
@@ -111,11 +116,13 @@ async function createRevisionOnServer({
  * Creates a temporary copy, clears undo_history, audio files, and image_data,
  * vacuums the database, then uploads it.
  *
+ * @param title Optional revision title to send to the server
  * @param onProgress Optional callback to receive progress updates
  * @returns UploadResult indicating success or failure
  */
 export async function uploadDatabaseToServer(
     dbConnection: DB,
+    title?: string,
     onProgress?: UploadProgressCallback,
 ): Promise<UploadResult> {
     try {
@@ -140,6 +147,7 @@ export async function uploadDatabaseToServer(
             productionId,
             data: omzBytes,
             setActive: true,
+            title,
             onProgress,
         });
 

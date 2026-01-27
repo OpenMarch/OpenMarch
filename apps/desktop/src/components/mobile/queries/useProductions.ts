@@ -3,13 +3,17 @@
  */
 
 import { useEffect, useMemo } from "react";
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+    mutationOptions,
+    QueryClient,
+    queryOptions,
+    useQuery,
+} from "@tanstack/react-query";
 import {
     NEEDS_AUTH_BASE_QUERY_KEY,
     useAccessToken,
 } from "@/hooks/queries/useAuth";
 import { apiGet } from "@/api/api-client";
-import { DEFAULT_STALE_TIME } from "@/hooks/queries/constants";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
@@ -43,6 +47,7 @@ export interface ProductionAudioFile {
 export interface RevisionPreview {
     id: number;
     pushed_at: string;
+    title: string;
     show_data_url: string | null;
     active: boolean;
 }
@@ -53,10 +58,11 @@ export interface RevisionPreview {
 export interface Production {
     id: number;
     name: string;
-    dots_sqlite_url: string | null;
     background_image_url: string | null;
-    active_revision: RevisionPreview | null;
+    revisions: RevisionPreview[];
+    active_revision_id: number | null;
     audio_files: ProductionAudioFile[];
+    active_audio_file_id: number | null;
     ensemble: { id: number; name: string };
     created_at: string;
     updated_at: string;
@@ -115,7 +121,32 @@ export const productionsByEnsembleQueryOptions = (
             return response.productions;
         },
         enabled: enabled && !!ensembleId,
-        staleTime: DEFAULT_STALE_TIME,
+        staleTime: undefined,
+    });
+};
+
+export const uploadRevisionMutationOptions = ({
+    queryClient,
+    onSuccess,
+    onError,
+}: {
+    queryClient: QueryClient;
+    onSuccess?: () => void;
+    onError?: (error: Error) => void;
+}) => {
+    return mutationOptions({
+        mutationFn: async ({ title }: { title: string }) =>
+            window.electron.uploadDatabase(title),
+        onSuccess: () => {
+            void queryClient.invalidateQueries({
+                queryKey: productionKeys.all(),
+            });
+            onSuccess?.();
+        },
+        onError: (error) => {
+            console.error("Failed to upload revision", error);
+            onError?.(error);
+        },
     });
 };
 

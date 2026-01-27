@@ -12,4 +12,6 @@ export const Constants = {
     PageNotesExportMaxLines: 4,
 } as const;
 
+export const OPENMARCH_API_ENDPOINT = "http://localhost:3100/api/editor";
+
 export default Constants;

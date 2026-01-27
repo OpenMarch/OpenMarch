@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
     Button,
     DialogTrigger,
@@ -15,8 +15,13 @@ import {
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import DetachButton from "./DetachButton";
-import { Production } from "./queries/useProductions";
+import {
+    Production,
+    RevisionPreview,
+    uploadRevisionMutationOptions,
+} from "./queries/useProductions";
 import { twMerge } from "tailwind-merge";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 type UploadStatus = "idle" | "loading" | "progress" | "error" | "success";
 
@@ -26,32 +31,6 @@ interface UploadProgress {
     progress?: number;
     error?: string;
 }
-
-type RevisionItem = {
-    id: number;
-    pushed_at: Date;
-    title: string;
-};
-
-// Fake revisions data for now (timestamps in UTC)
-const FAKE_REVISIONS: RevisionItem[] = [];
-//  [
-//     {
-//         id: 1,
-//         title: "Add new music",
-//         pushed_at: new Date("2026-01-02T02:13:00Z"),
-//     },
-//     {
-//         id: 3,
-//         title: "Opener first sets",
-//         pushed_at: new Date("2025-12-30T01:09:00Z"),
-//     },
-//     {
-//         id: 2,
-//         title: "Stage Color guard",
-//         pushed_at: new Date("2026-01-02T01:30:00Z"),
-//     },
-// ];
 
 /**
  * Mobile Export View - The main export functionality
@@ -64,19 +43,36 @@ export default function MobileExportView({
     return (
         <section className="animate-scale-in flex h-full w-fit flex-col">
             <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
-                <_SubmitRevisionForm isFirstRevision={false} />
-                <_RevisionsList
-                    revisions={FAKE_REVISIONS}
-                    activeRevisionId={1}
-                    key={currentProduction.active_revision?.id || "none"}
+                <SubmitRevisionForm isFirstRevision={false} />
+                <RevisionsList
+                    revisions={currentProduction.revisions}
+                    activeRevisionId={currentProduction.active_revision_id}
+                    key={currentProduction.id}
                 />
             </div>
         </section>
     );
 }
 
-const formatRevisionDate = (date: Date): string => {
-    // Date methods (getDate, getMonth, getHours, etc.) automatically convert UTC to local timezone
+const MAX_ERROR_DISPLAY_LENGTH = 120;
+
+/**
+ * Logs the full error and returns a truncated message for the UI.
+ */
+function toDisplayError(fullError: string): string {
+    if (fullError.length <= MAX_ERROR_DISPLAY_LENGTH) return fullError;
+    const looksLikeHtml =
+        fullError.trimStart().startsWith("<") ||
+        fullError.toLowerCase().includes("<!doctype") ||
+        fullError.toLowerCase().includes("<html");
+    if (looksLikeHtml) {
+        return "Upload failed. Check console for details.";
+    }
+    return `${fullError.slice(0, MAX_ERROR_DISPLAY_LENGTH)}…`;
+}
+
+const formatRevisionDate = (dateString: string): string => {
+    const date = new Date(dateString);
     const months = [
         "January",
         "February",
@@ -108,10 +104,11 @@ const formatRevisionDate = (date: Date): string => {
         return n + (s[(v - 20) % 10] || s[v] || s[0]);
     };
 
-    return `${month} ${getOrdinal(day)}, ${year} ${displayHours}:${displayMinutes}${amOrPm}`;
+    // Add weekday at the start
+    return `${month} ${getOrdinal(day)}, ${year} - ${displayHours}:${displayMinutes}${amOrPm}`;
 };
 
-export const _SubmitRevisionForm = ({
+export const SubmitRevisionForm = ({
     isFirstRevision,
 }: {
     isFirstRevision: boolean;
@@ -124,6 +121,10 @@ export const _SubmitRevisionForm = ({
         isFirstRevision ? "Initial revision" : "",
     );
     const [titleError, setTitleError] = useState<string>("");
+    const queryClient = useQueryClient();
+    const { mutate: uploadRevision } = useMutation(
+        uploadRevisionMutationOptions({ queryClient, onSuccess: () => {} }),
+    );
     const pushDisabled =
         uploadStatus === "loading" ||
         uploadStatus === "progress" ||
@@ -141,10 +142,13 @@ export const _SubmitRevisionForm = ({
                     setUploadProgress(progress.progress || 0);
                     setUploadMessage(progress.message || "Uploading...");
                 } else if (progress.status === "error") {
+                    const raw = progress.error || "Upload failed";
+                    console.error("Upload error:", raw);
+                    const display = toDisplayError(raw);
                     setUploadStatus("error");
-                    setUploadError(progress.error || "Upload failed");
-                    setUploadMessage(progress.error || "Upload failed");
-                    toast.error(progress.error || "Upload failed");
+                    setUploadError(display);
+                    setUploadMessage(display);
+                    toast.error(display);
                 } else if (progress.status === "success") {
                     setUploadStatus("success");
                     setUploadProgress(100);
@@ -173,19 +177,27 @@ export const _SubmitRevisionForm = ({
         setUploadError("");
 
         try {
-            const result = await window.electron.uploadDatabase();
+            const title = isFirstRevision
+                ? "Initial revision"
+                : revisionTitle.trim();
+            const result = await window.electron.uploadDatabase(title);
             if (!result.success) {
+                const raw = result.error || "Upload failed";
+                console.error("Upload error:", raw);
+                const display = toDisplayError(raw);
                 setUploadStatus("error");
-                setUploadError(result.error || "Upload failed");
-                toast.error(result.error || "Upload failed");
+                setUploadError(display);
+                toast.error(display);
             }
             // Success is handled via progress callback
         } catch (error) {
             const errorMessage =
                 error instanceof Error ? error.message : String(error);
+            console.error("Upload error:", error);
+            const display = toDisplayError(errorMessage);
             setUploadStatus("error");
-            setUploadError(errorMessage);
-            toast.error(errorMessage);
+            setUploadError(display);
+            toast.error(display);
         }
     }, [isFirstRevision, revisionTitle]);
 
@@ -302,12 +314,12 @@ export const _SubmitRevisionForm = ({
     );
 };
 
-export const _RevisionsList = ({
+export const RevisionsList = ({
     revisions,
     activeRevisionId,
 }: {
-    revisions: RevisionItem[];
-    activeRevisionId: number;
+    revisions: RevisionPreview[];
+    activeRevisionId: number | null;
 }) => {
     if (revisions.length === 0) {
         return (
@@ -316,18 +328,20 @@ export const _RevisionsList = ({
                 aria-label="No revisions message"
             >
                 Revisions help you keep track of what is currently being shown
-                on the performers' devices. Upload your first revision to get
-                started.
+                on the performers&apos; devices. Upload your first revision to
+                get started.
             </h4>
         );
     }
     return (
-        <div className="flex flex-col gap-6">
+        <section className="flex flex-col gap-6" aria-label="Revisions list">
             <h2 className="text-body text-text-subtitle">All revisions</h2>
             <div className="flex flex-col gap-8">
                 {revisions
                     .sort(
-                        (a, b) => b.pushed_at.getTime() - a.pushed_at.getTime(),
+                        (a, b) =>
+                            new Date(b.pushed_at).getTime() -
+                            new Date(a.pushed_at).getTime(),
                     )
                     .map((revision) => (
                         <div
@@ -339,23 +353,24 @@ export const _RevisionsList = ({
                                     : "border-stroke",
                             )}
                         >
-                            <div>
-                                <div className="text-body font-semibold">
-                                    {revision.title}
+                            <h4 className="text-body font-semibold">
+                                {revision.title}
+                            </h4>
+                            <div className="space-between flex">
+                                <div className="text-body text-text-subtitle flex-grow">
+                                    {formatRevisionDate(revision.pushed_at)}
                                 </div>
+
                                 {activeRevisionId === revision.id && (
                                     <div className="text-body text-accent">
                                         Currently active
                                     </div>
                                 )}
                             </div>
-                            <div className="text-body text-text-subtitle">
-                                {formatRevisionDate(revision.pushed_at)}
-                            </div>
                         </div>
                     ))}
             </div>
-        </div>
+        </section>
     );
 };
 
