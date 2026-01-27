@@ -52,13 +52,21 @@ export default defineConfig(({ command }) => {
                             minify: isBuild,
                             outDir: "dist-electron/main",
                             rollupOptions: {
-                                external: ["electron", "node"].concat(
+                                external: [
+                                    "electron",
+                                    "node",
+                                    "libsql",
+                                    "@libsql/client",
+                                ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
                                             ? pkg.dependencies
                                             : {},
                                     ),
                                 ),
+                            },
+                            commonjsOptions: {
+                                dynamicRequireTargets: ["@libsql/client"],
                             },
                         },
                     },

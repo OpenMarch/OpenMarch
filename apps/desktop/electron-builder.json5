@@ -5,11 +5,22 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    asarUnpack: ["**/*.node"],
+    asarUnpack: [
+        "**/*.node",
+        "**/node_modules/libsql",
+        "**/node_modules/@libsql/**",
+    ],
     directories: {
         output: "release/${buildVersion}",
     },
-    files: ["dist-electron", "dist"],
+    files: [
+        "dist-electron",
+        "dist",
+        "node_modules",
+        "node_modules/@libsql/**",
+        "electron/database/migrations",
+        "!**/node_modules/canvas/**",
+    ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
     mac: {
@@ -61,12 +72,8 @@
     win: {
         target: "nsis",
         artifactName: "${productName}_${buildVersion}.${ext}",
-        azureSignOptions: {
-            publisherName: "OpenMarch LLC",
-            endpoint: "https://eus.codesigning.azure.net",
-            certificateProfileName: "OpenMarch-Desktop",
-            codeSigningAccountName: "openmarch-desktop",
-        },
+        // Note: Azure signing is configured in electron-builder-sign.json5
+        // which extends this config and is only used for signed releases
         fileAssociations: [
             {
                 ext: "dots",
@@ -99,7 +106,6 @@
         // Custom protocol handler for OAuth callbacks
         mimeTypes: ["x-scheme-handler/openmarch"],
     },
-    files: ["!**/node_modules/canvas/**"],
     publish: [
         {
             provider: "github",

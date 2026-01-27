@@ -16,7 +16,11 @@ import * as Selectable from "./interfaces/Selectable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
+import {
+    cleanupGroupHandlers,
+    resetMarcherRotation,
+    setGroupAttributes,
+} from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
@@ -251,6 +255,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* GROUP SELECTION HANDLING *******************/
 
     handleSelection(event: fabric.IEvent<MouseEvent>) {
+        // Cleanup handlers from the previous group to prevent memory leaks
+        if (this._activeGroup) {
+            cleanupGroupHandlers(this._activeGroup);
+        }
+
         if (event.selected?.length && event.selected.length > 1) {
             const group = this.getActiveObject();
             if (group && group instanceof fabric.Group) {
@@ -1505,6 +1514,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this._backgroundImage.left = this._bgImageValues.left;
                 this._backgroundImage.top = this._bgImageValues.top;
             }
+            this._backgroundImage.opacity =
+                this.fieldProperties.backgroundImageOpacity;
             fieldArray.push(this._backgroundImage);
         }
 
@@ -2194,6 +2205,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     selectable: false,
                     hoverCursor: "default",
                     evented: false,
+                    opacity: this.fieldProperties.backgroundImageOpacity,
                 });
 
                 const imgAspectRatio = img.width / img.height;

@@ -347,6 +347,7 @@
         "general": "一般",
         "labels": {
             "background": "背景",
+            "backgroundImageOpacity": "背景画像の不透明度",
             "backgroundImageRatio": "背景画像比率",
             "bottom": "底",
             "conformingMethod": "適合 方法",

@@ -347,6 +347,7 @@
         "general": "Général",
         "labels": {
             "background": "Arrière-plan",
+            "backgroundImageOpacity": "Opacité de l'image d'arrière-plan",
             "backgroundImageRatio": "Ratio de l'image d'arrière-plan",
             "bottom": "Bas",
             "conformingMethod": "Méthode de mise en conformité",

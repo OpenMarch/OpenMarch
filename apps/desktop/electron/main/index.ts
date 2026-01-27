@@ -865,12 +865,19 @@ async function setActiveDb(path: string, isNewFile = false) {
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
 
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
+
         // If this isn't a new file, create backups before applying migrations
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
             );
-            if (migrator.hasPendingMigrations()) {
+            if (migrator.hasPendingMigrations(migrationsFolder)) {
                 const backupDir = join(app.getPath("userData"), "backups");
                 if (!fs.existsSync(backupDir)) {
                     fs.mkdirSync(backupDir);
@@ -903,9 +910,7 @@ async function setActiveDb(path: string, isNewFile = false) {
         } else {
             db.prepare("PRAGMA user_version = 7").run();
         }
-        await migrator.applyPendingMigrations(
-            join(app.getAppPath(), "electron", "database", "migrations"),
-        );
+        await migrator.applyPendingMigrations(migrationsFolder);
 
         if (isNewFile) {
             await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
