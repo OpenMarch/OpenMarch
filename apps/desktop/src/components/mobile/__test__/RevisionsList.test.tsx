@@ -1,13 +1,25 @@
 import { describe, expect, it, afterEach } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
-import { _RevisionsList } from "../MobileExportView";
+import { RevisionsList } from "../MobileExportView";
+import type { RevisionPreview } from "../queries/useProductions";
 import * as fc from "fast-check";
 
-type RevisionItem = {
-    id: number;
-    pushed_at: Date;
-    title: string;
-};
+function revision(
+    overrides: Partial<RevisionPreview> & {
+        id: number;
+        title: string;
+        pushed_at: string | Date;
+    },
+): RevisionPreview {
+    const { pushed_at: pa, ...rest } = overrides;
+    const pushed_at = typeof pa === "string" ? pa : (pa as Date).toISOString();
+    return {
+        show_data_url: null,
+        active: false,
+        ...rest,
+        pushed_at,
+    };
+}
 
 describe("RevisionsList", () => {
     afterEach(() => {
@@ -16,7 +28,7 @@ describe("RevisionsList", () => {
 
     describe("empty state", () => {
         it("displays empty state message when revisions array is empty", () => {
-            render(<_RevisionsList revisions={[]} activeRevisionId={1} />);
+            render(<RevisionsList revisions={[]} activeRevisionId={1} />);
 
             expect(
                 screen.getByLabelText("No revisions message"),
@@ -24,7 +36,7 @@ describe("RevisionsList", () => {
         });
 
         it("does not display 'All revisions' heading when empty", () => {
-            render(<_RevisionsList revisions={[]} activeRevisionId={1} />);
+            render(<RevisionsList revisions={[]} activeRevisionId={1} />);
 
             expect(screen.queryByText("All revisions")).not.toBeInTheDocument();
         });
@@ -32,42 +44,42 @@ describe("RevisionsList", () => {
 
     describe("non-empty state", () => {
         it("displays 'All revisions' heading when revisions exist", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Test Revision",
-                    pushed_at: new Date("2026-01-02T02:13:00Z"),
-                },
+                    pushed_at: "2026-01-02T02:13:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText("All revisions")).toBeInTheDocument();
         });
 
         it("renders all revision titles", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "First Revision",
-                    pushed_at: new Date("2026-01-02T02:13:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-02T02:13:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Second Revision",
-                    pushed_at: new Date("2026-01-01T01:00:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-01T01:00:00Z",
+                }),
+                revision({
                     id: 3,
                     title: "Third Revision",
-                    pushed_at: new Date("2025-12-31T12:00:00Z"),
-                },
+                    pushed_at: "2025-12-31T12:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText("First Revision")).toBeInTheDocument();
@@ -76,26 +88,26 @@ describe("RevisionsList", () => {
         });
 
         it("sorts revisions by pushed_at date in descending order (newest first)", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Oldest",
-                    pushed_at: new Date("2025-01-01T00:00:00Z"),
-                },
-                {
+                    pushed_at: "2025-01-01T00:00:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Newest",
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
+                revision({
                     id: 3,
                     title: "Middle",
-                    pushed_at: new Date("2025-06-01T00:00:00Z"),
-                },
+                    pushed_at: "2025-06-01T00:00:00Z",
+                }),
             ];
 
             const { container } = render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             const revisionElements = container.querySelectorAll(
@@ -112,63 +124,63 @@ describe("RevisionsList", () => {
         });
 
         it("displays formatted date for each revision", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Test Revision",
-                    pushed_at: new Date("2026-01-15T14:30:00Z"),
-                },
+                    pushed_at: "2020-01-15T14:30:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
-            // The date should be formatted and displayed
-            // Format: "January 15th, 2026 2:30PM" (timezone dependent)
-            const dateText = screen.getByText(/January.*2026/i);
+            // The date should be formatted and displayed (7+ days ago uses long format)
+            // Format: "January 15th, 2020 2:30PM" (timezone dependent)
+            const dateText = screen.getByText(/January.*2020/i);
             expect(dateText).toBeInTheDocument();
         });
     });
 
     describe("active revision highlighting", () => {
         it("displays 'Currently active' text for the active revision", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Active Revision",
-                    pushed_at: new Date("2026-01-02T02:13:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-02T02:13:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Inactive Revision",
-                    pushed_at: new Date("2026-01-01T01:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T01:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText("Currently active")).toBeInTheDocument();
         });
 
         it("does not display 'Currently active' for inactive revisions", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Inactive Revision 1",
-                    pushed_at: new Date("2026-01-02T02:13:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-02T02:13:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Inactive Revision 2",
-                    pushed_at: new Date("2026-01-01T01:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T01:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={999} />,
+                <RevisionsList revisions={revisions} activeRevisionId={999} />,
             );
 
             expect(
@@ -177,21 +189,21 @@ describe("RevisionsList", () => {
         });
 
         it("applies correct border class for active revision", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Active Revision",
-                    pushed_at: new Date("2026-01-02T02:13:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-02T02:13:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Inactive Revision",
-                    pushed_at: new Date("2026-01-01T01:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T01:00:00Z",
+                }),
             ];
 
             const { container } = render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             const revisionElements = container.querySelectorAll(
@@ -212,26 +224,26 @@ describe("RevisionsList", () => {
         });
 
         it("handles multiple revisions with only one active", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Revision 1",
-                    pushed_at: new Date("2026-01-03T00:00:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-03T00:00:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Revision 2 (Active)",
-                    pushed_at: new Date("2026-01-02T00:00:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-02T00:00:00Z",
+                }),
+                revision({
                     id: 3,
                     title: "Revision 3",
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
             ];
 
             const { container } = render(
-                <_RevisionsList revisions={revisions} activeRevisionId={2} />,
+                <RevisionsList revisions={revisions} activeRevisionId={2} />,
             );
 
             // Only one "Currently active" should be displayed
@@ -255,16 +267,16 @@ describe("RevisionsList", () => {
 
     describe("edge cases", () => {
         it("handles single revision correctly", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Only Revision",
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText("All revisions")).toBeInTheDocument();
@@ -273,22 +285,14 @@ describe("RevisionsList", () => {
         });
 
         it("handles revisions with same timestamp correctly", () => {
-            const sameDate = new Date("2026-01-01T00:00:00Z");
-            const revisions: RevisionItem[] = [
-                {
-                    id: 1,
-                    title: "Revision A",
-                    pushed_at: sameDate,
-                },
-                {
-                    id: 2,
-                    title: "Revision B",
-                    pushed_at: new Date(sameDate.getTime()),
-                },
+            const sameDate = "2026-01-01T00:00:00Z";
+            const revisions: RevisionPreview[] = [
+                revision({ id: 1, title: "Revision A", pushed_at: sameDate }),
+                revision({ id: 2, title: "Revision B", pushed_at: sameDate }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             // Both should be rendered
@@ -297,21 +301,21 @@ describe("RevisionsList", () => {
         });
 
         it("handles activeRevisionId that doesn't exist in revisions", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "Revision 1",
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
-                {
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
+                revision({
                     id: 2,
                     title: "Revision 2",
-                    pushed_at: new Date("2026-01-02T00:00:00Z"),
-                },
+                    pushed_at: "2026-01-02T00:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={999} />,
+                <RevisionsList revisions={revisions} activeRevisionId={999} />,
             );
 
             // Revisions should still render
@@ -326,32 +330,32 @@ describe("RevisionsList", () => {
 
         it("handles very long revision titles", () => {
             const longTitle = "A".repeat(200);
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: longTitle,
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText(longTitle)).toBeInTheDocument();
         });
 
         it("handles empty string revision titles", () => {
-            const revisions: RevisionItem[] = [
-                {
+            const revisions: RevisionPreview[] = [
+                revision({
                     id: 1,
                     title: "",
-                    pushed_at: new Date("2026-01-01T00:00:00Z"),
-                },
+                    pushed_at: "2026-01-01T00:00:00Z",
+                }),
             ];
 
             render(
-                <_RevisionsList revisions={revisions} activeRevisionId={1} />,
+                <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             // Component should still render without error
@@ -370,16 +374,17 @@ describe("RevisionsList", () => {
                         }),
                         fc.integer({ min: 1 }),
                         (ids, activeRevisionId) => {
-                            const revisions = ids.map((id, index) => ({
-                                id,
-                                title: `Revision ${index + 1}`,
-                                pushed_at: new Date(
-                                    `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
-                                ),
-                            }));
+                            const revisions: RevisionPreview[] = ids.map(
+                                (id, index) =>
+                                    revision({
+                                        id,
+                                        title: `Revision ${index + 1}`,
+                                        pushed_at: `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+                                    }),
+                            );
 
                             const { unmount } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
                                 />,
@@ -405,16 +410,17 @@ describe("RevisionsList", () => {
                         }),
                         fc.integer({ min: 1 }),
                         (ids, activeRevisionId) => {
-                            const revisions = ids.map((id, index) => ({
-                                id,
-                                title: `Revision ${index + 1}`,
-                                pushed_at: new Date(
-                                    `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
-                                ),
-                            }));
+                            const revisions: RevisionPreview[] = ids.map(
+                                (id, index) =>
+                                    revision({
+                                        id,
+                                        title: `Revision ${index + 1}`,
+                                        pushed_at: `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+                                    }),
+                            );
 
                             const { unmount } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
                                 />,
@@ -443,16 +449,17 @@ describe("RevisionsList", () => {
                         }),
                         fc.integer({ min: 1 }),
                         (ids, activeRevisionId) => {
-                            const revisions = ids.map((id, index) => ({
-                                id,
-                                title: `Revision ${index + 1}`,
-                                pushed_at: new Date(
-                                    `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
-                                ),
-                            }));
+                            const revisions: RevisionPreview[] = ids.map(
+                                (id, index) =>
+                                    revision({
+                                        id,
+                                        title: `Revision ${index + 1}`,
+                                        pushed_at: `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+                                    }),
+                            );
 
                             const { container, unmount } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
                                 />,
@@ -468,8 +475,8 @@ describe("RevisionsList", () => {
                             // by comparing the original sorted array
                             const sortedRevisions = [...revisions].sort(
                                 (a, b) =>
-                                    b.pushed_at.getTime() -
-                                    a.pushed_at.getTime(),
+                                    new Date(b.pushed_at).getTime() -
+                                    new Date(a.pushed_at).getTime(),
                             );
 
                             // All titles should appear in sorted order
@@ -496,18 +503,19 @@ describe("RevisionsList", () => {
                             maxLength: 20,
                         }),
                         (ids) => {
-                            const revisions = ids.map((id, index) => ({
-                                id,
-                                title: `Revision ${index + 1}`,
-                                pushed_at: new Date(
-                                    `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
-                                ),
-                            }));
+                            const revisions: RevisionPreview[] = ids.map(
+                                (id, index) =>
+                                    revision({
+                                        id,
+                                        title: `Revision ${index + 1}`,
+                                        pushed_at: `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+                                    }),
+                            );
 
                             // Test with a valid activeRevisionId
                             const validActiveId = revisions[0]?.id || 1;
                             const { unmount: unmount1 } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={validActiveId}
                                 />,
@@ -531,7 +539,7 @@ describe("RevisionsList", () => {
                             // Test with an invalid activeRevisionId
                             const invalidActiveId = 99999;
                             const { unmount: unmount2 } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={invalidActiveId}
                                 />,
@@ -553,7 +561,7 @@ describe("RevisionsList", () => {
                 fc.assert(
                     fc.property(fc.integer({ min: 1 }), (activeRevisionId) => {
                         const { unmount } = render(
-                            <_RevisionsList
+                            <RevisionsList
                                 revisions={[]}
                                 activeRevisionId={activeRevisionId}
                             />,
@@ -578,16 +586,17 @@ describe("RevisionsList", () => {
                         }),
                         fc.integer({ min: 1 }),
                         (ids, activeRevisionId) => {
-                            const revisions = ids.map((id, index) => ({
-                                id,
-                                title: `Revision ${index + 1}`,
-                                pushed_at: new Date(
-                                    `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
-                                ),
-                            }));
+                            const revisions: RevisionPreview[] = ids.map(
+                                (id, index) =>
+                                    revision({
+                                        id,
+                                        title: `Revision ${index + 1}`,
+                                        pushed_at: `2000-01-${String(index + 1).padStart(2, "0")}T00:00:00Z`,
+                                    }),
+                            );
 
                             const { container, unmount } = render(
-                                <_RevisionsList
+                                <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
                                 />,

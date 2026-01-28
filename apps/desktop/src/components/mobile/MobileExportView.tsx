@@ -1,10 +1,4 @@
-import React, {
-    useState,
-    useEffect,
-    useCallback,
-    useRef,
-    useMemo,
-} from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
     Button,
     DialogTrigger,
@@ -27,7 +21,7 @@ import {
 } from "./queries/useProductions";
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { motion, AnimatePresence } from "motion/react";
+import { animated, useTransition } from "@react-spring/web";
 
 type UploadStatus = "idle" | "loading" | "error";
 
@@ -275,25 +269,11 @@ export const SubmitRevisionForm = ({
     );
 };
 
-const REVISION_ENTER = {
-    opacity: 0,
-    scale: 0.94,
-    y: -12,
-};
-const REVISION_ANIMATE = {
-    opacity: 1,
-    scale: 1,
-    y: 0,
-};
-const REVISION_TRANSITION = {
-    type: "tween" as const,
-    duration: 0.24,
-    ease: [0.25, 0.1, 0.25, 1],
-};
-const LAYOUT_TRANSITION = {
-    duration: 0.24,
-    ease: [0.25, 0.1, 0.25, 1],
-};
+// Smooth spring config for fluid, professional animations
+const REVISION_SPRING_CONFIG = { tension: 280, friction: 36 };
+
+// Estimated height per revision item (card height + gap)
+const REVISION_ITEM_HEIGHT = 80;
 
 export const RevisionsList = ({
     revisions,
@@ -302,8 +282,6 @@ export const RevisionsList = ({
     revisions: RevisionPreview[];
     activeRevisionId: number | null;
 }) => {
-    const prevIdsRef = useRef<Set<number>>(new Set());
-
     const sortedRevisions = useMemo(
         () =>
             [...revisions].sort(
@@ -314,16 +292,26 @@ export const RevisionsList = ({
         [revisions],
     );
 
-    const newItemId =
-        prevIdsRef.current.size > 0 &&
-        sortedRevisions[0] &&
-        !prevIdsRef.current.has(sortedRevisions[0].id)
-            ? sortedRevisions[0].id
-            : null;
+    // Map each revision with its calculated Y position for smooth layout transitions
+    const revisionsWithPositions = useMemo(
+        () =>
+            sortedRevisions.map((revision, index) => ({
+                ...revision,
+                y: index * REVISION_ITEM_HEIGHT,
+            })),
+        [sortedRevisions],
+    );
 
-    useEffect(() => {
-        prevIdsRef.current = new Set(sortedRevisions.map((r) => r.id));
-    }, [sortedRevisions]);
+    const transitions = useTransition(revisionsWithPositions, {
+        keys: (item) => item.id,
+        from: { opacity: 0, scale: 0.85, y: -40, height: 0 },
+        enter: (item) => async (next) => {
+            await next({ opacity: 1, scale: 1, y: item.y, height: 80 });
+        },
+        update: (item) => ({ y: item.y }),
+        leave: { opacity: 0, scale: 0.92, y: -20, height: 0 },
+        config: REVISION_SPRING_CONFIG,
+    });
 
     if (revisions.length === 0) {
         return (
@@ -341,26 +329,25 @@ export const RevisionsList = ({
     return (
         <section className="flex flex-col gap-6" aria-label="Revisions list">
             <h2 className="text-body text-text-subtitle">All revisions</h2>
-            <div className="relative flex flex-col gap-8">
-                <AnimatePresence mode="popLayout" initial={false}>
-                    {sortedRevisions.map((revision) => (
-                        <motion.div
-                            key={revision.id}
-                            layout
-                            initial={
-                                newItemId === revision.id
-                                    ? REVISION_ENTER
-                                    : false
-                            }
-                            animate={REVISION_ANIMATE}
-                            transition={
-                                newItemId === revision.id
-                                    ? {
-                                          ...REVISION_TRANSITION,
-                                          layout: LAYOUT_TRANSITION,
-                                      }
-                                    : { layout: LAYOUT_TRANSITION }
-                            }
+            <div
+                className="relative"
+                style={{
+                    height: sortedRevisions.length * REVISION_ITEM_HEIGHT,
+                }}
+            >
+                {transitions((style, revision) => (
+                    <animated.div
+                        style={{
+                            position: "absolute",
+                            width: "100%",
+                            transform: style.y.to(
+                                (y) => `translate3d(0, ${y}px, 0)`,
+                            ),
+                            opacity: style.opacity,
+                            scale: style.scale.to((s) => `${s}`),
+                        }}
+                    >
+                        <div
                             className={twMerge(
                                 "rounded-6 bg-fg-2 flex flex-col gap-4 border p-12",
                                 activeRevisionId === revision.id
@@ -382,9 +369,9 @@ export const RevisionsList = ({
                                     </div>
                                 )}
                             </div>
-                        </motion.div>
-                    ))}
-                </AnimatePresence>
+                        </div>
+                    </animated.div>
+                ))}
             </div>
         </section>
     );
