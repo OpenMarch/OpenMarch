@@ -51,8 +51,6 @@ function useMobileExportValidation(): AlertState {
     const { data: currentProduction, error: currentProductionError } =
         useCurrentProduction();
 
-    console.log(currentProduction);
-
     return useMemo(() => {
         const isSignedIn = isAuthenticated;
         const hasProductionId = !!productionId;
@@ -198,7 +196,7 @@ function MobileExportModalContents() {
     );
 
     return (
-        <section className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
+        <section className="animate-scale-in text-text flex h-full w-[30rem] flex-col gap-16">
             <header className="flex items-start justify-between gap-24">
                 {heading}
                 <button
@@ -209,7 +207,7 @@ function MobileExportModalContents() {
                 </button>
             </header>
 
-            <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
+            <div className="flex grow flex-col gap-16 overflow-y-auto pr-3">
                 <div className="flex flex-col gap-12">
                     {currentProduction ? (
                         <MobileExportView

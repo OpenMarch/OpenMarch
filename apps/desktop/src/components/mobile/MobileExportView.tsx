@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, {
+    useState,
+    useEffect,
+    useCallback,
+    useRef,
+    useMemo,
+} from "react";
 import {
     Button,
     DialogTrigger,
@@ -9,7 +15,6 @@ import {
 } from "@openmarch/ui";
 import {
     CircleNotchIcon,
-    CheckCircleIcon,
     WarningCircleIcon,
     GearSixIcon,
 } from "@phosphor-icons/react";
@@ -22,8 +27,9 @@ import {
 } from "./queries/useProductions";
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "motion/react";
 
-type UploadStatus = "idle" | "loading" | "progress" | "error" | "success";
+type UploadStatus = "idle" | "loading" | "error";
 
 interface UploadProgress {
     status: "loading" | "progress" | "error" | "success";
@@ -41,8 +47,8 @@ export default function MobileExportView({
     currentProduction: Production;
 }) {
     return (
-        <section className="animate-scale-in flex h-full w-fit flex-col">
-            <div className="flex w-[30rem] grow flex-col gap-16 overflow-y-auto">
+        <section className="animate-scale-in flex h-full w-full flex-col">
+            <div className="flex grow flex-col gap-16 overflow-y-auto">
                 <SubmitRevisionForm isFirstRevision={false} />
                 <RevisionsList
                     revisions={currentProduction.revisions}
@@ -73,6 +79,26 @@ function toDisplayError(fullError: string): string {
 
 const formatRevisionDate = (dateString: string): string => {
     const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+    // Show relative time if less than 7 days ago
+    if (diffDays < 7) {
+        if (diffMinutes < 1) {
+            return "Just now";
+        } else if (diffMinutes < 60) {
+            return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
+        } else if (diffHours < 24) {
+            return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
+        } else {
+            return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+        }
+    }
+
+    // Show full formatted date if 7 days or older
     const months = [
         "January",
         "February",
@@ -114,8 +140,6 @@ export const SubmitRevisionForm = ({
     isFirstRevision: boolean;
 }) => {
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
-    const [uploadProgress, setUploadProgress] = useState<number>(0);
-    const [uploadMessage, setUploadMessage] = useState<string>("");
     const [uploadError, setUploadError] = useState<string>("");
     const [revisionTitle, setRevisionTitle] = useState<string>(
         isFirstRevision ? "Initial revision" : "",
@@ -123,36 +147,38 @@ export const SubmitRevisionForm = ({
     const [titleError, setTitleError] = useState<string>("");
     const queryClient = useQueryClient();
     const { mutate: uploadRevision } = useMutation(
-        uploadRevisionMutationOptions({ queryClient, onSuccess: () => {} }),
+        uploadRevisionMutationOptions({
+            queryClient,
+            onError: (error) => {
+                const errorMessage =
+                    error instanceof Error ? error.message : String(error);
+                console.error("Upload error:", error);
+                const display = toDisplayError(errorMessage);
+                setUploadStatus("error");
+                setUploadError(display);
+                toast.error(display);
+            },
+        }),
     );
-    const pushDisabled =
-        uploadStatus === "loading" ||
-        uploadStatus === "progress" ||
-        uploadStatus === "success";
 
     // Subscribe to upload progress updates
     useEffect(() => {
         const unsubscribe = window.electron.onUploadProgress(
             (progress: UploadProgress) => {
-                if (progress.status === "loading") {
+                if (
+                    progress.status === "loading" ||
+                    progress.status === "progress"
+                ) {
                     setUploadStatus("loading");
-                    setUploadMessage(progress.message || "Preparing...");
-                } else if (progress.status === "progress") {
-                    setUploadStatus("progress");
-                    setUploadProgress(progress.progress || 0);
-                    setUploadMessage(progress.message || "Uploading...");
                 } else if (progress.status === "error") {
                     const raw = progress.error || "Upload failed";
                     console.error("Upload error:", raw);
                     const display = toDisplayError(raw);
                     setUploadStatus("error");
                     setUploadError(display);
-                    setUploadMessage(display);
                     toast.error(display);
                 } else if (progress.status === "success") {
-                    setUploadStatus("success");
-                    setUploadProgress(100);
-                    setUploadMessage(progress.message || "Upload successful");
+                    setUploadStatus("idle");
                     toast.success(progress.message || "Upload successful");
                 }
             },
@@ -172,39 +198,16 @@ export const SubmitRevisionForm = ({
 
         setTitleError("");
         setUploadStatus("loading");
-        setUploadProgress(0);
-        setUploadMessage("");
         setUploadError("");
 
-        try {
-            const title = isFirstRevision
-                ? "Initial revision"
-                : revisionTitle.trim();
-            const result = await window.electron.uploadDatabase(title);
-            if (!result.success) {
-                const raw = result.error || "Upload failed";
-                console.error("Upload error:", raw);
-                const display = toDisplayError(raw);
-                setUploadStatus("error");
-                setUploadError(display);
-                toast.error(display);
-            }
-            // Success is handled via progress callback
-        } catch (error) {
-            const errorMessage =
-                error instanceof Error ? error.message : String(error);
-            console.error("Upload error:", error);
-            const display = toDisplayError(errorMessage);
-            setUploadStatus("error");
-            setUploadError(display);
-            toast.error(display);
-        }
-    }, [isFirstRevision, revisionTitle]);
+        const title = isFirstRevision
+            ? "Initial revision"
+            : revisionTitle.trim();
+        uploadRevision({ title });
+    }, [isFirstRevision, revisionTitle, uploadRevision]);
 
-    const isUploading =
-        uploadStatus === "loading" || uploadStatus === "progress";
+    const isUploading = uploadStatus === "loading";
     const hasError = uploadStatus === "error";
-    const isSuccess = uploadStatus === "success";
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -242,7 +245,7 @@ export const SubmitRevisionForm = ({
                 <div className="flex items-center gap-8">
                     <Button
                         type="submit"
-                        disabled={pushDisabled}
+                        disabled={isUploading}
                         className="flex-1"
                     >
                         {isUploading ? (
@@ -253,11 +256,6 @@ export const SubmitRevisionForm = ({
                                 />
                                 Pushing to Mobile App...
                             </span>
-                        ) : isSuccess ? (
-                            <span className="flex items-center gap-8">
-                                <CheckCircleIcon size={16} />
-                                Push to Mobile App
-                            </span>
                         ) : (
                             "Push to Mobile App"
                         )}
@@ -266,35 +264,6 @@ export const SubmitRevisionForm = ({
                 </div>
             </form>
 
-            {/* Progress Display */}
-            {(isUploading || isSuccess) && (
-                <div className="flex flex-col gap-8">
-                    {/* Progress Bar */}
-                    <div className="rounded-6 bg-stroke h-8 w-full overflow-hidden">
-                        <div
-                            className="bg-accent h-full transition-all duration-300 ease-out"
-                            style={{
-                                width: `${uploadProgress}%`,
-                            }}
-                        />
-                    </div>
-
-                    {/* Status Message */}
-                    {uploadMessage && (
-                        <p className="text-body text-text-subtitle">
-                            {uploadMessage}
-                        </p>
-                    )}
-
-                    {/* Progress Percentage */}
-                    {uploadStatus === "progress" && (
-                        <p className="text-body text-text-subtitle">
-                            {Math.round(uploadProgress)}%
-                        </p>
-                    )}
-                </div>
-            )}
-
             {/* Error Display */}
             {hasError && uploadError && (
                 <div className="rounded-6 bg-red/10 text-body text-red flex items-center gap-8 p-12">
@@ -302,16 +271,28 @@ export const SubmitRevisionForm = ({
                     <span>{uploadError}</span>
                 </div>
             )}
-
-            {/* Success Message */}
-            {isSuccess && (
-                <div className="rounded-6 bg-green/10 text-body text-accent flex items-center gap-8 p-12">
-                    <CheckCircleIcon size={16} />
-                    <span>Database uploaded successfully!</span>
-                </div>
-            )}
         </>
     );
+};
+
+const REVISION_ENTER = {
+    opacity: 0,
+    scale: 0.94,
+    y: -12,
+};
+const REVISION_ANIMATE = {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+};
+const REVISION_TRANSITION = {
+    type: "tween" as const,
+    duration: 0.24,
+    ease: [0.25, 0.1, 0.25, 1],
+};
+const LAYOUT_TRANSITION = {
+    duration: 0.24,
+    ease: [0.25, 0.1, 0.25, 1],
 };
 
 export const RevisionsList = ({
@@ -321,6 +302,29 @@ export const RevisionsList = ({
     revisions: RevisionPreview[];
     activeRevisionId: number | null;
 }) => {
+    const prevIdsRef = useRef<Set<number>>(new Set());
+
+    const sortedRevisions = useMemo(
+        () =>
+            [...revisions].sort(
+                (a, b) =>
+                    new Date(b.pushed_at).getTime() -
+                    new Date(a.pushed_at).getTime(),
+            ),
+        [revisions],
+    );
+
+    const newItemId =
+        prevIdsRef.current.size > 0 &&
+        sortedRevisions[0] &&
+        !prevIdsRef.current.has(sortedRevisions[0].id)
+            ? sortedRevisions[0].id
+            : null;
+
+    useEffect(() => {
+        prevIdsRef.current = new Set(sortedRevisions.map((r) => r.id));
+    }, [sortedRevisions]);
+
     if (revisions.length === 0) {
         return (
             <h4
@@ -333,19 +337,30 @@ export const RevisionsList = ({
             </h4>
         );
     }
+
     return (
         <section className="flex flex-col gap-6" aria-label="Revisions list">
             <h2 className="text-body text-text-subtitle">All revisions</h2>
-            <div className="flex flex-col gap-8">
-                {revisions
-                    .sort(
-                        (a, b) =>
-                            new Date(b.pushed_at).getTime() -
-                            new Date(a.pushed_at).getTime(),
-                    )
-                    .map((revision) => (
-                        <div
+            <div className="relative flex flex-col gap-8">
+                <AnimatePresence mode="popLayout" initial={false}>
+                    {sortedRevisions.map((revision) => (
+                        <motion.div
                             key={revision.id}
+                            layout
+                            initial={
+                                newItemId === revision.id
+                                    ? REVISION_ENTER
+                                    : false
+                            }
+                            animate={REVISION_ANIMATE}
+                            transition={
+                                newItemId === revision.id
+                                    ? {
+                                          ...REVISION_TRANSITION,
+                                          layout: LAYOUT_TRANSITION,
+                                      }
+                                    : { layout: LAYOUT_TRANSITION }
+                            }
                             className={twMerge(
                                 "rounded-6 bg-fg-2 flex flex-col gap-4 border p-12",
                                 activeRevisionId === revision.id
@@ -367,8 +382,9 @@ export const RevisionsList = ({
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
+                </AnimatePresence>
             </div>
         </section>
     );
