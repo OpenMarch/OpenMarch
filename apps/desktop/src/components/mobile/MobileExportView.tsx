@@ -11,6 +11,7 @@ import {
     CircleNotchIcon,
     WarningCircleIcon,
     GearSixIcon,
+    DeviceMobileIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import DetachButton from "./DetachButton";
@@ -143,6 +144,11 @@ export const SubmitRevisionForm = ({
     const { mutate: uploadRevision } = useMutation(
         uploadRevisionMutationOptions({
             queryClient,
+            onSuccess: () => {
+                setUploadStatus("idle");
+                setRevisionTitle("");
+                toast.success("Upload successful");
+            },
             onError: (error) => {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
@@ -171,9 +177,6 @@ export const SubmitRevisionForm = ({
                     setUploadStatus("error");
                     setUploadError(display);
                     toast.error(display);
-                } else if (progress.status === "success") {
-                    setUploadStatus("idle");
-                    toast.success(progress.message || "Upload successful");
                 }
             },
         );
@@ -226,6 +229,7 @@ export const SubmitRevisionForm = ({
                     <Input
                         placeholder="Describe what changed..."
                         value={revisionTitle}
+                        disabled={isUploading}
                         onChange={handleTitleChange}
                         className={twMerge(
                             "w-full",
@@ -355,7 +359,7 @@ export const RevisionsList = ({
                                     : "border-stroke",
                             )}
                         >
-                            <h4 className="text-body font-semibold">
+                            <h4 className="text-body truncate font-semibold">
                                 {revision.title}
                             </h4>
                             <div className="space-between flex">
@@ -364,9 +368,9 @@ export const RevisionsList = ({
                                 </div>
 
                                 {activeRevisionId === revision.id && (
-                                    <div className="text-body text-accent">
-                                        Currently active
-                                    </div>
+                                    <span className="text-body text-accent inline-flex items-center gap-4">
+                                        Active <DeviceMobileIcon />
+                                    </span>
                                 )}
                             </div>
                         </div>
