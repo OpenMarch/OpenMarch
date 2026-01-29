@@ -11,10 +11,9 @@ import {
     type OpenMarchSchemaType,
     toOpenMarchFile,
 } from "@openmarch/schema";
-import { FieldPropertiesSchema } from "../../../src/components/field/fieldPropertiesSchema";
-import { getOrmConnection } from "../../database/database.services";
 import { FieldProperties } from "@openmarch/core";
-import { DB, schema } from "../../database/db";
+import { DB, schema } from "@/global/database/db";
+import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 
 type TimingRow = {
     position: number;
@@ -209,9 +208,7 @@ function buildMeasuresFromTiming({
 // Data fetch + schema build (keeps toOpenMarchSchema under max-lines)
 // -----------------------------------------------------------------------------
 
-type DotsDb = ReturnType<typeof getOrmConnection>;
-
-async function fetchDotsData(db: DotsDb) {
+async function fetchDotsData(db: DB) {
     const timingRows = (await db
         .select()
         .from(schema.timing_objects)

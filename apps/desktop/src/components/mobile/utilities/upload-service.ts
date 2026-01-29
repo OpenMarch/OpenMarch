@@ -1,7 +1,7 @@
-import { authenticatedFetch } from "./api-client";
-import { workspaceSettingsSchema } from "../../../src/settings/workspaceSettings";
 import { DB } from "electron/database/db";
 import { toCompressedOpenMarchBytes } from "./dots-to-om";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
+import { apiPostFormData } from "@/auth/api-client";
 
 export interface UploadResult {
     success: boolean;
@@ -44,20 +44,12 @@ async function createRevisionOnServer({
     data,
     setActive = true,
     title,
-    onProgress,
 }: {
     productionId: string;
     data: Uint8Array;
     setActive?: boolean;
     title?: string;
-    onProgress?: UploadProgressCallback;
 }): Promise<UploadResult> {
-    onProgress?.({
-        status: "progress",
-        message: "Uploading file...",
-        progress: 0,
-    });
-
     const formData = new FormData();
     // Copy into ArrayBuffer so Blob accepts it (avoids Uint8Array<ArrayBufferLike> vs BlobPart)
     const buffer = new ArrayBuffer(data.length);
@@ -69,39 +61,15 @@ async function createRevisionOnServer({
         formData.append("title", title.trim());
     }
 
-    onProgress?.({
-        status: "progress",
-        message: "Connecting to server...",
-        progress: 10,
-    });
-
     const path = `/v1/productions/${productionId}/revisions`;
-    let response: Response;
     try {
-        response = await authenticatedFetch(path, {
-            method: "POST",
-            body: formData,
-        });
+        await apiPostFormData(path, formData);
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
         return {
             success: false,
             error: `Upload failed: ${errorMessage}`,
-        };
-    }
-
-    onProgress?.({
-        status: "progress",
-        message: "Upload complete",
-        progress: 100,
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text().catch(() => "Unknown error");
-        return {
-            success: false,
-            error: `Upload failed with status ${response.status}: ${errorText}`,
         };
     }
 
@@ -123,24 +91,15 @@ async function createRevisionOnServer({
 export async function uploadDatabaseToServer(
     dbConnection: DB,
     title?: string,
-    onProgress?: UploadProgressCallback,
 ): Promise<UploadResult> {
     try {
         const productionId = await getOtmProductionId(dbConnection);
         if (!productionId) {
-            const errorResult: UploadResult = {
-                success: false,
-                error: "No OTM production linked. Set OTM production in workspace settings.",
-            };
-            onProgress?.({ status: "error", error: errorResult.error });
-            return errorResult;
+            throw new Error(
+                "No OTM production linked. Set OTM production in workspace settings.",
+            );
         }
 
-        onProgress?.({
-            status: "progress",
-            message: "Reading file...",
-            progress: 30,
-        });
         const omzBytes = await toCompressedOpenMarchBytes(dbConnection);
 
         const result = await createRevisionOnServer({
@@ -148,33 +107,16 @@ export async function uploadDatabaseToServer(
             data: omzBytes,
             setActive: true,
             title,
-            onProgress,
         });
 
-        if (result.success) {
-            onProgress?.({
-                status: "success",
-                message: result.message || "Upload successful",
-            });
-        } else {
-            onProgress?.({
-                status: "error",
-                error: result.error,
-            });
+        if (!result.success) {
+            throw new Error(result.error || "Upload failed");
         }
 
         return result;
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        const errorResult = {
-            success: false,
-            error: `Upload failed: ${errorMessage}`,
-        };
-        onProgress?.({
-            status: "error",
-            error: errorResult.error,
-        });
-        return errorResult;
+        throw new Error(`Upload failed: ${errorMessage}`);
     }
 }

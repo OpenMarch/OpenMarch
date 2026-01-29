@@ -9,15 +9,14 @@ import {
     queryOptions,
     useQuery,
 } from "@tanstack/react-query";
-import {
-    NEEDS_AUTH_BASE_QUERY_KEY,
-    useAccessToken,
-} from "@/hooks/queries/useAuth";
-import { apiGet } from "@/api/api-client";
+import { NEEDS_AUTH_BASE_QUERY_KEY, useAccessToken } from "@/auth/useAuth";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import { OTM_BASE_QUERY_KEY } from "./constants";
+import { apiGet } from "@/auth/api-client";
+import { uploadDatabaseToServer } from "../utilities/upload-service";
+import { db } from "@/global/database/db";
 
 const KEY_BASE = "productions";
 
@@ -116,7 +115,6 @@ export const productionsByEnsembleQueryOptions = (
             }
             const response = await apiGet<ProductionsResponse>(
                 `v1/ensembles/${ensembleId}/productions`,
-                token,
             );
             return response.productions;
         },
@@ -136,7 +134,7 @@ export const uploadRevisionMutationOptions = ({
 }) => {
     return mutationOptions({
         mutationFn: async ({ title }: { title: string }) =>
-            window.electron.uploadDatabase(title),
+            uploadDatabaseToServer(db, title),
         onSuccess: () => {
             void queryClient.invalidateQueries({
                 queryKey: productionKeys.all(),
@@ -213,7 +211,6 @@ export const _productionQueryOptions = (
             }
             const response = await apiGet<{ production: Production }>(
                 `v1/productions/${productionId}`,
-                token,
             );
             return response.production;
         },

@@ -9,7 +9,7 @@ import {
     useOtmProductionId,
 } from "./queries/useProductions";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { useAccessToken, useAuth } from "@/hooks/queries/useAuth";
+import { useAccessToken, useAuth } from "@/auth/useAuth";
 import {
     AlertDialog,
     AlertDialogTitle,
@@ -19,7 +19,7 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@openmarch/ui";
-import { SignInButton } from "../auth/AuthButton";
+import { SignInButton } from "../../auth/AuthButton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { hasAnyEnsemblesQueryOptions } from "./queries/useEnsembles";
 import {

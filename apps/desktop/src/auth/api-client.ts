@@ -11,6 +11,10 @@ function getApiEndpoint(): string {
         : OPENMARCH_API_ENDPOINT;
 }
 
+const getAccessTokenFn = async (): Promise<string | null> => {
+    return (await window.electron.auth.getAccessToken()).token;
+};
+
 /**
  * Makes an authenticated API request.
  * @param path - The API path (e.g., 'v1/ensembles')
@@ -22,8 +26,9 @@ function getApiEndpoint(): string {
 async function authenticatedFetch<T>(
     path: string,
     options: RequestInit = {},
-    token: string | null,
+    getAccessToken: () => Promise<string | null> = getAccessTokenFn,
 ): Promise<T> {
+    const token = await getAccessToken();
     if (!token) {
         throw new Error("Authentication token is required");
     }
@@ -106,29 +111,18 @@ async function authenticatedFetch<T>(
 /**
  * Makes a GET request to the API.
  */
-export async function apiGet<T>(
-    path: string,
-    token: string | null,
-): Promise<T> {
-    return authenticatedFetch<T>(path, { method: "GET" }, token);
+export async function apiGet<T>(path: string): Promise<T> {
+    return authenticatedFetch<T>(path, { method: "GET" });
 }
 
 /**
  * Makes a POST request to the API.
  */
-export async function apiPost<T>(
-    path: string,
-    body: unknown,
-    token: string | null,
-): Promise<T> {
-    return authenticatedFetch<T>(
-        path,
-        {
-            method: "POST",
-            body: JSON.stringify(body),
-        },
-        token,
-    );
+export async function apiPost<T>(path: string, body: unknown): Promise<T> {
+    return authenticatedFetch<T>(path, {
+        method: "POST",
+        body: JSON.stringify(body),
+    });
 }
 
 /**
@@ -137,8 +131,9 @@ export async function apiPost<T>(
 export async function apiPostFormData<T>(
     path: string,
     formData: FormData,
-    token: string | null,
+    getAccessToken: () => Promise<string | null> = getAccessTokenFn,
 ): Promise<T> {
+    const token = await getAccessToken();
     if (!token) {
         throw new Error("Authentication token is required");
     }

@@ -3,8 +3,8 @@
  */
 
 import { queryOptions } from "@tanstack/react-query";
-import { NEEDS_AUTH_BASE_QUERY_KEY } from "../../../hooks/queries/useAuth";
-import { apiGet } from "@/api/api-client";
+import { NEEDS_AUTH_BASE_QUERY_KEY } from "../../../auth/useAuth";
+import { apiGet } from "@/auth/api-client";
 import { DEFAULT_STALE_TIME } from "../../../hooks/queries/constants";
 import { OTM_BASE_QUERY_KEY } from "./constants";
 import { ProductionPreview } from "./useProductions";

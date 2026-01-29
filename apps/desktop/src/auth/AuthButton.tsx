@@ -18,7 +18,7 @@ import {
     DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
 import { twMerge } from "tailwind-merge";
-import { useAuth } from "@/hooks/queries/useAuth";
+import { useAuth } from "@/auth/useAuth";
 
 export const SignInButton = ({
     className,

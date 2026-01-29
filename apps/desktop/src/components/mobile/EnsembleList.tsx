@@ -6,7 +6,7 @@ import {
 } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTolgee } from "@tolgee/react";
-import { useAccessToken } from "@/hooks/queries/useAuth";
+import { useAccessToken } from "@/auth/useAuth";
 import { allEnsemblesQueryOptions } from "./queries/useEnsembles";
 import {
     AlertDialog,

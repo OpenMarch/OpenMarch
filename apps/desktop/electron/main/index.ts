@@ -22,7 +22,6 @@ import {
     clearRecentFiles,
     updateRecentFileSvgPreview,
 } from "./services/recent-files-service";
-import { uploadDatabaseToServer } from "./services/upload-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
@@ -35,7 +34,6 @@ import {
     initAuthAfterReady,
     handleAuthSecondInstance,
 } from "./auth";
-import { getOrmConnection } from "../database/database.services";
 
 // The built directory structure
 //
@@ -292,16 +290,6 @@ void app.whenReady().then(async () => {
             console.error("Error repairing database:", error);
             throw error;
         }
-    });
-    ipcMain.handle("database:upload", async (_, title: string) => {
-        return await uploadDatabaseToServer(
-            getOrmConnection(),
-            title,
-            (progress) => {
-                // Send progress updates to renderer
-                win?.webContents.send("database:upload-progress", progress);
-            },
-        );
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 

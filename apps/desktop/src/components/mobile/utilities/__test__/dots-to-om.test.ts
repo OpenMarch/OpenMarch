@@ -1,6 +1,6 @@
 import { describeDbTests } from "@/test/base";
 import { expect } from "vitest";
-import type { DB } from "../../../database/db";
+import type { DB } from "@/global/database/db";
 import { toOpenMarchSchema } from "../dots-to-om";
 import { safeValidateOpenMarchData, SCHEMA_VERSION } from "@openmarch/schema";
 

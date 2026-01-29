@@ -5,8 +5,8 @@
 
 import { useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/AuthStore";
-import type { AuthState } from "../../../electron/main/auth/types";
+import { useAuthStore } from "@/auth/AuthStore";
+import type { AuthState } from "../../electron/main/auth/types";
 
 const KEY_BASE = "auth";
 export const NEEDS_AUTH_BASE_QUERY_KEY = "needs-auth" as const;

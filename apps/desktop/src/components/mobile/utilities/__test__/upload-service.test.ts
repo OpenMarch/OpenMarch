@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DB } from "../../../database/db";
+import type { DB } from "@/global/database/db";
 import {
     uploadDatabaseToServer,
     type UploadProgressCallback,

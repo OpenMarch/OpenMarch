@@ -261,37 +261,6 @@ const APP_API = {
             audioFileId,
         ) as Promise<AudioFile | null>,
 
-    // Database Upload
-    uploadDatabase: (title?: string) =>
-        ipcRenderer.invoke("database:upload", title ?? "") as Promise<{
-            success: boolean;
-            error?: string;
-            message?: string;
-        }>,
-
-    /** Subscribes to database upload progress updates */
-    onUploadProgress: (
-        callback: (progress: {
-            status: "loading" | "progress" | "error" | "success";
-            message?: string;
-            progress?: number;
-            error?: string;
-        }) => void,
-    ) => {
-        const handler = (
-            _event: IpcRendererEvent,
-            progress: {
-                status: "loading" | "progress" | "error" | "success";
-                message?: string;
-                progress?: number;
-                error?: string;
-            },
-        ) => callback(progress);
-        ipcRenderer.on("database:upload-progress", handler);
-        return () =>
-            ipcRenderer.removeListener("database:upload-progress", handler);
-    },
-
     // SQL Proxy for Drizzle
     sqlProxy: (
         sql: string,

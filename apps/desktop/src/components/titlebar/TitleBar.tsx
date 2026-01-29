@@ -15,7 +15,7 @@ import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { AuthButton } from "@/components/auth/AuthButton";
+import { AuthButton } from "@/auth/AuthButton";
 
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
