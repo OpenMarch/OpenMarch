@@ -3,6 +3,7 @@ import { vi } from "vitest";
 import { drizzle as drizzleSqliteProxy } from "drizzle-orm/sqlite-proxy";
 import { schema } from "./electron/database/db";
 
+// @ts-ignore
 global.jest = vi;
 
 // Mock Electron modules globally

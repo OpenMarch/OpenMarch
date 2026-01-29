@@ -447,7 +447,8 @@
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "discardChanges": "Discard Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
@@ -576,6 +577,7 @@
         },
         "drillPrefix": "Drill Prefix",
         "editButton": "Edit Marchers",
+        "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
@@ -600,6 +602,9 @@
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
+        "name": "Name",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes for this marcher...",
         "quantity": "Quantity",
         "section": "Section",
         "sectionError": {
@@ -608,7 +613,9 @@
         "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
-        "title": "Marchers"
+        "title": "Marchers",
+        "updateButton": "Update Marcher",
+        "year": "Year"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",
