@@ -734,10 +734,17 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                         ? this.cssZoomWrapper.parentElement.parentElement
                         : null;
                     this._viewportEl = viewportEl || null;
-                    if (typeof ResizeObserver !== "undefined" && viewportEl) {
-                        const ro = new ResizeObserver(() => refresh());
-                        ro.observe(viewportEl);
-                        this._viewportResizeObserver = ro;
+                    if (typeof ResizeObserver !== "undefined") {
+                        if (viewportEl) {
+                            const ro = new ResizeObserver(() => refresh());
+                            ro.observe(viewportEl);
+                            this._viewportResizeObserver = ro;
+                        } else {
+                            // Fallback to observing the wrapper if viewportEl is not available
+                            const ro = new ResizeObserver(() => refresh());
+                            ro.observe(this.cssZoomWrapper);
+                            this._wrapperResizeObserver = ro;
+                        }
                     }
                 } catch {
                     // ignore observer setup failures
