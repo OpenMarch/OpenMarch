@@ -91,6 +91,7 @@ export default function Canvas({
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const innerDivRef = useRef<HTMLDivElement>(null);
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
@@ -433,21 +434,33 @@ export default function Canvas({
 
         // When fullscreen mode is activated, center and fit the canvas
         if (isFullscreen) {
-            // Small delay to ensure the fullscreen transition has completed
+            // Wait for CSS transition and layout to complete before centering
             setTimeout(() => {
-                centerAndFitCanvas();
-                setSelectedMarchers([]);
-                setSelectedShapePageIds([]);
-            }, 100);
+                requestAnimationFrame(() => {
+                    centerAndFitCanvas();
+                    setSelectedMarchers([]);
+                    setSelectedShapePageIds([]);
+                });
+            }, 250);
         }
 
         if (!isFullscreen) {
             setPerspective(0);
             // Recalculate canvas size and center after exiting fullscreen
+            // Wait for CSS transition (200ms) + layout to complete before measuring
+            // Use innerDivRef to get the actual available space (content box of container)
             setTimeout(() => {
-                canvas.refreshCanvasSize();
-                canvas.centerAtBaseZoom();
-            }, 100);
+                requestAnimationFrame(() => {
+                    if (innerDivRef.current) {
+                        const rect =
+                            innerDivRef.current.getBoundingClientRect();
+                        canvas.setCanvasSize(rect.width, rect.height);
+                    } else {
+                        canvas.refreshCanvasSize();
+                    }
+                    canvas.centerAtBaseZoom();
+                });
+            }, 250);
         }
     }, [
         isFullscreen,
@@ -575,6 +588,7 @@ export default function Canvas({
         >
             {pages.length > 0 || canvas ? (
                 <div
+                    ref={innerDivRef}
                     style={{
                         transform: `rotateX(${perspective}deg)`,
                         transformOrigin:
