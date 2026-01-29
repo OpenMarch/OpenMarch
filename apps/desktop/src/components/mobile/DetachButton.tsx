@@ -38,7 +38,7 @@ export default function DetachButton(props: ButtonProps) {
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
-                <Button {...restProps}>
+                <Button {...restProps} className="w-full">
                     <LinkBreakIcon /> Detach File from Production
                 </Button>
             </Popover.Trigger>
@@ -54,7 +54,9 @@ export default function DetachButton(props: ButtonProps) {
                 >
                     <div className="text-text text-sm">
                         Are you sure you want to detach this file from the OTM
-                        Production? <br /> You can always re-attach it later
+                        Production? This means you will not be able to upload
+                        revisions to the mobile app. You can always re-attach it
+                        later
                     </div>
                     <div className="flex gap-8">
                         <Button

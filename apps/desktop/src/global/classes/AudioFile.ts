@@ -57,6 +57,30 @@ export default class AudioFile {
     }
 
     /**
+     * Computes a SHA256 checksum of the raw audio data (hex string).
+     * Matches the output of Digest::SHA256.hexdigest(data) used by om-online.
+     *
+     * @param data Raw audio file bytes (ArrayBuffer or Uint8Array)
+     * @returns Hex string of the SHA256 hash
+     */
+    public static async computeChecksum(
+        data: ArrayBuffer | Uint8Array,
+    ): Promise<string> {
+        const buffer: ArrayBuffer =
+            data instanceof Uint8Array
+                ? (data.buffer.slice(
+                      data.byteOffset,
+                      data.byteOffset + data.byteLength,
+                  ) as ArrayBuffer)
+                : data;
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+        const hashArray = new Uint8Array(hashBuffer);
+        return Array.from(hashArray)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+    }
+
+    /**
      * An array of all the AudioFile objects in the database without the audio data.
      * This is used for the front end to display the audio files without loading the whole file into memory.
      *

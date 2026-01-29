@@ -1,20 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
-import {
-    Button,
-    DialogTrigger,
-    Dialog,
-    DialogContent,
-    DialogTitle,
-    Input,
-} from "@openmarch/ui";
+import React, { useState, useCallback, useMemo } from "react";
+import { Button, Input } from "@openmarch/ui";
 import {
     CircleNotchIcon,
     WarningCircleIcon,
-    GearSixIcon,
     DeviceMobileIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import DetachButton from "./DetachButton";
 import {
     Production,
     RevisionPreview,
@@ -23,15 +14,9 @@ import {
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
+import { MobileExportSettingsDialog } from "./MobileExportSettings";
 
 type UploadStatus = "idle" | "loading" | "error";
-
-interface UploadProgress {
-    status: "loading" | "progress" | "error" | "success";
-    message?: string;
-    progress?: number;
-    error?: string;
-}
 
 /**
  * Mobile Export View - The main export functionality
@@ -160,31 +145,6 @@ export const SubmitRevisionForm = ({
             },
         }),
     );
-
-    // Subscribe to upload progress updates
-    useEffect(() => {
-        const unsubscribe = window.electron.onUploadProgress(
-            (progress: UploadProgress) => {
-                if (
-                    progress.status === "loading" ||
-                    progress.status === "progress"
-                ) {
-                    setUploadStatus("loading");
-                } else if (progress.status === "error") {
-                    const raw = progress.error || "Upload failed";
-                    console.error("Upload error:", raw);
-                    const display = toDisplayError(raw);
-                    setUploadStatus("error");
-                    setUploadError(display);
-                    toast.error(display);
-                }
-            },
-        );
-
-        return () => {
-            unsubscribe();
-        };
-    }, []);
 
     const handleUpload = useCallback(async () => {
         // Validate revision title if not first revision
@@ -378,24 +338,5 @@ export const RevisionsList = ({
                 ))}
             </div>
         </section>
-    );
-};
-
-const MobileExportSettingsDialog = () => {
-    return (
-        <Dialog>
-            <DialogTrigger asChild>
-                <Button variant="secondary">
-                    <GearSixIcon size={16} /> Settings
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[32rem]">
-                <DialogTitle>Export Settings</DialogTitle>
-                <div className="flex flex-col gap-16">
-                    {/* Settings content will go here */}
-                    <DetachButton variant="secondary" />
-                </div>
-            </DialogContent>
-        </Dialog>
     );
 };
