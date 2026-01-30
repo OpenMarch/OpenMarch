@@ -1,63 +1,60 @@
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import type { GetPlatformProxyOptions } from "wrangler";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
-import { sqliteD1Adapter } from "@payloadcms/db-d1-sqlite";
-import { lexicalEditor } from "@payloadcms/richtext-lexical";
-import { buildConfig } from "payload";
-import { r2Storage } from "@payloadcms/storage-r2";
+import fs from 'fs'
+import path from 'path'
+import { sqliteD1Adapter } from '@payloadcms/db-d1-sqlite'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { buildConfig } from 'payload'
+import { fileURLToPath } from 'url'
+import { CloudflareContext, getCloudflareContext } from '@opennextjs/cloudflare'
+import { GetPlatformProxyOptions } from 'wrangler'
+import { r2Storage } from '@payloadcms/storage-r2'
 
-import { Users } from "./collections/Users";
-import { Media } from "./collections/Media";
-import { Posts } from "./collections/Posts";
+import { Media } from './collections/Media'
+import { Posts } from './collections/Posts'
+import { Users } from './collections/Users'
 
-const filename = fileURLToPath(import.meta.url);
-const dirname = path.dirname(filename);
-const realpath = (value: string) =>
-    fs.existsSync(value) ? fs.realpathSync(value) : undefined;
+const filename = fileURLToPath(import.meta.url)
+const dirname = path.dirname(filename)
+const realpath = (value: string) => (fs.existsSync(value) ? fs.realpathSync(value) : undefined)
 
-const isCLI = process.argv.some((value) =>
-    realpath(value)?.endsWith(path.join("payload", "bin.js")),
-);
-const isProduction = process.env.NODE_ENV === "production";
+const isCLI = process.argv.some((value) => realpath(value).endsWith(path.join('payload', 'bin.js')))
+const isProduction = process.env.NODE_ENV === 'production'
 
 const cloudflare =
-    isCLI || !isProduction
-        ? await getCloudflareContextFromWrangler()
-        : await getCloudflareContext({ async: true });
+  isCLI || !isProduction
+    ? await getCloudflareContextFromWrangler()
+    : await getCloudflareContext({ async: true })
 
 export default buildConfig({
-    admin: {
-        user: Users.slug,
-        importMap: {
-            baseDir: path.resolve(dirname),
-        },
+  admin: {
+    user: Users.slug,
+    importMap: {
+      baseDir: path.resolve(dirname),
     },
-    collections: [Users, Media, Posts],
-    editor: lexicalEditor(),
-    secret: process.env.PAYLOAD_SECRET || "",
-    typescript: {
-        outputFile: path.resolve(dirname, "payload-types.ts"),
-    },
-    db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
-    plugins: [
-        r2Storage({
-            bucket: cloudflare.env.R2,
-            collections: { media: true },
-        }),
-    ],
-});
+  },
+  collections: [Users, Media, Posts],
+  editor: lexicalEditor(),
+  secret: process.env.PAYLOAD_SECRET || '',
+  typescript: {
+    outputFile: path.resolve(dirname, 'payload-types.ts'),
+  },
+  db: sqliteD1Adapter({ binding: cloudflare.env.D1 }),
+  plugins: [
+    r2Storage({
+      // Cloudflare's R2Bucket (wrangler) and @payloadcms/storage-r2 types disagree on
+      // R2GetOptions/R2Range; runtime is compatible. Cast to satisfy typecheck.
+      bucket: cloudflare.env.R2 as never,
+      collections: { media: true },
+    }),
+  ],
+})
 
-async function getCloudflareContextFromWrangler(): Promise<{
-    env: CloudflareEnv;
-}> {
-    const mod = await import(
-        /* webpackIgnore: true */ `${"__wrangler".replaceAll("_", "")}`
-    );
-    const { env } = await mod.getPlatformProxy({
+// Adapted from https://github.com/opennextjs/opennextjs-cloudflare/blob/d00b3a13e42e65aad76fba41774815726422cc39/packages/cloudflare/src/api/cloudflare-context.ts#L328C36-L328C46
+function getCloudflareContextFromWrangler(): Promise<CloudflareContext> {
+  return import(/* webpackIgnore: true */ `${'__wrangler'.replaceAll('_', '')}`).then(
+    ({ getPlatformProxy }) =>
+      getPlatformProxy({
         environment: process.env.CLOUDFLARE_ENV,
         remoteBindings: isProduction,
-    } satisfies GetPlatformProxyOptions);
-    return { env };
+      } satisfies GetPlatformProxyOptions),
+  )
 }

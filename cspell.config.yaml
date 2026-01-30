@@ -156,6 +156,7 @@ words:
   - WASD
   - wavesurfer
   - winget
+  - workerd
   - Woodgrove
   - xlink
   - XMLID
@@ -163,6 +164,7 @@ words:
   - zier
   - Zingali
   - 日本語
+  - rels
 ignorePaths:
   - node_modules/**
   - "**/node_modules/**"
@@ -190,6 +192,9 @@ ignorePaths:
   - "*.musicxml"
   - pnpm-workspace.yaml
   - .vscode/extensions.json
+  - cloudflare-env.d.ts
+  - apps/cms/.cursor/rules/*
+  - apps/cms/AGENTS.md
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

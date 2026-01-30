@@ -1,103 +1,72 @@
-import type { CollectionConfig, RichTextField } from "payload";
-import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
-import {
-    convertLexicalToMarkdown,
-    editorConfigFactory,
-    lexicalEditor,
-} from "@payloadcms/richtext-lexical";
-import { HeadingFeature, LinkFeature } from "@payloadcms/richtext-lexical";
+import type { CollectionConfig } from 'payload'
+import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { HeadingFeature, LinkFeature, UploadFeature } from '@payloadcms/richtext-lexical'
+import { slugField } from 'payload'
 
 export const Posts: CollectionConfig = {
-    slug: "posts",
-    admin: {
-        useAsTitle: "title",
-        defaultColumns: ["title", "author", "date", "updatedAt"],
+  slug: 'posts',
+  admin: {
+    useAsTitle: 'title',
+    defaultColumns: ['title', 'author', 'status', 'createdAt'],
+  },
+  access: {
+    read: () => true,
+  },
+  fields: [
+    {
+      name: 'title',
+      type: 'text',
+      required: true,
     },
-    access: {
-        read: () => true,
+    {
+      ...slugField({ fieldToUse: 'title' }),
     },
-    fields: [
-        {
-            name: "title",
-            type: "text",
-            required: true,
-        },
-        {
-            name: "author",
-            type: "text",
-            required: true,
-        },
-        {
-            name: "date",
-            type: "date",
-            required: true,
-            admin: {
-                date: {
-                    pickerAppearance: "dayAndTime",
-                },
+    {
+      name: 'content',
+      type: 'richText',
+      required: true,
+      editor: lexicalEditor({
+        features: ({ defaultFeatures }) => [
+          ...defaultFeatures,
+          HeadingFeature({
+            enabledHeadingSizes: ['h1', 'h2', 'h3', 'h4'],
+          }),
+          LinkFeature({
+            enabledCollections: ['posts'],
+          }),
+          UploadFeature({
+            collections: {
+              media: {
+                fields: [],
+              },
             },
+          }),
+        ],
+        admin: {
+          placeholder: 'Write your content here... Use "/" for slash commands.',
         },
-        {
-            name: "featuredImage",
-            type: "upload",
-            relationTo: "media",
-            required: true,
-            filterOptions: {
-                mimeType: { contains: "image" },
-            },
-        },
-        {
-            name: "content",
-            type: "richText",
-            required: true,
-            editor: lexicalEditor({
-                features: ({ defaultFeatures }) => [
-                    ...defaultFeatures,
-                    HeadingFeature({
-                        enabledHeadingSizes: ["h1", "h2", "h3", "h4"],
-                    }),
-                    LinkFeature({
-                        enabledCollections: ["posts"],
-                    }),
-                ],
-            }),
-        },
-        {
-            name: "contentMarkdown",
-            type: "textarea",
-            admin: {
-                description:
-                    "Markdown output of the rich text content (read-only, used by the website).",
-                readOnly: true,
-            },
-            hooks: {
-                afterRead: [
-                    ({ siblingData, siblingFields }) => {
-                        const data = siblingData["content"] as
-                            | SerializedEditorState
-                            | undefined;
-                        if (!data) return "";
-                        const richTextField = siblingFields.find(
-                            (f): f is RichTextField =>
-                                "name" in f && f.name === "content",
-                        );
-                        if (!richTextField) return "";
-                        const markdown = convertLexicalToMarkdown({
-                            data,
-                            editorConfig: editorConfigFactory.fromField({
-                                field: richTextField,
-                            }),
-                        });
-                        return markdown;
-                    },
-                ],
-                beforeChange: [
-                    ({ siblingData }) => {
-                        delete siblingData["contentMarkdown"];
-                        return undefined;
-                    },
-                ],
-            },
-        },
-    ],
-};
+      }),
+    },
+    {
+      name: 'author',
+      type: 'relationship',
+      relationTo: 'users',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
+      name: 'status',
+      type: 'select',
+      options: [
+        { label: 'Draft', value: 'draft' },
+        { label: 'Published', value: 'published' },
+      ],
+      defaultValue: 'draft',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+  ],
+  timestamps: true,
+}
