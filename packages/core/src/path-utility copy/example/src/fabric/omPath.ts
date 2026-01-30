@@ -1,12 +1,19 @@
-import { ControlPointManager, Path, type Point } from "@openmarch/core";
+import {
+    ControlPointManager,
+    Path,
+    type Point,
+} from "../../../../path-utility copy";
 import { fabric } from "fabric";
 import FabricControlPoint from "./ControlPoint";
+
+const numberOfChildren = 50;
 
 export default class OmPath<T extends fabric.Canvas> {
     private _pathObj: Path;
     private _fabricPath: fabric.Path;
     private _canvas: T;
     private _controlPointManager: ControlPointManager;
+    private _children: fabric.Object[] = [];
 
     constructor(pathObj: Path, canvas: T, pathOptions?: fabric.IPathOptions) {
         this._pathObj = pathObj;
@@ -27,6 +34,21 @@ export default class OmPath<T extends fabric.Canvas> {
             this.updatePath();
         });
 
+        const coordinates =
+            this._pathObj.getEvenlySpacedPoints(numberOfChildren);
+        for (let i = 0; i < numberOfChildren; i++) {
+            const child = new fabric.Circle({
+                radius: 5,
+                fill: "red",
+                originX: "center",
+                originY: "center",
+                left: coordinates[i].x,
+                top: coordinates[i].y,
+            });
+            this._children.push(child);
+            canvas.add(child);
+        }
+
         const controlPoints = this._controlPointManager.getAllControlPoints();
         for (const controlPoint of controlPoints) {
             new FabricControlPoint(
@@ -40,6 +62,8 @@ export default class OmPath<T extends fabric.Canvas> {
                 canvas,
             );
         }
+
+        canvas.requestRenderAll();
     }
 
     get canvas(): T {
@@ -69,6 +93,14 @@ export default class OmPath<T extends fabric.Canvas> {
             // Tell fabric to recalculate the object's dimensions and position
             this._fabricPath.setCoords();
             this._fabricPath.calcOwnMatrix();
+
+            const coordinates =
+                this._pathObj.getEvenlySpacedPoints(numberOfChildren);
+
+            for (let i = 0; i < numberOfChildren; i++) {
+                this._children[i].set("left", coordinates[i].x);
+                this._children[i].set("top", coordinates[i].y);
+            }
 
             // Request a re-render of the canvas
             this._canvas.requestRenderAll();
