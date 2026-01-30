@@ -61,6 +61,7 @@ words:
   - GLHF
   - Hipp
   - idioma
+  - importmap
   - Invalidators
   - launchpage
   - libsql
@@ -101,6 +102,8 @@ words:
   - rgba
   - ritardandos
   - rootfile
+  - rw-r
+  - rwxr
   - saario
   - samuelmeuli
   - Schachner
@@ -160,8 +163,6 @@ words:
   - zier
   - Zingali
   - 日本語
-  - rwxr
-  - rw-r
 ignorePaths:
   - node_modules/**
   - "**/node_modules/**"
