@@ -15,9 +15,6 @@ export type {
 // Classes
 export { Path } from "./Path";
 export { Line } from "./segments/Line";
-export { Arc } from "./segments/Arc";
-export { CubicCurve } from "./segments/CubicCurve";
-export { QuadraticCurve } from "./segments/QuadraticCurve";
 export { Spline } from "./segments/Spline";
-export { catmullrom } from "./segments/CatmullRom";
+export { catmullrom } from "./segments/utils/CatmullRom";
 export { ControlPointManager } from "./ControlPointManager";
