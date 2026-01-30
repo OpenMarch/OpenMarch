@@ -1,9 +1,5 @@
-import { parseSvg } from "./SvgParser";
 import { Line } from "./segments/Line";
-import { Arc } from "./segments/Arc";
-import { CubicCurve } from "./segments/CubicCurve";
 import { Spline } from "./segments/Spline";
-import { QuadraticCurve } from "./segments/QuadraticCurve";
 import type {
     IPath,
     IControllableSegment,
@@ -101,6 +97,85 @@ export class Path implements IPath {
         return lastSegment.getPointAtLength(lastSegment.getLength());
     }
 
+    /**
+     * Returns evenly spaced points along the path.
+     * This is more performant than calling getPointAtLength() multiple times
+     * because it pre-computes segment lengths and walks through segments sequentially.
+     *
+     * @param numPoints The number of evenly spaced points to return (must be >= 2)
+     * @returns An array of points evenly distributed along the path
+     */
+    getEvenlySpacedPoints(numPoints: number): Point[] {
+        if (this._segments.length === 0) {
+            throw new Error("Cannot get points from empty path");
+        }
+
+        if (numPoints < 2) {
+            throw new Error("Number of points must be at least 2");
+        }
+
+        // Pre-compute segment lengths to avoid redundant calculations
+        const segmentLengths: number[] = new Array(this._segments.length);
+        let totalLength = 0;
+
+        for (let i = 0; i < this._segments.length; i++) {
+            const len = this._segments[i]!.getLength();
+            segmentLengths[i] = len;
+            totalLength += len;
+        }
+
+        if (totalLength === 0) {
+            // All segments have zero length, return the start point repeated
+            const startPoint = this._segments[0]!.getPointAtLength(0);
+            return Array(numPoints).fill(startPoint);
+        }
+
+        const points: Point[] = new Array(numPoints);
+        const spacing = totalLength / (numPoints - 1);
+
+        // Track current position in the path
+        let currentSegmentIndex = 0;
+        let distanceIntoCurrentSegment = 0;
+        let accumulatedLengthBeforeCurrentSegment = 0;
+
+        for (let i = 0; i < numPoints; i++) {
+            const targetDistance = i * spacing;
+
+            // Move forward through segments until we find the one containing our target
+            while (
+                currentSegmentIndex < this._segments.length - 1 &&
+                targetDistance >=
+                    accumulatedLengthBeforeCurrentSegment +
+                        segmentLengths[currentSegmentIndex]!
+            ) {
+                accumulatedLengthBeforeCurrentSegment +=
+                    segmentLengths[currentSegmentIndex]!;
+                currentSegmentIndex++;
+            }
+
+            // Calculate distance into the current segment
+            distanceIntoCurrentSegment =
+                targetDistance - accumulatedLengthBeforeCurrentSegment;
+
+            // Clamp to segment length to handle floating point errors
+            const segmentLength = segmentLengths[currentSegmentIndex]!;
+            distanceIntoCurrentSegment = Math.min(
+                distanceIntoCurrentSegment,
+                segmentLength,
+            );
+            distanceIntoCurrentSegment = Math.max(
+                distanceIntoCurrentSegment,
+                0,
+            );
+
+            points[i] = this._segments[currentSegmentIndex]!.getPointAtLength(
+                distanceIntoCurrentSegment,
+            );
+        }
+
+        return points;
+    }
+
     getStartPoint(): Point {
         if (this._segments.length === 0) {
             throw new Error("Cannot get start point of empty path");
@@ -186,12 +261,6 @@ export class Path implements IPath {
         switch (data.type) {
             case "line":
                 return Line.fromJson(data);
-            case "arc":
-                return Arc.fromJson(data);
-            case "cubic-curve":
-                return CubicCurve.fromJson(data);
-            case "quadratic-curve":
-                return QuadraticCurve.fromJson(data);
             case "spline":
                 return Spline.fromJson(data);
             default:
@@ -217,15 +286,6 @@ export class Path implements IPath {
      */
     static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
         return Path.fromJson(path_data, undefined, undefined, id);
-    }
-
-    /**
-     * Creates a path from an SVG path string by parsing it into segments.
-     * Note: This will lose spline information if the SVG was originally from splines.
-     */
-    static fromSvgString(svgPath: string, id: number = 0): Path {
-        const segments = parseSvg(svgPath);
-        return new Path(segments, id);
     }
 
     /**

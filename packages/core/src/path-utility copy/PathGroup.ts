@@ -1,4 +1,4 @@
-import { IPath } from "./interfaces";
+import type { IPath } from "./interfaces";
 
 /**
  * Represents a collection of paths that may be intertwined or

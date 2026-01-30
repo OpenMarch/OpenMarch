@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Arc, Path, Spline } from "@openmarch/core";
+import { Path, Spline } from "../../../../path-utility copy";
 import OmPath from "../fabric/omPath";
 import {
     Button,
@@ -43,14 +43,6 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
 
         let segments: Path["segments"];
         switch (pathwayType) {
-            case "arc":
-                segments = [
-                    new Arc({ x: 150, y: 100 }, 100, 100, 0, 0, 0, {
-                        x: 400,
-                        y: 500,
-                    }),
-                ];
-                break;
             case "spline":
                 segments = [
                     Spline.fromPoints(SPLINE_SAMPLE_POINTS, splineAlpha, false),
