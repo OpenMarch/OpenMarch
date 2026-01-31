@@ -3,7 +3,11 @@ import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFormProps } from "../../global/Interfaces";
 import Marcher from "@/global/classes/Marcher";
 import { Button, TooltipClassName } from "@openmarch/ui";
-import { PencilIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+    DotsThreeOutlineIcon,
+    PencilIcon,
+    TrashIcon,
+} from "@phosphor-icons/react";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import FormButtons from "../FormButtons";
 import { AlertDialogAction, AlertDialogCancel } from "@openmarch/ui";
@@ -20,6 +24,7 @@ import {
     Tooltip,
     TooltipContent,
     TooltipPortal,
+    TooltipProvider,
     TooltipTrigger,
 } from "@radix-ui/react-tooltip";
 import clsx from "clsx";
@@ -351,33 +356,63 @@ function MarcherRow({ marcher, onDelete }: MarcherRowProps) {
                 </Tooltip>
             </div>
             <div className="flex place-content-end gap-8">
-                <Button
-                    variant="ghost"
-                    className="hover:text-accent"
-                    size="compact"
-                    content="icon"
-                    type="button"
-                    onClick={() => {
-                        setContent(
-                            <MarcherFormContents
-                                marcherIdToEdit={marcher.id}
-                            />,
-                            "marchers",
-                        );
-                    }}
-                >
-                    <PencilIcon size={18} />
-                </Button>
-                <Button
-                    variant="ghost"
-                    className="hover:text-red"
-                    size="compact"
-                    content="icon"
-                    type="button"
-                    onClick={() => onDelete(marcher.id)}
-                >
-                    <TrashIcon size={18} />
-                </Button>
+                <TooltipProvider delayDuration={0}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="compact"
+                                content="icon"
+                            >
+                                <DotsThreeOutlineIcon size={18} />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipPortal>
+                            <TooltipContent
+                                side="right"
+                                align="start"
+                                className={clsx(
+                                    TooltipClassName,
+                                    "p-16 break-all whitespace-normal",
+                                )}
+                            >
+                                <Button
+                                    variant="ghost"
+                                    className="hover:text-accent"
+                                    size="compact"
+                                    content="text"
+                                    type="button"
+                                    onClick={() => {
+                                        setContent(
+                                            <MarcherFormContents
+                                                marcherIdToEdit={marcher.id}
+                                            />,
+                                            "marchers",
+                                        );
+                                    }}
+                                >
+                                    <PencilIcon size={18} />
+                                    <p className="text-sub text-text/90">
+                                        Edit
+                                    </p>
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    className="hover:text-red"
+                                    size="compact"
+                                    content="text"
+                                    type="button"
+                                    onClick={() => onDelete(marcher.id)}
+                                >
+                                    <TrashIcon size={18} />
+                                    <p className="text-sub text-text/90">
+                                        Delete
+                                    </p>
+                                </Button>
+                            </TooltipContent>
+                        </TooltipPortal>
+                    </Tooltip>
+                </TooltipProvider>
             </div>
         </div>
     );
