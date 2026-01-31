@@ -153,6 +153,10 @@ const APP_API = {
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    onLoadFileResponse: (callback: (value: number) => void) =>
+        ipcRenderer.on("load-file-response", (_event, value) =>
+            callback(value),
+        ),
 
     // SVG Generation
     onGetSvgForClose: (callback: () => Promise<string>) => {

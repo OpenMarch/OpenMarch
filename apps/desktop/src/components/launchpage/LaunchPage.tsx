@@ -69,7 +69,7 @@ function Sidebar({
             console.log("Database create result:", dataBaseIsReady);
 
             // If database creation was successful, update the state
-            if (dataBaseIsReady > 0) {
+            if (dataBaseIsReady === 200) {
                 setDatabaseIsReady(true);
             }
         } catch (error) {

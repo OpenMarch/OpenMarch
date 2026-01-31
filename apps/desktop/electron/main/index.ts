@@ -292,14 +292,19 @@ void app.whenReady().then(async () => {
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
-        if (!filePath || !fs.existsSync(filePath)) return -1;
+        const resCode = DatabaseServices.setDbPath(filePath);
 
-        DatabaseServices.setDbPath(filePath);
-        store.set("databasePath", filePath);
-        addRecentFile(filePath);
+        if (resCode === 200) {
+            store.set("databasePath", filePath);
+            addRecentFile(filePath);
 
-        await setActiveDb(filePath);
-        return 200;
+            await setActiveDb(filePath);
+        }
+
+        // Handle alert dialogs in frontend
+        win?.webContents.send("load-file-response", resCode);
+
+        return resCode;
     });
 
     // Getters
@@ -657,17 +662,23 @@ export async function loadDatabaseFile() {
             ],
         })
         .then(async (path) => {
-            // If the user cancels the dialog, and there is no previous path, return -1
-            // if (path.canceled || !path.filePaths[0]) return -1;
+            if (path.canceled) return -1;
 
-            DatabaseServices.setDbPath(path.filePaths[0]);
-            store.set("databasePath", path.filePaths[0]); // Save the path for next time
+            const resCode = DatabaseServices.setDbPath(path.filePaths[0]);
 
-            // Add to recent files
-            addRecentFile(path.filePaths[0]);
+            if (resCode === 200) {
+                store.set("databasePath", path.filePaths[0]); // Save the path for next time
 
-            await setActiveDb(path.filePaths[0]);
-            return 200;
+                // Add to recent files
+                addRecentFile(path.filePaths[0]);
+
+                await setActiveDb(path.filePaths[0]);
+            }
+
+            // Handle alert dialogs in frontend
+            win?.webContents.send("load-file-response", resCode);
+
+            return resCode;
         })
         .catch((err) => {
             console.log(err);

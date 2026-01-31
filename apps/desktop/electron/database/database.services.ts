@@ -30,16 +30,28 @@ let DB_PATH = "";
  * Change the location of the database file the application and actively updates.
  *
  * @param path the path to the database file
- * @returns 200 if successful, -1 if the file does not exist
+ * @returns 200 if successful, HTTP status codes if appropriate, or -1 otherwise
  */
 export function setDbPath(path: string, isNewFile = false) {
-    const failedDb = (message: string) => {
+    const failedDb = (message: string, statusCode: number = -1) => {
+        console.error("Given status code: " + statusCode);
+
         console.error(message);
         DB_PATH = "";
-        return -1;
+        return statusCode;
     };
+
     if (!fs.existsSync(path) && !isNewFile) {
-        return failedDb(`setDbPath: File does not exist at path: ${path}`);
+        return failedDb(`setDbPath: File does not exist at path: ${path}`, 404);
+    }
+
+    try {
+        fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK);
+    } catch (err) {
+        return failedDb(
+            `setDbPath: File is not readable and writable: ${path}`,
+            403,
+        );
     }
 
     DB_PATH = path;
@@ -53,6 +65,7 @@ export function setDbPath(path: string, isNewFile = false) {
     if (user_version === -1) {
         return failedDb(
             `setDbPath: user_version is -1, meaning the database was not created successfully`,
+            500,
         );
     }
 
