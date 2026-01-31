@@ -33,6 +33,8 @@ import { historyKeys } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
+import AlertModal from "./components/AlertModal";
+import { useAlertModalStore } from "./stores/AlertModalStore";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -43,6 +45,7 @@ export const queryClient = new QueryClient({
 });
 
 function App() {
+    const { setTitle, setContent, setOpen } = useAlertModalStore();
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
@@ -190,6 +193,34 @@ function App() {
         "opacity-30": focussedComponent === "timeline",
     });
 
+    useEffect(() => {
+        window.electron.onLoadFileResponse((resCode) => {
+            if (resCode !== 200) {
+                switch (resCode) {
+                    case 403:
+                        setTitle("Invalid file permissions");
+                        break;
+                    case 404:
+                        setTitle("File not found");
+                        break;
+                    case 500:
+                        setTitle("Server error");
+                        break;
+                    default:
+                        setTitle("Error");
+                }
+                setContent(
+                    // TODO: Set related content here
+                    <p>
+                        Unable to open file, does the file exist and do you have
+                        the appropriate permissions to open it?
+                    </p>,
+                );
+                setOpen(true);
+            }
+        });
+    });
+
     return (
         <ErrorBoundary>
             <QueryClientProvider client={queryClient}>
@@ -208,6 +239,7 @@ function App() {
                             🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
                         </div>
                     )}
+                    <AlertModal />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
