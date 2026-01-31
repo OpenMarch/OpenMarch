@@ -126,6 +126,14 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number
+  /**
+   * Display name used in blog posts and throughout the site
+   */
+  name?: string | null
+  /**
+   * Profile picture shown next to your name in blog posts
+   */
+  profilePicture?: (number | null) | Media
   updatedAt: string
   createdAt: string
   email: string
@@ -276,6 +284,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  name?: T
+  profilePicture?: T
   updatedAt?: T
   createdAt?: T
   email?: T

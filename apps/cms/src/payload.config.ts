@@ -18,11 +18,13 @@ const realpath = (value: string) => (fs.existsSync(value) ? fs.realpathSync(valu
 
 const isCLI = process.argv.some((value) => realpath(value).endsWith(path.join('payload', 'bin.js')))
 const isProduction = process.env.NODE_ENV === 'production'
+// Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
+const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
+const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
 
-const cloudflare =
-  isCLI || !isProduction
-    ? await getCloudflareContextFromWrangler()
-    : await getCloudflareContext({ async: true })
+const cloudflare = useWranglerProxy
+  ? await getCloudflareContextFromWrangler(!useLocalBindings)
+  : await getCloudflareContext({ async: true })
 
 export default buildConfig({
   admin: {
@@ -49,12 +51,13 @@ export default buildConfig({
 })
 
 // Adapted from https://github.com/opennextjs/opennextjs-cloudflare/blob/d00b3a13e42e65aad76fba41774815726422cc39/packages/cloudflare/src/api/cloudflare-context.ts#L328C36-L328C46
-function getCloudflareContextFromWrangler(): Promise<CloudflareContext> {
+function getCloudflareContextFromWrangler(remoteBindings: boolean): Promise<CloudflareContext> {
   return import(/* webpackIgnore: true */ `${'__wrangler'.replaceAll('_', '')}`).then(
     ({ getPlatformProxy }) =>
       getPlatformProxy({
         environment: process.env.CLOUDFLARE_ENV,
-        remoteBindings: isProduction,
+        remoteBindings,
+        persist: { path: '.wrangler/state' },
       } satisfies GetPlatformProxyOptions),
   )
 }

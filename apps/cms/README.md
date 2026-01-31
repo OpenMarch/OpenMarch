@@ -50,9 +50,18 @@ The Worker will have direct access to a D1 SQLite database which Wrangler can co
 
 You can enable read replicas by adding `readReplicas: 'first-primary'` in the DB adapter and then enabling it on your D1 Cloudflare dashboard. Read more about this feature on [our docs](https://payloadcms.com/docs/database/sqlite#d1-read-replicas).
 
+## Local development (no Cloudflare login)
+
+You can run the CMS locally without logging in to Cloudflare. D1 and R2 use **local** bindings (SQLite file under `.wrangler/state` and local R2).
+
+- **Dev server**: `pnpm dev` — uses local D1/R2 automatically.
+- **Build locally** (e.g. to test the production build): `pnpm build:local` — same as `build` but with `CLOUDFLARE_LOCAL=1` so Wrangler uses local bindings and no auth is required.
+
+For production deploys you still need to be logged in (e.g. `pnpm wrangler login` or `CLOUDFLARE_API_TOKEN` in CI).
+
 ## Working with Cloudflare
 
-Firstly, after installing dependencies locally you need to authenticate with Wrangler by running:
+For deployments and remote Wrangler commands, authenticate with Wrangler:
 
 ```bash
 pnpm wrangler login

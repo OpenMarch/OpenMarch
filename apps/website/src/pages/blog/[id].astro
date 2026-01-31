@@ -6,6 +6,8 @@ import type { ImageMetadata } from "astro";
 import { ProseClass } from "@/components/ProseClass";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import {
+    getAuthorDisplayName,
+    getAuthorProfilePictureUrl,
     getPayloadPosts,
     isPayloadCmsEnabled,
     type PayloadPost,
@@ -39,8 +41,13 @@ const { source, post } = Astro.props;
 const isContent = source === "content";
 
 const title = isContent ? post.data.title : post.title;
-const author = isContent ? post.data.author : post.author;
-const date = isContent ? post.data.date : new Date(post.date);
+const author = isContent ? post.data.author : getAuthorDisplayName(post.author);
+const authorProfileImageUrl = !isContent
+    ? getAuthorProfilePictureUrl(post.author)
+    : null;
+const date = isContent
+    ? post.data.date
+    : new Date((post as PayloadPost).createdAt);
 const dateFormatted = date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -94,7 +101,18 @@ const { Content } = isContent
         >
         </div>
         <h1 class="text-h3 text-center">{title}</h1>
-        <div class="flex gap-16">
+        <div class="flex gap-16 items-center">
+            {
+                authorProfileImageUrl ? (
+                    <img
+                        src={authorProfileImageUrl}
+                        alt=""
+                        class="size-8 shrink-0 rounded-full object-cover"
+                        width={32}
+                        height={32}
+                    />
+                ) : null
+            }
             <p class="text-body">by {author}</p>
             <p class="text-body">{dateFormatted}</p>
         </div>

@@ -1,4 +1,11 @@
+import { initOpenNextCloudflareForDev } from '@opennextjs/cloudflare'
 import { withPayload } from '@payloadcms/next/withPayload'
+
+// Local dev: use Wrangler platform proxy with local D1/R2 (no Cloudflare login required)
+void initOpenNextCloudflareForDev({
+  persist: { path: '.wrangler/state' },
+  remoteBindings: false,
+})
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
