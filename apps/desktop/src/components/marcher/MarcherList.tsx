@@ -24,9 +24,9 @@ import {
     Tooltip,
     TooltipContent,
     TooltipPortal,
-    TooltipProvider,
     TooltipTrigger,
 } from "@radix-ui/react-tooltip";
+import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import clsx from "clsx";
 
 // eslint-disable-next-line max-lines-per-function
@@ -306,6 +306,7 @@ interface MarcherRowProps {
 
 function MarcherRow({ marcher, onDelete }: MarcherRowProps) {
     const { setContent } = useSidebarModalStore();
+    const [open, setOpen] = useState(false);
 
     return (
         <div
@@ -355,64 +356,60 @@ function MarcherRow({ marcher, onDelete }: MarcherRowProps) {
                     </TooltipPortal>
                 </Tooltip>
             </div>
-            <div className="flex place-content-end gap-8">
-                <TooltipProvider delayDuration={0}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
+            <div
+                className="flex place-content-end gap-8"
+                onMouseLeave={() => setOpen(false)}
+            >
+                <Dropdown.Root open={open} modal={false}>
+                    <Dropdown.Trigger
+                        onMouseEnter={() => setOpen(true)}
+                        asChild
+                    >
+                        <Button variant="ghost" size="compact" content="icon">
+                            <DotsThreeOutlineIcon size={18} />
+                        </Button>
+                    </Dropdown.Trigger>
+                    <Dropdown.Portal>
+                        <Dropdown.Content
+                            side="right"
+                            align="start"
+                            className={clsx(
+                                TooltipClassName,
+                                "p-16 break-all whitespace-normal",
+                            )}
+                        >
                             <Button
                                 variant="ghost"
+                                className="hover:text-accent"
                                 size="compact"
-                                content="icon"
+                                content="text"
+                                type="button"
+                                onClick={() => {
+                                    setContent(
+                                        <MarcherFormContents
+                                            marcherIdToEdit={marcher.id}
+                                        />,
+                                        "marchers",
+                                    );
+                                }}
                             >
-                                <DotsThreeOutlineIcon size={18} />
+                                <PencilIcon size={18} />
+                                <T keyName="marchers.list.editButton" />
                             </Button>
-                        </TooltipTrigger>
-                        <TooltipPortal>
-                            <TooltipContent
-                                side="right"
-                                align="start"
-                                className={clsx(
-                                    TooltipClassName,
-                                    "p-16 break-all whitespace-normal",
-                                )}
+                            <Button
+                                variant="ghost"
+                                className="hover:text-red"
+                                size="compact"
+                                content="text"
+                                type="button"
+                                onClick={() => onDelete(marcher.id)}
                             >
-                                <Button
-                                    variant="ghost"
-                                    className="hover:text-accent"
-                                    size="compact"
-                                    content="text"
-                                    type="button"
-                                    onClick={() => {
-                                        setContent(
-                                            <MarcherFormContents
-                                                marcherIdToEdit={marcher.id}
-                                            />,
-                                            "marchers",
-                                        );
-                                    }}
-                                >
-                                    <PencilIcon size={18} />
-                                    <p className="text-sub text-text/90">
-                                        Edit
-                                    </p>
-                                </Button>
-                                <Button
-                                    variant="ghost"
-                                    className="hover:text-red"
-                                    size="compact"
-                                    content="text"
-                                    type="button"
-                                    onClick={() => onDelete(marcher.id)}
-                                >
-                                    <TrashIcon size={18} />
-                                    <p className="text-sub text-text/90">
-                                        Delete
-                                    </p>
-                                </Button>
-                            </TooltipContent>
-                        </TooltipPortal>
-                    </Tooltip>
-                </TooltipProvider>
+                                <TrashIcon size={18} />
+                                <T keyName="marchers.list.deleteButton" />
+                            </Button>
+                        </Dropdown.Content>
+                    </Dropdown.Portal>
+                </Dropdown.Root>
             </div>
         </div>
     );
