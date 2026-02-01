@@ -21,6 +21,10 @@ const isCLI = process.argv.some((value) => {
   return Boolean(p && p.endsWith(path.join('payload', 'bin.js')))
 })
 const isProduction = process.env.NODE_ENV === 'production'
+const payloadSecret = process.env.PAYLOAD_SECRET ?? ''
+if (isProduction && !payloadSecret) {
+  throw new Error('PAYLOAD_SECRET is required in production')
+}
 // Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
 const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
 const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
@@ -38,7 +42,7 @@ export default buildConfig({
   },
   collections: [Users, Media, Posts],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: payloadSecret,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
