@@ -27,15 +27,19 @@ const isProduction = process.env.NODE_ENV === 'production'
 const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
 const isCI = process.env.CI === 'true'
 const rawSecret = process.env.PAYLOAD_SECRET?.trim()
-const payloadSecret =
-  rawSecret ||
-  (isBuild
-    ? 'build-time-placeholder'
-    : isCI
-      ? 'ci-test-placeholder-for-payload-initialization'
-      : '')
-if (isProduction && !isBuild && !payloadSecret) {
-  throw new Error('PAYLOAD_SECRET is required in production')
+const ciPlaceholder = 'ci-test-placeholder-for-payload-initialization'
+const buildPlaceholder = 'build-time-placeholder'
+const payloadSecret = rawSecret || (isBuild ? buildPlaceholder : isCI ? ciPlaceholder : '')
+// Production runtime: require rawSecret to be a real secret. When isBuild or isCI, payloadSecret
+// may be a placeholder; we must not allow that to satisfy production, so check rawSecret explicitly.
+if (isProduction && !isBuild) {
+  const isRealSecret =
+    Boolean(rawSecret) && rawSecret !== ciPlaceholder && rawSecret !== buildPlaceholder
+  if (!isRealSecret) {
+    throw new Error(
+      'PAYLOAD_SECRET is required in production and must not be a build/CI placeholder',
+    )
+  }
 }
 // Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
 // During build, always use local bindings since we can't access remote secrets yet.
