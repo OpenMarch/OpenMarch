@@ -7,3 +7,6 @@ PAYLOAD_SECRET=
 
 # Optional: secret for blog preview URLs
 PREVIEW_SECRET=
+
+# Optional: Cloudflare Pages deploy hook URL (triggers website rebuild when post status changes). Omit to disable.
+# WEBSITE_DEPLOY_HOOK_URL=

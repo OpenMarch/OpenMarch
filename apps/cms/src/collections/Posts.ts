@@ -9,6 +9,7 @@ import {
 } from '@payloadcms/richtext-lexical'
 import { slugField } from 'payload'
 import { YouTubeBlock } from '../blocks/YouTube'
+import { triggerWebsiteRebuild } from '../hooks/triggerWebsiteRebuild'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -21,6 +22,9 @@ export const Posts: CollectionConfig = {
       if (user) return true
       return { status: { equals: 'published' } }
     },
+  },
+  hooks: {
+    afterChange: [triggerWebsiteRebuild],
   },
   endpoints: [
     {
