@@ -185,16 +185,21 @@ export function parsePayloadPostToListItem(
 
 /**
  * Fetch all published posts from Payload CMS.
+ * Returns [] when CMS is unavailable (e.g. during build when CMS is not running).
  */
 export async function getPayloadPosts(): Promise<PayloadPost[]> {
     if (!PAYLOAD_CMS_URL) return [];
     const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
-    const res = await fetch(
-        `${base}/api/posts?limit=500&depth=3&sort=-createdAt&where[status][equals]=published`,
-    );
-    if (!res.ok) return [];
-    const data = (await res.json()) as PayloadFindResponse<PayloadPost>;
-    return data.docs ?? [];
+    try {
+        const res = await fetch(
+            `${base}/api/posts?limit=500&depth=3&sort=-createdAt&where[status][equals]=published`,
+        );
+        if (!res.ok) return [];
+        const data = (await res.json()) as PayloadFindResponse<PayloadPost>;
+        return data.docs ?? [];
+    } catch {
+        return [];
+    }
 }
 
 /**

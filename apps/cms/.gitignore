@@ -52,3 +52,5 @@ node_modules/
 # OpenNext
 .open-next
 .wrangler
+
+test-results/
