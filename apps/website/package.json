@@ -7,6 +7,8 @@
         "dev": "astro dev",
         "build": "astro check && astro build",
         "preview": "astro preview",
+        "preview:worker": "astro build && wrangler dev",
+        "deploy": "wrangler deploy",
         "astro": "astro",
         "test": "vitest run",
         "test:watch": "vitest",
@@ -51,6 +53,7 @@
     },
     "devDependencies": {
         "@playwright/test": "^1.56.1",
+        "wrangler": "^4.59.2",
         "@tailwindcss/typography": "^0.5.16",
         "tailwindcss-intersect": "^2.2.0",
         "tailwindcss-motion": "^1.1.1",
