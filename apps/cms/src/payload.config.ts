@@ -29,12 +29,17 @@ const isCI = process.env.CI === 'true'
 const rawSecret = process.env.PAYLOAD_SECRET?.trim()
 const ciPlaceholder = 'ci-test-placeholder-for-payload-initialization'
 const buildPlaceholder = 'build-time-placeholder'
-const payloadSecret = rawSecret || (isBuild ? buildPlaceholder : isCI ? ciPlaceholder : '')
-// Production runtime: require rawSecret to be a real secret. When isBuild or isCI, payloadSecret
-// may be a placeholder; we must not allow that to satisfy production, so check rawSecret explicitly.
-if (isProduction && !isBuild) {
+const migratePlaceholder = 'migrate-placeholder-no-secret-at-build-time'
+const payloadSecret =
+  rawSecret || (isBuild ? buildPlaceholder : isCI ? ciPlaceholder : isCLI ? migratePlaceholder : '')
+// Production runtime: require rawSecret to be a real secret. When isBuild, isCI, or Payload CLI
+// (e.g. payload migrate on Cloudflare where secrets aren't available at build time), allow placeholder.
+if (isProduction && !isBuild && !isCLI) {
   const isRealSecret =
-    Boolean(rawSecret) && rawSecret !== ciPlaceholder && rawSecret !== buildPlaceholder
+    Boolean(rawSecret) &&
+    rawSecret !== ciPlaceholder &&
+    rawSecret !== buildPlaceholder &&
+    rawSecret !== migratePlaceholder
   if (!isRealSecret) {
     throw new Error(
       'PAYLOAD_SECRET is required in production and must not be a build/CI placeholder',
