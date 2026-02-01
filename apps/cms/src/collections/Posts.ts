@@ -1,5 +1,4 @@
 import type { CollectionConfig } from 'payload'
-import { APIError } from 'payload'
 import {
   BlocksFeature,
   HeadingFeature,
@@ -10,6 +9,27 @@ import {
 import { slugField } from 'payload'
 import { YouTubeBlock } from '../blocks/YouTube'
 import { triggerWebsiteRebuild } from '../hooks/triggerWebsiteRebuild'
+
+/** Origins allowed for CORS on the blog preview endpoint (openmarch.com + localhost). */
+const PREVIEW_CORS_ORIGINS = new Set([
+  'https://openmarch.com',
+  'https://www.openmarch.com',
+  'http://localhost:4321',
+  'http://localhost:3000',
+])
+
+function getPreviewCorsHeaders(req: {
+  headers?: { get?: (name: string) => string | null }
+}): Headers {
+  const headers = new Headers()
+  headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
+  headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Preview-Token')
+  const origin = typeof req.headers?.get === 'function' ? (req.headers.get('origin') ?? null) : null
+  if (origin && PREVIEW_CORS_ORIGINS.has(origin)) {
+    headers.set('Access-Control-Allow-Origin', origin)
+  }
+  return headers
+}
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -31,13 +51,7 @@ export const Posts: CollectionConfig = {
       path: '/preview/:id',
       method: 'options',
       handler: async (req) => {
-        const origin = typeof req.headers?.get === 'function' ? req.headers.get('origin') : null
-        const headers = new Headers()
-        if (origin) {
-          headers.set('Access-Control-Allow-Origin', origin)
-        }
-        headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Preview-Token')
+        const headers = getPreviewCorsHeaders(req)
         headers.set('Access-Control-Max-Age', '86400')
         return new Response(null, { status: 204, headers })
       },
@@ -46,6 +60,7 @@ export const Posts: CollectionConfig = {
       path: '/preview/:id',
       method: 'get',
       handler: async (req) => {
+        const corsHeaders = getPreviewCorsHeaders(req)
         const id = req.routeParams?.id
         let token: string | undefined
         if (typeof req.headers?.get === 'function') {
@@ -60,10 +75,13 @@ export const Posts: CollectionConfig = {
         const normalizedSecret =
           typeof secret === 'string' ? secret.trim().replace(/^"|"$/g, '') : ''
         if (!token || !normalizedSecret || token.trim() !== normalizedSecret) {
-          throw new APIError('Invalid or missing preview token', 403)
+          return Response.json(
+            { error: 'Invalid or missing preview token' },
+            { status: 403, headers: corsHeaders },
+          )
         }
         if (!id) {
-          throw new APIError('Missing post id', 400)
+          return Response.json({ error: 'Missing post id' }, { status: 400, headers: corsHeaders })
         }
         const doc = await req.payload.findByID({
           collection: 'posts',
@@ -72,16 +90,9 @@ export const Posts: CollectionConfig = {
           overrideAccess: true,
         })
         if (!doc) {
-          throw new APIError('Post not found', 404)
+          return Response.json({ error: 'Post not found' }, { status: 404, headers: corsHeaders })
         }
-        const origin = typeof req.headers?.get === 'function' ? req.headers.get('origin') : null
-        const headers = new Headers()
-        if (origin) {
-          headers.set('Access-Control-Allow-Origin', origin)
-        }
-        headers.set('Access-Control-Allow-Methods', 'GET, OPTIONS')
-        headers.set('Access-Control-Allow-Headers', 'Content-Type, X-Preview-Token')
-        return Response.json({ doc }, { headers })
+        return Response.json({ doc }, { headers: corsHeaders })
       },
     },
   ],
