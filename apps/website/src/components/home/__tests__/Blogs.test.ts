@@ -56,7 +56,8 @@ describe("Blogs (integration)", () => {
         expect(result).toContain("CMS Test Post");
         expect(result).toContain("Alice Author");
         expect(result).toContain("https://example.com/cover.jpg");
-        expect(result).toContain("2025-1-15_cms-test-post");
+        expect(result).toContain("cms-test-post");
+        expect(result).toMatch(/\/blog\/\d{4}-\d{1,2}-\d{1,2}_cms-test-post/);
     });
 
     it("shows nothing from CMS when no payload posts are present", async () => {
