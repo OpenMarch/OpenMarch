@@ -1,5 +1,6 @@
 import type {
     DefaultNodeTypes,
+    SerializedBlockNode,
     SerializedUploadNode,
 } from "@payloadcms/richtext-lexical";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
@@ -11,12 +12,52 @@ import { clsx } from "clsx";
 import { buildPayloadUrlFromRelativePath } from "@/lib/payload";
 import { ProseClass } from "@/components/ProseClass";
 
-type NodeTypes = DefaultNodeTypes;
+type YouTubeBlockFields = { url: string };
+type NodeTypes = DefaultNodeTypes | SerializedBlockNode<YouTubeBlockFields>;
+
+function extractYouTubeVideoId(url: string | undefined): string | null {
+    if (!url || typeof url !== "string") return null;
+    const trimmed = url.trim();
+    if (!trimmed) return null;
+    // youtube.com/watch?v=VIDEO_ID
+    const watchMatch = trimmed.match(
+        /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]{11})/,
+    );
+    if (watchMatch) return watchMatch[1];
+    // youtu.be/VIDEO_ID
+    const shortMatch = trimmed.match(/(?:youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+    if (shortMatch) return shortMatch[1];
+    // youtube.com/embed/VIDEO_ID
+    const embedMatch = trimmed.match(
+        /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+    );
+    if (embedMatch) return embedMatch[1];
+    return null;
+}
 
 const jsxConverters: JSXConvertersFunction<NodeTypes> = ({
     defaultConverters,
 }) => ({
     ...defaultConverters,
+    blocks: {
+        youtube: ({ node }) => {
+            const url = (node as SerializedBlockNode<YouTubeBlockFields>).fields
+                ?.url;
+            const videoId = extractYouTubeVideoId(url);
+            if (!videoId) return null;
+            return (
+                <div className="rounded-6 border-stroke relative my-6 aspect-video w-full overflow-hidden border">
+                    <iframe
+                        src={`https://www.youtube.com/embed/${videoId}`}
+                        title="YouTube video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="absolute inset-0 h-full w-full"
+                    />
+                </div>
+            );
+        },
+    },
     upload: ({ node }) => {
         const uploadNode = node as SerializedUploadNode;
         const value = uploadNode.value;

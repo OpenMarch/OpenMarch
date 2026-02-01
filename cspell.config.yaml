@@ -99,6 +99,7 @@ words:
   - PWDEBUG
   - pwsh
   - Rcoords
+  - rels
   - rgba
   - ritardandos
   - rootfile
@@ -157,15 +158,15 @@ words:
   - WASD
   - wavesurfer
   - winget
-  - workerd
   - Woodgrove
+  - workerd
   - xlink
   - XMLID
   - yeskunallumami
+  - youtu
   - zier
   - Zingali
   - 日本語
-  - rels
 ignorePaths:
   - node_modules/**
   - "**/node_modules/**"

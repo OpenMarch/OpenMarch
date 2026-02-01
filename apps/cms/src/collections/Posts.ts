@@ -1,11 +1,13 @@
 import type { CollectionConfig } from 'payload'
 import {
+  BlocksFeature,
   HeadingFeature,
   LinkFeature,
   lexicalEditor,
   UploadFeature,
 } from '@payloadcms/richtext-lexical'
 import { slugField } from 'payload'
+import { YouTubeBlock } from '../blocks/YouTube'
 
 export const Posts: CollectionConfig = {
   slug: 'posts',
@@ -44,6 +46,9 @@ export const Posts: CollectionConfig = {
                 fields: [],
               },
             },
+          }),
+          BlocksFeature({
+            blocks: [YouTubeBlock],
           }),
         ],
         admin: {
