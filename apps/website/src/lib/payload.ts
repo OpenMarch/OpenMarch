@@ -210,8 +210,8 @@ export async function getPayloadPost(id: string): Promise<PayloadPost | null> {
     const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
     const res = await fetch(`${base}/api/posts/${id}?depth=3`);
     if (!res.ok) return null;
-    const data = (await res.json()) as { doc: PayloadPost };
-    return data.doc ?? null;
+    const data = (await res.json()) as PayloadPost | null;
+    return data ?? null;
 }
 
 /**

@@ -16,7 +16,10 @@ const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 const realpath = (value: string) => (fs.existsSync(value) ? fs.realpathSync(value) : undefined)
 
-const isCLI = process.argv.some((value) => realpath(value).endsWith(path.join('payload', 'bin.js')))
+const isCLI = process.argv.some((value) => {
+  const p = realpath(value)
+  return Boolean(p && p.endsWith(path.join('payload', 'bin.js')))
+})
 const isProduction = process.env.NODE_ENV === 'production'
 // Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
 const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
