@@ -23,8 +23,17 @@ const isCLI = process.argv.some((value) => {
 const isProduction = process.env.NODE_ENV === 'production'
 // During build phase (e.g., Next.js build on Cloudflare Pages), PAYLOAD_SECRET isn't available yet.
 // It's a runtime secret binding. Use a placeholder during build, validate at runtime in buildConfig.
+// In CI (e.g. GitHub Actions), use a test placeholder since secrets aren't available.
 const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
-const payloadSecret = process.env.PAYLOAD_SECRET ?? (isBuild ? 'build-time-placeholder' : '')
+const isCI = process.env.CI === 'true'
+const rawSecret = process.env.PAYLOAD_SECRET?.trim()
+const payloadSecret =
+  rawSecret ||
+  (isBuild
+    ? 'build-time-placeholder'
+    : isCI
+      ? 'ci-test-placeholder-for-payload-initialization'
+      : '')
 if (isProduction && !isBuild && !payloadSecret) {
   throw new Error('PAYLOAD_SECRET is required in production')
 }
