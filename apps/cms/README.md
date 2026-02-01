@@ -71,6 +71,32 @@ This will take you to Cloudflare to login and then you can use the Wrangler CLI 
 
 Wrangler is pretty smart so it will automatically bind your services for local development just by running `pnpm dev`.
 
+## Environment Variables and Secrets
+
+Before deploying, you need to configure the following secrets in Cloudflare:
+
+### PAYLOAD_SECRET (Required)
+
+The `PAYLOAD_SECRET` is required for production. Generate a secure random string and add it to your Cloudflare Worker:
+
+```bash
+# Generate a secure secret
+openssl rand -base64 64
+
+# Set it in Cloudflare (for Workers)
+pnpm wrangler secret put PAYLOAD_SECRET
+```
+
+For Cloudflare Pages, set this in the Pages dashboard under Settings → Environment variables → Production.
+
+### PREVIEW_SECRET (Optional)
+
+If you want to enable blog preview URLs, also set `PREVIEW_SECRET`:
+
+```bash
+pnpm wrangler secret put PREVIEW_SECRET
+```
+
 ## Deployments
 
 When you're ready to deploy, first make sure you have created your migrations:

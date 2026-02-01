@@ -21,13 +21,30 @@ const isCLI = process.argv.some((value) => {
   return Boolean(p && p.endsWith(path.join('payload', 'bin.js')))
 })
 const isProduction = process.env.NODE_ENV === 'production'
-const payloadSecret = process.env.PAYLOAD_SECRET ?? ''
-if (isProduction && !payloadSecret) {
-  throw new Error('PAYLOAD_SECRET is required in production')
+// During build phase (e.g., Next.js build on Cloudflare Pages), PAYLOAD_SECRET isn't available yet.
+// It's a runtime secret binding. Use a placeholder during build, validate at runtime in buildConfig.
+// In CI (e.g. GitHub Actions), use a test placeholder since secrets aren't available.
+const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
+const isCI = process.env.CI === 'true'
+const rawSecret = process.env.PAYLOAD_SECRET?.trim()
+const ciPlaceholder = 'ci-test-placeholder-for-payload-initialization'
+const buildPlaceholder = 'build-time-placeholder'
+const payloadSecret = rawSecret || (isBuild ? buildPlaceholder : isCI ? ciPlaceholder : '')
+// Production runtime: require rawSecret to be a real secret. When isBuild or isCI, payloadSecret
+// may be a placeholder; we must not allow that to satisfy production, so check rawSecret explicitly.
+if (isProduction && !isBuild) {
+  const isRealSecret =
+    Boolean(rawSecret) && rawSecret !== ciPlaceholder && rawSecret !== buildPlaceholder
+  if (!isRealSecret) {
+    throw new Error(
+      'PAYLOAD_SECRET is required in production and must not be a build/CI placeholder',
+    )
+  }
 }
 // Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
-const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
-const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
+// During build, always use local bindings since we can't access remote secrets yet.
+const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1' || isBuild
+const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1' || isBuild
 
 const cloudflare = useWranglerProxy
   ? await getCloudflareContextFromWrangler(!useLocalBindings)
