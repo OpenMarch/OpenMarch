@@ -7,6 +7,9 @@ settings:
 overrides:
   react: ^19.0.0
   react-dom: ^19.0.0
+  '@playwright/test': 1.56.1
+  playwright: 1.56.1
+  playwright-core: 1.56.1
 
 patchedDependencies:
   canvas:
@@ -605,7 +608,7 @@ importers:
         version: 3.25.76
     devDependencies:
       '@playwright/test':
-        specifier: ^1.56.1
+        specifier: 1.56.1
         version: 1.56.1
       '@tailwindcss/typography':
         specifier: ^0.5.16
@@ -10391,7 +10394,7 @@ packages:
     hasBin: true
     peerDependencies:
       '@opentelemetry/api': ^1.1.0
-      '@playwright/test': ^1.51.1
+      '@playwright/test': 1.56.1
       babel-plugin-react-compiler: '*'
       react: ^19.0.0
       react-dom: ^19.0.0

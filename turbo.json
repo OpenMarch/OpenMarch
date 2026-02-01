@@ -2,7 +2,12 @@
     "$schema": "https://turborepo.com/schema.json",
     "tasks": {
         "build": {
-            "outputs": ["dist/**"]
+            "outputs": ["dist/**"],
+            "env": [
+                "PAYLOAD_CMS_URL",
+                "PUBLIC_SUPABASE_KEY",
+                "WEBSITE_DEPLOY_HOOK_URL"
+            ]
         },
         "test": {
             "dependsOn": ["build", "^build"],

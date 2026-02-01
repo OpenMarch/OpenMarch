@@ -3,8 +3,6 @@
  * Set PAYLOAD_CMS_URL (e.g. https://cms.openmarch.com or http://localhost:3001) to enable.
  */
 
-const PAYLOAD_CMS_URL = import.meta.env.PAYLOAD_CMS_URL as string | undefined;
-
 /** Populated author from API when depth >= 1 */
 export interface PayloadUser {
     id: number;
@@ -24,6 +22,7 @@ export interface PayloadPost {
     content: unknown;
     updatedAt: string;
     createdAt: string;
+    slug: string;
     /** @deprecated Use createdAt instead */
     date?: string;
 }
@@ -71,7 +70,7 @@ export function buildPayloadUrlFromRelativePath(
 }
 
 export function isPayloadCmsEnabled(): boolean {
-    return Boolean(PAYLOAD_CMS_URL);
+    return Boolean(getPayloadCmsUrl());
 }
 
 /**
@@ -161,7 +160,7 @@ export function parsePayloadPostToListItem(
     const profileDims = getAuthorProfilePictureDimensions(p.author);
     return {
         source: "payload",
-        id: `payload-${p.id}`,
+        id: generatePayloadPostSlug(p),
         title: p.title,
         author: getAuthorDisplayName(p.author),
         authorProfileImageUrl: profilePic,
@@ -183,11 +182,20 @@ export function parsePayloadPostToListItem(
     };
 }
 
+export const generatePayloadPostSlug = (p: PayloadPost) => {
+    const date = new Date(p.createdAt);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}-${month}-${day}_${p.slug}`;
+};
+
 /**
  * Fetch all published posts from Payload CMS.
  * Returns [] when CMS is unavailable (e.g. during build when CMS is not running).
  */
 export async function getPayloadPosts(): Promise<PayloadPost[]> {
+    const PAYLOAD_CMS_URL = getPayloadCmsUrl();
     if (!PAYLOAD_CMS_URL) return [];
     const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
     try {
@@ -206,6 +214,7 @@ export async function getPayloadPosts(): Promise<PayloadPost[]> {
  * Fetch a single post by ID from Payload CMS.
  */
 export async function getPayloadPost(id: string): Promise<PayloadPost | null> {
+    const PAYLOAD_CMS_URL = getPayloadCmsUrl();
     if (!PAYLOAD_CMS_URL) return null;
     try {
         const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
@@ -228,6 +237,7 @@ export async function getPayloadPostPreview(
     token: string,
     baseUrl?: string,
 ): Promise<PayloadPost | null> {
+    const PAYLOAD_CMS_URL = getPayloadCmsUrl();
     const base = (baseUrl ?? PAYLOAD_CMS_URL)?.replace(/\/$/, "");
     if (!base || !token) return null;
     try {

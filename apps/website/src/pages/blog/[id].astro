@@ -8,6 +8,7 @@ import { ProseClass } from "@/components/ProseClass";
 import LexicalContent from "@/components/ui/LexicalContent";
 import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
+    generatePayloadPostSlug,
     getPayloadPosts,
     isPayloadCmsEnabled,
     parsePayloadPostToListItem,
@@ -27,7 +28,7 @@ export async function getStaticPaths() {
 
     const payloadPosts = await getPayloadPosts();
     const payloadPaths = payloadPosts.map((post: PayloadPost) => ({
-        params: { id: `payload-${post.id}` },
+        params: { id: generatePayloadPostSlug(post) },
         props: { source: "payload" as const, post },
     }));
 
