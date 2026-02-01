@@ -24,6 +24,7 @@ export interface PayloadPost {
     content: unknown;
     updatedAt: string;
     createdAt: string;
+    slug: string;
     /** @deprecated Use createdAt instead */
     date?: string;
 }
@@ -161,7 +162,7 @@ export function parsePayloadPostToListItem(
     const profileDims = getAuthorProfilePictureDimensions(p.author);
     return {
         source: "payload",
-        id: `payload-${p.id}`,
+        id: generatePayloadPostSlug(p),
         title: p.title,
         author: getAuthorDisplayName(p.author),
         authorProfileImageUrl: profilePic,
@@ -182,6 +183,14 @@ export function parsePayloadPostToListItem(
                 : undefined,
     };
 }
+
+export const generatePayloadPostSlug = (p: PayloadPost) => {
+    const date = new Date(p.createdAt);
+    const year = date.getFullYear();
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return `${year}-${month}-${day}_${p.slug}`;
+};
 
 /**
  * Fetch all published posts from Payload CMS.

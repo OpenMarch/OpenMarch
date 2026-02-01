@@ -42,6 +42,15 @@
     //   "bucket_name": "<BUCKET_NAME>",
     // },
   ],
+  "routes": [
+    {
+      "pattern": "cms.openmarch.com",
+      "zone_name": "openmarch.com",
+      "custom_domain": true,
+    },
+  ],
+  "workers_dev": true,
+  "preview_urls": true,
   // Here's how to configure an additional environment
   // It can be deployed with `CLOUDFLARE_ENV=staging pnpm run deploy`
   // "env": {
