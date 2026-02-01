@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     getAuthorDisplayName,
+    getAuthorProfilePictureDimensions,
     getAuthorProfilePictureUrl,
     getPayloadCmsUrl,
     getPayloadPosts,
@@ -234,7 +235,7 @@ describe("parsePayloadPostToListItem", () => {
 
         const result = parsePayloadPostToListItem(post, placeholder);
 
-        expect(result).toEqual({
+        expect(result).toMatchObject({
             source: "payload",
             id: "payload-42",
             title: "Test Post",
@@ -244,6 +245,8 @@ describe("parsePayloadPostToListItem", () => {
             imageUrl: "https://example.com/cover.jpg",
             imageAlt: "Cover alt",
         });
+        expect(result.imageWidth).toBeUndefined();
+        expect(result.imageHeight).toBeUndefined();
     });
 
     it("uses placeholder when post has no cover image", () => {
@@ -261,5 +264,74 @@ describe("parsePayloadPostToListItem", () => {
         expect(result.imageUrl).toBe(placeholder);
         expect(result.imageAlt).toBe("No Image");
         expect(result.author).toBe("Unknown");
+    });
+
+    it("passes image and profile dimensions when available from API", () => {
+        const post: PayloadPost = {
+            id: 1,
+            title: "With Dimensions",
+            author: {
+                id: 2,
+                email: "b@b.com",
+                name: "Bob",
+                profilePicture: {
+                    id: "pic-1",
+                    url: "/media/avatar.png",
+                    alt: "Bob",
+                    width: 400,
+                    height: 400,
+                },
+            },
+            coverImage: {
+                id: "img-1",
+                url: "/media/cover.jpg",
+                alt: "Cover",
+                width: 1920,
+                height: 1080,
+            },
+            content: {},
+            createdAt: "2025-01-01T00:00:00.000Z",
+            updatedAt: "2025-01-01T00:00:00.000Z",
+        };
+
+        const result = parsePayloadPostToListItem(post, placeholder);
+
+        expect(result.imageWidth).toBe(1920);
+        expect(result.imageHeight).toBe(1080);
+        expect(result.authorProfileImageWidth).toBe(400);
+        expect(result.authorProfileImageHeight).toBe(400);
+    });
+});
+
+describe("getAuthorProfilePictureDimensions", () => {
+    it("returns undefined for null author", () => {
+        expect(getAuthorProfilePictureDimensions(null)).toBeUndefined();
+    });
+
+    it("returns undefined when profilePicture has no dimensions", () => {
+        const user: PayloadUser = {
+            id: 1,
+            email: "a@b.com",
+            profilePicture: { id: "1", url: "/x.jpg", alt: "" },
+        };
+        expect(getAuthorProfilePictureDimensions(user)).toBeUndefined();
+    });
+
+    it("returns dimensions when profilePicture has width and height", () => {
+        const user: PayloadUser = {
+            id: 1,
+            email: "a@b.com",
+            profilePicture: {
+                id: "1",
+                url: "/x.jpg",
+                alt: "",
+                width: 200,
+                height: 200,
+            },
+        };
+        expect(getAuthorProfilePictureDimensions(user)).toEqual({
+            width: 200,
+            height: 200,
+        });
     });
 });

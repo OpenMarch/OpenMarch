@@ -74,13 +74,11 @@ const { Content } = isContent
                     class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
                 />
             ) : payloadParsed ? (
-                <img
+                <Image
                     src={payloadParsed.imageUrl}
-                    width={1280}
-                    height={720}
+                    width={payloadParsed.imageWidth ?? 1280}
+                    height={payloadParsed.imageHeight ?? 720}
                     alt={payloadParsed.imageAlt}
-                    data-fallback={placeholderImage.src}
-                    onerror="this.onerror=null;this.src=this.getAttribute('data-fallback')||''"
                     class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
                 />
             ) : null
@@ -94,16 +92,16 @@ const { Content } = isContent
         <div class="flex gap-16 items-center">
             {
                 authorProfileImageUrl ? (
-                    <img
+                    <Image
                         src={authorProfileImageUrl}
                         alt=""
-                        class="size-8 shrink-0 rounded-full object-cover"
-                        width={32}
-                        height={32}
+                        width={payloadParsed?.authorProfileImageWidth ?? 112}
+                        height={payloadParsed?.authorProfileImageHeight ?? 112}
+                        class="size-32 shrink-0 rounded-full object-cover"
                     />
                 ) : null
             }
-            <p class="text-body">by {author}</p>
+            <p class="text-body">{author}</p>
             <p class="text-body">{dateFormatted}</p>
         </div>
         {

@@ -55,11 +55,15 @@ export interface PayloadFindResponse<T> {
 export function getPayloadCmsUrl(): string | undefined {
     return PAYLOAD_CMS_URL;
 }
-const buildPayloadUrlFromRelativePath = (relativePath: string) => {
+const buildPayloadUrlFromRelativePath = (pathOrUrl: string) => {
+    if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://"))
+        return pathOrUrl;
     let url = getPayloadCmsUrl();
     if (!url) throw new Error("PAYLOAD_API_URL is not set");
     if (url.endsWith("/")) url = url.slice(0, -1);
-    if (relativePath.startsWith("/")) relativePath = "/" + relativePath;
+    const relativePath = pathOrUrl.startsWith("/")
+        ? pathOrUrl
+        : `/${pathOrUrl}`;
     return `${url}${relativePath}`;
 };
 
@@ -92,6 +96,25 @@ export function getAuthorProfilePictureUrl(
     return null;
 }
 
+/**
+ * Get the profile picture dimensions for a post author, or undefined if none.
+ */
+export function getAuthorProfilePictureDimensions(
+    author: number | PayloadUser | null | undefined,
+): { width: number; height: number } | undefined {
+    if (author == null || typeof author === "number") return undefined;
+    const pic = author.profilePicture;
+    if (pic == null || typeof pic !== "object") return undefined;
+    if (
+        typeof pic.width === "number" &&
+        typeof pic.height === "number" &&
+        pic.width > 0 &&
+        pic.height > 0
+    )
+        return { width: pic.width, height: pic.height };
+    return undefined;
+}
+
 /** List-item shape for a blog post from Payload (used in unified blog lists). */
 export interface PayloadBlogListItem {
     source: "payload";
@@ -99,9 +122,15 @@ export interface PayloadBlogListItem {
     title: string;
     author: string;
     authorProfileImageUrl: string | null;
+    /** Profile picture dimensions from API, when available */
+    authorProfileImageWidth?: number;
+    authorProfileImageHeight?: number;
     date: Date;
     imageUrl: string;
     imageAlt: string;
+    /** Cover image dimensions from API, when available */
+    imageWidth?: number;
+    imageHeight?: number;
 }
 
 /**
@@ -121,17 +150,29 @@ export function parsePayloadPostToListItem(
         typeof createdAt === "string"
             ? new Date(createdAt)
             : new Date(createdAt);
+    const profilePic = getAuthorProfilePictureUrl(p.author);
+    const profileDims = getAuthorProfilePictureDimensions(p.author);
     return {
         source: "payload",
         id: `payload-${p.id}`,
         title: p.title,
         author: getAuthorDisplayName(p.author),
-        authorProfileImageUrl: getAuthorProfilePictureUrl(p.author),
+        authorProfileImageUrl: profilePic,
+        authorProfileImageWidth: profileDims?.width,
+        authorProfileImageHeight: profileDims?.height,
         date,
         imageUrl: img?.url
             ? buildPayloadUrlFromRelativePath(img.url)
             : placeholderImageUrl,
         imageAlt: img?.alt ?? p.title,
+        imageWidth:
+            img?.width && img?.height && img.width > 0 && img.height > 0
+                ? img.width
+                : undefined,
+        imageHeight:
+            img?.width && img?.height && img.width > 0 && img.height > 0
+                ? img.height
+                : undefined,
     };
 }
 

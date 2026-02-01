@@ -68,40 +68,44 @@ const blogs: BlogListItem[] = [
                                 class="aspect-video h-auto w-full object-cover"
                             />
                         ) : (
-                            <img
+                            <Image
                                 src={blog.imageUrl}
-                                width={670}
-                                height={420}
-                                alt=""
-                                data-fallback={placeholderImage.src}
-                                onerror="this.onerror=null;this.src=this.getAttribute('data-fallback')||''"
+                                width={blog.imageWidth ?? 670}
+                                height={blog.imageHeight ?? 420}
+                                alt={blog.imageAlt}
                                 class="aspect-video h-auto w-full object-cover"
                             />
                         )}
                         <div class="flex w-full flex-col gap-8 p-16 h-fit">
                             <h2 class="w-full text-h4">{blog.title}</h2>
-                            <div class="flex gap-16 flex-wrap items-center">
+                            <div class="flex gap-16 flex-wrap items-center align-top">
                                 {blog.source === "payload" &&
                                 blog.authorProfileImageUrl ? (
-                                    <img
+                                    <Image
                                         src={blog.authorProfileImageUrl}
                                         alt=""
-                                        class="size-8 shrink-0 rounded-full object-cover"
-                                        width={32}
-                                        height={32}
+                                        width={
+                                            blog.authorProfileImageWidth ?? 96
+                                        }
+                                        height={
+                                            blog.authorProfileImageHeight ?? 96
+                                        }
+                                        class="size-24 shrink-0 rounded-full object-cover"
                                     />
                                 ) : null}
-                                <p class="w-fit text-body text-text-subtitle leading-[150%]">
-                                    by {blog.author}
-                                </p>
-                                <p class="w-fit text-body text-text-subtitle leading-[150%]">
-                                    {blog.date.toLocaleDateString("en-US", {
-                                        year: "numeric",
-                                        month: "long",
-                                        day: "numeric",
-                                        timeZone: "UTC",
-                                    })}
-                                </p>
+                                <div class="flex flex-col gap-2">
+                                    <p class="w-fit text-body text-text-subtitle leading-[150%]">
+                                        {blog.author}
+                                    </p>
+                                    <p class="w-fit text-body text-text-subtitle leading-[150%]">
+                                        {blog.date.toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                            timeZone: "UTC",
+                                        })}
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </a>

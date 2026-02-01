@@ -82,13 +82,11 @@ const blogs: BlogListItem[] = [
                                 class="aspect-video h-auto w-[30%] min-w-[30%] max-[700px]:w-full rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
                             />
                         ) : (
-                            <img
+                            <Image
                                 src={blog.imageUrl}
-                                width={670}
-                                height={420}
-                                alt=""
-                                data-fallback={placeholderImage.src}
-                                onerror="this.onerror=null;this.src=this.getAttribute('data-fallback')||''"
+                                width={blog.imageWidth ?? 670}
+                                height={blog.imageHeight ?? 420}
+                                alt={blog.imageAlt}
                                 class="aspect-video h-auto w-[30%] min-w-[30%] max-[700px]:w-full rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
                             />
                         )}
@@ -99,18 +97,22 @@ const blogs: BlogListItem[] = [
                             <div class="flex gap-16 flex-wrap items-center text-text-subtitle">
                                 {blog.source === "payload" &&
                                 blog.authorProfileImageUrl ? (
-                                    <img
+                                    <Image
                                         src={blog.authorProfileImageUrl}
                                         alt=""
-                                        class="size-8 shrink-0 rounded-full object-cover"
-                                        width={32}
-                                        height={32}
+                                        width={
+                                            blog.authorProfileImageWidth ?? 96
+                                        }
+                                        height={
+                                            blog.authorProfileImageHeight ?? 96
+                                        }
+                                        class="size-24 shrink-0 rounded-full object-cover"
                                     />
                                 ) : null}
                                 <p class="text-body leading-[150%]">
-                                    by {blog.author}
+                                    {blog.author}
                                 </p>
-                                <p class="ext-body leading-[150%]">
+                                <p class="text-body leading-[150%]">
                                     {blog.date.toLocaleDateString("en-US", {
                                         year: "numeric",
                                         month: "long",
