@@ -51,14 +51,19 @@ export interface PayloadFindResponse<T> {
 }
 
 export function getPayloadCmsUrl(): string | undefined {
-    return PAYLOAD_CMS_URL;
+    return import.meta.env.PAYLOAD_CMS_URL as string | undefined;
 }
-export function buildPayloadUrlFromRelativePath(pathOrUrl: string): string {
+/**
+ * @param baseUrl - Optional CMS base URL (e.g. from getPayloadCmsUrl()). Pass when building URLs on the client where env may be unset.
+ */
+export function buildPayloadUrlFromRelativePath(
+    pathOrUrl: string,
+    baseUrl?: string,
+): string {
     if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://"))
         return pathOrUrl;
-    let url = getPayloadCmsUrl();
-    if (!url) throw new Error("PAYLOAD_API_URL is not set");
-    if (url.endsWith("/")) url = url.slice(0, -1);
+    const url = (baseUrl ?? getPayloadCmsUrl())?.replace(/\/$/, "");
+    if (!url) throw new Error("PAYLOAD_CMS_URL is not set");
     const relativePath = pathOrUrl.startsWith("/")
         ? pathOrUrl
         : `/${pathOrUrl}`;
@@ -82,15 +87,17 @@ export function getAuthorDisplayName(
 
 /**
  * Get the profile picture URL for a post author, or null if none.
+ * @param baseUrl - Optional CMS base URL when building URLs on the client (e.g. preview page).
  */
 export function getAuthorProfilePictureUrl(
     author: number | PayloadUser | null | undefined,
+    baseUrl?: string,
 ): string | null {
     if (author == null || typeof author === "number") return null;
     const pic = author.profilePicture;
     if (pic == null) return null;
     if (typeof pic === "object" && pic.url)
-        return buildPayloadUrlFromRelativePath(pic.url);
+        return buildPayloadUrlFromRelativePath(pic.url, baseUrl);
     return null;
 }
 
@@ -134,10 +141,12 @@ export interface PayloadBlogListItem {
 /**
  * Parse a Payload CMS post into the shared blog list item shape.
  * Pass the placeholder image URL for fallback when the post has no cover image.
+ * @param payloadCmsBaseUrl - Optional CMS base URL when building URLs on the client (e.g. preview page) where env may be unset.
  */
 export function parsePayloadPostToListItem(
     p: PayloadPost,
     placeholderImageUrl: string,
+    payloadCmsBaseUrl?: string,
 ): PayloadBlogListItem {
     const img =
         typeof p.coverImage === "object"
@@ -148,7 +157,7 @@ export function parsePayloadPostToListItem(
         typeof createdAt === "string"
             ? new Date(createdAt)
             : new Date(createdAt);
-    const profilePic = getAuthorProfilePictureUrl(p.author);
+    const profilePic = getAuthorProfilePictureUrl(p.author, payloadCmsBaseUrl);
     const profileDims = getAuthorProfilePictureDimensions(p.author);
     return {
         source: "payload",
@@ -160,7 +169,7 @@ export function parsePayloadPostToListItem(
         authorProfileImageHeight: profileDims?.height,
         date,
         imageUrl: img?.url
-            ? buildPayloadUrlFromRelativePath(img.url)
+            ? buildPayloadUrlFromRelativePath(img.url, payloadCmsBaseUrl)
             : placeholderImageUrl,
         imageAlt: img?.alt ?? p.title,
         imageWidth:
@@ -195,6 +204,25 @@ export async function getPayloadPost(id: string): Promise<PayloadPost | null> {
     if (!PAYLOAD_CMS_URL) return null;
     const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
     const res = await fetch(`${base}/api/posts/${id}?depth=3`);
+    if (!res.ok) return null;
+    const data = (await res.json()) as { doc: PayloadPost };
+    return data.doc ?? null;
+}
+
+/**
+ * Fetch a single post by ID from Payload CMS via the preview endpoint.
+ * Returns the post (including drafts) when the token matches PREVIEW_SECRET; null on 403/404 or other errors.
+ * @param baseUrl - Optional CMS base URL (e.g. from getPayloadCmsUrl()); used when calling from client where env may be unset.
+ */
+export async function getPayloadPostPreview(
+    id: string,
+    token: string,
+    baseUrl?: string,
+): Promise<PayloadPost | null> {
+    const base = (baseUrl ?? PAYLOAD_CMS_URL)?.replace(/\/$/, "");
+    if (!base || !token) return null;
+    const url = `${base}/api/posts/preview/${id}?token=${encodeURIComponent(token)}`;
+    const res = await fetch(url);
     if (!res.ok) return null;
     const data = (await res.json()) as { doc: PayloadPost };
     return data.doc ?? null;

@@ -35,75 +35,82 @@ function extractYouTubeVideoId(url: string | undefined): string | null {
     return null;
 }
 
-const jsxConverters: JSXConvertersFunction<NodeTypes> = ({
-    defaultConverters,
-}) => ({
-    ...defaultConverters,
-    blocks: {
-        youtube: ({ node }) => {
-            const url = (node as SerializedBlockNode<YouTubeBlockFields>).fields
-                ?.url;
-            const videoId = extractYouTubeVideoId(url);
-            if (!videoId) return null;
+function getJsxConverters(
+    payloadCmsBaseUrl?: string,
+): JSXConvertersFunction<NodeTypes> {
+    return ({ defaultConverters }) => ({
+        ...defaultConverters,
+        blocks: {
+            youtube: ({ node }) => {
+                const url = (node as SerializedBlockNode<YouTubeBlockFields>)
+                    .fields?.url;
+                const videoId = extractYouTubeVideoId(url);
+                if (!videoId) return null;
+                return (
+                    <div className="rounded-6 border-stroke relative my-6 aspect-video w-full overflow-hidden border">
+                        <iframe
+                            src={`https://www.youtube.com/embed/${videoId}`}
+                            title="YouTube video"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                            className="absolute inset-0 h-full w-full"
+                        />
+                    </div>
+                );
+            },
+        },
+        upload: ({ node }) => {
+            const uploadNode = node as SerializedUploadNode;
+            const value = uploadNode.value;
+
+            if (typeof value !== "object" || value == null) {
+                return null;
+            }
+
+            const uploadDoc = value as {
+                url?: string;
+                alt?: string;
+                width?: number;
+                height?: number;
+                mimeType?: string;
+            };
+
+            const url = uploadDoc.url;
+            if (!url) return null;
+
+            const resolvedUrl = buildPayloadUrlFromRelativePath(
+                url,
+                payloadCmsBaseUrl,
+            );
+            const alt =
+                (uploadNode as { fields?: { alt?: string } }).fields?.alt ??
+                uploadDoc.alt ??
+                "";
+
+            const width = uploadDoc.width;
+            const height = uploadDoc.height;
+
             return (
-                <div className="rounded-6 border-stroke relative my-6 aspect-video w-full overflow-hidden border">
-                    <iframe
-                        src={`https://www.youtube.com/embed/${videoId}`}
-                        title="YouTube video"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen
-                        className="absolute inset-0 h-full w-full"
-                    />
-                </div>
+                <img
+                    alt={alt}
+                    className="rounded-6 border-stroke border"
+                    height={height}
+                    loading="lazy"
+                    src={resolvedUrl}
+                    width={width}
+                />
             );
         },
-    },
-    upload: ({ node }) => {
-        const uploadNode = node as SerializedUploadNode;
-        const value = uploadNode.value;
-
-        if (typeof value !== "object" || value == null) {
-            return null;
-        }
-
-        const uploadDoc = value as {
-            url?: string;
-            alt?: string;
-            width?: number;
-            height?: number;
-            mimeType?: string;
-        };
-
-        const url = uploadDoc.url;
-        if (!url) return null;
-
-        const resolvedUrl = buildPayloadUrlFromRelativePath(url);
-        const alt =
-            (uploadNode as { fields?: { alt?: string } }).fields?.alt ??
-            uploadDoc.alt ??
-            "";
-
-        const width = uploadDoc.width;
-        const height = uploadDoc.height;
-
-        return (
-            <img
-                alt={alt}
-                className="rounded-6 border-stroke border"
-                height={height}
-                loading="lazy"
-                src={resolvedUrl}
-                width={width}
-            />
-        );
-    },
-});
+    });
+}
 
 interface LexicalContentProps {
     /** Serialized Lexical editor state from Payload CMS */
     data: SerializedEditorState | null | undefined;
     /** Optional additional class names for the container */
     className?: string;
+    /** Optional CMS base URL when building upload URLs on the client (e.g. preview page) where env may be unset */
+    payloadCmsBaseUrl?: string;
 }
 
 /**
@@ -113,12 +120,16 @@ interface LexicalContentProps {
 export default function LexicalContent({
     data,
     className,
+    payloadCmsBaseUrl,
 }: LexicalContentProps) {
     if (!data) return null;
 
     return (
         <div className={clsx(ProseClass, className)}>
-            <RichText converters={jsxConverters} data={data} />
+            <RichText
+                converters={getJsxConverters(payloadCmsBaseUrl)}
+                data={data}
+            />
         </div>
     );
 }

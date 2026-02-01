@@ -17,4 +17,15 @@ describe('API', () => {
     })
     expect(users).toBeDefined()
   })
+
+  it('posts read access returns only published when no user', async () => {
+    const result = await payload.find({
+      collection: 'posts',
+      limit: 100,
+      overrideAccess: false,
+    })
+    for (const doc of result.docs) {
+      expect((doc as { status?: string }).status).toBe('published')
+    }
+  })
 })

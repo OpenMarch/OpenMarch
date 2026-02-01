@@ -7,6 +7,7 @@ declare namespace Cloudflare {
 		D1: D1Database;
 		ASSETS: Fetcher;
 		PAYLOAD_SECRET: string;
+		PREVIEW_SECRET?: string;
 	}
 }
 interface CloudflareEnv extends Cloudflare.Env {}
@@ -14,7 +15,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PAYLOAD_SECRET">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PAYLOAD_SECRET" | "PREVIEW_SECRET">> {}
 }
 
 // Begin runtime types

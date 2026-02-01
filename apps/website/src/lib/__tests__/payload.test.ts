@@ -4,6 +4,7 @@ import {
     getAuthorProfilePictureDimensions,
     getAuthorProfilePictureUrl,
     getPayloadCmsUrl,
+    getPayloadPostPreview,
     getPayloadPosts,
     isPayloadCmsEnabled,
     parsePayloadPostToListItem,
@@ -208,6 +209,95 @@ describe("getPayloadPosts", () => {
         const result = await getPayloadPosts();
 
         expect(result).toEqual([]);
+    });
+});
+
+describe("getPayloadPostPreview", () => {
+    const mockPost: PayloadPost = {
+        id: 1,
+        title: "Draft Post",
+        author: null,
+        content: {},
+        createdAt: "2025-01-01T00:00:00.000Z",
+        updatedAt: "2025-01-01T00:00:00.000Z",
+    };
+
+    beforeEach(() => {
+        vi.stubGlobal("fetch", vi.fn());
+    });
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it("fetches from preview URL with id and token", async () => {
+        const mockFetch = vi.mocked(fetch);
+        mockFetch.mockResolvedValue(
+            new Response(JSON.stringify({ doc: mockPost }), { status: 200 }),
+        );
+
+        await getPayloadPostPreview("1", "secret-token");
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            "http://localhost:3000/api/posts/preview/1?token=secret-token",
+        );
+    });
+
+    it("uses baseUrl when provided", async () => {
+        const mockFetch = vi.mocked(fetch);
+        mockFetch.mockResolvedValue(
+            new Response(JSON.stringify({ doc: mockPost }), { status: 200 }),
+        );
+
+        await getPayloadPostPreview(
+            "42",
+            "my-token",
+            "https://cms.example.com",
+        );
+
+        expect(mockFetch).toHaveBeenCalledWith(
+            "https://cms.example.com/api/posts/preview/42?token=my-token",
+        );
+    });
+
+    it("returns doc from successful response", async () => {
+        const mockFetch = vi.mocked(fetch);
+        mockFetch.mockResolvedValue(
+            new Response(JSON.stringify({ doc: mockPost }), { status: 200 }),
+        );
+
+        const result = await getPayloadPostPreview("1", "token");
+
+        expect(result).toEqual(mockPost);
+    });
+
+    it("returns null when response is 403", async () => {
+        const mockFetch = vi.mocked(fetch);
+        mockFetch.mockResolvedValue(
+            new Response(JSON.stringify({}), { status: 403 }),
+        );
+
+        const result = await getPayloadPostPreview("1", "bad-token");
+
+        expect(result).toBeNull();
+    });
+
+    it("returns null when response is 404", async () => {
+        const mockFetch = vi.mocked(fetch);
+        mockFetch.mockResolvedValue(
+            new Response(JSON.stringify({}), { status: 404 }),
+        );
+
+        const result = await getPayloadPostPreview("999", "token");
+
+        expect(result).toBeNull();
+    });
+
+    it("returns null when token is empty and no baseUrl", async () => {
+        const result = await getPayloadPostPreview("1", "");
+
+        expect(result).toBeNull();
+        expect(fetch).not.toHaveBeenCalled();
     });
 });
 
