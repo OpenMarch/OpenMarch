@@ -3,53 +3,123 @@ import { getCollection, render, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
+import placeholderImage from "@/content/blog/placeholder.jpg";
 import { ProseClass } from "@/components/ProseClass";
+import LexicalContent from "@/components/ui/LexicalContent";
+import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
+import {
+    getPayloadPosts,
+    isPayloadCmsEnabled,
+    parsePayloadPostToListItem,
+    type PayloadPost,
+} from "@/lib/payload";
 
 export async function getStaticPaths() {
-    const blogEntries = await getCollection("blog");
-    return blogEntries.map((post) => ({
+    const contentEntries = await getCollection("blog");
+    const contentPaths = contentEntries.map((post) => ({
         params: { id: post.id },
-        props: { post },
+        props: { source: "content" as const, post },
     }));
+
+    if (!isPayloadCmsEnabled()) {
+        return contentPaths;
+    }
+
+    const payloadPosts = await getPayloadPosts();
+    const payloadPaths = payloadPosts.map((post: PayloadPost) => ({
+        params: { id: `payload-${post.id}` },
+        props: { source: "payload" as const, post },
+    }));
+
+    return [...contentPaths, ...payloadPaths];
 }
 
-interface Props {
-    post: CollectionEntry<"blog">;
-}
-const { post } = Astro.props;
-const { Content } = await render(post);
+const { source, post } = Astro.props;
+const isContent = source === "content";
+
+const payloadParsed =
+    !isContent && source === "payload"
+        ? parsePayloadPostToListItem(post as PayloadPost, placeholderImage.src)
+        : null;
+
+const title = isContent ? post.data.title : (payloadParsed?.title ?? "");
+const author = isContent ? post.data.author : (payloadParsed?.author ?? "");
+const authorProfileImageUrl = payloadParsed?.authorProfileImageUrl ?? null;
+const date = isContent ? post.data.date : (payloadParsed?.date ?? new Date());
+const dateFormatted = date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    timeZone: "UTC",
+});
+
+const { Content } = isContent
+    ? await render(post as CollectionEntry<"blog">)
+    : { Content: null };
 ---
 
-<Layout title={post.data.title}>
+<Layout title={title}>
     <article
         class="flex relative max-w-[50rem] w-full flex-col items-center gap-16"
     >
-        <Image
-            src={post.data.image as ImageMetadata}
-            width={1280}
-            height={720}
-            alt={post.data.title}
-            class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
-        />
+        {
+            isContent ? (
+                <Image
+                    src={
+                        (post as CollectionEntry<"blog">).data
+                            .image as ImageMetadata
+                    }
+                    width={1280}
+                    height={720}
+                    alt=""
+                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                />
+            ) : payloadParsed ? (
+                <Image
+                    src={payloadParsed.imageUrl}
+                    width={payloadParsed.imageWidth ?? 1280}
+                    height={payloadParsed.imageHeight ?? 720}
+                    alt={payloadParsed.imageAlt}
+                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                />
+            ) : null
+        }
         <div
             class="absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2"
             style="background: radial-gradient(ellipse, oklch(from var(--color-accent) l c h / 0.3) 0%, transparent 70%);"
         >
         </div>
-        <h1 class="text-h3 text-center">{post.data.title}</h1>
-        <div class="flex gap-16">
-            <p class="text-body">{post.data.author}</p>
-            <p class="text-body">
-                {
-                    post.data.date.toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                        timeZone: "UTC",
-                    })
-                }
-            </p>
+        <h1 class="text-h3 text-center">{title}</h1>
+        <div class="flex gap-16 items-center">
+            {
+                authorProfileImageUrl ? (
+                    <Image
+                        src={authorProfileImageUrl}
+                        alt=""
+                        width={payloadParsed?.authorProfileImageWidth ?? 112}
+                        height={payloadParsed?.authorProfileImageHeight ?? 112}
+                        class="size-32 shrink-0 rounded-full object-cover"
+                    />
+                ) : null
+            }
+            <p class="text-body">{author}</p>
+            <p class="text-body">{dateFormatted}</p>
         </div>
-        <div class={ProseClass}><Content /></div>
+        {
+            isContent && Content ? (
+                <div class={ProseClass}>
+                    <Content />
+                </div>
+            ) : source === "payload" ? (
+                <LexicalContent
+                    data={
+                        (post as PayloadPost).content as
+                            | SerializedEditorState
+                            | null
+                            | undefined
+                    }
+                />
+            ) : null
+        }
     </article>
 </Layout>
