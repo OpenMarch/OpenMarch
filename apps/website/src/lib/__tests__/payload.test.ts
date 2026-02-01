@@ -133,6 +133,7 @@ describe("getPayloadPosts", () => {
         {
             id: 1,
             title: "Test Post",
+            slug: "test-post",
             author: null,
             content: {},
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -216,6 +217,7 @@ describe("getPayloadPostPreview", () => {
     const mockPost: PayloadPost = {
         id: 1,
         title: "Draft Post",
+        slug: "draft-post",
         author: null,
         content: {},
         createdAt: "2025-01-01T00:00:00.000Z",
@@ -308,6 +310,7 @@ describe("parsePayloadPostToListItem", () => {
         const post: PayloadPost = {
             id: 42,
             title: "Test Post",
+            slug: "test-post",
             author: {
                 id: 1,
                 email: "a@b.com",
@@ -327,7 +330,7 @@ describe("parsePayloadPostToListItem", () => {
 
         expect(result).toMatchObject({
             source: "payload",
-            id: "payload-42",
+            id: "2025-1-15_test-post",
             title: "Test Post",
             author: "Alice",
             authorProfileImageUrl: null,
@@ -343,6 +346,7 @@ describe("parsePayloadPostToListItem", () => {
         const post: PayloadPost = {
             id: "abc",
             title: "No Image",
+            slug: "no-image",
             author: null,
             content: {},
             createdAt: "2025-01-01T00:00:00.000Z",
@@ -360,6 +364,7 @@ describe("parsePayloadPostToListItem", () => {
         const post: PayloadPost = {
             id: 1,
             title: "With Dimensions",
+            slug: "with-dimensions",
             author: {
                 id: 2,
                 email: "b@b.com",

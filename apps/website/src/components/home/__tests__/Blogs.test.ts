@@ -38,6 +38,7 @@ describe("Blogs (integration)", () => {
             {
                 id: 1,
                 title: "CMS Test Post",
+                slug: "cms-test-post",
                 author: { id: 1, email: "a@b.com", name: "Alice Author" },
                 coverImage: {
                     id: "1",
@@ -55,7 +56,7 @@ describe("Blogs (integration)", () => {
         expect(result).toContain("CMS Test Post");
         expect(result).toContain("Alice Author");
         expect(result).toContain("https://example.com/cover.jpg");
-        expect(result).toContain("payload-1");
+        expect(result).toContain("2025-1-15_cms-test-post");
     });
 
     it("shows nothing from CMS when no payload posts are present", async () => {
