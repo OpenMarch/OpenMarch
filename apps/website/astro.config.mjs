@@ -73,6 +73,18 @@ export default defineConfig({
 
     site: "https://openmarch.com",
 
+    image: {
+        domains: ["localhost", "cms.openmarch.com"],
+        remotePatterns: [
+            { protocol: "http", hostname: "localhost", pathname: "/media/**" },
+            {
+                protocol: "https",
+                hostname: "**.openmarch.com",
+                pathname: "/media/**",
+            },
+        ],
+    },
+
     devToolbar: {
         enabled: false,
     },
