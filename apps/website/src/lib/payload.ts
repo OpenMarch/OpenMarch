@@ -207,11 +207,15 @@ export async function getPayloadPosts(): Promise<PayloadPost[]> {
  */
 export async function getPayloadPost(id: string): Promise<PayloadPost | null> {
     if (!PAYLOAD_CMS_URL) return null;
-    const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
-    const res = await fetch(`${base}/api/posts/${id}?depth=3`);
-    if (!res.ok) return null;
-    const data = (await res.json()) as PayloadPost | null;
-    return data ?? null;
+    try {
+        const base = PAYLOAD_CMS_URL.replace(/\/$/, "");
+        const res = await fetch(`${base}/api/posts/${id}?depth=3`);
+        if (!res.ok) return null;
+        const data = (await res.json()) as PayloadPost | null;
+        return data ?? null;
+    } catch {
+        return null;
+    }
 }
 
 /**
@@ -226,9 +230,13 @@ export async function getPayloadPostPreview(
 ): Promise<PayloadPost | null> {
     const base = (baseUrl ?? PAYLOAD_CMS_URL)?.replace(/\/$/, "");
     if (!base || !token) return null;
-    const url = `${base}/api/posts/preview/${id}?token=${encodeURIComponent(token)}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const data = (await res.json()) as { doc: PayloadPost };
-    return data.doc ?? null;
+    try {
+        const url = `${base}/api/posts/preview/${id}?token=${encodeURIComponent(token)}`;
+        const res = await fetch(url);
+        if (!res.ok) return null;
+        const data = (await res.json()) as { doc: PayloadPost };
+        return data.doc ?? null;
+    } catch {
+        return null;
+    }
 }
