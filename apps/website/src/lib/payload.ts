@@ -20,10 +20,8 @@ export interface PayloadPost {
     author: number | PayloadUser | null;
     /** Cover image (CMS field: coverImage). */
     coverImage?: PayloadMedia | number | null;
-    /** Lexical rich text (stored in CMS). */
+    /** Lexical rich text (stored in CMS). Use LexicalContent component for rendering. */
     content: unknown;
-    /** Markdown output of content (computed on read; use this for rendering). */
-    contentMarkdown?: string;
     updatedAt: string;
     createdAt: string;
     /** @deprecated Use createdAt instead */
@@ -55,7 +53,7 @@ export interface PayloadFindResponse<T> {
 export function getPayloadCmsUrl(): string | undefined {
     return PAYLOAD_CMS_URL;
 }
-const buildPayloadUrlFromRelativePath = (pathOrUrl: string) => {
+export function buildPayloadUrlFromRelativePath(pathOrUrl: string): string {
     if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://"))
         return pathOrUrl;
     let url = getPayloadCmsUrl();
@@ -65,7 +63,7 @@ const buildPayloadUrlFromRelativePath = (pathOrUrl: string) => {
         ? pathOrUrl
         : `/${pathOrUrl}`;
     return `${url}${relativePath}`;
-};
+}
 
 export function isPayloadCmsEnabled(): boolean {
     return Boolean(PAYLOAD_CMS_URL);

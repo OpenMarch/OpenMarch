@@ -5,7 +5,8 @@ import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
 import placeholderImage from "@/content/blog/placeholder.jpg";
 import { ProseClass } from "@/components/ProseClass";
-import MarkdownContent from "@/components/ui/MarkdownContent";
+import LexicalContent from "@/components/ui/LexicalContent";
+import type { SerializedEditorState } from "@payloadcms/richtext-lexical/lexical";
 import {
     getPayloadPosts,
     isPayloadCmsEnabled,
@@ -110,8 +111,13 @@ const { Content } = isContent
                     <Content />
                 </div>
             ) : source === "payload" ? (
-                <MarkdownContent
-                    content={(post as PayloadPost).contentMarkdown ?? ""}
+                <LexicalContent
+                    data={
+                        (post as PayloadPost).content as
+                            | SerializedEditorState
+                            | null
+                            | undefined
+                    }
                 />
             ) : null
         }

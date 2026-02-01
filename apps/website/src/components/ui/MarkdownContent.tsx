@@ -7,7 +7,7 @@ interface MarkdownContentProps {
 }
 
 /**
- * Renders markdown (e.g. from Payload CMS contentMarkdown) with prose styling.
+ * Renders markdown with prose styling. Used for markdown content from various sources.
  */
 export default function MarkdownContent({
     content,

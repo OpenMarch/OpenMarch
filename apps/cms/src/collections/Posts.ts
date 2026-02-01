@@ -1,6 +1,10 @@
 import type { CollectionConfig } from 'payload'
-import { lexicalEditor } from '@payloadcms/richtext-lexical'
-import { HeadingFeature, LinkFeature, UploadFeature } from '@payloadcms/richtext-lexical'
+import {
+  HeadingFeature,
+  LinkFeature,
+  lexicalEditor,
+  UploadFeature,
+} from '@payloadcms/richtext-lexical'
 import { slugField } from 'payload'
 
 export const Posts: CollectionConfig = {
