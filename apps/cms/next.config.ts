@@ -13,6 +13,12 @@ const nextConfig = {
   // Read more: https://opennext.js.org/cloudflare/howtos/workerd
   serverExternalPackages: ['jose', 'pg-cloudflare'],
 
+  // Silence SASS deprecation warnings from @payloadcms/ui and custom SCSS
+  // (Future import deprecation, legacy @import → @use migration)
+  sassOptions: {
+    silenceDeprecations: ['import', 'global-builtin'],
+  },
+
   images: {
     remotePatterns: [
       {
