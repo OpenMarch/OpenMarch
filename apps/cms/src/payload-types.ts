@@ -196,6 +196,7 @@ export interface Post {
     }
     [k: string]: unknown
   }
+  coverImage?: (number | null) | Media
   author?: (number | null) | User
   status?: ('draft' | 'published') | null
   updatedAt: string
@@ -328,6 +329,7 @@ export interface PostsSelect<T extends boolean = true> {
   generateSlug?: T
   slug?: T
   content?: T
+  coverImage?: T
   author?: T
   status?: T
   updatedAt?: T

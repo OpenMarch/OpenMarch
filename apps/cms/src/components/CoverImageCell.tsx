@@ -17,7 +17,14 @@ export function CoverImageCell({ cellData }: { cellData: MediaValue }) {
       : 'No cover image'
 
   return (
-    <div style={{ width: 48, height: 32, overflow: 'hidden', borderRadius: 4 }}>
+    <div
+      style={{
+        width: 48,
+        height: 32,
+        overflow: 'hidden',
+        borderRadius: 4,
+      }}
+    >
       <img
         src={url}
         alt={alt}

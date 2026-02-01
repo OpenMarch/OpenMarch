@@ -14,11 +14,12 @@ export interface PayloadUser {
 }
 
 export interface PayloadPost {
-    id: string;
+    id: string | number;
     title: string;
     /** Author ID or populated User object (when depth >= 1) */
     author: number | PayloadUser | null;
-    featuredImage: PayloadMedia | number;
+    /** Cover image (CMS field: coverImage). */
+    coverImage?: PayloadMedia | number | null;
     /** Lexical rich text (stored in CMS). */
     content: unknown;
     /** Markdown output of content (computed on read; use this for rendering). */
@@ -54,6 +55,13 @@ export interface PayloadFindResponse<T> {
 export function getPayloadCmsUrl(): string | undefined {
     return PAYLOAD_CMS_URL;
 }
+const buildPayloadUrlFromRelativePath = (relativePath: string) => {
+    let url = getPayloadCmsUrl();
+    if (!url) throw new Error("PAYLOAD_API_URL is not set");
+    if (url.endsWith("/")) url = url.slice(0, -1);
+    if (relativePath.startsWith("/")) relativePath = "/" + relativePath;
+    return `${url}${relativePath}`;
+};
 
 export function isPayloadCmsEnabled(): boolean {
     return Boolean(PAYLOAD_CMS_URL);
@@ -79,8 +87,52 @@ export function getAuthorProfilePictureUrl(
     if (author == null || typeof author === "number") return null;
     const pic = author.profilePicture;
     if (pic == null) return null;
-    if (typeof pic === "object" && pic.url) return pic.url;
+    if (typeof pic === "object" && pic.url)
+        return buildPayloadUrlFromRelativePath(pic.url);
     return null;
+}
+
+/** List-item shape for a blog post from Payload (used in unified blog lists). */
+export interface PayloadBlogListItem {
+    source: "payload";
+    id: string;
+    title: string;
+    author: string;
+    authorProfileImageUrl: string | null;
+    date: Date;
+    imageUrl: string;
+    imageAlt: string;
+}
+
+/**
+ * Parse a Payload CMS post into the shared blog list item shape.
+ * Pass the placeholder image URL for fallback when the post has no cover image.
+ */
+export function parsePayloadPostToListItem(
+    p: PayloadPost,
+    placeholderImageUrl: string,
+): PayloadBlogListItem {
+    const img =
+        typeof p.coverImage === "object"
+            ? (p.coverImage as PayloadMedia | null)
+            : null;
+    const createdAt = p.createdAt;
+    const date =
+        typeof createdAt === "string"
+            ? new Date(createdAt)
+            : new Date(createdAt);
+    return {
+        source: "payload",
+        id: `payload-${p.id}`,
+        title: p.title,
+        author: getAuthorDisplayName(p.author),
+        authorProfileImageUrl: getAuthorProfilePictureUrl(p.author),
+        date,
+        imageUrl: img?.url
+            ? buildPayloadUrlFromRelativePath(img.url)
+            : placeholderImageUrl,
+        imageAlt: img?.alt ?? p.title,
+    };
 }
 
 /**

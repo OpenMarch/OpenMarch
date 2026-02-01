@@ -48,6 +48,14 @@ export const Posts: CollectionConfig = {
       }),
     },
     {
+      name: 'coverImage',
+      type: 'upload',
+      relationTo: 'media',
+      admin: {
+        position: 'sidebar',
+      },
+    },
+    {
       name: 'author',
       type: 'relationship',
       relationTo: 'users',

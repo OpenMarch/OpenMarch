@@ -3,13 +3,13 @@ import { getCollection, render, type CollectionEntry } from "astro:content";
 import Layout from "@/layouts/Layout.astro";
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
+import placeholderImage from "@/content/blog/placeholder.jpg";
 import { ProseClass } from "@/components/ProseClass";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import {
-    getAuthorDisplayName,
-    getAuthorProfilePictureUrl,
     getPayloadPosts,
     isPayloadCmsEnabled,
+    parsePayloadPostToListItem,
     type PayloadPost,
 } from "@/lib/payload";
 
@@ -33,21 +33,18 @@ export async function getStaticPaths() {
     return [...contentPaths, ...payloadPaths];
 }
 
-type Props =
-    | { source: "content"; post: CollectionEntry<"blog"> }
-    | { source: "payload"; post: PayloadPost };
-
 const { source, post } = Astro.props;
 const isContent = source === "content";
 
-const title = isContent ? post.data.title : post.title;
-const author = isContent ? post.data.author : getAuthorDisplayName(post.author);
-const authorProfileImageUrl = !isContent
-    ? getAuthorProfilePictureUrl(post.author)
-    : null;
-const date = isContent
-    ? post.data.date
-    : new Date((post as PayloadPost).createdAt);
+const payloadParsed =
+    !isContent && source === "payload"
+        ? parsePayloadPostToListItem(post as PayloadPost, placeholderImage.src)
+        : null;
+
+const title = isContent ? post.data.title : (payloadParsed?.title ?? "");
+const author = isContent ? post.data.author : (payloadParsed?.author ?? "");
+const authorProfileImageUrl = payloadParsed?.authorProfileImageUrl ?? null;
+const date = isContent ? post.data.date : (payloadParsed?.date ?? new Date());
 const dateFormatted = date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -73,27 +70,20 @@ const { Content } = isContent
                     }
                     width={1280}
                     height={720}
-                    alt={title}
+                    alt=""
                     class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
                 />
-            ) : (
-                (() => {
-                    const p = post as PayloadPost;
-                    const img =
-                        typeof p.featuredImage === "object"
-                            ? p.featuredImage
-                            : null;
-                    return (
-                        <img
-                            src={img?.url ?? ""}
-                            width={1280}
-                            height={720}
-                            alt={img?.alt ?? title}
-                            class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
-                        />
-                    );
-                })()
-            )
+            ) : payloadParsed ? (
+                <img
+                    src={payloadParsed.imageUrl}
+                    width={1280}
+                    height={720}
+                    alt={payloadParsed.imageAlt}
+                    data-fallback={placeholderImage.src}
+                    onerror="this.onerror=null;this.src=this.getAttribute('data-fallback')||''"
+                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                />
+            ) : null
         }
         <div
             class="absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2"
