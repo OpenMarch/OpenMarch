@@ -21,13 +21,17 @@ const isCLI = process.argv.some((value) => {
   return Boolean(p && p.endsWith(path.join('payload', 'bin.js')))
 })
 const isProduction = process.env.NODE_ENV === 'production'
-const payloadSecret = process.env.PAYLOAD_SECRET ?? ''
-if (isProduction && !payloadSecret) {
+// During build phase (e.g., Next.js build on Cloudflare Pages), PAYLOAD_SECRET isn't available yet.
+// It's a runtime secret binding. Use a placeholder during build, validate at runtime in buildConfig.
+const isBuild = process.env.NEXT_PHASE === 'phase-production-build'
+const payloadSecret = process.env.PAYLOAD_SECRET ?? (isBuild ? 'build-time-placeholder' : '')
+if (isProduction && !isBuild && !payloadSecret) {
   throw new Error('PAYLOAD_SECRET is required in production')
 }
 // Use local bindings (no Cloudflare login) for dev and when CLOUDFLARE_LOCAL=1 (e.g. local build or CI without remote).
-const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
-const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1'
+// During build, always use local bindings since we can't access remote secrets yet.
+const useLocalBindings = !isProduction || process.env.CLOUDFLARE_LOCAL === '1' || isBuild
+const useWranglerProxy = isCLI || !isProduction || process.env.CLOUDFLARE_LOCAL === '1' || isBuild
 
 const cloudflare = useWranglerProxy
   ? await getCloudflareContextFromWrangler(!useLocalBindings)
