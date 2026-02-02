@@ -34,24 +34,27 @@ let DB_PATH = "";
  */
 export function setDbPath(path: string, isNewFile = false) {
     const failedDb = (message: string, statusCode: number = -1) => {
-        console.error("Given status code: " + statusCode);
-
         console.error(message);
         DB_PATH = "";
         return statusCode;
     };
 
-    if (!fs.existsSync(path) && !isNewFile) {
-        return failedDb(`setDbPath: File does not exist at path: ${path}`, 404);
-    }
+    if (!isNewFile) {
+        if (!fs.existsSync(path)) {
+            return failedDb(
+                `setDbPath: File does not exist at path: ${path}`,
+                404,
+            );
+        }
 
-    try {
-        fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK);
-    } catch (err) {
-        return failedDb(
-            `setDbPath: File is not readable and writable: ${path}`,
-            403,
-        );
+        try {
+            fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK);
+        } catch (err) {
+            return failedDb(
+                `setDbPath: File is not readable and writable: ${path}`,
+                403,
+            );
+        }
     }
 
     DB_PATH = path;

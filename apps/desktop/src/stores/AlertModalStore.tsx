@@ -13,12 +13,8 @@ type AlertModalStore = {
 
 export const useAlertModalStore = create<AlertModalStore>((set) => ({
     isOpen: false,
-    title: "Alert",
-    content: (
-        <h4 className="text-h4 text-red">
-            Alert modal content failed to render
-        </h4>
-    ), // default
+    title: "fileAccessDialogError.renderFail.title",
+    content: <p>Alert Dialog Modal failed to render</p>, // default
     toggleOpen: () =>
         set((state) => ({
             isOpen: !state.isOpen,

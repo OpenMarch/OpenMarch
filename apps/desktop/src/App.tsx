@@ -35,6 +35,7 @@ import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
 import AlertModal from "./components/AlertModal";
 import { useAlertModalStore } from "./stores/AlertModalStore";
+import { T } from "@tolgee/react";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -193,29 +194,92 @@ function App() {
         "opacity-30": focussedComponent === "timeline",
     });
 
+    // Add callback to show alert dialog when failing to open a file
     useEffect(() => {
         window.electron.onLoadFileResponse((resCode) => {
             if (resCode !== 200) {
                 switch (resCode) {
                     case 403:
-                        setTitle("Invalid file permissions");
+                        setTitle("fileAccessDialogError.forbidden.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.forbidden.description" />
+                                <span>
+                                    Refer to the{" "}
+                                    <a
+                                        href="https://www.openmarch.com/guides/file-errors/#invalid-file-permissions-error"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        OpenMarch File Error Guide
+                                    </a>{" "}
+                                    for more information.
+                                </span>
+                            </>,
+                        );
                         break;
                     case 404:
-                        setTitle("File not found");
+                        setTitle("fileAccessDialogError.notFound.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.notFound.description" />
+                                <span>
+                                    Refer to the{" "}
+                                    <a
+                                        href="https://www.openmarch.com/guides/file-errors/#file-not-found-error"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        OpenMarch File Error Guide
+                                    </a>{" "}
+                                    for more information.
+                                </span>
+                            </>,
+                        );
                         break;
                     case 500:
-                        setTitle("Server error");
+                        setTitle("fileAccessDialogError.server.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.server.description" />
+                                <span>
+                                    Refer to the{" "}
+                                    <a
+                                        href="https://www.openmarch.com/guides/file-errors/#server-error"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        OpenMarch File Error Guide
+                                    </a>{" "}
+                                    for more information.
+                                </span>
+                            </>,
+                        );
                         break;
                     default:
-                        setTitle("Error");
+                        setTitle("fileAccessDialogError.default.title");
+                        setContent(
+                            <>
+                                <T keyName="fileAccessDialogError.default.description" />
+                                <span>
+                                    Refer to the{" "}
+                                    <a
+                                        href="https://www.openmarch.com/guides/file-errors/#unable-to-open-file-error-or-render-failure"
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        className="text-accent underline"
+                                    >
+                                        OpenMarch File Error Guide
+                                    </a>{" "}
+                                    for more information.
+                                </span>
+                            </>,
+                        );
                 }
-                setContent(
-                    // TODO: Set related content here
-                    <p>
-                        Unable to open file, does the file exist and do you have
-                        the appropriate permissions to open it?
-                    </p>,
-                );
+
                 setOpen(true);
             }
         });
