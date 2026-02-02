@@ -207,7 +207,7 @@ function App() {
                                 <span>
                                     Refer to the{" "}
                                     <a
-                                        href="https://www.openmarch.com/guides/file-errors/#invalid-file-permissions-error"
+                                        href="https://www.openmarch.com/troubleshooting/file-errors/#invalid-file-permissions-error"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-accent underline"
@@ -227,7 +227,7 @@ function App() {
                                 <span>
                                     Refer to the{" "}
                                     <a
-                                        href="https://www.openmarch.com/guides/file-errors/#file-not-found-error"
+                                        href="https://www.openmarch.com/troubleshooting/file-errors/#file-not-found-error"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-accent underline"
@@ -247,7 +247,7 @@ function App() {
                                 <span>
                                     Refer to the{" "}
                                     <a
-                                        href="https://www.openmarch.com/guides/file-errors/#server-error"
+                                        href="https://www.openmarch.com/troubleshooting/file-errors/#server-error"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-accent underline"
@@ -267,7 +267,7 @@ function App() {
                                 <span>
                                     Refer to the{" "}
                                     <a
-                                        href="https://www.openmarch.com/guides/file-errors/#unable-to-open-file-error-or-render-failure"
+                                        href="https://www.openmarch.com/troubleshooting/file-errors/#unable-to-open-file-error-or-render-failure"
                                         target="_blank"
                                         rel="noreferrer"
                                         className="text-accent underline"
