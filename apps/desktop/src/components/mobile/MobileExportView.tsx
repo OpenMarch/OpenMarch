@@ -14,7 +14,7 @@ import {
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
-import { MobileExportSettingsDialog } from "./MobileExportSettings";
+import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
 
 type UploadStatus = "idle" | "loading" | "error";
 

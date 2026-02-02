@@ -67,10 +67,7 @@ export const allEnsemblesQueryOptions = (
             if (!token) {
                 throw new Error("Authentication token is required");
             }
-            const response = await apiGet<EnsemblesResponse>(
-                "v1/ensembles",
-                token,
-            );
+            const response = await apiGet<EnsemblesResponse>("v1/ensembles");
             return response.ensembles;
         },
         staleTime: DEFAULT_STALE_TIME,
@@ -90,10 +87,8 @@ export const hasAnyEnsemblesQueryOptions = (
             if (!token) {
                 throw new Error("Authentication token is required");
             }
-            const response = await apiGet<HasAnyEnsemblesResponse>(
-                "v1/ensembles/any",
-                token,
-            );
+            const response =
+                await apiGet<HasAnyEnsemblesResponse>("v1/ensembles/any");
             return response;
         },
     });

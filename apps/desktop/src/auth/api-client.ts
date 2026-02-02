@@ -126,6 +126,23 @@ export async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 /**
+ * Makes a PATCH request to the API.
+ */
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+    return authenticatedFetch<T>(path, {
+        method: "PATCH",
+        body: JSON.stringify(body),
+    });
+}
+
+/**
+ * Makes a DELETE request to the API.
+ */
+export async function apiDelete<T>(path: string): Promise<T> {
+    return authenticatedFetch<T>(path, { method: "DELETE" });
+}
+
+/**
  * Makes a POST request with FormData (for file uploads).
  */
 export async function apiPostFormData<T>(

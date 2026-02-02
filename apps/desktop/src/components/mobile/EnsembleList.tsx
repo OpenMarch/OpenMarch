@@ -66,7 +66,7 @@ export default function EnsembleList() {
 
         updateWorkspaceSettings.mutate({
             ...workspaceSettings,
-            otmProductionId: selectedProduction.id.toString(),
+            otmProductionId: selectedProduction.id,
         });
 
         setDialogOpen(false);
@@ -154,7 +154,7 @@ export default function EnsembleList() {
                                 productionId: number,
                             ) =>
                                 workspaceSettings?.otmProductionId ===
-                                productionId.toString();
+                                productionId;
 
                             return (
                                 <div

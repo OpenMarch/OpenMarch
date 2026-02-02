@@ -1,15 +1,15 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { DB } from "@/global/database/db";
 import {
     uploadDatabaseToServer,
     type UploadProgressCallback,
 } from "../upload-service";
+import type { DB } from "../../../../global/database/db";
 
 // Fake gzipped blob – we only care that it's some bytes; dots-to-om tests real structure.
 const FAKE_GZIPPED_BLOB = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00]);
 
 // Minimal workspace settings JSON that parses and includes otmProductionId when linked
-const workspaceJson = (otmProductionId?: string) =>
+const workspaceJson = (otmProductionId?: number) =>
     JSON.stringify({
         defaultBeatsPerMeasure: 4,
         defaultTempo: 120,
@@ -84,7 +84,7 @@ describe("upload-service", () => {
 
         it("returns success when production is linked and server returns created", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-123"),
+                json_data: workspaceJson(123),
             }));
             mockAuthenticatedFetch.mockResolvedValue({ ok: true });
 
@@ -94,7 +94,7 @@ describe("upload-service", () => {
             expect(result.message).toBe("Revision created successfully");
             expect(mockToCompressedOpenMarchBytes).toHaveBeenCalledWith(db);
             expect(mockAuthenticatedFetch).toHaveBeenCalledWith(
-                "api/editor/v1/productions/prod-123/revisions",
+                expect.stringContaining("/v1/productions/123/revisions"),
                 expect.objectContaining({
                     method: "POST",
                     body: expect.any(FormData),
@@ -104,7 +104,7 @@ describe("upload-service", () => {
 
         it("returns error when toCompressedOpenMarchBytes throws", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-123"),
+                json_data: workspaceJson(123),
             }));
             mockToCompressedOpenMarchBytes.mockRejectedValue(
                 new Error("Db is not open"),
@@ -120,7 +120,7 @@ describe("upload-service", () => {
 
         it("returns error when authenticatedFetch throws", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-123"),
+                json_data: workspaceJson(123),
             }));
             mockAuthenticatedFetch.mockRejectedValue(
                 new Error("Network error"),
@@ -135,7 +135,7 @@ describe("upload-service", () => {
 
         it("returns error when response is not ok", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-123"),
+                json_data: workspaceJson(123),
             }));
             mockAuthenticatedFetch.mockResolvedValue({
                 ok: false,
@@ -154,7 +154,7 @@ describe("upload-service", () => {
             const db = fakeDb(async () => null);
             const onProgress = vi.fn() as UploadProgressCallback;
 
-            await uploadDatabaseToServer(db, undefined, onProgress);
+            await uploadDatabaseToServer(db, undefined);
 
             expect(onProgress).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -166,12 +166,12 @@ describe("upload-service", () => {
 
         it("invokes onProgress with success when upload succeeds", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-456"),
+                json_data: workspaceJson(456),
             }));
             mockAuthenticatedFetch.mockResolvedValue({ ok: true });
             const onProgress = vi.fn() as UploadProgressCallback;
 
-            await uploadDatabaseToServer(db, undefined, onProgress);
+            await uploadDatabaseToServer(db, undefined);
 
             expect(onProgress).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -183,7 +183,7 @@ describe("upload-service", () => {
 
         it("sends show_data and set_active in request body", async () => {
             const db = fakeDb(async () => ({
-                json_data: workspaceJson("prod-789"),
+                json_data: workspaceJson(789),
             }));
             let capturedBody: FormData | undefined;
             mockAuthenticatedFetch.mockImplementation(

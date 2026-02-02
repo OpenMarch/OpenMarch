@@ -9,7 +9,15 @@ export const workspaceSettingsSchema = z.object({
     measurementOffset: z.int().default(1),
 
     // Mobile export settings
-    otmProductionId: z.string().optional(),
+    otmProductionId: z.preprocess(
+        (v) => (v === "" || v === undefined ? undefined : v),
+        z.coerce
+            .number()
+            .optional()
+            .transform((n) =>
+                n !== undefined && Number.isNaN(n) ? undefined : n,
+            ),
+    ),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -24,6 +32,7 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     audioOffsetSeconds: 0,
     pageNumberOffset: 0,
     measurementOffset: 0,
+    otmProductionId: undefined,
 };
 
 /**

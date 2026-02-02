@@ -18,7 +18,7 @@ export interface UploadProgress {
 
 export type UploadProgressCallback = (progress: UploadProgress) => void;
 
-const getOtmProductionId = async (db: DB): Promise<string | undefined> => {
+const getOtmProductionId = async (db: DB): Promise<number | undefined> => {
     const workspaceSettings = await db.query.workspace_settings.findFirst({
         columns: {
             json_data: true,
@@ -45,7 +45,7 @@ async function createRevisionOnServer({
     setActive = true,
     title,
 }: {
-    productionId: string;
+    productionId: number;
     data: Uint8Array;
     setActive?: boolean;
     title?: string;

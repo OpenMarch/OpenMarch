@@ -38,6 +38,10 @@ export interface ProductionAudioFile {
     id: number;
     name: string;
     url: string | null;
+    checksum?: string;
+    duration_seconds?: number | null;
+    size_megabytes?: number | null;
+    created_at?: string;
 }
 
 /**
@@ -61,7 +65,7 @@ export interface Production {
     revisions: RevisionPreview[];
     active_revision_id: number | null;
     audio_files: ProductionAudioFile[];
-    active_audio_file_id: number | null;
+    default_audio_file_id: number | null;
     ensemble: { id: number; name: string };
     created_at: string;
     updated_at: string;
@@ -88,7 +92,7 @@ export const productionKeys = {
             "ensemble",
             ensembleId,
         ] as const,
-    byId: (productionId: string | undefined) =>
+    byId: (productionId: number | undefined) =>
         [
             NEEDS_AUTH_BASE_QUERY_KEY,
             OTM_BASE_QUERY_KEY,
@@ -199,7 +203,7 @@ export function useProductions(ensembleId: number) {
 }
 
 export const _productionQueryOptions = (
-    productionId: string | undefined,
+    productionId: number | undefined,
     getAccessToken: () => Promise<string | null>,
 ) => {
     return queryOptions<Production>({
@@ -223,7 +227,7 @@ export const _productionQueryOptions = (
 /**
  * The ID of the current OTM production this file is attached to.
  */
-export const useOtmProductionId = (): string | undefined => {
+export const useOtmProductionId = (): number | undefined => {
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
