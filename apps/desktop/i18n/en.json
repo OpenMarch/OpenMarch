@@ -89,6 +89,29 @@
             "togglePreviousPaths": "Toggle viewing previous page paths"
         }
     },
+    "fileAccessDialogError": {
+        "closeButton": "Close",
+        "default": {
+            "title": "Error",
+            "description": "Unable to open file."
+        },
+        "renderFail": {
+            "title": "Modal render failure",
+            "description": "The alert modal failed to render."
+        },
+        "forbidden": {
+            "title": "Invalid file permissions",
+            "description": "You do not have permission to open this file."
+        },
+        "notFound": {
+            "title": "File not found",
+            "description": "This file does not exist at this location. Was it moved or renamed?"
+        },
+        "server": {
+            "title": "Internal server error",
+            "description": "The server experienced an error while trying to open this file."
+        }
+    },
     "analyticsOptIn": {
         "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
         "optIn": "Opt In",
