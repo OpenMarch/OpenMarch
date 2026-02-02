@@ -1,9 +1,12 @@
 /**
- * Get audio file duration in seconds using the Web Audio API.
- * Returns null if duration cannot be determined (e.g., unsupported format).
+ * Get audio duration in seconds using the Web Audio API.
+ * Accepts File or Blob (e.g. from ArrayBuffer). Returns null if duration
+ * cannot be determined (e.g., unsupported format).
  */
-export async function getAudioDuration(file: File): Promise<number | null> {
-    const url = URL.createObjectURL(file);
+export async function getAudioDuration(
+    source: File | Blob,
+): Promise<number | null> {
+    const url = URL.createObjectURL(source);
     return new Promise((resolve) => {
         const audio = new Audio(url);
         audio.addEventListener(
@@ -27,8 +30,8 @@ export async function getAudioDuration(file: File): Promise<number | null> {
 }
 
 /**
- * Get audio file size in megabytes (decimal).
+ * Get audio size in megabytes (decimal) from a File or Blob.
  */
-export function getAudioSizeMegabytes(file: File): number {
-    return file.size / 1_000_000;
+export function getAudioSizeMegabytes(source: File | Blob): number {
+    return source.size / 1_000_000;
 }

@@ -181,8 +181,8 @@ export const addAudioFileMutationOptions = ({
             file: File;
             nickname?: string;
             setAsDefault?: boolean;
-            durationSeconds?: number | null;
-            sizeMegabytes?: number | null;
+            durationSeconds: number;
+            sizeMegabytes: number;
         }) => {
             const formData = new FormData();
             formData.append("file", file);
@@ -193,12 +193,8 @@ export const addAudioFileMutationOptions = ({
                 "set_as_default",
                 setAsDefault === true ? "true" : "false",
             );
-            if (durationSeconds != null && Number.isFinite(durationSeconds)) {
-                formData.append("duration_seconds", String(durationSeconds));
-            }
-            if (sizeMegabytes != null && Number.isFinite(sizeMegabytes)) {
-                formData.append("size_megabytes", String(sizeMegabytes));
-            }
+            formData.append("duration_seconds", String(durationSeconds));
+            formData.append("size_megabytes", String(sizeMegabytes));
             const response = await apiPostFormData<AddAudioFileResponse>(
                 `v1/productions/${productionId}/audio_files`,
                 formData,

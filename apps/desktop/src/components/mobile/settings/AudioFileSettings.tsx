@@ -322,7 +322,7 @@ export function AudioFileSettings({
                 file: addAudioFile,
                 nickname: addAudioNickname || undefined,
                 setAsDefault: addAudioSetAsDefault,
-                durationSeconds,
+                durationSeconds: durationSeconds ?? 0,
                 sizeMegabytes,
             },
             {

@@ -33,6 +33,7 @@ export interface ProductionPreview {
 
 /**
  * Serialized audio file data structure matching the Rails controller response.
+ * GET /v1/productions/:production_id/audio_files includes checksum for matching local audio.
  */
 export interface ProductionAudioFile {
     id: number;
@@ -76,6 +77,14 @@ export interface Production {
  */
 interface ProductionsResponse {
     productions: ProductionPreview[];
+}
+
+/**
+ * API response structure for production audio files index.
+ * GET /v1/productions/:production_id/audio_files
+ */
+export interface AudioFilesIndexResponse {
+    audio_files: ProductionAudioFile[];
 }
 
 /**

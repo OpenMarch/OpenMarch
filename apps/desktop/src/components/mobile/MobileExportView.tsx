@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { Button, Input } from "@openmarch/ui";
 import {
     CircleNotchIcon,
@@ -10,11 +10,22 @@ import {
     Production,
     RevisionPreview,
     uploadRevisionMutationOptions,
+    productionKeys,
+    AudioFilesIndexResponse,
 } from "./queries/useProductions";
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
+import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
+import AudioFile from "@/global/classes/AudioFile";
+import { apiGet, apiPatch, apiPostFormData } from "@/auth/api-client";
+import {
+    isSilentPlaceholder,
+    prepareAudioSyncResult,
+    buildAudioUploadFormDataWithDuration,
+    type AudioSyncResult,
+} from "./utilities/audioSyncOnUpload";
 
 type UploadStatus = "idle" | "loading" | "error";
 
@@ -29,7 +40,10 @@ export default function MobileExportView({
     return (
         <section className="animate-scale-in flex h-full w-full flex-col">
             <div className="flex grow flex-col gap-16 overflow-y-auto">
-                <SubmitRevisionForm isFirstRevision={false} />
+                <SubmitRevisionForm
+                    isFirstRevision={false}
+                    productionId={currentProduction.id}
+                />
                 <RevisionsList
                     revisions={currentProduction.revisions}
                     activeRevisionId={currentProduction.active_revision_id}
@@ -116,8 +130,10 @@ const formatRevisionDate = (dateString: string): string => {
 
 export const SubmitRevisionForm = ({
     isFirstRevision,
+    productionId,
 }: {
     isFirstRevision: boolean;
+    productionId?: number;
 }) => {
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const [uploadError, setUploadError] = useState<string>("");
@@ -125,14 +141,101 @@ export const SubmitRevisionForm = ({
         isFirstRevision ? "Initial revision" : "",
     );
     const [titleError, setTitleError] = useState<string>("");
+    const [audioSyncResult, setAudioSyncResult] =
+        useState<AudioSyncResult | null>(null);
+    const [audioSyncLoading, setAudioSyncLoading] = useState(false);
     const queryClient = useQueryClient();
+    const selectedAudioFile = useSelectedAudioFile()?.selectedAudioFile;
+
+    const hasSelectedNonSilentAudio =
+        selectedAudioFile != null &&
+        !isSilentPlaceholder(selectedAudioFile.path, selectedAudioFile.id);
+
+    useEffect(() => {
+        if (
+            productionId == null ||
+            selectedAudioFile == null ||
+            isSilentPlaceholder(selectedAudioFile.path, selectedAudioFile.id)
+        ) {
+            setAudioSyncResult(null);
+            setAudioSyncLoading(false);
+            return;
+        }
+        let cancelled = false;
+        setAudioSyncLoading(true);
+        void (async () => {
+            try {
+                const fullFile = await AudioFile.getSelectedAudioFile();
+                if (cancelled || fullFile == null) return;
+                const response = await apiGet<AudioFilesIndexResponse>(
+                    `v1/productions/${productionId}/audio_files`,
+                );
+                if (cancelled) return;
+                const result = await prepareAudioSyncResult(
+                    fullFile,
+                    response.audio_files,
+                    AudioFile.computeChecksum,
+                );
+                if (cancelled) return;
+                setAudioSyncResult(result);
+            } catch (err) {
+                if (!cancelled) {
+                    console.error("Audio sync prep failed:", err);
+                    setAudioSyncResult(null);
+                }
+            } finally {
+                if (!cancelled) setAudioSyncLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [productionId, selectedAudioFile]);
+
+    const syncActiveAudioAfterUpload = useCallback(async () => {
+        if (productionId == null || audioSyncResult == null) return;
+        const { serverAudioFileId, selectedAudioFileWithData } =
+            audioSyncResult;
+        if (
+            isSilentPlaceholder(
+                selectedAudioFileWithData.path,
+                selectedAudioFileWithData.id,
+            )
+        ) {
+            return;
+        }
+        try {
+            if (serverAudioFileId != null) {
+                await apiPatch(`v1/productions/${productionId}`, {
+                    default_audio_file_id: serverAudioFileId,
+                });
+            } else {
+                const formData = await buildAudioUploadFormDataWithDuration(
+                    selectedAudioFileWithData,
+                );
+                await apiPostFormData(
+                    `v1/productions/${productionId}/audio_files`,
+                    formData,
+                );
+            }
+            void queryClient.invalidateQueries({
+                queryKey: productionKeys.byId(productionId),
+            });
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error("Failed to set active audio on server:", err);
+            toast.error(`Revision uploaded, but audio sync failed: ${msg}`);
+        }
+    }, [productionId, audioSyncResult, queryClient]);
+
     const { mutate: uploadRevision } = useMutation(
         uploadRevisionMutationOptions({
             queryClient,
-            onSuccess: () => {
+            onSuccess: async () => {
                 setUploadStatus("idle");
                 setRevisionTitle("");
                 toast.success("Upload successful");
+                await syncActiveAudioAfterUpload();
             },
             onError: (error) => {
                 const errorMessage =
@@ -165,6 +268,8 @@ export const SubmitRevisionForm = ({
 
     const isUploading = uploadStatus === "loading";
     const hasError = uploadStatus === "error";
+    const disableUpload =
+        isUploading || (hasSelectedNonSilentAudio && audioSyncLoading);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -203,7 +308,7 @@ export const SubmitRevisionForm = ({
                 <div className="flex items-center gap-8">
                     <Button
                         type="submit"
-                        disabled={isUploading}
+                        disabled={disableUpload}
                         className="flex-1"
                     >
                         {isUploading ? (
@@ -213,6 +318,14 @@ export const SubmitRevisionForm = ({
                                     className="animate-spin"
                                 />
                                 Pushing to Mobile App...
+                            </span>
+                        ) : hasSelectedNonSilentAudio && audioSyncLoading ? (
+                            <span className="flex items-center gap-8">
+                                <CircleNotchIcon
+                                    size={16}
+                                    className="animate-spin"
+                                />
+                                Preparing...
                             </span>
                         ) : (
                             "Push to Mobile App"
