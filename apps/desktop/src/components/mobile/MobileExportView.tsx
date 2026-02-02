@@ -26,6 +26,12 @@ import {
     buildAudioUploadFormDataWithDuration,
     type AudioSyncResult,
 } from "./utilities/audioSyncOnUpload";
+import {
+    prepareBackgroundImageSyncResult,
+    buildBackgroundImageFormData,
+    type BackgroundImageSyncResult,
+} from "./utilities/backgroundImageSyncOnUpload";
+import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 
 type UploadStatus = "idle" | "loading" | "error";
 
@@ -43,6 +49,7 @@ export default function MobileExportView({
                 <SubmitRevisionForm
                     isFirstRevision={false}
                     productionId={currentProduction.id}
+                    currentProduction={currentProduction}
                 />
                 <RevisionsList
                     revisions={currentProduction.revisions}
@@ -131,9 +138,11 @@ const formatRevisionDate = (dateString: string): string => {
 export const SubmitRevisionForm = ({
     isFirstRevision,
     productionId,
+    currentProduction,
 }: {
     isFirstRevision: boolean;
     productionId?: number;
+    currentProduction?: Production;
 }) => {
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const [uploadError, setUploadError] = useState<string>("");
@@ -144,6 +153,9 @@ export const SubmitRevisionForm = ({
     const [audioSyncResult, setAudioSyncResult] =
         useState<AudioSyncResult | null>(null);
     const [audioSyncLoading, setAudioSyncLoading] = useState(false);
+    const [backgroundSyncResult, setBackgroundSyncResult] =
+        useState<BackgroundImageSyncResult | null>(null);
+    const [backgroundSyncLoading, setBackgroundSyncLoading] = useState(false);
     const queryClient = useQueryClient();
     const selectedAudioFile = useSelectedAudioFile()?.selectedAudioFile;
 
@@ -192,6 +204,39 @@ export const SubmitRevisionForm = ({
         };
     }, [productionId, selectedAudioFile]);
 
+    useEffect(() => {
+        if (productionId == null || currentProduction == null) {
+            setBackgroundSyncResult(null);
+            setBackgroundSyncLoading(false);
+            return;
+        }
+        let cancelled = false;
+        setBackgroundSyncLoading(true);
+        void (async () => {
+            try {
+                const localImage = await getFieldPropertiesImage();
+                if (cancelled) return;
+                const result = await prepareBackgroundImageSyncResult(
+                    localImage,
+                    currentProduction.background_image_checksum ?? null,
+                    AudioFile.computeChecksum,
+                );
+                if (cancelled) return;
+                setBackgroundSyncResult(result);
+            } catch (err) {
+                if (!cancelled) {
+                    console.error("Background image sync prep failed:", err);
+                    setBackgroundSyncResult(null);
+                }
+            } finally {
+                if (!cancelled) setBackgroundSyncLoading(false);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [productionId, currentProduction]);
+
     const syncActiveAudioAfterUpload = useCallback(async () => {
         if (productionId == null || audioSyncResult == null) return;
         const { serverAudioFileId, selectedAudioFileWithData } =
@@ -228,6 +273,35 @@ export const SubmitRevisionForm = ({
         }
     }, [productionId, audioSyncResult, queryClient]);
 
+    const syncBackgroundImageAfterUpload = useCallback(async () => {
+        if (
+            productionId == null ||
+            backgroundSyncResult == null ||
+            !backgroundSyncResult.needsUpload ||
+            backgroundSyncResult.imageData == null
+        ) {
+            return;
+        }
+        try {
+            const formData = buildBackgroundImageFormData(
+                backgroundSyncResult.imageData,
+            );
+            await apiPostFormData(
+                `v1/productions/${productionId}/background_image`,
+                formData,
+            );
+            void queryClient.invalidateQueries({
+                queryKey: productionKeys.byId(productionId),
+            });
+        } catch (err) {
+            const msg = err instanceof Error ? err.message : String(err);
+            console.error("Failed to sync background image on server:", err);
+            toast.error(
+                `Revision uploaded, but background image sync failed: ${msg}`,
+            );
+        }
+    }, [productionId, backgroundSyncResult, queryClient]);
+
     const { mutate: uploadRevision } = useMutation(
         uploadRevisionMutationOptions({
             queryClient,
@@ -235,7 +309,10 @@ export const SubmitRevisionForm = ({
                 setUploadStatus("idle");
                 setRevisionTitle("");
                 toast.success("Upload successful");
-                await syncActiveAudioAfterUpload();
+                await Promise.all([
+                    syncActiveAudioAfterUpload(),
+                    syncBackgroundImageAfterUpload(),
+                ]);
             },
             onError: (error) => {
                 const errorMessage =
@@ -269,7 +346,9 @@ export const SubmitRevisionForm = ({
     const isUploading = uploadStatus === "loading";
     const hasError = uploadStatus === "error";
     const disableUpload =
-        isUploading || (hasSelectedNonSilentAudio && audioSyncLoading);
+        isUploading ||
+        (hasSelectedNonSilentAudio && audioSyncLoading) ||
+        backgroundSyncLoading;
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -319,7 +398,8 @@ export const SubmitRevisionForm = ({
                                 />
                                 Pushing to Mobile App...
                             </span>
-                        ) : hasSelectedNonSilentAudio && audioSyncLoading ? (
+                        ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
+                          backgroundSyncLoading ? (
                             <span className="flex items-center gap-8">
                                 <CircleNotchIcon
                                     size={16}

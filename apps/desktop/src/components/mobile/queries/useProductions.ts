@@ -63,6 +63,7 @@ export interface Production {
     id: number;
     name: string;
     background_image_url: string | null;
+    background_image_checksum: string | null;
     revisions: RevisionPreview[];
     active_revision_id: number | null;
     audio_files: ProductionAudioFile[];

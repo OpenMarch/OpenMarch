@@ -335,7 +335,9 @@ export function AudioFileSettings({
 
     return (
         <div className="flex flex-col gap-6">
-            <h5 className="text-h5 text-text leading-none">Audio Files</h5>
+            <h3 className="text-body text-text-subtitle font-medium">
+                Audio Files
+            </h3>
 
             <div className="flex flex-col gap-8">
                 {!audioFilesLoaded ? (

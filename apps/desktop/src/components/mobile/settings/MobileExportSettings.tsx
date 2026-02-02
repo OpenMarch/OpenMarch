@@ -23,7 +23,7 @@ export const MobileExportSettingsDialog = () => {
                     <GearSixIcon size={16} /> Settings
                 </Button>
             </DialogTrigger>
-            <DialogContent className="flex h-fit w-full max-w-[512px] flex-col gap-16">
+            <DialogContent className="flex w-full max-w-[512px] flex-col gap-16 overflow-y-auto">
                 <DialogTitle>Mobile app settings</DialogTitle>
                 <MobileExportSettingsContent />
             </DialogContent>
@@ -67,7 +67,39 @@ const MobileExportSettingsContent = () => {
                     });
                 }}
             />
-            <DetachButton variant="secondary" />
+            <section
+                className="flex flex-col gap-8"
+                aria-describedby="Background image"
+            >
+                <h3 className="text-body text-text-subtitle font-medium">
+                    Background image
+                </h3>
+                {production.background_image_url ? (
+                    <img
+                        src={production.background_image_url}
+                        alt="Production background"
+                        className="rounded-6 border-stroke bg-bg-1 h-auto w-full border object-contain"
+                    />
+                ) : (
+                    <p className="text-body text-text-disabled">
+                        No background image
+                    </p>
+                )}
+                <p className="text-sub text-text-subtitle">
+                    The background image is automatically synced when you upload
+                    a new revision. To change it, change the background image in
+                    field editor and upload a new revision.
+                </p>
+            </section>
+            <section
+                className="flex flex-col gap-8"
+                aria-describedby="Detach production"
+            >
+                <h3 className="text-body text-text-subtitle font-medium">
+                    Detach production
+                </h3>
+                <DetachButton variant="secondary" />
+            </section>
         </div>
     );
 };
