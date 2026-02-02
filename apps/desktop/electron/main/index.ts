@@ -850,7 +850,7 @@ async function setActiveDb(path: string, isNewFile = false) {
         const db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
-            return;
+            return 500;
         }
 
         const drizzleDb = getOrm(db);
@@ -909,6 +909,8 @@ async function setActiveDb(path: string, isNewFile = false) {
 
         store.set("databasePath", path); // Save current db path
         win?.webContents.reload();
+
+        return resCode;
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path
