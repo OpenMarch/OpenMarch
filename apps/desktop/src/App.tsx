@@ -196,7 +196,7 @@ function App() {
 
     // Add callback to show alert dialog when failing to open a file
     useEffect(() => {
-        window.electron.onLoadFileResponse((resCode) => {
+        window.electron.onLoadFileResponse((resCode: number) => {
             if (resCode !== 200) {
                 switch (resCode) {
                     case 403:
@@ -283,7 +283,7 @@ function App() {
                 setOpen(true);
             }
         });
-    });
+    }, []);
 
     return (
         <ErrorBoundary>

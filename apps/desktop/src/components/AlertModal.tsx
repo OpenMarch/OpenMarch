@@ -1,12 +1,12 @@
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import {
     AlertDialog,
+    AlertDialogAction,
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogTitle,
     Button,
 } from "@openmarch/ui";
-import { AlertDialogAction } from "@radix-ui/react-alert-dialog";
 import { T } from "@tolgee/react";
 
 export default function AlertModal() {
@@ -21,11 +21,12 @@ export default function AlertModal() {
                 <AlertDialogDescription>
                     <div className="flex w-full flex-col gap-16">{content}</div>
                 </AlertDialogDescription>
-                <AlertDialogAction className="mt-auto ml-auto">
+                <AlertDialogAction>
                     <Button
                         variant="secondary"
                         size="compact"
                         onClick={() => setOpen(false)}
+                        className="mt-auto ml-auto"
                     >
                         <T keyName="fileAccessDialogError.closeButton" />
                     </Button>
