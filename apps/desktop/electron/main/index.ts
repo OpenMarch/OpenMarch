@@ -292,14 +292,10 @@ void app.whenReady().then(async () => {
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
-        const resCode = DatabaseServices.setDbPath(filePath);
+        store.set("databasePath", filePath);
+        addRecentFile(filePath);
 
-        if (resCode === 200) {
-            store.set("databasePath", filePath);
-            addRecentFile(filePath);
-
-            await setActiveDb(filePath);
-        }
+        const resCode = await setActiveDb(filePath);
 
         // Handle alert dialogs in frontend
         win?.webContents.send("load-file-response", resCode);
@@ -664,16 +660,11 @@ export async function loadDatabaseFile() {
         .then(async (path) => {
             if (path.canceled) return -1;
 
-            const resCode = DatabaseServices.setDbPath(path.filePaths[0]);
+            store.set("databasePath", path.filePaths[0]); // Save the path for next time
+            // Add to recent files
+            addRecentFile(path.filePaths[0]);
 
-            if (resCode === 200) {
-                store.set("databasePath", path.filePaths[0]); // Save the path for next time
-
-                // Add to recent files
-                addRecentFile(path.filePaths[0]);
-
-                await setActiveDb(path.filePaths[0]);
-            }
+            const resCode = await setActiveDb(path.filePaths[0]);
 
             // Handle alert dialogs in frontend
             win?.webContents.send("load-file-response", resCode);
@@ -844,12 +835,16 @@ async function setActiveDb(path: string, isNewFile = false) {
         // I.e. last opened file
         if (path === ".") path = store.get("databasePath") as string;
 
-        if (!fs.existsSync(path) && !isNewFile) {
+        const resCode = DatabaseServices.setDbPath(path, isNewFile);
+
+        if (resCode !== 200) {
             store.delete("databasePath");
-            console.error("Database file does not exist:", path);
-            return;
+            console.error(
+                `Error loading database file [code=${resCode}] [path=${path}]`,
+            );
+            return resCode;
         }
-        DatabaseServices.setDbPath(path, isNewFile);
+
         win?.setTitle("OpenMarch - " + path);
 
         const db = DatabaseServices.connect();
