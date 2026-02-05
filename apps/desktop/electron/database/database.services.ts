@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import { ipcMain } from "electron";
 import Database from "libsql";
 import Constants from "../../src/global/Constants";
@@ -66,10 +67,30 @@ export function setDbPath(path: string, isNewFile = false) {
         }
     ).user_version;
     if (user_version === -1) {
+        db.close();
         return failedDb(
             `setDbPath: user_version is -1, meaning the database was not created successfully`,
             500,
         );
+    }
+
+    // Probe write access: on macOS, fs.accessSync can pass for Documents/Downloads
+    // even when the app lacks Full Disk Access, but SQLite writes fail with "disk I/O error".
+    try {
+        const probeTable = "__om_write_probe__";
+        db.prepare(`DROP TABLE IF EXISTS ${probeTable}`).run();
+        db.prepare(`CREATE TABLE ${probeTable} (x INTEGER)`).run();
+        db.prepare(`DROP TABLE ${probeTable}`).run();
+    } catch (err: unknown) {
+        db.close();
+        const msg = err instanceof Error ? err.message : String(err);
+        if (/disk\s*i\/o\s*error|i\/o\s*error/i.test(msg)) {
+            return failedDb(
+                `setDbPath: Cannot write to database (missing folder access): ${path}`,
+                403,
+            );
+        }
+        throw err;
     }
 
     return 200;
