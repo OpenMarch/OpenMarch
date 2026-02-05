@@ -1,12 +1,19 @@
 {
     "name": "@openmarch/musicxml-parser",
-    "license": "AGPL-3.0",
+    "license": "Apache-2.0",
     "type": "module",
     "version": "1.0.0",
     "types": "dist/index.d.ts",
     "main": "dist/index.cjs",
+    "description": "MusicXML parsing utility for OpenMarch",
+    "homepage": "https://openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
     "publishConfig": {
-        "@openmarch:registry": "https://npm.pkg.github.com"
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
     },
     "scripts": {
         "build": "tsup --format esm,cjs",
