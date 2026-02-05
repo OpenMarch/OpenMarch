@@ -5,74 +5,79 @@ description: "Information for various file errors"
 
 import { Steps } from "@astrojs/starlight/components";
 
-{/* cSpell:ignore myproject, dotsfile */}
-
-This page contains several file errors you may come across while using OpenMarch. Please refer
-to the appropriate section for the error you are receiving and look for the troubleshooting steps
-for your operating system.
+This page contains several file errors you may come across while using OpenMarch.
+Please refer to the appropriate section for the error you are receiving and look for the troubleshooting steps for your operating system.
 
 ## Invalid File Permissions Error
 
 If you see an error similar to `You do not have permission to open this file` please review the following steps:
 
-<br/>
-<details>
-  <summary>Windows</summary>
-    ### Windows
-    #### Using the File Explorer
+### Windows
 
-    <Steps>
+#### Using the File Explorer
 
-    1. Locate the file in Windows File Explorer.
-    2. Right-click on the file and select Properties from the context menu
-    3. In the Properties window, go to the Security tab
-    4. Under "Group or user names," select your user account or the group you belong to
-    5. In the "Permissions for [Your Username]" box below, check the "Allow" column for Read and Write permissions. A checkmark indicates you have the permission
-    6. If "Read" or "Write" is not checked, or if "Deny" is checked, you do not have that specific permission. Contact your system administrator for more information
+<Steps>
 
-    </Steps>
+1. Locate the file in Windows File Explorer.
+1. Right-click on the file and select Properties from the context menu
+1. In the Properties window, go to the Security tab
+1. Under "Group or user names," select your user account or the group you belong to
+1. In the "Permissions for [Your Username]" box below, check the "Allow" column for Read and Write permissions. A checkmark indicates you have the permission
+1. If "Read" or "Write" is not checked, or if "Deny" is checked, you do not have that specific permission. Contact your system administrator for more information
 
-</details>
-<br/>
-<details>
-  <summary>Mac</summary>
+</Steps>
 
-    ### Mac
-    #### Using Finder
-    ##### Assign permissions to users and groups
-    <Steps>
+### MacOS
 
-    1. On your Mac, select a disk, folder, or file, then choose File > Get Info.
-    2. If the information in Sharing & Permissions isn’t visible, click the arrow. (You may need to scroll down.)
-    3. Click the lock to unlock permission settings.
-    4. Select a user or group in the Name column, click the pop-up menu, then choose a privilege setting.
-        - Read & Write: Allows a user to open the item and change it.
-        - Read only: Allows a user to open the item, but not change its contents.
-        - Write only (Drop Box): Makes a folder into a drop box. Users can copy items to the drop box, but can’t open it. Only the owner of the drop box can open it.
-        - No Access: Blocks all access to the item.
-    </Steps>
+Be sure when MacOS prompts you with "OpenMarch would like to access files in your Desktop folder," allow it.
+If you clicked "Do not allow," or are having issues with permissions, please review the following steps:
 
-    You can undo any changes to privilege settings for a user or group in the Sharing & Permissions section since opening the Info window. Before closing the Info window, click the Action pop-up menu at the bottom of the window, then choose “Revert changes.”
+#### System settings
 
-    Please see the <a href="https://support.apple.com/en-lb/guide/mac-help/mchlp1203/mac">Mac User Guide</a> for more information.
+This is most likely the solution to many MacOS file permission issues.
 
-</details>
-<br/>
-<details>
-  <summary>Linux</summary>
-    ### Linux
-    #### Using `chmod` via the terminal
+<Steps>
 
-    <Steps>
+1. **Open System Settings** - Click the Apple icon in the top-left corner and select System Settings.
+1. **Navigate to Privacy** - Click Privacy & Security in the sidebar (you may need to scroll down).
+1. **Find Files & Folders** - Select Files & Folders from the list of permissions.
+1. **Adjust Settings** - Review the apps listed and turn access on or off for individual applications, such as Desktop, Documents, or Downloads.
 
-    1. Open a terminal and enter the directory containing your `.dots` file (e.g. `cd path/to/dotsfile/`)
-    2. Type `ls -l myproject.dots` to verify whether you have read/write permissions<br/>(see <a href="https://www.redhat.com/en/blog/linux-file-permissions-explained">Linux file permissions explained</a> for more information)
-    3. Type `chmod u+rw myproject.dots` to add read and write permissions for your current user
-    4. Verify the permissions were updated via `ls -l myproject.dots`
+</Steps>
 
-    </Steps>
+#### Using Finder
 
-</details>
+This is only for specific files and is likely just for rare cases.
+
+<Steps>
+
+1. On your Mac, select a disk, folder, or file, then choose `File > Get Info`.
+1. If the information in Sharing & Permissions isn’t visible, click the arrow. (You may need to scroll down.)
+1. Click the lock to unlock permission settings:
+1. Select a user or group in the Name column, click the pop-up menu, then choose a privilege setting.
+   - **Read & Write** - Allows a user to open the item and change it.
+   - **Read only** - Allows a user to open the item, but not change its contents.
+   - **Write only (Drop Box)** - Makes a folder into a drop box. Users can copy items to the drop box, but can’t open it. Only the owner of the drop box can open it.
+   - **No Access** - Blocks all access to the item.
+
+</Steps>
+
+You can undo any changes to privilege settings for a user or group in the Sharing & Permissions section since opening the Info window. Before closing the Info window, click the Action pop-up menu at the bottom of the window, then choose “Revert changes.”
+
+Please see the <a href="https://support.apple.com/en-lb/guide/mac-help/mchlp1203/mac">Mac User Guide</a> for more information.
+
+### Linux
+
+#### Using `chmod` via the terminal
+
+<Steps>
+
+1. Open a terminal and enter the directory containing your `.dots` file (e.g. `cd path/to/dots-file/`)
+1. Type `ls -l my-project.dots` to verify whether you have read/write permissions<br/>(see <a href="https://www.redhat.com/en/blog/linux-file-permissions-explained">Linux file permissions explained</a> for more information)
+1. Type `chmod u+rw my-project.dots` to add read and write permissions for your current user
+1. Verify the permissions were updated via `ls -l my-project.dots`
+
+</Steps>
 
 ## File Not Found Error
 
@@ -82,25 +87,19 @@ to open a recent file that has since moved or been renamed. Please review the fo
 <Steps>
 
 1. Open the source folder of the `.dots` file.
-2. Verify the `.dots` file exists in that folder and has not been renamed.
-3. If the `.dots` file was moved or renamed, use the `Open File` menu item in OpenMarch to open the
+1. Verify the `.dots` file exists in that folder and has not been renamed.
+1. If the `.dots` file was moved or renamed, use the `Open File` menu item in OpenMarch to open the
    moved / renamed file. Click the `X` button on the Recent Files section to remove the outdated file.
 
 </Steps>
 
-If you were not using the Recent Files section and you received this error, please
-
-<a href="https://openmarch.com/about/submitting-feedback">
-  submit a bug report
-</a>
-.
+If you were not using the Recent Files section and you received this error, please [submit a bug report](https://openmarch.com/about/submitting-feedback).
 
 ## Server Error
 
 This was likely caused by an internal system in OpenMarch.
-
-Please <a href="https://openmarch.com/about/submitting-feedback">submit a bug report</a> and consider including your `.dots` file.
+Please [submit a bug report](https://openmarch.com/about/submitting-feedback) and consider including your `.dots` file.
 
 ## "Unable to open file" Error or Render Failure
 
-Please <a href="https://openmarch.com/about/submitting-feedback">submit a bug report</a> and consider including your `.dots` file.
+Please [submit a bug report](https://openmarch.com/about/submitting-feedback) and consider including your `.dots` file.
