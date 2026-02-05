@@ -4,9 +4,6 @@
   "description": "OpenMarch CMS",
   "type": "module",
   "private": true,
-  "publishConfig": {
-    "access": "public"
-  },
   "scripts": {
     "build": "cross-env CLOUDFLARE_LOCAL=1 NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
     "build:remote": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
