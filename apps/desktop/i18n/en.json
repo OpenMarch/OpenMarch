@@ -91,6 +91,8 @@
     },
     "fileAccessDialogError": {
         "closeButton": "Close",
+        "guideLinkText": "OpenMarch File Error Guide",
+        "referToGuide": "Refer to the <link></link> for more information.",
         "default": {
             "title": "Error",
             "description": "Unable to open file."
