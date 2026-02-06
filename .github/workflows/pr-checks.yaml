@@ -12,17 +12,21 @@ jobs:
   check-changes:
     runs-on: ubuntu-latest
     outputs:
-      desktop: ${{ steps.filter.outputs.website_docs_only == 'false' }}
+      desktop: ${{ steps.filter.outputs.desktop_related }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            website_docs_only:
-              - 'apps/website/**/*.md'
-              - 'apps/website/**/*.mdx'
-              - 'apps/website/src/constants.ts'
+            desktop_related:
+              - 'apps/desktop/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+              - 'tsconfig.json'
+              - 'turbo.json'
 
   basic-checks:
     strategy:
