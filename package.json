@@ -27,8 +27,7 @@
         "format:check": "prettier --check .",
         "fix": "turbo run fix",
         "spellcheck": "turbo run spellcheck && cspell .",
-        "prepare": "husky",
-        "postinstall": "ln -sf ../turbo/bin/turbo node_modules/.bin/turbo || true"
+        "prepare": "husky"
     },
     "devDependencies": {
         "@tanstack/eslint-plugin-query": "^5.89.0",
