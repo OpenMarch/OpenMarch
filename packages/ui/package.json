@@ -5,8 +5,15 @@
     "license": "AGPL-3.0",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
+    "description": "UI components for OpenMarch applications",
+    "homepage": "https://openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
     "publishConfig": {
-        "@openmarch:registry": "https://npm.pkg.github.com"
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
     },
     "exports": {
         ".": {

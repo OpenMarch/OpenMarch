@@ -3,7 +3,18 @@
     "type": "module",
     "types": "dist/index.d.ts",
     "main": "dist/index.cjs",
+    "license": "Apache-2.0",
     "version": "1.1.0",
+    "description": "Metronome utility for OpenMarch",
+    "homepage": "https://openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
+    },
     "scripts": {
         "build": "tsup --format esm,cjs",
         "dev": "tsup --watch",

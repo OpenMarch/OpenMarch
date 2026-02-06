@@ -50,6 +50,10 @@ export default defineConfig({
                     autogenerate: { directory: "guides" },
                 },
                 {
+                    label: "Troubleshooting",
+                    autogenerate: { directory: "troubleshooting" },
+                },
+                {
                     label: "About",
                     autogenerate: { directory: "about" },
                 },
@@ -68,6 +72,18 @@ export default defineConfig({
     ],
 
     site: "https://openmarch.com",
+
+    image: {
+        domains: ["localhost", "cms.openmarch.com"],
+        remotePatterns: [
+            { protocol: "http", hostname: "localhost", pathname: "/media/**" },
+            {
+                protocol: "https",
+                hostname: "**.openmarch.com",
+                pathname: "/media/**",
+            },
+        ],
+    },
 
     devToolbar: {
         enabled: false,

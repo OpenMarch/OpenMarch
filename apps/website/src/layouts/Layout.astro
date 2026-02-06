@@ -7,13 +7,14 @@ import "@/styles/base.css";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer.astro";
 
-const { title } = Astro.props;
+const { title, noindex = false } = Astro.props;
 ---
 
 <html lang="en">
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
+        {noindex && <meta name="robots" content="noindex, nofollow" />}
         <link rel="icon" href="/favicon.png" type="image/png" />
         <link rel="sitemap" href="/sitemap-index.xml" />
         <title>{title} | OpenMarch</title>

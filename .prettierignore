@@ -108,3 +108,5 @@ out/
 
 # Test reports
 **/playwright-report/
+
+.open-next/

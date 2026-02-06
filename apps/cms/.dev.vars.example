@@ -1,0 +1,12 @@
+# Secrets for local Wrangler development
+# Copy this file to .dev.vars and fill in the values
+# .dev.vars is gitignored and used by wrangler for local development
+
+# Generate a random string using `openssl rand -base64 64`
+PAYLOAD_SECRET=
+
+# Optional: secret for blog preview URLs
+PREVIEW_SECRET=
+
+# Optional: Cloudflare Pages deploy hook URL (triggers website rebuild when post status changes). Omit to disable.
+# WEBSITE_DEPLOY_HOOK_URL=

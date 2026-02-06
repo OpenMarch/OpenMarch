@@ -1,13 +1,16 @@
 {
     "name": "@openmarch/website",
     "type": "module",
-    "version": "0.0.0",
+    "version": "1.0.0",
     "private": true,
     "scripts": {
         "dev": "astro dev",
         "build": "astro check && astro build",
         "preview": "astro preview",
         "astro": "astro",
+        "test": "vitest run",
+        "test:watch": "vitest",
+        "test:e2e": "playwright test",
         "lint": "eslint . --fix",
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
@@ -23,6 +26,7 @@
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
         "@openmarch/ui": "workspace:*",
+        "@payloadcms/richtext-lexical": "3.73.0",
         "@phosphor-icons/react": "^2.1.10",
         "@radix-ui/react-accordion": "^1.2.2",
         "@radix-ui/react-collapsible": "^1.1.2",
@@ -46,9 +50,11 @@
         "zod": "^3.25.76"
     },
     "devDependencies": {
+        "@playwright/test": "^1.56.1",
         "@tailwindcss/typography": "^0.5.16",
         "tailwindcss-intersect": "^2.2.0",
         "tailwindcss-motion": "^1.1.1",
-        "vite": "^6.4.1"
+        "vite": "^6.4.1",
+        "vitest": "^3.2.3"
     }
 }

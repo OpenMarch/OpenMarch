@@ -2,11 +2,47 @@
 import { getCollection, type CollectionEntry } from "astro:content";
 import { Image } from "astro:assets";
 import type { ImageMetadata } from "astro";
+import placeholderImage from "@/content/blog/placeholder.jpg";
 import NewsletterForm from "@/components/ui/NewsletterForm";
 import { ArrowUpRightIcon } from "@phosphor-icons/react";
+import {
+    getPayloadPosts,
+    isPayloadCmsEnabled,
+    parsePayloadPostToListItem,
+    type PayloadBlogListItem,
+} from "@/lib/payload";
 
-const blogs = await getCollection("blog");
+const contentBlogs = await getCollection("blog");
 type Blog = CollectionEntry<"blog">;
+
+type BlogListItem =
+    | {
+          source: "content";
+          id: string;
+          title: string;
+          author: string;
+          authorProfileImageUrl?: never;
+          date: Date;
+          imageMetadata: ImageMetadata;
+      }
+    | PayloadBlogListItem;
+
+const payloadPosts = isPayloadCmsEnabled() ? await getPayloadPosts() : [];
+const blogs: BlogListItem[] = [
+    ...contentBlogs.map((b: Blog) => ({
+        source: "content" as const,
+        id: b.id,
+        title: b.data.title,
+        author: b.data.author,
+        date: b.data.date,
+        imageMetadata: b.data.image as ImageMetadata,
+    })),
+    ...payloadPosts.map((p) =>
+        parsePayloadPostToListItem(p, placeholderImage.src),
+    ),
+]
+    .sort((a, b) => b.date.getTime() - a.date.getTime())
+    .slice(0, 4);
 ---
 
 <section id="blogs" class="flex flex-col gap-16">
@@ -18,48 +54,62 @@ type Blog = CollectionEntry<"blog">;
             class="grid grid-cols-2 grid-rows-2 gap-8 col-span-2 row-span-2 max-[850px]:col-span-1 max-[850px]:row-span-1 max-[650px]:grid-cols-1 max-[650px]:grid-rows-4"
         >
             {
-                blogs
-                    .sort(
-                        (a, b) =>
-                            new Date(b.data.date).getTime() -
-                            new Date(a.data.date).getTime(),
-                    )
-                    .slice(0, 4)
-                    .map((blog: Blog) => (
-                        <a
-                            href={`/blog/${blog.id}`}
-                            class="flex flex-col rounded-6 border overflow-clip border-stroke bg-fg-1 duration-150 ease-out hover:border-accent"
-                        >
+                blogs.map((blog: BlogListItem) => (
+                    <a
+                        href={`/blog/${blog.id}`}
+                        class="flex flex-col rounded-6 border overflow-clip border-stroke bg-fg-1 duration-150 ease-out hover:border-accent"
+                    >
+                        {blog.source === "content" ? (
                             <Image
-                                src={blog.data.image as ImageMetadata}
+                                src={blog.imageMetadata}
                                 width={670}
                                 height={420}
-                                alt={blog.data.title}
+                                alt=""
                                 class="aspect-video h-auto w-full object-cover"
                             />
-                            <div class="flex w-full flex-col gap-8 p-16 h-fit">
-                                <h2 class="w-full text-h4">
-                                    {blog.data.title}
-                                </h2>
-                                <div class="flex gap-16 flex-wrap">
+                        ) : (
+                            <Image
+                                src={blog.imageUrl}
+                                width={blog.imageWidth ?? 670}
+                                height={blog.imageHeight ?? 420}
+                                alt={blog.imageAlt}
+                                class="aspect-video h-auto w-full object-cover"
+                            />
+                        )}
+                        <div class="flex w-full flex-col gap-8 p-16 h-fit">
+                            <h2 class="w-full text-h4">{blog.title}</h2>
+                            <div class="flex gap-16 flex-wrap items-center align-top">
+                                {blog.source === "payload" &&
+                                blog.authorProfileImageUrl ? (
+                                    <Image
+                                        src={blog.authorProfileImageUrl}
+                                        alt=""
+                                        width={
+                                            blog.authorProfileImageWidth ?? 96
+                                        }
+                                        height={
+                                            blog.authorProfileImageHeight ?? 96
+                                        }
+                                        class="size-24 shrink-0 rounded-full object-cover"
+                                    />
+                                ) : null}
+                                <div class="flex flex-col gap-2">
                                     <p class="w-fit text-body text-text-subtitle leading-[150%]">
-                                        by {blog.data.author}
+                                        {blog.author}
                                     </p>
                                     <p class="w-fit text-body text-text-subtitle leading-[150%]">
-                                        {blog.data.date.toLocaleDateString(
-                                            "en-US",
-                                            {
-                                                year: "numeric",
-                                                month: "long",
-                                                day: "numeric",
-                                                timeZone: "UTC",
-                                            },
-                                        )}
+                                        {blog.date.toLocaleDateString("en-US", {
+                                            year: "numeric",
+                                            month: "long",
+                                            day: "numeric",
+                                            timeZone: "UTC",
+                                        })}
                                     </p>
                                 </div>
                             </div>
-                        </a>
-                    ))
+                        </div>
+                    </a>
+                ))
             }
         </div>
         <div

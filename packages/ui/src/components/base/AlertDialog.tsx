@@ -45,11 +45,21 @@ export const AlertDialogTitle = ({
 
 export const AlertDialogDescription = ({
     children,
+    className,
+    ...props
 }: {
     children: React.ReactNode;
-}) => (
-    <RadixAlertDialog.Description className="text-body text-text">
-        {children}
+    className?: string;
+} & Omit<
+    React.ComponentPropsWithoutRef<typeof RadixAlertDialog.Description>,
+    "className"
+>) => (
+    <RadixAlertDialog.Description
+        className={twMerge("text-body text-text", className)}
+        asChild
+        {...props}
+    >
+        <div>{children}</div>
     </RadixAlertDialog.Description>
 );
 
