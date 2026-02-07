@@ -37,6 +37,8 @@ import { historyKeys } from "./hooks/queries/useHistory";
 import tolgee from "./global/singletons/Tolgee";
 import { InContextTools } from "@tolgee/web/tools";
 import clsx from "clsx";
+import AlertModal from "./components/AlertModal";
+import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 
 export const queryClient = new QueryClient({
     defaultOptions: {
@@ -54,6 +56,7 @@ export const queryClient = new QueryClient({
 });
 
 function App() {
+    useLoadFileErrorHandler();
     const [databaseIsReady, setDatabaseIsReady] = useState(false);
     const [appCanvas, setAppCanvas] = useState<OpenMarchCanvas | undefined>(
         undefined,
@@ -220,6 +223,7 @@ function App() {
                             🎭 PLAYWRIGHT CODEGEN MODE - Recording test actions
                         </div>
                     )}
+                    <AlertModal />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
                         <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />

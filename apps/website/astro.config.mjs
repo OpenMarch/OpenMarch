@@ -50,6 +50,10 @@ export default defineConfig({
                     autogenerate: { directory: "guides" },
                 },
                 {
+                    label: "Troubleshooting",
+                    autogenerate: { directory: "troubleshooting" },
+                },
+                {
                     label: "About",
                     autogenerate: { directory: "about" },
                 },

@@ -166,6 +166,12 @@ const APP_API = {
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    onLoadFileResponse: (callback: (value: number) => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, value: number) =>
+            callback(value);
+        ipcRenderer.on("load-file-response", listener);
+        return () => ipcRenderer.removeListener("load-file-response", listener);
+    },
 
     // SVG Generation
     onGetSvgForClose: (callback: () => Promise<string>) => {
