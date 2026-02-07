@@ -3,6 +3,16 @@ type Point = {
     y: number;
 };
 
+/**
+ * Returns the midpoint of two points.
+ */
+export const getMidpoint = (p1: Point, p2: Point): Point => {
+    return {
+        x: (p1.x + p2.x) / 2,
+        y: (p1.y + p2.y) / 2,
+    };
+};
+
 export function distance(p1: Point, p2: Point): number {
     return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
 }

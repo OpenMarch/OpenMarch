@@ -3,13 +3,16 @@
  */
 export interface IPath {
     readonly id: number;
-    readonly segments: IControllableSegment[];
+    readonly segments: ControllableSegment[];
 
     /** Returns the total length of the path by summing segment lengths. */
     getTotalLength(): number;
 
     /** Returns a point at a given distance along the entire path. */
     getPointAtLength(dist: number): Point;
+
+    /** Returns an array of equidistant points along the whole path.. */
+    getEquidistantPoints(numberOfPoints: number): Point[];
 
     /** Returns the start point of the path. */
     getStartPoint(): Point;
@@ -25,60 +28,55 @@ export interface IPath {
 
     /** Returns the path from a JSON representation. */
     fromJson(json: string): IPath;
-
-    /**
-     * Gets the bounding box based on all control points from all segments.
-     * This includes start points, end points, and any intermediate control points
-     * like bezier curve control points, arc centers, etc.
-     *
-     * @returns An object with minX, minY, maxX, maxY, width, and height properties, or null if no segments exist
-     */
-    getBoundsByControlPoints(): {
-        minX: number;
-        minY: number;
-        maxX: number;
-        maxY: number;
-        width: number;
-        height: number;
-    } | null;
 }
 
+export type SegmentType = "line" | "spline";
+
 /**
- * Base interface for all path segments.
+ * Base class for all path segments.
  */
-export interface IControllableSegment {
-    /** The type of the segment (e.g., 'line', 'arc', 'cubic-curve', 'spline') */
-    readonly type: string;
+export abstract class ControllableSegment {
+    /** The type of the segment (e.g. 'line', 'spline') */
+    abstract readonly type: SegmentType;
 
-    /** Optional override for the start point of this segment */
-    startPointOverride?: Point;
+    _controlPoints: Point[];
 
-    /** Optional override for the end point of this segment */
-    endPointOverride?: Point;
+    constructor(controlPoints: Point[]) {
+        if (controlPoints.length < 2) {
+            throw new Error("A segment must have at least 2 control points");
+        }
+        this._controlPoints = controlPoints;
+    }
 
     /** Returns the length of this segment. */
-    getLength(): number;
+    abstract getLength(): number;
 
     /** Returns a point at a given distance along this segment (0 to getLength()). */
-    getPointAtLength(dist: number): Point;
+    abstract getPointAtLength(dist: number): Point;
 
-    /** Returns an array of equidistant points along this segment. */
-    getEquidistantPoints(numberOfPoints: number): Point[];
+    /** Returns an array of equidistant points along this segment. Start and end points are included. */
+    abstract getEquidistantPoints(numberOfPoints: number): Point[];
 
     /** Returns the start point of this segment. */
-    getStartPoint(): Point;
+    getStartPoint(): Point {
+        return this._controlPoints[0]!;
+    }
 
     /** Returns the end point of this segment. */
-    getEndPoint(): Point;
+    getEndPoint(): Point {
+        return this._controlPoints[this._controlPoints.length - 1]!;
+    }
 
     /** Returns the SVG path string for this segment. */
-    toSvgString(includeMoveTo?: boolean): string;
+    abstract toSvgString(includeMoveTo?: boolean): string;
 
     /** Returns the JSON representation of this segment, preserving original data. */
-    toJson(): SegmentJsonData;
-
-    /** Creates a segment from JSON data. */
-    fromJson(data: SegmentJsonData): IControllableSegment;
+    toJson(): SegmentJsonData {
+        return {
+            type: this.type,
+            points: this._controlPoints.map((p) => ({ ...p })),
+        };
+    }
 
     /**
      * Returns all control points for this segment
@@ -86,14 +84,24 @@ export interface IControllableSegment {
      * @param segmentIndex - The index of the segment this control point belongs to
      * @returns An array of control points for the segment
      */
-    getControlPoints(segmentIndex: number): ControlPoint[];
+    abstract getControlPoints(segmentIndex: number): ControlPoint[];
 
     /** Updates a control point and returns a new segment instance */
-    updateControlPoint(
+    abstract updateControlPoint(
         controlPointType: ControlPointType,
         pointIndex: number | undefined,
         newPoint: Point,
-    ): IControllableSegment;
+    ): ControllableSegment;
+
+    /**
+     * Creates a new control point in between two points of this segment.
+     *
+     * @param startingControlPointIndex - The index of the starting control point. Must be `> 0` and not the last index.
+     * @returns The new control point
+     */
+    abstract createControlPointInBetweenPoints(
+        startingControlPointIndex: number,
+    ): Point;
 }
 
 /**
@@ -107,17 +115,10 @@ export interface Point {
 /**
  * JSON representation of a path segment that preserves original data.
  */
-export interface SegmentJsonData {
-    type: string;
-    data: any; // Specific to each segment type
-}
-
-/**
- * JSON representation of a complete path.
- */
-export interface PathJsonData {
-    segments: SegmentJsonData[];
-}
+export type SegmentJsonData = {
+    type: SegmentType;
+    points: Point[];
+};
 
 /**
  * A hook to identify a point on a segment.
@@ -160,18 +161,14 @@ export interface GlobalControlPoint {
 export type ControlPointType =
     | "start" // Start point of segment
     | "end" // End point of segment
-    | "control1" // First control point (for curves)
-    | "control2" // Second control point (for curves)
-    | "center" // Center point (for arcs)
     | "spline-point"; // Individual point in spline control points array
 
-/**
- * Callback function called when a control point is moved.
- */
-export type ControlPointMoveCallback = (
-    controlPointId: string,
-    newPoint: Point,
-) => void;
+interface PointProps {
+    size: number;
+    color: string;
+    stroke: string;
+    strokeWidth: number;
+}
 
 /**
  * Configuration for control point visualization and interaction.
@@ -179,14 +176,6 @@ export type ControlPointMoveCallback = (
 export interface ControlPointConfig {
     /** Whether to show control points */
     visible: boolean;
-    /** Radius of control point handles in pixels */
-    handleRadius: number;
-    /** Color of control point handles */
-    handleColor: string;
-    /** Color of control point handles when selected */
-    selectedColor: string;
-    /** Whether to show control lines (for bezier curves) */
-    showControlLines: boolean;
-    /** Color of control lines */
-    controlLineColor: string;
+    controlPointProps: PointProps;
+    splitPointProps: PointProps;
 }

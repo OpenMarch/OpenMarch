@@ -68,6 +68,9 @@ export interface IControllableSegment {
     /** Returns the start point of this segment. */
     getStartPoint(): Point;
 
+    /** Returns the point at the midpoint of this segment (half the length). */
+    getMidpoint(): Point;
+
     /** Returns the end point of this segment. */
     getEndPoint(): Point;
 

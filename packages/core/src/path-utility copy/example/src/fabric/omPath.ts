@@ -1,21 +1,29 @@
 import {
-    ControlPointManager,
     Path,
+    type ControlPointConfig,
     type Point,
 } from "../../../../path-utility copy";
 import { fabric } from "fabric";
 import FabricControlPoint from "./ControlPoint";
 
-const numberOfChildren = 50;
+const numberOfChildren = 20;
+const midPointRadius = 4;
+const midPointFill = "#4A90E2";
 
 export default class OmPath<T extends fabric.Canvas> {
     private _pathObj: Path;
     private _fabricPath: fabric.Path;
     private _canvas: T;
-    private _controlPointManager: ControlPointManager;
     private _children: fabric.Object[] = [];
+    private _fabricControlPoints: FabricControlPoint[] = [];
+    private _midSegmentPoints: fabric.Object[] = [];
 
-    constructor(pathObj: Path, canvas: T, pathOptions?: fabric.IPathOptions) {
+    constructor(
+        pathObj: Path,
+        canvas: T,
+        config?: ControlPointConfig,
+        pathOptions?: fabric.IPathOptions,
+    ) {
         this._pathObj = pathObj;
         this._fabricPath = new fabric.Path(pathObj.toSvgString(), {
             selectable: false,
@@ -28,43 +36,44 @@ export default class OmPath<T extends fabric.Canvas> {
         canvas.add(this._fabricPath);
         canvas.requestRenderAll();
 
-        this._controlPointManager = new ControlPointManager(this._pathObj);
-        this._controlPointManager.addMoveCallback(() => {
-            // The path object is now mutated, so we just need to update the fabric object.
-            this.updatePath();
-        });
-
         const coordinates =
             this._pathObj.getEvenlySpacedPoints(numberOfChildren);
         for (let i = 0; i < numberOfChildren; i++) {
+            const pt = coordinates[i]!;
             const child = new fabric.Circle({
                 radius: 5,
                 fill: "red",
                 originX: "center",
                 originY: "center",
-                left: coordinates[i].x,
-                top: coordinates[i].y,
+                left: pt.x,
+                top: pt.y,
             });
             this._children.push(child);
             canvas.add(child);
         }
 
-        const controlPoints = this._controlPointManager.getAllControlPoints();
-        for (const controlPoint of controlPoints) {
-            new FabricControlPoint(
-                controlPoint,
-                (newPoint: Point) => {
-                    this._controlPointManager.moveControlPoint(
-                        controlPoint.id,
-                        newPoint,
-                    );
-                },
-                canvas,
-            );
-        }
-
+        this.createVertexControlPoints();
+        this.createMidSegmentPoints();
         canvas.requestRenderAll();
     }
+
+    private createVertexControlPoints(): void {
+        const controlPoints = this.pathObj.segments.flatMap((segment) =>
+            segment.getControlPoints(0),
+        );
+        for (const controlPoint of controlPoints) {
+            const fp = new FabricControlPoint(
+                controlPoint,
+                (newPoint: Point) => {
+                    this.moveControlPoint(controlPoint.id, newPoint);
+                },
+                this._canvas,
+            );
+            this._fabricControlPoints.push(fp);
+        }
+    }
+
+    private createMidSegmentPoints(): void {}
 
     get canvas(): T {
         return this._canvas;
@@ -98,8 +107,10 @@ export default class OmPath<T extends fabric.Canvas> {
                 this._pathObj.getEvenlySpacedPoints(numberOfChildren);
 
             for (let i = 0; i < numberOfChildren; i++) {
-                this._children[i].set("left", coordinates[i].x);
-                this._children[i].set("top", coordinates[i].y);
+                const pt = coordinates[i]!;
+                const child = this._children[i]!;
+                child.set("left", pt.x);
+                child.set("top", pt.y);
             }
 
             // Request a re-render of the canvas
