@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Path, Spline } from "../../../../path-utility copy";
+import { Path, Spline, Line } from "../../../../path-utility copy";
 import OmPath from "../fabric/omPath";
 import {
     Button,
@@ -11,7 +11,7 @@ import {
     Slider,
 } from "@openmarch/ui";
 
-type PathwayType = "arc" | "spline";
+type PathwayType = "line" | "spline";
 
 /** Alpha for spline: 0 = uniform, 0.5 = centripetal, 1 = chordal */
 const ALPHA_LABELS: Record<number, string> = {
@@ -47,6 +47,9 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                 segments = [
                     Spline.fromPoints(SPLINE_SAMPLE_POINTS, splineAlpha, false),
                 ];
+                break;
+            case "line":
+                segments = [Line.fromPoints(SPLINE_SAMPLE_POINTS)];
                 break;
             default:
                 segments = [
@@ -86,7 +89,7 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                 >
                     <SelectTriggerButton label="Pathway type" />
                     <SelectContent>
-                        <SelectItem value="arc">Arc</SelectItem>
+                        <SelectItem value="line">Line</SelectItem>
                         <SelectItem value="spline">Spline</SelectItem>
                     </SelectContent>
                 </Select>
