@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import { type GlobalControlPoint, type Point } from "@openmarch/core";
 
-export default class FabricControlPoint extends fabric.Circle {
+export default class FabricControlPoint extends fabric.Rect {
     constructor(
         controlPointObj: GlobalControlPoint,
         onMove: (point: Point) => void,
@@ -9,12 +9,15 @@ export default class FabricControlPoint extends fabric.Circle {
         config?: fabric.ICircleOptions,
     ) {
         super({
-            radius: 10,
+            width: 16,
+            height: 16,
             originX: "center",
             originY: "center",
             left: controlPointObj.point.x,
             top: controlPointObj.point.y,
-            fill: "red",
+            fill: "white",
+            stroke: "red",
+            strokeWidth: 4,
             hasControls: false,
             ...config,
         });
