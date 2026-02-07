@@ -1,38 +1,18 @@
+import { getMidpoint } from "../geometry-utils";
 import {
-    type IControllableSegment,
     type Point,
     type SegmentJsonData,
     type ControlPointType,
     type ControlPoint,
+    ControllableSegment,
 } from "../interfaces";
 
 /**
  * Represents a polyline: straight line segments through a sequence of control points.
  * Uses the same control-point array pattern as Spline (multiple points, same API).
  */
-export class Line implements IControllableSegment {
+export class Line extends ControllableSegment {
     readonly type = "line";
-
-    public startPointOverride?: Point;
-    public endPointOverride?: Point;
-
-    public readonly _controlPoints: Point[];
-
-    constructor(_controlPoints: Point[]);
-    constructor(startPoint: Point, endPoint: Point);
-    constructor(pointsOrStart: Point[] | Point, endPoint?: Point) {
-        if (Array.isArray(pointsOrStart)) {
-            if (pointsOrStart.length < 2) {
-                throw new Error("Line must have at least 2 control points");
-            }
-            this._controlPoints = pointsOrStart.map((p) => ({ ...p }));
-        } else {
-            if (endPoint === undefined) {
-                throw new Error("Line requires two points");
-            }
-            this._controlPoints = [{ ...pointsOrStart }, { ...endPoint }];
-        }
-    }
 
     /** Effective point at index i (overrides for first/last). */
     private getPointAt(i: number): Point {
@@ -110,65 +90,16 @@ export class Line implements IControllableSegment {
         return points;
     }
 
-    getStartPoint(): Point {
-        return this.startPointOverride ?? { ...this._controlPoints[0]! };
-    }
-
-    getEndPoint(): Point {
-        return (
-            this.endPointOverride ?? {
-                ...this._controlPoints[this._controlPoints.length - 1]!,
-            }
-        );
-    }
-
     toSvgString(includeMoveTo = false): string {
         return this.toPathString(includeMoveTo);
     }
-
-    toJson(): SegmentJsonData {
-        return {
-            type: this.type,
-            data: {
-                controlPoints: this._controlPoints.map((p) => ({ ...p })),
-            },
-        };
-    }
-
-    fromJson(data: SegmentJsonData): IControllableSegment {
-        if (data.type !== "line") {
-            throw new Error(
-                `Cannot create Line from data of type ${data.type}`,
-            );
-        }
-        const d = data.data;
-        // Support legacy format with startPoint/endPoint
-        const controlPoints =
-            d.controlPoints ?? [d.startPoint, d.endPoint].filter(Boolean);
-        if (controlPoints.length < 2) {
-            throw new Error(
-                "Line JSON must have controlPoints or startPoint and endPoint",
-            );
-        }
-        return new Line(controlPoints.map((p: Point) => ({ ...p })));
+    getMidpoint(): Point {
+        const total = this.getLength();
+        return this.getPointAtLength(total / 2);
     }
 
     static fromJson(data: SegmentJsonData): Line {
-        const instance = new Line([
-            { x: 0, y: 0 },
-            { x: 1, y: 1 },
-        ]);
-        return instance.fromJson(data) as Line;
-    }
-
-    /**
-     * Create a polyline from an array of points (all points, like Spline.fromPoints).
-     */
-    static fromPoints(points: Point[]): Line {
-        if (points.length < 2) {
-            throw new Error("Line must have at least 2 points");
-        }
-        return new Line(points.map((p) => ({ ...p })));
+        return new Line(data.points.map((p: Point) => ({ ...p })));
     }
 
     get controlPoints(): Point[] {
@@ -184,15 +115,6 @@ export class Line implements IControllableSegment {
             pointIndex: index,
         }));
 
-        if (this.startPointOverride && controlPoints.length > 0) {
-            controlPoints[0]!.point = { ...this.startPointOverride };
-        }
-        if (this.endPointOverride && controlPoints.length > 0) {
-            controlPoints[controlPoints.length - 1]!.point = {
-                ...this.endPointOverride,
-            };
-        }
-
         return controlPoints;
     }
 
@@ -200,7 +122,7 @@ export class Line implements IControllableSegment {
         controlPointType: ControlPointType,
         pointIndex: number | undefined,
         newPoint: Point,
-    ): IControllableSegment {
+    ): Line {
         const idx =
             controlPointType === "start"
                 ? 0
@@ -232,5 +154,28 @@ export class Line implements IControllableSegment {
         newControlPoints[resolvedIndex] = { ...newPoint };
 
         return new Line(newControlPoints);
+    }
+
+    /**
+     * Creates two new lines by splitting this line in half.
+     */
+    createControlPointInBetweenPoints(
+        startingControlPointIndex: number,
+    ): Point {
+        if (startingControlPointIndex < 0)
+            throw new Error("Starting control point index must be >= 0");
+        if (startingControlPointIndex >= this._controlPoints.length - 1)
+            throw new Error(
+                "Starting control point index must be < control points length - 1",
+            );
+
+        const p1 = this._controlPoints[startingControlPointIndex]!;
+        const p2 = this._controlPoints[startingControlPointIndex + 1]!;
+
+        const midpoint = getMidpoint(p1, p2);
+
+        this._controlPoints.splice(startingControlPointIndex + 1, 0, midpoint);
+
+        return midpoint;
     }
 }

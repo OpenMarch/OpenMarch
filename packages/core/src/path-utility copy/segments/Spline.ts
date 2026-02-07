@@ -17,9 +17,6 @@ export class Spline implements IControllableSegment {
     private _svgApproximation: string | null = null;
     private _length: number | null = null;
 
-    public startPointOverride?: Point;
-    public endPointOverride?: Point;
-
     constructor(
         public readonly _controlPoints: Point[],
         public readonly alpha: number = 0.5,
@@ -107,15 +104,16 @@ export class Spline implements IControllableSegment {
     }
 
     getStartPoint(): Point {
-        return this.startPointOverride ?? { ...this._controlPoints[0]! };
+        return { ...this._controlPoints[0]! };
     }
 
     getEndPoint(): Point {
-        return (
-            this.endPointOverride ?? {
-                ...this._controlPoints[this._controlPoints.length - 1]!,
-            }
-        );
+        return { ...this._controlPoints[this._controlPoints.length - 1]! };
+    }
+
+    getMidpoint(): Point {
+        const total = this.getLength();
+        return this.getPointAtLength(total / 2);
     }
 
     toSvgString(includeMoveTo = false): string {
@@ -141,35 +139,17 @@ export class Spline implements IControllableSegment {
     toJson(): SegmentJsonData {
         return {
             type: this.type,
-            data: {
-                controlPoints: this._controlPoints.map((p) => ({ ...p })),
-                alpha: this.alpha,
-                closed: this.closed,
-            },
+            points: this._controlPoints,
         };
     }
 
-    fromJson(data: SegmentJsonData): IControllableSegment {
+    fromJson(data: SegmentJsonData): Spline {
         if (data.type !== "spline") {
             throw new Error(
                 `Cannot create Spline from data of type ${data.type}`,
             );
         }
-        const d = data.data;
-        const alpha = d.alpha ?? (d.tension !== undefined ? d.tension : 0.5);
-        return new Spline(d.controlPoints, alpha, d.closed ?? false);
-    }
-
-    static fromJson(data: SegmentJsonData): Spline {
-        const instance = new Spline(
-            [
-                { x: 0, y: 0 },
-                { x: 1, y: 1 },
-            ],
-            0.5,
-            false,
-        );
-        return instance.fromJson(data) as Spline;
+        return new Spline(data.points, 0.5, false);
     }
 
     /**
@@ -200,15 +180,6 @@ export class Spline implements IControllableSegment {
             pointIndex: index,
         }));
 
-        if (this.startPointOverride && controlPoints.length > 0) {
-            controlPoints[0]!.point = { ...this.startPointOverride };
-        }
-        if (this.endPointOverride && controlPoints.length > 0) {
-            controlPoints[controlPoints.length - 1]!.point = {
-                ...this.endPointOverride,
-            };
-        }
-
         return controlPoints;
     }
 
@@ -233,6 +204,48 @@ export class Spline implements IControllableSegment {
         newControlPoints[pointIndex] = { ...newPoint };
 
         return new Spline(newControlPoints, this.alpha, this.closed);
+    }
+
+    /**
+     * Split the spline at parameter t (0 to 1) by inserting a new control point at the split location.
+     * Both halves use closed: false. Preserves startPointOverride on the first and endPointOverride on the second.
+     */
+    createSplits(t: 0.25 | 0.75): [Spline, Spline] {
+        const points = this.getEquidistantPoints(5);
+
+        const total = this.getLength();
+        const dist = Math.max(0, Math.min(1, t)) * total;
+        const splitPoint = this.getPointAtLength(dist);
+
+        const curves = this.getCurves();
+        let remaining = dist;
+        let curveIndex = 0;
+        for (let i = 0; i < curves.length; i++) {
+            const segLen = cubicBezierArcLength(curves[i]!);
+            if (remaining <= segLen) {
+                curveIndex = i;
+                break;
+            }
+            remaining -= segLen;
+            curveIndex = i + 1;
+        }
+        const insertIndex = Math.min(
+            curveIndex + 1,
+            this._controlPoints.length - 1,
+        );
+
+        const leftPoints = [
+            ...this._controlPoints.slice(0, insertIndex),
+            { ...splitPoint },
+        ];
+        const rightPoints = [
+            { ...splitPoint },
+            ...this._controlPoints.slice(insertIndex),
+        ];
+
+        const left = new Spline(leftPoints, this.alpha, false);
+        const right = new Spline(rightPoints, this.alpha, false);
+        return [left, right];
     }
 }
 

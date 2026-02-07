@@ -64,6 +64,36 @@ export class Path implements IPath {
         }
     }
 
+    /**
+     * Inserts segments at the specified index (before the segment currently at that index).
+     */
+    insertSegmentsAt(index: number, segments: IControllableSegment[]): void {
+        if (
+            index >= 0 &&
+            index <= this._segments.length &&
+            segments.length > 0
+        ) {
+            this._segments.splice(index, 0, ...segments);
+        }
+    }
+
+    /**
+     * Splits the segment at segmentIndex at parameter t (0 to 1) into two segments.
+     * Replaces the original segment with the two new segments. No-op if the segment does not support split.
+     */
+    splitSegment(segmentIndex: number, t: number): void {
+        if (
+            segmentIndex < 0 ||
+            segmentIndex >= this._segments.length ||
+            typeof this._segments[segmentIndex]!.split !== "function"
+        ) {
+            return;
+        }
+        const segment = this._segments[segmentIndex]!;
+        const [left, right] = segment.split!(t);
+        this._segments.splice(segmentIndex, 1, left, right);
+    }
+
     getTotalLength(): number {
         return this._segments.reduce(
             (total, segment) => total + segment.getLength(),

@@ -1,23 +1,27 @@
 import { fabric } from "fabric";
-import { type GlobalControlPoint, type Point } from "@openmarch/core";
+import type {
+    ControlPointConfig,
+    GlobalControlPoint,
+    Point,
+} from "../../../interfaces";
 
 export default class FabricControlPoint extends fabric.Rect {
     constructor(
         controlPointObj: GlobalControlPoint,
         onMove: (point: Point) => void,
         canvas: fabric.Canvas,
-        config?: fabric.ICircleOptions,
+        config?: ControlPointConfig,
     ) {
         super({
-            width: 16,
-            height: 16,
+            width: config?.controlPointProps.size || 16,
+            height: config?.controlPointProps.size || 16,
             originX: "center",
             originY: "center",
             left: controlPointObj.point.x,
             top: controlPointObj.point.y,
-            fill: "white",
-            stroke: "red",
-            strokeWidth: 4,
+            fill: config?.controlPointProps.color || "white",
+            stroke: config?.controlPointProps.stroke || "red",
+            strokeWidth: config?.controlPointProps.strokeWidth || 4,
             hasControls: false,
             ...config,
         });
