@@ -49,7 +49,7 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                 ];
                 break;
             case "line":
-                segments = [Line.fromPoints(SPLINE_SAMPLE_POINTS)];
+                segments = [new Line(SPLINE_SAMPLE_POINTS)];
                 break;
             default:
                 segments = [
