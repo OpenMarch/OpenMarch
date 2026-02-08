@@ -17,8 +17,8 @@ export default class FabricControlPoint extends fabric.Rect {
             height: config?.size || 16,
             originX: "center",
             originY: "center",
-            left: controlPointObj.point.x,
-            top: controlPointObj.point.y,
+            left: controlPointObj.point[0],
+            top: controlPointObj.point[1],
             fill: config?.fill || "white",
             stroke: config?.stroke || "red",
             strokeWidth: config?.strokeWidth || 4,
@@ -33,6 +33,9 @@ export default class FabricControlPoint extends fabric.Rect {
         canvas.add(this);
         canvas.requestRenderAll();
 
-        this.on("moving", () => onMove(this.getCenterPoint()));
+        this.on("moving", () => {
+            const centerPoint = this.getCenterPoint();
+            onMove([centerPoint.x, centerPoint.y]);
+        });
     }
 }
