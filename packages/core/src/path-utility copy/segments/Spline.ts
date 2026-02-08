@@ -18,6 +18,28 @@ export class Spline extends Line {
         public readonly closed: boolean = false,
     ) {
         super(controlPoints);
+        this.calculateSplitPoints();
+    }
+
+    /**
+     * Override: compute split points as arc-length midpoints on the spline path,
+     * not linear midpoints between control points.
+     */
+    protected override calculateSplitPoints(): void {
+        const curves = this.getCurves();
+        if (curves.length === 0) {
+            this._splitPoints = [];
+            return;
+        }
+        const splitPoints: Point[] = [];
+        let cumulativeLength = 0;
+        for (let i = 0; i < curves.length; i++) {
+            const segLen = cubicBezierArcLength(curves[i]!);
+            const midpointDist = cumulativeLength + segLen / 2;
+            splitPoints.push(this.getPointAtLength(midpointDist));
+            cumulativeLength += segLen;
+        }
+        this._splitPoints = splitPoints;
     }
 
     private getCurves(): Curve[] {
