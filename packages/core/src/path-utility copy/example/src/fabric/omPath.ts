@@ -2,7 +2,7 @@ import { Path, type ControlPointConfig } from "../../../../path-utility copy";
 import { fabric } from "fabric";
 import FabricControlPoint from "./ControlPoint";
 
-const numberOfChildren = 100;
+const numberOfChildren = 20;
 
 export default class OmPath<T extends fabric.Canvas> {
     private _pathObj: Path;
@@ -272,6 +272,7 @@ export default class OmPath<T extends fabric.Canvas> {
                 const child = this._children[i]!;
                 child.set("left", pt.x);
                 child.set("top", pt.y);
+                child.setCoords();
             }
             this.moveSplitPoints();
 
