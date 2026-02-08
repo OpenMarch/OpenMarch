@@ -1,5 +1,5 @@
 import { Line } from "./segments/Line";
-import type { SegmentJsonData, Point } from "./interfaces";
+import type { SegmentJsonData, Point, ControlPoint } from "./interfaces";
 
 /**
  * A path implementation that can contain multiple types of segments,
@@ -9,14 +9,27 @@ import type { SegmentJsonData, Point } from "./interfaces";
 export class Path {
     private _segments: Line[];
     private _id: number;
+    private _transformPoint: Point;
 
-    constructor(segments: Line[] = [], id: number = 0) {
+    constructor(transformPoint: Point, segments: Line[] = [], id: number = 0) {
+        if (segments.length === 0)
+            throw new Error("A path must have at least one segment");
+
+        const firstPoint = segments[0]!.getStartPoint();
+        if (firstPoint.x !== 0 || firstPoint.y !== 0) {
+            console.warn(
+                "First segment start point is not at (0, 0). Automatically setting start point to (0, 0)",
+            );
+            segments[0]!.updateControlPoint(0, { x: 0, y: 0 });
+        }
+
         this._segments = [...segments].map((segment, index) => {
             if (index > 0) {
                 segment.connectToPreviousSegment(segments[index - 1]!);
             }
             return segment;
         });
+        this._transformPoint = transformPoint;
         this._id = id;
     }
 
@@ -26,6 +39,33 @@ export class Path {
 
     get segments(): Line[] {
         return [...this._segments];
+    }
+
+    get transformPoint(): Point {
+        return this._transformPoint;
+    }
+
+    worldControlPointsWithData(): ControlPoint[][] {
+        return this._segments.map((segment) =>
+            segment.getControlPointsWithData().map((point) => ({
+                ...point,
+                point: this.toWorldPoint(point.point),
+            })),
+        );
+    }
+
+    toWorldPoint(localPoint: Point): Point {
+        return {
+            x: localPoint.x + this._transformPoint.x,
+            y: localPoint.y + this._transformPoint.y,
+        };
+    }
+
+    fromWorldPoint(worldPoint: Point): Point {
+        return {
+            x: worldPoint.x - this._transformPoint.x,
+            y: worldPoint.y - this._transformPoint.y,
+        };
     }
 
     /**
@@ -57,6 +97,21 @@ export class Path {
             prev.updateControlPoint(prev.controlPoints.length - 1, newPoint);
         }
     }
+
+    // removeSegmentControlPoint(segmentIndex: number, pointIndex: number): void {
+    //     if (segmentIndex < 0 || segmentIndex >= this._segments.length) {
+    //         return;
+    //     }
+    //     const segment = this._segments[segmentIndex]!;
+
+    //     if (pointIndex === 0) {
+    //         if (segmentIndex === 0 && segment.controlPoints.length === 2) {
+
+    //         }
+    //     } else {
+    //         segment.removeControlPoint(pointIndex);
+    //     }
+    // }
 
     /**
      * Adds a segment to the path.
@@ -214,18 +269,24 @@ export class Path {
             );
         }
 
-        return points;
+        return points.map((point) => ({
+            x: point.x + this._transformPoint.x,
+            y: point.y + this._transformPoint.y,
+        }));
     }
 
     /**
      * Returns the split points for each segment.
+     * These are in world coordinates.
      *
      * @returns An array of arrays of split points. Each array contains the split points for a segment.
      */
     getSplitPoints(): Point[][] {
         const splitPoints: Point[][] = [];
         for (const segment of this._segments)
-            splitPoints.push(segment.splitPoints);
+            splitPoints.push(
+                segment.splitPoints.map((point) => this.toWorldPoint(point)),
+            );
 
         return splitPoints;
     }
@@ -248,13 +309,13 @@ export class Path {
 
     toSvgString(): string {
         if (this._segments.length === 0) return "";
+        const moveTo = `M ${this._transformPoint.x} ${this._transformPoint.y} `;
 
         const svgParts = this._segments.map((segment, index) => {
-            const includeMoveTo = index === 0;
-            return segment.toSvgString(includeMoveTo);
+            return segment.toSvgString(this._transformPoint);
         });
 
-        return svgParts.join(" ");
+        return `${moveTo} ${svgParts.join(" ")}`;
     }
 
     // /**
@@ -298,17 +359,17 @@ export class Path {
     //     }
     // }
 
-    /**
-     * Factory method to create a segment from JSON data based on its type.
-     */
-    private createSegmentFromJson(data: SegmentJsonData): Line {
-        switch (data.type) {
-            case "line":
-                return Line.fromJson(data);
-            default:
-                throw new Error(`Unknown segment type: ${data.type}`);
-        }
-    }
+    // /**
+    //  * Factory method to create a segment from JSON data based on its type.
+    //  */
+    // private createSegmentFromJson(data: SegmentJsonData): Line {
+    //     switch (data.type) {
+    //         case "line":
+    //             return Line.fromJson(data);
+    //         default:
+    //             throw new Error(`Unknown segment type: ${data.type}`);
+    //     }
+    // }
 
     // /**
     //  * Creates a new Path instance from JSON string.
@@ -324,17 +385,6 @@ export class Path {
     // static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
     //     return Path.fromJson(path_data, id);
     // }
-
-    /**
-     * Creates a simple path from an array of points connected by lines.
-     */
-    static fromPoints(points: Point[], id: number = 0): Path {
-        if (points.length < 2) {
-            return new Path([], id);
-        }
-
-        return new Path([new Line(points)], id);
-    }
 
     /**
      * Gets the bounding box based on all control points from all segments.

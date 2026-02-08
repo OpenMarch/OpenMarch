@@ -118,21 +118,28 @@ export default class OmPath<T extends fabric.Canvas> {
         }
         this._fabricControlPoints = [];
 
-        for (const [segmentIndex, segment] of this.pathObj.segments.entries()) {
-            for (const [pointIndex, controlPoint] of segment
-                .getControlPointsWithData()
-                .entries()) {
+        const worldControlPoints = this.pathObj.worldControlPointsWithData();
+
+        for (const [
+            segmentIndex,
+            segmentControlPoints,
+        ] of worldControlPoints.entries()) {
+            for (const [
+                pointIndex,
+                worldControlPoint,
+            ] of segmentControlPoints.entries()) {
                 if (segmentIndex > 0 && pointIndex === 0) continue;
+                console.log(worldControlPoint.point);
                 const fp = new FabricControlPoint(
                     {
-                        ...controlPoint,
+                        ...worldControlPoint,
                         segmentIndex,
                     },
                     (newPoint) => {
                         this.pathObj.updateSegmentControlPoint(
                             segmentIndex,
                             pointIndex,
-                            newPoint,
+                            this.pathObj.fromWorldPoint(newPoint),
                         );
                     },
                     this._canvas,
@@ -188,8 +195,6 @@ export default class OmPath<T extends fabric.Canvas> {
         this._midSegmentPoints = [];
         for (let i = 0; i < this.pathObj.segments.length; i++)
             this._midSegmentPoints.push([]);
-
-        console.log(this.pathObj.getSplitPoints());
 
         for (const [segmentIndex, pointsInSegment] of this.pathObj
             .getSplitPoints()
