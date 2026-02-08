@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Path, Spline, Line } from "../../../../path-utility copy";
+import { Path, Line } from "../../../../path-utility copy";
 import OmPath from "../fabric/omPath";
 import {
     Button,
@@ -20,17 +20,23 @@ const ALPHA_LABELS: Record<number, string> = {
     1: "Chordal",
 };
 
-const SPLINE_SAMPLE_POINTS = [
-    { x: 100, y: 150 },
-    { x: 200, y: 80 },
-    { x: 280, y: 200 },
-    { x: 350, y: 350 },
-    { x: 200, y: 400 },
-];
+// const SPLINE_SAMPLE_POINTS = [
+//     { x: 100, y: 150 },
+//     { x: 200, y: 80 },
+//     { x: 280, y: 200 },
+//     { x: 350, y: 350 },
+//     { x: 200, y: 400 },
+// ];
 
-const LINE_SAMPLE_POINTS = [
-    { x: 200, y: 400 },
-    { x: 150, y: 300 },
+// const LINE_SAMPLE_POINTS = [
+//     { x: 200, y: 400 },
+//     { x: 150, y: 300 },
+// ];
+const SPLINE_SAMPLE_POINTS = [
+    { x: 0, y: 0 },
+    { x: 200, y: 300 },
+    { x: 0, y: 150 },
+    { x: -50, y: 400 },
 ];
 
 interface PathEditorProps {
@@ -49,21 +55,16 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         let segments: Path["segments"];
         switch (pathwayType) {
             case "spline":
-                segments = [
-                    new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
-                    new Line(LINE_SAMPLE_POINTS),
-                ];
+                segments = [new Line(SPLINE_SAMPLE_POINTS)];
                 break;
             case "line":
                 segments = [new Line(SPLINE_SAMPLE_POINTS)];
                 break;
             default:
-                segments = [
-                    new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
-                ];
+                segments = [new Line(SPLINE_SAMPLE_POINTS)];
         }
 
-        const newPath = new Path(segments);
+        const newPath = new Path({ x: 100, y: 50 }, segments);
         const omPath = new OmPath(newPath, canvas, {
             visible: true,
             controlPointProps: {

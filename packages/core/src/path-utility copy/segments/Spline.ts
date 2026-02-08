@@ -17,7 +17,7 @@ export class Spline extends Line {
         public readonly alpha: number = 0.5,
         public readonly closed: boolean = false,
     ) {
-        super(controlPoints);
+        super({ controlPoints });
         this.calculateSplitPoints();
     }
 

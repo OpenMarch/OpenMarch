@@ -27,13 +27,33 @@ export class Line {
     protected _controlPoints: Point[];
     protected _splitPoints: Point[] = [];
 
+    /**
+     *
+     * @param controlPoints - The control points of the segment with relative coordinates to the transform point
+     * @param transform - The transform point of the segment
+     * @throws If the number of control points is less than 2
+     */
     constructor(controlPoints: Point[]) {
         if (controlPoints.length < 2) {
             throw new Error("A segment must have at least 2 control points");
         }
-        this._controlPoints = controlPoints;
+        this._controlPoints = [...controlPoints];
         this.calculateSplitPoints();
     }
+
+    // toWorldPoint(localPoint: Point): Point {
+    //     return {
+    //         x: localPoint.x + this._transform.x,
+    //         y: localPoint.y + this._transform.y,
+    //     };
+    // }
+
+    // fromWorldPoint(worldPoint: Point): Point {
+    //     return {
+    //         x: worldPoint.x - this._transform.x,
+    //         y: worldPoint.y - this._transform.y,
+    //     };
+    // }
 
     connectToPreviousSegment(previousSegment: Line): void {
         const currentSegmentStartPoint = this.getStartPoint();
@@ -59,11 +79,24 @@ export class Line {
         return this._controlPoints[this._controlPoints.length - 1]!;
     }
 
+    isValidPointIndex(pointIndex: number): boolean {
+        return pointIndex >= 0 && pointIndex < this._controlPoints.length;
+    }
+
+    isLastPointInSegment(pointIndex: number): boolean {
+        return pointIndex === this._controlPoints.length - 1;
+    }
+
     /**
      * Points that split the control points of the segment
      */
     get splitPoints(): Point[] {
         return this._splitPoints;
+    }
+
+    addControlPointToStart(point: Point): void {
+        this._controlPoints.unshift(point);
+        this.calculateSplitPoints();
     }
 
     protected calculateSplitPoints(): void {
@@ -86,17 +119,13 @@ export class Line {
         return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     }
 
-    toPathString(includeMoveTo: boolean): string {
+    toSvgString(transform: Point = { x: 0, y: 0 }): string {
         const n = this._controlPoints.length;
         if (n < 2) return "";
         const parts: string[] = [];
         for (let i = 0; i < n; i++) {
             const p = this._controlPoints[i]!;
-            if (i === 0 && includeMoveTo) {
-                parts.push(`M ${p.x} ${p.y}`);
-            } else {
-                parts.push(`L ${p.x} ${p.y}`);
-            }
+            parts.push(`L ${p.x + transform.x} ${p.y + transform.y}`);
         }
         return parts.join(" ");
     }
@@ -146,10 +175,6 @@ export class Line {
         }
 
         return points;
-    }
-
-    toSvgString(includeMoveTo = false): string {
-        return this.toPathString(includeMoveTo);
     }
 
     toJson(): SegmentJsonData {
@@ -209,6 +234,11 @@ export class Line {
     }
 
     removeControlPoint(pointIndex: number): void {
+        if (this._controlPoints.length <= 2)
+            throw new Error(
+                "Cannot remove point. A line must have at least 2 control points",
+            );
+
         if (pointIndex < 0 || pointIndex >= this._controlPoints.length) {
             throw new Error(
                 `Invalid pointIndex ${pointIndex} for line with ${this._controlPoints.length} control points`,
