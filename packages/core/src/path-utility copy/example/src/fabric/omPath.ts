@@ -24,7 +24,7 @@ export default class OmPath<T extends fabric.Canvas> {
         if (!this._pendingControlPointDrag) return;
         const pointer = this._canvas.getPointer(e.e);
         const { segmentIndex, pointIndex } = this._pendingControlPointDrag;
-        this.pathObj.segments[segmentIndex].updateControlPoint(pointIndex, {
+        this.pathObj.updateSegmentControlPoint(segmentIndex, pointIndex, {
             x: pointer.x,
             y: pointer.y,
         });
@@ -122,13 +122,18 @@ export default class OmPath<T extends fabric.Canvas> {
             for (const [pointIndex, controlPoint] of segment
                 .getControlPointsWithData()
                 .entries()) {
+                if (segmentIndex > 0 && pointIndex === 0) continue;
                 const fp = new FabricControlPoint(
                     {
                         ...controlPoint,
                         segmentIndex,
                     },
                     (newPoint) => {
-                        segment.updateControlPoint(pointIndex, newPoint);
+                        this.pathObj.updateSegmentControlPoint(
+                            segmentIndex,
+                            pointIndex,
+                            newPoint,
+                        );
                     },
                     this._canvas,
                     this._controlPointConfig?.controlPointProps,

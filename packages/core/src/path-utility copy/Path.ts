@@ -1,6 +1,5 @@
 import { Line } from "./segments/Line";
 import type { SegmentJsonData, Point } from "./interfaces";
-import type { PathJsonData } from "../path-utility/interfaces";
 
 /**
  * A path implementation that can contain multiple types of segments,
@@ -12,7 +11,12 @@ export class Path {
     private _id: number;
 
     constructor(segments: Line[] = [], id: number = 0) {
-        this._segments = [...segments];
+        this._segments = [...segments].map((segment, index) => {
+            if (index > 0) {
+                segment.connectToPreviousSegment(segments[index - 1]!);
+            }
+            return segment;
+        });
         this._id = id;
     }
 
@@ -22,6 +26,36 @@ export class Path {
 
     get segments(): Line[] {
         return [...this._segments];
+    }
+
+    /**
+     * Updates a segment's control point and keeps segment junctions in sync.
+     * When the updated point is the end of a segment, the next segment's start
+     * is set to the same position. When the updated point is the start of a
+     * segment (index > 0), the previous segment's end is set to the same position.
+     */
+    updateSegmentControlPoint(
+        segmentIndex: number,
+        pointIndex: number,
+        newPoint: Point,
+    ): void {
+        if (segmentIndex < 0 || segmentIndex >= this._segments.length) {
+            return;
+        }
+        const segment = this._segments[segmentIndex]!;
+        segment.updateControlPoint(pointIndex, newPoint);
+
+        const numPoints = segment.controlPoints.length;
+        if (
+            segmentIndex < this._segments.length - 1 &&
+            pointIndex === numPoints - 1
+        ) {
+            this._segments[segmentIndex + 1]!.updateControlPoint(0, newPoint);
+        }
+        if (segmentIndex > 0 && pointIndex === 0) {
+            const prev = this._segments[segmentIndex - 1]!;
+            prev.updateControlPoint(prev.controlPoints.length - 1, newPoint);
+        }
     }
 
     /**
@@ -223,46 +257,46 @@ export class Path {
         return svgParts.join(" ");
     }
 
-    /**
-     * Converts the path to JSON format, preserving original segment data.
-     * Spline segments will maintain their spline parameters, while SVG segments
-     * will maintain their geometric data.
-     */
-    toJson(): string {
-        const pathData: PathJsonData = {
-            segments: this._segments.map((segment) => segment.toJson()),
-        };
+    // /**
+    //  * Converts the path to JSON format, preserving original segment data.
+    //  * Spline segments will maintain their spline parameters, while SVG segments
+    //  * will maintain their geometric data.
+    //  */
+    // toJson(): string {
+    //     const pathData: PathJsonData = {
+    //         segments: this._segments.map((segment) => segment.toJson()),
+    //     };
 
-        return JSON.stringify(pathData, null);
-    }
+    //     return JSON.stringify(pathData, null);
+    // }
 
-    /**
-     * Creates a path from JSON data, reconstructing the original segment types
-     * and their specific data (splines with control points, arcs with radii, etc.).
-     */
-    fromJson(json: string, id: number = 0): Path {
-        try {
-            const pathData: PathJsonData = JSON.parse(json);
+    // /**
+    //  * Creates a path from JSON data, reconstructing the original segment types
+    //  * and their specific data (splines with control points, arcs with radii, etc.).
+    //  */
+    // fromJson(json: string, id: number = 0): Path {
+    //     try {
+    //         const pathData: PathJsonData = JSON.parse(json);
 
-            if (!pathData.segments || !Array.isArray(pathData.segments)) {
-                throw new Error(
-                    "Invalid path JSON: missing or invalid segments array",
-                );
-            }
+    //         if (!pathData.segments || !Array.isArray(pathData.segments)) {
+    //             throw new Error(
+    //                 "Invalid path JSON: missing or invalid segments array",
+    //             );
+    //         }
 
-            const segments: Line[] = pathData.segments.map(
-                (segmentData: SegmentJsonData) => {
-                    return this.createSegmentFromJson(segmentData);
-                },
-            );
+    //         const segments: Line[] = pathData.segments.map(
+    //             (segmentData: SegmentJsonData) => {
+    //                 return this.createSegmentFromJson(segmentData);
+    //             },
+    //         );
 
-            return new Path(segments, id);
-        } catch (error) {
-            throw new Error(
-                `Failed to parse path JSON: ${error instanceof Error ? error.message : "Unknown error"}`,
-            );
-        }
-    }
+    //         return new Path(segments, id);
+    //     } catch (error) {
+    //         throw new Error(
+    //             `Failed to parse path JSON: ${error instanceof Error ? error.message : "Unknown error"}`,
+    //         );
+    //     }
+    // }
 
     /**
      * Factory method to create a segment from JSON data based on its type.
@@ -276,20 +310,20 @@ export class Path {
         }
     }
 
-    /**
-     * Creates a new Path instance from JSON string.
-     */
-    static fromJson(json: string, id: number = 0): Path {
-        const path = new Path();
-        return path.fromJson(json, id) as Path;
-    }
+    // /**
+    //  * Creates a new Path instance from JSON string.
+    //  */
+    // static fromJson(json: string, id: number = 0): Path {
+    //     const path = new Path();
+    //     return path.fromJson(json, id) as Path;
+    // }
 
-    /**
-     * Creates a new Path instance from a database path_data string.
-     */
-    static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
-        return Path.fromJson(path_data, id);
-    }
+    // /**
+    //  * Creates a new Path instance from a database path_data string.
+    //  */
+    // static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
+    //     return Path.fromJson(path_data, id);
+    // }
 
     /**
      * Creates a simple path from an array of points connected by lines.

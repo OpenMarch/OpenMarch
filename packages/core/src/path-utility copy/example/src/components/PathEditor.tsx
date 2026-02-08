@@ -28,6 +28,11 @@ const SPLINE_SAMPLE_POINTS = [
     { x: 200, y: 400 },
 ];
 
+const LINE_SAMPLE_POINTS = [
+    { x: 200, y: 400 },
+    { x: 150, y: 300 },
+];
+
 interface PathEditorProps {
     canvas: fabric.Canvas | null;
 }
@@ -46,6 +51,7 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
             case "spline":
                 segments = [
                     new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
+                    new Line(LINE_SAMPLE_POINTS),
                 ];
                 break;
             case "line":

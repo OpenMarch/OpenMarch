@@ -5,6 +5,13 @@ import {
     type ControlPoint,
 } from "../interfaces";
 
+const pointsAreEqual = (point1: Point, point2: Point) => {
+    return point1.x === point2.x && point1.y === point2.y;
+};
+const pointToString = (point: Point) => {
+    return `{ x: ${point.x}, y: ${point.y} }`;
+};
+
 /**
  * Represents a polyline: straight line segments through a sequence of control points.
  * Uses the same control-point array pattern as Spline (multiple points, same API).
@@ -26,6 +33,20 @@ export class Line {
         }
         this._controlPoints = controlPoints;
         this.calculateSplitPoints();
+    }
+
+    connectToPreviousSegment(previousSegment: Line): void {
+        const currentSegmentStartPoint = this.getStartPoint();
+        const previousSegmentEndPoint = previousSegment.getEndPoint();
+        if (!pointsAreEqual(currentSegmentStartPoint, previousSegmentEndPoint))
+            console.error(
+                `Segments are not connected. Previous segment end point: ${pointToString(previousSegmentEndPoint)}. Current segment start point: ${pointToString(currentSegmentStartPoint)}. Automatically connecting them`,
+            );
+
+        this._controlPoints = [
+            { ...currentSegmentStartPoint },
+            ...this._controlPoints.slice(1),
+        ];
     }
 
     /** Returns the start point of this segment. */
@@ -162,7 +183,8 @@ export class Line {
             );
         }
 
-        this._controlPoints[pointIndex] = { ...newPoint };
+        this._controlPoints[pointIndex]!.x = newPoint.x;
+        this._controlPoints[pointIndex]!.y = newPoint.y;
         this.calculateSplitPoints();
         this.notifyMoveSubscribers();
     }
