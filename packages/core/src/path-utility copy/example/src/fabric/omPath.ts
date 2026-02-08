@@ -2,7 +2,7 @@ import { Path, type ControlPointConfig } from "../../../../path-utility copy";
 import { fabric } from "fabric";
 import FabricControlPoint from "./ControlPoint";
 
-const numberOfChildren = 20;
+const numberOfChildren = 100;
 
 export default class OmPath<T extends fabric.Canvas> {
     private _pathObj: Path;
@@ -15,6 +15,37 @@ export default class OmPath<T extends fabric.Canvas> {
     private _controlPointConfig?: ControlPointConfig;
     private _moveUnsubscribes: (() => void)[] = [];
     private _countUnsubscribes: (() => void)[] = [];
+
+    private _pendingControlPointDrag: {
+        segmentIndex: number;
+        pointIndex: number;
+    } | null = null;
+    private _handlePendingMove = (e: fabric.IEvent<MouseEvent>) => {
+        if (!this._pendingControlPointDrag) return;
+        const pointer = this._canvas.getPointer(e.e);
+        const { segmentIndex, pointIndex } = this._pendingControlPointDrag;
+        this.pathObj.segments[segmentIndex].updateControlPoint(pointIndex, {
+            x: pointer.x,
+            y: pointer.y,
+        });
+        this.updatePath();
+        const fabricCp = this._fabricControlPoints.find(
+            (fp) =>
+                fp.data?.segmentIndex === segmentIndex &&
+                fp.data?.pointIndex === pointIndex,
+        );
+        if (fabricCp) {
+            fabricCp.set({ left: pointer.x, top: pointer.y });
+            fabricCp.setCoords();
+            this._canvas.requestRenderAll();
+        }
+    };
+    private _handlePendingUp = () => {
+        this._pendingControlPointDrag = null;
+        this._canvas.off("mouse:move", this._handlePendingMove as any);
+        this._canvas.off("mouse:up", this._handlePendingUp as any);
+        this._canvas.selection = true;
+    };
 
     constructor(
         pathObj: Path,
@@ -115,6 +146,13 @@ export default class OmPath<T extends fabric.Canvas> {
                 this.pathObj.segments[
                     segmentIndex
                 ].createControlPointInBetweenPoints(splitPointIndex);
+                this._pendingControlPointDrag = {
+                    segmentIndex,
+                    pointIndex: splitPointIndex + 1,
+                };
+                this._canvas.selection = false;
+                this._canvas.on("mouse:move", this._handlePendingMove);
+                this._canvas.on("mouse:up", this._handlePendingUp);
             }
         }
     };
@@ -246,6 +284,12 @@ export default class OmPath<T extends fabric.Canvas> {
      * Hides the path by removing it from the canvas.
      */
     hide() {
+        if (this._pendingControlPointDrag) {
+            this._pendingControlPointDrag = null;
+            this._canvas.off("mouse:move", this._handlePendingMove as any);
+            this._canvas.off("mouse:up", this._handlePendingUp as any);
+            this._canvas.selection = true;
+        }
         if (this._fabricPath) this._canvas.remove(this._fabricPath);
     }
 
