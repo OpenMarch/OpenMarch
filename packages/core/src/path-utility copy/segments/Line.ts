@@ -2,17 +2,61 @@ import { getMidpoint } from "../geometry-utils";
 import {
     type Point,
     type SegmentJsonData,
-    type ControlPointType,
     type ControlPoint,
-    ControllableSegment,
 } from "../interfaces";
 
 /**
  * Represents a polyline: straight line segments through a sequence of control points.
  * Uses the same control-point array pattern as Spline (multiple points, same API).
  */
-export class Line extends ControllableSegment {
+export class Line {
     readonly type = "line";
+
+    /** Subscribers to changes in the position of control points. */
+    private _moveSubscribers: Set<() => void> = new Set();
+    /** Subscribers to changes in the number of control points. */
+    private _countSubscribers: Set<() => void> = new Set();
+
+    private _controlPoints: Point[];
+    private _splitPoints: Point[] = [];
+
+    constructor(controlPoints: Point[]) {
+        if (controlPoints.length < 2) {
+            throw new Error("A segment must have at least 2 control points");
+        }
+        this._controlPoints = controlPoints;
+        this.calculateSplitPoints();
+    }
+
+    /** Returns the start point of this segment. */
+    getStartPoint(): Point {
+        return this._controlPoints[0]!;
+    }
+
+    /** Returns the end point of this segment. */
+    getEndPoint(): Point {
+        return this._controlPoints[this._controlPoints.length - 1]!;
+    }
+
+    /**
+     * Points that split the control points of the segment
+     */
+    get splitPoints(): Point[] {
+        return this._splitPoints;
+    }
+
+    private calculateSplitPoints(): void {
+        const splitPoints: Point[] = [];
+        for (let i = 0; i < this._controlPoints.length - 1; i++) {
+            splitPoints.push(
+                getMidpoint(
+                    this._controlPoints[i]!,
+                    this._controlPoints[i + 1]!,
+                ),
+            );
+        }
+        this._splitPoints = splitPoints;
+    }
 
     /** Effective point at index i (overrides for first/last). */
     private getPointAt(i: number): Point {
@@ -74,6 +118,7 @@ export class Line extends ControllableSegment {
         return { ...this.getEndPoint() };
     }
 
+    /** Returns an array of equidistant points along the whole path. Start and end points are included. */
     getEquidistantPoints(numberOfPoints: number): Point[] {
         if (numberOfPoints <= 0) return [];
         if (numberOfPoints === 1) return [this.getStartPoint()];
@@ -93,9 +138,12 @@ export class Line extends ControllableSegment {
     toSvgString(includeMoveTo = false): string {
         return this.toPathString(includeMoveTo);
     }
-    getMidpoint(): Point {
-        const total = this.getLength();
-        return this.getPointAtLength(total / 2);
+
+    toJson(): SegmentJsonData {
+        return {
+            type: this.type,
+            points: this._controlPoints,
+        };
     }
 
     static fromJson(data: SegmentJsonData): Line {
@@ -103,79 +151,69 @@ export class Line extends ControllableSegment {
     }
 
     get controlPoints(): Point[] {
-        return this.getControlPoints(0).map((cp) => cp.point);
+        return this._controlPoints;
     }
 
-    getControlPoints(segmentIndex: number): ControlPoint[] {
+    getControlPointsWithData(): ControlPoint[] {
         const controlPoints = this._controlPoints.map((point, index) => ({
-            id: `cp-${segmentIndex}-line-point-${index}`,
-            point: { ...point },
-            segmentIndex,
-            type: "spline-point" as ControlPointType,
+            point,
             pointIndex: index,
         }));
 
         return controlPoints;
     }
 
-    updateControlPoint(
-        controlPointType: ControlPointType,
-        pointIndex: number | undefined,
-        newPoint: Point,
-    ): Line {
-        const idx =
-            controlPointType === "start"
-                ? 0
-                : controlPointType === "end"
-                  ? this._controlPoints.length - 1
-                  : undefined;
-        const resolvedIndex = idx ?? pointIndex;
-
-        if (
-            controlPointType !== "spline-point" &&
-            controlPointType !== "start" &&
-            controlPointType !== "end"
-        ) {
+    updateControlPoint(pointIndex: number, newPoint: Point): void {
+        if (pointIndex < 0 || pointIndex >= this._controlPoints.length) {
             throw new Error(
-                `Line only supports 'spline-point', 'start', or 'end', got ${controlPointType}`,
-            );
-        }
-        if (
-            resolvedIndex === undefined ||
-            resolvedIndex < 0 ||
-            resolvedIndex >= this._controlPoints.length
-        ) {
-            throw new Error(
-                `Invalid pointIndex ${resolvedIndex} for line with ${this._controlPoints.length} control points`,
+                `Invalid pointIndex ${pointIndex} for line with ${this._controlPoints.length} control points`,
             );
         }
 
-        const newControlPoints = [...this._controlPoints];
-        newControlPoints[resolvedIndex] = { ...newPoint };
-
-        return new Line(newControlPoints);
+        this._controlPoints[pointIndex] = { ...newPoint };
+        this.calculateSplitPoints();
+        this.notifyMoveSubscribers();
     }
 
     /**
      * Creates two new lines by splitting this line in half.
      */
-    createControlPointInBetweenPoints(
-        startingControlPointIndex: number,
-    ): Point {
-        if (startingControlPointIndex < 0)
-            throw new Error("Starting control point index must be >= 0");
-        if (startingControlPointIndex >= this._controlPoints.length - 1)
+    createControlPointInBetweenPoints(splitPointIndex: number): void {
+        if (splitPointIndex < 0)
+            throw new Error("Split point index must be >= 0");
+        if (splitPointIndex >= this._splitPoints.length - 1)
             throw new Error(
-                "Starting control point index must be < control points length - 1",
+                "Split point index must be < split points length - 1",
             );
 
-        const p1 = this._controlPoints[startingControlPointIndex]!;
-        const p2 = this._controlPoints[startingControlPointIndex + 1]!;
+        const splitPoint = this._splitPoints[splitPointIndex]!;
 
-        const midpoint = getMidpoint(p1, p2);
+        this._controlPoints.splice(splitPointIndex + 1, 0, splitPoint);
+        this.calculateSplitPoints();
 
-        this._controlPoints.splice(startingControlPointIndex + 1, 0, midpoint);
+        this.notifyCountSubscribers();
+    }
 
-        return midpoint;
+    /**
+     * Subscribes to changes in the line.
+     * @param callback - The callback to call when the line changes.
+     * @returns A function to unsubscribe from the line.
+     */
+    subscribeToMove(callback: () => void): () => void {
+        this._moveSubscribers.add(callback);
+        return () => this._moveSubscribers.delete(callback);
+    }
+
+    notifyMoveSubscribers(): void {
+        this._moveSubscribers.forEach((callback) => callback());
+    }
+
+    subscribeToCount(callback: () => void): () => void {
+        this._countSubscribers.add(callback);
+        return () => this._countSubscribers.delete(callback);
+    }
+
+    notifyCountSubscribers(): void {
+        this._countSubscribers.forEach((callback) => callback());
     }
 }
