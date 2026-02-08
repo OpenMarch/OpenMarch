@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Path, Line } from "../../../../path-utility copy";
+import { Path, Line, type Point } from "../../../../path-utility copy";
 import OmPath from "../fabric/omPath";
 import {
     Button,
@@ -32,11 +32,11 @@ const ALPHA_LABELS: Record<number, string> = {
 //     { x: 200, y: 400 },
 //     { x: 150, y: 300 },
 // ];
-const SPLINE_SAMPLE_POINTS = [
-    { x: 0, y: 0 },
-    { x: 200, y: 300 },
-    { x: 0, y: 150 },
-    { x: -50, y: 400 },
+const SPLINE_SAMPLE_POINTS: Point[] = [
+    [0, 0],
+    [200, 300],
+    [0, 150],
+    [-50, 400],
 ];
 
 interface PathEditorProps {
@@ -64,7 +64,7 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
                 segments = [new Line(SPLINE_SAMPLE_POINTS)];
         }
 
-        const newPath = new Path({ x: 100, y: 50 }, segments);
+        const newPath = new Path([100, 50], segments);
         const omPath = new OmPath(newPath, canvas, {
             visible: true,
             controlPointProps: {

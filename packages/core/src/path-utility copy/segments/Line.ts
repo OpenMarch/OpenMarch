@@ -6,10 +6,10 @@ import {
 } from "../interfaces";
 
 const pointsAreEqual = (point1: Point, point2: Point) => {
-    return point1.x === point2.x && point1.y === point2.y;
+    return point1[0] === point2[0] && point1[1] === point2[1];
 };
 const pointToString = (point: Point) => {
-    return `{ x: ${point.x}, y: ${point.y} }`;
+    return `{ x: ${point[0]}, y: ${point[1]}`;
 };
 
 /**
@@ -43,15 +43,15 @@ export class Line {
 
     // toWorldPoint(localPoint: Point): Point {
     //     return {
-    //         x: localPoint.x + this._transform.x,
-    //         y: localPoint.y + this._transform.y,
+    //         x: localPoint[0] + this._transform[0],
+    //         y: localPoint[1] + this._transform[1],
     //     };
     // }
 
     // fromWorldPoint(worldPoint: Point): Point {
     //     return {
-    //         x: worldPoint.x - this._transform.x,
-    //         y: worldPoint.y - this._transform.y,
+    //         x: worldPoint[0] - this._transform[0],
+    //         y: worldPoint[1] - this._transform[1],
     //     };
     // }
 
@@ -116,16 +116,16 @@ export class Line {
     protected segmentLength(i: number): number {
         const a = this._controlPoints[i]!;
         const b = this._controlPoints[i + 1]!;
-        return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+        return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
     }
 
-    toSvgString(transform: Point = { x: 0, y: 0 }): string {
+    toSvgString(transform: Point = [0, 0]): string {
         const n = this._controlPoints.length;
         if (n < 2) return "";
         const parts: string[] = [];
         for (let i = 0; i < n; i++) {
             const p = this._controlPoints[i]!;
-            parts.push(`L ${p.x + transform.x} ${p.y + transform.y}`);
+            parts.push(`L ${p[0] + transform[0]} ${p[1] + transform[1]}`);
         }
         return parts.join(" ");
     }
@@ -150,10 +150,7 @@ export class Line {
                 const t = segLen > 0 ? remaining / segLen : 0;
                 const a = this._controlPoints[i]!;
                 const b = this._controlPoints[i + 1]!;
-                return {
-                    x: a.x + t * (b.x - a.x),
-                    y: a.y + t * (b.y - a.y),
-                };
+                return [a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1])];
             }
             remaining -= segLen;
         }
@@ -208,8 +205,8 @@ export class Line {
             );
         }
 
-        this._controlPoints[pointIndex]!.x = newPoint.x;
-        this._controlPoints[pointIndex]!.y = newPoint.y;
+        this._controlPoints[pointIndex]![0] = newPoint[0];
+        this._controlPoints[pointIndex]![1] = newPoint[1];
         this.calculateSplitPoints();
         this.notifyMoveSubscribers();
     }

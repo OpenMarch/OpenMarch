@@ -1,27 +1,18 @@
-type Point = {
-    x: number;
-    y: number;
-};
+import type { Point } from "./interfaces";
 
 /**
  * Returns the midpoint of two points.
  */
 export const getMidpoint = (p1: Point, p2: Point): Point => {
-    return {
-        x: (p1.x + p2.x) / 2,
-        y: (p1.y + p2.y) / 2,
-    };
+    return [(p1[0] + p2[0]) / 2, (p1[1] + p2[1]) / 2];
 };
 
 export function distance(p1: Point, p2: Point): number {
-    return Math.sqrt((p2.x - p1.x) ** 2 + (p2.y - p1.y) ** 2);
+    return Math.sqrt((p2[0] - p1[0]) ** 2 + (p2[1] - p1[1]) ** 2);
 }
 
 export function pointOnLine(p1: Point, p2: Point, t: number): Point {
-    return {
-        x: p1.x + (p2.x - p1.x) * t,
-        y: p1.y + (p2.y - p1.y) * t,
-    };
+    return [p1[0] + (p2[0] - p1[0]) * t, p1[1] + (p2[1] - p1[1]) * t];
 }
 
 export function pointOnQuadraticBezier(
@@ -31,10 +22,10 @@ export function pointOnQuadraticBezier(
     t: number,
 ): Point {
     const oneMinusT = 1 - t;
-    return {
-        x: oneMinusT ** 2 * p0.x + 2 * oneMinusT * t * p1.x + t ** 2 * p2.x,
-        y: oneMinusT ** 2 * p0.y + 2 * oneMinusT * t * p1.y + t ** 2 * p2.y,
-    };
+    return [
+        oneMinusT ** 2 * p0[0] + 2 * oneMinusT * t * p1[0] + t ** 2 * p2[0],
+        oneMinusT ** 2 * p0[1] + 2 * oneMinusT * t * p1[1] + t ** 2 * p2[1],
+    ];
 }
 
 export function pointOnCubicBezier(
@@ -48,26 +39,24 @@ export function pointOnCubicBezier(
     const oneMinusTSq = oneMinusT * oneMinusT;
     const tSq = t * t;
 
-    return {
-        x:
-            oneMinusTSq * oneMinusT * p0.x +
-            3 * oneMinusTSq * t * p1.x +
-            3 * oneMinusT * tSq * p2.x +
-            tSq * t * p3.x,
-        y:
-            oneMinusTSq * oneMinusT * p0.y +
-            3 * oneMinusTSq * t * p1.y +
-            3 * oneMinusT * tSq * p2.y +
-            tSq * t * p3.y,
-    };
+    return [
+        oneMinusTSq * oneMinusT * p0[0] +
+            3 * oneMinusTSq * t * p1[0] +
+            3 * oneMinusT * tSq * p2[0] +
+            tSq * t * p3[0],
+        oneMinusTSq * oneMinusT * p0[1] +
+            3 * oneMinusTSq * t * p1[1] +
+            3 * oneMinusT * tSq * p2[1] +
+            tSq * t * p3[1],
+    ];
 }
 
 // Helper for vector operations
 function vecAngle(u: Point, v: Point) {
-    const sign = Math.sign(u.x * v.y - u.y * v.x);
-    const dot = u.x * v.x + u.y * v.y;
-    const magU = Math.sqrt(u.x * u.x + u.y * u.y);
-    const magV = Math.sqrt(v.x * v.x + v.y * v.y);
+    const sign = Math.sign(u[0] * v[1] - u[1] * v[0]);
+    const dot = u[0] * v[0] + u[1] * v[1];
+    const magU = Math.sqrt(u[0] * u[0] + u[1] * u[1]);
+    const magV = Math.sqrt(v[0] * v[0] + v[1] * v[1]);
     const cosAngle = dot / (magU * magV);
 
     return sign * Math.acos(Math.min(1, Math.max(-1, cosAngle)));
@@ -92,8 +81,9 @@ export function getArcCenter(
     const sinPhi = Math.sin(phiRad);
 
     // Step 1: Compute (x1', y1')
-    const x1p = cosPhi * ((p1.x - p2.x) / 2) + sinPhi * ((p1.y - p2.y) / 2);
-    const y1p = -sinPhi * ((p1.x - p2.x) / 2) + cosPhi * ((p1.y - p2.y) / 2);
+    const x1p = cosPhi * ((p1[0] - p2[0]) / 2) + sinPhi * ((p1[1] - p2[1]) / 2);
+    const y1p =
+        -sinPhi * ((p1[0] - p2[0]) / 2) + cosPhi * ((p1[1] - p2[1]) / 2);
 
     // Ensure radii are non-zero
     rx = Math.abs(rx);
@@ -123,14 +113,14 @@ export function getArcCenter(
     const cyp = c_ * -((ry * x1p) / rx);
 
     // Step 3: Compute (cx, cy) from (cx', cy')
-    const cx = cosPhi * cxp - sinPhi * cyp + (p1.x + p2.x) / 2;
-    const cy = sinPhi * cxp + cosPhi * cyp + (p1.y + p2.y) / 2;
+    const cx = cosPhi * cxp - sinPhi * cyp + (p1[0] + p2[0]) / 2;
+    const cy = sinPhi * cxp + cosPhi * cyp + (p1[1] + p2[1]) / 2;
 
     // Step 4: Compute startAngle and sweepAngle
-    const v1 = { x: (x1p - cxp) / rx, y: (y1p - cyp) / ry };
-    const v2 = { x: (-x1p - cxp) / rx, y: (-y1p - cyp) / ry };
+    const v1: Point = [(x1p - cxp) / rx, (y1p - cyp) / ry];
+    const v2: Point = [(-x1p - cxp) / rx, (-y1p - cyp) / ry];
 
-    const startAngle = vecAngle({ x: 1, y: 0 }, v1);
+    const startAngle = vecAngle([1, 0], v1);
     let sweepAngle = vecAngle(v1, v2);
 
     if (fS === 0 && sweepAngle > 0) {
@@ -139,7 +129,7 @@ export function getArcCenter(
         sweepAngle += 2 * Math.PI;
     }
 
-    return { center: { x: cx, y: cy }, startAngle, sweepAngle };
+    return { center: [cx, cy], startAngle, sweepAngle };
 }
 
 /**
@@ -158,8 +148,8 @@ export function pointOnArc(
     const cosAngle = Math.cos(angle);
     const sinAngle = Math.sin(angle);
 
-    const x = center.x + rx * cosAngle * cosPhi - ry * sinAngle * sinPhi;
-    const y = center.y + rx * cosAngle * sinPhi + ry * sinAngle * cosPhi;
+    const x = center[0] + rx * cosAngle * cosPhi - ry * sinAngle * sinPhi;
+    const y = center[1] + rx * cosAngle * sinPhi + ry * sinAngle * cosPhi;
 
-    return { x, y };
+    return [x, y];
 }

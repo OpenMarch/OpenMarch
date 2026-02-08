@@ -15,15 +15,16 @@ export class Path {
         if (segments.length === 0)
             throw new Error("A path must have at least one segment");
 
-        const firstPoint = segments[0]!.getStartPoint();
-        if (firstPoint.x !== 0 || firstPoint.y !== 0) {
-            console.warn(
-                "First segment start point is not at (0, 0). Automatically setting start point to (0, 0)",
-            );
-            segments[0]!.updateControlPoint(0, { x: 0, y: 0 });
-        }
-
         this._segments = [...segments].map((segment, index) => {
+            const firstSegment = segments[0]!;
+            const firstPoint = firstSegment.getStartPoint();
+            if (firstPoint[0] !== 0 || firstPoint[1] !== 0) {
+                console.warn(
+                    "First segment start point is not at (0, 0). Automatically setting start point to (0, 0)",
+                );
+                firstSegment.updateControlPoint(0, [0, 0]);
+            }
+
             if (index > 0) {
                 segment.connectToPreviousSegment(segments[index - 1]!);
             }
@@ -55,17 +56,17 @@ export class Path {
     }
 
     toWorldPoint(localPoint: Point): Point {
-        return {
-            x: localPoint.x + this._transformPoint.x,
-            y: localPoint.y + this._transformPoint.y,
-        };
+        return [
+            localPoint[0]! + this._transformPoint[0]!,
+            localPoint[1]! + this._transformPoint[1]!,
+        ];
     }
 
     fromWorldPoint(worldPoint: Point): Point {
-        return {
-            x: worldPoint.x - this._transformPoint.x,
-            y: worldPoint.y - this._transformPoint.y,
-        };
+        return [
+            worldPoint[0]! - this._transformPoint[0]!,
+            worldPoint[1]! - this._transformPoint[1]!,
+        ];
     }
 
     /**
@@ -83,7 +84,7 @@ export class Path {
             return;
         }
         const segment = this._segments[segmentIndex]!;
-        segment.updateControlPoint(pointIndex, newPoint);
+        segment.updateControlPoint(pointIndex, this.fromWorldPoint(newPoint));
 
         const numPoints = segment.controlPoints.length;
         if (
@@ -269,10 +270,10 @@ export class Path {
             );
         }
 
-        return points.map((point) => ({
-            x: point.x + this._transformPoint.x,
-            y: point.y + this._transformPoint.y,
-        }));
+        return points.map((point) => [
+            point[0] + this._transformPoint[0],
+            point[1] + this._transformPoint[1],
+        ]);
     }
 
     /**
@@ -309,7 +310,7 @@ export class Path {
 
     toSvgString(): string {
         if (this._segments.length === 0) return "";
-        const moveTo = `M ${this._transformPoint.x} ${this._transformPoint.y} `;
+        const moveTo = `M ${this._transformPoint[0]!} ${this._transformPoint[1]!} `;
 
         const svgParts = this._segments.map((segment, index) => {
             return segment.toSvgString(this._transformPoint);
@@ -417,7 +418,7 @@ export class Path {
 
             // Process each control point
             for (const controlPoint of controlPoints) {
-                const { x, y } = controlPoint;
+                const [x, y] = controlPoint;
 
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);

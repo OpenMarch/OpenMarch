@@ -86,12 +86,12 @@ export abstract class ControllableSegment {
      */
     abstract getControlPoints(segmentIndex: number): ControlPoint[];
 
-    /** Updates a control point and returns a new segment instance */
-    abstract updateControlPoint(
-        controlPointType: ControlPointType,
-        pointIndex: number | undefined,
-        newPoint: Point,
-    ): ControllableSegment;
+    // /** Updates a control point and returns a new segment instance */
+    // abstract updateControlPoint(
+    //     controlPointType: ControlPointType,
+    //     pointIndex: number | undefined,
+    //     newPoint: Point,
+    // ): ControllableSegment;
 
     /**
      * Creates a new control point in between two points of this segment.
@@ -107,10 +107,7 @@ export abstract class ControllableSegment {
 /**
  * A 2D point with x and y coordinates.
  */
-export interface Point {
-    x: number;
-    y: number;
-}
+export type Point = [x: number, y: number];
 
 /**
  * JSON representation of a path segment that preserves original data.
