@@ -194,6 +194,18 @@ export class Line {
         this.notifyCountSubscribers();
     }
 
+    removeControlPoint(pointIndex: number): void {
+        if (pointIndex < 0 || pointIndex >= this._controlPoints.length) {
+            throw new Error(
+                `Invalid pointIndex ${pointIndex} for line with ${this._controlPoints.length} control points`,
+            );
+        }
+        this._controlPoints.splice(pointIndex, 1);
+
+        this.calculateSplitPoints();
+        this.notifyCountSubscribers();
+    }
+
     /**
      * Subscribes to changes in the line.
      * @param callback - The callback to call when the line changes.
