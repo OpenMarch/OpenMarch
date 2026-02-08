@@ -1,23 +1,17 @@
 import { Line } from "./segments/Line";
-import { Spline } from "./segments/Spline";
-import type {
-    IPath,
-    IControllableSegment,
-    PathJsonData,
-    SegmentJsonData,
-    Point,
-} from "./interfaces";
+import type { SegmentJsonData, Point } from "./interfaces";
+import type { PathJsonData } from "../path-utility/interfaces";
 
 /**
  * A path implementation that can contain multiple types of segments,
  * including splines and SVG-based segments, with proper JSON serialization
  * that preserves the original segment data.
  */
-export class Path implements IPath {
-    private _segments: IControllableSegment[];
+export class Path {
+    private _segments: Line[];
     private _id: number;
 
-    constructor(segments: IControllableSegment[] = [], id: number = 0) {
+    constructor(segments: Line[] = [], id: number = 0) {
         this._segments = [...segments];
         this._id = id;
     }
@@ -26,14 +20,14 @@ export class Path implements IPath {
         return this._id;
     }
 
-    get segments(): IControllableSegment[] {
+    get segments(): Line[] {
         return [...this._segments];
     }
 
     /**
      * Adds a segment to the path.
      */
-    addSegment(segment: IControllableSegment): void {
+    addSegment(segment: Line): void {
         this._segments.push(segment);
     }
 
@@ -55,44 +49,27 @@ export class Path implements IPath {
         this._segments = [];
     }
 
-    /**
-     * Replaces a segment at a specific index.
-     */
-    replaceSegment(index: number, segment: IControllableSegment): void {
-        if (index >= 0 && index < this._segments.length) {
-            this._segments[index] = segment;
-        }
-    }
+    // /**
+    //  * Replaces a segment at a specific index.
+    //  */
+    // replaceSegment(index: number, segment: IControllableSegment): void {
+    //     if (index >= 0 && index < this._segments.length) {
+    //         this._segments[index] = segment;
+    //     }
+    // }
 
-    /**
-     * Inserts segments at the specified index (before the segment currently at that index).
-     */
-    insertSegmentsAt(index: number, segments: IControllableSegment[]): void {
-        if (
-            index >= 0 &&
-            index <= this._segments.length &&
-            segments.length > 0
-        ) {
-            this._segments.splice(index, 0, ...segments);
-        }
-    }
-
-    /**
-     * Splits the segment at segmentIndex at parameter t (0 to 1) into two segments.
-     * Replaces the original segment with the two new segments. No-op if the segment does not support split.
-     */
-    splitSegment(segmentIndex: number, t: number): void {
-        if (
-            segmentIndex < 0 ||
-            segmentIndex >= this._segments.length ||
-            typeof this._segments[segmentIndex]!.split !== "function"
-        ) {
-            return;
-        }
-        const segment = this._segments[segmentIndex]!;
-        const [left, right] = segment.split!(t);
-        this._segments.splice(segmentIndex, 1, left, right);
-    }
+    // /**
+    //  * Inserts segments at the specified index (before the segment currently at that index).
+    //  */
+    // insertSegmentsAt(index: number, segments: IControllableSegment[]): void {
+    //     if (
+    //         index >= 0 &&
+    //         index <= this._segments.length &&
+    //         segments.length > 0
+    //     ) {
+    //         this._segments.splice(index, 0, ...segments);
+    //     }
+    // }
 
     getTotalLength(): number {
         return this._segments.reduce(
@@ -206,6 +183,19 @@ export class Path implements IPath {
         return points;
     }
 
+    /**
+     * Returns the split points for each segment.
+     *
+     * @returns An array of arrays of split points. Each array contains the split points for a segment.
+     */
+    getSplitPoints(): Point[][] {
+        const splitPoints: Point[][] = [];
+        for (const segment of this._segments)
+            splitPoints.push(segment.splitPoints);
+
+        return splitPoints;
+    }
+
     getStartPoint(): Point {
         if (this._segments.length === 0) {
             throw new Error("Cannot get start point of empty path");
@@ -250,12 +240,7 @@ export class Path implements IPath {
      * Creates a path from JSON data, reconstructing the original segment types
      * and their specific data (splines with control points, arcs with radii, etc.).
      */
-    fromJson(
-        json: string,
-        startPoint?: Point,
-        endPoint?: Point,
-        id: number = 0,
-    ): IPath {
+    fromJson(json: string, id: number = 0): Path {
         try {
             const pathData: PathJsonData = JSON.parse(json);
 
@@ -265,16 +250,11 @@ export class Path implements IPath {
                 );
             }
 
-            const segments: IControllableSegment[] = pathData.segments.map(
-                (segmentData) => {
+            const segments: Line[] = pathData.segments.map(
+                (segmentData: SegmentJsonData) => {
                     return this.createSegmentFromJson(segmentData);
                 },
             );
-
-            if (segments.length > 0) {
-                segments[0]!.startPointOverride = startPoint;
-                segments[segments.length - 1]!.endPointOverride = endPoint;
-            }
 
             return new Path(segments, id);
         } catch (error) {
@@ -287,12 +267,10 @@ export class Path implements IPath {
     /**
      * Factory method to create a segment from JSON data based on its type.
      */
-    private createSegmentFromJson(data: SegmentJsonData): IControllableSegment {
+    private createSegmentFromJson(data: SegmentJsonData): Line {
         switch (data.type) {
             case "line":
                 return Line.fromJson(data);
-            case "spline":
-                return Spline.fromJson(data);
             default:
                 throw new Error(`Unknown segment type: ${data.type}`);
         }
@@ -301,28 +279,16 @@ export class Path implements IPath {
     /**
      * Creates a new Path instance from JSON string.
      */
-    static fromJson(
-        json: string,
-        startPoint?: Point,
-        endPoint?: Point,
-        id: number = 0,
-    ): Path {
+    static fromJson(json: string, id: number = 0): Path {
         const path = new Path();
-        return path.fromJson(json, startPoint, endPoint, id) as Path;
+        return path.fromJson(json, id) as Path;
     }
 
     /**
      * Creates a new Path instance from a database path_data string.
      */
     static fromDb({ id, path_data }: { id: number; path_data: string }): Path {
-        return Path.fromJson(path_data, undefined, undefined, id);
-    }
-
-    /**
-     * Creates a path containing only a spline segment.
-     */
-    static fromSpline(spline: Spline, id: number = 0): Path {
-        return new Path([spline], id);
+        return Path.fromJson(path_data, id);
     }
 
     /**
@@ -333,12 +299,7 @@ export class Path implements IPath {
             return new Path([], id);
         }
 
-        const segments: IControllableSegment[] = [];
-        for (let i = 0; i < points.length - 1; i++) {
-            segments.push(new Line(points[i]!, points[i + 1]!));
-        }
-
-        return new Path(segments, id);
+        return new Path([new Line(points)], id);
     }
 
     /**
@@ -368,11 +329,11 @@ export class Path implements IPath {
         // Collect all control points from all segments
         for (let i = 0; i < this._segments.length; i++) {
             const segment = this._segments[i]!;
-            const controlPoints = segment.getControlPoints(i);
+            const controlPoints = segment.controlPoints;
 
             // Process each control point
             for (const controlPoint of controlPoints) {
-                const { x, y } = controlPoint.point;
+                const { x, y } = controlPoint;
 
                 minX = Math.min(minX, x);
                 minY = Math.min(minY, y);
@@ -399,29 +360,5 @@ export class Path implements IPath {
             width: maxX - minX,
             height: maxY - minY,
         };
-    }
-
-    /**
-     * Sets the start point of the path.
-     * @param point The new start point.
-     */
-    setStartPoint(point: Point) {
-        if (this._segments.length > 0) {
-            this._segments[0]!.startPointOverride = point;
-        } else {
-            throw new Error("Cannot set start point of empty path");
-        }
-    }
-
-    /**
-     * Sets the end point of the path.
-     * @param point The new end point.
-     */
-    setEndPoint(point: Point) {
-        if (this._segments.length > 0) {
-            this._segments[this._segments.length - 1]!.endPointOverride = point;
-        } else {
-            throw new Error("Cannot set end point of empty path");
-        }
     }
 }
