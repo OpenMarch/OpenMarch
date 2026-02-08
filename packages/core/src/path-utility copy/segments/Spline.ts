@@ -1,30 +1,23 @@
-import {
-    type IControllableSegment,
-    type Point,
-    type SegmentJsonData,
-    type ControlPointType,
-    type ControlPoint,
-} from "../interfaces";
+import { type Point, type SegmentJsonData } from "../interfaces";
+import { Line } from "./Line";
 
 /**
  * A spline segment using Catmull-Rom interpolation through control points.
  * Converts to cubic Béziers for SVG. Alpha: 0 = uniform, 0.5 = centripetal,
  * 1 = chordal.
  */
-export class Spline implements IControllableSegment {
+export class Spline extends Line {
     readonly type = "spline";
 
-    private _svgApproximation: string | null = null;
-    private _length: number | null = null;
+    protected _svgApproximation: string | null = null;
+    protected _length: number | null = null;
 
     constructor(
-        public readonly _controlPoints: Point[],
+        controlPoints: Point[],
         public readonly alpha: number = 0.5,
         public readonly closed: boolean = false,
     ) {
-        if (_controlPoints.length < 2) {
-            throw new Error("Spline must have at least 2 control points");
-        }
+        super(controlPoints);
     }
 
     private getCurves(): Curve[] {
@@ -34,7 +27,7 @@ export class Spline implements IControllableSegment {
         );
     }
 
-    private toPathString(includeMoveTo: boolean): string {
+    override toPathString(includeMoveTo: boolean): string {
         const curves = this.getCurves();
         if (curves.length === 0) return "";
 
@@ -55,7 +48,7 @@ export class Spline implements IControllableSegment {
         return parts.join(" ");
     }
 
-    getLength(): number {
+    override getLength(): number {
         if (this._length === null) {
             const curves = this.getCurves();
             this._length = curves.reduce(
@@ -66,7 +59,7 @@ export class Spline implements IControllableSegment {
         return this._length;
     }
 
-    getPointAtLength(dist: number): Point {
+    override getPointAtLength(dist: number): Point {
         const curves = this.getCurves();
         if (curves.length === 0) return this.getStartPoint();
         const total = this.getLength();
@@ -87,42 +80,13 @@ export class Spline implements IControllableSegment {
         return { ...last[3] };
     }
 
-    getEquidistantPoints(numberOfPoints: number): Point[] {
-        if (numberOfPoints <= 0) return [];
-        if (numberOfPoints === 1) return [this.getStartPoint()];
-
-        const totalLength = this.getLength();
-        const points: Point[] = [];
-
-        for (let i = 0; i < numberOfPoints; i++) {
-            const t = i / (numberOfPoints - 1);
-            const dist = t * totalLength;
-            points.push(this.getPointAtLength(dist));
-        }
-
-        return points;
-    }
-
-    getStartPoint(): Point {
-        return { ...this._controlPoints[0]! };
-    }
-
-    getEndPoint(): Point {
-        return { ...this._controlPoints[this._controlPoints.length - 1]! };
-    }
-
-    getMidpoint(): Point {
-        const total = this.getLength();
-        return this.getPointAtLength(total / 2);
-    }
-
-    toSvgString(includeMoveTo = false): string {
-        if (this._svgApproximation === null) {
-            this._svgApproximation = this.toPathString(true);
-        }
-        if (includeMoveTo) {
-            return this._svgApproximation;
-        }
+    override toSvgString(includeMoveTo = false): string {
+        // if (this._svgApproximation === null) {
+        //     this._svgApproximation = this.toPathString(true);
+        // }
+        // if (includeMoveTo) {
+        //     return this._svgApproximation;
+        // }
         const curves = this.getCurves();
         if (curves.length === 0) return "";
         const parts: string[] = [];
@@ -136,14 +100,22 @@ export class Spline implements IControllableSegment {
         return parts.join(" ");
     }
 
-    toJson(): SegmentJsonData {
-        return {
-            type: this.type,
-            points: this._controlPoints,
-        };
+    override updateControlPoint(pointIndex: number, newPoint: Point): void {
+        this._length = null;
+        super.updateControlPoint(pointIndex, newPoint);
     }
 
-    fromJson(data: SegmentJsonData): Spline {
+    override createControlPointInBetweenPoints(splitPointIndex: number): void {
+        this._length = null;
+        super.createControlPointInBetweenPoints(splitPointIndex);
+    }
+
+    override removeControlPoint(pointIndex: number): void {
+        this._length = null;
+        super.removeControlPoint(pointIndex);
+    }
+
+    static fromJson(data: SegmentJsonData): Spline {
         if (data.type !== "spline") {
             throw new Error(
                 `Cannot create Spline from data of type ${data.type}`,
@@ -153,66 +125,10 @@ export class Spline implements IControllableSegment {
     }
 
     /**
-     * Create a spline from an array of points (Catmull-Rom interpolation).
-     */
-    static fromPoints(
-        points: Point[],
-        alpha: number = 0.5,
-        closed: boolean = false,
-    ): Spline {
-        return new Spline(
-            points.map((p) => ({ ...p })),
-            alpha,
-            closed,
-        );
-    }
-
-    get controlPoints(): Point[] {
-        return this.getControlPoints(0).map((cp) => cp.point);
-    }
-
-    getControlPoints(segmentIndex: number): ControlPoint[] {
-        const controlPoints = this._controlPoints.map((point, index) => ({
-            id: `cp-${segmentIndex}-spline-point-${index}`,
-            point: { ...point },
-            segmentIndex,
-            type: "spline-point" as ControlPointType,
-            pointIndex: index,
-        }));
-
-        return controlPoints;
-    }
-
-    updateControlPoint(
-        controlPointType: ControlPointType,
-        pointIndex: number | undefined,
-        newPoint: Point,
-    ): IControllableSegment {
-        if (controlPointType !== "spline-point" || pointIndex === undefined) {
-            throw new Error(
-                `Spline only supports 'spline-point' control points with a valid pointIndex`,
-            );
-        }
-
-        if (pointIndex < 0 || pointIndex >= this._controlPoints.length) {
-            throw new Error(
-                `Invalid pointIndex ${pointIndex} for spline with ${this._controlPoints.length} control points`,
-            );
-        }
-
-        const newControlPoints = [...this._controlPoints];
-        newControlPoints[pointIndex] = { ...newPoint };
-
-        return new Spline(newControlPoints, this.alpha, this.closed);
-    }
-
-    /**
      * Split the spline at parameter t (0 to 1) by inserting a new control point at the split location.
      * Both halves use closed: false. Preserves startPointOverride on the first and endPointOverride on the second.
      */
     createSplits(t: 0.25 | 0.75): [Spline, Spline] {
-        const points = this.getEquidistantPoints(5);
-
         const total = this.getLength();
         const dist = Math.max(0, Math.min(1, t)) * total;
         const splitPoint = this.getPointAtLength(dist);

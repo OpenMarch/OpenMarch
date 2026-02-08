@@ -10,15 +10,15 @@ import {
  * Uses the same control-point array pattern as Spline (multiple points, same API).
  */
 export class Line {
-    readonly type = "line";
+    readonly type = "line" as "line" | "spline";
 
     /** Subscribers to changes in the position of control points. */
-    private _moveSubscribers: Set<() => void> = new Set();
+    protected _moveSubscribers: Set<() => void> = new Set();
     /** Subscribers to changes in the number of control points. */
-    private _countSubscribers: Set<() => void> = new Set();
+    protected _countSubscribers: Set<() => void> = new Set();
 
-    private _controlPoints: Point[];
-    private _splitPoints: Point[] = [];
+    protected _controlPoints: Point[];
+    protected _splitPoints: Point[] = [];
 
     constructor(controlPoints: Point[]) {
         if (controlPoints.length < 2) {
@@ -45,7 +45,7 @@ export class Line {
         return this._splitPoints;
     }
 
-    private calculateSplitPoints(): void {
+    protected calculateSplitPoints(): void {
         const splitPoints: Point[] = [];
         for (let i = 0; i < this._controlPoints.length - 1; i++) {
             splitPoints.push(
@@ -58,27 +58,19 @@ export class Line {
         this._splitPoints = splitPoints;
     }
 
-    /** Effective point at index i (overrides for first/last). */
-    private getPointAt(i: number): Point {
-        const n = this._controlPoints.length;
-        if (i <= 0) return this.getStartPoint();
-        if (i >= n - 1) return this.getEndPoint();
-        return { ...this._controlPoints[i]! };
-    }
-
     /** Length of segment from point i to i+1. */
-    private segmentLength(i: number): number {
-        const a = this.getPointAt(i);
-        const b = this.getPointAt(i + 1);
+    protected segmentLength(i: number): number {
+        const a = this._controlPoints[i]!;
+        const b = this._controlPoints[i + 1]!;
         return Math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
     }
 
-    private toPathString(includeMoveTo: boolean): string {
+    toPathString(includeMoveTo: boolean): string {
         const n = this._controlPoints.length;
         if (n < 2) return "";
         const parts: string[] = [];
         for (let i = 0; i < n; i++) {
-            const p = this.getPointAt(i);
+            const p = this._controlPoints[i]!;
             if (i === 0 && includeMoveTo) {
                 parts.push(`M ${p.x} ${p.y}`);
             } else {
@@ -106,8 +98,8 @@ export class Line {
             const segLen = this.segmentLength(i);
             if (remaining <= segLen) {
                 const t = segLen > 0 ? remaining / segLen : 0;
-                const a = this.getPointAt(i);
-                const b = this.getPointAt(i + 1);
+                const a = this._controlPoints[i]!;
+                const b = this._controlPoints[i + 1]!;
                 return {
                     x: a.x + t * (b.x - a.x),
                     y: a.y + t * (b.y - a.y),
@@ -181,7 +173,7 @@ export class Line {
     createControlPointInBetweenPoints(splitPointIndex: number): void {
         if (splitPointIndex < 0)
             throw new Error("Split point index must be >= 0");
-        if (splitPointIndex >= this._splitPoints.length - 1)
+        if (splitPointIndex >= this._splitPoints.length)
             throw new Error(
                 "Split point index must be < split points length - 1",
             );
