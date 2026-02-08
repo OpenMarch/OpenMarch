@@ -11,7 +11,7 @@ export interface IPath {
     /** Returns a point at a given distance along the entire path. */
     getPointAtLength(dist: number): Point;
 
-    /** Returns an array of equidistant points along the whole path.. */
+    /** Returns an array of equidistant points along the whole path. Start and end points are included. */
     getEquidistantPoints(numberOfPoints: number): Point[];
 
     /** Returns the start point of the path. */
@@ -121,24 +121,11 @@ export type SegmentJsonData = {
 };
 
 /**
- * A hook to identify a point on a segment.
- */
-export interface SegmentHook {
-    type: ControlPointType;
-    pointIndex: number;
-    segmentIndex: number;
-}
-
-/**
  * A base control point that can be used to find a control point in a segment.
  */
 export interface ControlPoint {
     /** Current position of the control point */
     point: Point;
-    /** Index of the segment this control point belongs to */
-    segmentIndex: number;
-    /** An type to find the control point in a segment. Can either be a type or an index. */
-    type: ControlPointType;
     /** Index of the control point in the segment */
     pointIndex: number;
 }
@@ -147,25 +134,17 @@ export interface ControlPoint {
  * Represents a control point that can be interactively moved.
  */
 export interface GlobalControlPoint {
-    /** Unique type for this control point */
-    id: string;
     /** Point of the control point */
     point: Point;
-    /** Segment control points that this control point is connected to */
-    segmentHooks: SegmentHook[];
+    /** Index of the segment this control point belongs to */
+    segmentIndex: number;
+    /** Index of the control point in its segment */
+    pointIndex: number;
 }
 
-/**
- * Types of control points that different segments can have.
- */
-export type ControlPointType =
-    | "start" // Start point of segment
-    | "end" // End point of segment
-    | "spline-point"; // Individual point in spline control points array
-
-interface PointProps {
+export interface PointProps {
     size: number;
-    color: string;
+    fill: string;
     stroke: string;
     strokeWidth: number;
 }

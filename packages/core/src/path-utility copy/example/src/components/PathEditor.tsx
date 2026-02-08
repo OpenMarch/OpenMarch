@@ -59,9 +59,19 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
 
         const newPath = new Path(segments);
         const omPath = new OmPath(newPath, canvas, {
-            stroke: "red",
-            strokeWidth: 2,
-            fill: "transparent",
+            visible: true,
+            controlPointProps: {
+                size: 16,
+                fill: "white",
+                stroke: "blue",
+                strokeWidth: 2,
+            },
+            splitPointProps: {
+                size: 8,
+                fill: "blue",
+                stroke: "white",
+                strokeWidth: 4,
+            },
         });
 
         setPaths((prev) => [...prev, omPath]);

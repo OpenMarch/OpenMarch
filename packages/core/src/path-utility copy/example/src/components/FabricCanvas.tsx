@@ -23,6 +23,7 @@ const FabricCanvas: React.FC<FabricCanvasProps> = ({ onCanvasReady }) => {
                     const canvas = new fabric.Canvas(canvasElement, {
                         width: 1000,
                         height: 600,
+                        renderOnAddRemove: false,
                     });
 
                     fabricCanvasRef.current = canvas;
