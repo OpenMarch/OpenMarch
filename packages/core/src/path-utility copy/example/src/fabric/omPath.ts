@@ -16,10 +16,6 @@ export default class OmPath<T extends fabric.Canvas> {
     private _moveUnsubscribes: (() => void)[] = [];
     private _countUnsubscribes: (() => void)[] = [];
 
-    private _mouseDownCanvasEventFunction:
-        | ((e: fabric.IEvent<MouseEvent>) => void)
-        | null = null;
-
     constructor(
         pathObj: Path,
         canvas: T,
@@ -50,6 +46,11 @@ export default class OmPath<T extends fabric.Canvas> {
             ...pathOptions,
         });
         this._canvas = canvas;
+        this._canvas.on("mouse:down", this.mouseDownCanvasEventFunction);
+        this._canvas.on(
+            "mouse:dblclick",
+            this.mouseDoubleClickCanvasEventFunction,
+        );
 
         canvas.add(this._fabricPath);
         canvas.requestRenderAll();
@@ -106,10 +107,33 @@ export default class OmPath<T extends fabric.Canvas> {
         }
     }
 
-    private createSplitPoints(): void {
-        if (this._mouseDownCanvasEventFunction) {
-            this._canvas.off("mouse:down", this._mouseDownCanvasEventFunction);
+    private mouseDownCanvasEventFunction = (e: fabric.IEvent<MouseEvent>) => {
+        if (e.target && e.target.data?.segmentIndex != null) {
+            const segmentIndex = e.target.data.segmentIndex;
+            if (e.target.data.type === "splitPoint") {
+                const splitPointIndex = e.target.data.splitPointIndex;
+                this.pathObj.segments[
+                    segmentIndex
+                ].createControlPointInBetweenPoints(splitPointIndex);
+            }
         }
+    };
+
+    private mouseDoubleClickCanvasEventFunction = (
+        e: fabric.IEvent<MouseEvent>,
+    ) => {
+        if (e.target && e.target.data?.segmentIndex != null) {
+            const segmentIndex = e.target.data.segmentIndex;
+            if (e.target.data.type === "controlPoint") {
+                const pointIndex = e.target.data.pointIndex;
+                this.pathObj.segments[segmentIndex].removeControlPoint(
+                    pointIndex,
+                );
+            }
+        }
+    };
+
+    private createSplitPoints(): void {
         const config = this._controlPointConfig?.splitPointProps;
 
         // Remove old split points from canvas before rebuilding
@@ -145,6 +169,7 @@ export default class OmPath<T extends fabric.Canvas> {
                     left: splitPoint.x,
                     top: splitPoint.y,
                     data: {
+                        type: "splitPoint",
                         segmentIndex,
                         splitPointIndex,
                     },
@@ -154,23 +179,6 @@ export default class OmPath<T extends fabric.Canvas> {
                 this._canvas.add(fp);
             }
         }
-        const mouseDownCanvasEventFunction = (e: fabric.IEvent<MouseEvent>) => {
-            console.log(e.target);
-            if (
-                e.target &&
-                e.target.data?.segmentIndex != null &&
-                e.target.data?.splitPointIndex != null
-            ) {
-                const segmentIndex = e.target.data.segmentIndex;
-                const splitPointIndex = e.target.data.splitPointIndex;
-                this.pathObj.segments[
-                    segmentIndex
-                ].createControlPointInBetweenPoints(splitPointIndex);
-            }
-        };
-
-        this._mouseDownCanvasEventFunction = mouseDownCanvasEventFunction;
-        this._canvas.on("mouse:down", mouseDownCanvasEventFunction);
     }
 
     /**

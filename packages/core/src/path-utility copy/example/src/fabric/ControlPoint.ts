@@ -23,6 +23,11 @@ export default class FabricControlPoint extends fabric.Rect {
             stroke: config?.stroke || "red",
             strokeWidth: config?.strokeWidth || 4,
             hasControls: false,
+            data: {
+                type: "controlPoint",
+                segmentIndex: controlPointObj.segmentIndex,
+                pointIndex: controlPointObj.pointIndex,
+            },
             ...config,
         });
         canvas.add(this);
