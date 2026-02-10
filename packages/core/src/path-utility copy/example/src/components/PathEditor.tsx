@@ -54,11 +54,11 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
 
         let segments: Path["segments"];
         switch (pathwayType) {
-            case "spline":
-                segments = [
-                    new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
-                ];
-                break;
+            // case "spline":
+            //     segments = [
+            //         new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
+            //     ];
+            //     break;
             case "line":
                 segments = [new Line(SPLINE_SAMPLE_POINTS)];
                 break;
@@ -70,16 +70,16 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         const omPath = new OmPath(newPath, canvas, {
             visible: true,
             controlPointProps: {
-                size: 16,
-                fill: "white",
-                stroke: "blue",
+                size: 32,
+                color: "blue",
                 strokeWidth: 2,
+                filled: false,
             },
             splitPointProps: {
                 size: 8,
-                fill: "blue",
-                stroke: "white",
-                strokeWidth: 4,
+                color: "blue",
+                strokeWidth: 0,
+                filled: true,
             },
         });
 

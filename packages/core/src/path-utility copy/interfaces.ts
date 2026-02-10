@@ -30,8 +30,6 @@ export interface IPath {
     fromJson(json: string): IPath;
 }
 
-export type SegmentType = "line" | "spline";
-
 /**
  * Base class for all path segments.
  */
@@ -117,10 +115,12 @@ export type SegmentJsonData = {
     points: Point[];
 };
 
+export type SegmentType = "linear" | "curved";
 /**
  * A base control point that can be used to find a control point in a segment.
  */
 export interface ControlPoint {
+    type: SegmentType;
     /** Current position of the control point */
     point: Point;
     /** Index of the control point in the segment */
@@ -141,9 +141,9 @@ export interface GlobalControlPoint {
 
 export interface PointProps {
     size: number;
-    fill: string;
-    stroke: string;
+    color: string;
     strokeWidth: number;
+    filled: boolean;
 }
 
 /**
