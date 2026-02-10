@@ -21,6 +21,7 @@ export const useAlertModalStore = create<AlertModalStore>((set) => ({
     toggleOpen: () =>
         set((state) => ({
             isOpen: !state.isOpen,
+            actions: state.isOpen ? state.actions : undefined,
         })),
     setOpen: (open) =>
         set(() => ({
