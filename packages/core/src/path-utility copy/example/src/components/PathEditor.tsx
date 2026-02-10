@@ -54,11 +54,11 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
 
         let segments: Path["segments"];
         switch (pathwayType) {
-            // case "spline":
-            //     segments = [
-            //         new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
-            //     ];
-            //     break;
+            case "spline":
+                segments = [
+                    new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
+                ];
+                break;
             case "line":
                 segments = [new Line(SPLINE_SAMPLE_POINTS)];
                 break;

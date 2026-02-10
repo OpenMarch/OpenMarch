@@ -7,7 +7,7 @@ import { Line } from "./Line";
  * 1 = chordal.
  */
 export class Spline extends Line {
-    readonly type = "spline";
+    readonly type = "curved";
 
     protected _svgApproximation: string | null = null;
     protected _length: number | null = null;
@@ -17,7 +17,7 @@ export class Spline extends Line {
         public readonly alpha: number = 0.5,
         public readonly closed: boolean = false,
     ) {
-        super({ controlPoints });
+        super(controlPoints);
         this.calculateSplitPoints();
     }
 
@@ -43,31 +43,7 @@ export class Spline extends Line {
     }
 
     private getCurves(): Curve[] {
-        return catmullrom(
-            this._controlPoints.map((p) => ({ x: p.x, y: p.y })),
-            this.alpha,
-        );
-    }
-
-    override toPathString(includeMoveTo: boolean): string {
-        const curves = this.getCurves();
-        if (curves.length === 0) return "";
-
-        const parts: string[] = [];
-        for (let i = 0; i < curves.length; i++) {
-            const [p0, p1, p2, p3] = curves[i]!;
-            if (i === 0 && includeMoveTo) {
-                parts.push(
-                    `M ${p0.x} ${p0.y} C ${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`,
-                );
-            } else {
-                parts.push(`C ${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`);
-            }
-        }
-        if (this.closed) {
-            parts.push(" Z");
-        }
-        return parts.join(" ");
+        return catmullrom(this._controlPoints, this.alpha);
     }
 
     override getLength(): number {
@@ -85,7 +61,7 @@ export class Spline extends Line {
         const curves = this.getCurves();
         if (curves.length === 0) return this.getStartPoint();
         const total = this.getLength();
-        if (dist <= 0) return  { ...curves[0]![0] };
+        if (dist <= 0) return curves[0]![0]!;
         if (dist >= total) return { ...curves[curves.length - 1]![3] };
         let remaining = dist;
         for (let i = 0; i < curves.length; i++) {
@@ -94,7 +70,7 @@ export class Spline extends Line {
             if (remaining <= segLen) {
                 const t = cubicBezierTAtLength(curve, remaining);
                 const p = cubicBezierPointAt(curve, t);
-                return { x: p.x, y: p.y };
+                return p;
             }
             remaining -= segLen;
         }
@@ -102,19 +78,16 @@ export class Spline extends Line {
         return { ...last[3] };
     }
 
-    override toSvgString(includeMoveTo = false): string {
-        // if (this._svgApproximation === null) {
-        //     this._svgApproximation = this.toPathString(true);
-        // }
-        // if (includeMoveTo) {
-        //     return this._svgApproximation;
-        // }
+    override toSvgString(transform: Point = [0, 0]): string {
         const curves = this.getCurves();
+        const [tx, ty] = transform;
         if (curves.length === 0) return "";
         const parts: string[] = [];
         for (let i = 0; i < curves.length; i++) {
             const [, p1, p2, p3] = curves[i]!;
-            parts.push(`C ${p1.x} ${p1.y} ${p2.x} ${p2.y} ${p3.x} ${p3.y}`);
+            parts.push(
+                `C ${p1[0] + tx} ${p1[1] + ty} ${p2[0] + tx} ${p2[1] + ty} ${p3[0] + tx} ${p3[1] + ty}`,
+            );
         }
         if (this.closed) {
             parts.push(" Z");
@@ -138,7 +111,7 @@ export class Spline extends Line {
     }
 
     static fromJson(data: SegmentJsonData): Spline {
-        if (data.type !== "spline") {
+        if (data.type !== "curved") {
             throw new Error(
                 `Cannot create Spline from data of type ${data.type}`,
             );
@@ -187,51 +160,42 @@ export class Spline extends Line {
     }
 }
 
-export type IPoint = {
-    x: number;
-    y: number;
-};
-
-export type Curve = [p0: IPoint, p1: IPoint, p2: IPoint, p3: IPoint];
+export type Curve = [p0: Point, p1: Point, p2: Point, p3: Point];
 
 /** Cubic Bézier derivative at t: B'(t) = 3(1-t)²(P1-P0) + 6(1-t)t(P2-P1) + 3t²(P3-P2) */
-function cubicBezierDerivative(
-    [p0, p1, p2, p3]: Curve,
-    t: number,
-): { x: number; y: number } {
+function cubicBezierDerivative([p0, p1, p2, p3]: Curve, t: number): Point {
     const u = 1 - t;
     const u2 = u * u;
     const u1 = u;
     const t2 = t * t;
-    return {
-        x:
-            3 * u2 * (p1.x - p0.x) +
-            6 * u1 * t * (p2.x - p1.x) +
-            3 * t2 * (p3.x - p2.x),
-        y:
-            3 * u2 * (p1.y - p0.y) +
-            6 * u1 * t * (p2.y - p1.y) +
-            3 * t2 * (p3.y - p2.y),
-    };
+    return [
+        3 * u2 * (p1[0] - p0[0]) +
+            6 * u1 * t * (p2[0] - p1[0]) +
+            3 * t2 * (p3[0] - p2[0]),
+
+        3 * u2 * (p1[1] - p0[1]) +
+            6 * u1 * t * (p2[1] - p1[1]) +
+            3 * t2 * (p3[1] - p2[1]),
+    ];
 }
 
 /** Point on cubic Bézier at t: B(t) = (1-t)³P0 + 3(1-t)²t P1 + 3(1-t)t² P2 + t³P3 */
-function cubicBezierPointAt([p0, p1, p2, p3]: Curve, t: number): IPoint {
+function cubicBezierPointAt([p0, p1, p2, p3]: Curve, t: number): Point {
     const u = 1 - t;
     const u3 = u * u * u;
     const u2 = u * u;
     const t2 = t * t;
     const t3 = t * t * t;
-    return {
-        x: u3 * p0.x + 3 * u2 * t * p1.x + 3 * u * t2 * p2.x + t3 * p3.x,
-        y: u3 * p0.y + 3 * u2 * t * p1.y + 3 * u * t2 * p2.y + t3 * p3.y,
-    };
+    return [
+        u3 * p0[0] + 3 * u2 * t * p1[0] + 3 * u * t2 * p2[0] + t3 * p3[0],
+        u3 * p0[1] + 3 * u2 * t * p1[1] + 3 * u * t2 * p2[1] + t3 * p3[1],
+    ];
 }
 
 /** Speed |B'(t)| */
 function cubicBezierSpeed(curve: Curve, t: number): number {
     const d = cubicBezierDerivative(curve, t);
-    return Math.sqrt(d.x * d.x + d.y * d.y);
+    return Math.sqrt(d[0] * d[0] + d[1] * d[1]);
 }
 
 /** Gauss-Legendre n=5 nodes and weights for [0,1] */
@@ -292,20 +256,20 @@ function cubicBezierTAtLength(curve: Curve, targetLength: number): number {
 /**
  * When alpha is 0, use uniform parameterization (d = 1 for all segments).
  */
-export const catmullrom = (data: IPoint[], alpha: number): Curve[] => {
+export const catmullrom = (data: Point[], alpha: number): Curve[] => {
     const result: Curve[] = [];
     if (data.length < 2) return result;
 
-    let lastStartPoint: IPoint = { ...data[0]! };
+    let lastStartPoint: Point = [...data[0]!];
 
     const length = data.length;
     const alpha2 = alpha * 2;
 
     for (let i = 0; i < length - 1; i++) {
-        const p0: IPoint = i === 0 ? data[0]! : data[i - 1]!;
-        const p1: IPoint = data[i]!;
-        const p2: IPoint = data[i + 1]!;
-        const p3: IPoint = i + 2 < length ? data[i + 2]! : p2;
+        const p0: Point = i === 0 ? data[0]! : data[i - 1]!;
+        const p1: Point = data[i]!;
+        const p2: Point = data[i + 1]!;
+        const p3: Point = i + 2 < length ? data[i + 2]! : p2;
 
         // C-R knots are defined as
         // t_{i+1} = | P_{i+1} - P_{i} | ^ alpha + t_{i} where alpha ∈ [0,1], t_{0} = 0
@@ -318,15 +282,15 @@ export const catmullrom = (data: IPoint[], alpha: number): Curve[] => {
         const d1 =
             alpha === 0
                 ? 1
-                : Math.sqrt((p0.x - p1.x) ** 2 + (p0.y - p1.y) ** 2);
+                : Math.sqrt((p0[0] - p1[0]) ** 2 + (p0[1] - p1[1]) ** 2);
         const d2 =
             alpha === 0
                 ? 1
-                : Math.sqrt((p1.x - p2.x) ** 2 + (p1.y - p2.y) ** 2);
+                : Math.sqrt((p1[0] - p2[0]) ** 2 + (p1[1] - p2[1]) ** 2);
         const d3 =
             alpha === 0
                 ? 1
-                : Math.sqrt((p2.x - p3.x) ** 2 + (p2.y - p3.y) ** 2);
+                : Math.sqrt((p2[0] - p3[0]) ** 2 + (p2[1] - p3[1]) ** 2);
 
         // Bezier control point can be calculated as follows
         // B_0 = P_1
@@ -365,21 +329,21 @@ export const catmullrom = (data: IPoint[], alpha: number): Curve[] => {
             M = 1 / M;
         }
 
-        let bp1: IPoint = {
-            x: (-d2pow2A * p0.x + A * p1.x + d1pow2A * p2.x) * N,
-            y: (-d2pow2A * p0.y + A * p1.y + d1pow2A * p2.y) * N,
-        };
+        let bp1: Point = [
+            (-d2pow2A * p0[0] + A * p1[0] + d1pow2A * p2[0]) * N,
+            (-d2pow2A * p0[1] + A * p1[1] + d1pow2A * p2[1]) * N,
+        ];
 
-        let bp2: IPoint = {
-            x: (d3pow2A * p1.x + B * p2.x - d2pow2A * p3.x) * M,
-            y: (d3pow2A * p1.y + B * p2.y - d2pow2A * p3.y) * M,
-        };
+        let bp2: Point = [
+            (d3pow2A * p1[0] + B * p2[0] - d2pow2A * p3[0]) * M,
+            (d3pow2A * p1[1] + B * p2[1] - d2pow2A * p3[1]) * M,
+        ];
 
-        if (bp1.x === 0 && bp1.y === 0) {
+        if (bp1[0] === 0 && bp1[1] === 0) {
             bp1 = { ...p1 };
         }
 
-        if (bp2.x === 0 && bp2.y === 0) {
+        if (bp2[0] === 0 && bp2[1] === 0) {
             bp2 = { ...p2 };
         }
 
