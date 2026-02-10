@@ -12,6 +12,12 @@ const pointToString = (point: Point) => {
     return `{ x: ${point[0]}, y: ${point[1]}`;
 };
 
+/** Threshold for snapping to zero to avoid floating-point artifacts (e.g. ±0, denormals). */
+const ZERO_THRESHOLD = 2e-5;
+
+const snapToZero = (x: number): number =>
+    Math.abs(x) < ZERO_THRESHOLD ? 0 : x;
+
 /**
  * Represents a polyline: straight line segments through a sequence of control points.
  * Uses the same control-point array pattern as Spline (multiple points, same API).
@@ -41,20 +47,6 @@ export class Line {
         this.calculateSplitPoints();
     }
 
-    // toWorldPoint(localPoint: Point): Point {
-    //     return {
-    //         x: localPoint[0] + this._transform[0],
-    //         y: localPoint[1] + this._transform[1],
-    //     };
-    // }
-
-    // fromWorldPoint(worldPoint: Point): Point {
-    //     return {
-    //         x: worldPoint[0] - this._transform[0],
-    //         y: worldPoint[1] - this._transform[1],
-    //     };
-    // }
-
     connectToPreviousSegment(previousSegment: Line): void {
         const currentSegmentStartPoint = this.getStartPoint();
         const previousSegmentEndPoint = previousSegment.getEndPoint();
@@ -69,9 +61,16 @@ export class Line {
         ];
     }
 
-    /** Returns the start point of this segment. */
+    /** Returns the start point of this segment (snapped to avoid ±0 / denormal floats). */
     getStartPoint(): Point {
-        return this._controlPoints[0]!;
+        const p = this._controlPoints[0]!;
+        return [snapToZero(p[0]), snapToZero(p[1])];
+    }
+
+    zeroStartPoint(): void {
+        this._controlPoints[0] = [0, 0];
+        this.notifyMoveSubscribers();
+        this.calculateSplitPoints();
     }
 
     /** Returns the end point of this segment. */
@@ -85,6 +84,16 @@ export class Line {
 
     isLastPointInSegment(pointIndex: number): boolean {
         return pointIndex === this._controlPoints.length - 1;
+    }
+
+    applyTransformToAllPoints(transform: Point): void {
+        const newPoints: Point[] = this._controlPoints.slice(1).map((point) => {
+            return [
+                snapToZero(point[0] - transform[0]),
+                snapToZero(point[1] - transform[1]),
+            ];
+        });
+        this._controlPoints = [[0, 0], ...newPoints];
     }
 
     /**
@@ -119,11 +128,11 @@ export class Line {
         return Math.sqrt((b[0] - a[0]) ** 2 + (b[1] - a[1]) ** 2);
     }
 
-    toSvgString(transform: Point = [0, 0]): string {
+    toSvgString(transform: Point = [0, 0], omitFirst: boolean = false): string {
         const n = this._controlPoints.length;
         if (n < 2) return "";
         const parts: string[] = [];
-        for (let i = 0; i < n; i++) {
+        for (let i = omitFirst ? 1 : 0; i < n; i++) {
             const p = this._controlPoints[i]!;
             parts.push(`L ${p[0] + transform[0]} ${p[1] + transform[1]}`);
         }
@@ -186,12 +195,19 @@ export class Line {
     }
 
     get controlPoints(): Point[] {
-        return this._controlPoints;
+        return this._controlPoints.map((p, i) =>
+            i === 0
+                ? ([snapToZero(p[0]), snapToZero(p[1])] as Point)
+                : p,
+        );
     }
 
     getControlPointsWithData(): ControlPoint[] {
         const controlPoints = this._controlPoints.map((point, index) => ({
-            point,
+            point:
+                index === 0
+                    ? ([snapToZero(point[0]), snapToZero(point[1])] as Point)
+                    : point,
             pointIndex: index,
         }));
 
