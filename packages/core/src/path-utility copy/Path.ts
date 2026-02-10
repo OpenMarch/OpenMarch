@@ -1,5 +1,5 @@
 import { Line } from "./segments/Line";
-import type { Point, ControlPoint } from "./interfaces";
+import type { Point, ControlPoint, SegmentType } from "./interfaces";
 
 /** Threshold for snapping transform to zero (avoids float artifacts in property tests). */
 const ZERO_THRESHOLD = 2e-5;
@@ -54,6 +54,7 @@ export class Path {
             segment.getControlPointsWithData().map((point) => ({
                 ...point,
                 point: this.toWorldPoint(point.point),
+                segmentIndex: this._segments.indexOf(segment),
             })),
         );
     }
@@ -123,12 +124,8 @@ export class Path {
         this._segments[0]!.updateControlPoint(0, [0, 0]);
         // Apply the original transform so it stays in the same place globally
         this._transformPoint = [
-            snapToZero(
-                originalTransformPoint[0] + originalFirstPoint[0],
-            ),
-            snapToZero(
-                originalTransformPoint[1] + originalFirstPoint[1],
-            ),
+            snapToZero(originalTransformPoint[0] + originalFirstPoint[0]),
+            snapToZero(originalTransformPoint[1] + originalFirstPoint[1]),
         ];
     }
 
@@ -315,11 +312,14 @@ export class Path {
      *
      * @returns An array of arrays of split points. Each array contains the split points for a segment.
      */
-    getSplitPoints(): Point[][] {
-        const splitPoints: Point[][] = [];
+    getSplitPoints(): { type: SegmentType; point: Point }[][] {
+        const splitPoints: { type: SegmentType; point: Point }[][] = [];
         for (const segment of this._segments)
             splitPoints.push(
-                segment.splitPoints.map((point) => this.toWorldPoint(point)),
+                segment.splitPoints.map((point) => ({
+                    point: this.toWorldPoint(point),
+                    type: segment.type,
+                })),
             );
 
         return splitPoints;

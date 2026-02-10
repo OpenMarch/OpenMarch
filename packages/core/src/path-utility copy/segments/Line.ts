@@ -3,16 +3,18 @@ import {
     type Point,
     type SegmentJsonData,
     type ControlPoint,
+    type SegmentType,
 } from "../interfaces";
 
 const pointsAreEqual = (point1: Point, point2: Point) => {
     return point1[0] === point2[0] && point1[1] === point2[1];
 };
+
 const pointToString = (point: Point) => {
     return `{ x: ${point[0]}, y: ${point[1]}`;
 };
 
-/** Threshold for snapping to zero to avoid floating-point artifacts (e.g. ±0, denormals). */
+/** Threshold for snapping to zero to avoid floating-point artifacts (e.g. ±0, de-normalized floats). */
 const ZERO_THRESHOLD = 2e-5;
 
 const snapToZero = (x: number): number =>
@@ -23,7 +25,7 @@ const snapToZero = (x: number): number =>
  * Uses the same control-point array pattern as Spline (multiple points, same API).
  */
 export class Line {
-    readonly type = "line" as "line" | "spline";
+    readonly type = "linear" as SegmentType;
 
     /** Subscribers to changes in the position of control points. */
     protected _moveSubscribers: Set<() => void> = new Set();
@@ -61,7 +63,7 @@ export class Line {
         ];
     }
 
-    /** Returns the start point of this segment (snapped to avoid ±0 / denormal floats). */
+    /** Returns the start point of this segment (snapped to avoid ±0 / de-normal floats). */
     getStartPoint(): Point {
         const p = this._controlPoints[0]!;
         return [snapToZero(p[0]), snapToZero(p[1])];
@@ -196,20 +198,33 @@ export class Line {
 
     get controlPoints(): Point[] {
         return this._controlPoints.map((p, i) =>
-            i === 0
-                ? ([snapToZero(p[0]), snapToZero(p[1])] as Point)
-                : p,
+            i === 0 ? ([snapToZero(p[0]), snapToZero(p[1])] as Point) : p,
         );
     }
 
-    getControlPointsWithData(): ControlPoint[] {
+    getControlPointsWithData({
+        previousSegmentType,
+        nextSegmentType,
+    }: {
+        previousSegmentType?: SegmentType;
+        nextSegmentType?: SegmentType;
+    } = {}): ControlPoint[] {
         const controlPoints = this._controlPoints.map((point, index) => ({
             point:
                 index === 0
                     ? ([snapToZero(point[0]), snapToZero(point[1])] as Point)
                     : point,
             pointIndex: index,
+            type: this.type,
         }));
+
+        // Default to surrounding segment types to be linear when curved in the middle
+        if (this.type === "curved") {
+            if (previousSegmentType === "linear")
+                controlPoints[0]!.type = "linear";
+            if (nextSegmentType === "linear")
+                controlPoints[controlPoints.length - 1]!.type = "linear";
+        }
 
         return controlPoints;
     }
