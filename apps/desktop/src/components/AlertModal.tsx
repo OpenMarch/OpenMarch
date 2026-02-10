@@ -10,7 +10,7 @@ import {
 import { T } from "@tolgee/react";
 
 export default function AlertModal() {
-    const { isOpen, title, content, setOpen } = useAlertModalStore();
+    const { isOpen, title, content, actions, setOpen } = useAlertModalStore();
 
     return (
         <AlertDialog open={isOpen} onOpenChange={setOpen}>
@@ -21,16 +21,20 @@ export default function AlertModal() {
                 <AlertDialogDescription>
                     <div className="flex w-full flex-col gap-16">{content}</div>
                 </AlertDialogDescription>
-                <AlertDialogAction>
-                    <Button
-                        variant="secondary"
-                        size="compact"
-                        onClick={() => setOpen(false)}
-                        className="mt-auto ml-auto"
-                    >
-                        <T keyName="fileAccessDialogError.closeButton" />
-                    </Button>
-                </AlertDialogAction>
+                {actions ? (
+                    actions
+                ) : (
+                    <AlertDialogAction>
+                        <Button
+                            variant="secondary"
+                            size="compact"
+                            onClick={() => setOpen(false)}
+                            className="mt-auto ml-auto"
+                        >
+                            <T keyName="fileAccessDialogError.closeButton" />
+                        </Button>
+                    </AlertDialogAction>
+                )}
             </AlertDialogContent>
         </AlertDialog>
     );
