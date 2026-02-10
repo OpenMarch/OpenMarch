@@ -82,6 +82,7 @@ export default class OmPath<T extends fabric.Canvas> {
             "mouse:dblclick",
             this.mouseDoubleClickCanvasEventFunction,
         );
+        this._canvas.on("mouse:up", this.mouseUpCanvasEventFunction);
 
         canvas.add(this._fabricPath);
         canvas.requestRenderAll();
@@ -180,6 +181,11 @@ export default class OmPath<T extends fabric.Canvas> {
                 );
             }
         }
+    };
+
+    private mouseUpCanvasEventFunction = () => {
+        this.pathObj.zeroFirstPoint();
+        this.updatePath();
     };
 
     private createSplitPoints(): void {

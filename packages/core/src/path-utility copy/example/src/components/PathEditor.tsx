@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { fabric } from "fabric";
-import { Path, Line, type Point } from "../../../../path-utility copy";
+import { Path, Line, type Point, Spline } from "../../../../path-utility copy";
 import OmPath from "../fabric/omPath";
 import {
     Button,
@@ -55,7 +55,9 @@ const PathEditor: React.FC<PathEditorProps> = ({ canvas }) => {
         let segments: Path["segments"];
         switch (pathwayType) {
             case "spline":
-                segments = [new Line(SPLINE_SAMPLE_POINTS)];
+                segments = [
+                    new Spline(SPLINE_SAMPLE_POINTS, splineAlpha, false),
+                ];
                 break;
             case "line":
                 segments = [new Line(SPLINE_SAMPLE_POINTS)];

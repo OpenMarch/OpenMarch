@@ -43,32 +43,57 @@
               "PWDEBUG": "1"
             }
           },
-        {
-            "name": "Debug Current Vitest Test File - desktop",
-            "type": "node",
-            "request": "launch",
-            "runtimeExecutable": "/usr/bin/env",
-            "runtimeArgs": ["node"],
-            "program": "${workspaceFolder}/apps/desktop/node_modules/vitest/vitest.mjs",
-            "args": [
-                "run",
-                "${file}",
-                "--reporter=verbose",
-                "--no-coverage",
-                "--maxWorkers", "1"
-            ],
-            "cwd": "${workspaceFolder}/apps/desktop",
-            "env": {
-                "NODE_ENV": "test",
-                "VITEST_ENABLE_HISTORY": "true",
-                "VITEST_ENABLE_SQLJS": "false"
-            },
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "skipFiles": [
-                "<node_internals>/**"
-            ]
-        },
+          {
+              "name": "Debug Current Vitest Test File - desktop",
+              "type": "node",
+              "request": "launch",
+              "runtimeExecutable": "/usr/bin/env",
+              "runtimeArgs": ["node"],
+              "program": "${workspaceFolder}/apps/desktop/node_modules/vitest/vitest.mjs",
+              "args": [
+                  "run",
+                  "${file}",
+                  "--reporter=verbose",
+                  "--no-coverage",
+                  "--maxWorkers", "1"
+              ],
+              "cwd": "${workspaceFolder}/apps/desktop",
+              "env": {
+                  "NODE_ENV": "test",
+                  "VITEST_ENABLE_HISTORY": "true",
+                  "VITEST_ENABLE_SQLJS": "false"
+              },
+              "console": "integratedTerminal",
+              "internalConsoleOptions": "neverOpen",
+              "skipFiles": [
+                  "<node_internals>/**"
+              ]
+          },
+          {
+              "name": "Debug Current Vitest Test File - core",
+              "type": "node",
+              "request": "launch",
+              "runtimeExecutable": "/usr/bin/env",
+              "runtimeArgs": ["node"],
+              "program": "${workspaceFolder}/packages/core/node_modules/vitest/vitest.mjs",
+              "args": [
+                  "run",
+                  "${file}",
+                  "--reporter=verbose",
+                  "--no-coverage",
+              ],
+              "cwd": "${workspaceFolder}/packages/core",
+              "env": {
+                  "NODE_ENV": "test",
+                  "VITEST_ENABLE_HISTORY": "true",
+                  "VITEST_ENABLE_SQLJS": "false"
+              },
+              "console": "integratedTerminal",
+              "internalConsoleOptions": "neverOpen",
+              "skipFiles": [
+                  "<node_internals>/**"
+              ]
+          },
         {
             "name": "Debug Main Process",
             "type": "node",

@@ -1,5 +1,10 @@
 import { Line } from "./segments/Line";
-import type { SegmentJsonData, Point, ControlPoint } from "./interfaces";
+import type { Point, ControlPoint } from "./interfaces";
+
+/** Threshold for snapping transform to zero (avoids float artifacts in property tests). */
+const ZERO_THRESHOLD = 2e-5;
+const snapToZero = (x: number): number =>
+    Math.abs(x) < ZERO_THRESHOLD ? 0 : x;
 
 /**
  * A path implementation that can contain multiple types of segments,
@@ -16,15 +21,6 @@ export class Path {
             throw new Error("A path must have at least one segment");
 
         this._segments = [...segments].map((segment, index) => {
-            const firstSegment = segments[0]!;
-            const firstPoint = firstSegment.getStartPoint();
-            if (firstPoint[0] !== 0 || firstPoint[1] !== 0) {
-                console.warn(
-                    "First segment start point is not at (0, 0). Automatically setting start point to (0, 0)",
-                );
-                firstSegment.updateControlPoint(0, [0, 0]);
-            }
-
             if (index > 0) {
                 segment.connectToPreviousSegment(segments[index - 1]!);
             }
@@ -46,6 +42,13 @@ export class Path {
         return this._transformPoint;
     }
 
+    worldControlPoints(): Point[][] {
+        const worldControlPoints = this._segments.map((segment) =>
+            segment.controlPoints.map((point) => this.toWorldPoint(point)),
+        );
+        return worldControlPoints;
+    }
+
     worldControlPointsWithData(): ControlPoint[][] {
         return this._segments.map((segment) =>
             segment.getControlPointsWithData().map((point) => ({
@@ -57,15 +60,15 @@ export class Path {
 
     toWorldPoint(localPoint: Point): Point {
         return [
-            localPoint[0]! + this._transformPoint[0]!,
-            localPoint[1]! + this._transformPoint[1]!,
+            localPoint[0] + this._transformPoint[0],
+            localPoint[1] + this._transformPoint[1],
         ];
     }
 
     fromWorldPoint(worldPoint: Point): Point {
         return [
-            worldPoint[0]! - this._transformPoint[0]!,
-            worldPoint[1]! - this._transformPoint[1]!,
+            worldPoint[0] - this._transformPoint[0],
+            worldPoint[1] - this._transformPoint[1],
         ];
     }
 
@@ -84,19 +87,49 @@ export class Path {
             return;
         }
         const segment = this._segments[segmentIndex]!;
+
         segment.updateControlPoint(pointIndex, this.fromWorldPoint(newPoint));
 
         const numPoints = segment.controlPoints.length;
+
+        // If this isn't the last segment and this is the last point of the segment, update the start point of the next segment to the new point
         if (
             segmentIndex < this._segments.length - 1 &&
             pointIndex === numPoints - 1
         ) {
             this._segments[segmentIndex + 1]!.updateControlPoint(0, newPoint);
         }
+
+        // If this isn't the first segment and this is the first point of the segment, update the end point of the previous segment to the new point
         if (segmentIndex > 0 && pointIndex === 0) {
             const prev = this._segments[segmentIndex - 1]!;
             prev.updateControlPoint(prev.controlPoints.length - 1, newPoint);
         }
+    }
+
+    /**
+     * Zeros the first point of the first segment and applies the transform to all segments.
+     */
+    zeroFirstPoint(): void {
+        const firstPoint = this._segments[0]!.getStartPoint();
+        if (firstPoint[0] === 0 && firstPoint[1] === 0) return;
+
+        const originalFirstPoint: Point = [...firstPoint];
+        const originalTransformPoint: Point = [...this._transformPoint];
+
+        for (const segment of this._segments)
+            segment.applyTransformToAllPoints(originalFirstPoint);
+
+        this._segments[0]!.updateControlPoint(0, [0, 0]);
+        // Apply the original transform so it stays in the same place globally
+        this._transformPoint = [
+            snapToZero(
+                originalTransformPoint[0] + originalFirstPoint[0],
+            ),
+            snapToZero(
+                originalTransformPoint[1] + originalFirstPoint[1],
+            ),
+        ];
     }
 
     // removeSegmentControlPoint(segmentIndex: number, pointIndex: number): void {
@@ -310,11 +343,17 @@ export class Path {
 
     toSvgString(): string {
         if (this._segments.length === 0) return "";
-        const moveTo = `M ${this._transformPoint[0]!} ${this._transformPoint[1]!} `;
+        const firstPoint = this.toWorldPoint(
+            this._segments[0]!.getStartPoint(),
+        );
+        const moveTo = `M ${firstPoint[0]!} ${firstPoint[1]!}`;
 
-        const svgParts = this._segments.map((segment, index) => {
-            return segment.toSvgString(this._transformPoint);
-        });
+        const svgParts: string[] = [];
+        for (const [index, segment] of this._segments.entries()) {
+            svgParts.push(
+                segment.toSvgString(this._transformPoint, index === 0),
+            );
+        }
 
         return `${moveTo} ${svgParts.join(" ")}`;
     }

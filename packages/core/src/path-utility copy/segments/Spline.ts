@@ -85,7 +85,7 @@ export class Spline extends Line {
         const curves = this.getCurves();
         if (curves.length === 0) return this.getStartPoint();
         const total = this.getLength();
-        if (dist <= 0) return { ...curves[0]![0] };
+        if (dist <= 0) return  { ...curves[0]![0] };
         if (dist >= total) return { ...curves[curves.length - 1]![3] };
         let remaining = dist;
         for (let i = 0; i < curves.length; i++) {
