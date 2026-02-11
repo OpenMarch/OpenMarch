@@ -625,14 +625,15 @@ export async function saveFile() {
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         })
         .then(async (path) => {
-            if (path.canceled || !path.filePath) return -1;
+            if (path.canceled || !path.filePath) return 0;
 
             // If the file exists, delete it to safely copy over it
             if (fs.existsSync(path.filePath)) {
                 fs.unlinkSync(path.filePath);
             }
 
-            db.exec(`VACUUM INTO '${path.filePath}'`);
+            const stmt = await db.prepare("VACUUM INTO ?");
+            await stmt.run(path.filePath);
 
             addRecentFile(path.filePath);
 

@@ -608,15 +608,18 @@ function RegisteredActionsHandler() {
                     window.electron
                         .databaseSave()
                         .then((response) => {
-                            if (response === 200) {
-                                toast.success("Copy saved");
+                            // User canceled dialog
+                            if (response === 0) {
+                                return;
+                            } else if (response === 200) {
+                                toast.success(t("fileTab.toasts.success"));
                             } else {
-                                toast.error("Unable to save copy.");
+                                toast.error(t("fileTab.toasts.error"));
                             }
                         })
                         .catch((err: Error) => {
                             toast.error(
-                                `Unable to save copy. Error ${err.message}`,
+                                `${t("fileTab.toasts.error")}. Error ${err.message}`,
                             );
                         });
                     break;

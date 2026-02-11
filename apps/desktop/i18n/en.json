@@ -467,7 +467,11 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
-        "undo": "Undo"
+        "undo": "Undo",
+        "toasts": {
+            "success": "Copy saved",
+            "error": "Unable to save copy"
+        }
     },
     "formButtons": {
         "cancel": "Cancel",
@@ -560,6 +564,8 @@
             "clearMissingRecentFiles": "Clear missing",
             "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
             "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
+            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
+            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
         "learn": {

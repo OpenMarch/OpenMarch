@@ -69,13 +69,26 @@ export default function FilesTabContent() {
     };
 
     const handleClearAllRecentFiles = async () => {
-        await window.electron.clearRecentFiles();
-        setRecentFiles([]);
+        try {
+            await window.electron.clearRecentFiles();
+            setRecentFiles([]);
+        } catch (error) {
+            console.error("Failed to clear all recent files:", error);
+            toast.error(t("launchpage.files.failedToClearAllRecentFiles"));
+        }
     };
 
     const handleClearMissingRecentFiles = async () => {
-        await window.electron.clearMissingRecentFiles();
-        void loadRecentFiles();
+        try {
+            await window.electron.clearMissingRecentFiles();
+            void loadRecentFiles();
+        } catch (error) {
+            console.error(
+                "Failed to clear missing / moved recent files:",
+                error,
+            );
+            toast.error(t("launchpage.files.failedToClearMissingRecentFiles"));
+        }
     };
 
     return (
