@@ -605,7 +605,20 @@ function RegisteredActionsHandler() {
                     void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
-                    void window.electron.databaseSave();
+                    window.electron
+                        .databaseSave()
+                        .then((response) => {
+                            if (response === 200) {
+                                toast.success("Copy saved");
+                            } else {
+                                toast.error("Unable to save copy.");
+                            }
+                        })
+                        .catch((err: Error) => {
+                            toast.error(
+                                `Unable to save copy. Error ${err.message}`,
+                            );
+                        });
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
                     void window.electron.databaseCreate();
