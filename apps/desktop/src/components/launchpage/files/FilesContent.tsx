@@ -68,6 +68,11 @@ export default function FilesTabContent() {
         }
     };
 
+    const handleClearRecentFiles = async () => {
+        await window.electron.clearRecentFiles();
+        setRecentFiles([]);
+    };
+
     return (
         <Tabs.Content
             value="files"
@@ -75,9 +80,23 @@ export default function FilesTabContent() {
         >
             <div className="flex h-full w-full flex-col p-6">
                 {recentFiles.length !== 0 && (
-                    <h2 className="text-h3 font-medium">
-                        <T keyName="launchpage.files.title" />
-                    </h2>
+                    <div className="flex items-center gap-16">
+                        <h2 className="text-h3 font-medium">
+                            <T keyName="launchpage.files.title" />
+                        </h2>
+                        <Button
+                            size="compact"
+                            variant="secondary"
+                            tooltipText={t(
+                                "launchpage.files.clearRecentFilesTooltip",
+                            )}
+                            tooltipDelay={300}
+                            tooltipSide="top"
+                            onClick={(e) => handleClearRecentFiles()}
+                        >
+                            <T keyName="launchpage.files.clearRecentFiles" />
+                        </Button>
+                    </div>
                 )}
 
                 {isLoading ? (

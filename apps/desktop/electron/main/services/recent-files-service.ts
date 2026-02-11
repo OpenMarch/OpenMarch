@@ -79,6 +79,7 @@ export function getRecentFiles(): RecentFile[] {
  * Clears all recent files
  */
 export function clearRecentFiles(): void {
+    console.log("clearRecentFiles");
     store.set("recentFiles", []);
 }
 

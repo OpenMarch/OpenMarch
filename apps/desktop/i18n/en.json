@@ -556,6 +556,8 @@
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
+            "clearRecentFiles": "Clear",
+            "clearRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
             "title": "Recent Files"
         },
         "learn": {
