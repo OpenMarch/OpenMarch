@@ -625,10 +625,14 @@ export async function saveFile() {
         .then(async (path) => {
             if (path.canceled || !path.filePath) return -1;
 
-            const serializedDb = db.serialize();
-            const uint8Array = Uint8Array.from(serializedDb);
+            // If the file exists, delete it to safely copy over it
+            if (fs.existsSync(path.filePath)) {
+                fs.unlinkSync(path.filePath);
+            }
 
-            fs.writeFileSync(path.filePath, uint8Array);
+            db.exec(`VACUUM INTO '${path.filePath}'`);
+
+            addRecentFile(path.filePath);
 
             await setActiveDb(path.filePath);
             return 200;
