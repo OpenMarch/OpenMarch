@@ -68,9 +68,14 @@ export default function FilesTabContent() {
         }
     };
 
-    const handleClearRecentFiles = async () => {
+    const handleClearAllRecentFiles = async () => {
         await window.electron.clearRecentFiles();
         setRecentFiles([]);
+    };
+
+    const handleClearMissingRecentFiles = async () => {
+        await window.electron.clearMissingRecentFiles();
+        void loadRecentFiles();
     };
 
     return (
@@ -88,13 +93,25 @@ export default function FilesTabContent() {
                             size="compact"
                             variant="secondary"
                             tooltipText={t(
-                                "launchpage.files.clearRecentFilesTooltip",
+                                "launchpage.files.clearAllRecentFilesTooltip",
                             )}
                             tooltipDelay={300}
                             tooltipSide="top"
-                            onClick={(e) => handleClearRecentFiles()}
+                            onClick={(e) => handleClearAllRecentFiles()}
                         >
-                            <T keyName="launchpage.files.clearRecentFiles" />
+                            <T keyName="launchpage.files.clearAllRecentFiles" />
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant="secondary"
+                            tooltipText={t(
+                                "launchpage.files.clearMissingRecentFilesTooltip",
+                            )}
+                            tooltipDelay={300}
+                            tooltipSide="top"
+                            onClick={(e) => handleClearMissingRecentFiles()}
+                        >
+                            <T keyName="launchpage.files.clearMissingRecentFiles" />
                         </Button>
                     </div>
                 )}

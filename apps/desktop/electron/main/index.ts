@@ -21,6 +21,7 @@ import {
     removeRecentFile,
     clearRecentFiles,
     updateRecentFileSvgPreview,
+    clearMissingRecentFiles,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
@@ -291,6 +292,7 @@ void app.whenReady().then(async () => {
         removeRecentFile(filePath),
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
+    ipcMain.handle("recent-files:clear-missing", clearMissingRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
         store.set("databasePath", filePath);
         addRecentFile(filePath);
@@ -617,7 +619,7 @@ export async function saveFile() {
     const db = DatabaseServices.connect();
 
     // Save
-    dialog
+    const response = await dialog
         .showSaveDialog(win, {
             buttonLabel: "Save Copy",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
@@ -634,13 +636,14 @@ export async function saveFile() {
 
             addRecentFile(path.filePath);
 
-            await setActiveDb(path.filePath);
             return 200;
         })
         .catch((err) => {
             console.log(err);
             return -1;
         });
+
+    return response;
 }
 
 /**

@@ -84,6 +84,16 @@ export function clearRecentFiles(): void {
 }
 
 /**
+ * Clears missing / moved recent files
+ */
+export function clearMissingRecentFiles(): void {
+    console.log("clearMissingRecentFiles");
+    const recentFiles = getRecentFiles();
+    const newRecentFiles = recentFiles.filter((file) => !file.isMissing);
+    store.set("recentFiles", newRecentFiles);
+}
+
+/**
  * Removes a specific file from the recent files list
  * @param filePath The path of the file to remove
  */
