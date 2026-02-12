@@ -356,15 +356,9 @@ function MarcherRow({ marcher, onDelete }: MarcherRowProps) {
                     </TooltipPortal>
                 </Tooltip>
             </div>
-            <div
-                className="flex place-content-end gap-8"
-                onMouseLeave={() => setOpen(false)}
-            >
-                <Dropdown.Root open={open} modal={false}>
-                    <Dropdown.Trigger
-                        onMouseEnter={() => setOpen(true)}
-                        asChild
-                    >
+            <div className="flex place-content-end gap-8">
+                <Dropdown.Root open={open} onOpenChange={setOpen} modal={false}>
+                    <Dropdown.Trigger asChild>
                         <Button variant="ghost" size="compact" content="icon">
                             <DotsThreeOutlineIcon size={18} />
                         </Button>
