@@ -9,7 +9,6 @@ import type {
 const controlPointSharedArgs: fabric.IObjectOptions = {
     originX: "center",
     originY: "center",
-    hoverCursor: "pointer",
     hasControls: false,
     hasBorders: false,
 };
@@ -27,6 +26,7 @@ export const createFabricControlPoint = ({
 }): fabric.Object => {
     const args: fabric.IObjectOptions = {
         ...controlPointSharedArgs,
+        hoverCursor: "move",
         left: controlPointObj.point[0],
         top: controlPointObj.point[1],
         width: config.size,
@@ -75,6 +75,7 @@ export const createFabricSplitPoint = ({
 
     const args: fabric.IObjectOptions = {
         ...controlPointSharedArgs,
+        hoverCursor: "pointer",
         stroke: config.color,
         strokeWidth: config.strokeWidth,
         left: point[0],
