@@ -467,6 +467,8 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
+        "saveFileCancel": "Cancel",
+        "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
     "formButtons": {

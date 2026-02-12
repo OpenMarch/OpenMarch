@@ -67,7 +67,7 @@ export const AlertDialogCancel = forwardRef<
     HTMLButtonElement,
     React.ComponentPropsWithoutRef<typeof RadixAlertDialog.Cancel>
 >(({ children, ...props }, ref) => (
-    <RadixAlertDialog.Cancel {...props} ref={ref}>
+    <RadixAlertDialog.Cancel {...props} ref={ref} asChild>
         {children}
     </RadixAlertDialog.Cancel>
 ));
