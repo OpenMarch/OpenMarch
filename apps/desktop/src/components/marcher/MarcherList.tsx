@@ -332,7 +332,7 @@ function MarcherRow({ marcher, onDelete }: MarcherRowProps) {
                     <TooltipTrigger asChild>
                         <p
                             className="text-body text-text truncate"
-                            data-testid="marcher-name"
+                            data-testid="marcher-name-tooltip"
                         >
                             {marcher.name}
                         </p>
