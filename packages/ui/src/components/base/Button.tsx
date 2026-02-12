@@ -17,7 +17,7 @@ const variants = cva(
                 primary: ["bg-accent text-text-invert"],
                 secondary: ["bg-fg-2 text-text"],
                 red: ["bg-red text-text-invert "],
-                ghost: ["bg-none border-none"],
+                ghost: ["bg-transparent border-none"],
             },
             size: {
                 default: [""],

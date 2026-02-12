@@ -19,7 +19,7 @@ import {
     updateMarchersMutationOptions,
 } from "@/hooks/queries";
 import { ModifiedMarcherArgs } from "@/db-functions";
-import { MarcherFormContents } from "./MarchersModal";
+import { MarcherFormContents } from "@/components/marcher/MarchersModal";
 import {
     Tooltip,
     TooltipContent,
