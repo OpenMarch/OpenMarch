@@ -1,11 +1,17 @@
 {
     "name": "@openmarch/core",
     "type": "module",
+    "description": "Core utilities and types for OpenMarch applications",
     "license": "AGPL-3.0",
-    "types": "./dist/index.d.ts",
     "version": "1.1.0",
+    "homepage": "https://openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
     "publishConfig": {
-        "@openmarch:registry": "https://npm.pkg.github.com"
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
     },
     "scripts": {
         "dev": "tsup --watch",
@@ -14,6 +20,7 @@
         "test": "vitest run --silent",
         "test:watch": "vitest"
     },
+    "types": "./dist/index.d.ts",
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
