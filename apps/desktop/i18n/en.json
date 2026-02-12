@@ -474,7 +474,8 @@
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "discardChanges": "Discard Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
@@ -603,14 +604,17 @@
         },
         "drillPrefix": "Drill Prefix",
         "editButton": "Edit Marchers",
+        "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
             "allSections": "All Sections",
             "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
+            "deleteButton": "Delete",
             "deleteSectionStyle": "Delete this section style",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
+            "editButton": "Edit",
             "fillColor": "Fill Color",
             "nameTitle": "Name",
             "noMarchers": "No marchers created yet. Why not create one?",
@@ -627,6 +631,9 @@
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
+        "name": "Name",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes for this marcher...",
         "quantity": "Quantity",
         "section": "Section",
         "sectionError": {
@@ -635,7 +642,9 @@
         "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
-        "title": "Marchers"
+        "title": "Marchers",
+        "updateButton": "Update Marcher",
+        "year": "Year"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",

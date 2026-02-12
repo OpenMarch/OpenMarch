@@ -14,7 +14,7 @@ export const createMarchers = async (
         .getByRole("spinbutton", { name: "Quantity" })
         .fill(numberOfMarchers.toString());
     await page.getByRole("button", { name: "Create Marcher Button" }).click();
-    await expect(page.getByText("ListEdit Marchers")).toBeVisible();
+    await expect(page.getByText("List")).toBeVisible();
 
     await page
         .locator("div")
