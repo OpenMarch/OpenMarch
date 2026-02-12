@@ -27,7 +27,6 @@ export default function AlertModal() {
                     <AlertDialogAction>
                         <Button
                             variant="secondary"
-                            size="compact"
                             onClick={() => setOpen(false)}
                             className="mt-auto ml-auto"
                         >

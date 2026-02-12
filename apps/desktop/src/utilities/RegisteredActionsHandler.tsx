@@ -623,7 +623,6 @@ function RegisteredActionsHandler() {
                             <AlertDialogAction>
                                 <Button
                                     variant="primary"
-                                    size="compact"
                                     onClick={() => {
                                         setAlertModalOpen(false);
                                         void window.electron.databaseSave();
@@ -635,7 +634,6 @@ function RegisteredActionsHandler() {
                             <AlertDialogCancel>
                                 <Button
                                     variant="secondary"
-                                    size="compact"
                                     onClick={() => setAlertModalOpen(false)}
                                 >
                                     <T keyName="fileTab.saveFileCancel" />
