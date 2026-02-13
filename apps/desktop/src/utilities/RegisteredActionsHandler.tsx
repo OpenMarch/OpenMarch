@@ -33,6 +33,7 @@ import {
 } from "@/hooks/queries/useHistory";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -613,23 +614,6 @@ function RegisteredActionsHandler() {
                     void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
-                    window.electron
-                        .databaseSave()
-                        .then((response) => {
-                            // User canceled dialog
-                            if (response === 0) {
-                                return;
-                            } else if (response === 200) {
-                                toast.success(t("fileTab.toasts.success"));
-                            } else {
-                                toast.error(t("fileTab.toasts.error"));
-                            }
-                        })
-                        .catch((err: Error) => {
-                            toast.error(
-                                `${t("fileTab.toasts.error")}. Error ${err.message}`,
-                            );
-                        });
                     // Set alert modal with help text to confirm the user wants to save a copy
                     setAlertModalTitle("fileTab.saveFile");
                     setAlertModalContent(
@@ -640,9 +624,49 @@ function RegisteredActionsHandler() {
                             <AlertDialogAction>
                                 <Button
                                     variant="primary"
-                                    onClick={() => {
-                                        setAlertModalOpen(false);
-                                        void window.electron.databaseSave();
+                                    onClick={(e) => {
+                                        e.preventDefault();
+
+                                        setAlertModalContent(
+                                            <div className="my-16 flex h-full w-full flex-col items-center justify-center gap-8 self-center">
+                                                <CircleNotchIcon
+                                                    size={32}
+                                                    aria-label="Saving"
+                                                    className="text-text my-8 animate-spin"
+                                                />
+                                                <T keyName="fileTab.saveSpinnerText" />
+                                            </div>,
+                                        );
+
+                                        setAlertModalActions(undefined);
+
+                                        window.electron
+                                            .databaseSave()
+                                            .then((response) => {
+                                                setAlertModalOpen(false);
+
+                                                // User canceled dialog
+                                                if (response === 0) {
+                                                    return;
+                                                } else if (response === 200) {
+                                                    toast.success(
+                                                        t(
+                                                            "fileTab.toasts.success",
+                                                        ),
+                                                    );
+                                                } else {
+                                                    toast.error(
+                                                        t(
+                                                            "fileTab.toasts.error",
+                                                        ),
+                                                    );
+                                                }
+                                            })
+                                            .catch((err: Error) => {
+                                                toast.error(
+                                                    `${t("fileTab.toasts.error")}. Error ${err.message}`,
+                                                );
+                                            });
                                     }}
                                 >
                                     <T keyName="fileTab.saveFile" />

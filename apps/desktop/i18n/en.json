@@ -472,6 +472,7 @@
             "error": "Unable to save copy"
         },
         "saveFileCancel": "Cancel",
+        "saveSpinnerText": "Saving copy...",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
