@@ -663,6 +663,7 @@ function RegisteredActionsHandler() {
                                                 }
                                             })
                                             .catch((err: Error) => {
+                                                setAlertModalOpen(false);
                                                 toast.error(
                                                     `${t("fileTab.toasts.error")}. Error ${err.message}`,
                                                 );
