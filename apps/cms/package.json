@@ -5,8 +5,8 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "build": "cross-env CLOUDFLARE_LOCAL=1 NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
-    "build:remote": "cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
+    "build": "pnpm run generate:importmap && cross-env CLOUDFLARE_LOCAL=1 NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
+    "build:remote": "pnpm run generate:importmap && cross-env NODE_OPTIONS=\"--no-deprecation --max-old-space-size=8000\" next build --webpack",
     "deploy": "pnpm run deploy:database && pnpm run deploy:app",
     "deploy:app": "opennextjs-cloudflare build --env=$CLOUDFLARE_ENV && opennextjs-cloudflare deploy --env=$CLOUDFLARE_ENV",
     "deploy:versions": "opennextjs-cloudflare build --env=$CLOUDFLARE_ENV && wrangler versions upload",
