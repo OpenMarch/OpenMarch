@@ -107,7 +107,7 @@ export default function FormButtons({
                         variant="secondary"
                         onClick={handleCancel}
                     >
-                        <T keyName="formButtons.cancel" />
+                        <T keyName="formButtons.discardChanges" />
                     </Button>
                 </>
             )}
