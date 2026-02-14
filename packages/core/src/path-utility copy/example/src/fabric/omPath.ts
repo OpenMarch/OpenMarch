@@ -1,29 +1,32 @@
 import { Path, type ControlPointConfig } from "../../../../path-utility copy";
 import { fabric } from "fabric";
 import {
+    CONTROL_POINT,
     createFabricControlPoint,
     createFabricSplitPoint,
+    SPLIT_POINT,
 } from "./ControlPoint";
 
 const numberOfChildren = 20;
 
 export default class OmPath<T extends fabric.Canvas> {
-    private _pathObj: Path;
-    private _fabricPath: fabric.Path;
-    private _canvas: T;
-    private _children: fabric.Object[] = [];
-    private _fabricControlPoints: fabric.Object[] = [];
-    private _midSegmentPoints: fabric.Object[][] = [];
+    protected _pathObj: Path;
+    protected _fabricPath: fabric.Path;
+    protected _canvas: T;
+    protected _children: fabric.Object[] = [];
+    protected _fabricControlPoints: fabric.Object[] = [];
+    protected _midSegmentPoints: fabric.Object[][] = [];
 
-    private _controlPointConfig: ControlPointConfig;
-    private _moveUnsubscribes: (() => void)[] = [];
-    private _countUnsubscribes: (() => void)[] = [];
+    protected _controlPointConfig: ControlPointConfig;
+    protected _moveUnsubscribes: (() => void)[] = [];
+    protected _countUnsubscribes: (() => void)[] = [];
+    protected _segmentChangeUnsubscribes: (() => void)[] = [];
 
-    private _pendingControlPointDrag: {
+    protected _pendingControlPointDrag: {
         segmentIndex: number;
         pointIndex: number;
     } | null = null;
-    private _handlePendingMove = (e: fabric.IEvent<MouseEvent>) => {
+    protected _handlePendingMove = (e: fabric.IEvent<MouseEvent>) => {
         if (!this._pendingControlPointDrag) return;
         const pointer = this._canvas.getPointer(e.e);
         const { segmentIndex, pointIndex } = this._pendingControlPointDrag;
@@ -46,7 +49,7 @@ export default class OmPath<T extends fabric.Canvas> {
             this._canvas.requestRenderAll();
         }
     };
-    private _handlePendingUp = () => {
+    protected _handlePendingUp = () => {
         this._pendingControlPointDrag = null;
         this._canvas.off("mouse:move", this._handlePendingMove as any);
         this._canvas.off("mouse:up", this._handlePendingUp as any);
@@ -60,11 +63,17 @@ export default class OmPath<T extends fabric.Canvas> {
         pathOptions?: fabric.IPathOptions,
     ) {
         this._pathObj = pathObj;
+        const onPathOrSegmentChange = () => {
+            this.rewireSegmentSubscriptions();
+            this.createControlPoints();
+            this.createSplitPoints();
+            this.updatePath();
+        };
         for (const segment of pathObj.segments) {
-            const unsubscribe = segment.subscribeToMove(() => {
+            const unsubscribeFromMove = segment.subscribeToMove(() => {
                 this.updatePath();
             });
-            this._moveUnsubscribes.push(unsubscribe);
+            this._moveUnsubscribes.push(unsubscribeFromMove);
 
             const unsubscribeCount = segment.subscribeToCount(() => {
                 this.createControlPoints();
@@ -73,6 +82,10 @@ export default class OmPath<T extends fabric.Canvas> {
             });
             this._countUnsubscribes.push(unsubscribeCount);
         }
+        const unsubscribeFromSegmentChange = pathObj.subscribeToChange(
+            onPathOrSegmentChange,
+        );
+        this._segmentChangeUnsubscribes.push(unsubscribeFromSegmentChange);
         this._fabricPath = new fabric.Path(pathObj.toSvgString(), {
             selectable: false,
             width: 1000,
@@ -89,7 +102,6 @@ export default class OmPath<T extends fabric.Canvas> {
             this.mouseDoubleClickCanvasEventFunction,
         );
         this._canvas.on("mouse:up", this.mouseUpCanvasEventFunction);
-
         canvas.add(this._fabricPath);
         canvas.requestRenderAll();
 
@@ -117,9 +129,33 @@ export default class OmPath<T extends fabric.Canvas> {
     }
 
     /**
+     * Unsubscribes from previous segments and subscribes to the path's current
+     * segments. Call this when the path's segment list may have changed (e.g.
+     * after changeTypeFromSplitPoint), so new segments get move/count listeners.
+     */
+    protected rewireSegmentSubscriptions(): void {
+        for (const unsubscribe of this._moveUnsubscribes) unsubscribe();
+        this._moveUnsubscribes = [];
+        for (const unsubscribe of this._countUnsubscribes) unsubscribe();
+        this._countUnsubscribes = [];
+        for (const segment of this._pathObj.segments) {
+            this._moveUnsubscribes.push(
+                segment.subscribeToMove(() => this.updatePath()),
+            );
+            this._countUnsubscribes.push(
+                segment.subscribeToCount(() => {
+                    this.createControlPoints();
+                    this.createSplitPoints();
+                    this.updatePath();
+                }),
+            );
+        }
+    }
+
+    /**
      * Deletes the current control points and creates new ones.
      */
-    private createControlPoints(): void {
+    protected createControlPoints(): void {
         for (const controlPoint of this._fabricControlPoints) {
             this._canvas.remove(controlPoint);
         }
@@ -158,45 +194,7 @@ export default class OmPath<T extends fabric.Canvas> {
         this._canvas.requestRenderAll();
     }
 
-    private mouseDownCanvasEventFunction = (e: fabric.IEvent<MouseEvent>) => {
-        if (e.target && e.target.data?.segmentIndex != null) {
-            const segmentIndex = e.target.data.segmentIndex;
-            if (e.target.data.type === "splitPoint") {
-                const splitPointIndex = e.target.data.splitPointIndex;
-                this.pathObj.segments[
-                    segmentIndex
-                ].createControlPointInBetweenPoints(splitPointIndex);
-                this._pendingControlPointDrag = {
-                    segmentIndex,
-                    pointIndex: splitPointIndex + 1,
-                };
-                this._canvas.selection = false;
-                this._canvas.on("mouse:move", this._handlePendingMove);
-                this._canvas.on("mouse:up", this._handlePendingUp);
-            }
-        }
-    };
-
-    private mouseDoubleClickCanvasEventFunction = (
-        e: fabric.IEvent<MouseEvent>,
-    ) => {
-        if (e.target && e.target.data?.segmentIndex != null) {
-            const segmentIndex = e.target.data.segmentIndex;
-            if (e.target.data.type === "controlPoint") {
-                const pointIndex = e.target.data.pointIndex;
-                this.pathObj.segments[segmentIndex].removeControlPoint(
-                    pointIndex,
-                );
-            }
-        }
-    };
-
-    private mouseUpCanvasEventFunction = () => {
-        this.pathObj.zeroFirstPoint();
-        this.updatePath();
-    };
-
-    private createSplitPoints(): void {
+    protected createSplitPoints(): void {
         const config = this._controlPointConfig.splitPointProps;
 
         // Remove old split points from canvas before rebuilding
@@ -237,7 +235,7 @@ export default class OmPath<T extends fabric.Canvas> {
      * Moves the split points to their appropriate positions.
      * @note does not request a render
      */
-    private moveSplitPoints(): void {
+    protected moveSplitPoints(): void {
         for (const [segmentIndex, pointsInSegment] of this.pathObj
             .getSplitPoints()
             .entries()) {
@@ -314,4 +312,58 @@ export default class OmPath<T extends fabric.Canvas> {
     addToCanvas() {
         this._canvas.add(this._fabricPath);
     }
+
+    // ********************* EVENT HANDLERS *********************
+
+    protected mouseDownCanvasEventFunction = (e: fabric.IEvent<MouseEvent>) => {
+        const isLeftClick = e.e.button === 0;
+        const shiftKey = e.e.shiftKey;
+        if (e.target && e.target.data?.segmentIndex != null) {
+            const segmentIndex = e.target.data.segmentIndex;
+            if (isLeftClick) {
+                if (shiftKey) {
+                    if (e.target.data.type === SPLIT_POINT) {
+                        const splitPointIndex = e.target.data.splitPointIndex;
+                        this.pathObj.changeTypeFromSplitPoint(
+                            segmentIndex,
+                            splitPointIndex,
+                        );
+                    }
+                } else {
+                    if (e.target.data.type === SPLIT_POINT) {
+                        const splitPointIndex = e.target.data.splitPointIndex;
+                        this.pathObj.segments[
+                            segmentIndex
+                        ].createControlPointInBetweenPoints(splitPointIndex);
+                        this._pendingControlPointDrag = {
+                            segmentIndex,
+                            pointIndex: splitPointIndex + 1,
+                        };
+                        this._canvas.selection = false;
+                        this._canvas.on("mouse:move", this._handlePendingMove);
+                        this._canvas.on("mouse:up", this._handlePendingUp);
+                    }
+                }
+            }
+        }
+    };
+
+    protected mouseDoubleClickCanvasEventFunction = (
+        e: fabric.IEvent<MouseEvent>,
+    ) => {
+        if (e.target && e.target.data?.segmentIndex != null) {
+            const segmentIndex = e.target.data.segmentIndex;
+            if (e.target.data.type === CONTROL_POINT) {
+                const pointIndex = e.target.data.pointIndex;
+                this.pathObj.segments[segmentIndex].removeControlPoint(
+                    pointIndex,
+                );
+            }
+        }
+    };
+
+    protected mouseUpCanvasEventFunction = () => {
+        this.pathObj.zeroFirstPoint();
+        this.updatePath();
+    };
 }

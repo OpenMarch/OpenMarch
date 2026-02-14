@@ -1,5 +1,6 @@
 import { Line } from "./segments/Line";
 import type { Point, ControlPoint, SegmentType } from "./interfaces";
+import { Spline } from "./segments/Spline";
 
 /** Threshold for snapping transform to zero (avoids float artifacts in property tests). */
 const ZERO_THRESHOLD = 2e-5;
@@ -12,9 +13,10 @@ const snapToZero = (x: number): number =>
  * that preserves the original segment data.
  */
 export class Path {
-    private _segments: Line[];
-    private _id: number;
-    private _transformPoint: Point;
+    protected _segments: Line[];
+    protected _id: number;
+    protected _transformPoint: Point;
+    protected _subscribers: Set<() => void> = new Set();
 
     constructor(transformPoint: Point, segments: Line[] = [], id: number = 0) {
         if (segments.length === 0)
@@ -30,6 +32,21 @@ export class Path {
         this._id = id;
     }
 
+    /**
+     * A function to run when the path changes.
+     *
+     * @param callback - The callback to call when the path changes.
+     * @returns A function to unsubscribe from the path.
+     */
+    subscribeToChange(callback: () => void): () => void {
+        this._subscribers.add(callback);
+        return () => this._subscribers.delete(callback);
+    }
+
+    notifySubscribers(): void {
+        this._subscribers.forEach((callback) => callback());
+    }
+
     get id(): number {
         return this._id;
     }
@@ -40,6 +57,38 @@ export class Path {
 
     get transformPoint(): Point {
         return this._transformPoint;
+    }
+
+    protected segmentIndexIsValid(segmentIndex: number): boolean {
+        const isValid =
+            segmentIndex >= 0 && segmentIndex < this._segments.length;
+        if (!isValid)
+            throw new Error(
+                `Invalid segment index: ${segmentIndex}, path has ${this._segments.length} segments`,
+            );
+        return isValid;
+    }
+
+    protected assertPointIndexIsValid(
+        segmentIndex: number,
+        pointIndex: number,
+    ): boolean {
+        return (
+            this.segmentIndexIsValid(segmentIndex) &&
+            this._segments[segmentIndex]!.assertPointIndexIsValid(pointIndex)
+        );
+    }
+
+    protected assertSplitPointIndexIsValid(
+        segmentIndex: number,
+        splitPointIndex: number,
+    ): boolean {
+        return (
+            this.segmentIndexIsValid(segmentIndex) &&
+            this._segments[segmentIndex]!.assertSplitPointIndexIsValid(
+                splitPointIndex,
+            )
+        );
     }
 
     worldControlPoints(): Point[][] {
@@ -84,7 +133,7 @@ export class Path {
         pointIndex: number,
         newPoint: Point,
     ): void {
-        if (segmentIndex < 0 || segmentIndex >= this._segments.length) {
+        if (!this.assertPointIndexIsValid(segmentIndex, pointIndex)) {
             return;
         }
         const segment = this._segments[segmentIndex]!;
@@ -129,6 +178,53 @@ export class Path {
         ];
     }
 
+    protected isVeryFirstPoint(
+        segmentIndex: number,
+        pointIndex: number,
+    ): boolean {
+        return segmentIndex === 0 && pointIndex === 0;
+    }
+
+    protected isVeryLastPoint(
+        segmentIndex: number,
+        pointIndex: number,
+    ): boolean {
+        return (
+            segmentIndex === this._segments.length - 1 &&
+            pointIndex ===
+                this._segments[segmentIndex]!.controlPoints.length - 1
+        );
+    }
+
+    changeTypeFromSplitPoint(
+        segmentIndex: number,
+        splitPointIndex: number,
+    ): void {
+        if (!this.assertSplitPointIndexIsValid(segmentIndex, splitPointIndex))
+            return;
+
+        const currentType = this._segments[segmentIndex]!.type;
+        const NewType = currentType === "linear" ? Spline : Line;
+        const OldType = currentType === "linear" ? Line : Spline;
+
+        const segment = this._segments[segmentIndex]!;
+        const newSegmentPoints =
+            segment.getNewSegmentPointsForTypeChange(splitPointIndex);
+
+        // Delete the current segment and add the new segments
+        this._segments.splice(segmentIndex, 1);
+        for (const [
+            indexOffset,
+            newSegmentPoint,
+        ] of newSegmentPoints.entries()) {
+            const newSegment = newSegmentPoint.useOldType
+                ? new OldType(newSegmentPoint.points)
+                : new NewType(newSegmentPoint.points);
+            this._segments.splice(segmentIndex + indexOffset, 0, newSegment);
+        }
+        this.notifySubscribers();
+    }
+
     // removeSegmentControlPoint(segmentIndex: number, pointIndex: number): void {
     //     if (segmentIndex < 0 || segmentIndex >= this._segments.length) {
     //         return;
@@ -137,7 +233,6 @@ export class Path {
 
     //     if (pointIndex === 0) {
     //         if (segmentIndex === 0 && segment.controlPoints.length === 2) {
-
     //         }
     //     } else {
     //         segment.removeControlPoint(pointIndex);
@@ -225,9 +320,16 @@ export class Path {
     }
 
     /**
-     * Returns evenly spaced points along the path.
+     * Returns evenly spaced points along the path (by arc length).
      * This is more performant than calling getPointAtLength() multiple times
      * because it pre-computes segment lengths and walks through segments sequentially.
+     *
+     * Segment lengths come from each segment's getLength(). Linear segments use exact
+     * Euclidean length; curved (Spline) segments use numerical arc-length integration.
+     * If curve lengths are under-reported, some target distances are assigned to the
+     * next segment (often a line), so linear segments can appear to have tighter
+     * spacing than curves. Spline arc-length is computed with sufficient subdivisions
+     * to keep this effect negligible.
      *
      * @param numPoints The number of evenly spaced points to return (must be >= 2)
      * @returns An array of points evenly distributed along the path
@@ -358,6 +460,24 @@ export class Path {
         return `${moveTo} ${svgParts.join(" ")}`;
     }
 
+    /**
+     * Flattens all segments of the same type that are sequential.
+     *
+     * I.e. if two linear segments are sequential, they are replaced with a single linear segment.
+     */
+    _flattenSegmentsOfSameType(): void {
+        for (let i = 0; i < this._segments.length - 1; i++) {
+            const segment = this._segments[i]!;
+            const nextSegment = this._segments[i + 1]!;
+            if (segment.type === nextSegment.type) {
+                const pointsToAdd = [...nextSegment.controlPoints].slice(1);
+                segment.addControlPoints(pointsToAdd);
+                this._segments.splice(i + 1, 1);
+                i--; // Re-check current segment against its new next neighbor
+            }
+        }
+    }
+
     // /**
     //  * Converts the path to JSON format, preserving original segment data.
     //  * Spline segments will maintain their spline parameters, while SVG segments
@@ -402,7 +522,7 @@ export class Path {
     // /**
     //  * Factory method to create a segment from JSON data based on its type.
     //  */
-    // private createSegmentFromJson(data: SegmentJsonData): Line {
+    // protected createSegmentFromJson(data: SegmentJsonData): Line {
     //     switch (data.type) {
     //         case "line":
     //             return Line.fromJson(data);
@@ -484,5 +604,9 @@ export class Path {
             width: maxX - minX,
             height: maxY - minY,
         };
+    }
+
+    toSimpleObject(): { type: SegmentType; points: Point[] }[] {
+        return this._segments.map((segment) => segment.toSimpleObject());
     }
 }
