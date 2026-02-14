@@ -20,6 +20,13 @@ const ZERO_THRESHOLD = 2e-5;
 const snapToZero = (x: number): number =>
     Math.abs(x) < ZERO_THRESHOLD ? 0 : x;
 
+export type NewSegment = {
+    /** The points of the new segment */
+    points: Point[];
+    /** True if this segment should use the old type of the segment */
+    useOldType: boolean;
+};
+
 /**
  * Represents a polyline: straight line segments through a sequence of control points.
  * Uses the same control-point array pattern as Spline (multiple points, same API).
@@ -49,6 +56,26 @@ export class Line {
         this.calculateSplitPoints();
     }
 
+    assertPointIndexIsValid(pointIndex: number): boolean {
+        const isValid =
+            pointIndex >= 0 && pointIndex < this._controlPoints.length;
+        if (!isValid)
+            throw new Error(
+                `Invalid point index: ${pointIndex} for segment, segment has ${this._controlPoints.length} control points`,
+            );
+        return isValid;
+    }
+
+    assertSplitPointIndexIsValid(splitPointIndex: number): boolean {
+        const isValid =
+            splitPointIndex >= 0 && splitPointIndex < this._splitPoints.length;
+        if (!isValid)
+            throw new Error(
+                `Invalid split point index: ${splitPointIndex} for segment, segment has ${this._splitPoints.length} split points`,
+            );
+        return isValid;
+    }
+
     connectToPreviousSegment(previousSegment: Line): void {
         const currentSegmentStartPoint = this.getStartPoint();
         const previousSegmentEndPoint = previousSegment.getEndPoint();
@@ -58,7 +85,7 @@ export class Line {
             );
 
         this._controlPoints = [
-            { ...currentSegmentStartPoint },
+            [...currentSegmentStartPoint],
             ...this._controlPoints.slice(1),
         ];
     }
@@ -84,7 +111,11 @@ export class Line {
         return pointIndex >= 0 && pointIndex < this._controlPoints.length;
     }
 
-    isLastPointInSegment(pointIndex: number): boolean {
+    isFirstPoint(pointIndex: number): boolean {
+        return pointIndex === 0;
+    }
+
+    isLastPoint(pointIndex: number): boolean {
         return pointIndex === this._controlPoints.length - 1;
     }
 
@@ -242,6 +273,72 @@ export class Line {
         this.notifyMoveSubscribers();
     }
 
+    addControlPoints(points: Point[]): void {
+        this._controlPoints.push(...points);
+        this.calculateSplitPoints();
+        this.notifyCountSubscribers();
+    }
+    /**
+     * @param splitPointIndex - index of the split point to split the segment on. Also the same as the prior control point index.
+     * @returns An array of new segments that will need to be created. Delete this segment from the path before adding.
+     */
+    getNewSegmentPointsForTypeChange(splitPointIndex: number): NewSegment[] {
+        this.assertSplitPointIndexIsValid(splitPointIndex);
+        const splitIndex = splitPointIndex + 1;
+        let output: NewSegment[];
+
+        if (this.controlPoints.length === 2) {
+            output = [{ points: this.controlPoints, useOldType: false }];
+        } else if (this.controlPoints.length === 3) {
+            const firstPointUsesNew = splitPointIndex === 0;
+            output = [
+                {
+                    points: [this._controlPoints[0]!, this._controlPoints[1]!],
+                    useOldType: !firstPointUsesNew,
+                },
+                {
+                    points: [this._controlPoints[1]!, this._controlPoints[2]!],
+                    useOldType: firstPointUsesNew,
+                },
+            ];
+        } else {
+            const changedEdge = [
+                this._controlPoints[splitPointIndex]!,
+                this._controlPoints[splitPointIndex + 1]!,
+            ];
+            const rest = this._controlPoints.slice(
+                splitIndex,
+                this._controlPoints.length,
+            );
+            if (splitPointIndex === 0) {
+                // No "before" segment; only the changed edge and the rest
+                output = [
+                    { points: changedEdge, useOldType: false },
+                    { points: rest, useOldType: true },
+                ];
+            } else if (splitPointIndex === this._controlPoints.length - 2) {
+                // Last edge: no "after" segment; only the before and the changed edge
+                output = [
+                    {
+                        points: this._controlPoints.slice(0, splitIndex),
+                        useOldType: true,
+                    },
+                    { points: changedEdge, useOldType: false },
+                ];
+            } else {
+                output = [
+                    {
+                        points: this._controlPoints.slice(0, splitIndex),
+                        useOldType: true,
+                    },
+                    { points: changedEdge, useOldType: false },
+                    { points: rest, useOldType: true },
+                ];
+            }
+        }
+        return output;
+    }
+
     /**
      * Creates two new lines by splitting this line in half.
      */
@@ -299,5 +396,9 @@ export class Line {
 
     notifyCountSubscribers(): void {
         this._countSubscribers.forEach((callback) => callback());
+    }
+
+    toSimpleObject(): { type: SegmentType; points: Point[] } {
+        return { type: this.type, points: this._controlPoints };
     }
 }

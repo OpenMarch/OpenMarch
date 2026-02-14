@@ -13,6 +13,8 @@ const controlPointSharedArgs: fabric.IObjectOptions = {
     hasBorders: false,
 };
 
+export const CONTROL_POINT = "controlPoint";
+
 export const createFabricControlPoint = ({
     controlPointObj,
     onMove,
@@ -35,7 +37,7 @@ export const createFabricControlPoint = ({
         strokeWidth: config.strokeWidth,
         fill: config.filled ? config.color : "transparent",
         data: {
-            type: "controlPoint",
+            type: CONTROL_POINT,
             segmentIndex: controlPointObj.segmentIndex,
             pointIndex: controlPointObj.pointIndex,
         },
@@ -57,6 +59,8 @@ export const createFabricControlPoint = ({
     });
     return fabricObject;
 };
+
+export const SPLIT_POINT = "splitPoint";
 
 export const createFabricSplitPoint = ({
     splitPointObj,
@@ -84,7 +88,7 @@ export const createFabricSplitPoint = ({
         height: config.size,
         fill: config.filled ? config.color : "transparent",
         data: {
-            type: "splitPoint",
+            type: SPLIT_POINT,
             segmentIndex,
             splitPointIndex,
         },
