@@ -274,15 +274,15 @@ export function AudioFileSettings({
         if (!productionId || !editNicknameFile) return;
         updateNicknameMutation.mutate({
             productionId,
-            audioFileId: editNicknameFile.id,
-            nickname: editNicknameValue,
+            id: editNicknameFile.id,
+            data: { nickname: editNicknameValue },
         });
         closeEditNickname();
     };
 
     const handleDelete = (audioFileId: number) => {
         if (!productionId) return;
-        deleteMutation.mutate({ productionId, audioFileId });
+        deleteMutation.mutate({ productionId, id: audioFileId });
     };
 
     const handleAddAlternateClick = () => {

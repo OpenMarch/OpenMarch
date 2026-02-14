@@ -34,5 +34,6 @@
     "cSpell.import": [
         "cspell.config.yaml"
     ],
-    "cSpell.mergeCSpellSettings": false
+    "cSpell.mergeCSpellSettings": false,
+    "vitest.disableWorkspaceWarning": true
 }

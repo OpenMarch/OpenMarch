@@ -16,61 +16,70 @@ import type {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import * as axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import type {
+    GetApiEditorV1ProductionsId200,
     PatchApiEditorV1ProductionsIdBody,
     PostApiEditorV1ProductionsBody,
 } from ".././model";
+
+import { customInstance } from "../../editor-client";
+import type { ErrorType, BodyType } from "../../editor-client";
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * @summary Create production
  */
 export const postApiEditorV1Productions = (
-    postApiEditorV1ProductionsBody: PostApiEditorV1ProductionsBody,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.post(
-        `/api/editor/v1/productions`,
-        postApiEditorV1ProductionsBody,
+    postApiEditorV1ProductionsBody: BodyType<PostApiEditorV1ProductionsBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<void>(
+        {
+            url: `/api/editor/v1/productions`,
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            data: postApiEditorV1ProductionsBody,
+            signal,
+        },
         options,
     );
 };
 
 export const getPostApiEditorV1ProductionsMutationOptions = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
         Awaited<ReturnType<typeof postApiEditorV1Productions>>,
         TError,
-        { data: PostApiEditorV1ProductionsBody },
+        { data: BodyType<PostApiEditorV1ProductionsBody> },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
     Awaited<ReturnType<typeof postApiEditorV1Productions>>,
     TError,
-    { data: PostApiEditorV1ProductionsBody },
+    { data: BodyType<PostApiEditorV1ProductionsBody> },
     TContext
 > => {
     const mutationKey = ["postApiEditorV1Productions"];
-    const { mutation: mutationOptions, axios: axiosOptions } = options
+    const { mutation: mutationOptions, request: requestOptions } = options
         ? options.mutation &&
           "mutationKey" in options.mutation &&
           options.mutation.mutationKey
             ? options
             : { ...options, mutation: { ...options.mutation, mutationKey } }
-        : { mutation: { mutationKey }, axios: undefined };
+        : { mutation: { mutationKey }, request: undefined };
 
     const mutationFn: MutationFunction<
         Awaited<ReturnType<typeof postApiEditorV1Productions>>,
-        { data: PostApiEditorV1ProductionsBody }
+        { data: BodyType<PostApiEditorV1ProductionsBody> }
     > = (props) => {
         const { data } = props ?? {};
 
-        return postApiEditorV1Productions(data, axiosOptions);
+        return postApiEditorV1Productions(data, requestOptions);
     };
 
     return { mutationFn, ...mutationOptions };
@@ -80,27 +89,27 @@ export type PostApiEditorV1ProductionsMutationResult = NonNullable<
     Awaited<ReturnType<typeof postApiEditorV1Productions>>
 >;
 export type PostApiEditorV1ProductionsMutationBody =
-    PostApiEditorV1ProductionsBody;
-export type PostApiEditorV1ProductionsMutationError = AxiosError<void>;
+    BodyType<PostApiEditorV1ProductionsBody>;
+export type PostApiEditorV1ProductionsMutationError = ErrorType<void>;
 
 /**
  * @summary Create production
  */
 export const usePostApiEditorV1Productions = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
         Awaited<ReturnType<typeof postApiEditorV1Productions>>,
         TError,
-        { data: PostApiEditorV1ProductionsBody },
+        { data: BodyType<PostApiEditorV1ProductionsBody> },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<ReturnType<typeof postApiEditorV1Productions>>,
     TError,
-    { data: PostApiEditorV1ProductionsBody },
+    { data: BodyType<PostApiEditorV1ProductionsBody> },
     TContext
 > => {
     return useMutation(getPostApiEditorV1ProductionsMutationOptions(options));
@@ -110,9 +119,13 @@ export const usePostApiEditorV1Productions = <
  */
 export const getApiEditorV1ProductionsId = (
     id: number,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.get(`/api/editor/v1/productions/${id}`, options);
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1ProductionsId200>(
+        { url: `/api/editor/v1/productions/${id}`, method: "GET", signal },
+        options,
+    );
 };
 
 export const getGetApiEditorV1ProductionsIdQueryKey = (id: number) => {
@@ -121,7 +134,7 @@ export const getGetApiEditorV1ProductionsIdQueryKey = (id: number) => {
 
 export const getGetApiEditorV1ProductionsIdQueryOptions = <
     TData = Awaited<ReturnType<typeof getApiEditorV1ProductionsId>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(
     id: number,
     options?: {
@@ -130,18 +143,17 @@ export const getGetApiEditorV1ProductionsIdQueryOptions = <
             TError,
             TData
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     },
 ) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions, request: requestOptions } = options ?? {};
 
     const queryKey =
         queryOptions?.queryKey ?? getGetApiEditorV1ProductionsIdQueryKey(id);
 
     const queryFn: QueryFunction<
         Awaited<ReturnType<typeof getApiEditorV1ProductionsId>>
-    > = ({ signal }) =>
-        getApiEditorV1ProductionsId(id, { signal, ...axiosOptions });
+    > = ({ signal }) => getApiEditorV1ProductionsId(id, requestOptions, signal);
 
     return {
         queryKey,
@@ -158,7 +170,7 @@ export const getGetApiEditorV1ProductionsIdQueryOptions = <
 export type GetApiEditorV1ProductionsIdQueryResult = NonNullable<
     Awaited<ReturnType<typeof getApiEditorV1ProductionsId>>
 >;
-export type GetApiEditorV1ProductionsIdQueryError = AxiosError<void>;
+export type GetApiEditorV1ProductionsIdQueryError = ErrorType<void>;
 
 /**
  * @summary Show production
@@ -166,7 +178,7 @@ export type GetApiEditorV1ProductionsIdQueryError = AxiosError<void>;
 
 export function useGetApiEditorV1ProductionsId<
     TData = Awaited<ReturnType<typeof getApiEditorV1ProductionsId>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(
     id: number,
     options?: {
@@ -175,7 +187,7 @@ export function useGetApiEditorV1ProductionsId<
             TError,
             TData
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
     const queryOptions = getGetApiEditorV1ProductionsIdQueryOptions(
@@ -195,49 +207,55 @@ export function useGetApiEditorV1ProductionsId<
  */
 export const patchApiEditorV1ProductionsId = (
     id: number,
-    patchApiEditorV1ProductionsIdBody: PatchApiEditorV1ProductionsIdBody,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.patch(
-        `/api/editor/v1/productions/${id}`,
-        patchApiEditorV1ProductionsIdBody,
+    patchApiEditorV1ProductionsIdBody: BodyType<PatchApiEditorV1ProductionsIdBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<void>(
+        {
+            url: `/api/editor/v1/productions/${id}`,
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            data: patchApiEditorV1ProductionsIdBody,
+            signal,
+        },
         options,
     );
 };
 
 export const getPatchApiEditorV1ProductionsIdMutationOptions = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
         Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>,
         TError,
-        { id: number; data: PatchApiEditorV1ProductionsIdBody },
+        { id: number; data: BodyType<PatchApiEditorV1ProductionsIdBody> },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationOptions<
     Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>,
     TError,
-    { id: number; data: PatchApiEditorV1ProductionsIdBody },
+    { id: number; data: BodyType<PatchApiEditorV1ProductionsIdBody> },
     TContext
 > => {
     const mutationKey = ["patchApiEditorV1ProductionsId"];
-    const { mutation: mutationOptions, axios: axiosOptions } = options
+    const { mutation: mutationOptions, request: requestOptions } = options
         ? options.mutation &&
           "mutationKey" in options.mutation &&
           options.mutation.mutationKey
             ? options
             : { ...options, mutation: { ...options.mutation, mutationKey } }
-        : { mutation: { mutationKey }, axios: undefined };
+        : { mutation: { mutationKey }, request: undefined };
 
     const mutationFn: MutationFunction<
         Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>,
-        { id: number; data: PatchApiEditorV1ProductionsIdBody }
+        { id: number; data: BodyType<PatchApiEditorV1ProductionsIdBody> }
     > = (props) => {
         const { id, data } = props ?? {};
 
-        return patchApiEditorV1ProductionsId(id, data, axiosOptions);
+        return patchApiEditorV1ProductionsId(id, data, requestOptions);
     };
 
     return { mutationFn, ...mutationOptions };
@@ -247,27 +265,27 @@ export type PatchApiEditorV1ProductionsIdMutationResult = NonNullable<
     Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>
 >;
 export type PatchApiEditorV1ProductionsIdMutationBody =
-    PatchApiEditorV1ProductionsIdBody;
-export type PatchApiEditorV1ProductionsIdMutationError = AxiosError<void>;
+    BodyType<PatchApiEditorV1ProductionsIdBody>;
+export type PatchApiEditorV1ProductionsIdMutationError = ErrorType<void>;
 
 /**
  * @summary Update production
  */
 export const usePatchApiEditorV1ProductionsId = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
         Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>,
         TError,
-        { id: number; data: PatchApiEditorV1ProductionsIdBody },
+        { id: number; data: BodyType<PatchApiEditorV1ProductionsIdBody> },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<ReturnType<typeof patchApiEditorV1ProductionsId>>,
     TError,
-    { id: number; data: PatchApiEditorV1ProductionsIdBody },
+    { id: number; data: BodyType<PatchApiEditorV1ProductionsIdBody> },
     TContext
 > => {
     return useMutation(

@@ -16,20 +16,30 @@ import type {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import * as axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import type {
+    GetApiEditorV1ProductionsProductionIdAudioFiles200,
+    PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody,
+} from ".././model";
 
-import type { PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody } from ".././model";
+import { customInstance } from "../../editor-client";
+import type { ErrorType, BodyType } from "../../editor-client";
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * @summary List audio files
  */
 export const getApiEditorV1ProductionsProductionIdAudioFiles = (
     productionId: number,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.get(
-        `/api/editor/v1/productions/${productionId}/audio_files`,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1ProductionsProductionIdAudioFiles200>(
+        {
+            url: `/api/editor/v1/productions/${productionId}/audio_files`,
+            method: "GET",
+            signal,
+        },
         options,
     );
 };
@@ -44,7 +54,7 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions = <
     TData = Awaited<
         ReturnType<typeof getApiEditorV1ProductionsProductionIdAudioFiles>
     >,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(
     productionId: number,
     options?: {
@@ -57,10 +67,10 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions = <
             TError,
             TData
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     },
 ) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions, request: requestOptions } = options ?? {};
 
     const queryKey =
         queryOptions?.queryKey ??
@@ -73,10 +83,11 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions = <
             ReturnType<typeof getApiEditorV1ProductionsProductionIdAudioFiles>
         >
     > = ({ signal }) =>
-        getApiEditorV1ProductionsProductionIdAudioFiles(productionId, {
+        getApiEditorV1ProductionsProductionIdAudioFiles(
+            productionId,
+            requestOptions,
             signal,
-            ...axiosOptions,
-        });
+        );
 
     return {
         queryKey,
@@ -99,7 +110,7 @@ export type GetApiEditorV1ProductionsProductionIdAudioFilesQueryResult =
         >
     >;
 export type GetApiEditorV1ProductionsProductionIdAudioFilesQueryError =
-    AxiosError<void>;
+    ErrorType<void>;
 
 /**
  * @summary List audio files
@@ -109,7 +120,7 @@ export function useGetApiEditorV1ProductionsProductionIdAudioFiles<
     TData = Awaited<
         ReturnType<typeof getApiEditorV1ProductionsProductionIdAudioFiles>
     >,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(
     productionId: number,
     options?: {
@@ -122,7 +133,7 @@ export function useGetApiEditorV1ProductionsProductionIdAudioFiles<
             TError,
             TData
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     },
 ): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
     const queryOptions =
@@ -144,18 +155,24 @@ export function useGetApiEditorV1ProductionsProductionIdAudioFiles<
 export const patchApiEditorV1ProductionsProductionIdAudioFilesId = (
     productionId: number,
     id: number,
-    patchApiEditorV1ProductionsProductionIdAudioFilesIdBody: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.patch(
-        `/api/editor/v1/productions/${productionId}/audio_files/${id}`,
-        patchApiEditorV1ProductionsProductionIdAudioFilesIdBody,
+    patchApiEditorV1ProductionsProductionIdAudioFilesIdBody: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<void>(
+        {
+            url: `/api/editor/v1/productions/${productionId}/audio_files/${id}`,
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            data: patchApiEditorV1ProductionsProductionIdAudioFilesIdBody,
+            signal,
+        },
         options,
     );
 };
 
 export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions =
-    <TError = AxiosError<void>, TContext = unknown>(options?: {
+    <TError = ErrorType<void>, TContext = unknown>(options?: {
         mutation?: UseMutationOptions<
             Awaited<
                 ReturnType<
@@ -166,11 +183,11 @@ export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptio
             {
                 productionId: number;
                 id: number;
-                data: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+                data: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
             },
             TContext
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     }): UseMutationOptions<
         Awaited<
             ReturnType<
@@ -181,20 +198,20 @@ export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptio
         {
             productionId: number;
             id: number;
-            data: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+            data: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
         },
         TContext
     > => {
         const mutationKey = [
             "patchApiEditorV1ProductionsProductionIdAudioFilesId",
         ];
-        const { mutation: mutationOptions, axios: axiosOptions } = options
+        const { mutation: mutationOptions, request: requestOptions } = options
             ? options.mutation &&
               "mutationKey" in options.mutation &&
               options.mutation.mutationKey
                 ? options
                 : { ...options, mutation: { ...options.mutation, mutationKey } }
-            : { mutation: { mutationKey }, axios: undefined };
+            : { mutation: { mutationKey }, request: undefined };
 
         const mutationFn: MutationFunction<
             Awaited<
@@ -205,7 +222,7 @@ export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptio
             {
                 productionId: number;
                 id: number;
-                data: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+                data: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
             }
         > = (props) => {
             const { productionId, id, data } = props ?? {};
@@ -214,7 +231,7 @@ export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptio
                 productionId,
                 id,
                 data,
-                axiosOptions,
+                requestOptions,
             );
         };
 
@@ -230,15 +247,15 @@ export type PatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationResult =
         >
     >;
 export type PatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationBody =
-    PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+    BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
 export type PatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationError =
-    AxiosError<void>;
+    ErrorType<void>;
 
 /**
  * @summary Update audio file
  */
 export const usePatchApiEditorV1ProductionsProductionIdAudioFilesId = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
@@ -251,11 +268,11 @@ export const usePatchApiEditorV1ProductionsProductionIdAudioFilesId = <
         {
             productionId: number;
             id: number;
-            data: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+            data: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
         },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<
         ReturnType<typeof patchApiEditorV1ProductionsProductionIdAudioFilesId>
@@ -264,7 +281,7 @@ export const usePatchApiEditorV1ProductionsProductionIdAudioFilesId = <
     {
         productionId: number;
         id: number;
-        data: PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody;
+        data: BodyType<PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody>;
     },
     TContext
 > => {
@@ -280,16 +297,21 @@ export const usePatchApiEditorV1ProductionsProductionIdAudioFilesId = <
 export const deleteApiEditorV1ProductionsProductionIdAudioFilesId = (
     productionId: number,
     id: number,
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.delete(
-        `/api/editor/v1/productions/${productionId}/audio_files/${id}`,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<void>(
+        {
+            url: `/api/editor/v1/productions/${productionId}/audio_files/${id}`,
+            method: "DELETE",
+            signal,
+        },
         options,
     );
 };
 
 export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions =
-    <TError = AxiosError<void>, TContext = unknown>(options?: {
+    <TError = ErrorType<void>, TContext = unknown>(options?: {
         mutation?: UseMutationOptions<
             Awaited<
                 ReturnType<
@@ -300,7 +322,7 @@ export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOpti
             { productionId: number; id: number },
             TContext
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     }): UseMutationOptions<
         Awaited<
             ReturnType<
@@ -314,13 +336,13 @@ export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOpti
         const mutationKey = [
             "deleteApiEditorV1ProductionsProductionIdAudioFilesId",
         ];
-        const { mutation: mutationOptions, axios: axiosOptions } = options
+        const { mutation: mutationOptions, request: requestOptions } = options
             ? options.mutation &&
               "mutationKey" in options.mutation &&
               options.mutation.mutationKey
                 ? options
                 : { ...options, mutation: { ...options.mutation, mutationKey } }
-            : { mutation: { mutationKey }, axios: undefined };
+            : { mutation: { mutationKey }, request: undefined };
 
         const mutationFn: MutationFunction<
             Awaited<
@@ -335,7 +357,7 @@ export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOpti
             return deleteApiEditorV1ProductionsProductionIdAudioFilesId(
                 productionId,
                 id,
-                axiosOptions,
+                requestOptions,
             );
         };
 
@@ -352,13 +374,13 @@ export type DeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationResult =
     >;
 
 export type DeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationError =
-    AxiosError<void>;
+    ErrorType<void>;
 
 /**
  * @summary Delete audio file
  */
 export const useDeleteApiEditorV1ProductionsProductionIdAudioFilesId = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
@@ -371,7 +393,7 @@ export const useDeleteApiEditorV1ProductionsProductionIdAudioFilesId = <
         { productionId: number; id: number },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<
         ReturnType<typeof deleteApiEditorV1ProductionsProductionIdAudioFilesId>

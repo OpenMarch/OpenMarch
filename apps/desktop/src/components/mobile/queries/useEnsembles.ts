@@ -1,10 +1,13 @@
 /**
  * React Query hooks for fetching ensembles from the OpenMarch API.
+ * Uses Orval-generated editor API with custom query keys for invalidation.
  */
 
-import { queryOptions } from "@tanstack/react-query";
+import {
+    getGetApiEditorV1EnsemblesAnyQueryOptions,
+    getGetApiEditorV1EnsemblesQueryOptions,
+} from "@/api/generated/ensembles/ensembles";
 import { NEEDS_AUTH_BASE_QUERY_KEY } from "../../../auth/useAuth";
-import { apiGet } from "@/auth/api-client";
 import { DEFAULT_STALE_TIME } from "../../../hooks/queries/constants";
 import { OTM_BASE_QUERY_KEY } from "./constants";
 import { ProductionPreview } from "./useProductions";
@@ -24,12 +27,9 @@ export interface Ensemble {
     productions: ProductionPreview[];
 }
 
-/**
- * API response structure for ensembles index.
- */
-interface EnsemblesResponse {
-    ensembles: Ensemble[];
-}
+export type HasAnyEnsemblesResponse = {
+    has_any: boolean;
+};
 
 /**
  * Query key factory for ensembles.
@@ -56,40 +56,32 @@ export const ensembleKeys = {
 
 /**
  * Query options for fetching all ensembles.
+ * Uses generated API with custom queryKey for cache invalidation.
  */
 export const allEnsemblesQueryOptions = (
-    getAccessToken: () => Promise<string | null>,
+    _getAccessToken: () => Promise<string | null>,
 ) => {
-    return queryOptions<Ensemble[]>({
-        queryKey: ensembleKeys.all(),
-        queryFn: async (): Promise<Ensemble[]> => {
-            const token = await getAccessToken();
-            if (!token) {
-                throw new Error("Authentication token is required");
-            }
-            const response = await apiGet<EnsemblesResponse>("v1/ensembles");
-            return response.ensembles;
+    return getGetApiEditorV1EnsemblesQueryOptions<Ensemble[]>({
+        query: {
+            queryKey: ensembleKeys.all(),
+            select: (data) => (data.ensembles ?? []) as unknown as Ensemble[],
+            staleTime: DEFAULT_STALE_TIME,
         },
-        staleTime: DEFAULT_STALE_TIME,
     });
 };
 
-type HasAnyEnsemblesResponse = {
-    has_any: boolean;
-};
+/**
+ * Query options for checking if user has any ensembles.
+ */
 export const hasAnyEnsemblesQueryOptions = (
-    getAccessToken: () => Promise<string | null>,
+    _getAccessToken: () => Promise<string | null>,
 ) => {
-    return queryOptions<HasAnyEnsemblesResponse>({
-        queryKey: ensembleKeys.hasAny(),
-        queryFn: async (): Promise<HasAnyEnsemblesResponse> => {
-            const token = await getAccessToken();
-            if (!token) {
-                throw new Error("Authentication token is required");
-            }
-            const response =
-                await apiGet<HasAnyEnsemblesResponse>("v1/ensembles/any");
-            return response;
+    return getGetApiEditorV1EnsemblesAnyQueryOptions<HasAnyEnsemblesResponse>({
+        query: {
+            queryKey: ensembleKeys.hasAny(),
+            select: (data) => ({
+                has_any: data.has_any ?? false,
+            }),
         },
     });
 };

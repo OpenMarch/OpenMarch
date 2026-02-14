@@ -1,5 +1,7 @@
 /**
  * React Query hooks for fetching and creating productions from the OpenMarch API.
+ * Uses Orval-generated editor API where the spec matches; keeps api-client for
+ * productions-by-ensemble and upload revision (different request shape).
  */
 
 import { useEffect, useMemo } from "react";
@@ -9,6 +11,7 @@ import {
     queryOptions,
     useQuery,
 } from "@tanstack/react-query";
+import { getApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import { NEEDS_AUTH_BASE_QUERY_KEY, useAccessToken } from "@/auth/useAuth";
 import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
@@ -212,24 +215,35 @@ export function useProductions(ensembleId: number) {
     return query;
 }
 
+/**
+ * Query options for a single production by ID.
+ * Uses generated GET production fetcher (auth via mutator); spec types response as void so we cast to Production.
+ */
 export const _productionQueryOptions = (
     productionId: number | undefined,
-    getAccessToken: () => Promise<string | null>,
+    _getAccessToken: () => Promise<string | null>,
 ) => {
+    if (productionId == null) {
+        return queryOptions<Production>({
+            queryKey: productionKeys.byId(productionId),
+            queryFn: () => Promise.reject(new Error("No production ID")),
+            enabled: false,
+        });
+    }
+    const id = productionId;
     return queryOptions<Production>({
+        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: productionKeys.byId(productionId),
-        queryFn: async (): Promise<Production> => {
-            const token = await getAccessToken();
-            if (!token) {
-                throw new Error("Authentication token is required");
-            }
-            const response = await apiGet<{ production: Production }>(
-                `v1/productions/${productionId}`,
+        queryFn: async ({ signal }: { signal?: AbortSignal }) => {
+            const data = await getApiEditorV1ProductionsId(
+                id,
+                undefined,
+                signal,
             );
-            return response.production;
+            return (data as unknown as { production: Production }).production;
         },
-        enabled: productionId != null,
-        staleTime: undefined, // go stale immediately
+        enabled: true,
+        staleTime: undefined,
         networkMode: "online",
     });
 };

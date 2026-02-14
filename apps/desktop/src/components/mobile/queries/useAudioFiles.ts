@@ -1,6 +1,7 @@
 /**
  * React Query hooks for listing and mutating audio files (set active, add, edit nickname, delete)
  * for the current production via the OpenMarch editor API.
+ * Uses Orval-generated API for list, set active, patch nickname, delete; keeps api-client for add (FormData POST).
  */
 
 import {
@@ -11,12 +12,13 @@ import {
     useQuery,
 } from "@tanstack/react-query";
 import {
-    apiGet,
-    apiPatch,
-    apiPostFormData,
-    apiDelete,
-} from "@/auth/api-client";
+    getApiEditorV1ProductionsProductionIdAudioFiles,
+    getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions,
+    getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions,
+} from "@/api/generated/audio-files/audio-files";
+import { patchApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import { NEEDS_AUTH_BASE_QUERY_KEY, useAccessToken } from "@/auth/useAuth";
+import { apiPostFormData } from "@/auth/api-client";
 import { OTM_BASE_QUERY_KEY } from "./constants";
 import type { Production } from "./useProductions";
 import { productionKeys } from "./useProductions";
@@ -43,7 +45,7 @@ export type AudioFileListItem = {
     checksum?: string;
 };
 
-/** Response shape from GET audio_files (index). */
+/** Response shape from GET audio_files (index); spec types as void so we cast. */
 interface ListAudioFilesResponse {
     audio_files: AudioFileApi[];
 }
@@ -71,23 +73,32 @@ function normalizeAudioFile(api: AudioFileApi): AudioFileListItem {
 
 export const audioFilesByProductionQueryOptions = (
     productionId: number | undefined,
-    getAccessToken: () => Promise<string | null>,
-) =>
-    queryOptions<AudioFileListItem[]>({
-        queryKey: audioFilesKeys.byProduction(productionId),
-        queryFn: async (): Promise<AudioFileListItem[]> => {
-            const token = await getAccessToken();
-            if (!token) {
-                throw new Error("Authentication token is required");
-            }
-            const response = await apiGet<ListAudioFilesResponse>(
-                `v1/productions/${productionId}/audio_files`,
+    _getAccessToken: () => Promise<string | null>,
+) => {
+    if (productionId == null) {
+        return queryOptions<AudioFileListItem[]>({
+            queryKey: audioFilesKeys.byProduction(productionId),
+            queryFn: () => Promise.resolve([]),
+            enabled: false,
+        });
+    }
+    const id = productionId;
+    return queryOptions<AudioFileListItem[]>({
+        queryKey: audioFilesKeys.byProduction(id),
+        queryFn: async ({ signal }: { signal?: AbortSignal }) => {
+            const data = await getApiEditorV1ProductionsProductionIdAudioFiles(
+                id,
+                undefined,
+                signal,
             );
-            return (response.audio_files ?? []).map(normalizeAudioFile);
+            const list =
+                (data as unknown as ListAudioFilesResponse).audio_files ?? [];
+            return list.map(normalizeAudioFile);
         },
-        enabled: productionId != null,
+        enabled: true,
         staleTime: undefined,
     });
+};
 
 /**
  * Fetches the list of audio files for a production from the server.
@@ -99,13 +110,9 @@ export function useAudioFiles(productionId: number | undefined) {
     });
 }
 
-/** Response shape from PATCH/DELETE audio file and PATCH production (production only). */
-interface ProductionResponse {
+/** Response shape from POST audio_files (create) - not in OpenAPI spec. */
+interface AddAudioFileResponse {
     production: Production;
-}
-
-/** Response shape from POST audio_files (create). */
-interface AddAudioFileResponse extends ProductionResponse {
     audio_file: {
         id: number;
         name: string;
@@ -115,33 +122,26 @@ interface AddAudioFileResponse extends ProductionResponse {
     };
 }
 
-/** Response shape from PATCH audio_files (update nickname). */
-interface UpdateAudioFileResponse extends ProductionResponse {
-    audio_file: { id: number; name: string; url: string | null };
-}
-
 /**
  * Set an audio file as the default (active) for the current production.
+ * Uses generated PATCH production fetcher; spec body has name/position only so we cast default_audio_file_id.
  */
 export const setActiveAudioFileMutationOptions = ({
     queryClient,
 }: {
     queryClient: QueryClient;
-}) => {
-    return mutationOptions({
+}) =>
+    mutationOptions({
         mutationFn: async ({
             productionId,
             audioFileId,
         }: {
             productionId: number;
             audioFileId: number;
-        }) => {
-            const response = await apiPatch<ProductionResponse>(
-                `v1/productions/${productionId}`,
-                { default_audio_file_id: audioFileId },
-            );
-            return response;
-        },
+        }) =>
+            patchApiEditorV1ProductionsId(productionId, {
+                default_audio_file_id: audioFileId,
+            } as Parameters<typeof patchApiEditorV1ProductionsId>[1]),
         onSuccess: (_, { productionId }) => {
             void queryClient.invalidateQueries({
                 queryKey: productionKeys.byId(productionId),
@@ -154,7 +154,6 @@ export const setActiveAudioFileMutationOptions = ({
             });
         },
     });
-};
 
 export function useSetActiveAudioFileMutation(queryClient: QueryClient) {
     return useMutation(setActiveAudioFileMutationOptions({ queryClient }));
@@ -162,6 +161,7 @@ export function useSetActiveAudioFileMutation(queryClient: QueryClient) {
 
 /**
  * Add an audio file to the current production.
+ * Kept as custom mutation (POST with FormData) until OpenAPI spec includes this endpoint.
  */
 export const addAudioFileMutationOptions = ({
     queryClient,
@@ -221,41 +221,37 @@ export function useAddAudioFileMutation(queryClient: QueryClient) {
 
 /**
  * Update an audio file's nickname.
+ * Uses generated PATCH audio file mutation with onSuccess invalidation.
  */
 export const updateAudioFileNicknameMutationOptions = ({
     queryClient,
 }: {
     queryClient: QueryClient;
-}) => {
-    return mutationOptions({
-        mutationFn: async ({
-            productionId,
-            audioFileId,
-            nickname,
-        }: {
-            productionId: number;
-            audioFileId: number;
-            nickname: string;
-        }) => {
-            const response = await apiPatch<UpdateAudioFileResponse>(
-                `v1/productions/${productionId}/audio_files/${audioFileId}`,
-                { nickname },
-            );
-            return response;
-        },
-        onSuccess: (_, { productionId }) => {
-            void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: productionKeys.all(),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: audioFilesKeys.byProduction(productionId),
-            });
+}) =>
+    getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions({
+        mutation: {
+            onSuccess: (
+                _: unknown,
+                variables: {
+                    productionId: number;
+                    id: number;
+                    data: { nickname?: string };
+                },
+            ) => {
+                void queryClient.invalidateQueries({
+                    queryKey: productionKeys.byId(variables.productionId),
+                });
+                void queryClient.invalidateQueries({
+                    queryKey: productionKeys.all(),
+                });
+                void queryClient.invalidateQueries({
+                    queryKey: audioFilesKeys.byProduction(
+                        variables.productionId,
+                    ),
+                });
+            },
         },
     });
-};
 
 export function useUpdateAudioFileNicknameMutation(queryClient: QueryClient) {
     return useMutation(updateAudioFileNicknameMutationOptions({ queryClient }));
@@ -263,37 +259,35 @@ export function useUpdateAudioFileNicknameMutation(queryClient: QueryClient) {
 
 /**
  * Delete an audio file from the current production.
+ * Uses generated DELETE mutation with onSuccess invalidation.
  */
 export const deleteAudioFileMutationOptions = ({
     queryClient,
 }: {
     queryClient: QueryClient;
 }) => {
-    return mutationOptions({
-        mutationFn: async ({
-            productionId,
-            audioFileId,
-        }: {
-            productionId: number;
-            audioFileId: number;
-        }) => {
-            const response = await apiDelete<ProductionResponse>(
-                `v1/productions/${productionId}/audio_files/${audioFileId}`,
-            );
-            return response;
+    return getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMutationOptions(
+        {
+            mutation: {
+                onSuccess: (
+                    _: unknown,
+                    variables: { productionId: number; id: number },
+                ) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: productionKeys.byId(variables.productionId),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey: productionKeys.all(),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey: audioFilesKeys.byProduction(
+                            variables.productionId,
+                        ),
+                    });
+                },
+            },
         },
-        onSuccess: (_, { productionId }) => {
-            void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: productionKeys.all(),
-            });
-            void queryClient.invalidateQueries({
-                queryKey: audioFilesKeys.byProduction(productionId),
-            });
-        },
-    });
+    );
 };
 
 export function useDeleteAudioFileMutation(queryClient: QueryClient) {

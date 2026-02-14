@@ -5,24 +5,47 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
+import { faker } from "@faker-js/faker";
+
 import { HttpResponse, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
+import type { GetApiEditorV1Ping200 } from ".././model";
+
+export const getGetApiEditorV1PingResponseMock = (
+    overrideResponse: Partial<GetApiEditorV1Ping200> = {},
+): GetApiEditorV1Ping200 => ({
+    clerk_user: faker.helpers.arrayElement([
+        faker.helpers.arrayElement([null]),
+        undefined,
+    ]),
+    ...overrideResponse,
+});
+
 export const getGetApiEditorV1PingMockHandler = (
     overrideResponse?:
-        | void
+        | GetApiEditorV1Ping200
         | ((
               info: Parameters<Parameters<typeof http.get>[1]>[0],
-          ) => Promise<void> | void),
+          ) => Promise<GetApiEditorV1Ping200> | GetApiEditorV1Ping200),
     options?: RequestHandlerOptions,
 ) => {
     return http.get(
         "*/api/editor/v1/ping",
         async (info) => {
-            if (typeof overrideResponse === "function") {
-                await overrideResponse(info);
-            }
-            return new HttpResponse(null, { status: 200 });
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getGetApiEditorV1PingResponseMock(),
+                ),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         },
         options,
     );

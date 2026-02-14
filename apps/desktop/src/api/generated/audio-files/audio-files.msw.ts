@@ -5,24 +5,98 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
+import { faker } from "@faker-js/faker";
+
 import { HttpResponse, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
+import type { GetApiEditorV1ProductionsProductionIdAudioFiles200 } from ".././model";
+
+export const getGetApiEditorV1ProductionsProductionIdAudioFilesResponseMock = (
+    overrideResponse: Partial<GetApiEditorV1ProductionsProductionIdAudioFiles200> = {},
+): GetApiEditorV1ProductionsProductionIdAudioFiles200 => ({
+    audio_files: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+    ).map(() => ({
+        id: faker.helpers.arrayElement([
+            faker.number.int({ min: undefined, max: undefined }),
+            undefined,
+        ]),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined,
+        ]),
+        url: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        duration_seconds: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.number.float({
+                    min: undefined,
+                    max: undefined,
+                    fractionDigits: 2,
+                }),
+                null,
+            ]),
+            undefined,
+        ]),
+        size_megabytes: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.number.float({
+                    min: undefined,
+                    max: undefined,
+                    fractionDigits: 2,
+                }),
+                null,
+            ]),
+            undefined,
+        ]),
+        created_at: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+    })),
+    ...overrideResponse,
+});
+
 export const getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
     overrideResponse?:
-        | void
+        | GetApiEditorV1ProductionsProductionIdAudioFiles200
         | ((
               info: Parameters<Parameters<typeof http.get>[1]>[0],
-          ) => Promise<void> | void),
+          ) =>
+              | Promise<GetApiEditorV1ProductionsProductionIdAudioFiles200>
+              | GetApiEditorV1ProductionsProductionIdAudioFiles200),
     options?: RequestHandlerOptions,
 ) => {
     return http.get(
         "*/api/editor/v1/productions/:productionId/audio_files",
         async (info) => {
-            if (typeof overrideResponse === "function") {
-                await overrideResponse(info);
-            }
-            return new HttpResponse(null, { status: 200 });
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getGetApiEditorV1ProductionsProductionIdAudioFilesResponseMock(),
+                ),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         },
         options,
     );

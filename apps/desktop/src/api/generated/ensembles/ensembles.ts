@@ -13,21 +13,27 @@ import type {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import * as axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import type {
     GetApiEditorV1Ensembles200,
     GetApiEditorV1EnsemblesAny200,
 } from ".././model";
 
+import { customInstance } from "../../editor-client";
+import type { ErrorType } from "../../editor-client";
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
 /**
  * @summary List ensembles
  */
 export const getApiEditorV1Ensembles = (
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<GetApiEditorV1Ensembles200>> => {
-    return axios.default.get(`/api/editor/v1/ensembles`, options);
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1Ensembles200>(
+        { url: `/api/editor/v1/ensembles`, method: "GET", signal },
+        options,
+    );
 };
 
 export const getGetApiEditorV1EnsemblesQueryKey = () => {
@@ -36,23 +42,23 @@ export const getGetApiEditorV1EnsemblesQueryKey = () => {
 
 export const getGetApiEditorV1EnsemblesQueryOptions = <
     TData = Awaited<ReturnType<typeof getApiEditorV1Ensembles>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ensembles>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions, request: requestOptions } = options ?? {};
 
     const queryKey =
         queryOptions?.queryKey ?? getGetApiEditorV1EnsemblesQueryKey();
 
     const queryFn: QueryFunction<
         Awaited<ReturnType<typeof getApiEditorV1Ensembles>>
-    > = ({ signal }) => getApiEditorV1Ensembles({ signal, ...axiosOptions });
+    > = ({ signal }) => getApiEditorV1Ensembles(requestOptions, signal);
 
     return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ensembles>>,
@@ -64,7 +70,7 @@ export const getGetApiEditorV1EnsemblesQueryOptions = <
 export type GetApiEditorV1EnsemblesQueryResult = NonNullable<
     Awaited<ReturnType<typeof getApiEditorV1Ensembles>>
 >;
-export type GetApiEditorV1EnsemblesQueryError = AxiosError<void>;
+export type GetApiEditorV1EnsemblesQueryError = ErrorType<void>;
 
 /**
  * @summary List ensembles
@@ -72,14 +78,14 @@ export type GetApiEditorV1EnsemblesQueryError = AxiosError<void>;
 
 export function useGetApiEditorV1Ensembles<
     TData = Awaited<ReturnType<typeof getApiEditorV1Ensembles>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ensembles>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
     const queryOptions = getGetApiEditorV1EnsemblesQueryOptions(options);
 
@@ -94,9 +100,13 @@ export function useGetApiEditorV1Ensembles<
  * @summary Check if user has any ensembles
  */
 export const getApiEditorV1EnsemblesAny = (
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<GetApiEditorV1EnsemblesAny200>> => {
-    return axios.default.get(`/api/editor/v1/ensembles/any`, options);
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1EnsemblesAny200>(
+        { url: `/api/editor/v1/ensembles/any`, method: "GET", signal },
+        options,
+    );
 };
 
 export const getGetApiEditorV1EnsemblesAnyQueryKey = () => {
@@ -105,23 +115,23 @@ export const getGetApiEditorV1EnsemblesAnyQueryKey = () => {
 
 export const getGetApiEditorV1EnsemblesAnyQueryOptions = <
     TData = Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions, request: requestOptions } = options ?? {};
 
     const queryKey =
         queryOptions?.queryKey ?? getGetApiEditorV1EnsemblesAnyQueryKey();
 
     const queryFn: QueryFunction<
         Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>
-    > = ({ signal }) => getApiEditorV1EnsemblesAny({ signal, ...axiosOptions });
+    > = ({ signal }) => getApiEditorV1EnsemblesAny(requestOptions, signal);
 
     return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>,
@@ -133,7 +143,7 @@ export const getGetApiEditorV1EnsemblesAnyQueryOptions = <
 export type GetApiEditorV1EnsemblesAnyQueryResult = NonNullable<
     Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>
 >;
-export type GetApiEditorV1EnsemblesAnyQueryError = AxiosError<void>;
+export type GetApiEditorV1EnsemblesAnyQueryError = ErrorType<void>;
 
 /**
  * @summary Check if user has any ensembles
@@ -141,14 +151,14 @@ export type GetApiEditorV1EnsemblesAnyQueryError = AxiosError<void>;
 
 export function useGetApiEditorV1EnsemblesAny<
     TData = Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1EnsemblesAny>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
     const queryOptions = getGetApiEditorV1EnsemblesAnyQueryOptions(options);
 

@@ -13,17 +13,25 @@ import type {
     UseQueryResult,
 } from "@tanstack/react-query";
 
-import * as axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
+import type { GetApiEditorV1Ping200 } from ".././model";
+
+import { customInstance } from "../../editor-client";
+import type { ErrorType } from "../../editor-client";
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * Returns current Clerk user (test: use X-Test-Clerk-Id header)
  * @summary Health check
  */
 export const getApiEditorV1Ping = (
-    options?: AxiosRequestConfig,
-): Promise<AxiosResponse<void>> => {
-    return axios.default.get(`/api/editor/v1/ping`, options);
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1Ping200>(
+        { url: `/api/editor/v1/ping`, method: "GET", signal },
+        options,
+    );
 };
 
 export const getGetApiEditorV1PingQueryKey = () => {
@@ -32,22 +40,22 @@ export const getGetApiEditorV1PingQueryKey = () => {
 
 export const getGetApiEditorV1PingQueryOptions = <
     TData = Awaited<ReturnType<typeof getApiEditorV1Ping>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ping>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }) => {
-    const { query: queryOptions, axios: axiosOptions } = options ?? {};
+    const { query: queryOptions, request: requestOptions } = options ?? {};
 
     const queryKey = queryOptions?.queryKey ?? getGetApiEditorV1PingQueryKey();
 
     const queryFn: QueryFunction<
         Awaited<ReturnType<typeof getApiEditorV1Ping>>
-    > = ({ signal }) => getApiEditorV1Ping({ signal, ...axiosOptions });
+    > = ({ signal }) => getApiEditorV1Ping(requestOptions, signal);
 
     return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ping>>,
@@ -59,7 +67,7 @@ export const getGetApiEditorV1PingQueryOptions = <
 export type GetApiEditorV1PingQueryResult = NonNullable<
     Awaited<ReturnType<typeof getApiEditorV1Ping>>
 >;
-export type GetApiEditorV1PingQueryError = AxiosError<void>;
+export type GetApiEditorV1PingQueryError = ErrorType<void>;
 
 /**
  * @summary Health check
@@ -67,14 +75,14 @@ export type GetApiEditorV1PingQueryError = AxiosError<void>;
 
 export function useGetApiEditorV1Ping<
     TData = Awaited<ReturnType<typeof getApiEditorV1Ping>>,
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
 >(options?: {
     query?: UseQueryOptions<
         Awaited<ReturnType<typeof getApiEditorV1Ping>>,
         TError,
         TData
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
     const queryOptions = getGetApiEditorV1PingQueryOptions(options);
 

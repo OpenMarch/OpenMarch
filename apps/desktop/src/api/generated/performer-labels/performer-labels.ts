@@ -12,33 +12,39 @@ import type {
     UseMutationResult,
 } from "@tanstack/react-query";
 
-import * as axios from "axios";
-import type { AxiosError, AxiosRequestConfig, AxiosResponse } from "axios";
-
 import type {
     PatchApiEditorV1EnsemblesEnsembleIdPerformerLabels200,
     PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody,
 } from ".././model";
+
+import { customInstance } from "../../editor-client";
+import type { ErrorType, BodyType } from "../../editor-client";
+
+type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 /**
  * @summary Sync performer labels
  */
 export const patchApiEditorV1EnsemblesEnsembleIdPerformerLabels = (
     ensembleId: number,
-    patchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody,
-    options?: AxiosRequestConfig,
-): Promise<
-    AxiosResponse<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabels200>
-> => {
-    return axios.default.patch(
-        `/api/editor/v1/ensembles/${ensembleId}/performer_labels`,
-        patchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody,
+    patchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabels200>(
+        {
+            url: `/api/editor/v1/ensembles/${ensembleId}/performer_labels`,
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            data: patchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody,
+            signal,
+        },
         options,
     );
 };
 
 export const getPatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationOptions =
-    <TError = AxiosError<void>, TContext = unknown>(options?: {
+    <TError = ErrorType<void>, TContext = unknown>(options?: {
         mutation?: UseMutationOptions<
             Awaited<
                 ReturnType<
@@ -48,11 +54,11 @@ export const getPatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationOption
             TError,
             {
                 ensembleId: number;
-                data: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+                data: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
             },
             TContext
         >;
-        axios?: AxiosRequestConfig;
+        request?: SecondParameter<typeof customInstance>;
     }): UseMutationOptions<
         Awaited<
             ReturnType<
@@ -62,20 +68,20 @@ export const getPatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationOption
         TError,
         {
             ensembleId: number;
-            data: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+            data: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
         },
         TContext
     > => {
         const mutationKey = [
             "patchApiEditorV1EnsemblesEnsembleIdPerformerLabels",
         ];
-        const { mutation: mutationOptions, axios: axiosOptions } = options
+        const { mutation: mutationOptions, request: requestOptions } = options
             ? options.mutation &&
               "mutationKey" in options.mutation &&
               options.mutation.mutationKey
                 ? options
                 : { ...options, mutation: { ...options.mutation, mutationKey } }
-            : { mutation: { mutationKey }, axios: undefined };
+            : { mutation: { mutationKey }, request: undefined };
 
         const mutationFn: MutationFunction<
             Awaited<
@@ -85,7 +91,7 @@ export const getPatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationOption
             >,
             {
                 ensembleId: number;
-                data: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+                data: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
             }
         > = (props) => {
             const { ensembleId, data } = props ?? {};
@@ -93,7 +99,7 @@ export const getPatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationOption
             return patchApiEditorV1EnsemblesEnsembleIdPerformerLabels(
                 ensembleId,
                 data,
-                axiosOptions,
+                requestOptions,
             );
         };
 
@@ -109,15 +115,15 @@ export type PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationResult =
         >
     >;
 export type PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationBody =
-    PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+    BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
 export type PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsMutationError =
-    AxiosError<void>;
+    ErrorType<void>;
 
 /**
  * @summary Sync performer labels
  */
 export const usePatchApiEditorV1EnsemblesEnsembleIdPerformerLabels = <
-    TError = AxiosError<void>,
+    TError = ErrorType<void>,
     TContext = unknown,
 >(options?: {
     mutation?: UseMutationOptions<
@@ -129,11 +135,11 @@ export const usePatchApiEditorV1EnsemblesEnsembleIdPerformerLabels = <
         TError,
         {
             ensembleId: number;
-            data: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+            data: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
         },
         TContext
     >;
-    axios?: AxiosRequestConfig;
+    request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<
         ReturnType<typeof patchApiEditorV1EnsemblesEnsembleIdPerformerLabels>
@@ -141,7 +147,7 @@ export const usePatchApiEditorV1EnsemblesEnsembleIdPerformerLabels = <
     TError,
     {
         ensembleId: number;
-        data: PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody;
+        data: BodyType<PatchApiEditorV1EnsemblesEnsembleIdPerformerLabelsBody>;
     },
     TContext
 > => {

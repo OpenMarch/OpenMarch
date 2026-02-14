@@ -19,7 +19,9 @@ import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
-import { apiGet, apiPatch, apiPostFormData } from "@/auth/api-client";
+import { apiPostFormData } from "@/auth/api-client";
+import { getApiEditorV1ProductionsProductionIdAudioFiles } from "@/api/generated/audio-files/audio-files";
+import { patchApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import {
     isSilentPlaceholder,
     prepareAudioSyncResult,
@@ -179,13 +181,15 @@ export const SubmitRevisionForm = ({
             try {
                 const fullFile = await AudioFile.getSelectedAudioFile();
                 if (cancelled || fullFile == null) return;
-                const response = await apiGet<AudioFilesIndexResponse>(
-                    `v1/productions/${productionId}/audio_files`,
-                );
+                const data =
+                    await getApiEditorV1ProductionsProductionIdAudioFiles(
+                        productionId,
+                    );
                 if (cancelled) return;
+                const response = data as unknown as AudioFilesIndexResponse;
                 const result = await prepareAudioSyncResult(
                     fullFile,
-                    response.audio_files,
+                    response.audio_files ?? [],
                     AudioFile.computeChecksum,
                 );
                 if (cancelled) return;
@@ -251,9 +255,9 @@ export const SubmitRevisionForm = ({
         }
         try {
             if (serverAudioFileId != null) {
-                await apiPatch(`v1/productions/${productionId}`, {
+                await patchApiEditorV1ProductionsId(productionId, {
                     default_audio_file_id: serverAudioFileId,
-                });
+                } as { name?: string; position?: number });
             } else {
                 const formData = await buildAudioUploadFormDataWithDuration(
                     selectedAudioFileWithData,
