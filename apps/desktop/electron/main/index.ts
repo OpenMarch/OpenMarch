@@ -627,13 +627,21 @@ export async function saveFile() {
         .then(async (path) => {
             if (path.canceled || !path.filePath) return 0;
 
-            // If the file exists, delete it to safely copy over it
+            // Make a copy into a temp file
+            const tempPath = path.filePath + ".tmp";
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
+
+            const stmt = await db.prepare("VACUUM INTO ?");
+            await stmt.run(tempPath);
+
+            // If there is an existing file, only delete it after successful copy
             if (fs.existsSync(path.filePath)) {
                 fs.unlinkSync(path.filePath);
             }
 
-            const stmt = await db.prepare("VACUUM INTO ?");
-            await stmt.run(path.filePath);
+            fs.renameSync(tempPath, path.filePath);
 
             addRecentFile(path.filePath);
 
