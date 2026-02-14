@@ -631,7 +631,9 @@ function RegisteredActionsHandler() {
                                             <div className="my-16 flex h-full w-full flex-col items-center justify-center gap-8 self-center">
                                                 <CircleNotchIcon
                                                     size={32}
-                                                    aria-label="Saving"
+                                                    aria-label={t(
+                                                        "fileTab.saveSpinnerText",
+                                                    )}
                                                     className="text-text my-8 animate-spin"
                                                 />
                                                 <T keyName="fileTab.saveSpinnerText" />
