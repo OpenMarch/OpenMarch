@@ -119,6 +119,7 @@ export default function Canvas({
     } | null>(null);
     const [propGeometryScope, setPropGeometryScope] =
         useState<GeometryPropagation>("forward");
+    const [propRecreateKey, setPropRecreateKey] = useState(0);
     const pagesCountRef = useRef(pages.length);
     pagesCountRef.current = pages.length;
     const { setSelectedShapePageIds } = useSelectionStore()!;
@@ -678,16 +679,29 @@ export default function Canvas({
             showNames: uiSettings.showPropNames,
             nameOverrides: uiSettings.propNameOverrides,
             hiddenIds: uiSettings.hiddenPropIds,
+            propRecreateKey,
         });
 
         if (structureKey === prevPropStructureRef.current) {
-            // Position-only change: update existing props in place
+            // Position/label-only change: update existing props in place
+            const { showPropNames, propNameOverrides } = uiSettings;
+            const propById = new Map(props.map((p) => [p.id, p]));
             canvas
                 .getObjects()
                 .filter(CanvasProp.isCanvasProp)
                 .forEach((cp) => {
                     const mp = marcherPages[cp.marcherObj.id];
                     if (mp) cp.setMarcherCoords(mp);
+                    const prop = propById.get(cp.propId);
+                    if (prop) {
+                        const name =
+                            prop.marcher.name ||
+                            `${prop.marcher.drill_prefix}${prop.marcher.drill_order}`;
+                        const showName =
+                            propNameOverrides[prop.id.toString()] ??
+                            showPropNames;
+                        cp.updateNameLabel(name, showName);
+                    }
                 });
             canvas.requestRenderAll();
             return;
@@ -745,6 +759,7 @@ export default function Canvas({
         marcherPages,
         fieldProperties,
         selectedPage,
+        propRecreateKey,
         uiSettings.showPropNames,
         uiSettings.propNameOverrides,
         uiSettings.hiddenPropIds,
@@ -1191,8 +1206,7 @@ export default function Canvas({
                 open={!!pendingPropGeometry}
                 onOpenChange={(open) => {
                     if (!open) {
-                        if (pendingPropGeometry)
-                            applyPropGeometryScope("current");
+                        setPropRecreateKey((k) => k + 1);
                         setPendingPropGeometry(null);
                     }
                 }}
@@ -1243,10 +1257,8 @@ export default function Canvas({
                                 variant="secondary"
                                 size="compact"
                                 onClick={() => {
-                                    if (pendingPropGeometry) {
-                                        applyPropGeometryScope("current");
-                                        setPendingPropGeometry(null);
-                                    }
+                                    setPropRecreateKey((k) => k + 1);
+                                    setPendingPropGeometry(null);
                                 }}
                             >
                                 Cancel
@@ -1254,9 +1266,10 @@ export default function Canvas({
                         </DialogClose>
                         <Button
                             size="compact"
-                            onClick={() =>
-                                applyPropGeometryScope(propGeometryScope)
-                            }
+                            onClick={() => {
+                                applyPropGeometryScope(propGeometryScope);
+                                setPendingPropGeometry(null);
+                            }}
                             disabled={
                                 updatePropGeometryWithPropagation.isPending
                             }

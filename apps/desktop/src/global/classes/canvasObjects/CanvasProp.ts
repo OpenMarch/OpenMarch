@@ -317,6 +317,12 @@ export default class CanvasProp extends CanvasMarcher {
         });
     }
 
+    /** Update the name label text and visibility (e.g. after prop/marcher name change). */
+    updateNameLabel(text: string, visible: boolean): void {
+        this.propNameLabel.set({ text, visible });
+        this.setCoords();
+    }
+
     /** Keep the name label positioned above the prop */
     setCoords() {
         super.setCoords();
