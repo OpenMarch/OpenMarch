@@ -38,8 +38,6 @@ export interface ModifiedPropPageGeometryArgs {
     width?: number;
     height?: number;
     rotation?: number;
-    rotation_x?: number;
-    rotation_y?: number;
     visible?: boolean;
 }
 

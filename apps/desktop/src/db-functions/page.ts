@@ -291,8 +291,6 @@ const _createMarcherPages = async ({
                 height: number;
                 radius: number | null;
                 rotation: number;
-                rotation_x: number;
-                rotation_y: number;
             }[] = [];
 
             for (const mp of propMarcherPages) {
@@ -305,8 +303,6 @@ const _createMarcherPages = async ({
                     height: prevGeom.height,
                     radius: prevGeom.radius,
                     rotation: prevGeom.rotation,
-                    rotation_x: prevGeom.rotation_x,
-                    rotation_y: prevGeom.rotation_y,
                 });
             }
 

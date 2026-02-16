@@ -194,10 +194,6 @@ export const prop_page_geometry = sqliteTable(
         custom_geometry: text(),
         /** 2D rotation in degrees (yaw - rotation on canvas plane) */
         rotation: real().notNull().default(0),
-        /** Pitch rotation in degrees */
-        rotation_x: real().notNull().default(0),
-        /** Roll rotation in degrees */
-        rotation_y: real().notNull().default(0),
         /** Whether the prop is visible on this page */
         visible: integer({ mode: "boolean" }).notNull().default(true),
         ...timestamps,

@@ -7,8 +7,6 @@ CREATE TABLE `prop_page_geometry` (
 	`radius` real,
 	`custom_geometry` text,
 	`rotation` real DEFAULT 0 NOT NULL,
-	`rotation_x` real DEFAULT 0 NOT NULL,
-	`rotation_y` real DEFAULT 0 NOT NULL,
 	`visible` integer DEFAULT true NOT NULL,
 	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`updated_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
