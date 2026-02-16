@@ -30,7 +30,10 @@ CREATE TABLE `props` (
 	`image_opacity` real DEFAULT 1 NOT NULL,
 	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`updated_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
-	FOREIGN KEY (`marcher_id`) REFERENCES `marchers`(`id`) ON UPDATE no action ON DELETE cascade
+	FOREIGN KEY (`marcher_id`) REFERENCES `marchers`(`id`) ON UPDATE no action ON DELETE cascade,
+	CONSTRAINT "props_default_width_check" CHECK(default_width IS NULL OR default_width > 0),
+	CONSTRAINT "props_default_height_check" CHECK(default_height IS NULL OR default_height > 0),
+	CONSTRAINT "props_image_opacity_check" CHECK(image_opacity >= 0 AND image_opacity <= 1)
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `props_marcher_id_unique` ON `props` (`marcher_id`);--> statement-breakpoint

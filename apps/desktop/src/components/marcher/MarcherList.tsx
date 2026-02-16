@@ -93,18 +93,6 @@ export default function MarcherList({
         changesRef.current = {};
     }
 
-    const handleChange = (
-        value: string,
-        attribute: string,
-        marcherId: number,
-    ) => {
-        // create an entry for the marcher if it doesn't exist
-        if (!changesRef.current[marcherId]) changesRef.current[marcherId] = {};
-
-        // record the change
-        changesRef.current[marcherId][attribute] = value;
-    };
-
     // Update local marchers when marchers are fetched (filter out props)
     useEffect(() => {
         setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
@@ -137,7 +125,7 @@ export default function MarcherList({
         return <div>Error loading marchers</div>;
     }
 
-    if (marchersSuccess && marchers.length > 0)
+    if (marchersSuccess && localMarchers && localMarchers.length > 0)
         return (
             <form
                 id={"marcherListForm"}
@@ -153,7 +141,7 @@ export default function MarcherList({
                     </p>
                     <div className="flex gap-8">
                         {localMarchers &&
-                        marchers.length > 0 &&
+                        localMarchers.length > 0 &&
                         deletionsRef.current.length > 0 ? (
                             <FormButtons
                                 variant="primary"
@@ -211,7 +199,7 @@ export default function MarcherList({
                     id="table"
                     className="flex min-h-0 w-[27rem] min-w-0 flex-1 flex-col gap-10"
                 >
-                    {localMarchers && marchers.length > 0 && (
+                    {localMarchers && localMarchers.length > 0 && (
                         <>
                             <div
                                 id="key"
