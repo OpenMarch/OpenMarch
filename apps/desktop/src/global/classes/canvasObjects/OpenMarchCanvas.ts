@@ -744,9 +744,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 try {
                     const refresh = () => this.refreshCanvasSize();
                     refresh();
-                    // Observe the viewport element that actually defines available space
-                    // teal wrapper = parent of canvas-container
-                    // cssZoomWrapper -> canvas-container -> viewport wrapper
+                    // Observe the outer container (containerRef) for standard resize events
                     const viewportEl = this.cssZoomWrapper.parentElement
                         ? this.cssZoomWrapper.parentElement.parentElement
                         : null;
@@ -757,6 +755,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             ro.observe(viewportEl);
                             this._viewportResizeObserver = ro;
                         } else {
+                            // Fallback to observing the wrapper if viewportEl is not available
                             const ro = new ResizeObserver(() => refresh());
                             ro.observe(this.cssZoomWrapper);
                             this._wrapperResizeObserver = ro;
@@ -948,24 +947,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******************* INSTANCE METHODS ******************/
     refreshCanvasSize() {
-        // Prefer the outer viewport wrapper (teal wrapper) if available,
-        // fallback to canvas-zoom-wrapper, then window size
-        // @ts-ignore
-        const viewportEl: HTMLElement | null = this._viewportEl || null;
+        // Prefer the viewport element if available, fallback to wrapper, then window
+        const viewportEl = this._viewportEl;
         const targetRect = viewportEl
             ? viewportEl.getBoundingClientRect()
             : this.cssZoomWrapper
               ? this.cssZoomWrapper.getBoundingClientRect()
-              : ({
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                } as any);
+              : { width: window.innerWidth, height: window.innerHeight };
 
         const width = Math.max(0, Math.floor(targetRect.width));
         const height = Math.max(0, Math.floor(targetRect.height));
 
         this.setWidth(width);
         this.setHeight(height);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Set the canvas size to specific dimensions.
+     * Use this when you have the exact dimensions to use.
+     */
+    setCanvasSize(width: number, height: number) {
+        this.setWidth(Math.max(0, Math.floor(width)));
+        this.setHeight(Math.max(0, Math.floor(height)));
         this.requestRenderAll();
     }
 

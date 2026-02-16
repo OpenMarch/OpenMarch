@@ -189,6 +189,9 @@ export default function Canvas({
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const innerDivRef = useRef<HTMLDivElement>(null);
+    const fullscreenEnterTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const fullscreenExitTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
@@ -909,19 +912,66 @@ export default function Canvas({
     useEffect(() => {
         if (!canvas || !containerRef.current) return;
 
+        // Clear any pending timeouts before scheduling new ones
+        if (fullscreenEnterTimeoutRef.current) {
+            clearTimeout(fullscreenEnterTimeoutRef.current);
+            fullscreenEnterTimeoutRef.current = null;
+        }
+        if (fullscreenExitTimeoutRef.current) {
+            clearTimeout(fullscreenExitTimeoutRef.current);
+            fullscreenExitTimeoutRef.current = null;
+        }
+
         // When fullscreen mode is activated, center and fit the canvas
         if (isFullscreen) {
-            // Small delay to ensure the fullscreen transition has completed
-            setTimeout(() => {
-                centerAndFitCanvas();
-                setSelectedMarchers([]);
-                setSelectedShapePageIds([]);
-            }, 100);
+            // Wait for CSS transition and layout to complete before centering
+            fullscreenEnterTimeoutRef.current = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    centerAndFitCanvas();
+                    setSelectedMarchers([]);
+                    setSelectedShapePageIds([]);
+                });
+            }, 250);
         }
 
         if (!isFullscreen) {
             setPerspective(0);
+            // Recalculate canvas size and center after exiting fullscreen
+            // Wait for CSS transition (200ms) + layout to complete before measuring
+            // Use clientWidth/clientHeight for non-transformed layout dimensions
+            fullscreenExitTimeoutRef.current = setTimeout(() => {
+                requestAnimationFrame(() => {
+                    let width = innerDivRef.current?.clientWidth ?? 0;
+                    let height = innerDivRef.current?.clientHeight ?? 0;
+
+                    // Fallback to containerRef if innerDivRef has zero dimensions
+                    if (width <= 0 || height <= 0) {
+                        width = containerRef.current?.clientWidth ?? 0;
+                        height = containerRef.current?.clientHeight ?? 0;
+                    }
+
+                    // Only set canvas size if we have valid dimensions
+                    if (width > 0 && height > 0) {
+                        canvas.setCanvasSize(width, height);
+                    } else {
+                        canvas.refreshCanvasSize();
+                    }
+                    canvas.centerAtBaseZoom();
+                });
+            }, 250);
         }
+
+        // Cleanup timeouts on unmount or before re-running effect
+        return () => {
+            if (fullscreenEnterTimeoutRef.current) {
+                clearTimeout(fullscreenEnterTimeoutRef.current);
+                fullscreenEnterTimeoutRef.current = null;
+            }
+            if (fullscreenExitTimeoutRef.current) {
+                clearTimeout(fullscreenExitTimeoutRef.current);
+                fullscreenExitTimeoutRef.current = null;
+            }
+        };
     }, [
         isFullscreen,
         canvas,
@@ -1048,6 +1098,7 @@ export default function Canvas({
         >
             {pages.length > 0 || canvas ? (
                 <div
+                    ref={innerDivRef}
                     style={{
                         transform: `rotateX(${perspective}deg)`,
                         transformOrigin:

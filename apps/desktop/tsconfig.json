@@ -22,13 +22,14 @@
         "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]
     },
-    "include": ["src", "electron"],
+    "include": ["src", "electron", "vitest.setup.ts"],
     "exclude": [
         "**/__test__/**",
         "**/*.test.ts",
         "**/*.test.tsx",
         "**/*.spec.mts",
-        "e2e"
+        "e2e",
+        "vitest.setup.ts"
     ],
     "references": [{ "path": "./tsconfig.node.json" }]
 }

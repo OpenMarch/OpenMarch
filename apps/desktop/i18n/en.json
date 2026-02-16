@@ -89,6 +89,31 @@
             "togglePreviousPaths": "Toggle viewing previous page paths"
         }
     },
+    "fileAccessDialogError": {
+        "closeButton": "Close",
+        "guideLinkText": "OpenMarch File Error Guide",
+        "referToGuide": "Refer to the <link></link> for more information.",
+        "default": {
+            "title": "Error",
+            "description": "Unable to open file."
+        },
+        "renderFail": {
+            "title": "Modal render failure",
+            "description": "The alert modal failed to render."
+        },
+        "forbidden": {
+            "title": "Invalid file permissions",
+            "description": "You do not have permission to open this file."
+        },
+        "notFound": {
+            "title": "File not found",
+            "description": "This file does not exist at this location. Was it moved or renamed?"
+        },
+        "server": {
+            "title": "Internal server error",
+            "description": "The server experienced an error while trying to open this file."
+        }
+    },
     "analyticsOptIn": {
         "description": "To help us improve OpenMarch, we collect analytics data, error logs, and session captures. This helps us understand how you use the app and identify bugs. Read our <a>privacy policy</a> to learn more.",
         "optIn": "Opt In",
@@ -442,12 +467,15 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
+        "saveFileCancel": "Cancel",
+        "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "discardChanges": "Discard Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
@@ -576,14 +604,17 @@
         },
         "drillPrefix": "Drill Prefix",
         "editButton": "Edit Marchers",
+        "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
             "allSections": "All Sections",
             "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
+            "deleteButton": "Delete",
             "deleteSectionStyle": "Delete this section style",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
+            "editButton": "Edit",
             "fillColor": "Fill Color",
             "nameTitle": "Name",
             "noMarchers": "No marchers created yet. Why not create one?",
@@ -600,6 +631,9 @@
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
+        "name": "Name",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes for this marcher...",
         "quantity": "Quantity",
         "section": "Section",
         "sectionError": {
@@ -608,7 +642,9 @@
         "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
-        "title": "Marchers"
+        "title": "Marchers",
+        "updateButton": "Update Marcher",
+        "year": "Year"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",

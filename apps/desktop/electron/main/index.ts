@@ -292,14 +292,15 @@ void app.whenReady().then(async () => {
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
-        if (!filePath || !fs.existsSync(filePath)) return -1;
-
-        DatabaseServices.setDbPath(filePath);
         store.set("databasePath", filePath);
         addRecentFile(filePath);
 
-        await setActiveDb(filePath);
-        return 200;
+        const resCode = await setActiveDb(filePath);
+
+        // Handle alert dialogs in frontend
+        win?.webContents.send("load-file-response", resCode);
+
+        return resCode;
     });
 
     // Getters
@@ -657,17 +658,18 @@ export async function loadDatabaseFile() {
             ],
         })
         .then(async (path) => {
-            // If the user cancels the dialog, and there is no previous path, return -1
-            // if (path.canceled || !path.filePaths[0]) return -1;
+            if (path.canceled) return -1;
 
-            DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
-
             // Add to recent files
             addRecentFile(path.filePaths[0]);
 
-            await setActiveDb(path.filePaths[0]);
-            return 200;
+            const resCode = await setActiveDb(path.filePaths[0]);
+
+            // Handle alert dialogs in frontend
+            win?.webContents.send("load-file-response", resCode);
+
+            return resCode;
         })
         .catch((err) => {
             console.log(err);
@@ -833,18 +835,22 @@ async function setActiveDb(path: string, isNewFile = false) {
         // I.e. last opened file
         if (path === ".") path = store.get("databasePath") as string;
 
-        if (!fs.existsSync(path) && !isNewFile) {
+        const resCode = DatabaseServices.setDbPath(path, isNewFile);
+
+        if (resCode !== 200) {
             store.delete("databasePath");
-            console.error("Database file does not exist:", path);
-            return;
+            console.error(
+                `Error loading database file [code=${resCode}] [path=${path}]`,
+            );
+            return resCode;
         }
-        DatabaseServices.setDbPath(path, isNewFile);
+
         win?.setTitle("OpenMarch - " + path);
 
         const db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
-            return;
+            return 500;
         }
 
         const drizzleDb = getOrm(db);
@@ -903,6 +909,8 @@ async function setActiveDb(path: string, isNewFile = false) {
 
         store.set("databasePath", path); // Save current db path
         win?.webContents.reload();
+
+        return resCode;
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path
