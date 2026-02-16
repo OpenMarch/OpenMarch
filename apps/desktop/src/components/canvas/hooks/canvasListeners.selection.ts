@@ -1,6 +1,7 @@
 import { useEffect, useCallback } from "react";
 import * as Selectable from "@/global/classes/canvasObjects/interfaces/Selectable";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import Marcher from "@/global/classes/Marcher";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -59,21 +60,37 @@ export const useSelectionListeners = ({
                         const canvasMarcher = canvasMarchers.get(
                             selectedMarcher.id,
                         );
-                        if (!canvasMarcher) {
-                            console.error(
-                                "SelectedMarcher not found on Canvas",
-                                selectedMarcher,
+                        if (canvasMarcher) {
+                            globalSelectedClassIds.add(
+                                Selectable.getClassId(canvasMarcher),
                             );
-                            continue;
                         }
-                        globalSelectedClassIds.add(
-                            Selectable.getClassId(canvasMarcher),
-                        );
+                        // Note: marcher might be a prop, which is handled in PROP case
                     }
                     break;
                 }
                 case Selectable.SelectableClasses.MARCHER_SHAPE: {
                     // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
+                    break;
+                }
+                case Selectable.SelectableClasses.PROP: {
+                    // Props use the marcher selection system - find props by marcher id
+                    const canvasProps = canvas
+                        .getObjects()
+                        .filter(CanvasProp.isCanvasProp);
+                    const propsByMarcherId = new Map(
+                        canvasProps.map((p) => [p.marcherObj.id, p]),
+                    );
+                    for (const selectedMarcher of selectedMarchers) {
+                        const canvasProp = propsByMarcherId.get(
+                            selectedMarcher.id,
+                        );
+                        if (canvasProp) {
+                            globalSelectedClassIds.add(
+                                Selectable.getClassId(canvasProp),
+                            );
+                        }
+                    }
                     break;
                 }
                 default: {
@@ -139,6 +156,7 @@ export const useSelectionListeners = ({
         } = {
             [Selectable.SelectableClasses.MARCHER]: [],
             [Selectable.SelectableClasses.MARCHER_SHAPE]: [],
+            [Selectable.SelectableClasses.PROP]: [],
         };
 
         const allObjectsToSelect: Selectable.ISelectable[] = [];
@@ -188,6 +206,23 @@ export const useSelectionListeners = ({
                     // setSelectedCurvePoints(newSelectedObjects[Selectable.SelectableClasses.MARCHER_SHAPE]);
                     break;
                 }
+                case Selectable.SelectableClasses.PROP: {
+                    // Props use the marcher selection system - add prop marchers to selection
+                    const propMarchers: Marcher[] = newSelectedObjects[
+                        Selectable.SelectableClasses.PROP
+                    ] as any as Marcher[];
+                    if (propMarchers.length > 0) {
+                        // Combine with existing marcher selection
+                        const existingMarchers: Marcher[] = newSelectedObjects[
+                            Selectable.SelectableClasses.MARCHER
+                        ] as any as Marcher[];
+                        setSelectedMarchers([
+                            ...existingMarchers,
+                            ...propMarchers,
+                        ]);
+                    }
+                    break;
+                }
                 default: {
                     unimplementedError(selectableClass);
                 }
@@ -219,6 +254,10 @@ export const useSelectionListeners = ({
                 }
                 case Selectable.SelectableClasses.MARCHER_SHAPE: {
                     // setSelectedCurvePoints([]);
+                    break;
+                }
+                case Selectable.SelectableClasses.PROP: {
+                    // Props are deselected through the marcher selection system
                     break;
                 }
                 default: {

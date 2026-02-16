@@ -101,6 +101,7 @@ export default function MarcherCoordinateSheetPreview({
         if (example && fieldProperties) {
             setMarcherToUse({
                 id: 1,
+                type: "marcher",
                 name: t("exportCoordinates.exampleMarcherName"),
                 section: t("exportCoordinates.exampleMarcherSection"),
                 drill_prefix: "B",

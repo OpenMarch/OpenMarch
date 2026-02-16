@@ -42,6 +42,7 @@ const expectedMarchers = Array.from({ length: numberOfMarchers }, (_, i) => {
 
     return {
         id: marcherNumber,
+        type: "marcher",
         name: null,
         section,
         drill_prefix,

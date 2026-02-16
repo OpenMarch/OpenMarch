@@ -3,6 +3,7 @@ import * as z from "zod";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
+import { withTransactionLock } from "./history";
 
 export type DatabaseWorkspaceSettings =
     typeof schema.workspace_settings.$inferSelect;
@@ -44,21 +45,26 @@ export async function updateWorkspaceSettings({
     // Initialize the workspace settings record if it doesn't exist
     await initializeWorkspaceSettings({ db });
 
-    return await db.transaction(async (tx: DbTransaction) => {
-        await tx
-            .update(schema.workspace_settings)
-            .set({
-                ...args,
-                updated_at: new Date().toISOString(),
-            })
-            .where(eq(schema.workspace_settings.id, 1));
+    return await withTransactionLock(() =>
+        db.transaction(async (tx: DbTransaction) => {
+            await tx
+                .update(schema.workspace_settings)
+                .set({
+                    ...args,
+                    updated_at: new Date().toISOString(),
+                })
+                .where(eq(schema.workspace_settings.id, 1));
 
-        const updatedSettings = await tx.query.workspace_settings.findFirst();
-        if (!updatedSettings) {
-            throw new Error("Workspace settings record not found after update");
-        }
-        return updatedSettings;
-    });
+            const updatedSettings =
+                await tx.query.workspace_settings.findFirst();
+            if (!updatedSettings) {
+                throw new Error(
+                    "Workspace settings record not found after update",
+                );
+            }
+            return updatedSettings;
+        }),
+    );
 }
 
 /**

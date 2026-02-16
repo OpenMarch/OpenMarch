@@ -20,6 +20,7 @@ import Plugin from "./global/classes/Plugin";
 import Sidebar from "@/components/sidebar/Sidebar";
 import Toaster from "./components/ui/Toaster";
 import FocusNotice from "./components/FocusNotice";
+import PropDrawingNotice from "./components/PropDrawingNotice";
 import SvgPreviewHandler from "./utilities/SvgPreviewHandler";
 import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
@@ -225,6 +226,7 @@ function App() {
                                             <SvgPreviewHandler />
                                             <TitleBar showControls />
                                             <FocusNotice />
+                                            <PropDrawingNotice />
                                             <div
                                                 id="app"
                                                 className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"

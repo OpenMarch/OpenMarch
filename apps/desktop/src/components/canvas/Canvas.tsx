@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -9,12 +9,21 @@ import {
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
     marcherAppearancesQueryOptions,
+    allPropsQueryOptions,
+    propPageGeometryQueryOptions,
+    propImagesQueryOptions,
+    updatePropGeometryMutationOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
+import PropDrawingListeners, {
+    PropGeometry,
+} from "./listeners/PropDrawingListeners";
+import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+import { createPropsMutationOptions } from "@/hooks/queries";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
@@ -30,6 +39,11 @@ import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
+import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
+import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
+import PropVisualGroup, {
+    PropVisualMap,
+} from "@/global/classes/PropVisualGroup";
 
 /**
  * The field/stage UI of OpenMarch
@@ -77,7 +91,91 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
+    const updatePropGeometry = useMutation(
+        updatePropGeometryMutationOptions(queryClient),
+    );
     const { setSelectedShapePageIds } = useSelectionStore()!;
+
+    // Props queries
+    const { data: props } = useQuery(allPropsQueryOptions());
+    const { data: propGeometries } = useQuery(propPageGeometryQueryOptions());
+    const { data: propImages } = useQuery(propImagesQueryOptions());
+    const { mutate: createPropsMutate } = useMutation(
+        createPropsMutationOptions(queryClient),
+    );
+
+    // Create prop visuals map for pathways (use ref to persist across renders)
+    const propVisualsRef = useRef<PropVisualMap>({});
+    const propVisuals = useMemo(() => {
+        if (!props) return propVisualsRef.current;
+        const currentIds = new Set(props.map((p) => p.marcher_id));
+        // Remove visuals for props that no longer exist
+        for (const id of Object.keys(propVisualsRef.current)) {
+            if (!currentIds.has(Number(id))) {
+                delete propVisualsRef.current[Number(id)];
+            }
+        }
+        // Add visuals for new props
+        for (const prop of props) {
+            if (!propVisualsRef.current[prop.marcher_id]) {
+                propVisualsRef.current[prop.marcher_id] = new PropVisualGroup({
+                    marcherId: prop.marcher_id,
+                });
+            }
+        }
+        return propVisualsRef.current;
+    }, [props]);
+
+    // Prop image cache — persists loaded HTMLImageElement objects across renders.
+    // imageCacheVersion is state so that when async loading finishes, the prop
+    // rendering effect re-runs and picks up the newly cached elements.
+    const propImageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
+    const [imageCacheVersion, setImageCacheVersion] = useState(0);
+    useEffect(() => {
+        if (!propImages) return;
+        let cancelled = false;
+        if (propImages.length === 0) {
+            if (propImageCacheRef.current.size > 0) {
+                propImageCacheRef.current.clear();
+                setImageCacheVersion((v) => v + 1);
+            }
+            return;
+        }
+        const loadImg = (data: Uint8Array): Promise<HTMLImageElement> =>
+            new Promise((resolve, reject) => {
+                const img = new Image();
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                const blob = new Blob([(data as any).buffer ?? data]);
+                img.src = URL.createObjectURL(blob);
+            });
+        void (async () => {
+            const newCache = new Map<number, HTMLImageElement>();
+            await Promise.all(
+                propImages.map(async ({ prop_id, image }) => {
+                    try {
+                        const el = await loadImg(image);
+                        if (!cancelled) newCache.set(prop_id, el);
+                    } catch {
+                        /* skip broken images */
+                    }
+                }),
+            );
+            if (!cancelled) {
+                propImageCacheRef.current = newCache;
+                setImageCacheVersion((v) => v + 1);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [propImages]);
+
+    // Structural fingerprint for detecting position-only changes
+    const prevPropStructureRef = useRef<string>("");
+
+    // Prop drawing state
+    const { drawingMode, resetDrawingState } = usePropDrawingStore();
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
@@ -181,19 +279,79 @@ export default function Canvas({
         onCanvasReady,
     ]);
 
+    // Helper to convert pixels to feet
+    const pixelsToFeetLocal = useCallback(
+        (pixels: number) => {
+            if (!fieldProperties) return pixels;
+            // Inline calculation to avoid import - could use getPixelsPerFoot from Prop.ts
+            const pixelsPerStep = fieldProperties.pixelsPerStep;
+            const inchesPerStep = 22.5;
+            const pixelsPerFoot = (pixelsPerStep / inchesPerStep) * 12;
+            return pixels / pixelsPerFoot;
+        },
+        [fieldProperties],
+    );
+
+    // Handle prop drawing completion
+    const handlePropDrawingComplete = useCallback(
+        (geometry: PropGeometry) => {
+            const widthFeet = pixelsToFeetLocal(geometry.widthPixels);
+            const heightFeet = pixelsToFeetLocal(geometry.heightPixels);
+
+            // Build custom geometry JSON for non-rectangle shapes
+            let customGeometry: string | undefined;
+            if (geometry.points) {
+                customGeometry = JSON.stringify({
+                    points: geometry.points,
+                    originalWidth: geometry.widthPixels,
+                    originalHeight: geometry.heightPixels,
+                });
+            }
+
+            createPropsMutate([
+                {
+                    name: `New ${geometry.shapeType}`,
+                    surface_type: "obstacle",
+                    width: Math.max(widthFeet, 1),
+                    height: Math.max(heightFeet, 1),
+                    shape_type: geometry.shapeType,
+                    custom_geometry: customGeometry,
+                    initial_x: geometry.centerX,
+                    initial_y: geometry.centerY,
+                },
+            ]);
+
+            resetDrawingState();
+        },
+        [createPropsMutate, pixelsToFeetLocal, resetDrawingState],
+    );
+
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
-            // Initiate listeners
-            switch (alignmentEvent) {
-                case "line":
-                    canvas.setListeners(new LineListeners({ canvas: canvas }));
-                    break;
-                default:
-                    canvas.setListeners(
-                        new DefaultListeners({ canvas: canvas }),
-                    );
-                    break;
+            // Check for prop drawing mode first
+            if (drawingMode) {
+                const propListeners = new PropDrawingListeners({
+                    canvas,
+                    drawingMode,
+                });
+                propListeners.onComplete = handlePropDrawingComplete;
+                propListeners.onCancel = resetDrawingState;
+                canvas.setListeners(propListeners);
+            } else {
+                // Standard listeners
+                switch (alignmentEvent) {
+                    case "line":
+                        canvas.setListeners(
+                            new LineListeners({ canvas: canvas }),
+                        );
+                        break;
+                    default:
+                        canvas.setListeners(
+                            new DefaultListeners({ canvas: canvas }),
+                        );
+                        break;
+                }
             }
             canvas.eventMarchers = canvas.getCanvasMarchersByIds(
                 alignmentEventMarchers.map((marcher) => marcher.id),
@@ -213,14 +371,18 @@ export default function Canvas({
         alignmentEventMarchers,
         centerAndFitCanvas,
         isFullscreen,
+        drawingMode,
+        handlePropDrawingComplete,
+        resetDrawingState,
     ]);
 
-    // Update section appearances
+    // Update canvas functions for database updates
     useEffect(() => {
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
+            canvas.updatePropGeometryFunction = updatePropGeometry.mutate;
         }
-    }, [canvas, updateMarcherPages.mutate]);
+    }, [canvas, updateMarcherPages.mutate, updatePropGeometry.mutate]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -229,8 +391,9 @@ export default function Canvas({
 
         canvas.renderOnAddRemove = false;
         try {
-            // Remove all marcher visuals from the canvas
+            // Remove marcher visuals from canvas (skip CanvasProps - managed separately)
             canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+                if (CanvasProp.isCanvasProp(canvasMarcher)) return;
                 canvas.remove(canvasMarcher);
                 canvas.remove(canvasMarcher.textLabel);
             });
@@ -414,6 +577,321 @@ export default function Canvas({
         uiSettings.nextPaths,
         uiSettings.previousPaths,
         marcherVisuals,
+        marcherPagesLoaded,
+    ]);
+
+    // Render props on the canvas
+    useEffect(() => {
+        if (
+            !canvas ||
+            !props ||
+            !propGeometries ||
+            !marcherPages ||
+            !fieldProperties ||
+            !selectedPage
+        )
+            return;
+
+        // Compute structural fingerprint (everything except positions).
+        // propMpIds tracks which marcher-pages back each prop so that when a
+        // newly-created prop's marcher page arrives we trigger a full recreate.
+        const structureKey = JSON.stringify({
+            propIds: props.map((p) => p.id),
+            propMpIds: props.map((p) => marcherPages[p.marcher_id]?.id ?? null),
+            geoKeys: propGeometries.map(
+                (g) =>
+                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}:${g.visible}`,
+            ),
+            opacities: props.map((p) => p.image_opacity),
+            imgVer: imageCacheVersion,
+            pageId: selectedPage.id,
+            showNames: uiSettings.showPropNames,
+            nameOverrides: uiSettings.propNameOverrides,
+            hiddenIds: uiSettings.hiddenPropIds,
+        });
+
+        if (structureKey === prevPropStructureRef.current) {
+            // Position-only change: update existing props in place
+            canvas
+                .getObjects()
+                .filter(CanvasProp.isCanvasProp)
+                .forEach((cp) => {
+                    const mp = marcherPages[cp.marcherObj.id];
+                    if (mp) cp.setMarcherCoords(mp);
+                });
+            canvas.requestRenderAll();
+            return;
+        }
+        prevPropStructureRef.current = structureKey;
+
+        // Full recreate path — structural change detected
+        canvas
+            .getObjects()
+            .filter(CanvasProp.isCanvasProp)
+            .forEach((prop) => {
+                canvas.remove(prop.propNameLabel);
+                canvas.remove(prop);
+            });
+
+        const geometryByMpId = new Map(
+            propGeometries.map((g) => [g.marcher_page_id, g]),
+        );
+        const marcherPagesForPage = Object.values(marcherPages);
+        const pixelsPerStep = fieldProperties.pixelsPerStep;
+        const pixelsPerFoot = (pixelsPerStep / 22.5) * 12;
+        const { showPropNames, propNameOverrides, hiddenPropIds } = uiSettings;
+
+        for (const prop of props) {
+            const marcherPage = marcherPagesForPage.find(
+                (mp) => mp.marcher_id === prop.marcher_id,
+            );
+            if (!marcherPage) continue;
+
+            const geometry = geometryByMpId.get(marcherPage.id);
+            if (!geometry || !geometry.visible) continue;
+            if (hiddenPropIds[prop.id.toString()]) continue;
+
+            const canvasProp = new CanvasProp({
+                marcher: prop.marcher,
+                prop,
+                geometry,
+                coordinate: { x: marcherPage.x, y: marcherPage.y },
+                pixelsPerFoot,
+                showName:
+                    propNameOverrides[prop.id.toString()] ?? showPropNames,
+                imageElement: propImageCacheRef.current.get(prop.id),
+                imageOpacity: prop.image_opacity,
+            });
+            canvas.add(canvasProp);
+            canvas.add(canvasProp.propNameLabel);
+        }
+
+        canvas.requestRenderAll();
+    }, [
+        canvas,
+        props,
+        propGeometries,
+        imageCacheVersion,
+        marcherPages,
+        fieldProperties,
+        selectedPage,
+        uiSettings.showPropNames,
+        uiSettings.propNameOverrides,
+        uiSettings.hiddenPropIds,
+    ]);
+
+    // Copy-paste for props
+    const propClipboardRef = useRef<
+        {
+            name: string;
+            surface_type: string;
+            shape_type: string;
+            custom_geometry: string | null;
+            width: number;
+            height: number;
+            x: number;
+            y: number;
+        }[]
+    >([]);
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (
+                !canvas ||
+                !props ||
+                !propGeometries ||
+                !marcherPages ||
+                uiSettings.focussedComponent !== "canvas" ||
+                document.activeElement?.matches(
+                    "input, textarea, select, [contenteditable]",
+                )
+            )
+                return;
+
+            const isCtrl = e.ctrlKey || e.metaKey;
+
+            if (isCtrl && e.key === "c") {
+                const activeProps = canvas
+                    .getCanvasMarchers({ active: true })
+                    .filter(CanvasProp.isCanvasProp);
+                if (activeProps.length === 0) return;
+
+                propClipboardRef.current = activeProps
+                    .map((cp) => {
+                        const mp = marcherPages[cp.marcherObj.id];
+                        const prop = props.find(
+                            (p) => p.marcher_id === cp.marcherObj.id,
+                        );
+                        const geom = propGeometries.find(
+                            (g) => g.marcher_page_id === mp?.id,
+                        );
+                        if (!mp || !prop || !geom) return null;
+                        return {
+                            name:
+                                prop.marcher.name ?? prop.marcher.drill_prefix,
+                            surface_type: prop.surface_type,
+                            shape_type: geom.shape_type,
+                            custom_geometry: geom.custom_geometry,
+                            width: geom.width,
+                            height: geom.height,
+                            x: mp.x,
+                            y: mp.y,
+                        };
+                    })
+                    .filter(
+                        Boolean,
+                    ) as (typeof propClipboardRef.current)[number][];
+            }
+
+            if (
+                isCtrl &&
+                e.key === "v" &&
+                propClipboardRef.current.length > 0
+            ) {
+                e.preventDefault();
+                const pasteOffset = 30; // pixels offset from original
+
+                createPropsMutate(
+                    propClipboardRef.current.map((data) => ({
+                        name: data.name,
+                        surface_type: data.surface_type as SurfaceType,
+                        width: data.width,
+                        height: data.height,
+                        shape_type: data.shape_type as ShapeType,
+                        custom_geometry: data.custom_geometry ?? undefined,
+                        initial_x: data.x + pasteOffset,
+                        initial_y: data.y + pasteOffset,
+                    })),
+                );
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [
+        canvas,
+        props,
+        propGeometries,
+        marcherPages,
+        uiSettings.focussedComponent,
+        createPropsMutate,
+    ]);
+
+    // Add prop pathway visuals to canvas and update their positions
+    useEffect(() => {
+        if (
+            !canvas ||
+            !props ||
+            !fieldProperties ||
+            !selectedPage ||
+            !marcherPagesLoaded
+        )
+            return;
+
+        // Remove existing prop pathway visuals
+        for (const visual of Object.values(propVisuals)) {
+            canvas.remove(visual.getPreviousPathway());
+            canvas.remove(visual.getNextPathway());
+            canvas.remove(visual.getPreviousMidpoint());
+            canvas.remove(visual.getNextMidpoint());
+            canvas.remove(visual.getPreviousEndpoint());
+            canvas.remove(visual.getNextEndpoint());
+        }
+
+        const prevPageIsEmpty =
+            !previousMarcherPages ||
+            Object.keys(previousMarcherPages).length === 0;
+        const nextPageIsEmpty =
+            !nextMarcherPages || Object.keys(nextMarcherPages).length === 0;
+
+        // Add all prop pathway visuals and update positions
+        for (const prop of props) {
+            const visual = propVisuals[prop.marcher_id];
+            if (!visual) continue;
+
+            // Add pathway visuals to canvas
+            canvas.add(visual.getPreviousPathway());
+            canvas.add(visual.getNextPathway());
+            canvas.add(visual.getPreviousMidpoint());
+            canvas.add(visual.getNextMidpoint());
+            canvas.add(visual.getPreviousEndpoint());
+            canvas.add(visual.getNextEndpoint());
+
+            // Apply theme colors
+            visual
+                .getPreviousPathway()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextPathway().setColor(fieldProperties.theme.nextPath);
+            visual
+                .getPreviousMidpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextMidpoint().setColor(fieldProperties.theme.nextPath);
+            visual
+                .getPreviousEndpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextEndpoint().setColor(fieldProperties.theme.nextPath);
+
+            // Update positions
+            const prev = !prevPageIsEmpty
+                ? previousMarcherPages?.[prop.marcher_id]
+                : undefined;
+            const curr = marcherPages?.[prop.marcher_id];
+            const next = !nextPageIsEmpty
+                ? nextMarcherPages?.[prop.marcher_id]
+                : undefined;
+
+            // Previous pathway, midpoint, endpoint
+            if (uiSettings.previousPaths && !prevPageIsEmpty && prev && curr) {
+                visual.getPreviousPathway().show();
+                visual.getPreviousPathway().updateStartCoords(curr);
+                visual.getPreviousPathway().updateEndCoords(prev);
+
+                visual.getPreviousMidpoint().show();
+                visual.getPreviousMidpoint().updateCoords({
+                    x: (curr.x + prev.x) / 2,
+                    y: (curr.y + prev.y) / 2,
+                });
+
+                visual.getPreviousEndpoint().show();
+                visual.getPreviousEndpoint().updateCoords(prev);
+            } else {
+                visual.getPreviousPathway().hide();
+                visual.getPreviousMidpoint().hide();
+                visual.getPreviousEndpoint().hide();
+            }
+
+            // Next pathway, midpoint, endpoint
+            if (uiSettings.nextPaths && !nextPageIsEmpty && next && curr) {
+                visual.getNextPathway().show();
+                visual.getNextPathway().updateStartCoords(curr);
+                visual.getNextPathway().updateEndCoords(next);
+
+                visual.getNextMidpoint().show();
+                visual.getNextMidpoint().updateCoords({
+                    x: (curr.x + next.x) / 2,
+                    y: (curr.y + next.y) / 2,
+                });
+
+                visual.getNextEndpoint().show();
+                visual.getNextEndpoint().updateCoords(next);
+            } else {
+                visual.getNextPathway().hide();
+                visual.getNextMidpoint().hide();
+                visual.getNextEndpoint().hide();
+            }
+        }
+
+        canvas.requestRenderAll();
+    }, [
+        canvas,
+        fieldProperties,
+        marcherPages,
+        previousMarcherPages,
+        nextMarcherPages,
+        props,
+        propVisuals,
+        selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
         marcherPagesLoaded,
     ]);
 

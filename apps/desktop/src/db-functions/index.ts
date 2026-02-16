@@ -12,3 +12,4 @@ export * from "./shapes";
 export * from "./shapePages";
 export * from "./shapePageMarchers";
 export * from "./tag";
+export * from "./prop";

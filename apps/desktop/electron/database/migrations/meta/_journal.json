@@ -120,6 +120,20 @@
             "when": 1764733345489,
             "tag": "0016_unique_ultimo",
             "breakpoints": true
+        },
+        {
+            "idx": 17,
+            "version": "6",
+            "when": 1770003302649,
+            "tag": "0017_glamorous_stellaris",
+            "breakpoints": true
+        },
+        {
+            "idx": 18,
+            "version": "6",
+            "when": 1771216258698,
+            "tag": "0018_natural_squirrel_girl",
+            "breakpoints": true
         }
     ]
 }

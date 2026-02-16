@@ -106,7 +106,7 @@ export default function MarcherList({
 
     function handleCancel() {
         setIsEditing(false);
-        setLocalMarchers(marchers);
+        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
         deletionsRef.current = [];
         changesRef.current = {};
     }
@@ -139,9 +139,9 @@ export default function MarcherList({
 
     const selectPlaceholder = t("marchers.list.selectSection");
 
-    // Update local marchers when marchers are fetched
+    // Update local marchers when marchers are fetched (filter out props)
     useEffect(() => {
-        setLocalMarchers(marchers);
+        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
     }, [marchers]);
 
     // Turn off editing if the modal closes

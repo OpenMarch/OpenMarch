@@ -60,3 +60,6 @@ packages/metronome/
 
 *.tmp.dots
 *.tmp.dots-journal
+
+# Local-only AI reference rules
+.cursor/rules/ref-*.mdc

@@ -200,53 +200,120 @@ const _createMarcherPages = async ({
     tx: DbTransaction;
     sortedNewPages: RealDatabasePage[];
 }) => {
-    // Create the marcher pages
     const allMarchers = await tx.query.marchers.findMany();
-    if (allMarchers.length > 0) {
-        for (const page of sortedNewPages) {
-            const newMarcherPages: ModifiedMarcherPageArgs[] = [];
-            const previousPage = await getAdjacentPage({
-                tx,
-                pageId: page.id,
-                direction: "previous",
-            });
-            if (previousPage) {
-                const previousPageMarcherPages =
-                    await tx.query.marcher_pages.findMany({
-                        where: eq(
-                            schema.marcher_pages.page_id,
-                            previousPage.id,
-                        ),
-                    });
+    if (allMarchers.length === 0) return;
 
-                for (const marcherPage of previousPageMarcherPages)
-                    newMarcherPages.push({
-                        marcher_id: marcherPage.marcher_id,
-                        page_id: page.id,
-                        x: marcherPage.x,
-                        y: marcherPage.y,
-                        notes: marcherPage.notes,
-                        path_data_id: marcherPage.path_data_id,
-                        path_start_position: marcherPage.path_start_position,
-                        path_end_position: marcherPage.path_end_position,
-                    });
-            } else {
-                for (const marcher of allMarchers) {
-                    newMarcherPages.push({
-                        marcher_id: marcher.id,
-                        page_id: page.id,
-                        x: 100,
-                        y: 100,
-                    });
-                }
+    const propMarchers = allMarchers.filter((m) => m.type === "prop");
+    const propMarcherIds = new Set(propMarchers.map((m) => m.id));
+
+    for (const page of sortedNewPages) {
+        const newMarcherPages: ModifiedMarcherPageArgs[] = [];
+        const previousPage = await getAdjacentPage({
+            tx,
+            pageId: page.id,
+            direction: "previous",
+        });
+
+        if (previousPage) {
+            const previousPageMarcherPages =
+                await tx.query.marcher_pages.findMany({
+                    where: eq(schema.marcher_pages.page_id, previousPage.id),
+                });
+
+            for (const marcherPage of previousPageMarcherPages)
+                newMarcherPages.push({
+                    marcher_id: marcherPage.marcher_id,
+                    page_id: page.id,
+                    x: marcherPage.x,
+                    y: marcherPage.y,
+                    notes: marcherPage.notes,
+                    path_data_id: marcherPage.path_data_id,
+                    path_start_position: marcherPage.path_start_position,
+                    path_end_position: marcherPage.path_end_position,
+                });
+        } else {
+            for (const marcher of allMarchers) {
+                newMarcherPages.push({
+                    marcher_id: marcher.id,
+                    page_id: page.id,
+                    x: 100,
+                    y: 100,
+                });
+            }
+        }
+
+        if (newMarcherPages.length === 0) continue;
+
+        const createdMarcherPages = await tx
+            .insert(schema.marcher_pages)
+            .values(newMarcherPages)
+            .returning();
+
+        // Create prop_page_geometry for prop-type marchers
+        const propMarcherPages = createdMarcherPages.filter((mp) =>
+            propMarcherIds.has(mp.marcher_id),
+        );
+
+        if (propMarcherPages.length > 0 && previousPage) {
+            // Get previous page's marcher_pages first so we can look up their geometry
+            const prevMarcherPages = await tx.query.marcher_pages.findMany({
+                where: eq(schema.marcher_pages.page_id, previousPage.id),
+            });
+
+            const prevMpIds = prevMarcherPages
+                .filter((mp) => propMarcherIds.has(mp.marcher_id))
+                .map((mp) => mp.id);
+
+            // Copy geometry from previous page using the PREVIOUS marcher_page IDs
+            const prevGeometries =
+                prevMpIds.length > 0
+                    ? await tx.query.prop_page_geometry.findMany({
+                          where: (table, { inArray: inArr }) =>
+                              inArr(table.marcher_page_id, prevMpIds),
+                      })
+                    : [];
+
+            const prevGeomByMarcher = new Map<
+                number,
+                typeof schema.prop_page_geometry.$inferSelect
+            >();
+            for (const pg of prevGeometries) {
+                const prevMp = prevMarcherPages.find(
+                    (mp) => mp.id === pg.marcher_page_id,
+                );
+                if (prevMp) prevGeomByMarcher.set(prevMp.marcher_id, pg);
             }
 
-            if (newMarcherPages.length > 0) {
-                // Create the marcher pages
+            const newGeometries: {
+                marcher_page_id: number;
+                shape_type: string;
+                width: number;
+                height: number;
+                radius: number | null;
+                rotation: number;
+                rotation_x: number;
+                rotation_y: number;
+            }[] = [];
+
+            for (const mp of propMarcherPages) {
+                const prevGeom = prevGeomByMarcher.get(mp.marcher_id);
+                if (!prevGeom) continue;
+                newGeometries.push({
+                    marcher_page_id: mp.id,
+                    shape_type: prevGeom.shape_type,
+                    width: prevGeom.width,
+                    height: prevGeom.height,
+                    radius: prevGeom.radius,
+                    rotation: prevGeom.rotation,
+                    rotation_x: prevGeom.rotation_x,
+                    rotation_y: prevGeom.rotation_y,
+                });
+            }
+
+            if (newGeometries.length > 0) {
                 await tx
-                    .insert(schema.marcher_pages)
-                    .values(newMarcherPages)
-                    .returning();
+                    .insert(schema.prop_page_geometry)
+                    .values(newGeometries);
             }
         }
     }
