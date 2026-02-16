@@ -282,7 +282,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         size="compact"
                         disabled={isPending}
                     >
-                        This page forward
+                        This page forward (default)
                     </Button>
                     <Button
                         onClick={() => handleSaveGeometry("current")}

@@ -622,11 +622,11 @@ interface StaticQuarterMarcherSheetProps {
 /**
  * Format measure as X-X (e.g. 12A-14), max 11 chars.
  * Discards count of the measure.
- * Accepts strings like "12A(9) → 14(16)" or "12(9)".
+ * Accepts strings like "12A(9) -> 14(16)" or "12(9)".
  */
 function compactMeasureFormat(measureStr: string): string {
     const match = measureStr.match(
-        /([A-Za-z0-9]+)\(\d+\)\s*[→\-]\s*([A-Za-z0-9]+)\(\d+\)/,
+        /([A-Za-z0-9]+)\(\d+\)\s*(?:->|[-\u2192])\s*([A-Za-z0-9]+)\(\d+\)/,
     );
     if (match) {
         return `${match[1]}-${match[2]}`.slice(0, 11);

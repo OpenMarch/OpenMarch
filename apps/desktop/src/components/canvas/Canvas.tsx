@@ -14,6 +14,7 @@ import {
     propPageGeometryQueryOptions,
     propImagesQueryOptions,
     updatePropGeometryMutationOptions,
+    updatePropGeometryWithPropagationMutationOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -46,6 +47,15 @@ import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
 import PropVisualGroup, {
     PropVisualMap,
 } from "@/global/classes/PropVisualGroup";
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+    DialogClose,
+    Button,
+} from "@openmarch/ui";
+import type { GeometryPropagation } from "@/db-functions/prop";
 
 /**
  * The field/stage UI of OpenMarch
@@ -99,6 +109,18 @@ export default function Canvas({
     const updateMarcherPagesAndGeometry = useMutation(
         updateMarcherPagesAndGeometryMutationOptions(queryClient),
     );
+    const updatePropGeometryWithPropagation = useMutation(
+        updatePropGeometryWithPropagationMutationOptions(queryClient),
+    );
+    const [pendingPropGeometry, setPendingPropGeometry] = useState<{
+        propId: number;
+        pageId: number;
+        changes: { width: number; height: number; rotation: number };
+    } | null>(null);
+    const [propGeometryScope, setPropGeometryScope] =
+        useState<GeometryPropagation>("forward");
+    const pagesCountRef = useRef(pages.length);
+    pagesCountRef.current = pages.length;
     const { setSelectedShapePageIds } = useSelectionStore()!;
 
     // Props queries
@@ -410,12 +432,26 @@ export default function Canvas({
             canvas.updatePropGeometryFunction = updatePropGeometry.mutate;
             canvas.updateMarcherPagesAndGeometryFunction =
                 updateMarcherPagesAndGeometry.mutate;
+            canvas.onPropGeometryEditedFromCanvas = (args) => {
+                if (pagesCountRef.current <= 1) {
+                    updatePropGeometryWithPropagation.mutate({
+                        propId: args.propId,
+                        currentPageId: args.pageId,
+                        changes: args.changes,
+                        propagation: "forward",
+                    });
+                    return;
+                }
+                setPendingPropGeometry(args);
+                setPropGeometryScope("forward");
+            };
         }
     }, [
         canvas,
         updateMarcherPages.mutate,
         updatePropGeometry.mutate,
         updateMarcherPagesAndGeometry.mutate,
+        updatePropGeometryWithPropagation.mutate,
     ]);
 
     // Sync canvas with marcher visuals
@@ -1133,50 +1169,147 @@ export default function Canvas({
         uiSettings.showCollisions,
     ]);
 
-    return (
-        <div
-            ref={containerRef}
-            className={clsx(
-                `rounded-6 relative h-full w-full overflow-hidden`,
+    const applyPropGeometryScope = useCallback(
+        (scope: GeometryPropagation) => {
+            if (!pendingPropGeometry) return;
+            updatePropGeometryWithPropagation.mutate(
                 {
-                    "pointer-events-none pt-128": isFullscreen,
+                    propId: pendingPropGeometry.propId,
+                    currentPageId: pendingPropGeometry.pageId,
+                    changes: pendingPropGeometry.changes,
+                    propagation: scope,
                 },
-            )}
-            style={{
-                perspective: `${1500}px`,
-                perspectiveOrigin: "center center",
-                transformStyle: "preserve-3d",
-            }}
-        >
-            {pages.length > 0 || canvas ? (
-                <div
-                    ref={innerDivRef}
-                    style={{
-                        transform: `rotateX(${perspective}deg)`,
-                        transformOrigin:
-                            "center 70%" /* Position pivot point below center for more natural look */,
-                        transition: "transform 0.2s ease-out",
-                        height: "100%",
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <canvas
-                        ref={canvasRef}
-                        id="fieldCanvas"
-                        data-testid="fieldCanvas"
-                    />
-                </div>
-            ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                    <CircleNotchIcon
-                        size={32}
-                        className="text-text animate-spin"
-                    />
-                </div>
-            )}
-        </div>
+                { onSettled: () => setPendingPropGeometry(null) },
+            );
+        },
+        [pendingPropGeometry, updatePropGeometryWithPropagation.mutate],
+    );
+
+    return (
+        <>
+            <Dialog
+                open={!!pendingPropGeometry}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        if (pendingPropGeometry)
+                            applyPropGeometryScope("current");
+                        setPendingPropGeometry(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Apply prop changes</DialogTitle>
+                    <DialogDescription>
+                        Apply this size/rotation to:
+                    </DialogDescription>
+                    <div className="mt-12 flex flex-col gap-8">
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "current"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("current")}
+                        >
+                            This page only
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "forward"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("forward")}
+                        >
+                            This page forward (default)
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "all"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("all")}
+                        >
+                            All pages
+                        </Button>
+                    </div>
+                    <div className="mt-12 flex justify-end gap-8">
+                        <DialogClose>
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={() => {
+                                    if (pendingPropGeometry) {
+                                        applyPropGeometryScope("current");
+                                        setPendingPropGeometry(null);
+                                    }
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            size="compact"
+                            onClick={() =>
+                                applyPropGeometryScope(propGeometryScope)
+                            }
+                            disabled={
+                                updatePropGeometryWithPropagation.isPending
+                            }
+                        >
+                            Apply
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <div
+                ref={containerRef}
+                className={clsx(
+                    `rounded-6 relative h-full w-full overflow-hidden`,
+                    {
+                        "pointer-events-none pt-128": isFullscreen,
+                    },
+                )}
+                style={{
+                    perspective: `${1500}px`,
+                    perspectiveOrigin: "center center",
+                    transformStyle: "preserve-3d",
+                }}
+            >
+                {pages.length > 0 || canvas ? (
+                    <div
+                        ref={innerDivRef}
+                        style={{
+                            transform: `rotateX(${perspective}deg)`,
+                            transformOrigin:
+                                "center 70%" /* Position pivot point below center for more natural look */,
+                            transition: "transform 0.2s ease-out",
+                            height: "100%",
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <canvas
+                            ref={canvasRef}
+                            id="fieldCanvas"
+                            data-testid="fieldCanvas"
+                        />
+                    </div>
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                        <CircleNotchIcon
+                            size={32}
+                            className="text-text animate-spin"
+                        />
+                    </div>
+                )}
+            </div>
+        </>
     );
 }

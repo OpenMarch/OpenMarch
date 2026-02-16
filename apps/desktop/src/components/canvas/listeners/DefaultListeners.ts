@@ -188,7 +188,6 @@ export default class DefaultListeners implements CanvasListeners {
                     const sx = prop.scaleX || 1;
                     const sy = prop.scaleY || 1;
 
-                    // Only update geometry if the prop was actually scaled or rotated
                     const wasScaled =
                         Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
                     const wasRotated =
@@ -198,12 +197,23 @@ export default class DefaultListeners implements CanvasListeners {
 
                     if (wasScaled || wasRotated) {
                         const dimensions = prop.getDimensions(pixelsPerFoot);
-                        modifiedGeometries.push({
-                            id: prop.geometry.id,
+                        const changes = {
                             width: dimensions.width,
                             height: dimensions.height,
                             rotation: currentRotation,
-                        });
+                        };
+                        if (this.canvas.onPropGeometryEditedFromCanvas) {
+                            this.canvas.onPropGeometryEditedFromCanvas({
+                                propId: prop.propId,
+                                pageId: objPageId,
+                                changes,
+                            });
+                        } else {
+                            modifiedGeometries.push({
+                                id: prop.geometry.id,
+                                ...changes,
+                            });
+                        }
                     }
                 }
             });

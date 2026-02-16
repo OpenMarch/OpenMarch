@@ -42,7 +42,7 @@ export const measureRangeString = (
                 : `${lastMeasure.number}(${beatToEndOn})`;
 
         if (firstMeasureString === lastMeasureString) return firstMeasureString;
-        return `${firstMeasureString} → ${lastMeasureString}`;
+        return `${firstMeasureString} -> ${lastMeasureString}`;
     } catch (err) {
         return "N/A";
     }

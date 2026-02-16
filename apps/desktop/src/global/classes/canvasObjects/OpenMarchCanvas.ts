@@ -110,6 +110,16 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }[];
     }) => void;
 
+    /**
+     * Called when the user edits a prop's size/rotation on the canvas.
+     * If set, geometry is not written immediately; the host shows a scope prompt and then applies via propagation.
+     */
+    onPropGeometryEditedFromCanvas?: (args: {
+        propId: number;
+        pageId: number;
+        changes: { width: number; height: number; rotation: number };
+    }) => void;
+
     // ---- AlignmentEvent changes ----
     /**
      * Updates the event marchers in global state. Must be set in a React component
