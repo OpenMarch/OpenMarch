@@ -108,7 +108,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             height?: number;
             rotation?: number;
         }[];
-    }) => void;
+    }) => void | Promise<void>;
 
     /**
      * Called when the user edits a prop's size/rotation on the canvas.

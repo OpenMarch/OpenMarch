@@ -432,7 +432,7 @@ export default function Canvas({
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
             canvas.updatePropGeometryFunction = updatePropGeometry.mutate;
             canvas.updateMarcherPagesAndGeometryFunction =
-                updateMarcherPagesAndGeometry.mutate;
+                updateMarcherPagesAndGeometry.mutateAsync;
             canvas.onPropGeometryEditedFromCanvas = (args) => {
                 if (pagesCountRef.current <= 1) {
                     updatePropGeometryWithPropagation.mutate({
@@ -451,7 +451,7 @@ export default function Canvas({
         canvas,
         updateMarcherPages.mutate,
         updatePropGeometry.mutate,
-        updateMarcherPagesAndGeometry.mutate,
+        updateMarcherPagesAndGeometry.mutateAsync,
         updatePropGeometryWithPropagation.mutate,
     ]);
 

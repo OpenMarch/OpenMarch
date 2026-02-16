@@ -89,17 +89,19 @@ test("Export modal is visible", async ({ electronApp }) => {
 
 test("Sidebars are visible", async ({ electronApp }) => {
     const { page } = electronApp;
-    await page.locator("#sidebar").getByRole("button").first().click();
+    await page.locator("#sidebar-launcher-marchers").click();
     await expect(page.getByRole("heading", { name: "Marchers" })).toBeVisible();
     await expect(
         page.locator("#workspace div").filter({ hasText: "Marchers" }).nth(1),
     ).toBeVisible();
-    await page.locator("#sidebar").getByRole("button").nth(2).click();
+    await page.locator("#sidebar-launcher-props").click();
+    await expect(page.getByRole("heading", { name: "Props" })).toBeVisible();
+    await page.locator("#sidebar-launcher-music").click();
     await expect(page.locator("header")).toContainText("Music");
     await expect(
         page.getByRole("heading", { name: "Tempo Groups" }),
     ).toBeVisible();
-    await page.locator("#sidebar").getByRole("button").nth(3).click();
+    await page.locator("#sidebar-launcher-field").click();
     await expect(
         page
             .locator("#workspace div")
@@ -113,7 +115,7 @@ test("Field properties customizer tabs are visible", async ({
     electronApp,
 }) => {
     const { page } = electronApp;
-    await page.locator("#sidebar").getByRole("button").nth(3).click();
+    await page.locator("#sidebar-launcher-field").click();
     await expect(page.getByText("Field Template")).toBeVisible();
     await page
         .getByRole("combobox", { name: "High school football field (" })

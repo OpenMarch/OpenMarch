@@ -7,7 +7,7 @@ const otherFile = expectedAudioFiles[0];
 test("Audio files are is visible", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
 
-    await page.locator("#sidebar").getByRole("button").nth(2).click();
+    await page.locator("#sidebar-launcher-music").click();
     await page
         .getByRole("combobox", { name: "/Users/openmarchdev/Documents" })
         .click();
@@ -18,9 +18,9 @@ test("Audio files are is visible", async ({ audioFiles, electronApp }) => {
 
 test("Change selected audio file", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
-    await page.locator("#sidebar").getByRole("button").nth(2).click();
+    await page.locator("#sidebar-launcher-music").click();
     await page.locator("header").getByRole("button").click();
-    await page.locator("#sidebar").getByRole("button").nth(2).click();
+    await page.locator("#sidebar-launcher-music").click();
     await expect(
         page.getByRole("combobox", { name: currentlySelectedFile }),
     ).toBeVisible();
@@ -51,7 +51,7 @@ test("Change selected audio file", async ({ audioFiles, electronApp }) => {
 test("Delete audio file", async ({ audioFiles, electronApp }) => {
     const { page } = electronApp;
 
-    await page.locator("#sidebar").getByRole("button").nth(2).click();
+    await page.locator("#sidebar-launcher-music").click();
     await page.getByRole("combobox", { name: currentlySelectedFile }).click();
     await expect(
         page.getByRole("listbox").getByText(currentlySelectedFile),
