@@ -221,6 +221,7 @@ async function updatePropsInTransaction({
     tx: DbTransaction;
 }): Promise<DatabaseProp[]> {
     const updated: DatabaseProp[] = [];
+    const updatedIds = new Set<number>();
     for (const mod of modifiedProps) {
         const { id, name, ...propData } = mod;
 
@@ -232,7 +233,10 @@ async function updatePropsInTransaction({
                 .where(eq(schema.props.id, id))
                 .returning()
                 .get();
-            if (result) updated.push(result);
+            if (result) {
+                updated.push(result);
+                updatedIds.add(id);
+            }
         }
 
         // Update marcher name if provided
@@ -245,6 +249,12 @@ async function updatePropsInTransaction({
                     .update(schema.marchers)
                     .set({ name })
                     .where(eq(schema.marchers.id, prop.marcher_id));
+
+                // Ensure the prop is in the result even if only name changed
+                if (!updatedIds.has(id)) {
+                    updated.push(prop);
+                    updatedIds.add(id);
+                }
             }
         }
     }

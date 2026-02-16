@@ -19,6 +19,7 @@ import {
     ModifiedMarcherPageArgs,
     swapMarchers,
     updateMarcherPages,
+    updateMarcherPagesAndGeometry,
 } from "@/db-functions/marcherPage";
 import { conToastError } from "@/utilities/utils";
 import { DEFAULT_STALE_TIME } from "./constants";
@@ -141,6 +142,41 @@ export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
         },
         onError: (e, variables) => {
             conToastError(`Error updating pages`, e, variables);
+        },
+    });
+};
+
+/** Atomically update marcher pages and prop geometry in one transaction */
+export const updateMarcherPagesAndGeometryMutationOptions = (
+    qc: QueryClient,
+) => {
+    return mutationOptions({
+        mutationFn: (args: {
+            modifiedMarcherPages: ModifiedMarcherPageArgs[];
+            modifiedGeometries: {
+                id: number;
+                width?: number;
+                height?: number;
+                rotation?: number;
+            }[];
+        }) =>
+            updateMarcherPagesAndGeometry({
+                db,
+                modifiedMarcherPages: args.modifiedMarcherPages,
+                modifiedGeometries: args.modifiedGeometries,
+            }),
+        onSuccess: (_, variables) => {
+            const pageIds = new Set<number>(
+                variables.modifiedMarcherPages.map((m) => m.page_id),
+            );
+            invalidateByPage(qc, pageIds);
+            if (variables.modifiedGeometries.length > 0)
+                void qc.invalidateQueries({
+                    queryKey: ["prop_page_geometry"],
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(`Error updating pages and geometry`, e, variables);
         },
     });
 };

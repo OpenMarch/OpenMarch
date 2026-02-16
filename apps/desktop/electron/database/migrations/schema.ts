@@ -182,7 +182,7 @@ export const prop_page_geometry = sqliteTable(
             .notNull()
             .unique()
             .references(() => marcher_pages.id, { onDelete: "cascade" }),
-        /** "rectangle", "circle", or "custom" */
+        /** "rectangle", "circle", "arc", "polygon", "freehand" — see ShapeType in Prop.ts */
         shape_type: text().notNull().default("rectangle"),
         /** Width in feet/meters */
         width: real().notNull(),

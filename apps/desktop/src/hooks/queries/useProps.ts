@@ -101,8 +101,10 @@ export const updatePropsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedProps: ModifiedPropArgs[]) =>
             updateProps({ db, modifiedProps }),
-        onSuccess: () => {
+        onSuccess: (_data, modifiedProps) => {
             void qc.invalidateQueries({ queryKey: [KEY_BASE] });
+            if (modifiedProps.some((m) => m.name != null))
+                void qc.invalidateQueries({ queryKey: marcherKeys.all() });
         },
         onError: (e, variables) => {
             conToastError(`Error updating props`, e, variables);

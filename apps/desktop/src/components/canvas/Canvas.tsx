@@ -5,6 +5,7 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
+    updateMarcherPagesAndGeometryMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
@@ -40,6 +41,7 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
+import { getPixelsPerFoot } from "@/global/classes/Prop";
 import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
 import PropVisualGroup, {
     PropVisualMap,
@@ -94,6 +96,9 @@ export default function Canvas({
     const updatePropGeometry = useMutation(
         updatePropGeometryMutationOptions(queryClient),
     );
+    const updateMarcherPagesAndGeometry = useMutation(
+        updateMarcherPagesAndGeometryMutationOptions(queryClient),
+    );
     const { setSelectedShapePageIds } = useSelectionStore()!;
 
     // Props queries
@@ -129,39 +134,62 @@ export default function Canvas({
     // Prop image cache — persists loaded HTMLImageElement objects across renders.
     // imageCacheVersion is state so that when async loading finishes, the prop
     // rendering effect re-runs and picks up the newly cached elements.
-    const propImageCacheRef = useRef<Map<number, HTMLImageElement>>(new Map());
+    const propImageCacheRef = useRef<
+        Map<number, { el: HTMLImageElement; url: string }>
+    >(new Map());
     const [imageCacheVersion, setImageCacheVersion] = useState(0);
     useEffect(() => {
         if (!propImages) return;
         let cancelled = false;
+
+        const revokeAll = (
+            cache: Map<number, { el: HTMLImageElement; url: string }>,
+        ) => {
+            for (const { url } of cache.values()) URL.revokeObjectURL(url);
+        };
+
         if (propImages.length === 0) {
             if (propImageCacheRef.current.size > 0) {
-                propImageCacheRef.current.clear();
+                revokeAll(propImageCacheRef.current);
+                propImageCacheRef.current = new Map();
                 setImageCacheVersion((v) => v + 1);
             }
             return;
         }
-        const loadImg = (data: Uint8Array): Promise<HTMLImageElement> =>
+        const loadImg = (
+            data: Uint8Array,
+        ): Promise<{ el: HTMLImageElement; url: string }> =>
             new Promise((resolve, reject) => {
-                const img = new Image();
-                img.onload = () => resolve(img);
-                img.onerror = reject;
                 const blob = new Blob([(data as any).buffer ?? data]);
-                img.src = URL.createObjectURL(blob);
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => resolve({ el: img, url });
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error("Image load failed"));
+                };
+                img.src = url;
             });
         void (async () => {
-            const newCache = new Map<number, HTMLImageElement>();
+            const newCache = new Map<
+                number,
+                { el: HTMLImageElement; url: string }
+            >();
+            const loaded: string[] = [];
             await Promise.all(
                 propImages.map(async ({ prop_id, image }) => {
                     try {
-                        const el = await loadImg(image);
-                        if (!cancelled) newCache.set(prop_id, el);
+                        const entry = await loadImg(image);
+                        loaded.push(entry.url);
+                        if (!cancelled) newCache.set(prop_id, entry);
+                        else URL.revokeObjectURL(entry.url);
                     } catch {
                         /* skip broken images */
                     }
                 }),
             );
             if (!cancelled) {
+                revokeAll(propImageCacheRef.current);
                 propImageCacheRef.current = newCache;
                 setImageCacheVersion((v) => v + 1);
             }
@@ -286,11 +314,7 @@ export default function Canvas({
     const pixelsToFeetLocal = useCallback(
         (pixels: number) => {
             if (!fieldProperties) return pixels;
-            // Inline calculation to avoid import - could use getPixelsPerFoot from Prop.ts
-            const pixelsPerStep = fieldProperties.pixelsPerStep;
-            const inchesPerStep = 22.5;
-            const pixelsPerFoot = (pixelsPerStep / inchesPerStep) * 12;
-            return pixels / pixelsPerFoot;
+            return pixels / getPixelsPerFoot(fieldProperties);
         },
         [fieldProperties],
     );
@@ -384,8 +408,15 @@ export default function Canvas({
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
             canvas.updatePropGeometryFunction = updatePropGeometry.mutate;
+            canvas.updateMarcherPagesAndGeometryFunction =
+                updateMarcherPagesAndGeometry.mutate;
         }
-    }, [canvas, updateMarcherPages.mutate, updatePropGeometry.mutate]);
+    }, [
+        canvas,
+        updateMarcherPages.mutate,
+        updatePropGeometry.mutate,
+        updateMarcherPagesAndGeometry.mutate,
+    ]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -640,8 +671,7 @@ export default function Canvas({
             propGeometries.map((g) => [g.marcher_page_id, g]),
         );
         const marcherPagesForPage = Object.values(marcherPages);
-        const pixelsPerStep = fieldProperties.pixelsPerStep;
-        const pixelsPerFoot = (pixelsPerStep / 22.5) * 12;
+        const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
         const { showPropNames, propNameOverrides, hiddenPropIds } = uiSettings;
 
         for (const prop of props) {
@@ -660,9 +690,10 @@ export default function Canvas({
                 geometry,
                 coordinate: { x: marcherPage.x, y: marcherPage.y },
                 pixelsPerFoot,
+                pageId: selectedPage.id,
                 showName:
                     propNameOverrides[prop.id.toString()] ?? showPropNames,
-                imageElement: propImageCacheRef.current.get(prop.id),
+                imageElement: propImageCacheRef.current.get(prop.id)?.el,
                 imageOpacity: prop.image_opacity,
             });
             canvas.add(canvasProp);
@@ -750,6 +781,15 @@ export default function Canvas({
                 e.key === "v" &&
                 propClipboardRef.current.length > 0
             ) {
+                // Only paste when canvas truly has focus
+                if (uiSettings.focussedComponent !== "canvas") return;
+                if (
+                    document.activeElement?.matches(
+                        "input, textarea, select, [contenteditable]",
+                    )
+                )
+                    return;
+
                 e.preventDefault();
                 const pasteOffset = 30; // pixels offset from original
 
@@ -768,8 +808,20 @@ export default function Canvas({
             }
         };
 
+        // Clear clipboard when focus leaves the canvas
+        const handleBlur = () => {
+            propClipboardRef.current = [];
+        };
+        const canvasEl = canvasRef.current;
+
         window.addEventListener("keydown", handleKeyDown);
-        return () => window.removeEventListener("keydown", handleKeyDown);
+        window.addEventListener("blur", handleBlur);
+        canvasEl?.addEventListener("focusout", handleBlur);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("blur", handleBlur);
+            canvasEl?.removeEventListener("focusout", handleBlur);
+        };
     }, [
         canvas,
         props,

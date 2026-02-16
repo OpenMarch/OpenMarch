@@ -22,6 +22,7 @@ import {
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import { DEFAULT_PROP_WIDTH, DEFAULT_PROP_HEIGHT } from "@/global/classes/Prop";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
@@ -311,6 +312,17 @@ const _createMarcherPages = async ({
                     .insert(schema.prop_page_geometry)
                     .values(newGeometries);
             }
+        } else if (propMarcherPages.length > 0) {
+            // No previous page — seed default geometry for each prop
+            await tx.insert(schema.prop_page_geometry).values(
+                propMarcherPages.map((mp) => ({
+                    marcher_page_id: mp.id,
+                    shape_type: "rectangle",
+                    width: DEFAULT_PROP_WIDTH,
+                    height: DEFAULT_PROP_HEIGHT,
+                    rotation: 0,
+                })),
+            );
         }
     }
 };

@@ -201,23 +201,22 @@ const pathwayMutations = {
             db.transaction(async (tx) => {
                 await incrementUndoGroup(tx);
 
-                const results = await tx
-                    .delete(pathways)
-                    .where(inArray(pathways.id, pathwayIds))
-                    .returning()
-                    .all();
-
+                // Collect affected page IDs BEFORE deletion (path_data_id is set to NULL on delete)
                 const pageIdsSet = new Set<number>();
-
                 for (const pathwayId of pathwayIds) {
                     const pageIdsForPathway = await findPageIdsForPathway({
                         tx,
                         pathwayId,
                     });
-                    pageIdsForPathway.forEach((pageId) => {
+                    for (const pageId of pageIdsForPathway)
                         pageIdsSet.add(pageId);
-                    });
                 }
+
+                const results = await tx
+                    .delete(pathways)
+                    .where(inArray(pathways.id, pathwayIds))
+                    .returning()
+                    .all();
 
                 return { pathways: results, pageIds: Array.from(pageIdsSet) };
             }),

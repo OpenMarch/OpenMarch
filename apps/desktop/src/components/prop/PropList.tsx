@@ -116,6 +116,9 @@ export default function PropList({ onEditProp }: PropListProps) {
                         <div className="flex items-center gap-8">
                             <button
                                 title={isHidden ? "Show prop" : "Hide prop"}
+                                aria-label={
+                                    isHidden ? "Show prop" : "Hide prop"
+                                }
                                 className="text-text/50 hover:text-text shrink-0 transition-colors"
                                 onClick={(e) => {
                                     e.stopPropagation();
@@ -145,6 +148,7 @@ export default function PropList({ onEditProp }: PropListProps) {
                                 <Button
                                     variant="secondary"
                                     size="compact"
+                                    aria-label="Edit prop"
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onEditProp(prop);
@@ -156,6 +160,7 @@ export default function PropList({ onEditProp }: PropListProps) {
                             <Button
                                 variant="red"
                                 size="compact"
+                                aria-label="Delete prop"
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(prop.id);

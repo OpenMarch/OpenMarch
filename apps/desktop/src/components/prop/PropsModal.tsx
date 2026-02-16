@@ -41,6 +41,8 @@ export function PropListContents() {
                     </Button>
                     <button
                         onClick={toggleOpen}
+                        aria-label="Close props modal"
+                        title="Close props modal"
                         className="hover:text-red duration-150 ease-out"
                     >
                         <XIcon size={24} />
@@ -69,6 +71,8 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
                         onClick={() => {
                             setContent(<PropListContents />, "props");
                         }}
+                        aria-label="Back to props list"
+                        title="Back to props list"
                         className="hover:text-accent duration-150 ease-out"
                     >
                         <CaretLeftIcon size={24} />
@@ -77,6 +81,8 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
                 </div>
                 <button
                     onClick={toggleOpen}
+                    aria-label="Close props modal"
+                    title="Close props modal"
                     className="hover:text-red duration-150 ease-out"
                 >
                     <XIcon size={24} />

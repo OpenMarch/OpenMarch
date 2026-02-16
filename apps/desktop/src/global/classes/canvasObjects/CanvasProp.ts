@@ -37,6 +37,8 @@ interface CustomGeometryData {
     points?: Point[];
     originalWidth?: number;
     originalHeight?: number;
+    /** Whether a freehand path should be closed. Defaults to true. */
+    closed?: boolean;
 }
 
 /** Scales points from original dimensions to target dimensions, centered at origin */
@@ -83,6 +85,7 @@ export default class CanvasProp extends CanvasMarcher {
         geometry,
         coordinate,
         pixelsPerFoot,
+        pageId,
         showName = false,
         imageElement,
         imageOpacity = 1,
@@ -92,6 +95,8 @@ export default class CanvasProp extends CanvasMarcher {
         geometry: DatabasePropPageGeometry;
         coordinate: Point;
         pixelsPerFoot: number;
+        /** Page ID for the coordinate. Props should supply the current canvas page. */
+        pageId?: number;
         showName?: boolean;
         imageElement?: HTMLImageElement;
         imageOpacity?: number;
@@ -123,7 +128,11 @@ export default class CanvasProp extends CanvasMarcher {
         // Call parent constructor with customShape
         super({
             marcher: fullMarcher,
-            coordinate: { x: coordinate.x, y: coordinate.y, page_id: 0 },
+            coordinate: {
+                x: coordinate.x,
+                y: coordinate.y,
+                page_id: pageId ?? 0,
+            },
             customShape: shapeObject,
             skipTextLabel: true,
             hasControls: true,
@@ -285,13 +294,16 @@ export default class CanvasProp extends CanvasMarcher {
                         widthPixels,
                         heightPixels,
                     );
-                    const pathData =
+                    const openPath =
                         `M ${scaledPoints[0].x} ${scaledPoints[0].y}` +
                         scaledPoints
                             .slice(1)
                             .map((p) => ` L ${p.x} ${p.y}`)
-                            .join("") +
-                        " Z";
+                            .join("");
+                    const pathData =
+                        customData.closed !== false
+                            ? openPath + " Z"
+                            : openPath;
                     return new fabric.Path(pathData, baseProps);
                 }
                 break;
@@ -350,12 +362,17 @@ export default class CanvasProp extends CanvasMarcher {
         };
     }
 
-    /** Get current edges in pixels */
+    /** Get current edges in pixels (excludes stroke, consistent with getDimensions) */
     getEdges(): { l: number; r: number; t: number; b: number } {
         const sx = this.scaleX || 1,
             sy = this.scaleY || 1;
-        const w = this.shapeObject.getScaledWidth() * sx;
-        const h = this.shapeObject.getScaledHeight() * sy;
+        // Use raw width/height to exclude strokeWidth, matching getDimensions
+        const w =
+            (this.shapeObject.width || 0) * (this.shapeObject.scaleX || 1) * sx;
+        const h =
+            (this.shapeObject.height || 0) *
+            (this.shapeObject.scaleY || 1) *
+            sy;
         const cx = this.left || 0,
             cy = this.top || 0;
         return { l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2 };

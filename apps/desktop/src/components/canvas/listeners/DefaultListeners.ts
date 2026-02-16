@@ -7,6 +7,7 @@ import CanvasProp from "../../../global/classes/canvasObjects/CanvasProp";
 import { rgbaToString } from "@openmarch/core";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
+import { getPixelsPerFoot } from "@/global/classes/Prop";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -155,8 +156,8 @@ export default class DefaultListeners implements CanvasListeners {
 
         // Handle all marcher/prop movement in a single loop
         // Since CanvasProp extends CanvasMarcher, getActiveObjectsByType(CanvasMarcher) returns both
-        const pixelsPerStep = this.canvas.fieldProperties?.pixelsPerStep || 1;
-        const pixelsPerFoot = (pixelsPerStep / 22.5) * 12;
+        const fp = this.canvas.fieldProperties;
+        const pixelsPerFoot = fp ? getPixelsPerFoot(fp) : 6;
         const pageId = this.canvas.currentPage?.id;
 
         this.canvas
@@ -207,18 +208,17 @@ export default class DefaultListeners implements CanvasListeners {
                 }
             });
 
-        // Sequential calls to avoid nested transactions
+        // Atomic update: both marcher pages and prop geometry in one transaction
         this._isUpdatingDatabase = true;
         try {
-            if (modifiedMarcherPages.length > 0) {
-                await this.canvas.updateMarcherPagesFunction?.(
+            if (
+                modifiedMarcherPages.length > 0 ||
+                modifiedGeometries.length > 0
+            ) {
+                await this.canvas.updateMarcherPagesAndGeometryFunction?.({
                     modifiedMarcherPages,
-                );
-            }
-            if (modifiedGeometries.length > 0) {
-                await this.canvas.updatePropGeometryFunction?.(
                     modifiedGeometries,
-                );
+                });
             }
         } finally {
             this._isUpdatingDatabase = false;

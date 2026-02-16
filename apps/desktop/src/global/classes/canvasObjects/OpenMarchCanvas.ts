@@ -97,6 +97,19 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }[],
     ) => void;
 
+    /**
+     * Atomically update marcher pages and prop geometry in a single transaction.
+     */
+    updateMarcherPagesAndGeometryFunction?: (args: {
+        modifiedMarcherPages: ModifiedMarcherPageArgs[];
+        modifiedGeometries: {
+            id: number;
+            width?: number;
+            height?: number;
+            rotation?: number;
+        }[];
+    }) => void;
+
     // ---- AlignmentEvent changes ----
     /**
      * Updates the event marchers in global state. Must be set in a React component

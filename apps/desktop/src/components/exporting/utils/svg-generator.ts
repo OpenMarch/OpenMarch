@@ -391,8 +391,9 @@ export const generateDrillChartExportSVGs = async (args: {
 
     // If individual charts are enabled, initialize the output SVGs array for each non-prop marcher
     // Otherwise, initialize the output SVGs for the main chart
-    if (individualCharts) nonPropMarchers.forEach(() => outputSVGs.push([]));
-    else outputSVGs.push([]);
+    if (individualCharts) {
+        for (let i = 0; i < nonPropMarchers.length; i++) outputSVGs.push([]);
+    } else outputSVGs.push([]);
 
     // Loop through each page and generate an SVG for it
     for (const [pageIndex, page] of sortedPages.entries()) {
@@ -455,7 +456,7 @@ export const generateDrillChartExportSVGs = async (args: {
         }
 
         // Remove props so they can be recreated with next page's geometry
-        propObjects.forEach((obj) => canvas.remove(obj));
+        for (const obj of propObjects) canvas.remove(obj);
     }
 
     return {

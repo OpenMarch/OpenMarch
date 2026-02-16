@@ -23,12 +23,10 @@ export const DEFAULT_PROP_HEIGHT = 15;
 
 /**
  * Calculates pixels per foot from field properties.
- * Based on 8-to-5 step = 22.5 inches.
+ * Uses PIXELS_PER_INCH from FieldProperties for consistency across field types.
  */
 export function getPixelsPerFoot(fieldProperties: FieldProperties): number {
-    const pixelsPerStep = fieldProperties.pixelsPerStep;
-    const inchesPerStep = 22.5;
-    return (pixelsPerStep / inchesPerStep) * 12;
+    return FieldProperties.PIXELS_PER_INCH * 12;
 }
 
 /**
