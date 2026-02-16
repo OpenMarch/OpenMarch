@@ -2,7 +2,7 @@ import { asc, gt, eq, lt, desc, and, sql } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
-import { transactionWithHistory } from "./history";
+import { transactionWithHistory, withTransactionLock } from "./history";
 import { assert } from "@/utilities/utils";
 import {
     DatabaseShapePageMarcher,
@@ -489,16 +489,29 @@ export async function updateMarcherPagesAndGeometry({
     if (modifiedMarcherPages.length === 0 && modifiedGeometries.length === 0)
         return;
 
+    if (modifiedMarcherPages.length === 0) {
+        await withTransactionLock(async () => {
+            await db.transaction(async (tx) => {
+                for (const mod of modifiedGeometries) {
+                    const { id, ...data } = mod;
+                    await tx
+                        .update(schema.prop_page_geometry)
+                        .set(data)
+                        .where(eq(schema.prop_page_geometry.id, id));
+                }
+            });
+        });
+        return;
+    }
+
     await transactionWithHistory(
         db,
         "updateMarcherPagesAndGeometry",
         async (tx) => {
-            if (modifiedMarcherPages.length > 0) {
-                await updateMarcherPagesInTransaction({
-                    tx,
-                    modifiedMarcherPages,
-                });
-            }
+            await updateMarcherPagesInTransaction({
+                tx,
+                modifiedMarcherPages,
+            });
             for (const mod of modifiedGeometries) {
                 const { id, ...data } = mod;
                 await tx

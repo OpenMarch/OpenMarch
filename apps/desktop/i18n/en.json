@@ -713,6 +713,14 @@
         "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume"
     },
+    "props": {
+        "createError": "Error creating props",
+        "updateError": "Error updating props",
+        "updateGeometryError": "Error updating prop geometry",
+        "updateImageError": "Error updating prop image",
+        "deleteImageError": "Error deleting prop image",
+        "deleteError": "Error deleting props"
+    },
     "pages": {
         "createFailed": "Failed to create page - {error}",
         "createLastPageFailed": "Failed to create last page - {error}",

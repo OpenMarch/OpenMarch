@@ -49,7 +49,7 @@ export class DrizzleMigrationService {
         if (
             process.env.PLAYWRIGHT_CODEGEN ||
             process.env.PLAYWRIGHT_SESSION ||
-            (folder.includes("dist-electron/main") && !fs.existsSync(folder))
+            (/dist-electron[/\\]main/.test(folder) && !fs.existsSync(folder))
         ) {
             folder = folder.replace(/dist-electron[/\\]main/, "");
         }
@@ -115,7 +115,7 @@ export class DrizzleMigrationService {
         if (
             process.env.PLAYWRIGHT_CODEGEN ||
             process.env.PLAYWRIGHT_SESSION ||
-            (folder.includes("dist-electron/main") && !fs.existsSync(folder))
+            (/dist-electron[/\\]main/.test(folder) && !fs.existsSync(folder))
         ) {
             folder = folder.replace(/dist-electron[/\\]main/, "");
         }

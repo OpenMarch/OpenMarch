@@ -378,10 +378,12 @@ export default class CanvasProp extends CanvasMarcher {
         return { l: cx - w / 2, r: cx + w / 2, t: cy - h / 2, b: cy + h / 2 };
     }
 
-    /** Apply new edges, recalculating scale and position */
+    /** Apply new edges, recalculating scale and position (raw width/height, excludes stroke) */
     setEdges(edges: { l: number; r: number; t: number; b: number }) {
-        const baseW = this.shapeObject.getScaledWidth();
-        const baseH = this.shapeObject.getScaledHeight();
+        const baseW =
+            (this.shapeObject.width || 0) * (this.shapeObject.scaleX || 1);
+        const baseH =
+            (this.shapeObject.height || 0) * (this.shapeObject.scaleY || 1);
         const w = edges.r - edges.l,
             h = edges.b - edges.t;
         if (w > 10 && h > 10) {

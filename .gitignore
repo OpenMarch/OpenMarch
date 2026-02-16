@@ -63,3 +63,6 @@ packages/metronome/
 
 # Local-only AI reference rules
 .cursor/rules/ref-*.mdc
+
+# Local development docs (not committed)
+docs/

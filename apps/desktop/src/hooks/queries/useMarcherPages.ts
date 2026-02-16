@@ -27,6 +27,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { db, schema } from "@/global/database/db";
 import { invalidateByPage } from "./sharedInvalidators";
+import { propGeometryKeys } from "./useProps";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -172,7 +173,7 @@ export const updateMarcherPagesAndGeometryMutationOptions = (
             invalidateByPage(qc, pageIds);
             if (variables.modifiedGeometries.length > 0)
                 void qc.invalidateQueries({
-                    queryKey: ["prop_page_geometry"],
+                    queryKey: propGeometryKeys.all(),
                 });
         },
         onError: (e, variables) => {

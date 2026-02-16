@@ -296,15 +296,25 @@ const _createMarcherPages = async ({
 
             for (const mp of propMarcherPages) {
                 const prevGeom = prevGeomByMarcher.get(mp.marcher_id);
-                if (!prevGeom) continue;
-                newGeometries.push({
-                    marcher_page_id: mp.id,
-                    shape_type: prevGeom.shape_type,
-                    width: prevGeom.width,
-                    height: prevGeom.height,
-                    radius: prevGeom.radius,
-                    rotation: prevGeom.rotation,
-                });
+                newGeometries.push(
+                    prevGeom
+                        ? {
+                              marcher_page_id: mp.id,
+                              shape_type: prevGeom.shape_type,
+                              width: prevGeom.width,
+                              height: prevGeom.height,
+                              radius: prevGeom.radius,
+                              rotation: prevGeom.rotation,
+                          }
+                        : {
+                              marcher_page_id: mp.id,
+                              shape_type: "rectangle",
+                              width: DEFAULT_PROP_WIDTH,
+                              height: DEFAULT_PROP_HEIGHT,
+                              radius: null,
+                              rotation: 0,
+                          },
+                );
             }
 
             if (newGeometries.length > 0) {

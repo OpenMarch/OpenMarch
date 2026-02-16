@@ -8,6 +8,7 @@ import { rgbaToString } from "@openmarch/core";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
+import { toast } from "sonner";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -118,8 +119,11 @@ export default class DefaultListeners implements CanvasListeners {
      * Update the marcher's position when it is moved
      */
     async handleObjectModified(fabricEvent?: fabric.IEvent<MouseEvent>) {
-        // Prevent concurrent database updates
-        if (this._isUpdatingDatabase) return;
+        // Prevent concurrent database updates — restore canvas to last persisted state
+        if (this._isUpdatingDatabase) {
+            this.canvas.refreshMarchers();
+            return;
+        }
 
         /*
             ---- Determine if the mouse was clicked or dragged ----
@@ -230,6 +234,10 @@ export default class DefaultListeners implements CanvasListeners {
                     modifiedGeometries,
                 });
             }
+        } catch (err) {
+            console.error("updateMarcherPagesAndGeometry failed", err);
+            toast.error("Failed to save position; reverting.");
+            this.canvas.refreshMarchers();
         } finally {
             this._isUpdatingDatabase = false;
         }

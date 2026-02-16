@@ -171,7 +171,21 @@ export const props = sqliteTable(
         image_opacity: real().notNull().default(1),
         ...timestamps,
     },
-    (table) => [index("idx_props_marcher_id").on(table.marcher_id)],
+    (table) => [
+        index("idx_props_marcher_id").on(table.marcher_id),
+        check(
+            "props_default_width_check",
+            sql`default_width IS NULL OR default_width > 0`,
+        ),
+        check(
+            "props_default_height_check",
+            sql`default_height IS NULL OR default_height > 0`,
+        ),
+        check(
+            "props_image_opacity_check",
+            sql`image_opacity >= 0 AND image_opacity <= 1`,
+        ),
+    ],
 );
 
 export const prop_page_geometry = sqliteTable(

@@ -39,6 +39,12 @@ export default function PropList({ onEditProp }: PropListProps) {
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
     const handleDelete = (propId: number) => {
+        if (
+            !window.confirm(
+                "Delete this prop? This can be undone with Ctrl/Cmd+Z.",
+            )
+        )
+            return;
         deletePropsMutation.mutate(new Set([propId]));
     };
 

@@ -108,6 +108,8 @@ export function PropNewFormContents() {
                             setContent(<PropListContents />, "props");
                         }}
                         className="hover:text-accent duration-150 ease-out"
+                        aria-label="Back to list"
+                        title="Back to list"
                     >
                         <CaretLeftIcon size={24} />
                     </button>
@@ -116,6 +118,8 @@ export function PropNewFormContents() {
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
+                    aria-label="Close"
+                    title="Close"
                 >
                     <XIcon size={24} />
                 </button>

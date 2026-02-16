@@ -6,6 +6,7 @@ import {
 } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import {
     createProps,
     getPropsWithMarchers,
@@ -77,22 +78,22 @@ export const propImagesQueryOptions = () => {
 };
 
 export const fetchProps = () => {
-    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-    void queryClient.invalidateQueries({ queryKey: [GEOMETRY_KEY] });
-    void queryClient.invalidateQueries({ queryKey: [IMAGE_KEY] });
+    void queryClient.invalidateQueries({ queryKey: propKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: propGeometryKeys.all() });
+    void queryClient.invalidateQueries({ queryKey: propImageKeys.all() });
 };
 
 export const createPropsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (newProps: NewPropArgs[]) => createProps({ db, newProps }),
         onSuccess: async () => {
-            await qc.invalidateQueries({ queryKey: [KEY_BASE] });
-            void qc.invalidateQueries({ queryKey: [GEOMETRY_KEY] });
+            await qc.invalidateQueries({ queryKey: propKeys.all() });
+            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherPageKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating props`, e, variables);
+            conToastError(tolgee.t("props.createError"), e, variables);
         },
     });
 };
@@ -102,12 +103,12 @@ export const updatePropsMutationOptions = (qc: QueryClient) => {
         mutationFn: (modifiedProps: ModifiedPropArgs[]) =>
             updateProps({ db, modifiedProps }),
         onSuccess: (_data, modifiedProps) => {
-            void qc.invalidateQueries({ queryKey: [KEY_BASE] });
+            void qc.invalidateQueries({ queryKey: propKeys.all() });
             if (modifiedProps.some((m) => m.name != null))
                 void qc.invalidateQueries({ queryKey: marcherKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating props`, e, variables);
+            conToastError(tolgee.t("props.updateError"), e, variables);
         },
     });
 };
@@ -117,10 +118,10 @@ export const updatePropGeometryMutationOptions = (qc: QueryClient) => {
         mutationFn: (modifiedGeometries: ModifiedPropPageGeometryArgs[]) =>
             updatePropPageGeometry({ db, modifiedGeometries }),
         onSuccess: () => {
-            void qc.invalidateQueries({ queryKey: [GEOMETRY_KEY] });
+            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating prop geometry`, e, variables);
+            conToastError(tolgee.t("props.updateGeometryError"), e, variables);
         },
     });
 };
@@ -136,10 +137,10 @@ export const updatePropGeometryWithPropagationMutationOptions = (
             propagation: GeometryPropagation;
         }) => updatePropGeometryWithPropagation({ db, ...args }),
         onSuccess: () => {
-            void qc.invalidateQueries({ queryKey: [GEOMETRY_KEY] });
+            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating prop geometry`, e, variables);
+            conToastError(tolgee.t("props.updateGeometryError"), e, variables);
         },
     });
 };
@@ -152,7 +153,7 @@ export const updatePropImageMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({ queryKey: propImageKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating prop image`, e, variables);
+            conToastError(tolgee.t("props.updateImageError"), e, variables);
         },
     });
 };
@@ -164,7 +165,7 @@ export const deletePropImageMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({ queryKey: propImageKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting prop image`, e, variables);
+            conToastError(tolgee.t("props.deleteImageError"), e, variables);
         },
     });
 };
@@ -173,14 +174,14 @@ export const deletePropsMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (propIds: Set<number>) => deleteProps({ db, propIds }),
         onSuccess: () => {
-            void qc.invalidateQueries({ queryKey: [KEY_BASE] });
-            void qc.invalidateQueries({ queryKey: [GEOMETRY_KEY] });
-            void qc.invalidateQueries({ queryKey: [IMAGE_KEY] });
+            void qc.invalidateQueries({ queryKey: propKeys.all() });
+            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+            void qc.invalidateQueries({ queryKey: propImageKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherPageKeys.all() });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting props`, e, variables);
+            conToastError(tolgee.t("props.deleteError"), e, variables);
         },
     });
 };

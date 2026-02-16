@@ -91,6 +91,11 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
         setOpacityValue(prop.image_opacity);
     }, [prop.image_opacity]);
 
+    useEffect(() => {
+        setName(prop.marcher.name || "");
+        setSurfaceType(prop.surface_type as SurfaceType);
+    }, [prop.id, prop.marcher.name, prop.surface_type]);
+
     const handleOpacityChange = useCallback((values: number[]) => {
         setOpacityValue(values[0]);
     }, []);
