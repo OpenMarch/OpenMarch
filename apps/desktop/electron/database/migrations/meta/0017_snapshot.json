@@ -1129,6 +1129,21 @@
                     "notNull": false,
                     "autoincrement": false
                 },
+                "image": {
+                    "name": "image",
+                    "type": "blob",
+                    "primaryKey": false,
+                    "notNull": false,
+                    "autoincrement": false
+                },
+                "image_opacity": {
+                    "name": "image_opacity",
+                    "type": "real",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 1
+                },
                 "created_at": {
                     "name": "created_at",
                     "type": "text",

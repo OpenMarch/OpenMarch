@@ -26,6 +26,8 @@ CREATE TABLE `props` (
 	`prop_category` text,
 	`default_width` real,
 	`default_height` real,
+	`image` blob,
+	`image_opacity` real DEFAULT 1 NOT NULL,
 	`created_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	`updated_at` text DEFAULT (CURRENT_TIMESTAMP) NOT NULL,
 	FOREIGN KEY (`marcher_id`) REFERENCES `marchers`(`id`) ON UPDATE no action ON DELETE cascade

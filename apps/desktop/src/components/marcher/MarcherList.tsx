@@ -88,9 +88,7 @@ export default function MarcherList({
     }
 
     function handleCancel() {
-        setIsEditing(false);
         setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
-        setLocalMarchers(marchers);
         deletionsRef.current = [];
         changesRef.current = {};
     }
@@ -107,24 +105,7 @@ export default function MarcherList({
         changesRef.current[marcherId][attribute] = value;
     };
 
-    const sectionOptions = useMemo<SectionOption[]>(() => {
-        return Object.values(SECTIONS).map((section) => ({
-            value: section.name,
-            label: getTranslatedSectionName(section.name, t) ?? section.name,
-        }));
-    }, [t]);
-
-    const sectionLabelMap = useMemo<Record<string, string>>(() => {
-        return sectionOptions.reduce<Record<string, string>>((acc, option) => {
-            acc[option.value] = option.label;
-            return acc;
-        }, {});
-    }, [sectionOptions]);
-
-    const selectPlaceholder = t("marchers.list.selectSection");
-
     // Update local marchers when marchers are fetched (filter out props)
-    // Update local marchers when marchers are fetched
     useEffect(() => {
         setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
     }, [marchers]);
