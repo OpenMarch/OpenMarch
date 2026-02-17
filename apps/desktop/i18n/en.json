@@ -518,11 +518,11 @@
         },
         "prop": {
             "geometry": "Geometry",
-            "geometryWithPage": "Geometry — {pageName}",
             "height": "Height",
             "name": "Name",
             "no": "No",
             "notSet": "—",
+            "pageSubtitle": "Page {pageName}",
             "radius": "Radius",
             "rotation": "Rotation",
             "shape": "Shape",

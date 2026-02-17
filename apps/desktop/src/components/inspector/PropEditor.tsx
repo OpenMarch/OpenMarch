@@ -100,16 +100,17 @@ export default function PropEditor() {
                 <>
                     <hr className="border-stroke w-full border" />
 
-                    <h5 className="text-h5 px-6">
-                        {selectedPage ? (
+                    <h3 className="text-h3 px-6">
+                        <T keyName="inspector.prop.geometry" />
+                    </h3>
+                    {selectedPage && (
+                        <h4 className="text-text-subtitle px-6">
                             <T
-                                keyName="inspector.prop.geometryWithPage"
+                                keyName="inspector.prop.pageSubtitle"
                                 params={{ pageName: selectedPage.name }}
                             />
-                        ) : (
-                            <T keyName="inspector.prop.geometry" />
-                        )}
-                    </h5>
+                        </h4>
+                    )}
 
                     <Row
                         label={t("inspector.prop.shape")}
