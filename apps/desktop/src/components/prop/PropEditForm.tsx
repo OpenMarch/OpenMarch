@@ -27,6 +27,8 @@ interface PropEditFormProps {
     prop: PropWithMarcher;
 }
 
+const to3Decimals = (n: number) => Math.floor(n * 1000) / 1000;
+
 const SURFACE_OPTIONS: { value: SurfaceType; label: string }[] = [
     { value: "floor", label: "Floor (can march over)" },
     { value: "platform", label: "Platform (can stand on)" },
@@ -69,8 +71,12 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
     const [surfaceType, setSurfaceType] = useState<SurfaceType>(
         prop.surface_type as SurfaceType,
     );
-    const [width, setWidth] = useState(currentGeometry?.width ?? 15);
-    const [height, setHeight] = useState(currentGeometry?.height ?? 15);
+    const [width, setWidth] = useState(
+        to3Decimals(currentGeometry?.width ?? 15),
+    );
+    const [height, setHeight] = useState(
+        to3Decimals(currentGeometry?.height ?? 15),
+    );
     const [visible, setVisible] = useState(currentGeometry?.visible ?? true);
 
     const hasImage = useMemo(
@@ -81,8 +87,8 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
 
     useEffect(() => {
         if (currentGeometry) {
-            setWidth(currentGeometry.width);
-            setHeight(currentGeometry.height);
+            setWidth(to3Decimals(currentGeometry.width));
+            setHeight(to3Decimals(currentGeometry.height));
             setVisible(currentGeometry.visible);
         }
     }, [currentGeometry]);
@@ -259,7 +265,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         type="number"
                         value={width}
                         onChange={(e) =>
-                            setWidth(parseFloat(e.target.value) || 1)
+                            setWidth(
+                                to3Decimals(parseFloat(e.target.value) || 1),
+                            )
                         }
                         min={1}
                         step={0.5}
@@ -270,7 +278,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         type="number"
                         value={height}
                         onChange={(e) =>
-                            setHeight(parseFloat(e.target.value) || 1)
+                            setHeight(
+                                to3Decimals(parseFloat(e.target.value) || 1),
+                            )
                         }
                         min={1}
                         step={0.5}
