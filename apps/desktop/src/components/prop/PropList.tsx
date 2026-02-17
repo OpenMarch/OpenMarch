@@ -4,16 +4,23 @@ import {
     allPropsQueryOptions,
     deletePropsMutationOptions,
 } from "@/hooks/queries";
-import { Button, Switch } from "@openmarch/ui";
+import {
+    AlertDialogAction,
+    AlertDialogCancel,
+    Button,
+    Switch,
+} from "@openmarch/ui";
 import {
     TrashIcon,
     PencilSimpleIcon,
     EyeIcon,
     EyeSlashIcon,
 } from "@phosphor-icons/react";
+import { T } from "@tolgee/react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { PropWithMarcher } from "@/global/classes/Prop";
+import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 /** Resolve effective name-visibility for a single prop */
@@ -38,14 +45,44 @@ export default function PropList({ onEditProp }: PropListProps) {
     const { setSelectedMarchers } = useSelectedMarchers()!;
     const { uiSettings, setUiSettings } = useUiSettingsStore();
 
+    const {
+        setTitle: setAlertTitle,
+        setContent: setAlertContent,
+        setActions: setAlertActions,
+        setOpen: setAlertOpen,
+    } = useAlertModalStore();
+
     const handleDelete = (propId: number) => {
-        if (
-            !window.confirm(
-                "Delete this prop? This can be undone with Ctrl/Cmd+Z.",
-            )
-        )
-            return;
-        deletePropsMutation.mutate(new Set([propId]));
+        setAlertTitle("inspector.prop.deleteConfirmTitle");
+        setAlertContent(
+            <T keyName="inspector.prop.deleteConfirmDescription" />,
+        );
+        setAlertActions(
+            <div className="flex justify-end gap-16">
+                <AlertDialogAction>
+                    <Button
+                        variant="red"
+                        size="compact"
+                        onClick={() => {
+                            setAlertOpen(false);
+                            deletePropsMutation.mutate(new Set([propId]));
+                        }}
+                    >
+                        <T keyName="marchers.deleteButton" />
+                    </Button>
+                </AlertDialogAction>
+                <AlertDialogCancel>
+                    <Button
+                        variant="secondary"
+                        size="compact"
+                        onClick={() => setAlertOpen(false)}
+                    >
+                        <T keyName="marchers.cancelDeleteButton" />
+                    </Button>
+                </AlertDialogCancel>
+            </div>,
+        );
+        setAlertOpen(true);
     };
 
     const handleSelect = (prop: PropWithMarcher) => {

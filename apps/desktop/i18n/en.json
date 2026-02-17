@@ -517,6 +517,8 @@
             "title": "Page {pageNumber}"
         },
         "prop": {
+            "deleteConfirmDescription": "This can be undone with Ctrl/Cmd+Z.",
+            "deleteConfirmTitle": "Delete this prop?",
             "geometry": "Geometry",
             "height": "Height",
             "name": "Name",
