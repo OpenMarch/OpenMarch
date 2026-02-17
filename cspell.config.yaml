@@ -62,6 +62,7 @@ words:
   - Hipp
   - idioma
   - importmap
+  - keyframed
   - Invalidators
   - launchpage
   - libsql
@@ -77,6 +78,7 @@ words:
   - midsets
   - monokai
   - Moulse
+  - mgmt
   - multiselection
   - musescore
   - musicxml
@@ -111,6 +113,7 @@ words:
   - samuelmeuli
   - Schachner
   - selectability
+  - sandboxing
   - seti
   - shouldn
   - sicommand
@@ -166,6 +169,7 @@ words:
   - xlink
   - XMLID
   - yeskunallumami
+  - Zustand
   - youtu
   - zier
   - Zingali

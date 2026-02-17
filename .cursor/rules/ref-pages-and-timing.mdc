@@ -1,0 +1,174 @@
+---
+description: When working with pages, beats, measures, timing, marcher pages, marcher positions, or the timing system
+alwaysApply: false
+---
+
+# Pages, Beats, Measures & Timing Reference
+
+## Overview
+
+Pages are the primary unit of drill - each page has a set number of counts and an order in the show. Beats are the fundamental timing unit; measures group beats. The `useTimingObjects` hook combines all three into a unified timeline used across the app.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/Page.ts` | Page domain class with timing calculations |
+| `src/global/classes/Beat.ts` | Beat domain class with timestamp calculations |
+| `src/global/classes/Measure.ts` | Measure domain class containing beats |
+| `src/global/classes/MarcherPage.ts` | Marcher position on a page |
+| `src/global/classes/MarcherPageIndex.ts` | Efficient marcher-page lookup |
+| `src/global/classes/TimeSignature.ts` | Time signature handling |
+| `src/global/classes/BeatUnit.ts` | Beat unit calculations |
+| `src/db-functions/page.ts` | Page CRUD |
+| `src/db-functions/beat.ts` | Beat CRUD |
+| `src/db-functions/measures.ts` | Measure CRUD |
+| `src/db-functions/marcherPage.ts` | MarcherPage CRUD |
+| `src/hooks/queries/usePages.ts` | Page query hooks |
+| `src/hooks/queries/useBeats.ts` | Beat query hooks |
+| `src/hooks/queries/useMeasures.ts` | Measure query hooks |
+| `src/hooks/queries/useMarcherPages.ts` | MarcherPage query hooks |
+| `src/hooks/useTimingObjects.ts` | Combined timing data hook |
+| `src/context/SelectedPageContext.tsx` | Current page selection |
+
+## Data Model
+
+### Page
+```typescript
+{
+    id: number;
+    name: string;           // Display name (e.g., "2A")
+    counts: number;         // Duration in counts
+    order: number;          // Position in show
+    notes: string | null;
+    isSubset: boolean;      // True if subset of previous page
+    // Computed from beats:
+    duration: number;       // Duration in seconds
+    timestamp: number;      // Start time in seconds
+    nextPageId: number | null;
+    previousPageId: number | null;
+    beats: Beat[];          // Beats in this page
+    measures: Measure[];    // Measures in this page
+}
+```
+
+### Beat
+```typescript
+{
+    id: number;
+    position: number;       // Global beat position
+    duration: number;       // Duration in seconds (from BPM)
+    includeInMeasure: boolean;  // Whether this beat counts in measures
+    notes: string | null;
+    // Computed:
+    index: number;          // 0-based index
+    timestamp: number;      // Absolute time in seconds
+}
+```
+
+### Measure
+```typescript
+{
+    id: number;
+    startBeat: number;      // FK to beats.id
+    number: number;         // Measure number
+    rehearsalMark: string | null;
+    notes: string | null;
+    // Computed from contained beats:
+    duration: number;
+    counts: number;
+    timestamp: number;
+    beats: Beat[];
+}
+```
+
+## Timing System
+
+The timing system builds a unified timeline from beats, measures, and pages:
+
+```
+Beats (fundamental unit, each has duration from BPM)
+  ↓ grouped into
+Measures (musical grouping with time signatures)
+  ↓ referenced by
+Pages (drill pages, each starts at a specific beat)
+```
+
+### useTimingObjects Hook
+
+The primary hook for accessing the complete timeline:
+
+```typescript
+// src/hooks/useTimingObjects.ts
+import { useTimingObjects } from "@/hooks";
+
+const {
+    pages,          // Page[] - all pages with computed timing
+    measures,       // Measure[] - all measures with beats
+    beats,          // Beat[] - all beats with timestamps
+    isLoading,
+    hasError,
+} = useTimingObjects();
+```
+
+This is a multi-query hook that combines `usePages`, `useBeats`, `useMeasures`, and `useUtility` data. It calculates timestamps, durations, and links pages to their beats/measures.
+
+## Page Selection
+
+```typescript
+// src/context/SelectedPageContext.tsx
+import { useSelectedPage } from "@/context/SelectedPageContext";
+
+const { selectedPage, setSelectedPage, setPageToSelect } = useSelectedPage();
+
+// setSelectedPage({ id: pageId }) - select existing page
+// setPageToSelect({ id: pageId }) - select page after it's created (deferred)
+```
+
+## Page Operations
+
+Key operations in `src/db-functions/page.ts`:
+
+```typescript
+// Create pages
+createPagesInTransaction({ newPages, tx })
+
+// Update page counts
+updatePageCountInTransaction({ pageId, counts, tx })
+
+// Split a page
+splitPageInTransaction({ pageId, splitCount, tx })
+
+// Reorder pages (yank/push)
+yankOrPushPagesAfterIndexInTransaction({ startIndex, direction, tx })
+```
+
+When creating a page, MarcherPages are auto-created for all existing marchers with default positions.
+
+## Integration Points
+
+- **MarcherPage**: Junction between marchers and pages. Every (marcher, page) pair has coordinates.
+- **Canvas**: `OpenMarchCanvas` renders marchers at their MarcherPage positions for the selected page.
+- **Timeline**: `TimelineContainer` uses timing objects to display the visual timeline.
+- **Animation**: `useAnimation` interpolates marcher positions between pages during playback.
+- **Audio**: Beat timestamps sync with audio file playback.
+
+## Page 0 and transition times (critical)
+
+**Page 0 is a sentinel, not a real drill page.** In the DB it has `start_beat = 0` (beat 0). In `Page.fromDatabasePages()` (Page.ts) it is special-cased: `counts: 0`, `duration: 0`, `beats: [startBeat]`, `timestamp: 0`. Beat 0 typically has duration 0. So page 0 has **only one beat** and zero duration — it cannot define a transition. The first real drill page is page 1.
+
+**Transition duration is always the target page's duration.** There is no separate "transition time" column. So:
+- **0→1**: Page 0 has no duration (one beat, often 0s). The 0→1 transition time is **page 1's duration** (beats from page 1's `start_beat` up to page 2's `start_beat`). Not stored on page 0.
+- **N→(N+1)** for N≥1: **page (N+1)'s duration**.
+So the time from page 0 to 1 is not "between" two pages and not on page 0; it lives entirely as **page 1's duration**.
+
+**Formations are keyframed at the end of each page.** Keyframe time (ms) = `(page.timestamp + page.duration) * 1000`. So "play from page N" means: show formation at end of page N, then animate to end of page N+1 over page (N+1)'s duration. The animation for "getting to page N" is the segment ending at that keyframe; its duration is page N's duration.
+
+## Gotchas
+
+- Pages are ordered by `order` field, not `id`. Always sort by order.
+- Beat `position` is the global position (not relative to page). Timestamps are calculated cumulatively.
+- `Page.fromDatabasePages()` is the factory that enriches database rows with computed fields (duration, timestamp, beats, measures). It special-cases page 0 (FIRST_PAGE_ID).
+- Creating/deleting pages triggers MarcherPage creation/deletion for all marchers.
+- The `isSubset` field marks pages that are subsets of the previous page (used in display only).
+- Do not update page 0's `start_beat` or other non-notes fields; db-functions filter such changes (FIRST_PAGE_ID).
