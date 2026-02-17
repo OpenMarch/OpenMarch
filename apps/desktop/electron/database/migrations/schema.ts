@@ -150,7 +150,10 @@ export const marchers = sqliteTable(
         drill_order: integer().notNull(),
         ...timestamps,
     },
-    (table) => [unique().on(table.drill_prefix, table.drill_order)],
+    (table) => [
+        unique().on(table.drill_prefix, table.drill_order),
+        check("marchers_type_check", sql`type IN ('marcher', 'prop')`),
+    ],
 );
 
 export const props = sqliteTable(
