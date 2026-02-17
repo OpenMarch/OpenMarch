@@ -516,6 +516,32 @@
             "subset": "Subset",
             "title": "Page {pageNumber}"
         },
+        "prop": {
+            "geometry": "Geometry",
+            "geometryWithPage": "Geometry — {pageName}",
+            "height": "Height",
+            "name": "Name",
+            "no": "No",
+            "notSet": "—",
+            "radius": "Radius",
+            "rotation": "Rotation",
+            "shape": "Shape",
+            "shapeType": {
+                "circle": "Circle",
+                "custom": "Custom",
+                "rectangle": "Rectangle"
+            },
+            "surface": "Surface",
+            "surfaceType": {
+                "floor": "Floor",
+                "obstacle": "Obstacle",
+                "platform": "Platform"
+            },
+            "title": "Prop",
+            "visible": "Visible",
+            "width": "Width",
+            "yes": "Yes"
+        },
         "shape": {
             "addSegmentButton": "Add",
             "addSegmentTooltip": "Add segment to shape",

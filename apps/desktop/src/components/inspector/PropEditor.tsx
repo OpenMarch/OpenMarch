@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { T, useTranslate } from "@tolgee/react";
 import {
     allPropsQueryOptions,
     propPageGeometryQueryOptions,
@@ -9,26 +10,27 @@ import { InspectorCollapsible } from "./InspectorCollapsible";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 
-const SURFACE_LABELS: Record<string, string> = {
-    floor: "Floor",
-    platform: "Platform",
-    obstacle: "Obstacle",
+const SURFACE_KEYS: Record<string, string> = {
+    floor: "inspector.prop.surfaceType.floor",
+    platform: "inspector.prop.surfaceType.platform",
+    obstacle: "inspector.prop.surfaceType.obstacle",
 };
 
-const SHAPE_LABELS: Record<string, string> = {
-    rectangle: "Rectangle",
-    circle: "Circle",
-    custom: "Custom",
+const SHAPE_KEYS: Record<string, string> = {
+    rectangle: "inspector.prop.shapeType.rectangle",
+    circle: "inspector.prop.shapeType.circle",
+    custom: "inspector.prop.shapeType.custom",
 };
 
-const fmtFeet = (val: number | null | undefined) =>
-    val == null ? "—" : `${val.toFixed(1)} ft`;
+const fmtFeet = (val: number | null | undefined, notSet: string) =>
+    val == null ? notSet : `${val.toFixed(1)} ft`;
 
 /**
  * Inspector section shown when a single prop-type marcher is selected.
  * Displays prop metadata and per-page geometry dimensions in feet.
  */
 export default function PropEditor() {
+    const { t } = useTranslate();
     const { selectedMarchers } = useSelectedMarchers()!;
     const { selectedPage } = useSelectedPage()!;
 
@@ -69,14 +71,16 @@ export default function PropEditor() {
         </div>
     );
 
+    const notSet = t("inspector.prop.notSet");
+
     return (
         <InspectorCollapsible
             defaultOpen
-            title="Prop"
+            translatableTitle={{ keyName: "inspector.prop.title" }}
             className="mt-12 flex flex-col gap-16"
         >
             <Row
-                label="Name"
+                label={t("inspector.prop.name")}
                 value={
                     selectedProp.marcher.name ||
                     selectedProp.marcher.drill_prefix +
@@ -84,10 +88,11 @@ export default function PropEditor() {
                 }
             />
             <Row
-                label="Surface"
+                label={t("inspector.prop.surface")}
                 value={
-                    SURFACE_LABELS[selectedProp.surface_type] ??
-                    selectedProp.surface_type
+                    SURFACE_KEYS[selectedProp.surface_type]
+                        ? t(SURFACE_KEYS[selectedProp.surface_type])
+                        : selectedProp.surface_type
                 }
             />
 
@@ -96,25 +101,49 @@ export default function PropEditor() {
                     <hr className="border-stroke w-full border" />
 
                     <h5 className="text-h5 px-6">
-                        Geometry{selectedPage ? ` — ${selectedPage.name}` : ""}
+                        {selectedPage ? (
+                            <T
+                                keyName="inspector.prop.geometryWithPage"
+                                params={{ pageName: selectedPage.name }}
+                            />
+                        ) : (
+                            <T keyName="inspector.prop.geometry" />
+                        )}
                     </h5>
 
                     <Row
-                        label="Shape"
+                        label={t("inspector.prop.shape")}
                         value={
-                            SHAPE_LABELS[geometry.shape_type] ??
-                            geometry.shape_type
+                            SHAPE_KEYS[geometry.shape_type]
+                                ? t(SHAPE_KEYS[geometry.shape_type])
+                                : geometry.shape_type
                         }
                     />
-                    <Row label="Width" value={fmtFeet(geometry.width)} />
-                    <Row label="Height" value={fmtFeet(geometry.height)} />
-                    {geometry.radius != null && (
-                        <Row label="Radius" value={fmtFeet(geometry.radius)} />
-                    )}
-                    <Row label="Rotation" value={`${geometry.rotation}°`} />
                     <Row
-                        label="Visible"
-                        value={geometry.visible ? "Yes" : "No"}
+                        label={t("inspector.prop.width")}
+                        value={fmtFeet(geometry.width, notSet)}
+                    />
+                    <Row
+                        label={t("inspector.prop.height")}
+                        value={fmtFeet(geometry.height, notSet)}
+                    />
+                    {geometry.radius != null && (
+                        <Row
+                            label={t("inspector.prop.radius")}
+                            value={fmtFeet(geometry.radius, notSet)}
+                        />
+                    )}
+                    <Row
+                        label={t("inspector.prop.rotation")}
+                        value={`${geometry.rotation}°`}
+                    />
+                    <Row
+                        label={t("inspector.prop.visible")}
+                        value={
+                            geometry.visible
+                                ? t("inspector.prop.yes")
+                                : t("inspector.prop.no")
+                        }
                     />
                 </>
             )}
