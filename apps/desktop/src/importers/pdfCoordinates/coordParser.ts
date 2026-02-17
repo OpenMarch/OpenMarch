@@ -23,6 +23,19 @@ export type ParseOk = { ok: true; steps: number };
 export type ParseErr = { ok: false; code: string; message: string };
 export type ParseResult = ParseOk | ParseErr;
 
+/** Hash type the source PDF's coordinates are written in. */
+export type SourceHashType = "HS" | "CH" | "PH";
+
+/** Standard hash positions (steps from center front) by hash type. */
+const STANDARD_HASH_STEPS: Record<
+    SourceHashType,
+    { front: number; back: number }
+> = {
+    HS: { front: -28, back: -56 },
+    CH: { front: -32, back: -52 },
+    PH: { front: -38, back: -48 },
+};
+
 // ---------------------------------------------------------------------------
 // Lateral (X-axis) parsing
 // ---------------------------------------------------------------------------
@@ -120,6 +133,7 @@ export function parseLateral(text: string, field: FieldPropsLike): ParseResult {
 export function parseFrontBack(
     text: string,
     field: FieldPropsLike,
+    sourceHashType?: SourceHashType,
 ): ParseResult {
     if (!text?.trim())
         return { ok: false, code: "EMPTY", message: "Empty FB text" };
@@ -133,7 +147,8 @@ export function parseFrontBack(
             message: "No meaningful tokens",
         };
 
-    const tag = extractTag(tokens);
+    // User-selected source hash type overrides any tag inferred from the text
+    const tag = sourceHashType ?? extractTag(tokens);
     const ref = extractReference(tokens);
 
     if (!ref) {
@@ -306,7 +321,6 @@ function getYCheckpoint(
     const lc = which.toLowerCase();
 
     if (target === "Hash") {
-        // Hash type patterns match actual checkpoint name prefixes (HS, NCAA, pro, etc.)
         if (hashType) {
             const typePatterns: Record<string, RegExp> = {
                 HS: /\bhs\b/i,
@@ -326,7 +340,7 @@ function getYCheckpoint(
                     );
             }
         }
-        // Fallback: match any hash with the right front/back direction
+        // No hash type specified — match any hash with the right front/back direction
         const candidates = field.yCheckpoints.filter(
             (c) => /hash/i.test(c.name) && c.name.toLowerCase().includes(lc),
         );
@@ -340,5 +354,14 @@ function getYCheckpoint(
             return candidates.find((c) => c.useAsReference) || candidates[0];
     }
 
+    // Field doesn't have checkpoints for this hash type — use standard positions
+    if (target === "Hash" && hashType) {
+        const std = STANDARD_HASH_STEPS[hashType];
+        return {
+            name: `${hashType} ${lc} hash`,
+            stepsFromCenterFront: which === "Front" ? std.front : std.back,
+            useAsReference: true,
+        };
+    }
     return null;
 }

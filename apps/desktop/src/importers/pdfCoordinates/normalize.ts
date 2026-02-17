@@ -1,5 +1,10 @@
 import type { NormalizedSheet, ParsedSheet, NormalizedRow } from "./types";
-import { parseLateral, parseFrontBack, type ParseResult } from "./coordParser";
+import {
+    parseLateral,
+    parseFrontBack,
+    type ParseResult,
+    type SourceHashType,
+} from "./coordParser";
 
 type CheckpointLike = {
     name: string;
@@ -15,22 +20,25 @@ type FieldPropsLike = {
 export function normalizeSheets(
     sheets: ParsedSheet[],
     fieldProperties: FieldPropsLike,
+    sourceHashType?: SourceHashType,
 ): NormalizedSheet[] {
     return sheets.map((s) => ({
         pageIndex: s.pageIndex,
         quadrant: s.quadrant,
         header: s.header,
-        rows: s.rows.map((r) => normalizeRow(r, fieldProperties)),
+        rows: s.rows.map((r) =>
+            normalizeRow(r, fieldProperties, sourceHashType),
+        ),
     }));
 }
 
 function normalizeRow(
     row: any,
     fieldProperties: FieldPropsLike,
+    sourceHashType?: SourceHashType,
 ): NormalizedRow {
     const xResult = parseLateral(row.lateralText, fieldProperties);
-    const yResult = parseFrontBack(row.fbText, fieldProperties);
-
+    const yResult = parseFrontBack(row.fbText, fieldProperties, sourceHashType);
     const xSteps = xResult.ok ? xResult.steps : NaN;
     const ySteps = yResult.ok ? yResult.steps : NaN;
 

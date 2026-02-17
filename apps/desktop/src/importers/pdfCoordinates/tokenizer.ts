@@ -31,26 +31,68 @@ export type Token = {
 
 // Multi-word phrases checked first (longest-match).
 // Order matters: longer phrases before shorter sub-phrases.
+// Pyware lets users customize all terminology — these cover known defaults
+// and common alternatives: Home/Visitor, Front/Back, Top/Bottom, A/B, etc.
 const MULTI_WORD: Array<{ words: string[]; type: TokenType; value: string }> = [
     { words: ["in", "front", "of"], type: "INFRONT", value: "In Front Of" },
+    // Sideline: front/back/home/visitor/top/bottom + "side line" or "sideline"
     {
         words: ["front", "side", "line"],
         type: "SIDELINE",
         value: "Front Sideline",
     },
     {
+        words: ["home", "side", "line"],
+        type: "SIDELINE",
+        value: "Front Sideline",
+    },
+    {
+        words: ["visitor", "side", "line"],
+        type: "SIDELINE",
+        value: "Back Sideline",
+    },
+    {
+        words: ["bottom", "side", "line"],
+        type: "SIDELINE",
+        value: "Front Sideline",
+    },
+    {
+        words: ["top", "side", "line"],
+        type: "SIDELINE",
+        value: "Back Sideline",
+    },
+    {
         words: ["back", "side", "line"],
         type: "SIDELINE",
         value: "Back Sideline",
     },
+    { words: ["home", "sideline"], type: "SIDELINE", value: "Front Sideline" },
+    {
+        words: ["visitor", "sideline"],
+        type: "SIDELINE",
+        value: "Back Sideline",
+    },
+    {
+        words: ["bottom", "sideline"],
+        type: "SIDELINE",
+        value: "Front Sideline",
+    },
+    { words: ["top", "sideline"], type: "SIDELINE", value: "Back Sideline" },
     { words: ["front", "sideline"], type: "SIDELINE", value: "Front Sideline" },
     { words: ["back", "sideline"], type: "SIDELINE", value: "Back Sideline" },
+    // Hash: front/back/home/visitor/top/bottom
+    { words: ["home", "hash"], type: "HASH", value: "Front Hash" },
+    { words: ["visitor", "hash"], type: "HASH", value: "Back Hash" },
+    { words: ["bottom", "hash"], type: "HASH", value: "Front Hash" },
+    { words: ["top", "hash"], type: "HASH", value: "Back Hash" },
     { words: ["front", "hash"], type: "HASH", value: "Front Hash" },
     { words: ["back", "hash"], type: "HASH", value: "Back Hash" },
+    // Yard line variants
     { words: ["yd", "ln"], type: "YARDLINE", value: "yd ln" },
     { words: ["yd", "line"], type: "YARDLINE", value: "yd ln" },
     { words: ["yard", "line"], type: "YARDLINE", value: "yd ln" },
     { words: ["yard", "ln"], type: "YARDLINE", value: "yd ln" },
+    // Side: Side 1/2, Side A/B
     { words: ["side", "1"], type: "SIDE", value: "1" },
     { words: ["side", "2"], type: "SIDE", value: "2" },
     { words: ["side", "a"], type: "SIDE", value: "1" },
@@ -192,8 +234,8 @@ export function tokenize(text: string): Token[] {
             continue;
         }
 
-        // 5. Check for "Side X:" patterns where X is embedded (e.g. "Side1:")
-        const sideEmbed = /^side([12ab])[:.]?$/i.exec(words[i]);
+        // 5. Check for side patterns: "Side1:", "1:", "2:", "A:", "B:"
+        const sideEmbed = /^(?:side)?([12ab])[:.]$/i.exec(words[i]);
         if (sideEmbed) {
             const v = sideEmbed[1].toLowerCase();
             tokens.push({

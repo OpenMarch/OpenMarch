@@ -119,7 +119,9 @@ function looksLikeLateral(s: string): boolean {
 
 function looksLikeFB(s: string): boolean {
     const lc = s.toLowerCase();
-    return /(front|back|hash|behind|in front of)/.test(lc);
+    return /(front|back|hash|behind|in front of|home|visitor|sideline|side line)/.test(
+        lc,
+    );
 }
 
 export function clusterBandsByTokens(

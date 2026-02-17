@@ -3,6 +3,14 @@ import { extractSheetsFromPage } from "./parsePage";
 import { normalizeSheets } from "./normalize";
 import { reconcileSheets } from "./reconcile";
 import { dryRunValidate } from "./dryRun";
+import type { SourceHashType } from "./coordParser";
+
+export type { SourceHashType } from "./coordParser";
+
+export type ParsedPdf = {
+    pages: number;
+    parsed: ParsedSheet[];
+};
 
 export type ImportResult = {
     dryRun: ReturnType<typeof dryRunValidate>;
@@ -33,10 +41,10 @@ async function configurePdfWorker(pdfjs: any) {
     }
 }
 
-export async function dryRunImportPdfCoordinates(
+/** Parse PDF text into structured sheets (heavy; call once per file). */
+export async function parsePdfToSheets(
     arrayBuffer: ArrayBuffer,
-    fieldProperties: FieldPropsLike,
-): Promise<ImportResult> {
+): Promise<ParsedPdf> {
     const pdfjs = await import("pdfjs-dist");
     await configurePdfWorker(pdfjs as any);
     const pdf = await (pdfjs as any).getDocument({ data: arrayBuffer.slice(0) })
@@ -83,9 +91,48 @@ export async function dryRunImportPdfCoordinates(
         `[pdf-import] Extracted ${totalRows} rows across ${parsedSheets.length} sheets`,
     );
 
-    const reconciled = reconcileSheets(parsedSheets);
-    const normalized = normalizeSheets(reconciled, fieldProperties as any);
-    const dryRun = dryRunValidate(normalized);
+    return { pages: pdf.numPages, parsed: parsedSheets };
+}
 
-    return { dryRun, pages: pdf.numPages, normalized, parsed: parsedSheets };
+/** Original all-in-one entry point (kept for backwards compatibility). */
+export async function dryRunImportPdfCoordinates(
+    arrayBuffer: ArrayBuffer,
+    fieldProperties: FieldPropsLike,
+    sourceHashType?: SourceHashType,
+): Promise<ImportResult> {
+    const { pages, parsed } = await parsePdfToSheets(arrayBuffer);
+    const result = normalizeParsedSheets(
+        parsed,
+        fieldProperties,
+        sourceHashType,
+    );
+    return { ...result, pages };
+}
+
+/** Reconcile, normalize, and validate parsed sheets (light; safe to re-run on hash type change). */
+export function normalizeParsedSheets(
+    parsedSheets: ParsedSheet[],
+    fieldProperties: FieldPropsLike,
+    sourceHashType?: SourceHashType,
+): Omit<ImportResult, "pages"> {
+    const reconciled = reconcileSheets(parsedSheets);
+    const normalized = normalizeSheets(
+        reconciled,
+        fieldProperties,
+        sourceHashType,
+    );
+    const dryRun = dryRunValidate(normalized);
+    return { dryRun, normalized, parsed: parsedSheets };
+}
+
+/** Detect the hash type from field property checkpoint names. */
+export function detectFieldHashType(
+    yCheckpoints: { name: string }[],
+): SourceHashType {
+    for (const cp of yCheckpoints) {
+        if (/\bhs\b/i.test(cp.name)) return "HS";
+        if (/\b(ncaa|college)\b/i.test(cp.name)) return "CH";
+        if (/\b(nfl|pro)\b/i.test(cp.name)) return "PH";
+    }
+    return "HS";
 }

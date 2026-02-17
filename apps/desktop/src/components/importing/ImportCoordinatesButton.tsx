@@ -1,4 +1,4 @@
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useEffect } from "react";
 import { getButtonClassName } from "@openmarch/ui";
 import { Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { toast } from "sonner";
@@ -12,8 +12,16 @@ import {
     updateMarcherPagesMutationOptions,
 } from "@/hooks/queries";
 import { queryClient } from "@/App";
-import { dryRunImportPdfCoordinates } from "@/importers/pdfCoordinates";
-import type { NormalizedSheet } from "@/importers/pdfCoordinates/types";
+import {
+    parsePdfToSheets,
+    normalizeParsedSheets,
+    detectFieldHashType,
+    type SourceHashType,
+} from "@/importers/pdfCoordinates";
+import type {
+    NormalizedSheet,
+    ParsedSheet,
+} from "@/importers/pdfCoordinates/types";
 import {
     allDatabaseBeatsQueryOptions,
     allDatabasePagesQueryOptions,
@@ -28,6 +36,12 @@ import {
     buildMarcherPageUpdates,
     mapPage0Variants,
 } from "@/importers/pdfCoordinates/planBuilder";
+
+const HASH_TYPE_LABELS: Record<SourceHashType, string> = {
+    HS: "High School",
+    CH: "College / NCAA",
+    PH: "Pro / NFL",
+};
 
 export default function ImportCoordinatesButton() {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -57,14 +71,11 @@ export default function ImportCoordinatesButton() {
         updateMarcherPagesMutationOptions(qc),
     );
     const [open, setOpen] = useState(false);
-    const [report, setReport] = useState<null | {
+    const [parsedPdf, setParsedPdf] = useState<{
         pages: number;
-        errors: number;
-        warnings: number;
-        details: any[];
-        normalized: NormalizedSheet[];
-        parsed: any[];
-    }>(null);
+        parsed: ParsedSheet[];
+    } | null>(null);
+    const [sourceHashType, setSourceHashType] = useState<SourceHashType>("HS");
     const [activeStep, setActiveStep] = useState<
         "parsed" | "normalized" | "dots" | "db"
     >("parsed");
@@ -72,6 +83,35 @@ export default function ImportCoordinatesButton() {
     const [isCommitting, setIsCommitting] = useState(false);
     const [createTimeline, setCreateTimeline] = useState(true);
     const [bpm, setBpm] = useState(120);
+
+    // Default hash type from the user's field properties
+    useEffect(() => {
+        if (fieldProperties?.yCheckpoints) {
+            setSourceHashType(
+                detectFieldHashType(fieldProperties.yCheckpoints as any),
+            );
+        }
+    }, [fieldProperties]);
+
+    // Re-normalize reactively when hash type or parsed data changes
+    const report = useMemo(() => {
+        if (!parsedPdf || !fieldProperties) return null;
+        const result = normalizeParsedSheets(
+            parsedPdf.parsed,
+            fieldProperties as any,
+            sourceHashType,
+        );
+        return {
+            pages: parsedPdf.pages,
+            errors: result.dryRun.issues.filter((i) => i.type === "error")
+                .length,
+            warnings: result.dryRun.issues.filter((i) => i.type === "warning")
+                .length,
+            details: result.dryRun.issues,
+            normalized: result.normalized,
+            parsed: result.parsed,
+        };
+    }, [parsedPdf, fieldProperties, sourceHashType]);
 
     const hasExistingPerformers = useMemo(
         () => marchers && marchers.length > 0,
@@ -98,24 +138,8 @@ export default function ImportCoordinatesButton() {
         try {
             setIsLoading(true);
             const arrayBuffer = await file.arrayBuffer();
-            const result = await dryRunImportPdfCoordinates(
-                arrayBuffer,
-                fieldProperties as any,
-            );
-            const errors = result.dryRun.issues.filter(
-                (i) => i.type === "error",
-            ).length;
-            const warnings = result.dryRun.issues.filter(
-                (i) => i.type === "warning",
-            ).length;
-            setReport({
-                pages: result.pages,
-                errors,
-                warnings,
-                details: result.dryRun.issues,
-                normalized: result.normalized,
-                parsed: result.parsed,
-            });
+            const result = await parsePdfToSheets(arrayBuffer);
+            setParsedPdf(result);
             setOpen(true);
         } catch (err: any) {
             console.error(err);
@@ -913,6 +937,29 @@ export default function ImportCoordinatesButton() {
                                 sheets
                             </div>
                             <div className="flex items-center gap-16">
+                                <label className="flex items-center gap-8">
+                                    <span>Source hash type</span>
+                                    <select
+                                        value={sourceHashType}
+                                        onChange={(e) =>
+                                            setSourceHashType(
+                                                e.target
+                                                    .value as SourceHashType,
+                                            )
+                                        }
+                                        className="rounded-4 border-stroke bg-fg-1 border px-8 py-4"
+                                    >
+                                        {(
+                                            Object.entries(
+                                                HASH_TYPE_LABELS,
+                                            ) as [SourceHashType, string][]
+                                        ).map(([value, label]) => (
+                                            <option key={value} value={value}>
+                                                {label}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </label>
                                 <label className="flex items-center gap-8">
                                     <input
                                         type="checkbox"

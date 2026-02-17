@@ -63,3 +63,7 @@ packages/metronome/
 
 # Python virtual environment
 apps/desktop/scripts/venv/
+
+# Batch PDF test fixtures (user-provided test data)
+**/fixtures/pdfs/*.pdf
+**/fixtures/batch-report.json

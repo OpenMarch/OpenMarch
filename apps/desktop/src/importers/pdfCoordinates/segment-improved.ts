@@ -199,7 +199,26 @@ export function detectSheetsHybrid(
             const endRow =
                 i + 1 < anchorRows.length ? anchorRows[i + 1] : rows.length;
             const sheetItems = rows.slice(startRow, endRow).flat();
-            if (sheetItems.length > 0) {
+            if (sheetItems.length === 0) continue;
+
+            // Check for side-by-side performers by looking for a
+            // large horizontal gap in the anchor row's items.
+            const split = findVerticalSplit(sheetItems);
+            if (split !== null) {
+                const left = sheetItems.filter(
+                    (it) => it.x + (it.w || 0) / 2 < split,
+                );
+                const right = sheetItems.filter(
+                    (it) => it.x + (it.w || 0) / 2 >= split,
+                );
+                if (left.length >= 10)
+                    sheets.push({ items: left, bounds: calculateBounds(left) });
+                if (right.length >= 10)
+                    sheets.push({
+                        items: right,
+                        bounds: calculateBounds(right),
+                    });
+            } else {
                 sheets.push({
                     items: sheetItems,
                     bounds: calculateBounds(sheetItems),
@@ -211,6 +230,39 @@ export function detectSheetsHybrid(
 
     // Fallback to density-based if no anchors found
     return detectSheetsByDensity(items);
+}
+
+/**
+ * Detect whether items span two side-by-side performer columns.
+ * Looks for multiple "Performer:" tokens on the same row and splits at
+ * the midpoint of the gap between the two performer groups.
+ * Returns the x split point, or null if no clear split exists.
+ */
+function findVerticalSplit(items: TextItem[]): number | null {
+    if (items.length < 20) return null;
+
+    const rows = groupIntoRows(items, 3);
+    if (rows.length === 0) return null;
+
+    // Look for exactly two "Performer:" items on the same row
+    for (const row of rows.slice(0, 3)) {
+        const performers = row.filter((it) =>
+            /^performer\s*:/i.test(it.str.trim()),
+        );
+        if (performers.length < 2) continue;
+
+        performers.sort((a, b) => a.x - b.x);
+        // Find all items between the two performer headers on this row
+        const leftPerf = performers[0];
+        const rightPerf = performers[performers.length - 1];
+
+        // The left group ends where items stop before the right performer
+        const leftItems = row.filter((it) => it.x + (it.w || 0) < rightPerf.x);
+        const leftMax = Math.max(...leftItems.map((it) => it.x + (it.w || 0)));
+        return (leftMax + rightPerf.x) / 2;
+    }
+
+    return null;
 }
 
 // Helper functions

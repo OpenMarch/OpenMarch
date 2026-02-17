@@ -18,33 +18,80 @@ function isHeaderToken(text: string, needle: string | RegExp): boolean {
     return needle.test(norm);
 }
 
+// Pyware lets users customize all terminology. These needles cover
+// every known default + common alternative so we recognize column headers
+// regardless of which labels are configured.
 const headerNeedles = {
     setId: [/^set$/, /^set\s*#?$/],
     measureRange: [/^measures?$/, /^meas\.?$/, /^mvmt$/],
     counts: [/^counts?$/, /^cts\.?$/],
     lateralText: [
-        /^side to side$/,
         /^side\s*[-/]?\s*to\s*side$/,
         /^lateral$/,
-        /^left\/right$/,
+        /^left\s*[-/]?\s*right$/,
         /^departure$/,
         /^side\s*1.*side\s*2$/,
+        /^[ab]\s*[-/]\s*[ab]$/,
+        /^1\s*[-/]\s*2$/,
     ],
     fbText: [
-        /^front to back$/,
-        /^front\s*[-/]?\s*to\s*back$/,
-        /^front back$/,
+        /^front\s*[-/]?\s*(?:to\s*)?back$/,
         /^depth$/,
-        /^front\/back$/,
-        /^front.*back$/,
+        /^home\s*[-/]?\s*visitor$/,
+        /^top\s*[-/]?\s*bottom$/,
+        /^bottom\s*[-/]?\s*top$/,
     ],
 };
+
+/**
+ * Split compound header tokens that pdfjs merges into separate virtual
+ * items so each can match its own needle. Handles patterns like:
+ *   "CountsSide 1-Side 2" → "Counts" + "Side 1-Side 2"
+ *   "Counts 1-2"          → "Counts" + "1-2" (lateral shorthand)
+ *   "Counts A-B"          → "Counts" + "A-B"
+ */
+function expandHeaderItems(row: TextItem[]): TextItem[] {
+    const out: TextItem[] = [];
+    for (const it of row) {
+        const s = it.str.trim();
+        // "CountsSide 1-Side 2" — no space between Counts and Side
+        const m1 = /^(counts?)(side\s.+)$/i.exec(s);
+        // "Counts 1-2", "Counts A-B" — space between Counts and lateral shorthand
+        const m2 = !m1 && /^(counts?)\s+([ab1-2]\s*[-–]\s*[ab1-2].*)$/i.exec(s);
+        const m = m1 || m2;
+        if (m) {
+            // Place the lateral virtual header far enough right that
+            // the midpoint boundary won't eat narrow counts data.
+            // Use 70% of the width for the counts portion because
+            // the actual count values are left-aligned in a narrow column,
+            // while the lateral text begins further right.
+            const countsWidth = (it.w || 0) * 0.7;
+            out.push({ ...it, str: m[1], w: countsWidth });
+            out.push({
+                ...it,
+                str: m2 ? mapLateralShorthand(m[2]) : m[2],
+                x: it.x + countsWidth,
+                w: (it.w || 0) - countsWidth,
+            });
+        } else {
+            out.push(it);
+        }
+    }
+    return out;
+}
+
+/** Map shorthand lateral labels like "1-2" or "A-B" to recognizable forms. */
+function mapLateralShorthand(s: string): string {
+    if (/^1\s*[-–]\s*2$/i.test(s.trim())) return "Side 1-Side 2";
+    if (/^[aA]\s*[-–]\s*[bB]$/i.test(s.trim())) return "A-B";
+    return s;
+}
 
 export function detectHeaderAndBands(
     rows: TextItem[][],
 ): { headerIndex: number; bands: ColumnBand[] } | null {
     for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
+        const row = expandHeaderItems(rows[i]);
         const hits: { key: ColumnBand["key"]; label: string; x: number }[] = [];
         for (const it of row) {
             for (const key of Object.keys(headerNeedles) as Array<
@@ -105,6 +152,7 @@ export function detectHeaderAndBands(
             const haveFB = bands.some((b) => b.key === "fbText");
 
             if (haveLateral && !haveFB) {
+                // Have lateral but not FB → split lateral's right portion
                 const latBand = bands.find((b) => b.key === "lateralText")!;
                 const latIndex = bands.indexOf(latBand);
                 if (latIndex === bands.length - 1) {
@@ -118,7 +166,28 @@ export function detectHeaderAndBands(
                         x2: originalX2,
                     });
                 }
+            } else if (!haveLateral && haveFB) {
+                // Have FB but not lateral → insert lateral band in the gap
+                // before the FB band. This happens when the lateral column
+                // header is unrecognized (e.g. custom Pyware terminology).
+                const fbBand = bands.find((b) => b.key === "fbText")!;
+                const priorBand = [...bands]
+                    .filter((b) => b.x2 <= fbBand.x1 + 1)
+                    .sort((a, b) => b.x2 - a.x2)[0];
+                if (priorBand) {
+                    const midpoint =
+                        priorBand.x2 + (fbBand.x1 - priorBand.x2) * 0.4;
+                    bands.push({
+                        key: "lateralText",
+                        label: "Lateral (Inferred)",
+                        x1: midpoint,
+                        x2: fbBand.x1,
+                    });
+                    priorBand.x2 = midpoint;
+                    bands.sort((a, b) => a.x1 - b.x1);
+                }
             } else if (!haveLateral && !haveFB) {
+                // Neither → assign the two rightmost bands
                 const rightMost = [...bands]
                     .sort((a, b) => a.x1 - b.x1)
                     .slice(-2);
