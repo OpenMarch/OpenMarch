@@ -221,7 +221,7 @@
         "sideToSide": "Side to Side",
         "sideToSideAbbreviation": "S. to S."
     },
-    "exportCoordinates": {
+    "exportModal": {
         "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
         "cancel": "Cancel",
         "cancelledByUser": "Export cancelled by user",
@@ -241,6 +241,9 @@
         "exportNotAvailable": "Export Not Available",
         "exportNotAvailableDescription": "Export requires field properties, at least one non-default page, and at least one marcher.",
         "exportPDFSuccess": "Successfully exported as PDF!",
+        "tempoExportSuccess": "Successfully exported tempo data to .omt file!",
+        "tempo": "Tempo",
+        "tempoExportDescription": "Export the tempo data of this file into an OpenMarch Tempo (.omt) file. This file can be imported into metronome apps and other tools that support the .omt format.",
         "exportSuccess": "{count, plural, one {Successfully exported coordinate sheets for {count} marcher!} other {Successfully exported coordinate sheets for {count} marchers!}}",
         "fieldProperties": "Field Properties: {status}",
         "fieldPropertiesNotLoaded": "Field properties not loaded",

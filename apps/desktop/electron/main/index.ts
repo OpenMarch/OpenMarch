@@ -11,7 +11,7 @@ import {
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
-import { join } from "node:path";
+import { basename, join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
@@ -26,9 +26,10 @@ import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
-import { getOrm } from "../database/db";
+import { getOrm, schema } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import { eq } from "drizzle-orm";
 
 // The built directory structure
 //
@@ -342,6 +343,11 @@ function initGetters() {
         return PDFExportService.openExportDirectory(exportDir);
     });
 
+    // Export OMT (OpenMarch Tempo) file
+    ipcMain.handle("export:saveOmt", async (_, content: string) => {
+        return await saveOmtFile(content);
+    });
+
     // Export Full Charts
     // ipcMain.handle(
 
@@ -637,6 +643,117 @@ export async function saveFile() {
             console.log(err);
             return -1;
         });
+}
+
+/**
+ * Enriches OMT metadata with values available in the main process (show title,
+ * workspace audio offset, createdAtUtc). Merges with any existing metadata.
+ */
+async function enrichOmtMetadata(omt: {
+    metadata?: Record<string, unknown>;
+}): Promise<void> {
+    const baseName = PDFExportService.getCurrentFilename().replace(
+        /\.dots$/i,
+        "",
+    );
+    let audioOffsetSeconds: number | undefined;
+    try {
+        const db = DatabaseServices.getOrmConnection();
+        const rows = await db
+            .select()
+            .from(schema.workspace_settings)
+            .where(eq(schema.workspace_settings.id, 1));
+        if (rows[0]?.json_data) {
+            const ws = JSON.parse(rows[0].json_data) as {
+                audioOffsetSeconds?: number;
+            };
+            if (typeof ws.audioOffsetSeconds === "number") {
+                audioOffsetSeconds = ws.audioOffsetSeconds;
+            }
+        }
+    } catch {
+        // Db not open or no settings — leave audioOffsetSeconds unset
+    }
+
+    const existing = omt.metadata ?? {};
+    const existingInfo =
+        existing && typeof existing.info === "object" && existing.info !== null
+            ? (existing.info as Record<string, unknown>)
+            : {};
+
+    omt.metadata = {
+        ...existing,
+        createdAtUtc: new Date().toISOString(),
+        ...(audioOffsetSeconds !== undefined && {
+            audioOffsetSeconds,
+        }),
+        info: {
+            ...existingInfo,
+            ...(baseName && { title: basename(baseName) }),
+        },
+    };
+    const info = omt.metadata.info as Record<string, unknown> | undefined;
+    if (info && Object.keys(info).length === 0) {
+        delete omt.metadata.info;
+    }
+}
+
+/**
+ * Shows a save dialog and writes OMT (OpenMarch Tempo) content to the chosen file.
+ * Enriches metadata (createdAtUtc, audioOffsetSeconds, info.title) in the main process.
+ *
+ * @param content - JSON string of the OMT data
+ * @returns { success, path?, cancelled?, error? }
+ */
+async function saveOmtFile(content: string): Promise<{
+    success: boolean;
+    path?: string;
+    cancelled?: boolean;
+    error?: string;
+}> {
+    const targetWindow = win ?? BrowserWindow.getFocusedWindow();
+    if (!targetWindow) {
+        return { success: false, error: "No window available" };
+    }
+
+    try {
+        let omt: { metadata?: Record<string, unknown> };
+        try {
+            omt = JSON.parse(content) as { metadata?: Record<string, unknown> };
+        } catch {
+            return { success: false, error: "Invalid OMT JSON" };
+        }
+
+        await enrichOmtMetadata(omt);
+
+        const baseName = PDFExportService.getCurrentFilename().replace(
+            /\.dots$/i,
+            "",
+        );
+        const defaultPath = baseName ? `${baseName}.omt` : "tempo.omt";
+
+        const result = await dialog.showSaveDialog(targetWindow, {
+            title: "Export OpenMarch Tempo",
+            defaultPath,
+            filters: [{ name: "OpenMarch Tempo", extensions: ["omt"] }],
+            properties: ["showOverwriteConfirmation"],
+        });
+
+        if (result.canceled || !result.filePath) {
+            return { success: false, cancelled: true };
+        }
+
+        fs.writeFileSync(
+            result.filePath,
+            JSON.stringify(omt, null, 2),
+            "utf-8",
+        );
+        return { success: true, path: result.filePath };
+    } catch (error) {
+        const message =
+            error instanceof Error ? error.message : "Unknown error";
+        return { success: false, error: message };
+    }
 }
 
 /**

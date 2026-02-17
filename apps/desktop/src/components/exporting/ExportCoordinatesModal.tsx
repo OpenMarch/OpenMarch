@@ -50,6 +50,7 @@ import {
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
+import TempoExport from "./TempoExportModal";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -91,12 +92,12 @@ function CoordinateSheetExport() {
 
         // Fun marching band phrases that rotate during export
         const funPhrases = [
-            t("exportCoordinates.funPhrase.0"),
-            t("exportCoordinates.funPhrase.1"),
-            t("exportCoordinates.funPhrase.2"),
-            t("exportCoordinates.funPhrase.3"),
-            t("exportCoordinates.funPhrase.4"),
-            t("exportCoordinates.funPhrase.5"),
+            t("exportModal.funPhrase.0"),
+            t("exportModal.funPhrase.1"),
+            t("exportModal.funPhrase.2"),
+            t("exportModal.funPhrase.3"),
+            t("exportModal.funPhrase.4"),
+            t("exportModal.funPhrase.5"),
         ];
 
         let currentPhraseIndex = 0;
@@ -119,7 +120,7 @@ function CoordinateSheetExport() {
         };
 
         if (!fieldProperties) {
-            toast.error(t("exportCoordinates.fieldPropertiesRequired"));
+            toast.error(t("exportModal.fieldPropertiesRequired"));
             setIsLoading(false);
             return;
         }
@@ -137,7 +138,7 @@ function CoordinateSheetExport() {
             // Simulate more granular progress updates
             await new Promise((resolve) => setTimeout(resolve, 500));
             if (isCancelled.current)
-                throw new Error(t("exportCoordinates.cancelledByUser"));
+                throw new Error(t("exportModal.cancelledByUser"));
             setProgress(15);
 
             const processedMarchers = marchers
@@ -165,7 +166,7 @@ function CoordinateSheetExport() {
 
             await new Promise((resolve) => setTimeout(resolve, 300));
             if (isCancelled.current)
-                throw new Error(t("exportCoordinates.cancelledByUser"));
+                throw new Error(t("exportModal.cancelledByUser"));
             setProgress(25);
 
             // More detailed progress for sheet generation
@@ -173,14 +174,14 @@ function CoordinateSheetExport() {
 
             // Check for cancellation
             if (isCancelled.current) {
-                throw new Error(t("exportCoordinates.cancelledByUser"));
+                throw new Error(t("exportModal.cancelledByUser"));
             }
 
             // Generate coordinate sheets with progress tracking
             setProgress(35);
             await new Promise((resolve) => setTimeout(resolve, 200));
             if (isCancelled.current)
-                throw new Error(t("exportCoordinates.cancelledByUser"));
+                throw new Error(t("exportModal.cancelledByUser"));
 
             const pageOrderById: Record<number, number> = {};
             pages.forEach((page) => {
@@ -233,7 +234,7 @@ function CoordinateSheetExport() {
                                 drillNumber: marcher.drill_number,
                                 section:
                                     marcher.section ||
-                                    t("exportCoordinates.unsortedSection"),
+                                    t("exportModal.unsortedSection"),
                                 renderedPage: cleanedHtml,
                             };
                         } catch (error) {
@@ -246,8 +247,8 @@ function CoordinateSheetExport() {
                                 drillNumber: marcher.drill_number,
                                 section:
                                     marcher.section ||
-                                    t("exportCoordinates.unsortedSection"),
-                                renderedPage: `<div><h3>${t("exportCoordinates.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportCoordinates.unknownError")}</p></div>`,
+                                    t("exportModal.unsortedSection"),
+                                renderedPage: `<div><h3>${t("exportModal.errorRendering", { drillNumber: marcher.drill_number })}</h3><p>${error instanceof Error ? error.message : t("exportModal.unknownError")}</p></div>`,
                             };
                         }
                     });
@@ -268,8 +269,7 @@ function CoordinateSheetExport() {
                         name: marcher.name,
                         drillNumber: marcher.drill_number,
                         section:
-                            marcher.section ||
-                            t("exportCoordinates.unsortedSection"),
+                            marcher.section || t("exportModal.unsortedSection"),
                         renderedPage: ReactDOMServer.renderToString(
                             <StaticMarcherCoordinateSheet
                                 marcher={marcher}
@@ -336,12 +336,12 @@ function CoordinateSheetExport() {
             }
 
             setProgress(100);
-            setCurrentStep(t("exportCoordinates.exportComplete"));
+            setCurrentStep(t("exportModal.exportComplete"));
 
             // Add success toast message
             toast.success(
                 <span>
-                    {t("exportCoordinates.exportSuccess", {
+                    {t("exportModal.exportSuccess", {
                         count: marchers.length,
                     })}
                     <button
@@ -353,10 +353,9 @@ function CoordinateSheetExport() {
                                 );
                             if (error) {
                                 toast.error(
-                                    t(
-                                        "exportCoordinates.openExportDirectoryError",
-                                        { error },
-                                    ),
+                                    t("exportModal.openExportDirectoryError", {
+                                        error,
+                                    }),
                                 );
                             }
                         }}
@@ -371,15 +370,15 @@ function CoordinateSheetExport() {
                             marginLeft: "0.5em",
                         }}
                     >
-                        <T keyName="exportCoordinates.openExportDirectory" />
+                        <T keyName="exportModal.openExportDirectory" />
                     </button>
                 </span>,
             );
         } catch (error) {
             console.error("Export error:", error);
-            setCurrentStep(t("exportCoordinates.exportFailed"));
+            setCurrentStep(t("exportModal.exportFailed"));
             toast.error(
-                t("exportCoordinates.exportFailedToast", {
+                t("exportModal.exportFailedToast", {
                     error:
                         error instanceof Error
                             ? error.message
@@ -427,7 +426,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.includeMeasures" />
+                        <T keyName="exportModal.includeMeasures" />
                     </Form.Label>
                 </Form.Field>
 
@@ -445,7 +444,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.abbreviateCoordinateDescriptions" />
+                        <T keyName="exportModal.abbreviateCoordinateDescriptions" />
                     </Form.Label>
                 </Form.Field>
 
@@ -462,7 +461,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.useXYHeaders" />
+                        <T keyName="exportModal.useXYHeaders" />
                     </Form.Label>
                 </Form.Field>
 
@@ -480,7 +479,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.quarterPageLayout" />
+                        <T keyName="exportModal.quarterPageLayout" />
                     </Form.Label>
                 </Form.Field>
 
@@ -497,7 +496,7 @@ function CoordinateSheetExport() {
                         />
                     </Form.Control>
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.organizeBySection" />
+                        <T keyName="exportModal.organizeBySection" />
                     </Form.Label>
 
                     <Tooltip.TooltipProvider>
@@ -509,7 +508,7 @@ function CoordinateSheetExport() {
                                 <Tooltip.Content
                                     className={clsx(TooltipClassName, "p-16")}
                                 >
-                                    <T keyName="exportCoordinates.organizeBySectionTooltip" />
+                                    <T keyName="exportModal.organizeBySectionTooltip" />
                                 </Tooltip.Content>
                             </Tooltip.Portal>
                         </Tooltip.Root>
@@ -521,7 +520,7 @@ function CoordinateSheetExport() {
                     className="flex w-full items-center justify-between gap-12"
                 >
                     <Form.Label className="text-body">
-                        <T keyName="exportCoordinates.roundingDenominator" />
+                        <T keyName="exportModal.roundingDenominator" />
                     </Form.Label>
                     <Select
                         value={roundingDenominator.toString()}
@@ -534,7 +533,7 @@ function CoordinateSheetExport() {
                                 coordinateRoundingOptions.find(
                                     (opt) => opt.value === roundingDenominator,
                                 )?.label ||
-                                t("exportCoordinates.selectRoundingDenominator")
+                                t("exportModal.selectRoundingDenominator")
                             }
                             className="w-[16rem] whitespace-nowrap"
                         />
@@ -556,7 +555,7 @@ function CoordinateSheetExport() {
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
                     <h5 className="text-h5">
-                        <T keyName="exportCoordinates.preview" />
+                        <T keyName="exportModal.preview" />
                     </h5>
                 </div>
                 <div className="mx-2 max-h-[28vh] overflow-auto rounded-md border border-gray-200 bg-white text-black">
@@ -578,9 +577,9 @@ function CoordinateSheetExport() {
                     disabled={isLoading || !marchersLoaded}
                 >
                     {isLoading ? (
-                        <T keyName="exportCoordinates.exporting" />
+                        <T keyName="exportModal.exporting" />
                     ) : (
-                        <T keyName="exportCoordinates.export" />
+                        <T keyName="exportModal.export" />
                     )}
                 </Button>
                 <DialogClose>
@@ -589,7 +588,7 @@ function CoordinateSheetExport() {
                         variant="secondary"
                         onClick={() => (isCancelled.current = true)}
                     >
-                        <T keyName="exportCoordinates.cancel" />
+                        <T keyName="exportModal.cancel" />
                     </Button>
                 </DialogClose>
             </div>
@@ -695,7 +694,7 @@ function DrillChartExport() {
             exportDir: string,
         ) => {
             if (!marchersLoaded) {
-                throw new Error(t("exportCoordinates.marchersNotLoaded"));
+                throw new Error(t("exportModal.marchersNotLoaded"));
             }
             const exportPages = pages.map((page) => {
                 if (!page.notes) return page;
@@ -751,7 +750,7 @@ function DrillChartExport() {
 
                 setProgress(50 + (50 * marcher) / svgPages.length);
                 setCurrentStep(
-                    t("exportCoordinates.generatingPDF", {
+                    t("exportModal.generatingPDF", {
                         drillNumber: marchers[marcher]?.drill_number ?? "MAIN",
                     }),
                 );
@@ -763,7 +762,7 @@ function DrillChartExport() {
                         result.error,
                     );
                     toast.error(
-                        t("exportCoordinates.svgExportFailed", {
+                        t("exportModal.svgExportFailed", {
                             drillNumber:
                                 marchers[marcher]?.drill_number ?? "MAIN",
                             error: result.error,
@@ -771,7 +770,7 @@ function DrillChartExport() {
                     );
                 }
                 if (isCancelled.current) {
-                    throw new Error(t("exportCoordinates.cancelledByUser"));
+                    throw new Error(t("exportModal.cancelledByUser"));
                 }
             }
         },
@@ -802,18 +801,12 @@ function DrillChartExport() {
         setIsLoading(true);
         setProgress(0);
 
-        assert(
-            marcherPagesLoaded,
-            t("exportCoordinates.marcherPagesNotLoaded"),
-        );
-        assert(marchersLoaded, t("exportCoordinates.marchersNotLoaded"));
-        assert(
-            fieldProperties,
-            t("exportCoordinates.fieldPropertiesNotLoaded"),
-        );
+        assert(marcherPagesLoaded, t("exportModal.marcherPagesNotLoaded"));
+        assert(marchersLoaded, t("exportModal.marchersNotLoaded"));
+        assert(fieldProperties, t("exportModal.fieldPropertiesNotLoaded"));
         assert(
             sectionAppearances,
-            t("exportCoordinates.sectionAppearancesNotLoaded"),
+            t("exportModal.sectionAppearancesNotLoaded"),
         );
 
         const backgroundImage = await getFieldPropertiesImageElement();
@@ -834,14 +827,14 @@ function DrillChartExport() {
             }));
         } catch (error) {
             toast.error(
-                t("exportCoordinates.svgGenerationFailed", {
+                t("exportModal.svgGenerationFailed", {
                     error:
                         error instanceof Error
                             ? error.message
                             : "Unknown error",
                 }),
             );
-            setCurrentStep(t("exportCoordinates.exportFailed"));
+            setCurrentStep(t("exportModal.exportFailed"));
             isCancelled.current = true;
             setIsLoading(false);
         }
@@ -878,12 +871,12 @@ function DrillChartExport() {
             clearInterval(finalProgressInterval);
 
             setProgress(100);
-            setCurrentStep(t("exportCoordinates.exportComplete"));
+            setCurrentStep(t("exportModal.exportComplete"));
 
             // Prompt user to open the export directory
             toast.success(
                 <span>
-                    {t("exportCoordinates.exportPDFSuccess")}{" "}
+                    {t("exportModal.exportPDFSuccess")}{" "}
                     <button
                         type="button"
                         onClick={() =>
@@ -899,20 +892,20 @@ function DrillChartExport() {
                             cursor: "pointer",
                         }}
                     >
-                        <T keyName="exportCoordinates.openExportDirectory" />
+                        <T keyName="exportModal.openExportDirectory" />
                     </button>
                 </span>,
             );
         } catch (error) {
             toast.error(
-                t("exportCoordinates.pdfExportFailed", {
+                t("exportModal.pdfExportFailed", {
                     error:
                         error instanceof Error
                             ? error.message
                             : "Unknown error",
                 }),
             );
-            setCurrentStep(t("exportCoordinates.exportFailed"));
+            setCurrentStep(t("exportModal.exportFailed"));
         } finally {
             // Keep the completed state visible for a moment before hiding
             setTimeout(() => {
@@ -955,7 +948,7 @@ function DrillChartExport() {
                             />
                         </Form.Control>
                         <Form.Label className="text-body">
-                            <T keyName="exportCoordinates.individualCharts" />
+                            <T keyName="exportModal.individualCharts" />
                         </Form.Label>
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
@@ -973,10 +966,10 @@ function DrillChartExport() {
                                         )}
                                     >
                                         <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltip" />
+                                            <T keyName="exportModal.individualChartsTooltip" />
                                         </div>
                                         <div>
-                                            <T keyName="exportCoordinates.individualChartsTooltipDescription" />
+                                            <T keyName="exportModal.individualChartsTooltipDescription" />
                                         </div>
                                     </Tooltip.Content>
                                 </Tooltip.Portal>
@@ -997,7 +990,7 @@ function DrillChartExport() {
                             />
                         </Form.Control>
                         <Form.Label className="text-body">
-                            <T keyName="exportCoordinates.includeNotesAppendix" />
+                            <T keyName="exportModal.includeNotesAppendix" />
                         </Form.Label>
                         <Tooltip.TooltipProvider>
                             <Tooltip.Root>
@@ -1015,10 +1008,10 @@ function DrillChartExport() {
                                         )}
                                     >
                                         <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltip" />
+                                            <T keyName="exportModal.includeNotesAppendixTooltip" />
                                         </div>
                                         <div>
-                                            <T keyName="exportCoordinates.includeNotesAppendixTooltipDescription" />
+                                            <T keyName="exportModal.includeNotesAppendixTooltipDescription" />
                                         </div>
                                     </Tooltip.Content>
                                 </Tooltip.Portal>
@@ -1032,7 +1025,7 @@ function DrillChartExport() {
             <div className="flex flex-col gap-8">
                 <div className="flex w-full items-center justify-between">
                     <h5 className="text-h5">
-                        <T keyName="exportCoordinates.preview" />
+                        <T keyName="exportModal.preview" />
                     </h5>
                 </div>
 
@@ -1058,24 +1051,24 @@ function DrillChartExport() {
                 ) : (
                     <div className="flex flex-col items-center justify-center gap-12 bg-white py-20 text-black">
                         <h4 className="text-h4">
-                            <T keyName="exportCoordinates.exportNotAvailable" />
+                            <T keyName="exportModal.exportNotAvailable" />
                         </h4>
                         <p className="text-body max-w-md text-center text-gray-600">
-                            <T keyName="exportCoordinates.exportNotAvailableDescription" />
+                            <T keyName="exportModal.exportNotAvailableDescription" />
                         </p>
                         <div className="text-center text-xs text-gray-500">
                             <div>
-                                {t("exportCoordinates.fieldProperties", {
+                                {t("exportModal.fieldProperties", {
                                     status: fieldProperties ? "✓" : "✗",
                                 })}
                             </div>
                             <div>
-                                {t("exportCoordinates.page", {
+                                {t("exportModal.page", {
                                     status: pages.length > 1 ? "✓" : "✗",
                                 })}
                             </div>
                             <div>
-                                {t("exportCoordinates.marcher", {
+                                {t("exportModal.marcher", {
                                     status:
                                         marchers && marchers.length > 0
                                             ? "✓"
@@ -1095,8 +1088,8 @@ function DrillChartExport() {
                     disabled={isLoading || !canExport}
                 >
                     {isLoading
-                        ? t("exportCoordinates.exporting")
-                        : t("exportCoordinates.export")}
+                        ? t("exportModal.exporting")
+                        : t("exportModal.export")}
                 </Button>
                 <DialogClose>
                     <Button
@@ -1104,7 +1097,7 @@ function DrillChartExport() {
                         variant="secondary"
                         onClick={() => (isCancelled.current = true)}
                     >
-                        <T keyName="exportCoordinates.cancel" />
+                        <T keyName="exportModal.cancel" />
                     </Button>
                 </DialogClose>
             </div>
@@ -1156,10 +1149,13 @@ function ExportModalContents() {
         <Tabs defaultValue="coordinate-sheets" className="gap-12">
             <TabsList>
                 <TabItem value="coordinate-sheets">
-                    <T keyName="exportCoordinates.coordinateSheets" />
+                    <T keyName="exportModal.coordinateSheets" />
                 </TabItem>
                 <TabItem value="drill-charts">
-                    <T keyName="exportCoordinates.drillCharts" />
+                    <T keyName="exportModal.drillCharts" />
+                </TabItem>
+                <TabItem value="tempo">
+                    <T keyName="exportModal.tempo" />
                 </TabItem>
             </TabsList>
 
@@ -1169,6 +1165,10 @@ function ExportModalContents() {
 
             <TabContent value="drill-charts">
                 <DrillChartExport />
+            </TabContent>
+
+            <TabContent value="tempo">
+                <TempoExport />
             </TabContent>
         </Tabs>
     );
@@ -1186,14 +1186,14 @@ export default function ExportCoordinatesModal() {
                 >
                     <button type="button" className="flex items-center gap-8">
                         <ArrowSquareOutIcon size={24} />
-                        <T keyName="exportCoordinates.exportButton" />
+                        <T keyName="exportModal.exportButton" />
                     </button>
                 </DialogTrigger>
 
                 {/* Dialog Setup */}
                 <DialogContent className="export-coordinates-dialog max-h-[80vh] w-[48rem] overflow-y-auto">
                     <DialogTitle>
-                        <T keyName="exportCoordinates.title" />
+                        <T keyName="exportModal.title" />
                     </DialogTitle>
                     <ExportModalContents />
                 </DialogContent>

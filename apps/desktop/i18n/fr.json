@@ -196,7 +196,7 @@
         "sideToSide": "Côte à côte",
         "sideToSideAbbreviation": "C. à C."
     },
-    "exportCoordinates": {
+    "exportModal": {
         "abbreviateCoordinateDescriptions": "Abréger les descriptions des coordonnées",
         "cancel": "Annuler",
         "cancelledByUser": "Exportation annulée par l'utilisateur",
@@ -216,6 +216,9 @@
         "exportNotAvailable": "Exportation Non Disponible",
         "exportNotAvailableDescription": "L'exportation nécessite des propriétés de champ, au moins une page non par défaut, et au moins un marcheur.",
         "exportPDFSuccess": "Exporté avec succès en PDF !",
+        "tempoExportSuccess": "Données de tempo exportées avec succès vers le fichier .omt !",
+        "tempo": "Tempo",
+        "tempoExportDescription": "Exportez les données de tempo de ce fichier vers un fichier OpenMarch Tempo (.omt). Ce fichier peut être importé dans des applications métronome et d'autres outils prenant en charge le format .omt.",
         "exportSuccess": "{count, plural, one {Feuilles de coordonnées exportées avec succès pour {count} marcheur !} other {Feuilles de coordonnées exportées avec succès pour {count} marcheurs !} }",
         "fieldProperties": "Propriétés du champ : {status}",
         "fieldPropertiesNotLoaded": "Propriétés du champ non chargées",

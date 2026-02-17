@@ -196,7 +196,7 @@
         "sideToSide": "サイド トゥ サイド",
         "sideToSideAbbreviation": "左右"
     },
-    "exportCoordinates": {
+    "exportModal": {
         "abbreviateCoordinateDescriptions": "座標の説明を短縮",
         "cancel": "キャンセル",
         "cancelledByUser": "ユーザー に よって エクスポート が キャンセル されました",
@@ -216,6 +216,9 @@
         "exportNotAvailable": "エクスポート 不可",
         "exportNotAvailableDescription": "エクスポートにはフィールド プロパティ、少なくとも1つの非デフォルト ページ、および少なくとも1つのマーシャーが必要です。",
         "exportPDFSuccess": "PDF として正常にエクスポートされました！",
+        "tempoExportSuccess": "テンポデータを .omt ファイルに正常にエクスポートしました！",
+        "tempo": "テンポ",
+        "tempoExportDescription": "このファイルのテンポデータを OpenMarch Tempo（.omt）ファイルにエクスポートします。このファイルはメトロノームアプリや .omt 形式をサポートするその他のツールにインポートできます。",
         "exportSuccess": "{value, plural, other {座標シートを {count} 人のマーチャー用に正常にエクスポートしました！} }",
         "fieldProperties": "フィールドプロパティ: {status}",
         "fieldPropertiesNotLoaded": "フィールドプロパティが読み込まれていません",

@@ -101,8 +101,8 @@ export default function MarcherCoordinateSheetPreview({
         if (example && fieldProperties) {
             setMarcherToUse({
                 id: 1,
-                name: t("exportCoordinates.exampleMarcherName"),
-                section: t("exportCoordinates.exampleMarcherSection"),
+                name: t("exportModal.exampleMarcherName"),
+                section: t("exportModal.exampleMarcherSection"),
                 drill_prefix: "B",
                 drill_order: 1,
                 drill_number: "B1",
@@ -356,26 +356,26 @@ export function StaticMarcherCoordinateSheet({
             marcherPagesState.length === 0 ? (
                 <>
                     <h5>
-                        <T keyName="exportCoordinates.errorTitle" />
+                        <T keyName="exportModal.errorTitle" />
                     </h5>
                     {!fieldPropertiesState && (
                         <p>
-                            <T keyName="exportCoordinates.noFieldProperties" />
+                            <T keyName="exportModal.noFieldProperties" />
                         </p>
                     )}
                     {!marcherState && (
                         <p>
-                            <T keyName="exportCoordinates.noMarcher" />
+                            <T keyName="exportModal.noMarcher" />
                         </p>
                     )}
                     {pagesState.length === 0 && (
                         <p>
-                            <T keyName="exportCoordinates.noPages" />
+                            <T keyName="exportModal.noPages" />
                         </p>
                     )}
                     {marcherPagesState.length === 0 && (
                         <p>
-                            <T keyName="exportCoordinates.noMarcherPages" />
+                            <T keyName="exportModal.noMarcherPages" />
                         </p>
                     )}
                 </>
@@ -491,7 +491,7 @@ export function StaticMarcherCoordinateSheet({
                                             fontWeight: "bold",
                                         }}
                                     >
-                                        {t("exportCoordinates.measuresHeader")}
+                                        {t("exportModal.measuresHeader")}
                                     </th>
                                 )}
                                 <th
@@ -503,9 +503,7 @@ export function StaticMarcherCoordinateSheet({
                                 >
                                     {useXYState
                                         ? "X"
-                                        : t(
-                                              "exportCoordinates.sideToSideHeader",
-                                          )}
+                                        : t("exportModal.sideToSideHeader")}
                                 </th>
                                 <th
                                     aria-label="y header"
@@ -516,9 +514,7 @@ export function StaticMarcherCoordinateSheet({
                                 >
                                     {useXYState
                                         ? "Y"
-                                        : t(
-                                              "exportCoordinates.frontToBackHeader",
-                                          )}
+                                        : t("exportModal.frontToBackHeader")}
                                 </th>
                             </tr>
                         </thead>
@@ -819,7 +815,7 @@ export function StaticQuarterMarcherSheet({
                                     lineHeight: 1.1,
                                 }}
                             >
-                                {t("exportCoordinates.measuresHeader")}
+                                {t("exportModal.measuresHeader")}
                             </th>
                         )}
                         <th
@@ -835,7 +831,7 @@ export function StaticQuarterMarcherSheet({
                         >
                             {useXYState
                                 ? "X"
-                                : t("exportCoordinates.sideToSideHeader")}
+                                : t("exportModal.sideToSideHeader")}
                         </th>
                         <th
                             aria-label="front to back header"
@@ -850,7 +846,7 @@ export function StaticQuarterMarcherSheet({
                         >
                             {useXYState
                                 ? "Y"
-                                : t("exportCoordinates.frontToBackHeader")}
+                                : t("exportModal.frontToBackHeader")}
                         </th>
                     </tr>
                 </thead>

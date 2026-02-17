@@ -196,7 +196,7 @@
         "sideToSide": "Lado a Lado",
         "sideToSideAbbreviation": "L. a L."
     },
-    "exportCoordinates": {
+    "exportModal": {
         "abbreviateCoordinateDescriptions": "Abreviar descrições de coordenadas",
         "cancel": "Cancelar",
         "cancelledByUser": "Exportação cancelada pelo usuário",
@@ -216,6 +216,9 @@
         "exportNotAvailable": "Exportação Indisponível",
         "exportNotAvailableDescription": "A exportação requer propriedades do campo, pelo menos uma página não padrão e pelo menos um marcador.",
         "exportPDFSuccess": "Exportado com sucesso como PDF!",
+        "tempoExportSuccess": "Dados de tempo exportados com sucesso para o arquivo .omt!",
+        "tempo": "Tempo",
+        "tempoExportDescription": "Exporte os dados de tempo deste arquivo para um arquivo OpenMarch Tempo (.omt). Este arquivo pode ser importado em aplicativos de metrônomo e outras ferramentas que suportem o formato .omt.",
         "exportSuccess": "{value, plural, one {Coordenadas exportadas com sucesso para {count} caminhante!} other {Coordenadas exportadas com sucesso para {count} caminhantes!} }",
         "fieldProperties": "Propriedades do Campo: {status}",
         "fieldPropertiesNotLoaded": "Propriedades do campo não carregadas",

@@ -88,6 +88,11 @@ export const webContents = {
     getAllWebContents: vi.fn(() => []),
 };
 
+/** Mock for window.electron.export.saveOmt - use when setting up window.electron for tests */
+export const exportSaveOmtMock = vi
+    .fn()
+    .mockResolvedValue({ success: true, path: "/mock/path.omt" });
+
 // Default export for when electron is imported as a module
 // eslint-disable-next-line import/no-anonymous-default-export
 export default {

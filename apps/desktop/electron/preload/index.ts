@@ -206,6 +206,9 @@ const APP_API = {
             individualCharts: boolean;
             notesAppendixPages?: { pageName: string; notes: string }[];
         }) => ipcRenderer.invoke("export:generateDocForMarcher", args),
+
+        saveOmt: (content: string) =>
+            ipcRenderer.invoke("export:saveOmt", content),
     },
 
     getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
