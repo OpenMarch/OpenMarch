@@ -9,6 +9,8 @@ export interface MarcherColor {
     label: RgbaColor;
 }
 
+export type ShapeType = "circle" | "square" | "triangle" | "x" | null;
+
 /** Represents a field theme with various colors. */
 export interface FieldTheme {
     readonly primaryStroke: RgbaColor;
@@ -20,6 +22,7 @@ export interface FieldTheme {
     readonly previousPath: RgbaColor;
     readonly nextPath: RgbaColor;
     readonly shape: RgbaColor;
+    readonly shapeType: ShapeType;
     readonly tempPath: RgbaColor;
     readonly defaultMarcher: MarcherColor;
 }
@@ -37,6 +40,7 @@ export const createFieldTheme = (
     previousPath: { r: 0, g: 0, b: 0, a: 1 },
     nextPath: { r: 0, g: 175, b: 13, a: 1 },
     shape: { r: 126, g: 34, b: 206, a: 1 },
+    shapeType: "circle",
     tempPath: { r: 192, g: 132, b: 252, a: 1 },
     defaultMarcher: {
         fill: { r: 255, g: 0, b: 0, a: 1 },

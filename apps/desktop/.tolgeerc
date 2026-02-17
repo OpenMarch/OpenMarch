@@ -1,13 +1,17 @@
 {
-  "$schema": "https://docs.tolgee.io/cli-schema.json",
-  "projectId": 19983,
-  "format": "JSON_TOLGEE",
-  "patterns": ["./src/**/*.ts?(x)"],
-  "push": {
-    "filesTemplate": "./i18n/{{language}}.json",
-    "language": ["en"]
-  },
-  "pull": {
-    "path": "./i18n"
-  }
+    "$schema": "https://docs.tolgee.io/cli-schema.json",
+    "projectId": 19983,
+    "format": "JSON_TOLGEE",
+    "patterns": [
+        "./src/**/*.ts?(x)"
+    ],
+    "push": {
+        "filesTemplate": "./i18n/{{language}}.json",
+        "language": [
+            "en"
+        ]
+    },
+    "pull": {
+        "path": "./i18n"
+    }
 }

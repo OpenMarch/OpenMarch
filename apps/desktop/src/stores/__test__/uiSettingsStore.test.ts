@@ -45,7 +45,7 @@ describe("uiSettings Store", () => {
         focussedComponent: "canvas",
         mouseSettings: {
             ...defaultSettings.mouseSettings,
-            zoomSensitivity: 5,
+            zoomSensitivity: 4,
         },
     };
 

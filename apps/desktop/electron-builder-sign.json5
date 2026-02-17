@@ -1,0 +1,17 @@
+/**
+ * Electron builder configuration for Windows signing.
+ * This extends the base electron-builder.json5 config with Azure signing options.
+ * Only used when building signed releases.
+ * @see https://www.electron.build/configuration/configuration
+ */
+{
+    extends: "./electron-builder.json5",
+    win: {
+        azureSignOptions: {
+            publisherName: "OpenMarch LLC",
+            endpoint: "https://eus.codesigning.azure.net",
+            certificateProfileName: "OpenMarch-Desktop",
+            codeSigningAccountName: "openmarch-desktop",
+        },
+    },
+}

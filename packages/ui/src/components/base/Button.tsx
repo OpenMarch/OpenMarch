@@ -17,6 +17,7 @@ const variants = cva(
                 primary: ["bg-accent text-text-invert"],
                 secondary: ["bg-fg-2 text-text"],
                 red: ["bg-red text-text-invert "],
+                ghost: ["bg-transparent border-none"],
             },
             size: {
                 default: [""],
@@ -68,9 +69,10 @@ export const getButtonClassName = ({
     twMerge(clsx(variants({ variant, size, content }), className));
 
 export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+    extends
+        React.ButtonHTMLAttributes<HTMLButtonElement>,
         VariantProps<typeof variants> {
-    variant?: "primary" | "secondary" | "red";
+    variant?: "primary" | "secondary" | "red" | "ghost";
     size?: "default" | "compact";
     content?: "text" | "icon";
     tooltipText?: string;

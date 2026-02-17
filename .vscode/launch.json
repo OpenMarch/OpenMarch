@@ -16,7 +16,33 @@
             "stopAll": true
         }
     ],
+    "tasks": [
+        {
+            "label": "Format Current File",
+            "type": "shell",
+            "command": "pnpm exec prettier --write ${file}",
+            "group": "format",
+            "presentation": {
+                "reveal": "always",
+                "group": "",
+                "order": 1
+            }
+        },
+    ],
     "configurations": [
+        {
+            "name": "Debug Playwright Tests",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/node_modules/@playwright/test/cli.js",
+            "args": ["test", "${file}"],
+            "cwd": "${workspaceFolder}/apps/desktop",
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "neverOpen",
+            "env": {
+              "PWDEBUG": "1"
+            }
+          },
         {
             "name": "Debug Current Vitest Test File - desktop",
             "type": "node",

@@ -15,8 +15,14 @@ import {
     updateMeasures,
     NewMeasureArgs,
     ModifiedMeasureArgs,
+    transactionWithHistory,
+    deleteMeasuresAndBeatsInTransaction,
+    NewBeatArgs,
+    createMeasuresAndBeatsInTransaction,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { beatKeys } from "./useBeats";
+import tolgee from "@/global/singletons/Tolgee";
 
 const KEY_BASE = "measures";
 
@@ -56,11 +62,81 @@ export const createMeasuresMutationOptions = (qc: QueryClient) => {
         onSettled: () => {
             // Invalidate all queries
             void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
+                queryKey: measureKeys.all(),
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error creating measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.createFailed", { error: e.message }),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+/**
+ * Mutation to create beats with an accompanying measure at the first created beat.
+ *
+ * To create multiple measures, use the quantity parameter.
+ *
+ * ```ts
+ * // Creates one measure with two beats
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 1,
+ *   startingPosition: 1,
+ * })
+ *
+ * // Creates four measures with two beats each, eight total beats created
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 4,
+ *   startingPosition: 1,
+ * })
+ * ```
+ */
+export const createMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: ({
+            beatArgs,
+            startingPosition,
+            quantity = 1,
+        }: {
+            beatArgs: Omit<NewBeatArgs, "include_in_measure">[];
+            startingPosition: number;
+            quantity?: number;
+        }) => {
+            return transactionWithHistory(
+                db,
+                "createMeasuresAndBeats",
+                async (tx) =>
+                    createMeasuresAndBeatsInTransaction({
+                        tx,
+                        beatArgs,
+                        startingPosition,
+                        quantity,
+                    }),
+            );
+        },
+        onSettled: () => {
+            // Invalidate all queries
+            void qc
+                .invalidateQueries({
+                    queryKey: measureKeys.all(),
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: beatKeys.all(),
+                    });
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                tolgee.t("measures.createFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -79,11 +155,15 @@ export const updateMeasuresMutationOptions = (qc: QueryClient) => {
                 queryKey: Array.from(itemIds).map((id) => measureKeys.byId(id)),
             });
             void qc.invalidateQueries({
-                queryKey: [KEY_BASE],
+                queryKey: measureKeys.all(),
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error updating measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.updateFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -98,7 +178,47 @@ export const deleteMeasuresMutationOptions = (qc: QueryClient) => {
             });
         },
         onError: (e, variables) => {
-            conToastError(`Error deleting measures`, e, variables);
+            conToastError(
+                tolgee.t("measures.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const deleteMeasuresAndBeatsMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (measureIds: Set<number>) => {
+            return transactionWithHistory(
+                db,
+                "deleteMeasuresAndBeats",
+                async (tx) => {
+                    await deleteMeasuresAndBeatsInTransaction({
+                        tx,
+                        measureIds,
+                    });
+                },
+            );
+        },
+        onSettled: () => {
+            // Invalidate all queries
+            void qc
+                .invalidateQueries({
+                    queryKey: measureKeys.all(),
+                })
+                .then(() => {
+                    void qc.invalidateQueries({
+                        queryKey: beatKeys.all(),
+                    });
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                tolgee.t("measures.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
         },
     });
 };

@@ -23,7 +23,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
 import tolgee from "@/global/singletons/Tolgee";
-import { useTolgee } from "@tolgee/react";
+import { T, useTolgee } from "@tolgee/react";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,6 +31,8 @@ import {
     canUndoQueryOptions,
     canRedoQueryOptions,
 } from "@/hooks/queries/useHistory";
+import { useAlertModalStore } from "@/stores/AlertModalStore";
+import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -566,6 +568,12 @@ function RegisteredActionsHandler() {
     const keyboardShortcutDictionary = useRef<{
         [shortcutKeyString: string]: RegisteredActionsEnum;
     }>({});
+    const {
+        setTitle: setAlertModalTitle,
+        setContent: setAlertModalContent,
+        setActions: setAlertModalActions,
+        setOpen: setAlertModalOpen,
+    } = useAlertModalStore();
 
     /**
      * Get the MarcherPages for the selected marchers on the selected page.
@@ -605,7 +613,35 @@ function RegisteredActionsHandler() {
                     void window.electron.databaseLoad();
                     break;
                 case RegisteredActionsEnum.launchSaveFileDialogue:
-                    void window.electron.databaseSave();
+                    // Set alert modal with help text to confirm the user wants to save a copy
+                    setAlertModalTitle("fileTab.saveFile");
+                    setAlertModalContent(
+                        <T keyName="fileTab.saveCopyDialogDescription" />,
+                    );
+                    setAlertModalActions(
+                        <div className="flex justify-end gap-16">
+                            <AlertDialogAction>
+                                <Button
+                                    variant="primary"
+                                    onClick={() => {
+                                        setAlertModalOpen(false);
+                                        void window.electron.databaseSave();
+                                    }}
+                                >
+                                    <T keyName="fileTab.saveFile" />
+                                </Button>
+                            </AlertDialogAction>
+                            <AlertDialogCancel>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setAlertModalOpen(false)}
+                                >
+                                    <T keyName="fileTab.saveFileCancel" />
+                                </Button>
+                            </AlertDialogCancel>
+                        </div>,
+                    );
+                    setAlertModalOpen(true);
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
                     void window.electron.databaseCreate();

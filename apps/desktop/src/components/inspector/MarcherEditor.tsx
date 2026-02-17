@@ -185,19 +185,23 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(horizontalStepInterval);
 
+            if (!fieldProperties) return currentCoordinates;
+
             if (!stepValue) {
-                if (!fieldProperties) return currentCoordinates;
                 return evenlyDistributeHorizontally({
                     coordinates: currentCoordinates,
                     fieldProperties,
                 });
             }
 
-            if (!fieldProperties) return currentCoordinates;
             const interval = stepValue * fieldProperties.pixelsPerStep;
-            const startingX = Number(currentCoordinates[0]?.x ?? 0);
+            const leftToRightMarchers = currentCoordinates.sort(
+                (a, b) => a.x - b.x,
+            );
+            if (leftToRightMarchers.length === 0) return currentCoordinates;
 
-            return currentCoordinates.map((coordinate, index) => ({
+            const startingX = Number(leftToRightMarchers[0].x);
+            return leftToRightMarchers.map((coordinate, index) => ({
                 ...coordinate,
                 x: startingX + index * interval,
             }));
@@ -214,26 +218,24 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             if (currentCoordinates.length === 0) return currentCoordinates;
             const stepValue = parseStepInterval(verticalStepInterval);
 
+            if (!fieldProperties) return currentCoordinates;
+
             if (!stepValue) {
-                if (!fieldProperties) return currentCoordinates;
                 return evenlyDistributeVertically({
                     coordinates: currentCoordinates,
                     fieldProperties,
                 });
             }
 
-            if (!fieldProperties) return currentCoordinates;
             const interval = stepValue * fieldProperties.pixelsPerStep;
-            const startingY = Number(currentCoordinates[0]?.y ?? 0);
-            const avgX =
-                currentCoordinates.reduce(
-                    (sum, marcher) => sum + (marcher.x as number),
-                    0,
-                ) / currentCoordinates.length;
+            const topToBottomMarchers = currentCoordinates.sort(
+                (a, b) => a.y - b.y,
+            );
+            if (topToBottomMarchers.length === 0) return currentCoordinates;
 
-            return currentCoordinates.map((coordinate, index) => ({
+            const startingY = Number(topToBottomMarchers[0].y);
+            return topToBottomMarchers.map((coordinate, index) => ({
                 ...coordinate,
-                x: avgX,
                 y: startingY + index * interval,
             }));
         });
@@ -430,9 +432,6 @@ function MarcherEditor() {
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.id),
     );
-    const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
-    );
     const { data: previousMarcherPages } = useQuery(
         marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
     );
@@ -542,15 +541,14 @@ function MarcherEditor() {
             !marcherPagesLoaded ||
             !previousMarcherPages ||
             !selectedPage ||
-            !fieldProperties ||
-            !nextMarcherPages
+            !fieldProperties
         )
             return undefined;
 
         return StepSize.getMinAndMaxStepSizesForMarchers({
             marchers: selectedMarchers,
-            startingMarcherPages: marcherPages,
-            endingMarcherPages: nextMarcherPages,
+            startingMarcherPages: previousMarcherPages,
+            endingMarcherPages: marcherPages,
             page: selectedPage,
             fieldProperties,
         });
@@ -561,7 +559,6 @@ function MarcherEditor() {
         selectedPage,
         fieldProperties,
         marcherPages,
-        nextMarcherPages,
     ]);
 
     const resetForm = useCallback(() => {
@@ -609,6 +606,15 @@ function MarcherEditor() {
             </>
         );
     }
+
+    const xCheckpoint = (rCoords: ReadableCoords) =>
+        rCoords.xCheckpoint.terseName ||
+        rCoords.xCheckpoint.name ||
+        `X-Checkpoint ${rCoords.xCheckpoint.id.toString()}`;
+    const yCheckpoint = (rCoords: ReadableCoords) =>
+        rCoords.yCheckpoint.terseName ||
+        rCoords.yCheckpoint.name ||
+        `Y-Checkpoint ${rCoords.yCheckpoint.id.toString()}`;
 
     return (
         <>
@@ -792,33 +798,19 @@ function MarcherEditor() {
                                             </Select>
                                             <Select
                                                 disabled
-                                                value={
-                                                    rCoords.xCheckpoint
-                                                        .terseName ||
-                                                    rCoords.xCheckpoint.name
-                                                }
+                                                value={xCheckpoint(rCoords)}
                                             >
                                                 <SelectTriggerCompact
-                                                    label={
-                                                        rCoords.xCheckpoint
-                                                            .terseName ||
-                                                        rCoords.xCheckpoint.name
-                                                    }
+                                                    label={xCheckpoint(rCoords)}
                                                     className="disabled:cursor-auto disabled:opacity-100"
                                                 />
                                                 <SelectContent>
                                                     <SelectItem
-                                                        value={
-                                                            rCoords.xCheckpoint
-                                                                .terseName ||
-                                                            rCoords.xCheckpoint
-                                                                .name
-                                                        }
+                                                        value={xCheckpoint(
+                                                            rCoords,
+                                                        )}
                                                     >
-                                                        {rCoords.xCheckpoint
-                                                            .terseName ||
-                                                            rCoords.xCheckpoint
-                                                                .name}
+                                                        {xCheckpoint(rCoords)}
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>
@@ -902,33 +894,19 @@ function MarcherEditor() {
                                             </Select>
                                             <Select
                                                 disabled
-                                                value={
-                                                    rCoords.yCheckpoint
-                                                        .terseName ||
-                                                    rCoords.yCheckpoint.name
-                                                }
+                                                value={yCheckpoint(rCoords)}
                                             >
                                                 <SelectTriggerCompact
-                                                    label={
-                                                        rCoords.yCheckpoint
-                                                            .terseName ||
-                                                        rCoords.yCheckpoint.name
-                                                    }
+                                                    label={yCheckpoint(rCoords)}
                                                     className="disabled:cursor-auto disabled:opacity-100"
                                                 />
                                                 <SelectContent>
                                                     <SelectItem
-                                                        value={
-                                                            rCoords.yCheckpoint
-                                                                .terseName ||
-                                                            rCoords.yCheckpoint
-                                                                .name
-                                                        }
+                                                        value={yCheckpoint(
+                                                            rCoords,
+                                                        )}
                                                     >
-                                                        {rCoords.yCheckpoint
-                                                            .terseName ||
-                                                            rCoords.yCheckpoint
-                                                                .name}
+                                                        {yCheckpoint(rCoords)}
                                                     </SelectItem>
                                                 </SelectContent>
                                             </Select>

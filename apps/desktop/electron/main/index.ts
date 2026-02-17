@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {
     app,
     BrowserWindow,
@@ -33,6 +34,7 @@ import {
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
+import { repairDatabase } from "../database/repair";
 
 // The built directory structure
 //
@@ -75,6 +77,20 @@ ipcMain.handle("env:get", () => {
         isCI: !!process.env.CI,
         isPlaywrightSession: !!process.env.PLAYWRIGHT_SESSION,
     };
+});
+
+ipcMain.handle("shell:openExternal", async (_, url: string) => {
+    try {
+        const parsedUrl = new URL(url);
+        // Only allow http and https protocols
+        if (parsedUrl.protocol !== "http:" && parsedUrl.protocol !== "https:") {
+            throw new Error(`Unsafe URL protocol: ${parsedUrl.protocol}`);
+        }
+        await shell.openExternal(url);
+    } catch (error) {
+        console.error("Error opening external URL:", error);
+        throw error;
+    }
 });
 
 process.env.DIST_ELECTRON = join(__dirname, "../");
@@ -262,6 +278,17 @@ void app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("database:repair", async (_, dbPath: string) => {
+        try {
+            const newPath = await repairDatabase(dbPath);
+            // Set the new database path and reload the window
+            await setActiveDb(newPath);
+            return newPath;
+        } catch (error) {
+            console.error("Error repairing database:", error);
+            throw error;
+        }
+    });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
 
     // Recent files handlers
@@ -271,14 +298,15 @@ void app.whenReady().then(async () => {
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
-        if (!filePath || !fs.existsSync(filePath)) return -1;
-
-        DatabaseServices.setDbPath(filePath);
         store.set("databasePath", filePath);
         addRecentFile(filePath);
 
-        await setActiveDb(filePath);
-        return 200;
+        const resCode = await setActiveDb(filePath);
+
+        // Handle alert dialogs in frontend
+        win?.webContents.send("load-file-response", resCode);
+
+        return resCode;
     });
 
     // OCR handlers
@@ -574,19 +602,35 @@ export async function newFile() {
 
     if (!win) return -1;
 
-    // Get path to new file
-    const path = await dialog.showSaveDialog(win, {
-        buttonLabel: "Create New",
-        filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
-    });
-    if (path.canceled || !path.filePath) return;
-    if (fs.existsSync(path.filePath)) {
-        fs.unlinkSync(path.filePath);
+    let filePath: string | undefined;
+
+    // In Playwright test mode, use the provided test file path instead of showing dialog
+    if (
+        process.env.PLAYWRIGHT_SESSION &&
+        process.env.PLAYWRIGHT_NEW_FILE_PATH
+    ) {
+        console.log(
+            "Using test file path:",
+            process.env.PLAYWRIGHT_NEW_FILE_PATH,
+        );
+        filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
+    } else {
+        // Get path to new file via dialog
+        const dialogResult = await dialog.showSaveDialog(win, {
+            buttonLabel: "Create New",
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        });
+        if (dialogResult.canceled || !dialogResult.filePath) return;
+        filePath = dialogResult.filePath;
     }
-    await setActiveDb(path.filePath, true);
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    await setActiveDb(filePath, true);
 
     // Add to recent files
-    addRecentFile(path.filePath);
+    addRecentFile(filePath);
     win?.webContents.reload();
 
     return 200;
@@ -650,17 +694,18 @@ export async function loadDatabaseFile() {
             ],
         })
         .then(async (path) => {
-            // If the user cancels the dialog, and there is no previous path, return -1
-            // if (path.canceled || !path.filePaths[0]) return -1;
+            if (path.canceled) return -1;
 
-            DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
-
             // Add to recent files
             addRecentFile(path.filePaths[0]);
 
-            await setActiveDb(path.filePaths[0]);
-            return 200;
+            const resCode = await setActiveDb(path.filePaths[0]);
+
+            // Handle alert dialogs in frontend
+            win?.webContents.send("load-file-response", resCode);
+
+            return resCode;
         })
         .catch((err) => {
             console.log(err);
@@ -826,29 +871,40 @@ async function setActiveDb(path: string, isNewFile = false) {
         // I.e. last opened file
         if (path === ".") path = store.get("databasePath") as string;
 
-        if (!fs.existsSync(path) && !isNewFile) {
+        const resCode = DatabaseServices.setDbPath(path, isNewFile);
+
+        if (resCode !== 200) {
             store.delete("databasePath");
-            console.error("Database file does not exist:", path);
-            return;
+            console.error(
+                `Error loading database file [code=${resCode}] [path=${path}]`,
+            );
+            return resCode;
         }
-        DatabaseServices.setDbPath(path, isNewFile);
+
         win?.setTitle("OpenMarch - " + path);
 
         const db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
-            return;
+            return 500;
         }
 
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
+
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
 
         // If this isn't a new file, create backups before applying migrations
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
             );
-            if (migrator.hasPendingMigrations()) {
+            if (migrator.hasPendingMigrations(migrationsFolder)) {
                 const backupDir = join(app.getPath("userData"), "backups");
                 if (!fs.existsSync(backupDir)) {
                     fs.mkdirSync(backupDir);
@@ -879,18 +935,18 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.pragma("user_version = 7");
+            db.prepare("PRAGMA user_version = 7").run();
         }
-        await migrator.applyPendingMigrations(
-            join(app.getAppPath(), "electron", "database", "migrations"),
-        );
+        await migrator.applyPendingMigrations(migrationsFolder);
 
         if (isNewFile) {
-            await migrator.initializeDatabase(drizzleDb);
+            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
         }
 
         store.set("databasePath", path); // Save current db path
         win?.webContents.reload();
+
+        return resCode;
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path

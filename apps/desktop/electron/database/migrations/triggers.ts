@@ -1,7 +1,4 @@
-import { DbConnection } from "../tables/__test__/testUtils";
-import { DB } from "../db";
-import { sql } from "drizzle-orm";
-import Database from "better-sqlite3";
+import Database from "libsql";
 
 const triggers = {
     prevent_first_beat_modification: `CREATE TRIGGER IF NOT EXISTS prevent_first_beat_modification
@@ -46,30 +43,16 @@ END;`,
 
 /**
  * Drops all triggers from the database.
- * @param db - The database instance to drop triggers from (Drizzle ORM connection)
- * @param rawDb - Optional raw database connection (better-sqlite3). If provided, uses exec() directly to avoid semicolon stripping.
+ * @param dbConnection - The libsql database connection
  */
-export const dropAllTriggers = async (
-    db: DbConnection | DB,
-    rawDb?: Database.Database,
-) => {
+export const dropAllTriggers = (dbConnection: Database.Database) => {
     for (const [name] of Object.entries(triggers)) {
         if (!name || name.trim() === "") {
             console.warn("Skipping empty trigger name");
             continue;
         }
         try {
-            const query = `DROP TRIGGER IF EXISTS ${name}`;
-            if (!query || query.trim() === "") {
-                console.warn(`Skipping empty query for trigger ${name}`);
-                continue;
-            }
-            // Use rawDb if available to avoid SQL proxy issues
-            if (rawDb) {
-                rawDb.exec(query);
-            } else {
-                await db.run(sql.raw(query));
-            }
+            dbConnection.exec(`DROP TRIGGER IF EXISTS ${name}`);
         } catch (error) {
             // Ignore errors - triggers might not exist (e.g., new database)
             // This is safe because we're using IF EXISTS
@@ -83,13 +66,9 @@ export const dropAllTriggers = async (
 
 /**
  * Creates all triggers in the database.
- * @param db - The database instance to create triggers in (Drizzle ORM connection)
- * @param rawDb - Optional raw database connection (better-sqlite3). If provided, uses exec() directly to avoid semicolon stripping.
+ * @param dbConnection - The libsql database connection
  */
-export const createAllTriggers = async (
-    db: DbConnection | DB,
-    rawDb?: Database.Database,
-) => {
+export const createAllTriggers = (dbConnection: Database.Database) => {
     for (const [name, trigger] of Object.entries(triggers)) {
         if (!name || name.trim() === "" || !trigger || trigger.trim() === "") {
             console.warn(
@@ -98,30 +77,7 @@ export const createAllTriggers = async (
             continue;
         }
         try {
-            const dropQuery = `DROP TRIGGER IF EXISTS ${name}`;
-            // Drop trigger first if it exists
-            try {
-                if (rawDb) {
-                    rawDb.exec(dropQuery);
-                } else {
-                    await db.run(sql.raw(dropQuery));
-                }
-            } catch (dropError) {
-                // Ignore drop errors - trigger might not exist
-            }
-
-            // Create the trigger
-            // Use rawDb.exec() if available to avoid semicolon stripping in SQL proxy
-            const createQuery = trigger.trim();
-            if (!createQuery || createQuery === "") {
-                console.error(`Trigger SQL is empty for ${name}`);
-                continue;
-            }
-            if (rawDb) {
-                rawDb.exec(createQuery);
-            } else {
-                await db.run(sql.raw(createQuery));
-            }
+            dbConnection.exec(`${trigger}`);
         } catch (error) {
             console.error(`Error creating trigger ${name}:`, error);
             throw error;

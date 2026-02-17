@@ -123,26 +123,43 @@ export const SelectContent = ({ children }: RadixSelectContentProps) => {
     );
 };
 
-export type SelectItemProps = RadixSelectItemProps;
-export const SelectItem = React.forwardRef<
-    HTMLDivElement,
-    RadixSelectItemProps
->(({ children, ...props }, forwardedRef) => {
-    return (
-        <RadixSelect.Item
-            className="text-body text-text data-[state='checked']:text-accent flex h-fit w-full cursor-pointer items-center justify-between gap-12 font-sans leading-none duration-150 ease-out outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:translate-x-2"
-            {...props}
-            ref={forwardedRef}
-        >
-            <RadixSelect.ItemText className="text-body text-text w-full truncate leading-none whitespace-nowrap">
-                {children}
-            </RadixSelect.ItemText>
-            <RadixSelect.ItemIndicator>
-                <CheckIcon size={20} />
-            </RadixSelect.ItemIndicator>
-        </RadixSelect.Item>
-    );
-});
+export type SelectItemProps = RadixSelectItemProps & {
+    allowMultiline?: boolean;
+};
+export const SelectItem = React.forwardRef<HTMLDivElement, SelectItemProps>(
+    ({ children, allowMultiline, className, ...props }, forwardedRef) => {
+        return (
+            <RadixSelect.Item
+                className={twMerge(
+                    clsx(
+                        "text-body text-text data-[state='checked']:text-accent flex h-fit w-full cursor-pointer items-center justify-between gap-12 font-sans leading-none duration-150 ease-out outline-none select-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50 data-[highlighted]:translate-x-2",
+                        allowMultiline && "!items-start",
+                        className,
+                    ),
+                )}
+                {...props}
+                ref={forwardedRef}
+            >
+                <RadixSelect.ItemText>
+                    <span
+                        className={twMerge(
+                            clsx(
+                                "text-body text-text w-full leading-none",
+                                !allowMultiline && "truncate whitespace-nowrap",
+                                allowMultiline && "whitespace-normal",
+                            ),
+                        )}
+                    >
+                        {children}
+                    </span>
+                </RadixSelect.ItemText>
+                <RadixSelect.ItemIndicator>
+                    <CheckIcon size={20} />
+                </RadixSelect.ItemIndicator>
+            </RadixSelect.Item>
+        );
+    },
+);
 
 export const SelectGroup = ({ children }: { children: ReactNode }) => {
     return (

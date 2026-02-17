@@ -1,0 +1,16 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import BlogPreview from "@/components/blog/BlogPreview";
+import placeholderImage from "@/content/blog/placeholder.jpg";
+import { getPayloadCmsUrl } from "@/lib/payload";
+
+const payloadCmsUrl = getPayloadCmsUrl();
+---
+
+<Layout title="Preview" noindex={true}>
+    <BlogPreview
+        client:load
+        payloadCmsUrl={payloadCmsUrl}
+        placeholderImageUrl={placeholderImage.src}
+    />
+</Layout>

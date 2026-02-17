@@ -35,6 +35,10 @@ export const FieldThemeSchema = z.object({
     previousPath: RgbaColorSchema,
     nextPath: RgbaColorSchema,
     shape: RgbaColorSchema,
+    shapeType: z
+        .enum(["circle", "square", "triangle", "x"])
+        .nullable()
+        .default("circle"),
     tempPath: RgbaColorSchema,
     defaultMarcher: MarcherColorSchema,
 });
@@ -95,6 +99,7 @@ export const FieldPropertiesSchema = z.object({
     isCustom: z.boolean().default(true),
     showFieldImage: z.boolean().default(true),
     imageFillOrFit: z.enum(["fill", "fit"]).default("fit"),
+    backgroundImageOpacity: z.float64().min(0).max(1).default(1.0),
     theme: FieldThemeSchema.default(DEFAULT_FIELD_THEME),
 });
 

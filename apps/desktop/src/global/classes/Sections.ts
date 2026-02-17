@@ -104,6 +104,12 @@ export const FAMILIES: { [key: string]: SectionFamily } = {
  * The order of sections is the family order (defined in the SectionFamily enum), then the score order.
  */
 export const SECTIONS: { [key: string]: Section } = {
+    Other: new Section({
+        family: FAMILIES.Other,
+        name: "Other",
+        tName: "section.other",
+        prefix: "OT",
+    }),
     Piccolo: new Section({
         family: FAMILIES.Woodwind,
         name: "Piccolo",
@@ -295,12 +301,6 @@ export const SECTIONS: { [key: string]: Section } = {
         name: "Drum Major",
         tName: "section.drumMajor",
         prefix: "DM",
-    }),
-    Other: new Section({
-        family: FAMILIES.Other,
-        name: "Other",
-        tName: "section.other",
-        prefix: "OT",
     }),
 } as const;
 

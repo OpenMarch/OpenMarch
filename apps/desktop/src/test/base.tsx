@@ -1,8 +1,7 @@
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
-import { drizzle as betterSqliteDrizzle } from "drizzle-orm/better-sqlite3";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
-import Database, { RunResult } from "better-sqlite3";
+import Database, { RunResult } from "libsql";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
@@ -353,7 +352,7 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
             new Database(":memory:");
         } catch (error) {
             console.error(
-                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for Node by running 'pnpm run test:prepare'\n",
+                "Error setting up database better-sqlite3 database... \nEnsure LibSQL is compiled for this platform",
                 error,
             );
             throw error;
@@ -372,37 +371,6 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
                     logger: true,
                 },
             ) as unknown as DbConnection,
-        );
-        db.close();
-    },
-});
-
-const betterSqliteTestDirect: TestAPI<DbTestAPI> = baseFixture.extend<{
-    db: DbConnection;
-}>({
-    db: async ({ task }, use) => {
-        // setup the fixture before each test function
-        const tempDatabaseFile = getTempDotsPath(task);
-
-        try {
-            new Database(":memory:");
-        } catch (error) {
-            console.error(
-                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for Node by running 'pnpm run test:prepare'\n",
-                error,
-            );
-            throw error;
-        }
-
-        const db = new Database(tempDatabaseFile);
-
-        setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
-        await use(
-            betterSqliteDrizzle(db, {
-                schema,
-                casing: "snake_case",
-                logger: true,
-            }) as unknown as DbConnection,
         );
         db.close();
     },
@@ -456,20 +424,16 @@ const describeDbTests = (
     // Feel free to enable it by setting the `VITEST_ENABLE_SQLJS` environment variable to `true`.
     // We test SQL.js as we're hoping that we'll use it in the future.
     if (process.env.VITEST_ENABLE_SQLJS === "true")
-        describe("sql-js", () => {
+        // Transactions are currently not working very well with the db proxy.
+        // SQL.js or WASM SQLite support should be revisited, perhaps with wa-sqlite
+        // https://www.powersync.com/blog/sqlite-persistence-on-the-web
+        describe.skip("sql-js", () => {
             tests(sqlJsTest, "sql-js");
-        });
-
-    // Not really needed, but keeping it here for reference
-    if (process.env.VITEST_ENABLE_BETTER_SQLITE_DIRECT === "true")
-        describe("better-sqlite3", () => {
-            tests(betterSqliteTestDirect, "better-sqlite3");
         });
 };
 
 export {
     sqlJsTest,
-    betterSqliteTestDirect,
     betterSqliteTestWithProxy,
     describeDbTests,
     type DbTestsFunc,

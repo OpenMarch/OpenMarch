@@ -4,12 +4,12 @@ packages:
 onlyBuiltDependencies:
   - "@sentry/cli"
   - "@tailwindcss/oxide"
-  - "@openmarch/path-utility"
-  - better-sqlite3
   - canvas
   - core-js
   - electron
   - esbuild
+  - libsql
+  - "@libsql/client"
   - sharp
 patchedDependencies:
   canvas: patches/canvas.patch

@@ -16,7 +16,11 @@ import * as Selectable from "./interfaces/Selectable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
+import {
+    cleanupGroupHandlers,
+    resetMarcherRotation,
+    setGroupAttributes,
+} from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
@@ -157,7 +161,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     private readonly INTERNAL_BASE_ZOOM_SENSITIVITY = 0.5; // Base sensitivity for zoom operations
 
     // Sensitivity settings
-    private panSensitivity = 0.5; // Reduced for smoother panning
     private zoomSensitivity = 0.03; // Reduced for gentler zooming
     private trackpadPanSensitivity = 0.5; // Reduced to be less jumpy
     private _activeGroup: fabric.Group | null = null;
@@ -252,6 +255,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* GROUP SELECTION HANDLING *******************/
 
     handleSelection(event: fabric.IEvent<MouseEvent>) {
+        // Cleanup handlers from the previous group to prevent memory leaks
+        if (this._activeGroup) {
+            cleanupGroupHandlers(this._activeGroup);
+        }
+
         if (event.selected?.length && event.selected.length > 1) {
             const group = this.getActiveObject();
             if (group && group instanceof fabric.Group) {
@@ -532,8 +540,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (lastTouch && this.viewportTransform) {
                 const deltaX = touch.clientX - lastTouch.x;
                 const deltaY = touch.clientY - lastTouch.y;
-                this.viewportTransform[4] += deltaX * this.panSensitivity;
-                this.viewportTransform[5] += deltaY * this.panSensitivity;
+                const pan = this.trackpadPanSensitivity ?? 1;
+                this.viewportTransform[4] += deltaX * pan;
+                this.viewportTransform[5] += deltaY * pan;
                 this.requestRenderAll();
                 this.checkCanvasBounds();
                 this.touchPoints[touch.identifier] = {
@@ -581,7 +590,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     private handleAdvancedMouseDown(event: MouseEvent) {
-        if (event.button === 2 || event.button === 1 || this.forceTrackpadPan) {
+        // Do not handle mouse buttons here; DefaultListeners owns mouse-button panning.
+        // Only allow Alt-key forced panning (trackpad-like) to start a pan.
+        if (this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;
             this.lastPosX = event.clientX;
@@ -593,12 +604,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     }
 
     private handleAdvancedMouseMove(event: MouseEvent) {
-        if (this.isPanning && this.viewportTransform) {
+        // Only handle panning here if Alt-key forced panning is active
+        if (this.isPanning && this.viewportTransform && this.forceTrackpadPan) {
             event.preventDefault();
             const deltaX = event.clientX - this.lastPosX;
             const deltaY = event.clientY - this.lastPosY;
-            this.viewportTransform[4] += deltaX * this.panSensitivity;
-            this.viewportTransform[5] += deltaY * this.panSensitivity;
+
+            // Trackpad/Alt panning always uses zoom-adjusted speed
+            const zoomFactor = this.getZoom();
+            const panSpeed = Math.min(1, 1 / Math.max(0.5, zoomFactor));
+            this.viewportTransform[4] += deltaX * panSpeed;
+            this.viewportTransform[5] += deltaY * panSpeed;
+
             this.requestRenderAll();
             this.checkCanvasBounds();
             this.lastPosX = event.clientX;
@@ -712,9 +729,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 try {
                     const refresh = () => this.refreshCanvasSize();
                     refresh();
-                    // Observe the viewport element that actually defines available space
-                    // teal wrapper = parent of canvas-container
-                    // cssZoomWrapper -> canvas-container -> viewport wrapper
+                    // Observe the outer container (containerRef) for standard resize events
                     const viewportEl = this.cssZoomWrapper.parentElement
                         ? this.cssZoomWrapper.parentElement.parentElement
                         : null;
@@ -725,6 +740,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             ro.observe(viewportEl);
                             this._viewportResizeObserver = ro;
                         } else {
+                            // Fallback to observing the wrapper if viewportEl is not available
                             const ro = new ResizeObserver(() => refresh());
                             ro.observe(this.cssZoomWrapper);
                             this._wrapperResizeObserver = ro;
@@ -785,7 +801,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (this._uiSettings?.mouseSettings) {
             this.zoomSensitivity =
                 this._uiSettings.mouseSettings.zoomSensitivity;
-            this.panSensitivity = this._uiSettings.mouseSettings.panSensitivity;
             this.trackpadPanSensitivity =
                 this._uiSettings.mouseSettings.trackpadPanSensitivity;
             if (this._uiSettings.mouseSettings.trackpadMode !== undefined) {
@@ -917,24 +932,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******************* INSTANCE METHODS ******************/
     refreshCanvasSize() {
-        // Prefer the outer viewport wrapper (teal wrapper) if available,
-        // fallback to canvas-zoom-wrapper, then window size
-        // @ts-ignore
-        const viewportEl: HTMLElement | null = this._viewportEl || null;
+        // Prefer the viewport element if available, fallback to wrapper, then window
+        const viewportEl = this._viewportEl;
         const targetRect = viewportEl
             ? viewportEl.getBoundingClientRect()
             : this.cssZoomWrapper
               ? this.cssZoomWrapper.getBoundingClientRect()
-              : ({
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                } as any);
+              : { width: window.innerWidth, height: window.innerHeight };
 
         const width = Math.max(0, Math.floor(targetRect.width));
         const height = Math.max(0, Math.floor(targetRect.height));
 
         this.setWidth(width);
         this.setHeight(height);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Set the canvas size to specific dimensions.
+     * Use this when you have the exact dimensions to use.
+     */
+    setCanvasSize(width: number, height: number) {
+        this.setWidth(Math.max(0, Math.floor(width)));
+        this.setHeight(Math.max(0, Math.floor(height)));
         this.requestRenderAll();
     }
 
@@ -1498,6 +1518,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this._backgroundImage.left = this._bgImageValues.left;
                 this._backgroundImage.top = this._bgImageValues.top;
             }
+            this._backgroundImage.opacity =
+                this.fieldProperties.backgroundImageOpacity;
             fieldArray.push(this._backgroundImage);
         }
 
@@ -2187,6 +2209,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     selectable: false,
                     hoverCursor: "default",
                     evented: false,
+                    opacity: this.fieldProperties.backgroundImageOpacity,
                 });
 
                 const imgAspectRatio = img.width / img.height;

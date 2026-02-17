@@ -42,7 +42,10 @@ words:
   - DBSCAN
   - DELME
   - Dhruva
+  - DMEA
   - dorico
+  - dorny
+  - dpkg
   - drumline
   - dukc
   - Dumouchelle
@@ -65,9 +68,11 @@ words:
   - hdrs
   - Hipp
   - idioma
+  - importmap
   - Invalidators
   - keyframed
   - launchpage
+  - libsql
   - lightridge
   - localappdata
   - mgmt
@@ -89,6 +94,7 @@ words:
   - Nativewind
   - notarytool
   - NSIS
+  - nums
   - NURBS
   - oklch
   - openmarch
@@ -96,6 +102,7 @@ words:
   - pymupdf
   - openmarchdev
   - overscan
+  - pacman
   - pagewidth
   - paperplane
   - pfps
@@ -114,6 +121,8 @@ words:
   - rgba
   - ritardandos
   - rootfile
+  - rw-r
+  - rwxr
   - sandboxing
   - saario
   - samuelmeuli
@@ -155,6 +164,7 @@ words:
   - unistyles
   - unmaximize
   - unpreview
+  - unstub
   - uuidv
   - venv
   - vertaal
@@ -171,9 +181,11 @@ words:
   - wavesurfer
   - winget
   - Woodgrove
+  - workerd
   - xlink
   - XMLID
   - yeskunallumami
+  - youtu
   - zier
   - Zingali
   - Zustand
@@ -200,10 +212,14 @@ ignorePaths:
   - apps/desktop/e2e/Dockerfile
   - "**/dist-electron/**"
   - "**/wasm/pkg/**"
+  - "**/release/**"
   - "*.svg"
   - "*.musicxml"
   - pnpm-workspace.yaml
   - .vscode/extensions.json
+  - cloudflare-env.d.ts
+  - apps/cms/.cursor/rules/*
+  - apps/cms/AGENTS.md
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

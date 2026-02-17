@@ -1,7 +1,11 @@
-import { eq, inArray } from "drizzle-orm";
+import { eq, gt, inArray, and, isNotNull, gte, lt } from "drizzle-orm";
 import {
+    createBeatsInTransaction,
+    DatabaseBeat,
     DbConnection,
     DbTransaction,
+    deleteBeatsInTransaction,
+    NewBeatArgs,
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
@@ -128,7 +132,7 @@ export async function createMeasures({
     db: DbConnection;
 }): Promise<DatabaseMeasure[]> {
     if (newItems.length === 0) {
-        console.log("No new measures to create");
+        console.debug("No new measures to create");
         return [];
     }
 
@@ -221,6 +225,13 @@ export async function deleteMeasures({
 }): Promise<DatabaseMeasure[]> {
     if (itemIds.size === 0) return [];
 
+    // Check if any of the measures actually exist before using transactionWithHistory
+    const existingMeasures = await db.query.measures.findMany({
+        where: inArray(schema.measures.id, Array.from(itemIds)),
+    });
+
+    if (existingMeasures.length === 0) return [];
+
     const response = await transactionWithHistory(
         db,
         "deleteMeasures",
@@ -247,4 +258,159 @@ export const deleteMeasuresInTransaction = async ({
         .returning();
 
     return deletedItems.map(realDatabaseMeasureToDatabaseMeasure);
+};
+
+/**
+ * Mutation to create beats with an accompanying measure at the first created beat.
+ *
+ * To create multiple measures, use the quantity parameter.
+ *
+ * ```ts
+ * // Creates one measure with two beats
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 1,
+ *   startingPosition: 1,
+ * })
+ *
+ * // Creates four measures with two beats each, eight total beats created
+ * createMeasures({
+ *   beatArgs: [{ duration: 1 }, { duration: 1 }],
+ *   quantity: 4,
+ *   startingPosition: 1,
+ * })
+ * ```
+ */
+export const createMeasuresAndBeatsInTransaction = async ({
+    beatArgs,
+    startingPosition,
+    quantity = 1,
+    tx,
+}: {
+    beatArgs: Omit<NewBeatArgs, "include_in_measure">[];
+    startingPosition: number;
+    quantity?: number;
+    tx: DbTransaction;
+}): Promise<{
+    createdMeasures: DatabaseMeasure[];
+    createdBeats: DatabaseBeat[];
+}> => {
+    const allCreatedMeasures: DatabaseMeasure[] = [];
+    const allCreatedBeats: DatabaseBeat[] = [];
+    for (let i = 0; i < quantity; i++) {
+        const newBeats = await createBeatsInTransaction({
+            tx,
+            newBeats: beatArgs.map((b) => ({
+                ...b,
+                include_in_measure: true,
+            })),
+            // Don't need to increment starting position, as we're creating the same number of beats each time
+            startingPosition,
+        });
+        if (newBeats.length === 0) throw new Error("Failed to create beats");
+
+        const firstCreatedBeat = newBeats.reduce((acc, beat) => {
+            return acc.position < beat.position ? acc : beat;
+        }, newBeats[0]);
+
+        const newMeasures = await createMeasuresInTransaction({
+            tx,
+            newItems: [
+                {
+                    start_beat: firstCreatedBeat.id,
+                    rehearsal_mark: null,
+                    notes: null,
+                },
+            ],
+        });
+        allCreatedMeasures.push(...newMeasures);
+        allCreatedBeats.push(...newBeats);
+    }
+    return {
+        createdMeasures: allCreatedMeasures,
+        createdBeats: allCreatedBeats,
+    };
+};
+
+/**
+ * @param db - The database connection or transaction
+ * @param measureId - The ID of the measure to get the beat IDs for
+ * @returns A set of beat IDs that are in the measure
+ */
+export const getBeatIdsByMeasureId = async ({
+    db,
+    measureId,
+}: {
+    db: DbConnection | DbTransaction;
+    measureId: number;
+}): Promise<Set<number>> => {
+    const measureTimingObject = await db
+        .select()
+        .from(schema.timing_objects)
+        .where(eq(schema.timing_objects.measure_id, measureId))
+        .get();
+    if (measureTimingObject == null)
+        throw new Error(`Measure ID ${measureId} does not exist`);
+
+    const nextMeasureTimingObject = await db
+        .select()
+        .from(schema.timing_objects)
+        .where(
+            and(
+                gt(
+                    schema.timing_objects.position,
+                    measureTimingObject.position,
+                ),
+                isNotNull(schema.timing_objects.measure_id),
+            ),
+        )
+        .get();
+
+    // If there is no next measure, return all beats for the rest of the show
+    // If there is a next measure, return all beats for the current measure up to the next measure
+    const whereClauses =
+        nextMeasureTimingObject == null
+            ? gte(schema.beats.position, measureTimingObject.position)
+            : and(
+                  gte(schema.beats.position, measureTimingObject.position),
+                  lt(schema.beats.position, nextMeasureTimingObject.position),
+              );
+    const beatIds = await db
+        .select({ beat_id: schema.beats.id })
+        .from(schema.beats)
+        .where(whereClauses)
+        .all();
+
+    return new Set(beatIds.map((b) => b.beat_id));
+};
+
+export const deleteMeasuresAndBeatsInTransaction = async ({
+    measureIds,
+    tx,
+}: {
+    measureIds: Set<number>;
+    tx: DbTransaction;
+}): Promise<void> => {
+    const fetchedBeatIds: number[] = [];
+
+    for (const measureId of measureIds) {
+        const beatIds = await getBeatIdsByMeasureId({
+            db: tx,
+            measureId,
+        });
+        fetchedBeatIds.push(...Array.from(beatIds));
+    }
+    const uniqueBeatIds = new Set(fetchedBeatIds);
+
+    // delete measures first to avoid foreign key constraints
+    await deleteMeasuresInTransaction({
+        itemIds: measureIds,
+        tx,
+    });
+
+    // delete beats
+    await deleteBeatsInTransaction({
+        beatIds: uniqueBeatIds,
+        tx,
+    });
 };

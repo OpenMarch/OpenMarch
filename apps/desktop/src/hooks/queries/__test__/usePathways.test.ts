@@ -6,7 +6,7 @@ import {
     Arc,
     Path,
     Line,
-} from "@openmarch/path-utility";
+} from "@openmarch/core";
 import { _pathwayQueries } from "../usePathways";
 import { describe, expect } from "vitest";
 import { count, eq } from "drizzle-orm";

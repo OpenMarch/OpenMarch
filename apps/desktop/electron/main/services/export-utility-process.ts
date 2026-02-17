@@ -1,8 +1,5 @@
 import { parentPort } from "worker_threads";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
-import * as schema from "../../database/migrations/schema";
-import path from "path";
+import Database from "libsql";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
@@ -10,6 +7,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
+import { getOrm } from "electron/database/db";
 
 // =================================================================================================
 // PDF Layout Functions
@@ -150,6 +148,7 @@ function drawQuarterPageSheet(
 // Main Export Logic
 // =================================================================================================
 
+// eslint-disable-next-line max-lines-per-function
 async function handleExport(payload: any) {
     if (!parentPort) return;
 
@@ -165,7 +164,7 @@ async function handleExport(payload: any) {
     });
 
     const sqlite = new Database(dbPath);
-    const db = drizzle(sqlite, { schema });
+    const db = getOrm(sqlite);
 
     const fieldProperties = await db.query.field_properties.findFirst();
     if (fieldProperties) {

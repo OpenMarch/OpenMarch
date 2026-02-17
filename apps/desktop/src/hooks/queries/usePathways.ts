@@ -7,7 +7,7 @@ import { eq, inArray } from "drizzle-orm";
 import { incrementUndoGroup } from "@/global/classes/History";
 import { conToastError } from "@/utilities/utils";
 import { db, schema } from "@/global/database/db";
-import { Path } from "@openmarch/path-utility";
+import { Path } from "@openmarch/core";
 import { DbConnection } from "@/test/base";
 import { findPageIdsForPathway } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";

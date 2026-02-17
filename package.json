@@ -21,7 +21,6 @@
         "release": "pnpm run build && changeset version && changeset publish",
         "site": "turbo run --filter=@openmarch/website",
         "ui": "turbo run --filter=@openmarch/ui",
-        "path-utility": "turbo run --filter=@openmarch/path-utility",
         "test": "turbo run test",
         "lint": "turbo run lint",
         "format": "prettier --write .",
@@ -42,18 +41,21 @@
         "eslint-plugin-react": "^7.37.5",
         "husky": "^9.1.7",
         "lint-staged": "^16.2.5",
-        "prettier": "^3.6.2",
+        "prettier": "^3.8.0",
         "prettier-plugin-astro": "^0.14.1",
         "prettier-plugin-tailwindcss": "^0.6.13",
-        "turbo": "^2.5.4"
+        "turbo": "^2.6.3"
     },
     "peerDependencies": {
         "typescript": "^5"
     },
     "pnpm": {
         "overrides": {
-            "react": "19.0.0",
-            "react-dom": "19.0.0"
+            "react": "^19.0.0",
+            "react-dom": "^19.0.0",
+            "@playwright/test": "1.56.1",
+            "playwright": "1.56.1",
+            "playwright-core": "1.56.1"
         }
     },
     "dependencies": {

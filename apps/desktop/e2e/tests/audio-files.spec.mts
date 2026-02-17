@@ -59,12 +59,11 @@ test("Delete audio file", async ({ audioFiles, electronApp }) => {
     await expect(page.getByText(otherFile)).toBeVisible();
     await page.getByRole("listbox").getByText(currentlySelectedFile).click();
     await page.getByRole("button", { name: "Delete audio file" }).click();
-    await expect(
-        page.getByRole("alertdialog", { name: "Delete Audio File" }),
-    ).toBeVisible();
-    await expect(page.getByRole("paragraph")).toContainText(
-        currentlySelectedFile,
-    );
+    const deleteDialog = page.getByRole("alertdialog", {
+        name: "Delete Audio File",
+    });
+    await expect(deleteDialog).toBeVisible();
+    await expect(deleteDialog).toContainText(currentlySelectedFile);
     await page.getByLabel("Delete Audio File").getByText("Cancel").click();
     await page.getByRole("button", { name: "Delete audio file" }).click();
     await expect(

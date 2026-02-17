@@ -1,6 +1,7 @@
 import Page, {
     fromDatabasePages,
     generatePageNames,
+    measureRangeString,
     yankOrPushPagesAfterIndex,
 } from "../Page";
 import Measure from "../Measure";
@@ -1041,6 +1042,201 @@ describe("Page", () => {
                 { id: 2, start_beat: beats[5].id }, // Original start (4) + offset (1)
                 { id: 3, start_beat: beats[9].id }, // Original start (8) + offset (1)
             ]);
+        });
+    });
+
+    describe("measureRangeString", () => {
+        describe("examples", () => {
+            it.for<{
+                testDescription?: string;
+                pageObject: {
+                    measures: { number: number; counts: number }[] | null;
+                    measureBeatToStartOn: number | null;
+                    measureBeatToEndOn: number | null;
+                } | null;
+                expectedString: string;
+            }>([
+                {
+                    testDescription: "no measures",
+                    pageObject: {
+                        measures: [],
+                        measureBeatToStartOn: null,
+                        measureBeatToEndOn: null,
+                    },
+                    expectedString: "-",
+                },
+                {
+                    testDescription: "no start or end beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: null,
+                        measureBeatToEndOn: null,
+                    },
+                    expectedString: "-",
+                },
+                {
+                    testDescription: "no start beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: null,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "-",
+                },
+                {
+                    testDescription: "no end beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: null,
+                    },
+                    expectedString: "-",
+                },
+                {
+                    testDescription: "null page objects",
+                    pageObject: null,
+                    expectedString: "-",
+                },
+                {
+                    testDescription: "six measures",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "1 → 6",
+                },
+                {
+                    testDescription: "last measure is different counts",
+                    pageObject: {
+                        measures: [
+                            ...Array(6)
+                                .fill({ number: 1, counts: 4 })
+                                .map((_, i) => ({ number: i + 1, counts: 4 })),
+                            { number: 7, counts: 3 },
+                        ],
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 3,
+                    },
+                    expectedString: "1 → 7",
+                },
+                {
+                    testDescription: "last measure is not a sequential number",
+                    pageObject: {
+                        measures: [
+                            ...Array(6)
+                                .fill({ number: 1, counts: 4 })
+                                .map((_, i) => ({ number: i + 1, counts: 4 })),
+                            { number: 5000, counts: 3 },
+                        ],
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 3,
+                    },
+                    expectedString: "1 → 5000",
+                },
+                {
+                    testDescription: "not ending on the last beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 3,
+                    },
+                    expectedString: "1 → 6(3)",
+                },
+                {
+                    testDescription: "ending on the first beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 1,
+                    },
+                    expectedString: "1 → 6(1)",
+                },
+                {
+                    testDescription: "not starting on the first beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 3,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "1(3) → 6",
+                },
+                {
+                    testDescription: "starting on the last beat",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 4,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "1(4) → 6",
+                },
+                {
+                    testDescription: "both measures",
+                    pageObject: {
+                        measures: Array(6)
+                            .fill({ number: 1, counts: 4 })
+                            .map((_, i) => ({ number: i + 1, counts: 4 })),
+                        measureBeatToStartOn: 2,
+                        measureBeatToEndOn: 3,
+                    },
+                    expectedString: "1(2) → 6(3)",
+                },
+                {
+                    testDescription: "playing in the same measure",
+                    pageObject: {
+                        measures: [{ number: 1, counts: 4 }],
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "1",
+                },
+                {
+                    testDescription: "playing in the same measure push back",
+                    pageObject: {
+                        measures: [{ number: 1, counts: 4 }],
+                        measureBeatToStartOn: 2,
+                        measureBeatToEndOn: 4,
+                    },
+                    expectedString: "1(2) → 1",
+                },
+                {
+                    testDescription: "playing in the same measure pull forward",
+                    pageObject: {
+                        measures: [{ number: 1, counts: 4 }],
+                        measureBeatToStartOn: 1,
+                        measureBeatToEndOn: 2,
+                    },
+                    expectedString: "1 → 1(2)",
+                },
+                {
+                    testDescription: "playing in the same measure in between",
+                    pageObject: {
+                        measures: [{ number: 1, counts: 4 }],
+                        measureBeatToStartOn: 2,
+                        measureBeatToEndOn: 3,
+                    },
+                    expectedString: "1(2) → 1(3)",
+                },
+            ])("%# - $testDescription", ({ pageObject, expectedString }) => {
+                const result = measureRangeString(pageObject);
+                expect(result).toBe(expectedString);
+            });
         });
     });
 });

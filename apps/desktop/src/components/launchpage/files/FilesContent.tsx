@@ -119,20 +119,25 @@ export default function FilesTabContent() {
                                         />
                                     )}
                                 </div>
-                                <div className="flex w-full flex-1 justify-between p-4">
-                                    <div className="flex flex-col justify-between gap-6">
-                                        <div className="text-h5 truncate">
+                                <div className="flex w-full min-w-0 flex-1 justify-between p-4">
+                                    <div className="flex min-w-0 flex-1 flex-col justify-between gap-6">
+                                        <div className="text-h5 min-w-0 break-words">
                                             {file.name}
                                         </div>
                                         {file.isMissing && (
-                                            <div className="text-red text-body flex items-center gap-4">
-                                                <WarningCircleIcon size={16} />
-                                                {t(
-                                                    "launchpage.files.movedOrMissing",
-                                                )}
+                                            <div className="text-red text-body flex min-w-0 items-center gap-4">
+                                                <WarningCircleIcon
+                                                    size={16}
+                                                    className="flex-shrink-0"
+                                                />
+                                                <span className="min-w-0 break-words">
+                                                    {t(
+                                                        "launchpage.files.movedOrMissing",
+                                                    )}
+                                                </span>
                                             </div>
                                         )}
-                                        <div className="text-text-subtitle text-body">
+                                        <div className="text-text-subtitle text-body min-w-0 break-words">
                                             {new Date(
                                                 file.lastOpened,
                                             ).toLocaleDateString()}{" "}

@@ -7,7 +7,9 @@ const navigateToLaunchPageSettings = async (page: Page) => {
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
 
     await page.getByRole("tab", { name: "Settings" }).click();
-    await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
+    await expect(
+        page.getByRole("heading", { name: "Settings", exact: true }),
+    ).toBeVisible();
     await expect(page.getByRole("heading", { name: "Plugins" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "Privacy" })).toBeVisible();
 };
@@ -75,7 +77,7 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page.getByRole("option", { name: "Español" }).click();
         await expect(page.getByText("Idioma")).toBeVisible();
         await expect(
-            page.getByRole("heading", { name: "Configuración" }),
+            page.getByRole("heading", { name: "Configuración", exact: true }),
         ).toBeVisible();
 
         // await expect(page.getByText("Configuración")).toBeVisible();
@@ -103,12 +105,15 @@ settingsMenus.forEach(({ name, navigate }) => {
         const { page } = electronApp;
         await navigate(page);
         await page.getByLabel("Zoom sensitivity").click();
+        // Enable trackpad mode first so the trackpad pan sensitivity slider is visible
         await page
-            .getByLabel("Trackpad pan sensitivity")
-            .getByRole("slider", { name: "Volume" })
-            .press("ControlOrMeta+r");
+            .getByRole("switch", { name: "Trackpad mode (recommended" })
+            .click();
+        await page.getByLabel("Trackpad pan sensitivity").getByRole("slider");
         await page.getByLabel("Zoom sensitivity").click();
-        await page.getByLabel("Pan sensitivity", { exact: true }).click();
+        await page
+            .getByLabel("Trackpad pan sensitivity", { exact: true })
+            .click();
         await page.getByLabel("Trackpad pan sensitivity").click();
         await page
             .getByRole("switch", { name: "Trackpad mode (recommended" })

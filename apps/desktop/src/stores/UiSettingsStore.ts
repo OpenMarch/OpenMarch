@@ -29,12 +29,10 @@ export interface UiSettings {
     mouseSettings: {
         /** Whether to enable trackpad mode (specific handling for macOS trackpads) */
         trackpadMode: boolean;
-        /** Trackpad pan sensitivity (0.1-3.0) */
+        /** Trackpad wheel pan sensitivity (0.1-3.0) */
         trackpadPanSensitivity: number;
-        /** Multiplier for base zoom sensitivity. Default: 1.0 (100%). Range 0.5-2.0 (50%-200%). */
+        /** Zoom sensitivity multiplier. Default: 1.0 (100%). Range 0.5-4.0. */
         zoomSensitivity: number;
-        /** Standard pan sensitivity (0.1-3.0) */
-        panSensitivity: number;
     };
     coordinateRounding?: {
         /** In steps, the closest step to round to on the X-axis, offset on the nearestXSteps */
@@ -46,6 +44,10 @@ export interface UiSettings {
         /** In steps, the offset from the center-front point to round to on the Y-axis */
         referencePointY?: number;
     };
+    /** Whether to enable Tolgee In-Context Translating */
+    tolgeeDevTools?: boolean;
+    /** Tolgee API Key for In-Context Translating */
+    tolgeeApiKey?: string;
 }
 
 // Default settings that will be used if no localStorage data exists
@@ -67,7 +69,6 @@ export const defaultSettings: UiSettings = {
         trackpadMode: true,
         trackpadPanSensitivity: 0.5,
         zoomSensitivity: 1.0,
-        panSensitivity: 0.5,
     },
     coordinateRounding: {
         nearestXSteps: 0,
@@ -75,9 +76,13 @@ export const defaultSettings: UiSettings = {
         nearestYSteps: 0,
         referencePointY: undefined,
     },
+    tolgeeDevTools: false,
 };
 
 const STORAGE_KEY = "openmarch:uiSettings";
+
+const clampZoomSensitivity = (value: number): number =>
+    Math.min(4.0, Math.max(0.5, value));
 
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {
@@ -86,8 +91,28 @@ const loadSettings = (): UiSettings => {
         if (!stored) return defaultSettings;
 
         const parsed = JSON.parse(stored) as UiSettings;
+        const mergedMouseSettings = {
+            ...defaultSettings.mouseSettings,
+            ...parsed.mouseSettings,
+        };
+        if (mergedMouseSettings.zoomSensitivity !== undefined) {
+            mergedMouseSettings.zoomSensitivity = clampZoomSensitivity(
+                mergedMouseSettings.zoomSensitivity,
+            );
+        }
         // Merge with default settings to ensure all properties exist
-        return { ...defaultSettings, ...parsed };
+        // Deep merge nested objects to preserve new properties in defaults
+        return {
+            ...defaultSettings,
+            ...parsed,
+            mouseSettings: mergedMouseSettings,
+            coordinateRounding: parsed.coordinateRounding
+                ? {
+                      ...defaultSettings.coordinateRounding,
+                      ...parsed.coordinateRounding,
+                  }
+                : defaultSettings.coordinateRounding,
+        };
     } catch (error) {
         console.error("Failed to load UI settings from localStorage:", error);
         return defaultSettings;
@@ -114,8 +139,7 @@ interface UiSettingsStoreActions {
     setAudioVolume: (volume: number) => void;
 }
 interface UiSettingsStoreInterface
-    extends UiSettingsStoreState,
-        UiSettingsStoreActions {}
+    extends UiSettingsStoreState, UiSettingsStoreActions {}
 
 export const useUiSettingsStore = create<UiSettingsStoreInterface>(
     (set, get) => ({
@@ -132,6 +156,12 @@ export const useUiSettingsStore = create<UiSettingsStoreInterface>(
 
         setUiSettings: (newUiSettings, type) => {
             const uiSettings = { ...newUiSettings };
+
+            if (uiSettings.mouseSettings?.zoomSensitivity !== undefined) {
+                uiSettings.mouseSettings.zoomSensitivity = clampZoomSensitivity(
+                    uiSettings.mouseSettings.zoomSensitivity,
+                );
+            }
 
             if (uiSettings.lockX && type === "lockX") {
                 uiSettings.lockY = false;

@@ -19,6 +19,7 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
+import { marcherAppearancesKeys } from ".";
 
 const KEY_BASE = "section_appearances";
 
@@ -112,43 +113,13 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedItems: ModifiedSectionAppearanceArgs[]) =>
             updateSectionAppearances({ db, modifiedItems }),
-        onSuccess: (_, variables) => {
-            // Invalidate specific queries
-            const itemIds = new Set<number>();
-            const sections = new Set<string>();
-
-            for (const modifiedArgs of variables) {
-                itemIds.add(modifiedArgs.id);
-                if (modifiedArgs.section) {
-                    sections.add(modifiedArgs.section);
-                }
-            }
-
-            // Invalidate by ID queries
-            if (itemIds.size > 0)
-                void qc.invalidateQueries({
-                    queryKey: Array.from(itemIds).map((id) =>
-                        sectionAppearanceKeys.byId(id),
-                    ),
-                });
-
-            // Invalidate by section queries
-            if (sections.size > 0)
-                void qc.invalidateQueries({
-                    queryKey: Array.from(sections).map((section) =>
-                        sectionAppearanceKeys.bySection(section),
-                    ),
-                });
-
-            void qc
-                .invalidateQueries({
-                    queryKey: [KEY_BASE],
-                })
-                .then(() => {
-                    void qc.invalidateQueries({
-                        queryKey: marcherWithVisualsKeys.all(),
-                    });
-                });
+        onSuccess: async () => {
+            await qc.invalidateQueries({
+                queryKey: sectionAppearanceKeys.all(),
+            });
+            await qc.invalidateQueries({
+                queryKey: marcherAppearancesKeys.all(),
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error updating section appearances`, e, variables);

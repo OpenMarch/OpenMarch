@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import Database from "better-sqlite3";
+import Database from "libsql";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -18,7 +18,7 @@ describe("Migration 0012_pink_king_cobra", () => {
 
         // Create a new database
         db = new Database(tempDbPath);
-        db.pragma("foreign_keys = ON");
+        db.prepare("PRAGMA foreign_keys = ON").run();
 
         // Create the minimal schema needed for this migration
         // Based on migration 0012, we need: beats, pages, and measures tables
@@ -565,7 +565,7 @@ describe("Migration 0012_pink_king_cobra", () => {
         // Helper to set up beats with beat 0 at position 1
         function setupBeatsWithFirstAtPosition1(count: number) {
             // Temporarily disable foreign keys and drop triggers
-            db.pragma("foreign_keys = OFF");
+            db.prepare("PRAGMA foreign_keys = OFF").run();
             db.exec("DROP TRIGGER IF EXISTS prevent_delete_first_beat");
             db.exec("DROP TRIGGER IF EXISTS prevent_delete_first_page");
 
@@ -575,11 +575,15 @@ describe("Migration 0012_pink_king_cobra", () => {
 
             // Re-enable foreign keys BEFORE recreating triggers and data
             // This ensures foreign key constraints are enforced
-            db.pragma("foreign_keys = ON");
+            db.prepare("PRAGMA foreign_keys = ON").run();
 
             // Verify foreign keys are enabled
-            const fkEnabled = db.pragma("foreign_keys", { simple: true });
-            if (!fkEnabled) {
+            const fkEnabled = (
+                db.prepare("PRAGMA foreign_keys").get() as {
+                    foreign_keys: number;
+                }
+            ).foreign_keys;
+            if (fkEnabled !== 1) {
                 throw new Error("Failed to re-enable foreign keys");
             }
 
@@ -622,8 +626,12 @@ describe("Migration 0012_pink_king_cobra", () => {
             }
 
             // Final verification that foreign keys are still enabled
-            const fkStillEnabled = db.pragma("foreign_keys", { simple: true });
-            if (!fkStillEnabled) {
+            const fkStillEnabled = (
+                db.prepare("PRAGMA foreign_keys").get() as {
+                    foreign_keys: number;
+                }
+            ).foreign_keys;
+            if (fkStillEnabled !== 1) {
                 throw new Error("Foreign keys were disabled after setup");
             }
         }

@@ -44,10 +44,13 @@ export const transactionWithHistory = async <T>(
     funcName: string,
     func: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> => {
-    return await db.transaction(async (tx) => {
+    const output = await db.transaction(async (tx) => {
         const startMessage = `=========== start ${funcName} ============`;
+        let result: T;
         if (window.electron) void window.electron?.log("info", startMessage);
+        // eslint-disable-next-line no-console
         else console.log(startMessage);
+        let error: Error | undefined;
 
         try {
             await incrementHistoryGroupInTransaction(tx, "undo");
@@ -80,7 +83,7 @@ export const transactionWithHistory = async <T>(
             assert(groupBefore != null, "Group before is undefined");
 
             // Execute the function
-            const result = await func(tx);
+            result = await func(tx);
 
             const groupAfter =
                 (
@@ -128,13 +131,19 @@ export const transactionWithHistory = async <T>(
              *    - Are there triggers for the table that the function is performing actions on?
              *    - Do the functions actually perform actions on the database?
              */
-
-            return result;
+        } catch (err: any) {
+            // Remove the items from the history tables that were added by the transaction
+            error = err as Error;
+            console.debug("Rolling back history state");
         } finally {
             const endMessage = `=========== end ${funcName} ============\n`;
             mainProcessLog("info", endMessage);
         }
+        if (error) throw error;
+
+        return result!;
     });
+    return output;
 };
 
 type HistoryType = "undo" | "redo";
@@ -497,7 +506,7 @@ async function createTriggers(
     // This had to be done because using the drizzle proxy led to SQLITE syntax errors
     // Likely, because drizzle tries to prepare the SQL statement and then execute it
     const isViteTest = typeof process !== "undefined" && process.env.VITEST;
-    if (isViteTest) db.run(sql.raw(insertTrigger));
+    if (isViteTest) await db.run(sql.raw(insertTrigger));
     else await window.electron.unsafeSqlProxy(insertTrigger);
     // UPDATE trigger
     const updateTrigger = `CREATE TRIGGER IF NOT EXISTS '${tableName}_ut' AFTER UPDATE ON "${tableName}"
@@ -511,7 +520,7 @@ async function createTriggers(
                     .join(",")} WHERE rowid='||old.rowid);
         ${sideEffect}
     END;`;
-    if (isViteTest) db.run(sql.raw(updateTrigger));
+    if (isViteTest) await db.run(sql.raw(updateTrigger));
     else await window.electron.unsafeSqlProxy(updateTrigger);
 
     // DELETE trigger
@@ -527,7 +536,7 @@ async function createTriggers(
                 .join(",")})');
           ${sideEffect}
       END;`;
-    if (isViteTest) db.run(sql.raw(deleteTrigger));
+    if (isViteTest) await db.run(sql.raw(deleteTrigger));
     else await window.electron.unsafeSqlProxy(deleteTrigger);
 }
 
@@ -698,29 +707,37 @@ async function executeHistoryAction(
             await switchTriggerMode(db, "undo", false, tableNames);
         }
 
-        // Temporarily disable foreign key checks
-        await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
+        let error: Error | undefined;
+        try {
+            // Temporarily disable foreign key checks
+            await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
-        /// Execute all of the SQL statements in the current history group
-        for (const sqlStatement of sqlStatements) {
-            await db.run(sqlStatement);
+            /// Execute all of the SQL statements in the current history group
+            await db.transaction(async (tx) => {
+                for (const sqlStatement of sqlStatements)
+                    await tx.run(sqlStatement);
+            });
+        } catch (err: any) {
+            error = err;
+        } finally {
+            // Re-enable foreign key checks
+            await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
+
+            // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
+            await switchTriggerMode(db, "undo", true, tableNames);
         }
 
-        // Re-enable foreign key checks
-        await db.run(sql.raw("PRAGMA foreign_keys = ON;"));
+        if (error) throw error;
 
         // Delete all of the SQL statements in the current history group
         await db.run(
             sql.raw(`
-            DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
-        `),
+        DELETE FROM ${tableName} WHERE "history_group"=${currentGroup};
+    `),
         );
-
         // Refresh the current group number in the history stats table
         await refreshCurrentGroups(db);
 
-        // Switch the triggers back to undo mode and delete the redo rows when inputting new undo rows
-        await switchTriggerMode(db, "undo", true, tableNames);
         response = {
             success: true,
             tableNames,
@@ -773,12 +790,12 @@ export async function clearMostRecentRedo(db: DbConnection | DB) {
  * @returns The current undo group number in the history stats table
  */
 export async function getCurrentUndoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_undo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_undo_group: number };
-    return result.cur_undo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_undo_group: true,
+        },
+    });
+    return result?.cur_undo_group ?? 0;
 }
 
 /**
@@ -786,12 +803,12 @@ export async function getCurrentUndoGroup(db: DbConnection | DB) {
  * @returns The current redo group number in the history stats table
  */
 export async function getCurrentRedoGroup(db: DbConnection | DB) {
-    const result = (await db.get(
-        sql.raw(`
-        SELECT cur_redo_group FROM ${Constants.HistoryStatsTableName};
-    `),
-    )) as { cur_redo_group: number };
-    return result.cur_redo_group;
+    const result = await db.query.history_stats.findFirst({
+        columns: {
+            cur_redo_group: true,
+        },
+    });
+    return result?.cur_redo_group ?? 0;
 }
 
 export async function getUndoStackLength(db: DbConnection): Promise<number> {
@@ -888,11 +905,14 @@ export async function calculateHistorySize(db: DbConnection | DB) {
     const getSqlLength = async (tableName: string): Promise<number> => {
         const rows = (await db.all(
             sql.raw(`SELECT sql FROM ${tableName}`),
-        )) as HistoryTableRow[];
+        )) as string[][];
 
         if (rows.length === 0) return 0;
 
-        const totalLength = rows.reduce((sum, row) => sum + row.sql.length, 0);
+        const totalLength = rows.reduce(
+            (sum, row) => sum + (row[0]?.length ?? 0),
+            0,
+        );
         return totalLength;
     };
 
