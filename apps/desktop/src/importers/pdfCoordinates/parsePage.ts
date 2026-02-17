@@ -1,4 +1,10 @@
-import type { ParsedSheet } from "./types";
+import type {
+    ParsedRow,
+    ParsedSheet,
+    PerformerHeader,
+    Quadrant,
+} from "./types";
+import { SET_ID_REGEX, START_SET_IDS } from "./types";
 import {
     bucketRows,
     detectHeaderAndBands,
@@ -9,18 +15,25 @@ import {
     fallbackParseRowLeftToRight,
     extractHeaderFromRows,
     type TextItem,
+    type ColumnBand,
 } from "./columns";
 import { pywareProfile } from "./profile";
 import { getQuadrantRects, rectContains } from "./segment";
 import { detectSheetsHybrid } from "./segment-improved";
 
-function toItems(textContent: any): TextItem[] {
-    const items = textContent.items as Array<{
+function quadrantLabel(index: number): Quadrant {
+    return index === 0 ? "TL" : index === 1 ? "TR" : index === 2 ? "BL" : "BR";
+}
+
+function toItems(textContent: {
+    items: Array<{
         str: string;
         transform: number[];
         width: number;
         height?: number;
     }>;
+}): TextItem[] {
+    const items = textContent.items;
     return items.map((it) => {
         const [, , , d, e, f] = it.transform;
         return {
@@ -33,9 +46,9 @@ function toItems(textContent: any): TextItem[] {
     });
 }
 
-function extractHeader(arr: TextItem[]) {
+function extractHeader(arr: TextItem[]): Partial<PerformerHeader> {
     const joined = arr.map((t) => t.str).join(" ");
-    const header: any = {};
+    const header: Partial<PerformerHeader> = {};
     const label = /Label\s*:\s*([A-Za-z]+\d*)/i.exec(joined)?.[1];
     if (label) header.label = label.trim();
     const symbol = /Symbol\s*:\s*([^\s]+)/i.exec(joined)?.[1];
@@ -70,133 +83,13 @@ export async function extractSheetsFromPage(
             const qItems = sheet.items;
             if (qItems.length < 10) continue;
             const qRows = bucketRows(qItems, 2);
-            const qRegions = segmentRowsByAnchors(qRows);
-            if (qRegions.length === 0) {
-                // fallback to header-based segmentation in this quadrant
-                const headers = detectAllHeaders(qRows) || [];
-                const headerMeta = extractHeader(qItems);
-                if (headers.length === 0) {
-                    const parsedRows = mapTableRows(qRows);
-                    if (parsedRows.length > 0)
-                        sheets.push({
-                            pageIndex,
-                            quadrant: (si === 0
-                                ? "TL"
-                                : si === 1
-                                  ? "TR"
-                                  : si === 2
-                                    ? "BL"
-                                    : "BR") as any,
-                            header: headerMeta,
-                            rows: parsedRows,
-                            rawText: qItems.map((t) => t.str).join("\n"),
-                        });
-                    continue;
-                }
-                const h = headers[0];
-                const start = h.headerIndex + 1;
-                const end = qRows.length;
-                const subRows = qRows.slice(start, end);
-                const parsedRows = mapTableRows([
-                    qRows[h.headerIndex],
-                    ...subRows,
-                ]);
-                if (parsedRows.length > 0)
-                    sheets.push({
-                        pageIndex,
-                        quadrant: (si === 0
-                            ? "TL"
-                            : si === 1
-                              ? "TR"
-                              : si === 2
-                                ? "BL"
-                                : "BR") as any,
-                        header: headerMeta,
-                        rows: parsedRows,
-                        rawText: qItems.map((t) => t.str).join("\n"),
-                    });
-                continue;
-            }
-            // Use first region within sheet
-            const { start, end } = qRegions[0];
-            const regionRows = qRows.slice(start, end);
-            const headerCut = detectHeaderAndBands(regionRows);
-            const headerRowsForMeta = headerCut
-                ? regionRows.slice(0, headerCut.headerIndex)
-                : regionRows.slice(0, 3);
-            const headerMeta = {
-                ...extractHeader(headerRowsForMeta.flat()),
-                ...extractHeaderFromRows(headerRowsForMeta),
-            } as any;
-            const header = detectHeaderAndBands(regionRows);
-            let dataRows = header
-                ? regionRows.slice(header.headerIndex + 1)
-                : regionRows;
-            let bands = header
-                ? header.bands
-                : clusterBandsByTokens(dataRows, 5) ||
-                  inferBandsFromData(dataRows) ||
-                  [];
-            const haveLateral = bands.some((b) => b.key === "lateralText");
-            const haveFB = bands.some((b) => b.key === "fbText");
-            if (!haveLateral || !haveFB) {
-                const clustered =
-                    clusterBandsByTokens(dataRows, 5) ||
-                    inferBandsFromData(dataRows);
-                if (clustered) bands = clustered;
-            }
-            const out: any[] = [];
-            for (const r of dataRows) {
-                let cols = mapRowToColumns(r, bands);
-                if (
-                    !cols.setId ||
-                    !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
-                    !cols.counts ||
-                    !/^\d+$/.test((cols.counts || "").trim())
-                ) {
-                    const fallback = fallbackParseRowLeftToRight(r);
-                    if (fallback) cols = { ...fallback } as any;
-                }
-                // Sanitize lateral prefix: drop a leading zero if present before 'Side'
-                if (
-                    cols.lateralText &&
-                    /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)
-                ) {
-                    cols.lateralText = cols.lateralText.replace(
-                        /^\s*0+\s+(?=Side\b)/i,
-                        "",
-                    );
-                }
-                const setId = cols.setId;
-                const countsRaw = cols.counts;
-                if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
-                const counts = parseInt(
-                    (countsRaw || "").replace(/[^0-9]/g, ""),
-                    10,
-                );
-                out.push({
-                    setId: setId.trim(),
-                    measureRange: (cols.measureRange || "").trim(),
-                    counts: Number.isFinite(counts) ? counts : 0,
-                    lateralText: (cols.lateralText || "").trim(),
-                    fbText: (cols.fbText || "").trim(),
-                    source: "text",
-                });
-            }
-            if (out.length > 0)
-                sheets.push({
-                    pageIndex,
-                    quadrant: (si === 0
-                        ? "TL"
-                        : si === 1
-                          ? "TR"
-                          : si === 2
-                            ? "BL"
-                            : "BR") as any,
-                    header: headerMeta,
-                    rows: out,
-                    rawText: qItems.map((t) => t.str).join("\n"),
-                });
+            const parsed = processRegion(
+                qRows,
+                pageIndex,
+                quadrantLabel(si),
+                qItems,
+            );
+            if (parsed) sheets.push(parsed);
         }
         if (sheets.length > 0) return sheets;
     }
@@ -208,189 +101,100 @@ export async function extractSheetsFromPage(
     for (let qi = 0; qi < quadOrder.length; qi++) {
         const qk = quadOrder[qi];
         const rect = quads[qk];
-        const qItems = items.filter((it) =>
-            rectContains(rect as any, it.x, it.y),
-        );
+        const qItems = items.filter((it) => rectContains(rect, it.x, it.y));
         if (qItems.length < 10) continue;
         const qRows = bucketRows(qItems, 2);
-        const qRegions = segmentRowsByAnchors(qRows);
-        if (qRegions.length === 0) {
-            // fallback to header-based segmentation in this quadrant
-            const headers = detectAllHeaders(qRows) || [];
-            const headerMeta = extractHeader(qItems);
-            if (headers.length === 0) {
-                const parsedRows = mapTableRows(qRows);
-                if (parsedRows.length > 0)
-                    sheets.push({
-                        pageIndex,
-                        quadrant: qk as any,
-                        header: headerMeta,
-                        rows: parsedRows,
-                        rawText: qItems.map((t) => t.str).join("\n"),
-                    });
-                continue;
-            }
-            const h = headers[0];
-            const start = h.headerIndex + 1;
-            const end = qRows.length;
-            const subRows = qRows.slice(start, end);
-            const parsedRows = mapTableRows([qRows[h.headerIndex], ...subRows]);
-            if (parsedRows.length > 0)
-                sheets.push({
-                    pageIndex,
-                    quadrant: qk as any,
-                    header: headerMeta,
-                    rows: parsedRows,
-                    rawText: qItems.map((t) => t.str).join("\n"),
-                });
-            continue;
-        }
-        // Use first region within quadrant
-        const { start, end } = qRegions[0];
-        const regionRows = qRows.slice(start, end);
-        const headerCut = detectHeaderAndBands(regionRows);
-        const headerRowsForMeta = headerCut
-            ? regionRows.slice(0, headerCut.headerIndex)
-            : regionRows.slice(0, 3);
-        const headerMeta = {
-            ...extractHeader(headerRowsForMeta.flat()),
-            ...extractHeaderFromRows(headerRowsForMeta),
-        } as any;
-        const header = detectHeaderAndBands(regionRows);
-        let dataRows = header
-            ? regionRows.slice(header.headerIndex + 1)
-            : regionRows;
-        let bands = header
-            ? header.bands
-            : clusterBandsByTokens(dataRows, 5) ||
-              inferBandsFromData(dataRows) ||
-              [];
-        const haveLateral = bands.some((b) => b.key === "lateralText");
-        const haveFB = bands.some((b) => b.key === "fbText");
-        if (!haveLateral || !haveFB) {
-            const clustered =
-                clusterBandsByTokens(dataRows, 5) ||
-                inferBandsFromData(dataRows);
-            if (clustered) bands = clustered;
-        }
-        const out: any[] = [];
-        for (const r of dataRows) {
-            let cols = mapRowToColumns(r, bands);
-            if (
-                !cols.setId ||
-                !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
-                !cols.counts ||
-                !/^\d+$/.test((cols.counts || "").trim())
-            ) {
-                const fallback = fallbackParseRowLeftToRight(r);
-                if (fallback) cols = { ...fallback } as any;
-            }
-            // Sanitize lateral prefix: drop a leading zero if present before 'Side'
-            if (
-                cols.lateralText &&
-                /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)
-            ) {
-                cols.lateralText = cols.lateralText.replace(
-                    /^\s*0+\s+(?=Side\b)/i,
-                    "",
-                );
-            }
-            const setId = cols.setId;
-            const countsRaw = cols.counts;
-            if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
-            const counts = parseInt(
-                (countsRaw || "").replace(/[^0-9]/g, ""),
-                10,
-            );
-            out.push({
-                setId: setId.trim(),
-                measureRange: (cols.measureRange || "").trim(),
-                counts: Number.isFinite(counts) ? counts : 0,
-                lateralText: (cols.lateralText || "").trim(),
-                fbText: (cols.fbText || "").trim(),
-                source: "text",
-            });
-        }
-        if (out.length > 0)
-            sheets.push({
-                pageIndex,
-                quadrant: qk as any,
-                header: headerMeta,
-                rows: out,
-                rawText: qItems.map((t) => t.str).join("\n"),
-            });
+        const parsed = processRegion(qRows, pageIndex, qk, qItems);
+        if (parsed) sheets.push(parsed);
     }
     if (sheets.length > 0) return sheets;
-    // Fallback: original whole-page logic
+    // Fallback: whole-page single region
     const rows = bucketRows(items, 2);
     const regions = segmentRowsByAnchors(rows);
     if (regions.length === 0) return [];
     const { start, end } = regions[0];
-    const parsed = mapTableRows(rows.slice(start, end));
-    if (parsed.length === 0) return [];
-    return [
-        {
-            pageIndex,
-            quadrant: "TL" as any,
-            header: extractHeader(items),
-            rows: parsed,
-            rawText: items.map((t) => t.str).join("\n"),
-        },
-    ];
+    const parsed = processRegion(
+        rows.slice(start, end),
+        pageIndex,
+        "TL",
+        items,
+    );
+    return parsed ? [parsed] : [];
+}
+
+/**
+ * Shared row-parsing logic used by all extraction paths.
+ * Accepts data rows + column bands, applies fallback if column mapping fails,
+ * and accepts both numeric and word-based (Start/Opener) set IDs.
+ * Optional getConf can be used by OCR to attach per-row confidence.
+ */
+export function parseDataRows(
+    dataRows: TextItem[][],
+    bands: ColumnBand[],
+    getConf?: (row: TextItem[]) => number | undefined,
+): ParsedRow[] {
+    const out: ParsedRow[] = [];
+    for (const r of dataRows) {
+        let cols = mapRowToColumns(r, bands);
+        const setIdValid = SET_ID_REGEX.test((cols.setId || "").trim());
+        const countsValid = /^\d+$/.test((cols.counts || "").trim());
+        const isStartRow = START_SET_IDS.test((cols.setId || "").trim());
+        if (!setIdValid || (!countsValid && !isStartRow)) {
+            const fallback = fallbackParseRowLeftToRight(r);
+            if (fallback) cols = { ...fallback };
+        }
+        if (cols.lateralText && /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)) {
+            cols.lateralText = cols.lateralText.replace(
+                /^\s*0+\s+(?=Side\b)/i,
+                "",
+            );
+        }
+        const setId = cols.setId;
+        if (!setId || !SET_ID_REGEX.test(setId.trim())) continue;
+        const counts = parseInt((cols.counts || "").replace(/[^0-9]/g, ""), 10);
+        const row: ParsedRow = {
+            setId: setId.trim(),
+            measureRange: (cols.measureRange || "").trim(),
+            counts: Number.isFinite(counts) ? counts : 0,
+            lateralText: (cols.lateralText || "").trim(),
+            fbText: (cols.fbText || "").trim(),
+            source: "text",
+        };
+        const conf = getConf?.(r);
+        if (conf !== undefined) row.conf = conf;
+        out.push(row);
+    }
+    return out;
 }
 
 function mapTableRows(rows: TextItem[][]) {
     const header = detectHeaderAndBands(rows);
-    let dataRows = header ? rows.slice(header.headerIndex + 1) : rows;
-    const out: any[] = [];
+    const dataRows = header ? rows.slice(header.headerIndex + 1) : rows;
     if (header) {
         let bands = header.bands;
-        const haveLateral = bands.some((b) => b.key === "lateralText");
-        const haveFB = bands.some((b) => b.key === "fbText");
-        if (!haveLateral || !haveFB) {
+        if (
+            !bands.some((b) => b.key === "lateralText") ||
+            !bands.some((b) => b.key === "fbText")
+        ) {
             const inferred = inferBandsFromData(dataRows);
             if (inferred) bands = inferred;
         }
-        for (const r of dataRows) {
-            let cols = mapRowToColumns(r, bands);
-            if (
-                !cols.setId ||
-                !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
-                !cols.counts ||
-                !/^\d+$/.test((cols.counts || "").trim())
-            ) {
-                const fallback = fallbackParseRowLeftToRight(r);
-                if (fallback) cols = { ...fallback } as any;
-            }
-            const setId = cols.setId;
-            const countsRaw = cols.counts;
-            if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
-            const counts = parseInt(
-                (countsRaw || "").replace(/[^0-9]/g, ""),
-                10,
-            );
-            out.push({
-                setId: setId.trim(),
-                measureRange: (cols.measureRange || "").trim(),
-                counts: Number.isFinite(counts) ? counts : 0,
-                lateralText: (cols.lateralText || "").trim(),
-                fbText: (cols.fbText || "").trim(),
-                source: "text",
-            });
-        }
-        return out;
+        return parseDataRows(dataRows, bands);
     }
+    // No header detected — try positional parsing as last resort
+    const out: ParsedRow[] = [];
     for (const r of dataRows) {
         const text = r.map((t) => t.str);
         const [setId, measureRange, countsRaw, ...rest] = text;
-        if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
+        if (!setId || !SET_ID_REGEX.test(setId.trim())) continue;
         const counts = parseInt((countsRaw || "").replace(/[^0-9]/g, ""), 10);
-        const lateralText = rest.join(" ");
-        let fbText = "";
         const fbIndex = rest.findIndex((s) => /hash/i.test(s));
-        if (fbIndex >= 0) fbText = rest.slice(fbIndex).join(" ");
+        const lateralText = (fbIndex >= 0 ? rest.slice(0, fbIndex) : rest).join(
+            " ",
+        );
+        const fbText = fbIndex >= 0 ? rest.slice(fbIndex).join(" ") : "";
         out.push({
-            setId: setId?.trim(),
+            setId: setId.trim(),
             measureRange: (measureRange || "").trim(),
             counts: Number.isFinite(counts) ? counts : 0,
             lateralText: lateralText.trim(),
@@ -399,6 +203,72 @@ function mapTableRows(rows: TextItem[][]) {
         });
     }
     return out;
+}
+
+/** Single shared path: segment → detect header/bands → parse → build ParsedSheet. */
+function processRegion(
+    qRows: TextItem[][],
+    pageIndex: number,
+    quadrant: Quadrant,
+    itemsForRaw: TextItem[],
+): ParsedSheet | null {
+    const rawText = itemsForRaw.map((t) => t.str).join("\n");
+    const qRegions = segmentRowsByAnchors(qRows);
+    if (qRegions.length === 0) {
+        const headers = detectAllHeaders(qRows) || [];
+        const headerMeta = extractHeader(itemsForRaw);
+        const parsedRows =
+            headers.length === 0
+                ? mapTableRows(qRows)
+                : (() => {
+                      const h = headers[0];
+                      const subRows = qRows.slice(h.headerIndex + 1);
+                      return mapTableRows([qRows[h.headerIndex], ...subRows]);
+                  })();
+        if (parsedRows.length === 0) return null;
+        return {
+            pageIndex,
+            quadrant,
+            header: headerMeta,
+            rows: parsedRows,
+            rawText,
+        };
+    }
+    const { start, end } = qRegions[0];
+    const regionRows = qRows.slice(start, end);
+    const headerCut = detectHeaderAndBands(regionRows);
+    const headerRowsForMeta = headerCut
+        ? regionRows.slice(0, headerCut.headerIndex)
+        : regionRows.slice(0, 3);
+    const headerMeta = {
+        ...extractHeader(headerRowsForMeta.flat()),
+        ...extractHeaderFromRows(headerRowsForMeta),
+    };
+    const header = detectHeaderAndBands(regionRows);
+    let dataRows = header
+        ? regionRows.slice(header.headerIndex + 1)
+        : regionRows;
+    let bands = header
+        ? header.bands
+        : clusterBandsByTokens(dataRows, 5) ||
+          inferBandsFromData(dataRows) ||
+          [];
+    const haveLateral = bands.some((b) => b.key === "lateralText");
+    const haveFB = bands.some((b) => b.key === "fbText");
+    if (!haveLateral || !haveFB) {
+        const clustered =
+            clusterBandsByTokens(dataRows, 5) || inferBandsFromData(dataRows);
+        if (clustered) bands = clustered;
+    }
+    const out = parseDataRows(dataRows, bands);
+    if (out.length === 0) return null;
+    return {
+        pageIndex,
+        quadrant,
+        header: headerMeta,
+        rows: out,
+        rawText,
+    };
 }
 
 function segmentRowsByAnchors(

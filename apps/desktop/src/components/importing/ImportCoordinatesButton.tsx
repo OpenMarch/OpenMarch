@@ -13,21 +13,21 @@ import {
 } from "@/hooks/queries";
 import { queryClient } from "@/App";
 import { dryRunImportPdfCoordinates } from "@/importers/pdfCoordinates";
+import type { NormalizedSheet } from "@/importers/pdfCoordinates/types";
 import {
     allDatabaseBeatsQueryOptions,
     allDatabasePagesQueryOptions,
 } from "@/hooks/queries";
 import { type NewMarcherArgs } from "@/db-functions";
 import { useTimingObjects } from "@/hooks";
-
-type NormalizedSheet =
-    ReturnType<typeof dryRunImportPdfCoordinates> extends Promise<infer R>
-        ? R extends { normalized: infer N }
-            ? N extends any[]
-                ? N[number]
-                : never
-            : never
-        : never;
+import {
+    parseSetId,
+    buildPagePlan,
+    validatePlan,
+    computeBeatPositions,
+    buildMarcherPageUpdates,
+    mapPage0Variants,
+} from "@/importers/pdfCoordinates/planBuilder";
 
 export default function ImportCoordinatesButton() {
     const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -64,11 +64,10 @@ export default function ImportCoordinatesButton() {
         details: any[];
         normalized: NormalizedSheet[];
         parsed: any[];
-        rawPythonOutput: any[];
     }>(null);
     const [activeStep, setActiveStep] = useState<
-        "raw" | "parsed" | "normalized" | "dots" | "db"
-    >("raw");
+        "parsed" | "normalized" | "dots" | "db"
+    >("parsed");
     const [isLoading, setIsLoading] = useState(false);
     const [isCommitting, setIsCommitting] = useState(false);
     const [createTimeline, setCreateTimeline] = useState(true);
@@ -109,7 +108,6 @@ export default function ImportCoordinatesButton() {
             const warnings = result.dryRun.issues.filter(
                 (i) => i.type === "warning",
             ).length;
-            (window as any).__lastParsedSheets = result.parsed;
             setReport({
                 pages: result.pages,
                 errors,
@@ -117,7 +115,6 @@ export default function ImportCoordinatesButton() {
                 details: result.dryRun.issues,
                 normalized: result.normalized,
                 parsed: result.parsed,
-                rawPythonOutput: result.rawPythonOutput || [],
             });
             setOpen(true);
         } catch (err: any) {
@@ -178,8 +175,7 @@ export default function ImportCoordinatesButton() {
 
     function downloadCsv() {
         if (!report) return;
-        // Export raw parsed data for inspection; conversions can be improved iteratively
-        const blob = toCsvRaw((window as any).__lastParsedSheets || []);
+        const blob = toCsvRaw(report.parsed || []);
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -354,7 +350,6 @@ export default function ImportCoordinatesButton() {
                 details: report.details,
                 normalized: report.normalized,
                 parsed: report.parsed,
-                rawPythonOutput: report.rawPythonOutput,
             },
         };
         const blob = new Blob([JSON.stringify(data, null, 2)], {
@@ -379,102 +374,9 @@ export default function ImportCoordinatesButton() {
         );
     }, [report]);
 
-    function getPagePlan(): { name: string; counts: number }[] {
+    function getPagePlan() {
         if (!report) return [];
-        // Aggregate sets from all sheets to ensure we don't miss any if some performers have rests/missing rows
-        const sets = new Map<string, number>();
-        for (const sheet of report.normalized) {
-            for (const row of sheet.rows) {
-                const id = row.setId;
-                if (!sets.has(id)) {
-                    sets.set(id, row.counts);
-                }
-            }
-        }
-
-        const plan = Array.from(sets.entries()).map(([name, counts]) => ({
-            name,
-            counts,
-        }));
-
-        // Sort by set ID
-        plan.sort((a, b) => {
-            const pA = parseSetId(a.name);
-            const pB = parseSetId(b.name);
-            if (!pA || !pB) return a.name.localeCompare(b.name);
-            if (pA.num !== pB.num) return pA.num - pB.num;
-            if (pA.subset === pB.subset) return 0;
-            if (!pA.subset) return -1; // 1 before 1A
-            if (!pB.subset) return 1;
-            return pA.subset.localeCompare(pB.subset);
-        });
-
-        return plan;
-    }
-
-    type ParsedSet = { num: number; subset: string | null };
-    function parseSetId(name: string): ParsedSet | null {
-        // Handle "Start", "Beg", "Opener" as set 0
-        if (/^(start|beg|bgn|opener|open)$/i.test(name)) {
-            return { num: 0, subset: null };
-        }
-        const m = name.match(/^(\d+)([A-Za-z]*)$/);
-        if (!m) return null;
-        return {
-            num: parseInt(m[1], 10),
-            subset: m[2] ? m[2].toUpperCase() : null,
-        };
-    }
-
-    function validateAndFlags(plan: { name: string; counts: number }[]): {
-        valid: boolean;
-        flags: boolean[];
-        message?: string;
-    } {
-        let lastNum: number | null = null;
-        let lastSubset: string | null = null; // retained for clarity though not used downstream
-        const flags: boolean[] = [];
-        for (let i = 0; i < plan.length; i++) {
-            const p = plan[i];
-            const parsed = parseSetId(p.name);
-            if (!parsed)
-                return {
-                    valid: false,
-                    flags: [],
-                    message: `Unrecognized set id: ${p.name}`,
-                };
-            const { num, subset } = parsed;
-            if (i === 0) {
-                flags.push(false);
-                lastNum = num;
-                lastSubset = subset;
-                continue;
-            }
-            if (subset) {
-                if (num !== lastNum) {
-                    return {
-                        valid: false,
-                        flags: [],
-                        message: `Subset ${p.name} appears without prior base ${num}`,
-                    };
-                }
-                // allow any subset letter progression; generator will increment A,B,C,…; we only mark subset=true
-                flags.push(true);
-            } else {
-                // new base number
-                if (lastNum !== null && num < lastNum) {
-                    return {
-                        valid: false,
-                        flags: [],
-                        message: `Page order not ascending near ${p.name}`,
-                    };
-                }
-                flags.push(false);
-                lastNum = num;
-                lastSubset = null;
-            }
-        }
-        return { valid: true, flags };
+        return buildPagePlan(report.normalized as any);
     }
 
     async function ensureBeatsAndPages() {
@@ -541,7 +443,7 @@ export default function ImportCoordinatesButton() {
         );
 
         // 2) Pages with robust subset flags
-        const validation = validateAndFlags(plan);
+        const validation = validatePlan(plan);
         if (!validation.valid) {
             console.error(
                 "[import-commit] Page plan validation failed:",
@@ -821,6 +723,9 @@ export default function ImportCoordinatesButton() {
                 toast.error("Page 0 not found. Cannot proceed with import.");
                 return;
             }
+            mapPage0Variants(plan, page0Id).forEach((id, setId) =>
+                pageBySetId.set(setId, id),
+            );
 
             if (planIndexToStartBeat) {
                 // Map plan items to pages using the start_beat positions we tracked
@@ -848,34 +753,10 @@ export default function ImportCoordinatesButton() {
                 );
 
                 for (let i = 0; i < plan.length; i++) {
+                    if (i === 0) continue;
                     const { name: setId, counts } = plan[i];
                     const parsedSet = parseSetId(setId);
-
-                    // CRITICAL: The first row in the plan (index 0) ALWAYS maps to page ID 0
-                    // regardless of what the setId is called (could be "0", "1", "Start", etc.)
-                    if (i === 0) {
-                        pageBySetId.set(setId, page0Id);
-                        console.log(
-                            `[import-commit] Mapped first row "${setId}" (plan index 0, counts=${counts}) to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                        );
-                        // Also map "0" explicitly if the first row isn't "0"
-                        if (parsedSet && parsedSet.num === 0 && setId !== "0") {
-                            pageBySetId.set("0", page0Id);
-                            console.log(
-                                `[import-commit] Also mapped setId "0" to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                            );
-                        }
-                        continue;
-                    }
-
-                    // Also ensure that any row with setId "0" maps to page 0
-                    if (parsedSet && parsedSet.num === 0) {
-                        pageBySetId.set(setId, page0Id);
-                        console.log(
-                            `[import-commit] Mapped Set 0 "${setId}" to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                        );
-                        continue;
-                    }
+                    if (parsedSet && parsedSet.num === 0) continue;
 
                     const startBeatId = planIndexToStartBeat.get(i);
                     const isSet2Mapping =
@@ -930,337 +811,34 @@ export default function ImportCoordinatesButton() {
                     const bPos = beatsById.get(b.start_beat) ?? Infinity;
                     return aPos - bPos;
                 });
-                // Map by index (plan[i] -> sortedPages[i])
+                // Map by index (plan[i] -> sortedPages[i]); page-0 already in pageBySetId
                 for (
                     let i = 0;
                     i < plan.length && i < sortedPages.length;
                     i++
                 ) {
                     const { name: setId } = plan[i];
-                    const parsedSet = parseSetId(setId);
-
-                    // CRITICAL: The first row in the plan (index 0) ALWAYS maps to page ID 0
-                    if (i === 0) {
-                        pageBySetId.set(setId, page0Id);
-                        console.log(
-                            `[import-commit] Mapped first row "${setId}" (plan index 0) to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                        );
-                        // Also map "0" explicitly if the first row isn't "0"
-                        if (parsedSet && parsedSet.num === 0 && setId !== "0") {
-                            pageBySetId.set("0", page0Id);
-                            console.log(
-                                `[import-commit] Also mapped setId "0" to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                            );
-                        }
-                    } else {
-                        // Also ensure that any row with setId "0" maps to page 0
-                        if (parsedSet && parsedSet.num === 0) {
-                            pageBySetId.set(setId, page0Id);
-                            console.log(
-                                `[import-commit] Mapped Set 0 "${setId}" to page ID ${page0Id} (FIRST_PAGE_ID)`,
-                            );
-                        } else {
-                            pageBySetId.set(setId, sortedPages[i].id);
-                        }
-                    }
+                    if (pageBySetId.has(setId)) continue;
+                    pageBySetId.set(setId, sortedPages[i].id);
                 }
             }
 
-            console.log(
-                `[import-commit] Found ${allPages.length} pages in database, mapped ${pageBySetId.size} pages by setId`,
-            );
-            console.log(
-                `[import-commit] Page mapping (first 10):`,
-                Array.from(pageBySetId.entries())
-                    .slice(0, 10)
-                    .map(([setId, pageId]) => `${setId} -> ${pageId}`)
-                    .join(", "),
-            );
-
-            // 3) Build updates for marcher_pages
-            console.log("[import-commit] Building marcher_pages updates...");
-
-            // Track statistics for comprehensive reporting
-            const stats = {
-                totalRowsFromNormalized: 0,
-                rowsSkippedNoMarcher: 0,
-                rowsSkippedNoPage: 0,
-                rowsSkippedInvalidCoords: 0,
-                rowsWithZeroZero: 0,
-                rowsCommitted: 0,
-            };
-
-            const updates: {
-                marcher_id: number;
-                page_id: number;
-                x: number;
-                y: number;
-                notes?: string | null;
-            }[] = [];
             const pps = fieldProperties.pixelsPerStep as number;
             const cx = fieldProperties.centerFrontPoint.xPixels as number;
             const cy = fieldProperties.centerFrontPoint.yPixels as number;
 
-            const skippedSheets: string[] = [];
-            const skippedRows: Array<{
-                sheet: string;
-                setId: string;
-                reason: string;
-            }> = [];
-
-            // Track which performers get which coordinates for collision detection
-            const performerCoordinateCounts = new Map<string, number>();
-            const performerLabelsSeen = new Map<string, number>(); // label -> count of sheets with this label
-            const invalidCoordinates: Array<{
-                sheet: string;
-                setId: string;
-                reason: string;
-                lateralText: string;
-                fbText: string;
-            }> = [];
-
-            // First pass: detect duplicate labels (multiple performers with same label)
-            for (const sheet of report.normalized) {
-                const labelKey = (
-                    sheet.header.label ||
-                    sheet.header.symbol ||
-                    sheet.header.performer ||
-                    "?"
-                ).toLowerCase();
-                performerLabelsSeen.set(
-                    labelKey,
-                    (performerLabelsSeen.get(labelKey) || 0) + 1,
-                );
-            }
-
-            // Warn about duplicate labels
-            const duplicateLabels = Array.from(
-                performerLabelsSeen.entries(),
-            ).filter(([_, count]) => count > 1);
-            if (duplicateLabels.length > 0) {
-                console.warn(
-                    `[import-commit] WARNING: Found duplicate performer labels:`,
-                    duplicateLabels
-                        .map(([label, count]) => `${label} (${count}x)`)
-                        .join(", "),
-                );
-                toast.warning(
-                    `Found ${duplicateLabels.length} duplicate performer labels. Coordinates may be incorrectly assigned.`,
-                );
-            }
-
-            for (const sheet of report.normalized) {
-                const labelKey = (
-                    sheet.header.label ||
-                    sheet.header.symbol ||
-                    sheet.header.performer ||
-                    "?"
-                ).toLowerCase();
-
-                // Count total rows before any filtering
-                stats.totalRowsFromNormalized += sheet.rows.length;
-
-                const marcherId = existingByLabel.get(labelKey);
-                if (!marcherId) {
-                    skippedSheets.push(labelKey);
-                    stats.rowsSkippedNoMarcher += sheet.rows.length;
-                    console.warn(
-                        `[import-commit] Skipping sheet "${labelKey}" (${sheet.rows.length} rows) - no matching marcher found`,
-                    );
-                    continue;
-                }
-
-                // Track how many coordinates this performer is getting
-                const coordCount = sheet.rows.length;
-                performerCoordinateCounts.set(labelKey, coordCount);
-
-                // Warn if a performer has suspiciously many or few coordinates
-                if (coordCount > 100) {
-                    console.warn(
-                        `[import-commit] WARNING: Performer "${labelKey}" has ${coordCount} coordinates - might be incorrectly grouped`,
-                    );
-                }
-
-                for (const row of sheet.rows) {
-                    // Debug logging for Set 0 to track mapping issues
-                    const parsedSet = parseSetId(row.setId);
-                    if (parsedSet && parsedSet.num === 0) {
-                        console.log(
-                            `[import-commit] Processing Set 0 row: setId="${row.setId}", looking up in pageBySetId map`,
-                        );
-                        console.log(
-                            `[import-commit] Available mappings:`,
-                            Array.from(pageBySetId.entries())
-                                .slice(0, 5)
-                                .map(([s, p]) => `${s}->${p}`)
-                                .join(", "),
-                        );
-                    }
-
-                    let pageId = pageBySetId.get(row.setId);
-
-                    // If Set 0 is not found in the map, explicitly map it to page 0
-                    if (!pageId && parsedSet && parsedSet.num === 0) {
-                        console.warn(
-                            `[import-commit] Set 0 "${row.setId}" not found in pageBySetId, mapping to page 0 explicitly`,
-                        );
-                        pageId = page0Id;
-                    }
-
-                    if (!pageId) {
-                        skippedRows.push({
-                            sheet: labelKey,
-                            setId: row.setId,
-                            reason: "Page not found",
-                        });
-                        stats.rowsSkippedNoPage++;
-                        continue;
-                    }
-
-                    // Debug logging for Set 0 to confirm correct mapping
-                    if (parsedSet && parsedSet.num === 0) {
-                        console.log(
-                            `[import-commit] Set 0 "${row.setId}" mapped to page ID ${pageId} (expected: ${page0Id})`,
-                        );
-                    }
-
-                    // Validate coordinates - check for NaN (parsing failures)
-                    const xSteps = row.xSteps;
-                    const ySteps = row.ySteps;
-                    const hasInvalidX = !Number.isFinite(xSteps);
-                    const hasInvalidY = !Number.isFinite(ySteps);
-
-                    if (hasInvalidX || hasInvalidY) {
-                        const reasons: string[] = [];
-                        if (hasInvalidX) {
-                            reasons.push("lateral coordinate failed to parse");
-                        }
-                        if (hasInvalidY) {
-                            reasons.push(
-                                "front-back coordinate failed to parse",
-                            );
-                        }
-                        invalidCoordinates.push({
-                            sheet: labelKey,
-                            setId: row.setId,
-                            reason: reasons.join(", "),
-                            lateralText: row.lateralText || "",
-                            fbText: row.fbText || "",
-                        });
-                        stats.rowsSkippedInvalidCoords++;
-                        console.warn(
-                            `[import-commit] Skipping invalid coordinates for ${labelKey} Set ${row.setId}: ${reasons.join(", ")}`,
-                            `lateralText: "${row.lateralText}", fbText: "${row.fbText}"`,
-                        );
-                        continue; // Skip this row instead of placing at center
-                    }
-
-                    // Warn if coordinates are exactly 0,0 (might indicate parsing failure)
-                    if (xSteps === 0 && ySteps === 0) {
-                        stats.rowsWithZeroZero++;
-                        console.warn(
-                            `[import-commit] WARNING: ${labelKey} Set ${row.setId} has coordinates (0, 0) - may indicate parsing failure`,
-                            `lateralText: "${row.lateralText}", fbText: "${row.fbText}"`,
-                        );
-                    }
-
-                    const x = cx + xSteps * pps;
-                    const y = cy + ySteps * pps;
-
-                    // Ensure all required fields are present and properly typed
-                    const update: {
-                        marcher_id: number;
-                        page_id: number;
-                        x: number;
-                        y: number;
-                        notes?: string | null;
-                    } = {
-                        marcher_id: marcherId,
-                        page_id: pageId,
-                        x: Number.isFinite(x) ? x : 0,
-                        y: Number.isFinite(y) ? y : 0,
-                        notes: `${row.lateralText} | ${row.fbText}` || null,
-                    };
-
-                    // Validate the update structure
-                    if (
-                        !Number.isFinite(update.marcher_id) ||
-                        !Number.isFinite(update.page_id) ||
-                        !Number.isFinite(update.x) ||
-                        !Number.isFinite(update.y)
-                    ) {
-                        console.error(
-                            `[import-commit] Invalid update structure:`,
-                            update,
-                        );
-                        continue;
-                    }
-
-                    updates.push(update);
-                    stats.rowsCommitted++;
-                }
-            }
-
-            // Log comprehensive statistics
-            console.log(`[import-commit] Row processing statistics:`, {
-                totalRowsFromNormalized: stats.totalRowsFromNormalized,
-                rowsCommitted: stats.rowsCommitted,
-                rowsSkippedNoMarcher: stats.rowsSkippedNoMarcher,
-                rowsSkippedNoPage: stats.rowsSkippedNoPage,
-                rowsSkippedInvalidCoords: stats.rowsSkippedInvalidCoords,
-                rowsWithZeroZero: stats.rowsWithZeroZero,
-                skippedSheetsCount: skippedSheets.length,
-                skippedRowsCount: skippedRows.length,
-                invalidCoordsCount: invalidCoordinates.length,
-            });
-
-            // Log coordinate distribution for debugging
-            console.log(
-                `[import-commit] Coordinate distribution:`,
-                Array.from(performerCoordinateCounts.entries())
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 20)
-                    .map(([label, count]) => `${label}: ${count}`)
-                    .join(", "),
+            const { updates, stats } = buildMarcherPageUpdates(
+                report.normalized,
+                pageBySetId,
+                existingByLabel,
+                pps,
+                cx,
+                cy,
             );
 
-            if (skippedSheets.length > 0) {
-                console.warn(
-                    `[import-commit] Skipped ${skippedSheets.length} sheets (marcher not found):`,
-                    skippedSheets,
-                );
-            }
-            if (skippedRows.length > 0) {
-                console.warn(
-                    `[import-commit] Skipped ${skippedRows.length} rows (page not found):`,
-                    skippedRows,
-                );
-            }
-            if (invalidCoordinates.length > 0) {
-                console.warn(
-                    `[import-commit] Skipped ${invalidCoordinates.length} rows with invalid coordinates:`,
-                    invalidCoordinates
-                        .slice(0, 10)
-                        .map(
-                            (ic) =>
-                                `${ic.sheet} Set ${ic.setId}: ${ic.reason} (lateral: "${ic.lateralText}", fb: "${ic.fbText}")`,
-                        ),
-                );
+            if (stats.skippedInvalid > 0) {
                 toast.warning(
-                    `Skipped ${invalidCoordinates.length} rows with invalid coordinates. Check console for details.`,
-                );
-            }
-
-            // Summary toast with all statistics
-            const totalSkipped =
-                stats.rowsSkippedNoMarcher +
-                stats.rowsSkippedNoPage +
-                stats.rowsSkippedInvalidCoords;
-            if (totalSkipped > 0) {
-                console.warn(
-                    `[import-commit] SUMMARY: ${stats.totalRowsFromNormalized} total rows processed, ` +
-                        `${stats.rowsCommitted} committed, ${totalSkipped} skipped ` +
-                        `(${stats.rowsSkippedNoMarcher} no marcher, ${stats.rowsSkippedNoPage} no page, ${stats.rowsSkippedInvalidCoords} invalid coords)`,
+                    `Skipped ${stats.skippedInvalid} rows with invalid coordinates.`,
                 );
             }
 
@@ -1387,24 +965,20 @@ export default function ImportCoordinatesButton() {
                                 <div className="flex gap-4 border-b">
                                     {[
                                         {
-                                            key: "raw",
-                                            label: "1. Raw Python Output",
-                                        },
-                                        {
                                             key: "parsed",
-                                            label: "2. Parsed Sheets",
+                                            label: "1. Parsed Sheets",
                                         },
                                         {
                                             key: "normalized",
-                                            label: "3. Normalized (xSteps/ySteps)",
+                                            label: "2. Normalized (xSteps/ySteps)",
                                         },
                                         {
                                             key: "dots",
-                                            label: "4. Dots Format (pixels)",
+                                            label: "3. Dots Format (pixels)",
                                         },
                                         {
                                             key: "db",
-                                            label: "5. DB Write Preview",
+                                            label: "4. DB Write Preview",
                                         },
                                     ].map((step) => (
                                         <button
@@ -1423,15 +997,6 @@ export default function ImportCoordinatesButton() {
                                     ))}
                                 </div>
                                 <div className="max-h-[400px] overflow-auto rounded-md border p-12 font-mono text-xs">
-                                    {activeStep === "raw" && (
-                                        <pre className="whitespace-pre-wrap">
-                                            {JSON.stringify(
-                                                report.rawPythonOutput,
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    )}
                                     {activeStep === "parsed" && (
                                         <pre className="whitespace-pre-wrap">
                                             {JSON.stringify(

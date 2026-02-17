@@ -41,14 +41,42 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
         }
     }
 
-    // bounds & plausibility
+    // bounds, NaN, and plausibility checks
     for (const s of sheets) {
         for (const r of s.rows) {
-            if (Math.abs(r.xSteps) > 96 || Math.abs(r.ySteps) > 90) {
+            // NaN coordinates = parse failure
+            if (!Number.isFinite(r.xSteps)) {
+                issues.push({
+                    type: "error",
+                    code: "LATERAL_PARSE_FAILED",
+                    message: `Lateral parse failed at set ${r.setId}: "${r.lateralText}"`,
+                    pageIndex: s.pageIndex,
+                    quadrant: s.quadrant,
+                    setId: r.setId,
+                    field: "lateralText",
+                });
+            }
+            if (!Number.isFinite(r.ySteps)) {
+                issues.push({
+                    type: "error",
+                    code: "FB_PARSE_FAILED",
+                    message: `Front-back parse failed at set ${r.setId}: "${r.fbText}"`,
+                    pageIndex: s.pageIndex,
+                    quadrant: s.quadrant,
+                    setId: r.setId,
+                    field: "fbText",
+                });
+            }
+            // Out-of-bounds (only check if parseable)
+            if (
+                Number.isFinite(r.xSteps) &&
+                Number.isFinite(r.ySteps) &&
+                (Math.abs(r.xSteps) > 96 || Math.abs(r.ySteps) > 90)
+            ) {
                 issues.push({
                     type: "error",
                     code: "OUT_OF_BOUNDS",
-                    message: `Out-of-bounds coordinate at set ${r.setId}`,
+                    message: `Out-of-bounds coordinate at set ${r.setId} (x=${r.xSteps.toFixed(1)}, y=${r.ySteps.toFixed(1)})`,
                     pageIndex: s.pageIndex,
                     quadrant: s.quadrant,
                     setId: r.setId,
@@ -67,7 +95,7 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
                 });
             }
             // Low confidence warning on OCR-derived rows
-            if (typeof (r as any).conf === "number" && (r as any).conf < 0.5) {
+            if (typeof r.conf === "number" && r.conf < 0.5) {
                 issues.push({
                     type: "warning",
                     code: "LOW_CONFIDENCE",
@@ -75,8 +103,7 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
                     pageIndex: s.pageIndex,
                     quadrant: s.quadrant,
                     setId: r.setId,
-                    field: undefined,
-                    confidence: (r as any).conf,
+                    confidence: r.conf,
                 });
             }
         }

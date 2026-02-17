@@ -28,7 +28,6 @@ import {
     runPythonOCR,
     initializeOCRService,
     checkPythonAvailable,
-    runCoordinateParser,
 } from "./services/pdf-ocr-service";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
@@ -327,18 +326,6 @@ void app.whenReady().then(async () => {
             return await runPythonOCR(pdfArrayBuffer, pageIndex, dpi);
         },
     );
-    ipcMain.handle(
-        "ocr:runCoordinateParser",
-        async (
-            _,
-            pdfArrayBuffer: ArrayBuffer,
-            pageIndex: number,
-            dpi: number,
-        ) => {
-            return await runCoordinateParser(pdfArrayBuffer, pageIndex, dpi);
-        },
-    );
-
     // Getters
     initGetters();
 

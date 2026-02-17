@@ -1,5 +1,14 @@
 import { z } from "zod";
 
+/**
+ * Matches valid set IDs: numeric ("1", "2A", "12B") or word-based
+ * start markers ("Start", "Beg", "Bgn", "Opener", "Open").
+ */
+export const SET_ID_REGEX = /^(\d+[A-Za-z]?|Start|Beg|Bgn|Opener|Open)$/i;
+
+/** Start-type set IDs that represent the initial position (0 counts). */
+export const START_SET_IDS = /^(start|beg|bgn|opener|open)$/i;
+
 export const PerformerHeaderSchema = z.object({
     label: z.string().min(1).trim().optional(),
     symbol: z.string().trim().optional(),
@@ -10,11 +19,11 @@ export type PerformerHeader = z.infer<typeof PerformerHeaderSchema>;
 
 export const ParsedRowSchema = z.object({
     setId: z.string().min(1),
-    measureRange: z.string().min(1),
+    measureRange: z.string(),
     counts: z.coerce.number().int().nonnegative(),
-    lateralText: z.string().min(1),
-    fbText: z.string().min(1),
-    source: z.literal("ocr").optional(),
+    lateralText: z.string(),
+    fbText: z.string(),
+    source: z.string().optional(),
     conf: z.number().min(0).max(1).optional(),
 });
 export type ParsedRow = z.infer<typeof ParsedRowSchema>;

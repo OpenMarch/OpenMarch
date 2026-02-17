@@ -157,17 +157,6 @@ const APP_API = {
             dpi: number,
         ) =>
             ipcRenderer.invoke("ocr:runPython", pdfArrayBuffer, pageIndex, dpi),
-        runCoordinateParser: (
-            pdfArrayBuffer: ArrayBuffer,
-            pageIndex: number,
-            dpi: number,
-        ) =>
-            ipcRenderer.invoke(
-                "ocr:runCoordinateParser",
-                pdfArrayBuffer,
-                pageIndex,
-                dpi,
-            ),
     },
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),

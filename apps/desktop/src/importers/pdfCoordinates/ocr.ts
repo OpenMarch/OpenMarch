@@ -3,15 +3,25 @@ import { defaultImportConfig } from "../../config/importOptions";
 import {
     bucketRows,
     detectAllHeaders,
-    mapRowToColumns,
     inferBandsFromData,
     clusterBandsByTokens,
-    fallbackParseRowLeftToRight,
     extractHeaderFromRows,
     type TextItem,
 } from "./columns";
+import { parseDataRows } from "./parsePage";
 import { pywareProfile } from "./profile";
 import { detectSheetsHybrid } from "./segment-improved";
+
+function quadrantLabel(index: number): "TL" | "TR" | "BL" | "BR" {
+    return index === 0 ? "TL" : index === 1 ? "TR" : index === 2 ? "BL" : "BR";
+}
+
+function avgConf(row: Array<{ conf?: number }>): number {
+    const nums = row
+        .map((t) => t.conf)
+        .filter((n): n is number => typeof n === "number");
+    return nums.length ? nums.reduce((a, b) => a + b, 0) / nums.length : 1;
+}
 
 // High-performance OCR extractor using Python EasyOCR.
 // Returns an empty array if OCR is unavailable or fails.
@@ -79,19 +89,28 @@ async function tryPythonOCR(
         }
 
         // Convert Python OCR result to internal format
-        const items = result.words.map((w: any) => ({
-            str: w.str || "",
-            x: w.x || 0,
-            y: w.y || 0,
-            w: w.w || 0,
-            h: w.h || 0,
-            conf: w.conf !== undefined ? w.conf : 1.0,
-        }));
+        const items: OCRItem[] = result.words.map(
+            (w: {
+                str?: string;
+                x?: number;
+                y?: number;
+                w?: number;
+                h?: number;
+                conf?: number;
+            }) => ({
+                str: w.str || "",
+                x: w.x || 0,
+                y: w.y || 0,
+                w: w.w || 0,
+                h: w.h || 0,
+                conf: w.conf !== undefined ? w.conf : 1.0,
+            }),
+        );
 
         // Continue with existing parsing logic
         // EasyOCR may return phrases; bucketRows groups by Y coordinate
         // Epsilon of 3 pixels works well for drill chart row detection
-        const rows = bucketRows(items as any, 3);
+        const rows = bucketRows(items, 3);
         console.log(
             `[ocr] Processed ${items.length} OCR items into ${rows.length} rows for page ${pageIndex}`,
         );
@@ -126,9 +145,11 @@ async function tryPythonOCR(
     }
 }
 
+type OCRItem = TextItem & { conf?: number };
+
 function processOCRItems(
-    items: any[],
-    rows: any[],
+    items: OCRItem[],
+    rows: OCRItem[][],
     pageIndex: number,
 ): ParsedSheet[] {
     console.log(
@@ -140,10 +161,7 @@ function processOCRItems(
     const headerAnchors = pywareProfile.pageHeaderAnchors;
 
     // Try hybrid detection first (best of both worlds)
-    const detectedSheets = detectSheetsHybrid(
-        items as TextItem[],
-        headerAnchors,
-    );
+    const detectedSheets = detectSheetsHybrid(items, headerAnchors);
     console.log(
         `[ocr-debug] Hybrid detection found ${detectedSheets.length} sheets`,
     );
@@ -162,7 +180,7 @@ function processOCRItems(
             let end = -1;
 
             for (let i = 0; i < rows.length; i++) {
-                const rowItems = rows[i] as TextItem[];
+                const rowItems = rows[i];
                 const hasItems = rowItems.some((item) =>
                     sheetItemKeys.has(`${item.x},${item.y},${item.str}`),
                 );
@@ -189,18 +207,14 @@ function processOCRItems(
         const footerAnchors = pywareProfile.footerAnchors;
         const starts: number[] = [];
         for (let i = 0; i < rows.length; i++) {
-            const text = toLower(
-                (rows[i] as any[]).map((t) => t.str).join(" "),
-            );
+            const text = toLower(rows[i].map((t) => t.str).join(" "));
             if (headerAnchors.some((a) => text.includes(a))) starts.push(i);
         }
         for (let si = 0; si < starts.length; si++) {
             const start = starts[si];
             let end = rows.length;
             for (let j = start + 1; j < rows.length; j++) {
-                const text = toLower(
-                    (rows[j] as any[]).map((t) => t.str).join(" "),
-                );
+                const text = toLower(rows[j].map((t) => t.str).join(" "));
                 if (headerAnchors.some((a) => text.includes(a))) {
                     end = j;
                     break;
@@ -223,8 +237,7 @@ function processOCRItems(
         console.log(
             `[ocr-debug] No regions found, falling back to full-page header detection`,
         );
-        // fallback to header-based segmentation
-        const hdrs = detectAllHeaders(rows as any) || [];
+        const hdrs = detectAllHeaders(rows as TextItem[][]) || [];
         console.log(
             `[ocr-debug] detectAllHeaders found ${hdrs.length} headers`,
         );
@@ -237,69 +250,30 @@ function processOCRItems(
             const start = h.headerIndex + 1;
             const end =
                 hi + 1 < hdrs.length ? hdrs[hi + 1].headerIndex : rows.length;
-            const subRows = rows.slice(start, end);
-            const headerMeta = extractHeaderFromRows(subRows as any);
+            const subRows = rows.slice(start, end) as TextItem[][];
+            const headerMeta = extractHeaderFromRows(subRows);
             let bands = h.bands;
             const haveLateral = bands.some((b) => b.key === "lateralText");
             const haveFB = bands.some((b) => b.key === "fbText");
             if (!haveLateral || !haveFB)
                 bands =
-                    clusterBandsByTokens(subRows as any, 5) ||
-                    inferBandsFromData(subRows as any) ||
+                    clusterBandsByTokens(subRows, 5) ||
+                    inferBandsFromData(subRows) ||
                     bands;
-
             console.log(
                 `[ocr-debug] Processing header region ${hi}, rows: ${subRows.length}, bands: ${bands.length}`,
             );
-            const out: any[] = [];
-            for (const r of subRows) {
-                let cols = mapRowToColumns(r as any, bands);
-                if (
-                    !cols.setId ||
-                    !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
-                    !cols.counts ||
-                    !/^\d+$/.test((cols.counts || "").trim())
-                ) {
-                    const fallback = fallbackParseRowLeftToRight(r as any);
-                    if (fallback) cols = { ...fallback } as any;
-                }
-                const setId = cols.setId;
-                const countsRaw = cols.counts;
-                if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
-                const counts = parseInt(
-                    (countsRaw || "").replace(/[^0-9]/g, ""),
-                    10,
-                );
-                const rowConfs = (r as any[])
-                    .map((t) => t.conf)
-                    .filter((n) => typeof n === "number");
-                const conf = rowConfs.length
-                    ? rowConfs.reduce((a, b) => a + b, 0) / rowConfs.length
-                    : 1;
-                out.push({
-                    setId: setId.trim(),
-                    measureRange: (cols.measureRange || "").trim(),
-                    counts: Number.isFinite(counts) ? counts : 0,
-                    lateralText: (cols.lateralText || "").trim(),
-                    fbText: (cols.fbText || "").trim(),
-                    source: "ocr",
-                    conf,
-                });
-            }
+            const out = parseDataRows(subRows, bands, (r) =>
+                avgConf(r as Array<{ conf?: number }>),
+            ).map((row) => ({ ...row, source: "ocr" as const }));
             console.log(
                 `[ocr-debug] Region ${hi} produced ${out.length} valid rows`,
             );
             if (out.length > 0)
                 sheets.push({
                     pageIndex,
-                    quadrant: (hi === 0
-                        ? "TL"
-                        : hi === 1
-                          ? "TR"
-                          : hi === 2
-                            ? "BL"
-                            : "BR") as any,
-                    header: headerMeta as any,
+                    quadrant: quadrantLabel(hi),
+                    header: headerMeta,
                     rows: out,
                     rawText: items.map((t) => t.str).join("\n"),
                 });
@@ -309,113 +283,44 @@ function processOCRItems(
     // Use anchor regions
     for (let ri = 0; ri < regions.length; ri++) {
         const { start, end } = regions[ri];
-        const subRows = rows.slice(start, end);
+        const subRows = rows.slice(start, end) as TextItem[][];
         console.log(
             `[ocr-debug] Processing region ${ri}, rows ${start}-${end} (${subRows.length} rows)`,
         );
-
-        const headerLine = detectAllHeaders(subRows as any)[0];
+        const headerLine = detectAllHeaders(subRows)[0];
         console.log(
             `[ocr-debug] Header detection in region ${ri}: ${headerLine ? "Found" : "Not Found"}`,
         );
-
         const headerRowsForMeta = headerLine
-            ? (subRows as any[]).slice(0, headerLine.headerIndex)
-            : (subRows as any[]).slice(0, 3);
-        const headerMeta = extractHeaderFromRows(headerRowsForMeta as any);
+            ? subRows.slice(0, headerLine.headerIndex)
+            : subRows.slice(0, 3);
+        const headerMeta = extractHeaderFromRows(headerRowsForMeta);
         let bands = headerLine
             ? headerLine.bands
-            : clusterBandsByTokens(subRows as any, 5) ||
-              inferBandsFromData(subRows as any) ||
+            : clusterBandsByTokens(subRows, 5) ||
+              inferBandsFromData(subRows) ||
               [];
-        console.log(
-            `[ocr-debug] Bands for region ${ri}: ${bands.length} (Source: ${headerLine ? "Header" : "Clustering/Inference"})`,
-        );
-
         const haveLateral = bands.some((b) => b.key === "lateralText");
         const haveFB = bands.some((b) => b.key === "fbText");
         if (!haveLateral || !haveFB)
             bands =
-                clusterBandsByTokens(subRows as any, 5) ||
-                inferBandsFromData(subRows as any) ||
+                clusterBandsByTokens(subRows, 5) ||
+                inferBandsFromData(subRows) ||
                 bands;
-        const out: any[] = [];
-        for (const r of subRows) {
-            let cols = mapRowToColumns(r as any, bands);
-            if (
-                !cols.setId ||
-                !/^\d+[A-Za-z]?$/.test((cols.setId || "").trim()) ||
-                !cols.counts ||
-                !/^\d+$/.test((cols.counts || "").trim())
-            ) {
-                const fallback = fallbackParseRowLeftToRight(r as any);
-                if (fallback) cols = { ...fallback } as any;
-            }
-            if (
-                cols.lateralText &&
-                /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)
-            ) {
-                cols.lateralText = cols.lateralText.replace(
-                    /^\s*0+\s+(?=Side\b)/i,
-                    "",
-                );
-            }
-            if (
-                cols.lateralText &&
-                /^\s*0+\s+(?=Side\b)/i.test(cols.lateralText)
-            ) {
-                cols.lateralText = cols.lateralText.replace(
-                    /^\s*0+\s+(?=Side\b)/i,
-                    "",
-                );
-            }
-            const setId = cols.setId;
-            const countsRaw = cols.counts;
-            // Debug parsing failures for first few rows
-            if (
-                out.length < 3 &&
-                (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim()))
-            ) {
-                console.log(
-                    `[ocr-debug] Row parse failed/skipped: setId='${setId}', counts='${countsRaw}'`,
-                );
-            }
-
-            if (!setId || !/^\d+[A-Za-z]?$/.test(setId.trim())) continue;
-            const counts = parseInt(
-                (countsRaw || "").replace(/[^0-9]/g, ""),
-                10,
-            );
-            const rowConfs = (r as any[])
-                .map((t) => t.conf)
-                .filter((n) => typeof n === "number");
-            const conf = rowConfs.length
-                ? rowConfs.reduce((a, b) => a + b, 0) / rowConfs.length
-                : 1;
-            out.push({
-                setId: setId.trim(),
-                measureRange: (cols.measureRange || "").trim(),
-                counts: Number.isFinite(counts) ? counts : 0,
-                lateralText: (cols.lateralText || "").trim(),
-                fbText: (cols.fbText || "").trim(),
-                source: "ocr",
-                conf,
-            });
-        }
+        const dataRows = headerLine
+            ? subRows.slice(headerLine.headerIndex + 1)
+            : subRows;
+        const out = parseDataRows(dataRows, bands, (r) =>
+            avgConf(r as Array<{ conf?: number }>),
+        ).map((row) => ({ ...row, source: "ocr" as const }));
         console.log(
             `[ocr-debug] Region ${ri} produced ${out.length} valid rows`,
         );
         if (out.length > 0)
             sheets.push({
                 pageIndex,
-                quadrant: (ri === 0
-                    ? "TL"
-                    : ri === 1
-                      ? "TR"
-                      : ri === 2
-                        ? "BL"
-                        : "BR") as any,
-                header: headerMeta as any,
+                quadrant: quadrantLabel(ri),
+                header: headerMeta,
                 rows: out,
                 rawText: items.map((t) => t.str).join("\n"),
             });
