@@ -58,6 +58,7 @@ words:
   - fieldots
   - forwardslash
   - fitz
+  - français
   - frontfield
   - Geral
   - GLHF
@@ -65,9 +66,11 @@ words:
   - Hipp
   - idioma
   - Invalidators
+  - keyframed
   - launchpage
   - lightridge
   - localappdata
+  - mgmt
   - Macbook's
   - madripoor
   - measurenb
@@ -99,14 +102,19 @@ words:
   - Português
   - posthog
   - Pressable
+  - PWDEBUG
+  - pwsh
   - Pyware
   - quantiles
+  - quasirandom
   - Rcoords
   - Rects
   - Refetched
+  - rels
   - rgba
   - ritardandos
   - rootfile
+  - sandboxing
   - saario
   - samuelmeuli
   - Schachner
@@ -168,6 +176,7 @@ words:
   - yeskunallumami
   - zier
   - Zingali
+  - Zustand
   - 日本語
 ignorePaths:
   - node_modules/**
