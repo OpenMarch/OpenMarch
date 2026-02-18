@@ -351,20 +351,15 @@ export default class CanvasProp extends CanvasMarcher {
             );
     }
 
-    /** Get current dimensions in feet (rotation-independent) */
+    /** Get current dimensions from last-saved geometry × current scale. Ignores Group/Path reported size so selection box and path bounds don't cause shrink. */
     getDimensions(pixelsPerFoot: number): { width: number; height: number } {
+        const baseW = (this.geometry.width ?? 0) * pixelsPerFoot;
+        const baseH = (this.geometry.height ?? 0) * pixelsPerFoot;
         const sx = this.scaleX || 1;
         const sy = this.scaleY || 1;
-        // Use raw width/height (excludes stroke) to prevent dimension creep —
-        // getScaledWidth() includes strokeWidth, so saving & re-rendering would
-        // grow the shape by strokeWidth each cycle.
-        const w =
-            (this.shapeObject.width || 0) * (this.shapeObject.scaleX || 1);
-        const h =
-            (this.shapeObject.height || 0) * (this.shapeObject.scaleY || 1);
         return {
-            width: (w * sx) / pixelsPerFoot,
-            height: (h * sy) / pixelsPerFoot,
+            width: (baseW * sx) / pixelsPerFoot,
+            height: (baseH * sy) / pixelsPerFoot,
         };
     }
 

@@ -8,6 +8,7 @@ import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { CubeIcon } from "@phosphor-icons/react";
 import { PropWithMarcher } from "@/global/classes/Prop";
+import { usePropShapeEditStore } from "@/stores/PropShapeEditStore";
 
 export default function PropsModal() {
     return (
@@ -62,15 +63,23 @@ export function PropListContents() {
 
 export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
     const { setContent, toggleOpen } = useSidebarModalStore();
+    const clearPropShapeEdit = usePropShapeEditStore((s) => s.clearEditing);
+
+    const goBack = () => {
+        clearPropShapeEdit();
+        setContent(<PropListContents />, "props");
+    };
+    const closeModal = () => {
+        clearPropShapeEdit();
+        toggleOpen();
+    };
 
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex justify-between gap-24">
                 <div className="flex items-center gap-8">
                     <button
-                        onClick={() => {
-                            setContent(<PropListContents />, "props");
-                        }}
+                        onClick={goBack}
                         aria-label="Back to props list"
                         title="Back to props list"
                         className="hover:text-accent duration-150 ease-out"
@@ -80,7 +89,7 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
                     <h4 className="text-h4 leading-none">Edit Prop</h4>
                 </div>
                 <button
-                    onClick={toggleOpen}
+                    onClick={closeModal}
                     aria-label="Close props modal"
                     title="Close props modal"
                     className="hover:text-red duration-150 ease-out"

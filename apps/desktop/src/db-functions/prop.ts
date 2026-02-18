@@ -39,6 +39,8 @@ export interface ModifiedPropPageGeometryArgs {
     height?: number;
     rotation?: number;
     visible?: boolean;
+    shape_type?: ShapeType;
+    custom_geometry?: string | null;
 }
 
 /** Propagation mode for geometry updates */

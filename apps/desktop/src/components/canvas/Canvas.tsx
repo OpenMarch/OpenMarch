@@ -25,6 +25,7 @@ import PropDrawingListeners, {
     PropGeometry,
 } from "./listeners/PropDrawingListeners";
 import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+
 import { createPropsMutationOptions } from "@/hooks/queries";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -43,7 +44,9 @@ import { useRenderMarcherShapes } from "./hooks/shapes";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
+
 import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
+import { fabric } from "fabric";
 import PropVisualGroup, {
     PropVisualMap,
 } from "@/global/classes/PropVisualGroup";

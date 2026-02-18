@@ -32,6 +32,10 @@ export default class DefaultListeners implements CanvasListeners {
     private readonly LASSO_DASH_ARRAY = [5, 5];
     private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
 
+    /** When scaling a locked prop, pin center to avoid drift (especially when rotated). */
+    private _lockedPropCenter: { x: number; y: number } | null = null;
+    private _lockedPropId: number | null = null;
+
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
         this.handleObjectModified = this.handleObjectModified.bind(this);
@@ -81,6 +85,18 @@ export default class DefaultListeners implements CanvasListeners {
         const target = transform.target;
         const evt = e.e;
 
+        // Store center for locked props so scaling keeps position fixed (predictable for rotated/polygon)
+        if (target && CanvasProp.isCanvasProp(target)) {
+            const prop = target as CanvasProp;
+            if (prop.locked) {
+                this._lockedPropCenter = {
+                    x: target.left ?? 0,
+                    y: target.top ?? 0,
+                };
+                this._lockedPropId = prop.propId;
+            }
+        }
+
         // Block Shift+click on middle scale handles (ml, mr, mt, mb) for ActiveSelection
         // This prevents cross-axis scaling which causes unexpected behavior
         if (
@@ -119,6 +135,9 @@ export default class DefaultListeners implements CanvasListeners {
      * Update the marcher's position when it is moved
      */
     async handleObjectModified(fabricEvent?: fabric.IEvent<MouseEvent>) {
+        this._lockedPropCenter = null;
+        this._lockedPropId = null;
+
         // Prevent concurrent database updates — restore canvas to last persisted state
         if (this._isUpdatingDatabase) {
             this.canvas.refreshMarchers();
@@ -243,13 +262,30 @@ export default class DefaultListeners implements CanvasListeners {
         }
     }
 
-    /** Snap prop edges to grid during scaling */
+    /** Snap prop edges to grid during scaling; when coordinates locked, keep center fixed. */
     handleScaling(fabricEvent: fabric.IEvent<MouseEvent>) {
         const target = fabricEvent.target;
         if (!target || !CanvasProp.isCanvasProp(target)) return;
 
+        const prop = target as CanvasProp;
+
+        // When coordinates are locked, pin center so scaling doesn't move the prop (predictable for rotated/polygon/freehand)
+        if (
+            prop.locked &&
+            this._lockedPropCenter &&
+            this._lockedPropId === prop.propId
+        ) {
+            target.set({
+                left: this._lockedPropCenter.x,
+                top: this._lockedPropCenter.y,
+            });
+            target.setCoords();
+        }
+
+        // Snap to grid (axis-aligned props only; setEdges is not correct under rotation)
         const { uiSettings, fieldProperties } = this.canvas;
         if (!fieldProperties || !uiSettings?.coordinateRounding) return;
+        if (Math.abs(prop.angle || 0) >= 0.01) return;
 
         const corner = (this.canvas as any)?._currentTransform?.corner;
         if (!corner) return;
