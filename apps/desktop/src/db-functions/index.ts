@@ -1,6 +1,7 @@
 export * from "./pathways";
 export * from "./marcherPage";
 export * from "./types";
+export * from "./transactionLock";
 export * from "./history";
 export * from "./page";
 export * from "./marcher";

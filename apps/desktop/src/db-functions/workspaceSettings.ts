@@ -3,7 +3,7 @@ import * as z from "zod";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
-import { withTransactionLock } from "./history";
+import { withTransactionLock } from "./transactionLock";
 
 export type DatabaseWorkspaceSettings =
     typeof schema.workspace_settings.$inferSelect;

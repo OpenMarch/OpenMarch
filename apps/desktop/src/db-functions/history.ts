@@ -10,18 +10,6 @@ import { Constants } from "../global/Constants";
 import { getTableName, gt, sql, eq, desc, count } from "drizzle-orm";
 import { tableNamesToQueryKeys } from "../hooks/queries/utils";
 
-// Global transaction lock to prevent concurrent transactions
-// Attached to window to survive hot reloads
-declare global {
-    interface Window {
-        __dbTransactionLock?: Promise<void>;
-    }
-}
-const getTransactionLock = () =>
-    (window.__dbTransactionLock ??= Promise.resolve());
-const setTransactionLock = (lock: Promise<void>) =>
-    (window.__dbTransactionLock = lock);
-
 const tablesWithHistory = [
     schema.beats,
     schema.pages,
@@ -58,30 +46,59 @@ export const transactionWithHistory = async <T>(
     funcName: string,
     func: (tx: DbTransaction) => Promise<T>,
 ): Promise<T> => {
-    // Wait for any pending transaction to complete
-    const previousLock = getTransactionLock();
-    let resolveLock: () => void;
-    // Create new lock promise (intentionally not awaited - it's the next lock in the queue)
-    void setTransactionLock(
-        new Promise((resolve) => {
-            resolveLock = resolve;
-        }),
-    );
-    await previousLock;
+    const output = await db.transaction(async (tx) => {
+        const startMessage = `=========== start ${funcName} ============`;
+        let result: T;
+        if (window.electron) void window.electron?.log("info", startMessage);
+        // eslint-disable-next-line no-console
+        else console.log(startMessage);
+        let error: Error | undefined;
 
-    try {
-        const output = await db.transaction(async (tx) => {
-            const startMessage = `=========== start ${funcName} ============`;
-            let result: T;
-            if (window.electron)
-                void window.electron?.log("info", startMessage);
-            // eslint-disable-next-line no-console
-            else console.log(startMessage);
-            let error: Error | undefined;
+        try {
+            await incrementHistoryGroupInTransaction(tx, "undo");
+            let groupBefore = (
+                await tx.query.history_stats.findFirst({
+                    columns: {
+                        cur_undo_group: true,
+                    },
+                })
+            )?.cur_undo_group;
 
-            try {
-                await incrementHistoryGroupInTransaction(tx, "undo");
-                let groupBefore = (
+            if (!groupBefore) {
+                const currentUndoElements = await tx
+                    .select({ count: count() })
+                    .from(schema.history_undo)
+                    .get();
+                assert(
+                    currentUndoElements != null,
+                    "Current undo elements is undefined",
+                );
+                if (currentUndoElements.count > 0) {
+                    const maxGroup = await tx
+                        .select({
+                            max: max(schema.history_undo.history_group),
+                        })
+                        .from(schema.history_undo)
+                        .get();
+                    assert(maxGroup != null, "Max group is undefined");
+                    groupBefore = maxGroup.max ?? 0;
+                }
+            }
+            assert(groupBefore != null, "Group before is undefined");
+
+            // Execute the function
+            result = await func(tx);
+
+            const groupAfter =
+                (
+                    await tx
+                        .select({
+                            max: max(schema.history_undo.history_group),
+                        })
+                        .from(schema.history_undo)
+                        .get()
+                )?.max ??
+                (
                     await tx.query.history_stats.findFirst({
                         columns: {
                             cur_undo_group: true,
@@ -89,119 +106,50 @@ export const transactionWithHistory = async <T>(
                     })
                 )?.cur_undo_group;
 
-                if (!groupBefore) {
-                    const currentUndoElements = await tx
-                        .select({ count: count() })
-                        .from(schema.history_undo)
-                        .get();
-                    assert(
-                        currentUndoElements != null,
-                        "Current undo elements is undefined",
-                    );
-                    if (currentUndoElements.count > 0) {
-                        const maxGroup = await tx
-                            .select({
-                                max: max(schema.history_undo.history_group),
-                            })
-                            .from(schema.history_undo)
-                            .get();
-                        assert(maxGroup != null, "Max group is undefined");
-                        groupBefore = maxGroup.max ?? 0;
-                    }
-                }
-                assert(groupBefore != null, "Group before is undefined");
-
-                // Execute the function
-                result = await func(tx);
-
-                const groupAfter =
-                    (
-                        await tx
-                            .select({
-                                max: max(schema.history_undo.history_group),
-                            })
-                            .from(schema.history_undo)
-                            .get()
-                    )?.max ??
-                    (
-                        await tx.query.history_stats.findFirst({
-                            columns: {
-                                cur_undo_group: true,
-                            },
-                        })
-                    )?.cur_undo_group;
-
-                // Ensure that the group was not changed by the function
-                // This is important to ensure predictable undo/redo behavior
-                assert(groupAfter != null, "Group after is undefined");
-                assert(
-                    groupBefore === groupAfter,
-                    `Group before and after do not match. Expected ${groupBefore} but got ${groupAfter}.
+            // Ensure that the group was not changed by the function
+            // This is important to ensure predictable undo/redo behavior
+            assert(groupAfter != null, "Group after is undefined");
+            assert(
+                groupBefore === groupAfter,
+                `Group before and after do not match. Expected ${groupBefore} but got ${groupAfter}.
                 ${
                     groupBefore > groupAfter
                         ? "The expected group is greater, meaning that the function didn't perform any database actions on tables that are tracked by undo/redo history triggers"
                         : "Group after is greater than the expected. This means that the function incremented the group number after performing database actions. This will cause these actions to be treated separately in the undo/redo history"
                 }`,
-                );
-                await incrementHistoryGroupInTransaction(tx, "undo");
+            );
+            await incrementHistoryGroupInTransaction(tx, "undo");
 
-                const groupAfterIncremented = await getCurrentHistoryGroup(
-                    tx,
-                    "undo",
-                );
+            const groupAfterIncremented = await getCurrentHistoryGroup(
+                tx,
+                "undo",
+            );
 
-                // Ensure that the group was incremented by the function
-                // This is important to ensure predictable undo/redo behavior
-                assert(
-                    groupAfterIncremented === groupBefore + 1,
-                    `Undo group after incrementing is not correct. This often happens when we expect an action to be performed in the database during the test that increments the history group, but it did not. Expected group to be '${groupBefore + 1}', but it was '${groupAfterIncremented}'`,
-                );
-                // NOTE - the group will not be incremented if no database action was performed in the 'func' callback
-                /**
-                 * If you're getting this error, here's a quick checklist to validate:
-                 *    - Are there triggers for the table that the function is performing actions on?
-                 *    - Do the functions actually perform actions on the database?
-                 */
-            } catch (err: any) {
-                // Remove the items from the history tables that were added by the transaction
-                error = err as Error;
-                console.debug("Rolling back history state");
-            } finally {
-                const endMessage = `=========== end ${funcName} ============\n`;
-                mainProcessLog("info", endMessage);
-            }
-            if (error) throw error;
+            // Ensure that the group was incremented by the function
+            // This is important to ensure predictable undo/redo behavior
+            assert(
+                groupAfterIncremented === groupBefore + 1,
+                `Undo group after incrementing is not correct. This often happens when we expect an action to be performed in the database during the test that increments the history group, but it did not. Expected group to be '${groupBefore + 1}', but it was '${groupAfterIncremented}'`,
+            );
+            // NOTE - the group will not be incremented if no database action was performed in the 'func' callback
+            /**
+             * If you're getting this error, here's a quick checklist to validate:
+             *    - Are there triggers for the table that the function is performing actions on?
+             *    - Do the functions actually perform actions on the database?
+             */
+        } catch (err: any) {
+            // Remove the items from the history tables that were added by the transaction
+            error = err as Error;
+            console.debug("Rolling back history state");
+        } finally {
+            const endMessage = `=========== end ${funcName} ============\n`;
+            mainProcessLog("info", endMessage);
+        }
+        if (error) throw error;
 
-            return result!;
-        });
-        return output;
-    } finally {
-        resolveLock!();
-    }
-};
-
-/**
- * Wraps any async function with the global transaction lock.
- * Use this when you need to run db.transaction() directly instead of transactionWithHistory.
- */
-export const withTransactionLock = async <T>(
-    fn: () => Promise<T>,
-): Promise<T> => {
-    const previousLock = getTransactionLock();
-    let resolveLock: () => void;
-    // Create new lock promise (intentionally not awaited - it's the next lock in the queue)
-    void setTransactionLock(
-        new Promise((resolve) => {
-            resolveLock = resolve;
-        }),
-    );
-    await previousLock;
-
-    try {
-        return await fn();
-    } finally {
-        resolveLock!();
-    }
+        return result!;
+    });
+    return output;
 };
 
 type HistoryType = "undo" | "redo";
@@ -771,12 +719,10 @@ async function executeHistoryAction(
             await db.run(sql.raw("PRAGMA foreign_keys = OFF;"));
 
             /// Execute all of the SQL statements in the current history group
-            await withTransactionLock(() =>
-                db.transaction(async (tx) => {
-                    for (const sqlStatement of sqlStatements)
-                        await tx.run(sqlStatement);
-                }),
-            );
+            await db.transaction(async (tx) => {
+                for (const sqlStatement of sqlStatements)
+                    await tx.run(sqlStatement);
+            });
         } catch (err: any) {
             error = err;
         } finally {

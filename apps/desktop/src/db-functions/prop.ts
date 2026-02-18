@@ -1,7 +1,8 @@
 import { eq, isNotNull, sql } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
-import { transactionWithHistory, withTransactionLock } from "./history";
+import { transactionWithHistory } from "./history";
+import { withTransactionLock } from "./transactionLock";
 import { createMarchersInTransaction } from "./marcher";
 import {
     DatabaseProp,
