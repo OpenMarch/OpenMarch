@@ -47,10 +47,11 @@ export const useSelectionListeners = ({
         ) => {
             switch (selectedClass) {
                 case Selectable.SelectableClasses.MARCHER: {
-                    // a bit of a hack because marchers and canvasMarchers are different
+                    // Exclude props so they are only added in PROP case (CanvasProp extends CanvasMarcher)
                     const canvasMarchers: Map<number, CanvasMarcher> = new Map(
                         canvas
                             .getCanvasMarchers()
+                            .filter((cm) => !CanvasProp.isCanvasProp(cm))
                             .map((canvasMarcher) => [
                                 canvasMarcher.marcherObj.id,
                                 canvasMarcher,
@@ -65,7 +66,6 @@ export const useSelectionListeners = ({
                                 Selectable.getClassId(canvasMarcher),
                             );
                         }
-                        // Note: marcher might be a prop, which is handled in PROP case
                     }
                     break;
                 }

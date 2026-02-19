@@ -107,11 +107,11 @@ export class DrizzleMigrationService {
      * Checks if there are pending migrations to apply
      * Compares the number of applied migrations with the number of migration files
      *
-     * @param migrationsFolder Optional path to migrations folder, defaults to "./electron/database/migrations"
+     * @param migrationsFolder Optional path to migrations folder. Defaults to same as applyPendingMigrations (__dirname-based).
      * @returns true if there are pending migrations, false otherwise
      */
     hasPendingMigrations(migrationsFolder?: string): boolean {
-        let folder = migrationsFolder || "./electron/database/migrations";
+        let folder = migrationsFolder || path.join(__dirname, "../migrations");
         if (
             process.env.PLAYWRIGHT_CODEGEN ||
             process.env.PLAYWRIGHT_SESSION ||
