@@ -906,20 +906,31 @@ export default function Canvas({
         }
     }, [canvas, isPlaying, selectedPage]);
 
-    // This effect ensures that when the animation is paused, the marchers are
-    // rendered at their final positions for the selected page.
+    // This effect ensures that when the animation is paused, the marchers and
+    // props are rendered at their final positions for the selected page.
     useEffect(() => {
         if (
             canvas &&
             !isPlaying &&
             selectedPage &&
             marcherPagesLoaded &&
-            marcherVisuals != null
+            marcherVisuals != null &&
+            marcherPages
         ) {
             canvas
                 .renderMarchers({
                     marcherPages: marcherPages,
                     marcherVisuals: marcherVisuals,
+                })
+                .then(() => {
+                    canvas
+                        .getObjects()
+                        .filter(CanvasProp.isCanvasProp)
+                        .forEach((cp) => {
+                            const mp = marcherPages[cp.marcherObj.id];
+                            if (mp) cp.setMarcherCoords(mp);
+                        });
+                    canvas.requestRenderAll();
                 })
                 .catch((error) => {
                     console.error("Error rendering marchers", error);
