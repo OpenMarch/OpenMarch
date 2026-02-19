@@ -711,7 +711,7 @@ export default function Canvas({
         }
         prevPropStructureRef.current = structureKey;
 
-        // Full recreate path — structural change detected
+        // Full recreate prop — structural change detected
         canvas
             .getObjects()
             .filter(CanvasProp.isCanvasProp)
