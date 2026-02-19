@@ -203,8 +203,8 @@ async function createPropsInTransaction({
 
     if (marcherPages.length === 0) return createdProps;
 
-    // Create prop_page_geometry for each marcher_page
-    const geometries = marcherPages.map((mp) => {
+    // Create prop_page_geometry for each marcher_page (match NewPropPageGeometryRow shape)
+    const geometries: NewPropPageGeometryRow[] = marcherPages.map((mp) => {
         const propIndex = createdMarchers.findIndex(
             (m) => m.id === mp.marcher_id,
         );
@@ -214,6 +214,8 @@ async function createPropsInTransaction({
             shape_type: propArgs?.shape_type ?? "rectangle",
             width: propArgs?.width ?? DEFAULT_PROP_WIDTH,
             height: propArgs?.height ?? DEFAULT_PROP_HEIGHT,
+            radius: null,
+            rotation: 0,
             custom_geometry: propArgs?.custom_geometry,
         };
     });
