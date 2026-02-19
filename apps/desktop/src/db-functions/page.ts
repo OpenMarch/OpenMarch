@@ -22,6 +22,7 @@ import {
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import { buildPropPageGeometriesFromPrevious } from "@/db-functions/prop";
 import { DEFAULT_PROP_WIDTH, DEFAULT_PROP_HEIGHT } from "@/global/classes/Prop";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
@@ -250,22 +251,26 @@ const _createMarcherPages = async ({
             .values(newMarcherPages)
             .returning();
 
-        // Create prop_page_geometry for prop-type marchers
+        // Create prop_page_geometry for prop-type marchers (copy from previous or defaults)
         const propMarcherPages = createdMarcherPages.filter((mp) =>
             propMarcherIds.has(mp.marcher_id),
         );
+        if (propMarcherPages.length === 0) continue;
 
-        if (propMarcherPages.length > 0 && previousPage) {
-            // Get previous page's marcher_pages first so we can look up their geometry
+        let prevGeomByMarcher = new Map<
+            number,
+            typeof schema.prop_page_geometry.$inferSelect
+        >();
+        if (previousPage) {
             const prevMarcherPages = await tx.query.marcher_pages.findMany({
-                where: eq(schema.marcher_pages.page_id, previousPage.id),
+                where: and(
+                    eq(schema.marcher_pages.page_id, previousPage.id),
+                    inArray(schema.marcher_pages.marcher_id, [
+                        ...propMarcherIds,
+                    ]),
+                ),
             });
-
-            const prevMpIds = prevMarcherPages
-                .filter((mp) => propMarcherIds.has(mp.marcher_id))
-                .map((mp) => mp.id);
-
-            // Copy geometry from previous page using the PREVIOUS marcher_page IDs
+            const prevMpIds = prevMarcherPages.map((mp) => mp.id);
             const prevGeometries =
                 prevMpIds.length > 0
                     ? await tx.query.prop_page_geometry.findMany({
@@ -273,67 +278,19 @@ const _createMarcherPages = async ({
                               inArr(table.marcher_page_id, prevMpIds),
                       })
                     : [];
-
-            const prevGeomByMarcher = new Map<
-                number,
-                typeof schema.prop_page_geometry.$inferSelect
-            >();
             for (const pg of prevGeometries) {
                 const prevMp = prevMarcherPages.find(
                     (mp) => mp.id === pg.marcher_page_id,
                 );
                 if (prevMp) prevGeomByMarcher.set(prevMp.marcher_id, pg);
             }
-
-            const newGeometries: {
-                marcher_page_id: number;
-                shape_type: string;
-                width: number;
-                height: number;
-                radius: number | null;
-                rotation: number;
-            }[] = [];
-
-            for (const mp of propMarcherPages) {
-                const prevGeom = prevGeomByMarcher.get(mp.marcher_id);
-                newGeometries.push(
-                    prevGeom
-                        ? {
-                              marcher_page_id: mp.id,
-                              shape_type: prevGeom.shape_type,
-                              width: prevGeom.width,
-                              height: prevGeom.height,
-                              radius: prevGeom.radius,
-                              rotation: prevGeom.rotation,
-                          }
-                        : {
-                              marcher_page_id: mp.id,
-                              shape_type: "rectangle",
-                              width: DEFAULT_PROP_WIDTH,
-                              height: DEFAULT_PROP_HEIGHT,
-                              radius: null,
-                              rotation: 0,
-                          },
-                );
-            }
-
-            if (newGeometries.length > 0) {
-                await tx
-                    .insert(schema.prop_page_geometry)
-                    .values(newGeometries);
-            }
-        } else if (propMarcherPages.length > 0) {
-            // No previous page — seed default geometry for each prop
-            await tx.insert(schema.prop_page_geometry).values(
-                propMarcherPages.map((mp) => ({
-                    marcher_page_id: mp.id,
-                    shape_type: "rectangle",
-                    width: DEFAULT_PROP_WIDTH,
-                    height: DEFAULT_PROP_HEIGHT,
-                    rotation: 0,
-                })),
-            );
         }
+
+        const newGeometries = buildPropPageGeometriesFromPrevious({
+            previousGeometryByMarcherId: prevGeomByMarcher,
+            newPropMarcherPages: propMarcherPages,
+        });
+        await tx.insert(schema.prop_page_geometry).values(newGeometries);
     }
 };
 

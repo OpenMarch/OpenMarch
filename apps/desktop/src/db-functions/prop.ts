@@ -47,6 +47,59 @@ export interface ModifiedPropPageGeometryArgs {
 /** Propagation mode for geometry updates */
 export type GeometryPropagation = "current" | "forward" | "all";
 
+/** Geometry fields copied from a previous page when creating a new page */
+export type PropPageGeometrySource = Pick<
+    DatabasePropPageGeometry,
+    "shape_type" | "width" | "height" | "radius" | "rotation"
+>;
+
+/** Row shape for inserting prop_page_geometry (no id, no timestamps) */
+export type NewPropPageGeometryRow = {
+    marcher_page_id: number;
+    shape_type: string;
+    width: number;
+    height: number;
+    radius: number | null;
+    rotation: number;
+};
+
+/**
+ * Builds prop_page_geometry rows for new marcher_pages by copying from previous
+ * geometry (keyed by marcher_id) or using defaults.
+ */
+export function buildPropPageGeometriesFromPrevious({
+    previousGeometryByMarcherId,
+    newPropMarcherPages,
+    defaultWidth = DEFAULT_PROP_WIDTH,
+    defaultHeight = DEFAULT_PROP_HEIGHT,
+}: {
+    previousGeometryByMarcherId: Map<number, PropPageGeometrySource>;
+    newPropMarcherPages: { id: number; marcher_id: number }[];
+    defaultWidth?: number;
+    defaultHeight?: number;
+}): NewPropPageGeometryRow[] {
+    return newPropMarcherPages.map((mp) => {
+        const prev = previousGeometryByMarcherId.get(mp.marcher_id);
+        return prev
+            ? {
+                  marcher_page_id: mp.id,
+                  shape_type: prev.shape_type,
+                  width: prev.width,
+                  height: prev.height,
+                  radius: prev.radius,
+                  rotation: prev.rotation,
+              }
+            : {
+                  marcher_page_id: mp.id,
+                  shape_type: "rectangle",
+                  width: defaultWidth,
+                  height: defaultHeight,
+                  radius: null,
+                  rotation: 0,
+              };
+    });
+}
+
 export async function getProps({
     db,
 }: {

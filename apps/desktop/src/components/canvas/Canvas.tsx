@@ -41,11 +41,12 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { useRenderProps } from "./hooks/props";
+import { usePropClipboard } from "./hooks/propClipboard";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
 
-import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
 import { fabric } from "fabric";
 import PropVisualGroup, {
     PropVisualMap,
@@ -225,9 +226,6 @@ export default function Canvas({
         };
     }, [propImages]);
 
-    // Structural fingerprint for detecting position-only changes
-    const prevPropStructureRef = useRef<string>("");
-
     // Prop drawing state
     const { drawingMode, resetDrawingState } = usePropDrawingStore();
 
@@ -253,6 +251,24 @@ export default function Canvas({
     useMovementListeners({ canvas });
     useAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    useRenderProps({
+        canvas,
+        selectedPage,
+        fieldProperties,
+        propImageCacheRef,
+        imageCacheVersion,
+        propRecreateKey,
+        showPropNames: uiSettings.showPropNames,
+        propNameOverrides: uiSettings.propNameOverrides,
+        hiddenPropIds: uiSettings.hiddenPropIds,
+    });
+    usePropClipboard({
+        canvas,
+        canvasRef,
+        selectedPageId: selectedPage?.id,
+        focussedComponent: uiSettings.focussedComponent,
+        createPropsMutate: createPropsMutate,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -652,237 +668,6 @@ export default function Canvas({
         uiSettings.previousPaths,
         marcherVisuals,
         marcherPagesLoaded,
-    ]);
-
-    // Render props on the canvas
-    useEffect(() => {
-        if (
-            !canvas ||
-            !props ||
-            !propGeometries ||
-            !marcherPages ||
-            !fieldProperties ||
-            !selectedPage
-        )
-            return;
-
-        // Compute structural fingerprint (everything except positions).
-        // propMpIds tracks which marcher-pages back each prop so that when a
-        // newly-created prop's marcher page arrives we trigger a full recreate.
-        const structureKey = JSON.stringify({
-            propIds: props.map((p) => p.id),
-            propMpIds: props.map((p) => marcherPages[p.marcher_id]?.id ?? null),
-            geoKeys: propGeometries.map(
-                (g) =>
-                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}:${g.visible}`,
-            ),
-            opacities: props.map((p) => p.image_opacity),
-            imgVer: imageCacheVersion,
-            pageId: selectedPage.id,
-            showNames: uiSettings.showPropNames,
-            nameOverrides: uiSettings.propNameOverrides,
-            hiddenIds: uiSettings.hiddenPropIds,
-            propRecreateKey,
-        });
-
-        if (structureKey === prevPropStructureRef.current) {
-            // Position/label-only change: update existing props in place
-            const { showPropNames, propNameOverrides } = uiSettings;
-            const propById = new Map(props.map((p) => [p.id, p]));
-            canvas
-                .getObjects()
-                .filter(CanvasProp.isCanvasProp)
-                .forEach((cp) => {
-                    const mp = marcherPages[cp.marcherObj.id];
-                    if (mp) cp.setMarcherCoords(mp);
-                    const prop = propById.get(cp.propId);
-                    if (prop) {
-                        const name =
-                            prop.marcher.name ||
-                            `${prop.marcher.drill_prefix}${prop.marcher.drill_order}`;
-                        const showName =
-                            propNameOverrides[prop.id.toString()] ??
-                            showPropNames;
-                        cp.updateNameLabel(name, showName);
-                    }
-                });
-            canvas.requestRenderAll();
-            return;
-        }
-        prevPropStructureRef.current = structureKey;
-
-        // Full recreate path — structural change detected
-        canvas
-            .getObjects()
-            .filter(CanvasProp.isCanvasProp)
-            .forEach((prop) => {
-                canvas.remove(prop.propNameLabel);
-                canvas.remove(prop);
-            });
-
-        const geometryByMpId = new Map(
-            propGeometries.map((g) => [g.marcher_page_id, g]),
-        );
-        const marcherPagesForPage = Object.values(marcherPages);
-        const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
-        const { showPropNames, propNameOverrides, hiddenPropIds } = uiSettings;
-
-        for (const prop of props) {
-            const marcherPage = marcherPagesForPage.find(
-                (mp) => mp.marcher_id === prop.marcher_id,
-            );
-            if (!marcherPage) continue;
-
-            const geometry = geometryByMpId.get(marcherPage.id);
-            if (!geometry || !geometry.visible) continue;
-            if (hiddenPropIds[prop.id.toString()]) continue;
-
-            const canvasProp = new CanvasProp({
-                marcher: prop.marcher,
-                prop,
-                geometry,
-                coordinate: { x: marcherPage.x, y: marcherPage.y },
-                pixelsPerFoot,
-                pageId: selectedPage.id,
-                showName:
-                    propNameOverrides[prop.id.toString()] ?? showPropNames,
-                imageElement: propImageCacheRef.current.get(prop.id)?.el,
-                imageOpacity: prop.image_opacity,
-            });
-            canvas.add(canvasProp);
-            canvas.add(canvasProp.propNameLabel);
-        }
-
-        canvas.requestRenderAll();
-    }, [
-        canvas,
-        props,
-        propGeometries,
-        imageCacheVersion,
-        marcherPages,
-        fieldProperties,
-        selectedPage,
-        propRecreateKey,
-        uiSettings.showPropNames,
-        uiSettings.propNameOverrides,
-        uiSettings.hiddenPropIds,
-    ]);
-
-    // Copy-paste for props
-    const propClipboardRef = useRef<
-        {
-            name: string;
-            surface_type: string;
-            shape_type: string;
-            custom_geometry: string | null;
-            width: number;
-            height: number;
-            x: number;
-            y: number;
-        }[]
-    >([]);
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (
-                !canvas ||
-                !props ||
-                !propGeometries ||
-                !marcherPages ||
-                uiSettings.focussedComponent !== "canvas" ||
-                document.activeElement?.matches(
-                    "input, textarea, select, [contenteditable]",
-                )
-            )
-                return;
-
-            const isCtrl = e.ctrlKey || e.metaKey;
-
-            if (isCtrl && e.key === "c") {
-                const activeProps = canvas
-                    .getCanvasMarchers({ active: true })
-                    .filter(CanvasProp.isCanvasProp);
-                if (activeProps.length === 0) return;
-
-                propClipboardRef.current = activeProps
-                    .map((cp) => {
-                        const mp = marcherPages[cp.marcherObj.id];
-                        const prop = props.find(
-                            (p) => p.marcher_id === cp.marcherObj.id,
-                        );
-                        const geom = propGeometries.find(
-                            (g) => g.marcher_page_id === mp?.id,
-                        );
-                        if (!mp || !prop || !geom) return null;
-                        return {
-                            name:
-                                prop.marcher.name ?? prop.marcher.drill_prefix,
-                            surface_type: prop.surface_type,
-                            shape_type: geom.shape_type,
-                            custom_geometry: geom.custom_geometry,
-                            width: geom.width,
-                            height: geom.height,
-                            x: mp.x,
-                            y: mp.y,
-                        };
-                    })
-                    .filter(
-                        Boolean,
-                    ) as (typeof propClipboardRef.current)[number][];
-            }
-
-            if (
-                isCtrl &&
-                e.key === "v" &&
-                propClipboardRef.current.length > 0
-            ) {
-                // Only paste when canvas truly has focus
-                if (uiSettings.focussedComponent !== "canvas") return;
-                if (
-                    document.activeElement?.matches(
-                        "input, textarea, select, [contenteditable]",
-                    )
-                )
-                    return;
-
-                e.preventDefault();
-                const pasteOffset = 30; // pixels offset from original
-
-                createPropsMutate(
-                    propClipboardRef.current.map((data) => ({
-                        name: data.name,
-                        surface_type: data.surface_type as SurfaceType,
-                        width: data.width,
-                        height: data.height,
-                        shape_type: data.shape_type as ShapeType,
-                        custom_geometry: data.custom_geometry ?? undefined,
-                        initial_x: data.x + pasteOffset,
-                        initial_y: data.y + pasteOffset,
-                    })),
-                );
-            }
-        };
-
-        // Clear clipboard when focus leaves the canvas
-        const handleBlur = () => {
-            propClipboardRef.current = [];
-        };
-        const canvasEl = canvasRef.current;
-
-        window.addEventListener("keydown", handleKeyDown);
-        window.addEventListener("blur", handleBlur);
-        canvasEl?.addEventListener("focusout", handleBlur);
-        return () => {
-            window.removeEventListener("keydown", handleKeyDown);
-            window.removeEventListener("blur", handleBlur);
-            canvasEl?.removeEventListener("focusout", handleBlur);
-        };
-    }, [
-        canvas,
-        props,
-        propGeometries,
-        marcherPages,
-        uiSettings.focussedComponent,
-        createPropsMutate,
     ]);
 
     // Add prop pathway visuals to canvas and update their positions
