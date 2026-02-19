@@ -35,11 +35,11 @@ export const _combineMarcherVisualGroups = ({
 
     const newVisuals: Record<number, MarcherVisualGroup> = {};
     for (const marcher of marchers) {
-        // Skip prop-type marchers - they render as CanvasProp, not CanvasMarcher
-        if (marcher.type === "prop") continue;
-        newVisuals[marcher.id] = new MarcherVisualGroup({
-            marcher,
-        });
+        if (marcher.type === "marcher") {
+            newVisuals[marcher.id] = new MarcherVisualGroup({
+                marcher,
+            });
+        }
     }
 
     return newVisuals;
