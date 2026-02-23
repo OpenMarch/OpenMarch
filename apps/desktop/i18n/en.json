@@ -483,7 +483,12 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
+        "toasts": {
+            "success": "Copy saved",
+            "error": "Unable to save copy"
+        },
         "saveFileCancel": "Cancel",
+        "saveSpinnerText": "Saving copy...",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
@@ -575,6 +580,12 @@
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
+            "clearAllRecentFiles": "Clear all",
+            "clearMissingRecentFiles": "Clear missing",
+            "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
+            "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
+            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
+            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
         "learn": {
