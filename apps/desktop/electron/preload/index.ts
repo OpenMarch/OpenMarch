@@ -187,6 +187,8 @@ const APP_API = {
     removeRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:remove", filePath),
     clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
+    clearMissingRecentFiles: () =>
+        ipcRenderer.invoke("recent-files:clear-missing"),
     openRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:open", filePath),
 

@@ -21,6 +21,7 @@ import {
     removeRecentFile,
     clearRecentFiles,
     updateRecentFileSvgPreview,
+    clearMissingRecentFiles,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
@@ -299,6 +300,7 @@ void app.whenReady().then(async () => {
         removeRecentFile(filePath),
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
+    ipcMain.handle("recent-files:clear-missing", clearMissingRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
         store.set("databasePath", filePath);
         addRecentFile(filePath);
@@ -625,26 +627,40 @@ export async function saveFile() {
     const db = DatabaseServices.connect();
 
     // Save
-    dialog
+    const response = await dialog
         .showSaveDialog(win, {
             buttonLabel: "Save Copy",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         })
         .then(async (path) => {
-            if (path.canceled || !path.filePath) return -1;
+            if (path.canceled || !path.filePath) return 0;
 
-            const serializedDb = db.serialize();
-            const uint8Array = Uint8Array.from(serializedDb);
+            // Make a copy into a temp file
+            const tempPath = path.filePath + ".tmp";
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
 
-            fs.writeFileSync(path.filePath, uint8Array);
+            const stmt = await db.prepare("VACUUM INTO ?");
+            await stmt.run(tempPath);
 
-            await setActiveDb(path.filePath);
+            // If there is an existing file, only delete it after successful copy
+            if (fs.existsSync(path.filePath)) {
+                fs.unlinkSync(path.filePath);
+            }
+
+            fs.renameSync(tempPath, path.filePath);
+
+            addRecentFile(path.filePath);
+
             return 200;
         })
         .catch((err) => {
             console.log(err);
             return -1;
         });
+
+    return response;
 }
 
 /**
