@@ -4,7 +4,6 @@ import react from "@astrojs/react";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
 import starlight from "@astrojs/starlight";
-import yeskunallumami from "@yeskunall/astro-umami";
 import starlightImageZoom from "starlight-image-zoom";
 
 import tailwindcss from "@tailwindcss/vite";
@@ -20,6 +19,9 @@ export default defineConfig({
         react(),
         starlight({
             plugins: [starlightImageZoom()],
+            components: {
+                Head: "./src/components/starlight/Head.astro",
+            },
             title: "OpenMarch",
             logo: {
                 light: "./public/openmarch-black.svg",
@@ -65,10 +67,6 @@ export default defineConfig({
         }),
         mdx(),
         sitemap(),
-        yeskunallumami({
-            id: "09a72d11-c8dd-43b0-9ee8-e2c7c492bc21",
-            endpointUrl: "https://umami.cool.dukc.dev",
-        }),
     ],
 
     site: "https://openmarch.com",

@@ -70,6 +70,9 @@ module.exports = {
             // It's the setting you need when using TypeScript.
             parserOptions: {
                 parser: "@typescript-eslint/parser",
+                // Use website tsconfig so .astro files under apps/website are in the TypeScript program.
+                project: ["./apps/website/tsconfig.json"],
+                tsconfigRootDir: __dirname,
                 extraFileExtensions: [".astro"],
             },
             rules: Object.keys(require("eslint-plugin-react").rules).reduce(

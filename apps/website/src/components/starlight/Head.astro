@@ -1,0 +1,9 @@
+---
+import type { Props } from "@astrojs/starlight/props";
+import Default from "@astrojs/starlight/components/Head.astro";
+import PostHog from "@/components/PostHog.astro";
+
+const props = Astro.props as Props;
+---
+<Default {...props} />
+<PostHog />

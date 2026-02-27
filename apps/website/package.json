@@ -34,7 +34,6 @@
         "@tailwindcss/vite": "^4.1.7",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
-        "@yeskunall/astro-umami": "^0.0.3",
         "astro": "^5.11.0",
         "astro-embed": "^0.9.0",
         "class-variance-authority": "^0.7.1",

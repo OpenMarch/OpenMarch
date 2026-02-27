@@ -6,12 +6,14 @@ import "@/styles/base.css";
 
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer.astro";
+import PostHog from "@/components/PostHog.astro";
 
 const { title, noindex = false } = Astro.props;
 ---
 
 <html lang="en">
     <head>
+        <PostHog />
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         {noindex && <meta name="robots" content="noindex, nofollow" />}
