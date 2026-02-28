@@ -38,7 +38,7 @@ We use commercially reasonable physical, managerial, and technical safeguards to
 
 ## 5. MODIFICATION, DELETION & RETENTION OF INFORMATION
 
-If you have an administrator account, you can access, modify, and delete your personal information through your account settings in the Desktop App or Mobile App or by emailing us at [support@openmarch.com](mailto:support@openmarch.com]). If you are a performer and you would like us to clear any record of your IP address or device ID, you can email us at [support@openmarch.com](mailto:support@openmarch.com]).
+If you have an administrator account, you can access, modify, and delete your personal information through your account settings in the Desktop App or Mobile App or by emailing us at [support@openmarch.com](mailto:support@openmarch.com). If you are a performer and you would like us to clear any record of your IP address or device ID, you can email us at [support@openmarch.com](mailto:support@openmarch.com).
 
 Subject to your right to request deletion of your personal information, we will retain your personal information as long as needed for your use of the Services.
 
@@ -52,7 +52,7 @@ We’re constantly trying to improve the Services, so we may need to change this
 
 ## 8. CONTACT US
 
-If you have any questions or concerns regarding this Policy, please send us a detailed message to [support@openmarch.com](mailto:support@openmarch.com]), and we will try to resolve your concerns.
+If you have any questions or concerns regarding this Policy, please send us a detailed message to [support@openmarch.com](mailto:support@openmarch.com), and we will try to resolve your concerns.
 
 You may also reach us at the following address:
 

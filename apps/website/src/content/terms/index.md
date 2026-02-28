@@ -34,7 +34,7 @@ Admins must create an account in order to use the Services. Performers do not ne
 
 You promise to provide us with accurate, complete, and updated registration information about yourself. You are responsible for maintaining the confidentiality of your account, and are fully responsible for any and all activities that occur under your account. You agree to immediately notify OpenMarch of any unauthorized use of your account or any other breach of security. OpenMarch will not be liable for any loss or damage arising from your failure to comply with this section.
 
-If you would like us to terminate your account, you can do so by emailing OpenMarch at [support@openmarch.com](mailto:support@openmarch.com]).
+If you would like us to terminate your account, you can do so by emailing OpenMarch at [support@openmarch.com](mailto:support@openmarch.com).
 
 ## 6. Desktop App
 
@@ -89,7 +89,7 @@ OpenMarch may modify the Services from time to time. OpenMarch shall have no lia
 
 ## 13. Termination
 
-OpenMarch may immediately and without notice terminate these Terms and disable your access to the Services if (i) OpenMarch determines that you have breached these Terms, (ii) the Admins for your Ensemble breach these Terms or choose to terminate your access to the Services, or (iii) the Entity Customer breaches these Terms or chooses to terminate your access to the Services. You may terminate your account at any time by emailing us at [support@openmarch.com](mailto:support@openmarch.com]).
+OpenMarch may immediately and without notice terminate these Terms and disable your access to the Services if (i) OpenMarch determines that you have breached these Terms, (ii) the Admins for your Ensemble breach these Terms or choose to terminate your access to the Services, or (iii) the Entity Customer breaches these Terms or chooses to terminate your access to the Services. You may terminate your account at any time by emailing us at [support@openmarch.com](mailto:support@openmarch.com).
 
 Provisions that, by their nature, should survive termination of these Terms shall survive termination. By way of example, all of the following will survive termination: any limitations on our liability, any terms regarding ownership or intellectual property rights, indemnification, and terms regarding disputes between us.
 
