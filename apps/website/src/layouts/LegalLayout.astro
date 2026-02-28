@@ -3,12 +3,12 @@ import Layout from "@/layouts/Layout.astro";
 
 interface Props {
     title: string;
-    effectiveDate?: string;
+    lastUpdated?: string;
 }
 
-const { title, effectiveDate } = Astro.props;
+const { title, lastUpdated } = Astro.props;
 
-function formatEffectiveDate(iso: string): string {
+function formatLastUpdated(iso: string): string {
     try {
         const [y, m, d] = iso.split("-").map(Number);
         if (!y || !m || !d) return iso;
@@ -24,7 +24,7 @@ function formatEffectiveDate(iso: string): string {
     }
 }
 
-const displayDate = effectiveDate ? formatEffectiveDate(effectiveDate) : null;
+const displayDate = lastUpdated ? formatLastUpdated(lastUpdated) : null;
 ---
 
 <Layout title={title}>
@@ -34,7 +34,7 @@ const displayDate = effectiveDate ? formatEffectiveDate(effectiveDate) : null;
             {
                 displayDate && (
                     <p class="text-body text-text-subtitle">
-                        Effective date - {displayDate}
+                        Last updated - {displayDate}
                     </p>
                 )
             }

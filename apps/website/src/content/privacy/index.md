@@ -1,7 +1,7 @@
 ---
 title: "OpenMarch Privacy Policy"
 description: "Privacy Policy for OpenMarch"
-effectiveDate: "2026-02-28"
+lastUpdated: "2026-02-28"
 ---
 
 ## 1. INTRODUCTION

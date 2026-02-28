@@ -1,7 +1,7 @@
 ---
 title: "OpenMarch Terms of Service"
 description: "Terms of Service for OpenMarch"
-effectiveDate: "2026-02-28"
+lastUpdated: "2026-02-28"
 ---
 
 ## 1. Agreement
