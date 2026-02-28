@@ -46,8 +46,12 @@ export class DrizzleMigrationService {
         }
 
         let folder = migrationsFolder || path.join(__dirname, "../migrations");
-        if (process.env.PLAYWRIGHT_CODEGEN || process.env.PLAYWRIGHT_SESSION) {
-            folder = folder.replace("/dist-electron/main", "");
+        if (
+            process.env.PLAYWRIGHT_CODEGEN ||
+            process.env.PLAYWRIGHT_SESSION ||
+            (/dist-electron[/\\]main/.test(folder) && !fs.existsSync(folder))
+        ) {
+            folder = folder.replace(/dist-electron[/\\]main/, "");
         }
 
         console.debug("migrationsFolder:", folder);
@@ -103,11 +107,18 @@ export class DrizzleMigrationService {
      * Checks if there are pending migrations to apply
      * Compares the number of applied migrations with the number of migration files
      *
-     * @param migrationsFolder Optional path to migrations folder, defaults to "./electron/database/migrations"
+     * @param migrationsFolder Optional path to migrations folder. Defaults to same as applyPendingMigrations (__dirname-based).
      * @returns true if there are pending migrations, false otherwise
      */
     hasPendingMigrations(migrationsFolder?: string): boolean {
-        const folder = migrationsFolder || "./electron/database/migrations";
+        let folder = migrationsFolder || path.join(__dirname, "../migrations");
+        if (
+            process.env.PLAYWRIGHT_CODEGEN ||
+            process.env.PLAYWRIGHT_SESSION ||
+            (/dist-electron[/\\]main/.test(folder) && !fs.existsSync(folder))
+        ) {
+            folder = folder.replace(/dist-electron[/\\]main/, "");
+        }
 
         try {
             // Get applied migrations from the database

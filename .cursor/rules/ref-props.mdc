@@ -1,0 +1,147 @@
+---
+description: When working with props, prop geometry, prop drawing, prop canvas rendering, or the props modal
+alwaysApply: false
+---
+
+# Props Feature Reference
+
+## Overview
+
+Props represent physical objects on the field (platforms, obstacles, floor markings). Each prop is linked to a marcher record (with `type: "prop"`) and has per-page geometry via the `prop_page_geometry` table. Props can be drawn on the canvas using various shape tools (rectangle, circle, arc, polygon, freehand).
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/Prop.ts` | Types, constants, unit conversions |
+| `src/global/classes/PropVisualGroup.ts` | Aggregates visual elements per prop |
+| `src/global/classes/canvasObjects/CanvasProp.ts` | Fabric.js canvas object (extends CanvasMarcher) |
+| `src/db-functions/prop.ts` | Database CRUD operations |
+| `src/hooks/queries/useProps.ts` | React Query hooks |
+| `src/stores/PropDrawingStore.ts` | Drawing mode state |
+| `src/components/canvas/listeners/PropDrawingListeners.ts` | Canvas drawing event handlers |
+| `src/components/prop/PropList.tsx` | Prop list UI |
+| `src/components/prop/PropsModal.tsx` | Sidebar modal wrapper |
+| `src/components/prop/PropEditForm.tsx` | Edit prop form |
+| `src/components/prop/NewPropForm.tsx` | Create prop form |
+| `src/components/prop/PropToolSelector.tsx` | Drawing tool selector |
+
+## Data Model
+
+### Props Table
+```typescript
+type DatabaseProp = {
+    id: number;
+    marcher_id: number;         // FK to marchers (type="prop")
+    surface_type: SurfaceType;  // "floor" | "platform" | "obstacle"
+    asset_url: string | null;
+    prop_category: string | null;
+    default_width: number;      // Default width in pixels
+    default_height: number;     // Default height in pixels
+    created_at: string;
+    updated_at: string;
+};
+
+type PropWithMarcher = DatabaseProp & {
+    marcher: typeof schema.marchers.$inferSelect;
+};
+```
+
+### Prop Page Geometry
+```typescript
+type DatabasePropPageGeometry = {
+    id: number;
+    marcher_page_id: number;    // FK to marcher_pages
+    shape_type: "rectangle" | "circle" | "custom";
+    width: number | null;
+    height: number | null;
+    radius: number | null;
+    custom_geometry: string | null;  // SVG/path data for custom shapes
+    rotation: number | null;
+    rotation_x: number | null;
+    rotation_y: number | null;
+    visible: number;            // 0 or 1 (SQLite boolean)
+};
+```
+
+### Surface Types & Z-Order
+```typescript
+type SurfaceType = "floor" | "platform" | "obstacle";
+
+const SURFACE_TYPE_Z_ORDER = {
+    floor: 0,       // Below marchers
+    platform: 1,    // At marcher level
+    obstacle: 3,    // Above marchers
+};
+```
+
+### Drawing Modes
+```typescript
+type PropDrawingMode = "rectangle" | "circle" | "arc" | "polygon" | "freehand" | null;
+```
+
+## Unit Conversions
+
+Props use real-world feet for dimensions, converted to canvas pixels:
+
+```typescript
+import { getPixelsPerFoot, feetToPixels, pixelsToFeet } from "@/global/classes/Prop";
+
+// 8-to-5 step = 22.5 inches
+const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
+const widthPx = feetToPixels(10, fieldProperties);  // 10 feet -> pixels
+const widthFt = pixelsToFeet(150, fieldProperties);  // 150 pixels -> feet
+```
+
+Default prop size: `DEFAULT_PROP_WIDTH = 15`, `DEFAULT_PROP_HEIGHT = 15` (pixels).
+
+## Canvas Rendering
+
+`CanvasProp` extends `CanvasMarcher` and adds:
+- `propId` - the prop's database id
+- `propObj` - the DatabaseProp data
+- `geometry` - the DatabasePropPageGeometry for current page
+- `shapeObject` - Fabric.js shape (rect, circle, or custom path)
+- Methods: `getDimensions()`, `getEdges()`, `setEdges()`
+
+`PropVisualGroup` is similar to `MarcherVisualGroup` but without the `canvasMarcher` property - it only has pathway/midpoint/endpoint visuals.
+
+## Drawing Store
+
+```typescript
+import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+
+const {
+    drawingMode,      // Current tool: "rectangle" | "circle" | ... | null
+    isDrawing,        // Currently drawing
+    startPoint,       // Initial click point
+    points,           // Accumulated points (polygon/freehand)
+    setDrawingMode,   // Activate a drawing tool
+    resetDrawingState // Clear all drawing state
+} = usePropDrawingStore();
+```
+
+## Architecture: Prop-Marcher Relationship
+
+Props piggyback on the marcher system:
+1. Creating a prop also creates a marcher record with `type: "prop"`
+2. This marcher gets MarcherPages (positions) on every page
+3. `prop_page_geometry` stores the shape/size per page via `marcher_page_id` FK
+4. On canvas, `CanvasProp` extends `CanvasMarcher` to reuse positioning logic
+
+This means props participate in undo/redo, pathways, and animation just like marchers.
+
+## Integration Points
+
+- **Marcher system**: Props create a marcher with `type: "prop"`. The marcher_pages provide positioning.
+- **Canvas**: `PropDrawingListeners.ts` handles mouse events for drawing. `CanvasProp` renders on canvas.
+- **PropDrawingStore**: Zustand store tracks active drawing tool and state.
+- **Field Properties**: Unit conversions depend on `fieldProperties.pixelsPerStep`.
+
+## Gotchas
+
+- A prop always has a backing marcher with `type: "prop"`. Deleting the marcher deletes the prop.
+- `prop_page_geometry.visible` is `0|1` (SQLite boolean), needs conversion.
+- Props are NOT tracked by undo/redo history triggers (the backing marcher IS tracked though).
+- `custom_geometry` stores SVG path data as a text string for non-rectangular shapes.
+- The `PropDrawingListeners` are only active when `drawingMode` is non-null in the PropDrawingStore.

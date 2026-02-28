@@ -16,6 +16,8 @@ const tablesWithHistory = [
     schema.measures,
     schema.marchers,
     schema.marcher_pages,
+    schema.props,
+    schema.prop_page_geometry,
     schema.shapes,
     schema.shape_pages,
     schema.shape_page_marchers,
@@ -73,7 +75,9 @@ export const transactionWithHistory = async <T>(
                 );
                 if (currentUndoElements.count > 0) {
                     const maxGroup = await tx
-                        .select({ max: max(schema.history_undo.history_group) })
+                        .select({
+                            max: max(schema.history_undo.history_group),
+                        })
                         .from(schema.history_undo)
                         .get();
                     assert(maxGroup != null, "Max group is undefined");
@@ -88,7 +92,9 @@ export const transactionWithHistory = async <T>(
             const groupAfter =
                 (
                     await tx
-                        .select({ max: max(schema.history_undo.history_group) })
+                        .select({
+                            max: max(schema.history_undo.history_group),
+                        })
                         .from(schema.history_undo)
                         .get()
                 )?.max ??

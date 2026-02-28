@@ -32,6 +32,7 @@ words:
   - codegen
   - colours
   - Configuración
+  - contenteditable
   - cooldown
   - couldn
   - customizer
@@ -63,6 +64,7 @@ words:
   - Hipp
   - idioma
   - importmap
+  - keyframed
   - Invalidators
   - launchpage
   - libsql
@@ -79,6 +81,7 @@ words:
   - midsets
   - monokai
   - Moulse
+  - mgmt
   - multiselection
   - musescore
   - musicxml
@@ -95,11 +98,13 @@ words:
   - pagewidth
   - paperplane
   - pfps
+  - Peucker
   - Português
   - posthog
   - Pressable
   - PWDEBUG
   - pwsh
+  - Ramer
   - Rcoords
   - rels
   - rgba
@@ -110,6 +115,8 @@ words:
   - saario
   - samuelmeuli
   - Schachner
+  - selectability
+  - sandboxing
   - seti
   - shouldn
   - sicommand
@@ -165,6 +172,7 @@ words:
   - xlink
   - XMLID
   - yeskunallumami
+  - Zustand
   - youtu
   - zier
   - Zingali

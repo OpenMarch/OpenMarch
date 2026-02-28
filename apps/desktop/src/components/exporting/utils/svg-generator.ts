@@ -5,12 +5,18 @@ import MarcherPageMap from "@/global/classes/MarcherPageIndex";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { defaultSettings } from "@/stores/UiSettingsStore";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { db } from "@/global/database/db";
 import { SectionAppearance } from "@/db-functions";
+import {
+    PropWithMarcher,
+    DatabasePropPageGeometry,
+    getPixelsPerFoot,
+} from "@/global/classes/Prop";
 
 const SectionAppearanceBySection = (
     sectionAppearances: SectionAppearance[] | undefined,
@@ -159,9 +165,10 @@ const initializeCanvasForRendering = async (args: {
     gridLines?: boolean;
     halfLines?: boolean;
     svgMargin?: number;
+    /** Marcher IDs that are props — skip creating CanvasMarcher for these */
+    propMarcherIds?: Set<number>;
 }): Promise<{
     canvas: OpenMarchCanvas;
-    // viewBox: fabric.IViewBox;
     canvasMarchersById: Record<number, CanvasMarcher>;
 }> => {
     const {
@@ -173,6 +180,7 @@ const initializeCanvasForRendering = async (args: {
         gridLines = true,
         halfLines = true,
         svgMargin = 40,
+        propMarcherIds,
     } = args;
 
     const canvasElement = document.createElement("canvas");
@@ -199,8 +207,9 @@ const initializeCanvasForRendering = async (args: {
         SectionAppearanceBySection(sectionAppearances);
 
     const canvasMarchersById: Record<number, CanvasMarcher> = {};
-    // Add every marcher
+    // Add every marcher (skip prop marchers — they are rendered as CanvasProp per page)
     for (const marcher of marchers) {
+        if (propMarcherIds?.has(marcher.id)) continue;
         const sectionAppearance = sectionAppearanceBySection.get(
             marcher.section,
         );
@@ -210,13 +219,10 @@ const initializeCanvasForRendering = async (args: {
             appearances: sectionAppearance,
         });
         canvasMarchersById[marcher.id] = canvasMarcher;
-        // Add the marcher to the canvas
         canvas.add(canvasMarcher);
         canvas.add(canvasMarcher.textLabel);
     }
     ReadableCoords.setFieldProperties(fieldProperties);
-
-    // const viewBox = _calculateViewBox(canvas);
 
     return { canvas, canvasMarchersById };
 };
@@ -290,6 +296,42 @@ const renderIndividualMarcherChartsForPage = (args: {
     return { marcherSvgs, marcherReadableCoordStrings };
 };
 
+/** Creates CanvasProp objects for a given page and adds them to the canvas. Returns the objects for later removal. */
+const addPropsForPage = ({
+    canvas,
+    props,
+    geometryByMpId,
+    marcherPagesByMarcher,
+    pixelsPerFoot,
+}: {
+    canvas: OpenMarchCanvas;
+    props: PropWithMarcher[];
+    geometryByMpId: Map<number, DatabasePropPageGeometry>;
+    marcherPagesByMarcher: Record<number, MarcherPage>;
+    pixelsPerFoot: number;
+}): fabric.Object[] => {
+    const objectsToRemove: fabric.Object[] = [];
+    for (const prop of props) {
+        const marcherPage = marcherPagesByMarcher[prop.marcher_id];
+        if (!marcherPage) continue;
+
+        const geometry = geometryByMpId.get(marcherPage.id);
+        if (!geometry || !geometry.visible) continue;
+
+        // Create CanvasProp without background image for export
+        const canvasProp = new CanvasProp({
+            marcher: prop.marcher,
+            prop,
+            geometry,
+            coordinate: { x: marcherPage.x, y: marcherPage.y },
+            pixelsPerFoot,
+        });
+        canvas.add(canvasProp);
+        objectsToRemove.push(canvasProp);
+    }
+    return objectsToRemove;
+};
+
 export const generateDrillChartExportSVGs = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
@@ -301,7 +343,14 @@ export const generateDrillChartExportSVGs = async (args: {
     halfLines?: boolean;
     individualCharts: boolean;
     useImagePlaceholder?: boolean;
-}): Promise<{ SVGs: string[][]; coords: string[][] }> => {
+    propsWithMarchers?: PropWithMarcher[];
+    propGeometries?: DatabasePropPageGeometry[];
+}): Promise<{
+    SVGs: string[][];
+    coords: string[][];
+    /** Marchers that have SVGs/coords (excludes prop marchers) */
+    exportMarchers: Marcher[];
+}> => {
     const {
         fieldProperties,
         marchers,
@@ -309,28 +358,49 @@ export const generateDrillChartExportSVGs = async (args: {
         marcherPagesMap,
         individualCharts,
         useImagePlaceholder = true,
+        propsWithMarchers,
+        propGeometries,
     } = args;
     const outputSVGs: string[][] = [];
-    // Readable coordinates storage for each marcher
-    let readableCoordsStrings: string[][] = individualCharts
-        ? Array.from({ length: marchers.length }, () => [])
-        : Array.from({ length: marchers.length }, () =>
+
+    // Build prop lookup structures
+    const propMarcherIds = new Set(
+        (propsWithMarchers ?? []).map((p) => p.marcher_id),
+    );
+    const geometryByMpId = new Map(
+        (propGeometries ?? []).map((g) => [g.marcher_page_id, g]),
+    );
+    const pixelsPerFoot = propsWithMarchers?.length
+        ? getPixelsPerFoot(fieldProperties)
+        : 0;
+
+    // Filter marchers to only non-prop marchers for coordinate tracking
+    const nonPropMarchers = marchers.filter((m) => !propMarcherIds.has(m.id));
+
+    // Readable coordinates storage for each non-prop marcher
+    const readableCoordsStrings: string[][] = individualCharts
+        ? Array.from({ length: nonPropMarchers.length }, () => [])
+        : Array.from({ length: nonPropMarchers.length }, () =>
               Array.from({ length: sortedPages.length }, () => ""),
           );
 
-    const { canvas, canvasMarchersById } =
-        await initializeCanvasForRendering(args);
+    const { canvas, canvasMarchersById } = await initializeCanvasForRendering({
+        ...args,
+        propMarcherIds,
+    });
 
-    // If individual charts are enabled, initialize the output SVGs array for each marcher
+    // If individual charts are enabled, initialize the output SVGs array for each non-prop marcher
     // Otherwise, initialize the output SVGs for the main chart
-    if (individualCharts) marchers.forEach(() => outputSVGs.push([]));
-    else outputSVGs.push([]);
+    if (individualCharts) {
+        for (let i = 0; i < nonPropMarchers.length; i++) outputSVGs.push([]);
+    } else outputSVGs.push([]);
 
     // Loop through each page and generate an SVG for it
     for (const [pageIndex, page] of sortedPages.entries()) {
         const marcherPagesByMarcherForCurrentPage =
             marcherPagesMap.marcherPagesByPage[page.id];
 
+        // Position non-prop marchers
         for (const marcherPage of Object.values(
             marcherPagesByMarcherForCurrentPage,
         )) {
@@ -339,12 +409,21 @@ export const generateDrillChartExportSVGs = async (args: {
             canvasMarcher.setMarcherCoords(marcherPage);
         }
 
+        // Add props for this page (recreated per page since geometry may differ)
+        const propObjects = addPropsForPage({
+            canvas,
+            props: propsWithMarchers ?? [],
+            geometryByMpId,
+            marcherPagesByMarcher: marcherPagesByMarcherForCurrentPage,
+            pixelsPerFoot,
+        });
+
         if (individualCharts) {
             const { marcherSvgs, marcherReadableCoordStrings } =
                 renderIndividualMarcherChartsForPage({
                     fieldProperties,
                     canvas,
-                    marchers,
+                    marchers: nonPropMarchers,
                     marcherPagesByMarcherForCurrentPage,
                     page,
                     pageIndex,
@@ -363,7 +442,7 @@ export const generateDrillChartExportSVGs = async (args: {
                 );
 
             marcherReadableCoordStrings.forEach((coord, index) =>
-                readableCoordsStrings![index].push(coord),
+                readableCoordsStrings[index].push(coord),
             );
         } else {
             if (outputSVGs.length === 0) outputSVGs.push([]);
@@ -375,9 +454,16 @@ export const generateDrillChartExportSVGs = async (args: {
                 );
             else outputSVGs[0].push(canvas.toSVG());
         }
+
+        // Remove props so they can be recreated with next page's geometry
+        for (const obj of propObjects) canvas.remove(obj);
     }
 
-    return { SVGs: outputSVGs, coords: readableCoordsStrings };
+    return {
+        SVGs: outputSVGs,
+        coords: readableCoordsStrings,
+        exportMarchers: nonPropMarchers,
+    };
 };
 
 export async function getFieldPropertiesImage(): Promise<Uint8Array | null> {

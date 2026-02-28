@@ -521,6 +521,34 @@
             "subset": "Subset",
             "title": "Page {pageNumber}"
         },
+        "prop": {
+            "deleteConfirmDescription": "This can be undone with Ctrl/Cmd+Z.",
+            "deleteConfirmTitle": "Delete this prop?",
+            "geometry": "Geometry",
+            "height": "Height",
+            "name": "Name",
+            "no": "No",
+            "notSet": "—",
+            "pageSubtitle": "Page {pageName}",
+            "radius": "Radius",
+            "rotation": "Rotation",
+            "shape": "Shape",
+            "shapeType": {
+                "circle": "Circle",
+                "custom": "Custom",
+                "rectangle": "Rectangle"
+            },
+            "surface": "Surface",
+            "surfaceType": {
+                "floor": "Floor",
+                "obstacle": "Obstacle",
+                "platform": "Platform"
+            },
+            "title": "Prop",
+            "visible": "Visible",
+            "width": "Width",
+            "yes": "Yes"
+        },
         "shape": {
             "addSegmentButton": "Add",
             "addSegmentTooltip": "Add segment to shape",
@@ -723,6 +751,14 @@
         "title": "Music",
         "undoWithCtrlZ": "This action is undoable with Ctrl + Z",
         "volume": "Volume"
+    },
+    "props": {
+        "createError": "Error creating props",
+        "updateError": "Error updating props",
+        "updateGeometryError": "Error updating prop geometry",
+        "updateImageError": "Error updating prop image",
+        "deleteImageError": "Error deleting prop image",
+        "deleteError": "Error deleting props"
     },
     "pages": {
         "createFailed": "Failed to create page - {error}",

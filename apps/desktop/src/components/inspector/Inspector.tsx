@@ -1,4 +1,5 @@
 import MarcherEditor from "./MarcherEditor";
+import PropEditor from "./PropEditor";
 import PageEditor from "./PageEditor";
 import AlignmentEditor from "./AlignmentEditor";
 import ShapeEditor from "./ShapeEditor";
@@ -17,6 +18,7 @@ function Inspector() {
             <div className="mt-8 flex min-h-0 flex-1 flex-col gap-48 overflow-y-auto">
                 <PageEditor />
                 <MarcherEditor />
+                <PropEditor />
                 <ShapeEditor />
                 <AlignmentEditor />
                 <ShapeSelector />

@@ -34,10 +34,13 @@ export const _combineMarcherVisualGroups = ({
     }
 
     const newVisuals: Record<number, MarcherVisualGroup> = {};
-    for (const marcher of marchers)
-        newVisuals[marcher.id] = new MarcherVisualGroup({
-            marcher,
-        });
+    for (const marcher of marchers) {
+        if (marcher.type === "marcher") {
+            newVisuals[marcher.id] = new MarcherVisualGroup({
+                marcher,
+            });
+        }
+    }
 
     return newVisuals;
 };
