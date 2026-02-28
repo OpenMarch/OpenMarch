@@ -47,7 +47,7 @@ export const getApiEditorV1ProductionsProductionIdAudioFiles = (
 export const getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey = (
     productionId: number,
 ) => {
-    return [`/api/editor/v1/productions/${productionId}/audio_files`] as const;
+    return [`/api/editor/v1/productions`, productionId, `audio_files`] as const;
 };
 
 export const getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions = <

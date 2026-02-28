@@ -117,7 +117,9 @@ export function connect() {
     }
     try {
         const dbPath = DB_PATH;
-        return new Database(dbPath, { verbose: console.log });
+        return new Database(dbPath, {
+            verbose: (message, ...args) => console.log(message, ...args),
+        });
     } catch (error: any) {
         console.error(error);
 

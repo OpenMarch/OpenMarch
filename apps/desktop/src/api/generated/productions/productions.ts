@@ -129,7 +129,7 @@ export const getApiEditorV1ProductionsId = (
 };
 
 export const getGetApiEditorV1ProductionsIdQueryKey = (id: number) => {
-    return [`/api/editor/v1/productions/${id}`] as const;
+    return [`/api/editor/v1/productions`, id] as const;
 };
 
 export const getGetApiEditorV1ProductionsIdQueryOptions = <
