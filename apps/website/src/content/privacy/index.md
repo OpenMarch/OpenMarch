@@ -1,97 +1,62 @@
 ---
-title: "Privacy Policy"
+title: "OpenMarch Privacy Policy"
 description: "Privacy Policy for OpenMarch"
+effectiveDate: "2026-02-28"
 ---
 
-## 1. Overview
+## 1. INTRODUCTION
 
-At OpenMarch, we are committed to respecting your privacy and being transparent about the data we collect. This policy explains what data we collect, how we use it, and your rights as a user.
+This Privacy Policy (the “**Policy**”) explains how OpenMarch LLC (“**OpenMarch**”, “**we**”, “**our**”) collects, uses, and discloses personal information through its website, desktop application (the “**Desktop App**”), and mobile application (the “**Mobile App**”, and collectively with the website and Desktop App, the “**Services**”).
 
----
+## 2. INFORMATION COLLECTED AND HOW WE USE IT
 
-## 2. What Data We Collect
+As explained further in this section, you will have the opportunity to provide us with certain personal information. In addition, we may collect certain personal information automatically through your use of the Services. The rest of this section provides a more detailed explanation of the personal information we collect and how we use that personal information.
 
-We collect certain information automatically when you use the OpenMarch application to improve your experience, monitor performance, and debug issues. This data is collected through third-party services, namely **PostHog** and **Sentry**.
+1. **Account Creation**. If you register for an administrator account with the Services, you will need to provide your name and email address. You will also have the opportunity to provide a photo of yourself. As part of the account creation process, you may choose to provide the foregoing information using certain third-party accounts, like Google and Apple. OpenMarch uses this information to manage your account and communicate with you about your use of the Services.
 
-**Important:** We **DO NOT** sell user data to any third parties. All data collection is purely for internal testing and decision-making purposes to improve the OpenMarch application.
+2. **Payment Processing**. If you are an administrator, you can purchase access to the Mobile App for performers in your ensemble and other authorized users. Your payment information will be processed by our third-party payment processor. We will not have access to your payment information.
 
----
+3. **Performers**. Performers are not asked to submit any personal information. Each performer can sign into the Mobile App by using a code and password provided by an administrator for their ensemble. As part of this authentication process, the performer will be asked to designate their instrument and position within their ensemble. Although performers do not submit any personal information, please see Section 2.4 below regarding certain information that we may automatically collect in order to authenticate performers and manage sessions on the Mobile App.
 
-## 3. Analytics and Session Recording
+4. **Automatically Collected Information**. Whenever you interact with the Services, we automatically receive and record your IP address and device ID. We collect your IP address and device ID for user authentication and to ensure the security of the Services. We also identify the operating system for your device, so that we can ensure compatibility with the Services. Finally, we use cookies on the website for authentication and session management. “Cookies” are small text files that we transfer to your browser.
 
-We use [**PostHog**](https://posthog.com/), a privacy-focused analytics platform, to understand how users interact with our software.
+5. **Desktop Analytics**. If you are an administrator and are using the Desktop App, you may opt into our collection of analytics information regarding your use of the Desktop App. If you do opt in, we will track activity such as the features on the Desktop App that you use and load times within the Desktop App.
 
-**Data Collected:**
+## 3. DISCLOSURE OF INFORMATION
 
-- Page views and user interactions
-- Session recordings (mouse movements, clicks, scrolls)
-- Device type, operating system, and browser version
-- Referrer URLs and usage paths
-- IP address (used for location estimation and session deduplication)
+We may disclose your personal information to the categories of third parties identified in this section.
 
-**How it's used:**
+1. **Personnel and Third Party Service Providers**. We employ personnel and engage other companies and people to perform tasks on our behalf and need to share your personal information with them to provide products or services to you. For example, we use a third party payment processor to process payments on our behalf. In addition, for those administrators who opt into our analytics tracking for the Desktop App, we rely on a third party vendor to process the analytics data.
 
-- To identify usability issues
-- To analyze feature adoption and improve design
-- To monitor general usage patterns
+2. **Business Transfers**. If we (or our assets) are acquired, or if we go out of business, enter bankruptcy, or go through some other change of control, personal information could be one of the assets transferred to or acquired by a third party.
 
-**Data Storage:**
+3. **Legal Compliance**. We reserve the right to access, read, preserve, and disclose any information that we believe is necessary to comply with governmental requests, law enforcement or court orders, or enforce or apply our Terms of Service and other agreements.
 
-- Data is stored on **PostHog’s servers**, which may be located in the United States or other jurisdictions depending on their hosting configuration.
+## 4. SECURITY
 
-> **Note:** Session recordings may capture user input behavior (e.g., text typed into form fields), but we do not intentionally record or store sensitive personal data like passwords or payment information.
+We use commercially reasonable physical, managerial, and technical safeguards to preserve the integrity and security of your personal information. In addition, we enter into contracts with all of our third party service providers that require reasonable precautions be taken against unauthorized uses of your personal information. We cannot, however, ensure or warrant that these precautions will always be successful or that your personal information on the Services may not be accessed, disclosed, altered, or destroyed by breach of any of our physical, technical, or managerial safeguards.
 
----
+## 5. MODIFICATION, DELETION & RETENTION OF INFORMATION
 
-## 4. Error Monitoring
+If you have an administrator account, you can access, modify, and delete your personal information through your account settings in the Desktop App or Mobile App or by emailing us at [support@openmarch.com](mailto:support@openmarch.com]). If you are a performer and you would like us to clear any record of your IP address or device ID, you can email us at [support@openmarch.com](mailto:support@openmarch.com]).
 
-We use [**Sentry**](https://sentry.io/welcome/) to detect and diagnose application errors and crashes.
+Subject to your right to request deletion of your personal information, we will retain your personal information as long as needed for your use of the Services.
 
-**Data Collected:**
+## 6. HOW WE RESPOND TO DO NOT TRACK SIGNALS
 
-- Error stack traces and crash reports
-- Environment details (OS, app version)
-- User actions leading up to the error
-- IP address (for geographic grouping)
-- Basic session data (anonymous UUID, timestamp)
+We will honor your exercise of your rights with respect to your personal information in accordance with Section 5\. Apart from those rights, we do not respond to “Do Not Track” signals.
 
-**How it's used:**
+## 7. CHANGES TO POLICY
 
-- To monitor app stability
-- To fix bugs and improve software reliability
+We’re constantly trying to improve the Services, so we may need to change this Policy from time to time as well. The date of the last modification will be posted at the beginning of this Policy. It is your responsibility to check from time to time for updates. By continuing to access or use the Services, you are indicating that you agree to be bound by the modified Policy.
 
-**Data Storage:**
+## 8. CONTACT US
 
-- Data is processed and stored by **Sentry**, primarily on servers located in the **United States**. You can view Sentry’s [privacy policy here](https://sentry.io/privacy/).
+If you have any questions or concerns regarding this Policy, please send us a detailed message to [support@openmarch.com](mailto:support@openmarch.com]), and we will try to resolve your concerns.
 
----
+You may also reach us at the following address:
 
-## 5. Your Data Rights
-
-Depending on your location, you may have rights under privacy laws such as the **GDPR** or **CCPA**, including:
-
-- The right to know what personal data we hold
-- The right to request deletion of your data
-- The right to opt out of tracking (if applicable)
-
-To exercise these rights, you can opt-out of collection in the app's settings and contact us at **[contact@openmarch.com](mailto:contact@openmarch.com)**.
-
----
-
-## 6. Cookies and Local Storage
-
-We do not use cookies in the traditional browser sense, but we may use **local storage** or similar technologies to store app settings or anonymized session data.
-
----
-
-## 7. Changes to This Policy
-
-We may update this policy from time to time. When we do, we will post the updated version in the app and/or notify users by other reasonable means.
-
----
-
-## 8. Contact Us
-
-If you have any questions about this Privacy Policy, please contact:
-
-📧 **[contact@openmarch.com](mailto:contact@openmarch.com)**
+OpenMarch LLC<br/>
+46950 Community Plz<br/>
+Ste 120 \- 1008<br/>
+Sterling, VA 20164

@@ -1,0 +1,13 @@
+---
+import LegalLayout from "@/layouts/LegalLayout.astro";
+import { ProseClass } from "@/components/ProseClass";
+
+const posts = await Astro.glob("../../../content/privacy/index.md");
+const post = posts[0];
+const title = post?.frontmatter?.title ?? "Privacy Policy";
+const effectiveDate = post?.frontmatter?.effectiveDate;
+---
+
+<LegalLayout title={title} effectiveDate={effectiveDate}>
+    <article class={`${ProseClass} w-full`}>{post && <post.Content />}</article>
+</LegalLayout>

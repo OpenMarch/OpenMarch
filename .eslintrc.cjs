@@ -71,6 +71,10 @@ module.exports = {
             parserOptions: {
                 parser: "@typescript-eslint/parser",
                 extraFileExtensions: [".astro"],
+                // Astro files live in apps/website; point to that tsconfig so they are in the
+                // TypeScript program and type-aware rules (e.g. no-floating-promises) work.
+                project: "./apps/website/tsconfig.json",
+                tsconfigRootDir: __dirname,
             },
             rules: Object.keys(require("eslint-plugin-react").rules).reduce(
                 (acc, rule) => {
