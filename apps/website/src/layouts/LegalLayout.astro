@@ -1,0 +1,44 @@
+---
+import Layout from "@/layouts/Layout.astro";
+
+interface Props {
+    title: string;
+    lastUpdated?: string;
+}
+
+const { title, lastUpdated } = Astro.props;
+
+function formatLastUpdated(iso: string): string {
+    try {
+        const [y, m, d] = iso.split("-").map(Number);
+        if (!y || !m || !d) return iso;
+        const date = new Date(y, m - 1, d);
+        if (Number.isNaN(date.getTime())) return iso;
+        return date.toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+        });
+    } catch {
+        return iso;
+    }
+}
+
+const displayDate = lastUpdated ? formatLastUpdated(lastUpdated) : null;
+---
+
+<Layout title={title}>
+    <article class="flex w-full max-w-3xl flex-col items-center gap-16 px-32">
+        <header class="flex w-full flex-col gap-4">
+            <h1 class="text-h1 text-text w-full">{title}</h1>
+            {
+                displayDate && (
+                    <p class="text-body text-text-subtitle">
+                        Last updated - {displayDate}
+                    </p>
+                )
+            }
+        </header>
+        <slot />
+    </article>
+</Layout>
