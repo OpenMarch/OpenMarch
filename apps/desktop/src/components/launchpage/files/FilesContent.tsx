@@ -68,6 +68,29 @@ export default function FilesTabContent() {
         }
     };
 
+    const handleClearAllRecentFiles = async () => {
+        try {
+            await window.electron.clearRecentFiles();
+            setRecentFiles([]);
+        } catch (error) {
+            console.error("Failed to clear all recent files:", error);
+            toast.error(t("launchpage.files.failedToClearAllRecentFiles"));
+        }
+    };
+
+    const handleClearMissingRecentFiles = async () => {
+        try {
+            await window.electron.clearMissingRecentFiles();
+            void loadRecentFiles();
+        } catch (error) {
+            console.error(
+                "Failed to clear missing / moved recent files:",
+                error,
+            );
+            toast.error(t("launchpage.files.failedToClearMissingRecentFiles"));
+        }
+    };
+
     return (
         <Tabs.Content
             value="files"
@@ -75,9 +98,35 @@ export default function FilesTabContent() {
         >
             <div className="flex h-full w-full flex-col p-6">
                 {recentFiles.length !== 0 && (
-                    <h2 className="text-h3 font-medium">
-                        <T keyName="launchpage.files.title" />
-                    </h2>
+                    <div className="flex items-center gap-16">
+                        <h2 className="text-h3 font-medium">
+                            <T keyName="launchpage.files.title" />
+                        </h2>
+                        <Button
+                            size="compact"
+                            variant="secondary"
+                            tooltipText={t(
+                                "launchpage.files.clearAllRecentFilesTooltip",
+                            )}
+                            tooltipDelay={300}
+                            tooltipSide="top"
+                            onClick={(e) => handleClearAllRecentFiles()}
+                        >
+                            <T keyName="launchpage.files.clearAllRecentFiles" />
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant="secondary"
+                            tooltipText={t(
+                                "launchpage.files.clearMissingRecentFilesTooltip",
+                            )}
+                            tooltipDelay={300}
+                            tooltipSide="top"
+                            onClick={(e) => handleClearMissingRecentFiles()}
+                        >
+                            <T keyName="launchpage.files.clearMissingRecentFiles" />
+                        </Button>
+                    </div>
                 )}
 
                 {isLoading ? (
