@@ -63,3 +63,4 @@ packages/metronome/
 
 # Local development docs (not committed)
 docs/
+.cursor/plans/

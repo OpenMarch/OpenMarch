@@ -46,6 +46,7 @@ words:
   - drumline
   - dukc
   - Dumouchelle
+  - easyocr
   - Ehhh
   - ehlert
   - endzone
@@ -55,6 +56,7 @@ words:
   - evented
   - fielddots
   - fieldots
+  - fitz
   - forwardslash
   - français
   - frontfield
@@ -146,6 +148,7 @@ words:
   - Tribbiani
   - turborepo
   - umami
+  - venv
   - Uncurried
   - undoable
   - undocs
