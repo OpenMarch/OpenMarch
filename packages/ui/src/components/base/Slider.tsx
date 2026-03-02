@@ -1,11 +1,19 @@
 import React from "react";
 import * as RadixSlider from "@radix-ui/react-slider";
 import { type SliderProps } from "@radix-ui/react-slider";
+import { twMerge } from "tailwind-merge";
 
-export function Slider({ "aria-label": ariaLabel, ...props }: SliderProps) {
+export function Slider({
+    "aria-label": ariaLabel,
+    className,
+    ...props
+}: SliderProps) {
     return (
         <RadixSlider.Root
-            className="relative flex h-5 w-[200px] touch-none items-center select-none"
+            className={twMerge(
+                "relative flex h-5 w-[200px] touch-none items-center select-none",
+                className,
+            )}
             {...props}
         >
             <RadixSlider.Track className="bg-stroke relative h-[3px] grow rounded-full">

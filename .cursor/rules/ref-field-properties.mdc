@@ -1,0 +1,99 @@
+---
+description: When working with field properties, field configuration, field templates, field customization, or field themes
+alwaysApply: false
+---
+
+# Field Properties & Configuration Reference
+
+## Overview
+
+Field properties define the drill field's dimensions, grid, theme, checkpoints, and background image. It's a singleton entity (id=1) stored as JSON in the `field_properties` table. Templates provide presets for common field types (Football, Indoor). The field properties drive canvas rendering and coordinate calculations.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/global/classes/FieldProperties.ts` | Domain class, getters/setters |
+| `src/global/classes/FieldProperties.templates.ts` | Template definitions |
+| `src/global/classes/fieldTemplates/Football.ts` | Football field template |
+| `src/global/classes/fieldTemplates/Indoor.ts` | Indoor field template |
+| `src/hooks/queries/useFieldProperties.ts` | React Query hooks |
+| `src/components/field/FieldPropertiesSelector.tsx` | Template selector UI |
+| `src/components/field/FieldPropertiesCustomizer.tsx` | Customization editor |
+| `src/components/field/FieldPropertiesSettings.tsx` | Settings wrapper |
+| `src/components/field/FieldIoButtons.tsx` | Import/export buttons |
+| `src/components/field/fieldPropertiesSchema.ts` | Validation schema |
+| `src/components/field/customizer/GeneralTab.tsx` | General settings tab |
+| `src/components/field/customizer/CheckpointsTab.tsx` | Checkpoints tab |
+| `src/components/field/customizer/CheckpointEditor.tsx` | Single checkpoint editor |
+| `src/components/field/customizer/ImageTab.tsx` | Background image tab |
+| `src/components/field/customizer/ThemeTab.tsx` | Theme/colors tab |
+
+## Data Model
+
+Field properties are stored as a JSON blob in the `field_properties` table (singleton, id=1). The `FieldProperties` type comes from `@openmarch/core` and includes:
+
+- **Dimensions**: width, height in pixels; `pixelsPerStep` (key conversion factor)
+- **Grid**: yard line spacing, hash marks, grid visibility
+- **Theme**: colors for field, lines, sideline text
+- **Checkpoints**: named positions on the field (e.g., yard lines, hash marks) used for coordinate readouts
+- **Image**: optional background image URL and positioning
+
+## Key Concept: pixelsPerStep
+
+`pixelsPerStep` is the fundamental unit conversion:
+- 1 step = 22.5 inches (8-to-5 marching)
+- All canvas coordinates are in pixels
+- `pixelsPerStep` converts between canvas pixels and real-world distances
+- Used by `ReadableCoords`, `StepSize`, and `Prop` unit conversions
+
+## Query Pattern
+
+```typescript
+import { fieldPropertiesQueryOptions } from "@/hooks/queries";
+
+// Get field properties
+const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+```
+
+Field properties are used everywhere (canvas rendering, coordinate display, prop sizing), so they're frequently queried.
+
+## Templates
+
+Templates provide preset field configurations:
+
+```typescript
+// Football field - standard NCAA/high school field
+import { footballField } from "@/global/classes/fieldTemplates/Football";
+
+// Indoor field - smaller rectangular area
+import { indoorField } from "@/global/classes/fieldTemplates/Indoor";
+```
+
+The `FieldPropertiesSelector` component lets users pick a template, then customize it with the `FieldPropertiesCustomizer`.
+
+## Customizer Tabs
+
+1. **GeneralTab** - Width, height, step size
+2. **CheckpointsTab** - Named positions (yard lines, hashes) with coordinates
+3. **ImageTab** - Background image upload and positioning
+4. **ThemeTab** - Field colors (background, lines, text)
+
+## Import/Export
+
+`FieldIoButtons` provides import/export of field configurations as JSON files, allowing users to share field setups.
+
+## Integration Points
+
+- **Canvas**: `OpenMarchCanvas.renderFieldGrid()` uses field properties for grid rendering
+- **Coordinates**: `ReadableCoords` converts pixel positions to human-readable field coordinates using checkpoints
+- **Props**: `getPixelsPerFoot()` in `Prop.ts` derives from `pixelsPerStep`
+- **Exporting**: Coordinate sheets use field properties for position labels
+- **Undo/redo**: `field_properties` table is tracked by history triggers
+
+## Gotchas
+
+- Field properties is a singleton - there's only one row (id=1).
+- Changing field properties can reposition everything. The canvas re-renders fully.
+- `pixelsPerStep` is the most critical value - it affects all coordinate calculations.
+- The `FieldProperties` type is imported from `@openmarch/core`, not defined locally.

@@ -1,5 +1,6 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
+import CanvasProp from "./CanvasProp";
 import Endpoint from "./Endpoint";
 import Pathway from "./Pathway";
 import Midpoint from "./Midpoint";
@@ -82,6 +83,42 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     updateMarcherPagesFunction?: (
         marcherPages: ModifiedMarcherPageArgs[],
     ) => void;
+
+    /**
+     * A function to update prop geometry in the database.
+     * This is used to update prop dimensions when the user resizes a prop.
+     */
+    updatePropGeometryFunction?: (
+        geometries: {
+            id: number;
+            width?: number;
+            height?: number;
+            rotation?: number;
+        }[],
+    ) => void;
+
+    /**
+     * Atomically update marcher pages and prop geometry in a single transaction.
+     */
+    updateMarcherPagesAndGeometryFunction?: (args: {
+        modifiedMarcherPages: ModifiedMarcherPageArgs[];
+        modifiedGeometries: {
+            id: number;
+            width?: number;
+            height?: number;
+            rotation?: number;
+        }[];
+    }) => void | Promise<void>;
+
+    /**
+     * Called when the user edits a prop's size/rotation on the canvas.
+     * If set, geometry is not written immediately; the host shows a scope prompt and then applies via propagation.
+     */
+    onPropGeometryEditedFromCanvas?: (args: {
+        propId: number;
+        pageId: number;
+        changes: { width: number; height: number; rotation: number };
+    }) => void;
 
     // ---- AlignmentEvent changes ----
     /**
@@ -270,11 +307,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         } else {
             this._activeGroup = null;
 
-            // If a marcher was selected, reset the rotation
+            // If a marcher (not a prop) was selected, reset the rotation
             if (
                 event.selected &&
                 event.selected.length &&
-                event.selected[0] instanceof CanvasMarcher
+                event.selected[0] instanceof CanvasMarcher &&
+                !CanvasProp.isCanvasProp(event.selected[0])
             ) {
                 event.selected[0].angle = 0;
             }

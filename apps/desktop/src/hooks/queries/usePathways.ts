@@ -9,7 +9,7 @@ import { conToastError } from "@/utilities/utils";
 import { db, schema } from "@/global/database/db";
 import { Path } from "@openmarch/core";
 import { DbConnection } from "@/test/base";
-import { findPageIdsForPathway } from "@/db-functions";
+import { findPageIdsForPathway, withTransactionLock } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 
 const { pathways, marcher_pages } = schema;
@@ -140,82 +140,87 @@ const pathwayMutations = {
         newPathwayArgs: NewPathwayArgs;
         marcherPageIds?: number[];
     }): Promise<MutationResult> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
+        return await withTransactionLock(() =>
+            db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
 
-            const createdPathway = await tx
-                .insert(pathways)
-                .values(newPathwayArgs)
-                .returning()
-                .get();
+                const createdPathway = await tx
+                    .insert(pathways)
+                    .values(newPathwayArgs)
+                    .returning()
+                    .get();
 
-            if (marcherPageIds) {
-                await tx
-                    .update(marcher_pages)
-                    .set({
-                        path_data_id: createdPathway.id,
-                        path_start_position: 0,
-                        path_end_position: 0,
-                    })
-                    .where(inArray(marcher_pages.id, marcherPageIds));
-            }
+                if (marcherPageIds) {
+                    await tx
+                        .update(marcher_pages)
+                        .set({
+                            path_data_id: createdPathway.id,
+                            path_start_position: 0,
+                            path_end_position: 0,
+                        })
+                        .where(inArray(marcher_pages.id, marcherPageIds));
+                }
 
-            const pageIds = await findPageIdsForPathway({
-                tx,
-                pathwayId: createdPathway.id,
-            });
+                const pageIds = await findPageIdsForPathway({
+                    tx,
+                    pathwayId: createdPathway.id,
+                });
 
-            return { pathways: [createdPathway], pageIds };
-        });
+                return { pathways: [createdPathway], pageIds };
+            }),
+        );
     },
 
     updatePathway: async (
         modifiedPathway: ModifiedPathwayArgs,
     ): Promise<MutationResult> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
+        return await withTransactionLock(() =>
+            db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
 
-            const { id, ...updateData } = modifiedPathway;
-            const updatedResult = await tx
-                .update(pathways)
-                .set(updateData)
-                .where(eq(pathways.id, id))
-                .returning()
-                .get();
+                const { id, ...updateData } = modifiedPathway;
+                const updatedResult = await tx
+                    .update(pathways)
+                    .set(updateData)
+                    .where(eq(pathways.id, id))
+                    .returning()
+                    .get();
 
-            const pageIds = await findPageIdsForPathway({
-                tx,
-                pathwayId: updatedResult.id,
-            });
+                const pageIds = await findPageIdsForPathway({
+                    tx,
+                    pathwayId: updatedResult.id,
+                });
 
-            return { pathways: [updatedResult], pageIds };
-        });
+                return { pathways: [updatedResult], pageIds };
+            }),
+        );
     },
 
     deletePathways: async (pathwayIds: number[]): Promise<MutationResult> => {
-        return await db.transaction(async (tx) => {
-            await incrementUndoGroup(tx);
+        return await withTransactionLock(() =>
+            db.transaction(async (tx) => {
+                await incrementUndoGroup(tx);
 
-            const results = await tx
-                .delete(pathways)
-                .where(inArray(pathways.id, pathwayIds))
-                .returning()
-                .all();
+                // Collect affected page IDs BEFORE deletion (path_data_id is set to NULL on delete)
+                const pageIdsSet = new Set<number>();
+                for (const pathwayId of pathwayIds) {
+                    const pageIdsForPathway = await findPageIdsForPathway({
+                        tx,
+                        pathwayId,
+                    });
+                    for (const pageId of pageIdsForPathway)
+                        pageIdsSet.add(pageId);
+                }
 
-            const pageIdsSet = new Set<number>();
+                const results = await tx
+                    .delete(pathways)
+                    .where(inArray(pathways.id, pathwayIds))
+                    .returning()
+                    .all();
 
-            for (const pathwayId of pathwayIds) {
-                const pageIdsForPathway = await findPageIdsForPathway({
-                    tx,
-                    pathwayId,
-                });
-                pageIdsForPathway.forEach((pageId) => {
-                    pageIdsSet.add(pageId);
-                });
-            }
-
-            return { pathways: results, pageIds: Array.from(pageIdsSet) };
-        });
+                return { pathways: results, pageIds: Array.from(pageIdsSet) };
+            }),
+        );
     },
 };
 

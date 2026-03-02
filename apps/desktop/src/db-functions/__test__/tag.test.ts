@@ -1,9 +1,9 @@
 import {
     _calculateMapAllTagAppearanceIdsByPageId,
-    TagAppearanceIdsByPageId,
+    type TagAppearanceIdsByPageId,
+    type TagAppearance,
 } from "../tag";
 import { describe, expect, it } from "vitest";
-import { TagAppearance } from "@/db-functions";
 import * as fc from "fast-check";
 
 describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
@@ -18,7 +18,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                 (_, i) => ({
                     tag_id: i + 1,
                     id: i + 1,
-                    start_page_id: pages[0].id, // only one tag on the first page
+                    start_page_id: pages[0]!.id, // only one tag on the first page
                 }),
             );
 
@@ -55,7 +55,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                 (_, i) => ({
                     tag_id: i + 1,
                     id: i + 1,
-                    start_page_id: pages[startPageIndex].id, // only one tag on the first page
+                    start_page_id: pages[startPageIndex]!.id, // only one tag on the first page
                 }),
             );
 
@@ -65,9 +65,9 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
             );
             for (let i = 0; i < numberOfPages; i++) {
                 if (i < startPageIndex) {
-                    expected.set(pages[i].id, new Set());
+                    expected.set(pages[i]!.id, new Set());
                 } else {
-                    expected.set(pages[i].id, expectedTagAppearanceIds);
+                    expected.set(pages[i]!.id, expectedTagAppearanceIds);
                 }
             }
 
@@ -237,13 +237,16 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             minLength: 1,
                             maxLength: 50,
                         }),
-                        fc.array(
+                        fc.uniqueArray(
                             fc.record({
                                 tag_id: fc.integer({ min: 1, max: 10 }),
                                 id: fc.integer({ min: 1, max: 500 }),
                                 start_page_id: fc.integer({ min: 0, max: 100 }),
                             }),
-                            { maxLength: 100 },
+                            {
+                                maxLength: 100,
+                                comparator: (a, b) => a.id === b.id,
+                            },
                         ),
                         (pageIds, tagAppearances) => {
                             const pages = pageIds.map((id) => ({ id }));
@@ -334,7 +337,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                 if (!appearancesByTag[appearance.tag_id]) {
                                     appearancesByTag[appearance.tag_id] = [];
                                 }
-                                appearancesByTag[appearance.tag_id].push(
+                                appearancesByTag[appearance.tag_id]!.push(
                                     appearance,
                                 );
                             });
@@ -363,7 +366,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                         i++
                                     ) {
                                         const currentAppearance =
-                                            sortedAppearances[i];
+                                            sortedAppearances[i]!;
                                         const nextAppearance =
                                             sortedAppearances[i + 1];
 
@@ -387,7 +390,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                             j++
                                         ) {
                                             const pageAppearances = actual.get(
-                                                pages[j].id,
+                                                pages[j]!.id,
                                             );
                                             expect(
                                                 pageAppearances?.has(
@@ -404,7 +407,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                                 j++
                                             ) {
                                                 const pageAppearances =
-                                                    actual.get(pages[j].id);
+                                                    actual.get(pages[j]!.id);
                                                 expect(
                                                     pageAppearances?.has(
                                                         currentAppearance.id,
@@ -432,8 +435,8 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                             );
 
                             // Generate random start pages for appearances (sorted)
-                            const startPages = fc
-                                .sample(
+                            const startPages = (
+                                fc.sample(
                                     fc.uniqueArray(
                                         fc.integer({
                                             min: 0,
@@ -445,8 +448,8 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                         },
                                     ),
                                     1,
-                                )[0]
-                                .sort((a, b) => a - b);
+                                )[0] ?? []
+                            ).sort((a, b) => a - b);
 
                             const tagAppearances = startPages.map(
                                 (startPage, idx) => ({
@@ -464,7 +467,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
 
                             // Verify that appearances transition correctly
                             for (let i = 0; i < tagAppearances.length; i++) {
-                                const currentAppearance = tagAppearances[i];
+                                const currentAppearance = tagAppearances[i]!;
                                 const nextAppearance = tagAppearances[i + 1];
 
                                 const startIdx =
@@ -578,7 +581,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
 
                                 for (let i = startIdx; i < endIdx; i++) {
                                     const pageAppearances = actual.get(
-                                        pages[i].id,
+                                        pages[i]!.id,
                                     );
                                     expect(
                                         pageAppearances?.has(appearance.id),
@@ -608,17 +611,18 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
 
                             // For each tag, create 1 to maxAppearancesPerTag appearances
                             for (let tagId = 1; tagId <= numTags; tagId++) {
-                                const numAppearances = fc.sample(
-                                    fc.integer({
-                                        min: 1,
-                                        max: maxAppearancesPerTag,
-                                    }),
-                                    1,
-                                )[0];
+                                const numAppearances =
+                                    fc.sample(
+                                        fc.integer({
+                                            min: 1,
+                                            max: maxAppearancesPerTag,
+                                        }),
+                                        1,
+                                    )[0] ?? 1;
 
                                 // Generate unique random start pages for this tag
-                                const startPages = fc
-                                    .sample(
+                                const startPages = (
+                                    fc.sample(
                                         fc.uniqueArray(
                                             fc.integer({
                                                 min: 0,
@@ -636,8 +640,8 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                             },
                                         ),
                                         1,
-                                    )[0]
-                                    .sort((a, b) => a - b);
+                                    )[0] ?? []
+                                ).sort((a, b) => a - b);
 
                                 for (const startPage of startPages) {
                                     tagAppearances.push({
@@ -666,7 +670,7 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                 if (!appearancesByTag[appearance.tag_id]) {
                                     appearancesByTag[appearance.tag_id] = [];
                                 }
-                                appearancesByTag[appearance.tag_id].push(
+                                appearancesByTag[appearance.tag_id]!.push(
                                     appearance,
                                 );
                             });
