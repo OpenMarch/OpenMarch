@@ -1,4 +1,8 @@
-import type { DryRunReport, NormalizedSheet } from "./types";
+import {
+    getNormalizedSheetKeys,
+    type DryRunReport,
+    type NormalizedSheet,
+} from "./types";
 
 export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
     const issues = [] as DryRunReport["issues"];
@@ -112,15 +116,7 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
     const stats = {
         sheets: sheets.length,
         rows: sheets.reduce((a, b) => a + b.rows.length, 0),
-        performers: new Set(
-            sheets.map(
-                (s) =>
-                    s.header.label ||
-                    s.header.symbol ||
-                    s.header.performer ||
-                    "?",
-            ),
-        ).size,
+        performers: new Set(getNormalizedSheetKeys(sheets)).size,
     };
 
     return { issues, stats };

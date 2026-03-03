@@ -23,6 +23,10 @@ import type {
     ParsedSheet,
 } from "@/importers/pdfCoordinates/types";
 import {
+    getNormalizedSheetKeys,
+    keyToDrillPrefixAndOrder,
+} from "@/importers/pdfCoordinates/types";
+import {
     allDatabaseBeatsQueryOptions,
     allDatabasePagesQueryOptions,
 } from "@/hooks/queries";
@@ -211,61 +215,43 @@ export default function ImportCoordinatesButton() {
     }
 
     const uniquePerformers = useMemo(() => {
-        if (!report)
-            return [] as {
-                key: string;
-                label?: string;
-                symbol?: string;
-                performer?: string;
-            }[];
-        const map = new Map<
-            string,
-            { key: string; label?: string; symbol?: string; performer?: string }
-        >();
-        report.normalized.forEach((s) => {
-            const key = (
-                s.header.label ||
-                s.header.symbol ||
-                s.header.performer ||
-                "?"
-            ).toLowerCase();
-            if (!map.has(key))
-                map.set(key, {
-                    key,
-                    label: s.header.label,
-                    symbol: s.header.symbol,
-                    performer: s.header.performer,
-                });
+        if (!report) return [] as { key: string }[];
+        const keys = getNormalizedSheetKeys(report.normalized);
+        const map = new Map<string, { key: string }>();
+        keys.forEach((key) => {
+            if (!map.has(key)) map.set(key, { key });
         });
         return Array.from(map.values());
     }, [report]);
 
     const proposedMarchers = useMemo(() => {
-        const performerKeys = uniquePerformers.map(
-            (p) => p.label || p.symbol || p.performer || "?",
-        );
+        const keys = uniquePerformers.map((p) => p.key);
         const newArgs: (NewMarcherArgs & { originalKey: string })[] = [];
         let generatedIndex = 1;
-        const existingByLabel = new Map<string, number>();
+        const usedDrillKeys = new Set<string>();
         if (marchers) {
             for (const m of marchers) {
                 if (m.drill_number)
-                    existingByLabel.set(m.drill_number.toLowerCase(), m.id);
+                    usedDrillKeys.add(
+                        `${m.drill_prefix}${m.drill_order}`.toLowerCase(),
+                    );
             }
         }
 
-        for (const key of performerKeys) {
-            const label = key || `U${generatedIndex}`;
-            const mKey = label.toLowerCase();
-            if (existingByLabel.has(mKey)) continue;
-            const match = label.match(/^[A-Za-z]+|\d+/g) || [];
-            const prefix =
-                match[0] && /[A-Za-z]/.test(match[0]) ? match[0] : "U";
-            const orderStr = match.length > 1 ? match[1] : `${generatedIndex}`;
-            const order = parseInt(orderStr, 10) || generatedIndex;
+        for (const key of keys) {
+            let { prefix, order } = keyToDrillPrefixAndOrder(
+                key,
+                generatedIndex,
+            );
+            let drillKey = `${prefix}${order}`.toLowerCase();
+            while (usedDrillKeys.has(drillKey)) {
+                order++;
+                drillKey = `${prefix}${order}`.toLowerCase();
+            }
+            usedDrillKeys.add(drillKey);
             newArgs.push({
                 section: "Band",
-                drill_prefix: prefix.toUpperCase(),
+                drill_prefix: prefix,
                 drill_order: order,
                 name: undefined,
                 originalKey: key,
@@ -291,44 +277,30 @@ export default function ImportCoordinatesButton() {
         const pps = fieldProperties.pixelsPerStep as number;
         const cx = fieldProperties.centerFrontPoint.xPixels as number;
         const cy = fieldProperties.centerFrontPoint.yPixels as number;
+        const sheetKeys = getNormalizedSheetKeys(report.normalized);
 
-        // Build a lookup for marcher IDs (simulated or real)
+        // Build a lookup for marcher IDs (simulated or real) by sheet key
         const marcherIdMap = new Map<string, string | number>();
-
-        // Add existing marchers
-        if (marchers) {
-            for (const m of marchers) {
-                if (m.drill_number)
-                    marcherIdMap.set(m.drill_number.toLowerCase(), m.id);
-            }
+        const existingByDrill = new Map(
+            (marchers || [])
+                .filter((m) => m.drill_number)
+                .map((m) => [m.drill_number!.toLowerCase(), m.id]),
+        );
+        for (let i = 0; i < report.normalized.length; i++) {
+            const sk = sheetKeys[i];
+            const { prefix, order } = keyToDrillPrefixAndOrder(sk, 1);
+            const drillKey = `${prefix}${order}`.toLowerCase();
+            const existingId = existingByDrill.get(drillKey);
+            if (existingId !== undefined) marcherIdMap.set(sk, existingId);
         }
-
-        // Add proposed marchers (simulate IDs)
         proposedMarchers.forEach((m, idx) => {
-            const drillNumber = `${m.drill_prefix}${m.drill_order}`;
-            marcherIdMap.set(drillNumber.toLowerCase(), `new-${idx + 1}`);
+            marcherIdMap.set(m.originalKey, `new-${idx + 1}`);
         });
 
-        for (const sheet of report.normalized) {
-            const labelKey = (
-                sheet.header.label ||
-                sheet.header.symbol ||
-                sheet.header.performer ||
-                "?"
-            ).toLowerCase();
-
-            // Try to find by direct match first
-            let marcherId = marcherIdMap.get(labelKey);
-
-            // If not found, try to match by key used in creation
-            if (!marcherId) {
-                const proposed = proposedMarchers.find(
-                    (p) => p.originalKey === labelKey,
-                );
-                if (proposed) {
-                    marcherId = `new-${proposedMarchers.indexOf(proposed) + 1}`;
-                }
-            }
+        for (let i = 0; i < report.normalized.length; i++) {
+            const sheet = report.normalized[i];
+            const labelKey = sheetKeys[i];
+            const marcherId = marcherIdMap.get(labelKey);
 
             if (!marcherId) continue;
 
@@ -620,14 +592,26 @@ export default function ImportCoordinatesButton() {
 
             // 1) Map or create marchers
             console.log("[import-commit] Processing marchers...");
-            const existingByLabel = new Map<string, number>();
+            const existingByDrill = new Map<string, number>();
             for (const m of marchers) {
                 if (m.drill_number)
-                    existingByLabel.set(m.drill_number.toLowerCase(), m.id);
+                    existingByDrill.set(m.drill_number.toLowerCase(), m.id);
             }
             console.log(
-                `[import-commit] Found ${existingByLabel.size} existing marchers`,
+                `[import-commit] Found ${existingByDrill.size} existing marchers`,
             );
+
+            /** Map sheet key (normalized, short) → marcher ID for buildMarcherPageUpdates */
+            const sheetKeys = getNormalizedSheetKeys(report.normalized);
+            const marcherBySheetKey = new Map<string, number>();
+            for (let i = 0; i < report.normalized.length; i++) {
+                const sk = sheetKeys[i];
+                const { prefix, order } = keyToDrillPrefixAndOrder(sk, 1);
+                const drillKey = `${prefix}${order}`.toLowerCase();
+                const existingId = existingByDrill.get(drillKey);
+                if (existingId !== undefined)
+                    marcherBySheetKey.set(sk, existingId);
+            }
 
             if (proposedMarchers.length > 0) {
                 console.log(
@@ -641,29 +625,20 @@ export default function ImportCoordinatesButton() {
                         .map((m) => `${m.drill_prefix}${m.drill_order}`)
                         .join(", "),
                 );
-                for (const m of createdMarchers) {
+                for (let i = 0; i < createdMarchers.length; i++) {
+                    const m = createdMarchers[i];
                     const drillNumber = `${m.drill_prefix}${m.drill_order}`;
-                    existingByLabel.set(drillNumber.toLowerCase(), m.id);
+                    existingByDrill.set(drillNumber.toLowerCase(), m.id);
+                    const originalKey = (proposedMarchers[i] as any)
+                        .originalKey;
+                    if (originalKey) marcherBySheetKey.set(originalKey, m.id);
 
-                    // If this marcher was newly created, set its initial position (x, y) in the `marchers` table
-                    // based on Set 0 / Start from the imported data.
-                    // This is separate from `marcher_pages` (which stores per-page coordinates).
-                    // The `marchers` table stores a default/initial coordinate.
-                    const originalKey = (m as any).originalKey;
-                    const labelKey = originalKey
-                        ? originalKey.toLowerCase()
-                        : drillNumber.toLowerCase();
-
-                    // Find the sheet for this marcher
-                    const sheet = report.normalized.find((s) => {
-                        const sKey = (
-                            s.header.label ||
-                            s.header.symbol ||
-                            s.header.performer ||
-                            "?"
-                        ).toLowerCase();
-                        return sKey === labelKey;
-                    });
+                    // Find the sheet for this marcher by matching normalized key
+                    const sheet = originalKey
+                        ? report.normalized[
+                              sheetKeys.findIndex((k) => k === originalKey)
+                          ]
+                        : null;
 
                     if (sheet) {
                         // Find the start row (Set 0 or first row)
@@ -826,7 +801,8 @@ export default function ImportCoordinatesButton() {
                     }
                 }
             } else {
-                // Fallback: if we didn't create timeline, try to map by name or index
+                // Fallback: when createTimeline is false, map plan items to existing pages by index.
+                // With no measures/beats beyond the seed, we may only have page 0 - map only what we can.
                 const beatsById = new Map(
                     allBeatsData.map((beat) => [beat.id, beat.position]),
                 );
@@ -835,15 +811,11 @@ export default function ImportCoordinatesButton() {
                     const bPos = beatsById.get(b.start_beat) ?? Infinity;
                     return aPos - bPos;
                 });
-                // Map by index (plan[i] -> sortedPages[i]); page-0 already in pageBySetId
-                for (
-                    let i = 0;
-                    i < plan.length && i < sortedPages.length;
-                    i++
-                ) {
+                for (let i = 0; i < plan.length; i++) {
                     const { name: setId } = plan[i];
                     if (pageBySetId.has(setId)) continue;
-                    pageBySetId.set(setId, sortedPages[i].id);
+                    const page = sortedPages[i];
+                    if (page) pageBySetId.set(setId, page.id);
                 }
             }
 
@@ -854,10 +826,11 @@ export default function ImportCoordinatesButton() {
             const { updates, stats } = buildMarcherPageUpdates(
                 report.normalized,
                 pageBySetId,
-                existingByLabel,
+                marcherBySheetKey,
                 pps,
                 cx,
                 cy,
+                sheetKeys,
             );
 
             if (stats.skippedInvalid > 0) {
@@ -996,11 +969,7 @@ export default function ImportCoordinatesButton() {
                                 <div className="max-h-[180px] overflow-auto rounded-md border p-12 text-sm">
                                     <ul className="grid grid-cols-2 gap-x-24 gap-y-8">
                                         {uniquePerformers.map((p, idx) => (
-                                            <li key={idx}>
-                                                {p.label ||
-                                                    p.symbol ||
-                                                    p.performer}
-                                            </li>
+                                            <li key={idx}>{p.key}</li>
                                         ))}
                                     </ul>
                                 </div>

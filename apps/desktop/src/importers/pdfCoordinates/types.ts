@@ -13,9 +13,67 @@ export const PerformerHeaderSchema = z.object({
     label: z.string().min(1).trim().optional(),
     symbol: z.string().trim().optional(),
     performer: z.string().trim().optional(),
+    /** Parsed from PDF when label/symbol/performer are not unique (e.g. "Id: 1") */
+    id: z.string().trim().optional(),
 });
 
 export type PerformerHeader = z.infer<typeof PerformerHeaderSchema>;
+
+/** Unique key for a performer sheet; includes id when present to distinguish duplicates */
+export function getSheetKey(sheet: { header: PerformerHeader }): string {
+    const base = (
+        sheet.header.label ||
+        sheet.header.symbol ||
+        sheet.header.performer ||
+        "?"
+    ).toLowerCase();
+    return sheet.header.id ? `${base}-${sheet.header.id}` : base;
+}
+
+/** Short keys for sheets: when id exists, use sequential indices (1,2,3) per base instead of raw id */
+export function getNormalizedSheetKeys(
+    sheets: { header: PerformerHeader }[],
+): string[] {
+    const keys: string[] = [];
+    const nextIndexPerBase = new Map<string, number>();
+    for (const sheet of sheets) {
+        const base = (
+            sheet.header.label ||
+            sheet.header.symbol ||
+            sheet.header.performer ||
+            "?"
+        ).toLowerCase();
+        if (sheet.header.id) {
+            const next = (nextIndexPerBase.get(base) ?? 0) + 1;
+            nextIndexPerBase.set(base, next);
+            keys.push(`${base}-${next}`);
+        } else {
+            keys.push(base);
+        }
+    }
+    return keys;
+}
+
+/** Derive drill_prefix and drill_order from a sheet key (e.g. "s-1" → S/1, "bd1" → BD/1) */
+export function keyToDrillPrefixAndOrder(
+    key: string,
+    fallbackOrder: number,
+): { prefix: string; order: number } {
+    const idMatch = key.match(/^(.+)-(\d+)$/);
+    if (idMatch) {
+        const [, base, idNum] = idMatch;
+        const letterPart = (base || "").replace(/\d/g, "").toUpperCase();
+        const prefix =
+            letterPart && /[A-Za-z]/.test(letterPart) ? letterPart : "P";
+        return { prefix, order: parseInt(idNum, 10) || fallbackOrder };
+    }
+    const match =
+        key.match(/^([A-Za-z]+)(\d+)$/i) || key.match(/^([A-Za-z]+)/i);
+    const prefix =
+        match?.[1] && /[A-Za-z]/.test(match[1]) ? match[1].toUpperCase() : "P";
+    const order = match?.[2] ? parseInt(match[2], 10) : fallbackOrder;
+    return { prefix, order };
+}
 
 export const ParsedRowSchema = z.object({
     setId: z.string().min(1),

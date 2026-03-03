@@ -37,7 +37,7 @@ const makeHsField = () => ({
         },
         {
             name: "grid back sideline",
-            stepsFromCenterFront: -85,
+            stepsFromCenterFront: -84,
             useAsReference: true,
         },
     ],
@@ -69,7 +69,7 @@ const makeCollegeField = () => ({
         },
         {
             name: "grid back sideline",
-            stepsFromCenterFront: -85,
+            stepsFromCenterFront: -84,
             useAsReference: true,
         },
         {
@@ -235,7 +235,7 @@ describe("parseFrontBack (y-axis)", () => {
         });
 
         it("On Back Sideline", () => {
-            expectOk(parseFrontBack("On Back Sideline", field), -85);
+            expectOk(parseFrontBack("On Back Sideline", field), -84);
         });
     });
 
@@ -325,7 +325,7 @@ describe("parseFrontBack (y-axis)", () => {
         });
 
         it("BSL for back sideline", () => {
-            expectOk(parseFrontBack("On BSL", field), -85);
+            expectOk(parseFrontBack("On BSL", field), -84);
         });
     });
 

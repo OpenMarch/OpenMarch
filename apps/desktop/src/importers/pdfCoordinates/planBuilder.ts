@@ -3,7 +3,7 @@
  * Extracted from ImportCoordinatesButton to enable testing and reuse.
  */
 
-import { START_SET_IDS } from "./types";
+import { getSheetKey, START_SET_IDS } from "./types";
 import type { NormalizedRow, NormalizedSheet } from "./types";
 
 export type ParsedSet = { num: number; subset: string | null };
@@ -149,7 +149,7 @@ export function computeBeatPositions(plan: PlanEntry[]): Map<number, number> {
  *
  * @param sheets - Normalized coordinate sheets
  * @param pageBySetId - Map from set ID string to database page ID
- * @param marcherByLabel - Map from performer label (lowercase) to marcher ID
+ * @param marcherByLabel - Map from sheet key (normalized, short) to marcher ID
  * @param fieldPixelsPerStep - Field pixels per step
  * @param centerX - Field center front X in pixels
  * @param centerY - Field center front Y in pixels
@@ -161,6 +161,7 @@ export function buildMarcherPageUpdates(
     fieldPixelsPerStep: number,
     centerX: number,
     centerY: number,
+    sheetKeys?: string[],
 ): {
     updates: Array<{
         marcher_id: number;
@@ -192,17 +193,13 @@ export function buildMarcherPageUpdates(
         skippedInvalid: 0,
     };
 
-    for (const sheet of sheets) {
-        const label = (
-            sheet.header.label ||
-            sheet.header.symbol ||
-            sheet.header.performer ||
-            "?"
-        ).toLowerCase();
+    for (let i = 0; i < sheets.length; i++) {
+        const sheet = sheets[i];
+        const sheetKey = sheetKeys?.[i] ?? getSheetKey(sheet);
 
         stats.total += sheet.rows.length;
 
-        const marcherId = marcherByLabel.get(label);
+        const marcherId = marcherByLabel.get(sheetKey);
         if (marcherId === undefined) {
             stats.skippedNoMarcher += sheet.rows.length;
             continue;
