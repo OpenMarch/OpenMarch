@@ -15,6 +15,8 @@ export default defineConfig({
         "/alexdumo": "/about/alexdumo",
         "/developers/contributing": "/developers/codebase",
         "/about/submitting-feedback/": "/guides/submitting-feedback/",
+        "/privacy": "/legal/privacy",
+        "/terms": "/legal/terms",
     },
     integrations: [
         react(),
