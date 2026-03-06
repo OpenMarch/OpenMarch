@@ -6,6 +6,7 @@
 import { useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/auth/AuthStore";
+import { isSignInEnabled } from "@/global/auth/constants";
 import type { AuthState } from "../../electron/main/auth/types";
 
 const KEY_BASE = "auth";
@@ -169,6 +170,7 @@ export function useAuth() {
         isLoading: queryLoading,
         user: authState.user,
         error: authState.error,
+        isSignInEnabled,
 
         // Actions
         login,

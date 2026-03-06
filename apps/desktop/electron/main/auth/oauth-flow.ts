@@ -25,8 +25,14 @@ import {
 
 /**
  * Gets the Clerk OAuth configuration.
+ * @throws If Clerk is not configured (CLERK_CONFIG is null).
  */
 function getClerkConfig(): ClerkOAuthConfig {
+    if (!CLERK_CONFIG) {
+        throw new Error(
+            "Clerk OAuth is not configured. Set VITE_CLERK_AUTHORIZATION_DOMAIN and VITE_CLERK_CLIENT_ID to enable sign-in.",
+        );
+    }
     return {
         clientId: CLERK_CONFIG.CLIENT_ID,
         authorizationEndpoint: getClerkAuthorizationEndpoint(),

@@ -5,7 +5,10 @@
  */
 
 import { ipcMain, BrowserWindow } from "electron";
-import { AUTH_IPC_CHANNELS } from "../../../src/global/auth/constants";
+import {
+    AUTH_IPC_CHANNELS,
+    isSignInEnabled,
+} from "../../../src/global/auth/constants";
 import {
     registerProtocolHandler,
     setupProtocolListeners,
@@ -165,6 +168,16 @@ export function initAuthAfterReady(
      */
     ipcMain.handle(AUTH_IPC_CHANNELS.LOGIN, async () => {
         console.log("[Auth] Login requested");
+
+        if (!isSignInEnabled) {
+            return {
+                success: false,
+                error: {
+                    code: "SIGN_IN_DISABLED",
+                    message: "Sign-in is not configured.",
+                },
+            };
+        }
 
         try {
             const pendingFlow = initiateOAuthFlow();

@@ -18,6 +18,7 @@ import {
     DropdownMenuSeparator,
 } from "@radix-ui/react-dropdown-menu";
 import { twMerge } from "tailwind-merge";
+import { isSignInEnabled } from "@/global/auth/constants";
 import { useAuth } from "@/auth/useAuth";
 
 export const SignInButton = ({
@@ -25,6 +26,8 @@ export const SignInButton = ({
     ...buttonProps
 }: Omit<ButtonProps, "children" | "disabled" | "onClick">) => {
     const { login, isLoggingIn } = useAuth();
+
+    if (!isSignInEnabled) return null;
 
     return (
         <Button
@@ -71,8 +74,9 @@ export function AuthButton() {
         );
     }
 
-    // Not authenticated - show sign in button
+    // Not authenticated - show sign in button only when sign-in is configured
     if (!isAuthenticated) {
+        if (!isSignInEnabled) return null;
         return <SignInButton variant="secondary" size="compact" />;
     }
 

@@ -34,26 +34,38 @@ export const AUTH_CALLBACK_PATH = "/auth/callback";
 export const OAUTH_SCOPES = ["openid", "profile", "email"];
 
 /**
- * Clerk OAuth configuration.
- * TODO: Replace these placeholder values with your actual Clerk credentials.
+ * Clerk OAuth configuration from environment.
+ * Sign-in is enabled only when both VITE_CLERK_AUTHORIZATION_DOMAIN and
+ * VITE_CLERK_CLIENT_ID are set; otherwise this is null and sign-in is disabled.
  */
-export const CLERK_CONFIG = {
-    DOMAIN: "trusty-monarch-66.clerk.accounts.dev",
-    // cspell:disable-next-line
-    CLIENT_ID: "0PjXIVfaEcRMEeva",
-} as const;
+const domain = import.meta.env.VITE_CLERK_AUTHORIZATION_DOMAIN;
+const clientId = import.meta.env.VITE_CLERK_CLIENT_ID;
+export const CLERK_CONFIG: { DOMAIN: string; CLIENT_ID: string } | null =
+    typeof domain === "string" &&
+    domain.length > 0 &&
+    typeof clientId === "string" &&
+    clientId.length > 0
+        ? { DOMAIN: domain, CLIENT_ID: clientId }
+        : null;
+
+/** True when both Clerk env vars are set; sign-in is disabled when false. */
+export const isSignInEnabled = CLERK_CONFIG !== null;
 
 /**
  * Gets the Clerk OAuth authorization endpoint URL.
+ * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
  */
 export function getClerkAuthorizationEndpoint(): string {
+    if (!CLERK_CONFIG) return "";
     return `https://${CLERK_CONFIG.DOMAIN}/oauth/authorize`;
 }
 
 /**
  * Gets the Clerk OAuth token endpoint URL.
+ * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
  */
 export function getClerkTokenEndpoint(): string {
+    if (!CLERK_CONFIG) return "";
     return `https://${CLERK_CONFIG.DOMAIN}/oauth/token`;
 }
 
