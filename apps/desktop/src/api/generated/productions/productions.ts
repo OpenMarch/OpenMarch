@@ -17,6 +17,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+    GetApiEditorV1EnsemblesEnsembleIdProductions200,
     GetApiEditorV1ProductionsId200,
     PatchApiEditorV1ProductionsIdBody,
     PostApiEditorV1ProductionsBody,
@@ -26,6 +27,119 @@ import { customInstance } from "../../editor-client";
 import type { ErrorType, BodyType } from "../../editor-client";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
+
+/**
+ * @summary List productions for ensemble
+ */
+export const getApiEditorV1EnsemblesEnsembleIdProductions = (
+    ensembleId: number,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    return customInstance<GetApiEditorV1EnsemblesEnsembleIdProductions200>(
+        {
+            url: `/api/editor/v1/ensembles/${ensembleId}/productions`,
+            method: "GET",
+            signal,
+        },
+        options,
+    );
+};
+
+export const getGetApiEditorV1EnsemblesEnsembleIdProductionsQueryKey = (
+    ensembleId: number,
+) => {
+    return [`/api/editor/v1/ensembles`, ensembleId, `productions`] as const;
+};
+
+export const getGetApiEditorV1EnsemblesEnsembleIdProductionsQueryOptions = <
+    TData = Awaited<
+        ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>
+    >,
+    TError = ErrorType<void>,
+>(
+    ensembleId: number,
+    options?: {
+        query?: UseQueryOptions<
+            Awaited<
+                ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>
+            >,
+            TError,
+            TData
+        >;
+        request?: SecondParameter<typeof customInstance>;
+    },
+) => {
+    const { query: queryOptions, request: requestOptions } = options ?? {};
+
+    const queryKey =
+        queryOptions?.queryKey ??
+        getGetApiEditorV1EnsemblesEnsembleIdProductionsQueryKey(ensembleId);
+
+    const queryFn: QueryFunction<
+        Awaited<ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>>
+    > = ({ signal }) =>
+        getApiEditorV1EnsemblesEnsembleIdProductions(
+            ensembleId,
+            requestOptions,
+            signal,
+        );
+
+    return {
+        queryKey,
+        queryFn,
+        enabled: !!ensembleId,
+        ...queryOptions,
+    } as UseQueryOptions<
+        Awaited<
+            ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>
+        >,
+        TError,
+        TData
+    > & { queryKey: QueryKey };
+};
+
+export type GetApiEditorV1EnsemblesEnsembleIdProductionsQueryResult =
+    NonNullable<
+        Awaited<ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>>
+    >;
+export type GetApiEditorV1EnsemblesEnsembleIdProductionsQueryError =
+    ErrorType<void>;
+
+/**
+ * @summary List productions for ensemble
+ */
+
+export function useGetApiEditorV1EnsemblesEnsembleIdProductions<
+    TData = Awaited<
+        ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>
+    >,
+    TError = ErrorType<void>,
+>(
+    ensembleId: number,
+    options?: {
+        query?: UseQueryOptions<
+            Awaited<
+                ReturnType<typeof getApiEditorV1EnsemblesEnsembleIdProductions>
+            >,
+            TError,
+            TData
+        >;
+        request?: SecondParameter<typeof customInstance>;
+    },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+    const queryOptions =
+        getGetApiEditorV1EnsemblesEnsembleIdProductionsQueryOptions(
+            ensembleId,
+            options,
+        );
+
+    const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+        queryKey: QueryKey;
+    };
+
+    return { ...query, queryKey: queryOptions.queryKey };
+}
 
 /**
  * @summary Create production

@@ -19,7 +19,7 @@ export const getPostApiEditorV1ProductionsProductionIdRevisionsResponseMock = (
         id: faker.number.int({ min: undefined, max: undefined }),
         production_id: faker.number.int({ min: undefined, max: undefined }),
         ensemble_id: faker.number.int({ min: undefined, max: undefined }),
-        pushed_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        pushed_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
         show_data_url: faker.helpers.arrayElement([
             faker.helpers.arrayElement([
                 faker.string.alpha({ length: { min: 10, max: 20 } }),
@@ -28,8 +28,8 @@ export const getPostApiEditorV1ProductionsProductionIdRevisionsResponseMock = (
             undefined,
         ]),
         active: faker.datatype.boolean(),
-        created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
-        updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        created_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
+        updated_at: faker.string.alpha({ length: { min: 10, max: 20 } }),
     },
     ...overrideResponse,
 });

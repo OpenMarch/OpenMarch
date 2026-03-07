@@ -5,8 +5,8 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
-import type { GetApiEditorV1Ensembles200EnsemblesItem } from "./getApiEditorV1Ensembles200EnsemblesItem";
+import type { Ensemble } from "./ensemble";
 
 export type GetApiEditorV1Ensembles200 = {
-    ensembles?: GetApiEditorV1Ensembles200EnsemblesItem[];
+    ensembles?: Ensemble[];
 };

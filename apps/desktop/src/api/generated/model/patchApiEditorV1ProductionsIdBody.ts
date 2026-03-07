@@ -9,4 +9,5 @@
 export type PatchApiEditorV1ProductionsIdBody = {
     name?: string;
     position?: number;
+    performer_labels?: string[];
 };

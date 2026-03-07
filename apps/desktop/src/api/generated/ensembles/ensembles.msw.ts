@@ -22,7 +22,38 @@ export const getGetApiEditorV1EnsemblesResponseMock = (
         Array.from(
             { length: faker.number.int({ min: 1, max: 10 }) },
             (_, i) => i + 1,
-        ).map(() => ({})),
+        ).map(() => ({
+            id: faker.number.int({ min: undefined, max: undefined }),
+            name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+            productions_count: faker.number.int({
+                min: undefined,
+                max: undefined,
+            }),
+            productions: Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+            ).map(() => ({
+                id: faker.number.int({ min: undefined, max: undefined }),
+                name: faker.string.alpha({ length: { min: 10, max: 20 } }),
+                position: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                        faker.number.int({ min: undefined, max: undefined }),
+                        null,
+                    ]),
+                    undefined,
+                ]),
+                created_at: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + "Z",
+                    undefined,
+                ]),
+                updated_at: faker.helpers.arrayElement([
+                    faker.date.past().toISOString().slice(0, 19) + "Z",
+                    undefined,
+                ]),
+            })),
+            created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+            updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        })),
         undefined,
     ]),
     ...overrideResponse,

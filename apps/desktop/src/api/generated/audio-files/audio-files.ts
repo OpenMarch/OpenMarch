@@ -19,7 +19,6 @@ import type {
 import type {
     GetApiEditorV1ProductionsProductionIdAudioFiles200,
     PatchApiEditorV1ProductionsProductionIdAudioFilesIdBody,
-    PostApiEditorV1ProductionsProductionIdAudioFiles201,
     PostApiEditorV1ProductionsProductionIdAudioFilesBody,
 } from ".././model";
 
@@ -28,166 +27,6 @@ import type { ErrorType, BodyType } from "../../editor-client";
 
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
-/**
- * @summary Upload audio file
- */
-export const postApiEditorV1ProductionsProductionIdAudioFiles = (
-    productionId: number,
-    postApiEditorV1ProductionsProductionIdAudioFilesBody: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>,
-    options?: SecondParameter<typeof customInstance>,
-    signal?: AbortSignal,
-) => {
-    const formData = new FormData();
-    formData.append(
-        `file`,
-        postApiEditorV1ProductionsProductionIdAudioFilesBody.file,
-    );
-    if (
-        postApiEditorV1ProductionsProductionIdAudioFilesBody.nickname !==
-        undefined
-    ) {
-        formData.append(
-            `nickname`,
-            postApiEditorV1ProductionsProductionIdAudioFilesBody.nickname,
-        );
-    }
-    if (
-        postApiEditorV1ProductionsProductionIdAudioFilesBody.set_as_default !==
-        undefined
-    ) {
-        formData.append(
-            `set_as_default`,
-            postApiEditorV1ProductionsProductionIdAudioFilesBody.set_as_default.toString(),
-        );
-    }
-    formData.append(
-        `duration_seconds`,
-        postApiEditorV1ProductionsProductionIdAudioFilesBody.duration_seconds.toString(),
-    );
-    formData.append(
-        `size_megabytes`,
-        postApiEditorV1ProductionsProductionIdAudioFilesBody.size_megabytes.toString(),
-    );
-
-    return customInstance<PostApiEditorV1ProductionsProductionIdAudioFiles201>(
-        {
-            url: `/api/editor/v1/productions/${productionId}/audio_files`,
-            method: "POST",
-            data: formData,
-            signal,
-        },
-        options,
-    );
-};
-
-export const getPostApiEditorV1ProductionsProductionIdAudioFilesMutationOptions =
-    <TError = ErrorType<void>, TContext = unknown>(options?: {
-        mutation?: UseMutationOptions<
-            Awaited<
-                ReturnType<
-                    typeof postApiEditorV1ProductionsProductionIdAudioFiles
-                >
-            >,
-            TError,
-            {
-                productionId: number;
-                data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-            },
-            TContext
-        >;
-        request?: SecondParameter<typeof customInstance>;
-    }): UseMutationOptions<
-        Awaited<
-            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
-        >,
-        TError,
-        {
-            productionId: number;
-            data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-        },
-        TContext
-    > => {
-        const mutationKey = [
-            "postApiEditorV1ProductionsProductionIdAudioFiles",
-        ];
-        const { mutation: mutationOptions, request: requestOptions } = options
-            ? options.mutation &&
-              "mutationKey" in options.mutation &&
-              options.mutation.mutationKey
-                ? options
-                : { ...options, mutation: { ...options.mutation, mutationKey } }
-            : { mutation: { mutationKey }, request: undefined };
-
-        const mutationFn: MutationFunction<
-            Awaited<
-                ReturnType<
-                    typeof postApiEditorV1ProductionsProductionIdAudioFiles
-                >
-            >,
-            {
-                productionId: number;
-                data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-            }
-        > = (props) => {
-            const { productionId, data } = props ?? {};
-
-            return postApiEditorV1ProductionsProductionIdAudioFiles(
-                productionId,
-                data,
-                requestOptions,
-            );
-        };
-
-        return { mutationFn, ...mutationOptions };
-    };
-
-export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationResult =
-    NonNullable<
-        Awaited<
-            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
-        >
-    >;
-export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationBody =
-    BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationError =
-    ErrorType<void>;
-
-/**
- * @summary Upload audio file
- */
-export const usePostApiEditorV1ProductionsProductionIdAudioFiles = <
-    TError = ErrorType<void>,
-    TContext = unknown,
->(options?: {
-    mutation?: UseMutationOptions<
-        Awaited<
-            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
-        >,
-        TError,
-        {
-            productionId: number;
-            data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-        },
-        TContext
-    >;
-    request?: SecondParameter<typeof customInstance>;
-}): UseMutationResult<
-    Awaited<
-        ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
-    >,
-    TError,
-    {
-        productionId: number;
-        data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
-    },
-    TContext
-> => {
-    return useMutation(
-        getPostApiEditorV1ProductionsProductionIdAudioFilesMutationOptions(
-            options,
-        ),
-    );
-};
 /**
  * @summary List audio files
  */
@@ -311,6 +150,166 @@ export function useGetApiEditorV1ProductionsProductionIdAudioFiles<
     return { ...query, queryKey: queryOptions.queryKey };
 }
 
+/**
+ * @summary Add audio file
+ */
+export const postApiEditorV1ProductionsProductionIdAudioFiles = (
+    productionId: number,
+    postApiEditorV1ProductionsProductionIdAudioFilesBody: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    const formData = new FormData();
+    formData.append(
+        `file`,
+        postApiEditorV1ProductionsProductionIdAudioFilesBody.file,
+    );
+    if (
+        postApiEditorV1ProductionsProductionIdAudioFilesBody.nickname !==
+        undefined
+    ) {
+        formData.append(
+            `nickname`,
+            postApiEditorV1ProductionsProductionIdAudioFilesBody.nickname,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdAudioFilesBody.set_as_default !==
+        undefined
+    ) {
+        formData.append(
+            `set_as_default`,
+            postApiEditorV1ProductionsProductionIdAudioFilesBody.set_as_default.toString(),
+        );
+    }
+    formData.append(
+        `duration_seconds`,
+        postApiEditorV1ProductionsProductionIdAudioFilesBody.duration_seconds.toString(),
+    );
+    formData.append(
+        `size_megabytes`,
+        postApiEditorV1ProductionsProductionIdAudioFilesBody.size_megabytes.toString(),
+    );
+
+    return customInstance<void>(
+        {
+            url: `/api/editor/v1/productions/${productionId}/audio_files`,
+            method: "POST",
+            data: formData,
+            signal,
+        },
+        options,
+    );
+};
+
+export const getPostApiEditorV1ProductionsProductionIdAudioFilesMutationOptions =
+    <TError = ErrorType<void>, TContext = unknown>(options?: {
+        mutation?: UseMutationOptions<
+            Awaited<
+                ReturnType<
+                    typeof postApiEditorV1ProductionsProductionIdAudioFiles
+                >
+            >,
+            TError,
+            {
+                productionId: number;
+                data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+            },
+            TContext
+        >;
+        request?: SecondParameter<typeof customInstance>;
+    }): UseMutationOptions<
+        Awaited<
+            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
+        >,
+        TError,
+        {
+            productionId: number;
+            data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+        },
+        TContext
+    > => {
+        const mutationKey = [
+            "postApiEditorV1ProductionsProductionIdAudioFiles",
+        ];
+        const { mutation: mutationOptions, request: requestOptions } = options
+            ? options.mutation &&
+              "mutationKey" in options.mutation &&
+              options.mutation.mutationKey
+                ? options
+                : { ...options, mutation: { ...options.mutation, mutationKey } }
+            : { mutation: { mutationKey }, request: undefined };
+
+        const mutationFn: MutationFunction<
+            Awaited<
+                ReturnType<
+                    typeof postApiEditorV1ProductionsProductionIdAudioFiles
+                >
+            >,
+            {
+                productionId: number;
+                data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+            }
+        > = (props) => {
+            const { productionId, data } = props ?? {};
+
+            return postApiEditorV1ProductionsProductionIdAudioFiles(
+                productionId,
+                data,
+                requestOptions,
+            );
+        };
+
+        return { mutationFn, ...mutationOptions };
+    };
+
+export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationResult =
+    NonNullable<
+        Awaited<
+            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
+        >
+    >;
+export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationBody =
+    BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+export type PostApiEditorV1ProductionsProductionIdAudioFilesMutationError =
+    ErrorType<void>;
+
+/**
+ * @summary Add audio file
+ */
+export const usePostApiEditorV1ProductionsProductionIdAudioFiles = <
+    TError = ErrorType<void>,
+    TContext = unknown,
+>(options?: {
+    mutation?: UseMutationOptions<
+        Awaited<
+            ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
+        >,
+        TError,
+        {
+            productionId: number;
+            data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+        },
+        TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+}): UseMutationResult<
+    Awaited<
+        ReturnType<typeof postApiEditorV1ProductionsProductionIdAudioFiles>
+    >,
+    TError,
+    {
+        productionId: number;
+        data: BodyType<PostApiEditorV1ProductionsProductionIdAudioFilesBody>;
+    },
+    TContext
+> => {
+    return useMutation(
+        getPostApiEditorV1ProductionsProductionIdAudioFilesMutationOptions(
+            options,
+        ),
+    );
+};
 /**
  * @summary Update audio file
  */

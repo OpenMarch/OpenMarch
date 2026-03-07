@@ -10,67 +10,7 @@ import { faker } from "@faker-js/faker";
 import { HttpResponse, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
-import type {
-    GetApiEditorV1ProductionsProductionIdAudioFiles200,
-    PostApiEditorV1ProductionsProductionIdAudioFiles201,
-} from ".././model";
-
-export const getPostApiEditorV1ProductionsProductionIdAudioFilesResponseMock = (
-    overrideResponse: Partial<PostApiEditorV1ProductionsProductionIdAudioFiles201> = {},
-): PostApiEditorV1ProductionsProductionIdAudioFiles201 => ({
-    audio_file: {
-        id: faker.helpers.arrayElement([
-            faker.number.int({ min: undefined, max: undefined }),
-            undefined,
-        ]),
-        name: faker.helpers.arrayElement([
-            faker.string.alpha({ length: { min: 10, max: 20 } }),
-            undefined,
-        ]),
-        url: faker.helpers.arrayElement([
-            faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                null,
-            ]),
-            undefined,
-        ]),
-        checksum: faker.helpers.arrayElement([
-            faker.helpers.arrayElement([
-                faker.string.alpha({ length: { min: 10, max: 20 } }),
-                null,
-            ]),
-            undefined,
-        ]),
-        duration_seconds: faker.helpers.arrayElement([
-            faker.helpers.arrayElement([
-                faker.number.float({
-                    min: undefined,
-                    max: undefined,
-                    fractionDigits: 2,
-                }),
-                null,
-            ]),
-            undefined,
-        ]),
-        size_megabytes: faker.helpers.arrayElement([
-            faker.helpers.arrayElement([
-                faker.number.float({
-                    min: undefined,
-                    max: undefined,
-                    fractionDigits: 2,
-                }),
-                null,
-            ]),
-            undefined,
-        ]),
-        created_at: faker.helpers.arrayElement([
-            faker.date.past().toISOString().slice(0, 19) + "Z",
-            undefined,
-        ]),
-    },
-    production: {},
-    ...overrideResponse,
-});
+import type { GetApiEditorV1ProductionsProductionIdAudioFiles200 } from ".././model";
 
 export const getGetApiEditorV1ProductionsProductionIdAudioFilesResponseMock = (
     overrideResponse: Partial<GetApiEditorV1ProductionsProductionIdAudioFiles200> = {},
@@ -131,37 +71,6 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesResponseMock = (
     ...overrideResponse,
 });
 
-export const getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
-    overrideResponse?:
-        | PostApiEditorV1ProductionsProductionIdAudioFiles201
-        | ((
-              info: Parameters<Parameters<typeof http.post>[1]>[0],
-          ) =>
-              | Promise<PostApiEditorV1ProductionsProductionIdAudioFiles201>
-              | PostApiEditorV1ProductionsProductionIdAudioFiles201),
-    options?: RequestHandlerOptions,
-) => {
-    return http.post(
-        "*/api/editor/v1/productions/:productionId/audio_files",
-        async (info) => {
-            return new HttpResponse(
-                JSON.stringify(
-                    overrideResponse !== undefined
-                        ? typeof overrideResponse === "function"
-                            ? await overrideResponse(info)
-                            : overrideResponse
-                        : getPostApiEditorV1ProductionsProductionIdAudioFilesResponseMock(),
-                ),
-                {
-                    status: 201,
-                    headers: { "Content-Type": "application/json" },
-                },
-            );
-        },
-        options,
-    );
-};
-
 export const getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
     overrideResponse?:
         | GetApiEditorV1ProductionsProductionIdAudioFiles200
@@ -188,6 +97,26 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
                     headers: { "Content-Type": "application/json" },
                 },
             );
+        },
+        options,
+    );
+};
+
+export const getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
+    overrideResponse?:
+        | void
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0],
+          ) => Promise<void> | void),
+    options?: RequestHandlerOptions,
+) => {
+    return http.post(
+        "*/api/editor/v1/productions/:productionId/audio_files",
+        async (info) => {
+            if (typeof overrideResponse === "function") {
+                await overrideResponse(info);
+            }
+            return new HttpResponse(null, { status: 201 });
         },
         options,
     );
@@ -235,8 +164,8 @@ export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler 
         );
     };
 export const getAudioFilesMock = () => [
-    getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler(),
     getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler(),
+    getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler(),
     getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler(),
     getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler(),
 ];
