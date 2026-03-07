@@ -6,7 +6,11 @@
  * OpenAPI spec version: v1
  */
 
-export type PatchApiEditorV1ProductionsIdBody = {
+export type GetApiEditorV1EnsemblesEnsembleIdProductions200ProductionsItem = {
+    id?: number;
     name?: string;
-    position?: number;
+    /** @nullable */
+    position?: number | null;
+    created_at?: string;
+    updated_at?: string;
 };

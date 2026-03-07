@@ -6,7 +6,6 @@
  * OpenAPI spec version: v1
  */
 
-export type PatchApiEditorV1ProductionsIdBody = {
-    name?: string;
-    position?: number;
+export type PostApiEditorV1ProductionsProductionIdAudioFiles201Production = {
+    [key: string]: unknown;
 };

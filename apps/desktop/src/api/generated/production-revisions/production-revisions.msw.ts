@@ -5,24 +5,61 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
+import { faker } from "@faker-js/faker";
+
 import { HttpResponse, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
+import type { PostApiEditorV1ProductionsProductionIdRevisions201 } from ".././model";
+
+export const getPostApiEditorV1ProductionsProductionIdRevisionsResponseMock = (
+    overrideResponse: Partial<PostApiEditorV1ProductionsProductionIdRevisions201> = {},
+): PostApiEditorV1ProductionsProductionIdRevisions201 => ({
+    revision: {
+        id: faker.number.int({ min: undefined, max: undefined }),
+        production_id: faker.number.int({ min: undefined, max: undefined }),
+        ensemble_id: faker.number.int({ min: undefined, max: undefined }),
+        pushed_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        show_data_url: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        active: faker.datatype.boolean(),
+        created_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+        updated_at: faker.date.past().toISOString().slice(0, 19) + "Z",
+    },
+    ...overrideResponse,
+});
+
 export const getPostApiEditorV1ProductionsProductionIdRevisionsMockHandler = (
     overrideResponse?:
-        | void
+        | PostApiEditorV1ProductionsProductionIdRevisions201
         | ((
               info: Parameters<Parameters<typeof http.post>[1]>[0],
-          ) => Promise<void> | void),
+          ) =>
+              | Promise<PostApiEditorV1ProductionsProductionIdRevisions201>
+              | PostApiEditorV1ProductionsProductionIdRevisions201),
     options?: RequestHandlerOptions,
 ) => {
     return http.post(
         "*/api/editor/v1/productions/:productionId/revisions",
         async (info) => {
-            if (typeof overrideResponse === "function") {
-                await overrideResponse(info);
-            }
-            return new HttpResponse(null, { status: 201 });
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getPostApiEditorV1ProductionsProductionIdRevisionsResponseMock(),
+                ),
+                {
+                    status: 201,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         },
         options,
     );

@@ -6,8 +6,11 @@ import {
 } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTolgee } from "@tolgee/react";
-import { useAccessToken } from "@/auth/useAuth";
-import { allEnsemblesQueryOptions } from "./queries/useEnsembles";
+import {
+    useGetApiEditorV1Ensembles,
+    getGetApiEditorV1EnsemblesQueryKey,
+} from "@/api/generated/ensembles/ensembles";
+import type { Ensemble, ProductionPreview } from "@/api/generated/model";
 import {
     AlertDialog,
     AlertDialogContent,
@@ -17,14 +20,12 @@ import {
     AlertDialogAction,
     Button,
 } from "@openmarch/ui";
-import { ProductionPreview } from "./queries/useProductions";
 
 /**
  * Component that displays a list of ensembles and provides a form to create new ones.
  */
 export default function EnsembleList() {
     const queryClient = useQueryClient();
-    const { getAccessToken } = useAccessToken();
     // Mutation to update workspace settings
     const updateWorkspaceSettings = useMutation(
         updateWorkspaceSettingsMutationOptions(queryClient),
@@ -33,7 +34,12 @@ export default function EnsembleList() {
         data: ensembles,
         isLoading,
         error,
-    } = useQuery(allEnsemblesQueryOptions(getAccessToken));
+    } = useGetApiEditorV1Ensembles<Ensemble[]>({
+        query: {
+            queryKey: getGetApiEditorV1EnsemblesQueryKey(),
+            select: (data) => data.ensembles ?? [],
+        },
+    });
     const { t } = useTolgee();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [selectedProduction, setSelectedProduction] =
@@ -125,21 +131,14 @@ export default function EnsembleList() {
                                     })}
                                 </p>
                             </div>
-                            <div className="w-[25%] min-w-0">
+                            <div className="w-[35%] min-w-0">
                                 <p className="text-sub text-text/90 font-mono">
                                     {t("ensembles.createdAtHeader", {
                                         defaultValue: "Created At",
                                     })}
                                 </p>
                             </div>
-                            <div className="w-[22.5%] min-w-0">
-                                <p className="text-sub text-text/90 font-mono">
-                                    {t("ensembles.performersHeader", {
-                                        defaultValue: "Performers",
-                                    })}
-                                </p>
-                            </div>
-                            <div className="w-[22.5%] min-w-0">
+                            <div className="w-[35%] min-w-0">
                                 <p className="text-sub text-text/90 font-mono">
                                     {t("ensembles.productionsHeader", {
                                         defaultValue: "Productions",
@@ -167,19 +166,14 @@ export default function EnsembleList() {
                                                 {ensemble.name}
                                             </p>
                                         </div>
-                                        <div className="w-[25%] min-w-0">
+                                        <div className="w-[35%] min-w-0">
                                             <p className="text-body text-text/80 min-w-0 break-words">
                                                 {formatDate(
                                                     ensemble.created_at,
                                                 )}
                                             </p>
                                         </div>
-                                        <div className="w-[22.5%] min-w-0">
-                                            <p className="text-body text-text/80 min-w-0">
-                                                {ensemble.performers_count}
-                                            </p>
-                                        </div>
-                                        <div className="w-[22.5%] min-w-0">
+                                        <div className="w-[35%] min-w-0">
                                             <p className="text-body text-text/80 min-w-0">
                                                 {ensemble.productions_count}
                                             </p>

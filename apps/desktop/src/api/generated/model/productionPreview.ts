@@ -6,7 +6,11 @@
  * OpenAPI spec version: v1
  */
 
-export type PatchApiEditorV1ProductionsIdBody = {
-    name?: string;
-    position?: number;
-};
+export interface ProductionPreview {
+    id: number;
+    name: string;
+    /** @nullable */
+    position?: number | null;
+    created_at?: string;
+    updated_at?: string;
+}

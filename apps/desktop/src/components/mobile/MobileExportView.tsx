@@ -10,9 +10,8 @@ import {
     Production,
     RevisionPreview,
     uploadRevisionMutationOptions,
-    productionKeys,
-    AudioFilesIndexResponse,
 } from "./queries/useProductions";
+import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { twMerge } from "tailwind-merge";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
@@ -186,10 +185,11 @@ export const SubmitRevisionForm = ({
                         productionId,
                     );
                 if (cancelled) return;
-                const response = data as unknown as AudioFilesIndexResponse;
                 const result = await prepareAudioSyncResult(
                     fullFile,
-                    response.audio_files ?? [],
+                    (data.audio_files ?? []) as Parameters<
+                        typeof prepareAudioSyncResult
+                    >[1],
                     AudioFile.computeChecksum,
                 );
                 if (cancelled) return;
@@ -268,7 +268,7 @@ export const SubmitRevisionForm = ({
                 );
             }
             void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
+                queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
             });
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
@@ -295,7 +295,7 @@ export const SubmitRevisionForm = ({
                 formData,
             );
             void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
+                queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
             });
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
