@@ -17,7 +17,7 @@ const ensureEndingSlash = (url: string) =>
 
 export const OPENMARCH_API_ENDPOINT =
     ensureEndingSlash(
-        import.meta.env.VITE_API_URL ?? "https://dev.app.openmarch.com/",
+        import.meta.env.VITE_API_URL ?? "https://app.dev.openmarch.com/",
     ) + "api/editor/";
 
 export default Constants;
