@@ -666,7 +666,6 @@ export default class CanvasMarcher
             left: absoluteCoords.x,
             top: absoluteCoords.y - CanvasMarcher.dotRadius * 2.2,
         });
-        this.textLabel.setCoords();
     }
 
     /**
@@ -758,7 +757,6 @@ export default class CanvasMarcher
         this.top = newCanvasCoords.y;
 
         this.updateTextLabelPosition();
-        this.setCoords();
     }
 
     /**

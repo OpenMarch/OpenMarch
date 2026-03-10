@@ -1421,14 +1421,24 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const gridLines = this.uiSettings?.gridLines ?? true;
         const halfLines = this.uiSettings?.halfLines ?? true;
         if (this.staticGridRef) this.remove(this.staticGridRef);
-        this.staticGridRef = this.createFieldGrid({
+
+        const dpr = 4;
+
+        const fieldURL = this.createFieldGrid({
             gridLines,
             halfLines,
+        }).toDataURL({
+            format: "svg",
+            multiplier: dpr,
         });
-        this.staticGridRef.objectCaching = false;
 
-        this.add(this.staticGridRef);
-        this.sendToBack(this.staticGridRef);
+        fabric.Image.fromURL(fieldURL, (img) => {
+            this.setBackgroundImage(img, () => {}, {
+                scaleX: 1 / dpr,
+                scaleY: 1 / dpr,
+            });
+        });
+
         this.requestRenderAll();
     };
 
