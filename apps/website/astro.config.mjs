@@ -68,7 +68,7 @@ export default defineConfig({
         mdx(),
         sitemap(),
         yeskunallumami({
-            id: "a024cff5-abcc-45a4-ab74-cf3c8ad58f77",
+            id: "ca4e77b2-a0e0-4b5a-8ac9-1e629dc8fe42",
             endpointUrl: "https://umami.openmarch.com",
         }),
     ],
