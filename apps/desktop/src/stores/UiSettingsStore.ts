@@ -44,6 +44,12 @@ export interface UiSettings {
         /** In steps, the offset from the center-front point to round to on the Y-axis */
         referencePointY?: number;
     };
+    /** Whether to show prop names on the canvas (default for props without an override) */
+    showPropNames: boolean;
+    /** Per-prop overrides for name visibility. Key is prop id (string), value is visibility. */
+    propNameOverrides: Record<string, boolean>;
+    /** Per-prop hidden state. Key is prop id (string), true = hidden on canvas. */
+    hiddenPropIds: Record<string, boolean>;
     /** Whether to enable Tolgee In-Context Translating */
     tolgeeDevTools?: boolean;
     /** Tolgee API Key for In-Context Translating */
@@ -76,6 +82,9 @@ export const defaultSettings: UiSettings = {
         nearestYSteps: 0,
         referencePointY: undefined,
     },
+    showPropNames: false,
+    propNameOverrides: {},
+    hiddenPropIds: {},
     tolgeeDevTools: false,
 };
 

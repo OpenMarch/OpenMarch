@@ -22,6 +22,8 @@ import {
     updateUtilityInTransaction,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import { buildPropPageGeometriesFromPrevious } from "@/db-functions/prop";
+import { DEFAULT_PROP_WIDTH, DEFAULT_PROP_HEIGHT } from "@/global/classes/Prop";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
@@ -200,55 +202,95 @@ const _createMarcherPages = async ({
     tx: DbTransaction;
     sortedNewPages: RealDatabasePage[];
 }) => {
-    // Create the marcher pages
     const allMarchers = await tx.query.marchers.findMany();
-    if (allMarchers.length > 0) {
-        for (const page of sortedNewPages) {
-            const newMarcherPages: ModifiedMarcherPageArgs[] = [];
-            const previousPage = await getAdjacentPage({
-                tx,
-                pageId: page.id,
-                direction: "previous",
-            });
-            if (previousPage) {
-                const previousPageMarcherPages =
-                    await tx.query.marcher_pages.findMany({
-                        where: eq(
-                            schema.marcher_pages.page_id,
-                            previousPage.id,
-                        ),
-                    });
+    if (allMarchers.length === 0) return;
 
-                for (const marcherPage of previousPageMarcherPages)
-                    newMarcherPages.push({
-                        marcher_id: marcherPage.marcher_id,
-                        page_id: page.id,
-                        x: marcherPage.x,
-                        y: marcherPage.y,
-                        notes: marcherPage.notes,
-                        path_data_id: marcherPage.path_data_id,
-                        path_start_position: marcherPage.path_start_position,
-                        path_end_position: marcherPage.path_end_position,
-                    });
-            } else {
-                for (const marcher of allMarchers) {
-                    newMarcherPages.push({
-                        marcher_id: marcher.id,
-                        page_id: page.id,
-                        x: 100,
-                        y: 100,
-                    });
-                }
-            }
+    const propMarchers = allMarchers.filter((m) => m.type === "prop");
+    const propMarcherIds = new Set(propMarchers.map((m) => m.id));
 
-            if (newMarcherPages.length > 0) {
-                // Create the marcher pages
-                await tx
-                    .insert(schema.marcher_pages)
-                    .values(newMarcherPages)
-                    .returning();
+    for (const page of sortedNewPages) {
+        const newMarcherPages: ModifiedMarcherPageArgs[] = [];
+        const previousPage = await getAdjacentPage({
+            tx,
+            pageId: page.id,
+            direction: "previous",
+        });
+
+        if (previousPage) {
+            const previousPageMarcherPages =
+                await tx.query.marcher_pages.findMany({
+                    where: eq(schema.marcher_pages.page_id, previousPage.id),
+                });
+
+            for (const marcherPage of previousPageMarcherPages)
+                newMarcherPages.push({
+                    marcher_id: marcherPage.marcher_id,
+                    page_id: page.id,
+                    x: marcherPage.x,
+                    y: marcherPage.y,
+                    notes: marcherPage.notes,
+                    path_data_id: marcherPage.path_data_id,
+                    path_start_position: marcherPage.path_start_position,
+                    path_end_position: marcherPage.path_end_position,
+                });
+        } else {
+            for (const marcher of allMarchers) {
+                newMarcherPages.push({
+                    marcher_id: marcher.id,
+                    page_id: page.id,
+                    x: 100,
+                    y: 100,
+                });
             }
         }
+
+        if (newMarcherPages.length === 0) continue;
+
+        const createdMarcherPages = await tx
+            .insert(schema.marcher_pages)
+            .values(newMarcherPages)
+            .returning();
+
+        // Create prop_page_geometry for prop-type marchers (copy from previous or defaults)
+        const propMarcherPages = createdMarcherPages.filter((mp) =>
+            propMarcherIds.has(mp.marcher_id),
+        );
+        if (propMarcherPages.length === 0) continue;
+
+        let prevGeomByMarcher = new Map<
+            number,
+            typeof schema.prop_page_geometry.$inferSelect
+        >();
+        if (previousPage) {
+            const prevMarcherPages = await tx.query.marcher_pages.findMany({
+                where: and(
+                    eq(schema.marcher_pages.page_id, previousPage.id),
+                    inArray(schema.marcher_pages.marcher_id, [
+                        ...propMarcherIds,
+                    ]),
+                ),
+            });
+            const prevMpIds = prevMarcherPages.map((mp) => mp.id);
+            const prevGeometries =
+                prevMpIds.length > 0
+                    ? await tx.query.prop_page_geometry.findMany({
+                          where: (table, { inArray: inArr }) =>
+                              inArr(table.marcher_page_id, prevMpIds),
+                      })
+                    : [];
+            for (const pg of prevGeometries) {
+                const prevMp = prevMarcherPages.find(
+                    (mp) => mp.id === pg.marcher_page_id,
+                );
+                if (prevMp) prevGeomByMarcher.set(prevMp.marcher_id, pg);
+            }
+        }
+
+        const newGeometries = buildPropPageGeometriesFromPrevious({
+            previousGeometryByMarcherId: prevGeomByMarcher,
+            newPropMarcherPages: propMarcherPages,
+        });
+        await tx.insert(schema.prop_page_geometry).values(newGeometries);
     }
 };
 

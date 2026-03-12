@@ -1,0 +1,164 @@
+---
+description: When working with tags, appearances, section appearances, marcher appearances, visual styling, or tag management
+alwaysApply: false
+---
+
+# Tags & Visual Appearances Reference
+
+## Overview
+
+The appearance system controls how marchers look on the canvas (color, shape, visibility, label). Appearances are resolved in layers: section defaults -> tag overrides -> per-marcher-page overrides. Tags are user-defined groups that can apply appearance overrides to their members on specific pages.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| **Database** | |
+| `src/db-functions/tag.ts` | Tag CRUD, marcher-tag assignments, tag appearances |
+| `src/db-functions/sectionAppearance.ts` | Section appearance CRUD |
+| **Query Hooks** | |
+| `src/hooks/queries/useMarcherAppearances.ts` | Resolved appearance per marcher |
+| `src/hooks/queries/useSectionAppearances.ts` | Section appearance hooks |
+| `src/hooks/queries/tags/queries.ts` | Tag query hooks |
+| `src/hooks/queries/tags/mutations.ts` | Tag mutation hooks |
+| **Components** | |
+| `src/components/marcher/appearance/AppearanceEditor.tsx` | Main appearance editor |
+| `src/components/marcher/appearance/AppearanceModal.tsx` | Sidebar modal |
+| `src/components/marcher/appearance/SectionAppearanceList.tsx` | Section defaults list |
+| `src/components/marcher/appearance/TagAppearanceList.tsx` | Tag overrides list |
+| `src/components/tags/TagsModel.tsx` | Tag management modal |
+| `src/entity-components/appearance.ts` | Appearance type definitions |
+
+## Data Model
+
+### Section Appearances
+```typescript
+{
+    id: number;
+    section: string;        // Section name (e.g., "Trumpet")
+    // Appearance fields:
+    fill_color: string | null;
+    outline_color: string | null;
+    shape_type: string | null;
+    visible: boolean;
+    label_visible: boolean;
+    equipment_name: string | null;
+    equipment_state: string | null;
+}
+```
+
+### Tags
+```typescript
+{
+    id: number;
+    name: string;
+    color: string | null;   // Tag color for UI display
+    notes: string | null;
+}
+```
+
+### Marcher Tags (junction)
+```typescript
+{
+    id: number;
+    marcher_id: number;     // FK to marchers
+    tag_id: number;         // FK to tags
+}
+```
+
+### Tag Appearances (per page)
+```typescript
+{
+    id: number;
+    tag_id: number;         // FK to tags
+    page_id: number;        // FK to pages
+    priority: number;       // Higher = takes precedence
+    // Same appearance fields as section_appearances
+    fill_color: string | null;
+    outline_color: string | null;
+    shape_type: string | null;
+    visible: boolean;
+    label_visible: boolean;
+    equipment_name: string | null;
+    equipment_state: string | null;
+}
+```
+
+## Appearance Resolution Order
+
+Appearances are resolved bottom-up, with later layers overriding earlier ones:
+
+```
+1. Section Appearance (base defaults for all marchers in a section)
+   ↓ overridden by
+2. Tag Appearances (per-page overrides, sorted by priority DESC)
+   ↓ overridden by
+3. MarcherPage Overrides (per-marcher, per-page direct overrides)
+```
+
+Each layer only overrides non-null fields. Null fields fall through to the previous layer.
+
+## Resolved Appearances Hook
+
+```typescript
+import { marcherAppearancesByPageQueryOptions } from "@/hooks/queries";
+
+// Returns Record<marcherId, AppearanceComponentOptional[]>
+// Each marcher has an ordered array of appearance layers
+const { data: appearances } = useQuery(
+    marcherAppearancesByPageQueryOptions(pageId)
+);
+```
+
+The resolution logic in `useMarcherAppearances.ts`:
+1. Fetches section appearances, tag appearances for the page, marcher-tag assignments, and marcher pages
+2. For each marcher: builds an array starting with section appearance, then tag appearances (sorted by priority), then marcher page overrides
+3. `CanvasMarcher.setAppearance()` merges these layers to determine final visual
+
+## AppearanceComponentOptional Type
+
+```typescript
+type AppearanceComponentOptional = {
+    fill_color?: string | null;
+    outline_color?: string | null;
+    shape_type?: string | null;
+    visible?: boolean;
+    label_visible?: boolean;
+    equipment_name?: string | null;
+    equipment_state?: string | null;
+};
+```
+
+## Tag Operations
+
+```typescript
+// Create tag
+createTagsInTransaction({ newTags: [{ name: "Soloist", color: "#ff0000" }], tx })
+
+// Assign marcher to tag
+createMarcherTagsInTransaction({ newMarcherTags: [{ marcher_id: 1, tag_id: 1 }], tx })
+
+// Create tag appearance for a page
+createTagAppearancesInTransaction({
+    newTagAppearances: [{
+        tag_id: 1, page_id: 1, priority: 10,
+        fill_color: "#ff0000", visible: true
+    }],
+    tx
+})
+```
+
+## Integration Points
+
+- **Canvas**: `CanvasMarcher` receives resolved appearances and applies them (color, visibility, shape).
+- **Selection**: `SelectedMarchersContext` filters out hidden marchers based on appearance `visible` field.
+- **Inspector**: `MarcherEditor` shows per-marcher-page appearance overrides.
+- **Undo/redo**: All appearance tables (`section_appearances`, `tags`, `tag_appearances`, `marcher_tags`) are tracked by history triggers.
+
+## Gotchas
+
+- Tag appearances are per-page. A tag can have different visual overrides on different pages.
+- `priority` on tag appearances determines override order. Higher priority wins.
+- When multiple tags apply to the same marcher, they're layered by priority (highest on top).
+- Null fields in an appearance layer mean "don't override" - they pass through to the layer below.
+- `visible: false` on any layer hides the marcher. The selection context respects this.
