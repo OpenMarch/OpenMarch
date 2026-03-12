@@ -68,8 +68,8 @@ export default defineConfig({
         mdx(),
         sitemap(),
         yeskunallumami({
-            id: "09a72d11-c8dd-43b0-9ee8-e2c7c492bc21",
-            endpointUrl: "https://umami.cool.dukc.dev",
+            id: "ca4e77b2-a0e0-4b5a-8ac9-1e629dc8fe42",
+            endpointUrl: "https://umami.openmarch.com",
         }),
     ],
 
