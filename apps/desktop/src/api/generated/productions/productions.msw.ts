@@ -10,7 +10,44 @@ import { faker } from "@faker-js/faker";
 import { HttpResponse, http } from "msw";
 import type { RequestHandlerOptions } from "msw";
 
-import type { GetApiEditorV1ProductionsId200 } from ".././model";
+import type {
+    GetApiEditorV1EnsemblesEnsembleIdProductions200,
+    GetApiEditorV1ProductionsId200,
+} from ".././model";
+
+export const getGetApiEditorV1EnsemblesEnsembleIdProductionsResponseMock = (
+    overrideResponse: Partial<GetApiEditorV1EnsemblesEnsembleIdProductions200> = {},
+): GetApiEditorV1EnsemblesEnsembleIdProductions200 => ({
+    productions: Array.from(
+        { length: faker.number.int({ min: 1, max: 10 }) },
+        (_, i) => i + 1,
+    ).map(() => ({
+        id: faker.helpers.arrayElement([
+            faker.number.int({ min: undefined, max: undefined }),
+            undefined,
+        ]),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined,
+        ]),
+        position: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.number.int({ min: undefined, max: undefined }),
+                null,
+            ]),
+            undefined,
+        ]),
+        created_at: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+        updated_at: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+    })),
+    ...overrideResponse,
+});
 
 export const getGetApiEditorV1ProductionsIdResponseMock = (
     overrideResponse: Partial<GetApiEditorV1ProductionsId200> = {},
@@ -114,6 +151,37 @@ export const getGetApiEditorV1ProductionsIdResponseMock = (
     ...overrideResponse,
 });
 
+export const getGetApiEditorV1EnsemblesEnsembleIdProductionsMockHandler = (
+    overrideResponse?:
+        | GetApiEditorV1EnsemblesEnsembleIdProductions200
+        | ((
+              info: Parameters<Parameters<typeof http.get>[1]>[0],
+          ) =>
+              | Promise<GetApiEditorV1EnsemblesEnsembleIdProductions200>
+              | GetApiEditorV1EnsemblesEnsembleIdProductions200),
+    options?: RequestHandlerOptions,
+) => {
+    return http.get(
+        "*/api/editor/v1/ensembles/:ensembleId/productions",
+        async (info) => {
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getGetApiEditorV1EnsemblesEnsembleIdProductionsResponseMock(),
+                ),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        },
+        options,
+    );
+};
+
 export const getPostApiEditorV1ProductionsMockHandler = (
     overrideResponse?:
         | void
@@ -185,6 +253,7 @@ export const getPatchApiEditorV1ProductionsIdMockHandler = (
     );
 };
 export const getProductionsMock = () => [
+    getGetApiEditorV1EnsemblesEnsembleIdProductionsMockHandler(),
     getPostApiEditorV1ProductionsMockHandler(),
     getGetApiEditorV1ProductionsIdMockHandler(),
     getPatchApiEditorV1ProductionsIdMockHandler(),

@@ -1,13 +1,15 @@
 import { DB } from "electron/database/db";
 import { toCompressedOpenMarchBytes } from "./dots-to-om";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
-import { apiPostFormData } from "@/auth/api-client";
+import { postApiEditorV1ProductionsProductionIdRevisions } from "@/api/generated/production-revisions/production-revisions";
+import { patchApiEditorV1EnsemblesEnsembleIdPerformerLabels } from "@/api/generated/performer-labels/performer-labels";
 
-export interface UploadResult {
-    success: boolean;
-    error?: string;
-    message?: string;
-}
+export type UploadResult =
+    | { success: true; ensembleId: number; message: string }
+    | {
+          success: false;
+          error: string;
+      };
 
 export interface UploadProgress {
     status: "loading" | "progress" | "error" | "success";
@@ -32,8 +34,6 @@ const getOtmProductionId = async (db: DB): Promise<number | undefined> => {
     return workspaceSettingsJson.otmProductionId;
 };
 
-const SHOW_DATA_FILENAME = "show_data.gz";
-
 /**
  * Creates a production revision on the server (om-online API).
  * POST /api/editor/v1/productions/:production_id/revisions
@@ -50,20 +50,21 @@ async function createRevisionOnServer({
     setActive?: boolean;
     title?: string;
 }): Promise<UploadResult> {
-    const formData = new FormData();
     // Copy into ArrayBuffer so Blob accepts it (avoids Uint8Array<ArrayBufferLike> vs BlobPart)
     const buffer = new ArrayBuffer(data.length);
     new Uint8Array(buffer).set(data);
     const blob = new Blob([buffer], { type: "application/gzip" });
-    formData.append("show_data", blob, SHOW_DATA_FILENAME);
-    formData.append("set_active", setActive ? "true" : "false");
-    if (title != null && title.trim() !== "") {
-        formData.append("title", title.trim());
-    }
 
-    const path = `/v1/productions/${productionId}/revisions`;
+    let response;
     try {
-        await apiPostFormData(path, formData);
+        response = await postApiEditorV1ProductionsProductionIdRevisions(
+            productionId,
+            {
+                show_data: blob,
+                set_active: setActive,
+                title: title?.trim() || undefined,
+            },
+        );
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
@@ -75,6 +76,7 @@ async function createRevisionOnServer({
 
     return {
         success: true,
+        ensembleId: response.revision.ensemble_id,
         message: "Revision created successfully",
     };
 }
@@ -100,20 +102,36 @@ export async function uploadDatabaseToServer(
             );
         }
 
+        const performerLabels = (
+            await dbConnection.query.marchers.findMany({
+                columns: {
+                    drill_prefix: true,
+                    drill_order: true,
+                },
+            })
+        ).map((marcher) => `${marcher.drill_prefix}${marcher.drill_order}`);
+
         const omzBytes = await toCompressedOpenMarchBytes(dbConnection);
 
-        const result = await createRevisionOnServer({
+        const revisionUploadResult = await createRevisionOnServer({
             productionId,
             data: omzBytes,
             setActive: true,
             title,
         });
 
-        if (!result.success) {
-            throw new Error(result.error || "Upload failed");
+        if (!revisionUploadResult.success) {
+            throw new Error(revisionUploadResult.error || "Upload failed");
         }
 
-        return result;
+        await patchApiEditorV1EnsemblesEnsembleIdPerformerLabels(
+            revisionUploadResult.ensembleId,
+            {
+                labels: performerLabels,
+            },
+        );
+
+        return revisionUploadResult;
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);

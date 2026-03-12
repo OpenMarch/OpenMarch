@@ -26,22 +26,17 @@ import {
 import {
     useAudioFiles,
     useSetActiveAudioFileMutation,
-    useUpdateAudioFileNicknameMutation,
-    useDeleteAudioFileMutation,
     useAddAudioFileMutation,
+    type AudioFileListItem,
 } from "../queries/useAudioFiles";
+import {
+    usePatchApiEditorV1ProductionsProductionIdAudioFilesId,
+    useDeleteApiEditorV1ProductionsProductionIdAudioFilesId,
+    getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey,
+} from "@/api/generated/audio-files/audio-files";
+import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { getAudioDuration, getAudioSizeMegabytes } from "../audio-files/utils";
 import clsx from "clsx";
-
-export type AudioFileDetails = {
-    id: number;
-    name: string;
-    sizeMb: number;
-    durationSeconds: number;
-    nickname?: string;
-    createdAt: Date;
-    checksum?: string;
-};
 
 function formatDuration(seconds: number): string {
     const roundedSeconds = Math.round(seconds);
@@ -174,7 +169,7 @@ function EditNicknameDialog({
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    file: AudioFileDetails | null;
+    file: AudioFileListItem | null;
     value: string;
     onValueChange: (value: string) => void;
     onClose: () => void;
@@ -240,12 +235,41 @@ export function AudioFileSettings({
     const { data: audioFiles, isSuccess: audioFilesLoaded } =
         useAudioFiles(productionId);
     const updateNicknameMutation =
-        useUpdateAudioFileNicknameMutation(queryClient);
-    const deleteMutation = useDeleteAudioFileMutation(queryClient);
+        usePatchApiEditorV1ProductionsProductionIdAudioFilesId({
+            mutation: {
+                onSuccess: (_, { productionId: pid }) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1ProductionsIdQueryKey(pid),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey:
+                            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey(
+                                pid,
+                            ),
+                    });
+                },
+            },
+        });
+    const deleteMutation =
+        useDeleteApiEditorV1ProductionsProductionIdAudioFilesId({
+            mutation: {
+                onSuccess: (_, { productionId: pid }) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1ProductionsIdQueryKey(pid),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey:
+                            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey(
+                                pid,
+                            ),
+                    });
+                },
+            },
+        });
     const addAudioMutation = useAddAudioFileMutation(queryClient);
 
     const [editNicknameFile, setEditNicknameFile] =
-        useState<AudioFileDetails | null>(null);
+        useState<AudioFileListItem | null>(null);
     const [editNicknameValue, setEditNicknameValue] = useState("");
 
     const [addAudioOpen, setAddAudioOpen] = useState(false);
@@ -260,7 +284,7 @@ export function AudioFileSettings({
         setDefaultAudioFileId(audioFileId);
     };
 
-    const openEditNickname = (file: AudioFileDetails) => {
+    const openEditNickname = (file: AudioFileListItem) => {
         setEditNicknameFile(file);
         setEditNicknameValue(file.nickname ?? file.name);
     };

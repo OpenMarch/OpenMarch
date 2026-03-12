@@ -5,8 +5,7 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
-import type { Ensemble } from "./ensemble";
 
-export type GetApiEditorV1Ensembles200 = {
-    ensembles?: Ensemble[];
+export type PostApiEditorV1ProductionsProductionIdAudioFiles201Production = {
+    [key: string]: unknown;
 };

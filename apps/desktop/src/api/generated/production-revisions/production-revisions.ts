@@ -12,6 +12,11 @@ import type {
     UseMutationResult,
 } from "@tanstack/react-query";
 
+import type {
+    PostApiEditorV1ProductionsProductionIdRevisions201,
+    PostApiEditorV1ProductionsProductionIdRevisionsBody,
+} from ".././model";
+
 import { customInstance } from "../../editor-client";
 import type { ErrorType, BodyType } from "../../editor-client";
 
@@ -22,17 +27,34 @@ type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
  */
 export const postApiEditorV1ProductionsProductionIdRevisions = (
     productionId: number,
-    postApiEditorV1ProductionsProductionIdRevisionsBody: BodyType<string>,
+    postApiEditorV1ProductionsProductionIdRevisionsBody: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>,
     options?: SecondParameter<typeof customInstance>,
     signal?: AbortSignal,
 ) => {
     const formData = new FormData();
     formData.append(
-        "data",
-        postApiEditorV1ProductionsProductionIdRevisionsBody,
+        `show_data`,
+        postApiEditorV1ProductionsProductionIdRevisionsBody.show_data,
     );
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.set_active !==
+        undefined
+    ) {
+        formData.append(
+            `set_active`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.set_active.toString(),
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.title !== undefined
+    ) {
+        formData.append(
+            `title`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.title,
+        );
+    }
 
-    return customInstance<void>(
+    return customInstance<PostApiEditorV1ProductionsProductionIdRevisions201>(
         {
             url: `/api/editor/v1/productions/${productionId}/revisions`,
             method: "POST",
@@ -52,7 +74,10 @@ export const getPostApiEditorV1ProductionsProductionIdRevisionsMutationOptions =
                 >
             >,
             TError,
-            { productionId: number; data: BodyType<string> },
+            {
+                productionId: number;
+                data: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
+            },
             TContext
         >;
         request?: SecondParameter<typeof customInstance>;
@@ -61,7 +86,10 @@ export const getPostApiEditorV1ProductionsProductionIdRevisionsMutationOptions =
             ReturnType<typeof postApiEditorV1ProductionsProductionIdRevisions>
         >,
         TError,
-        { productionId: number; data: BodyType<string> },
+        {
+            productionId: number;
+            data: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
+        },
         TContext
     > => {
         const mutationKey = ["postApiEditorV1ProductionsProductionIdRevisions"];
@@ -79,7 +107,10 @@ export const getPostApiEditorV1ProductionsProductionIdRevisionsMutationOptions =
                     typeof postApiEditorV1ProductionsProductionIdRevisions
                 >
             >,
-            { productionId: number; data: BodyType<string> }
+            {
+                productionId: number;
+                data: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
+            }
         > = (props) => {
             const { productionId, data } = props ?? {};
 
@@ -100,7 +131,7 @@ export type PostApiEditorV1ProductionsProductionIdRevisionsMutationResult =
         >
     >;
 export type PostApiEditorV1ProductionsProductionIdRevisionsMutationBody =
-    BodyType<string>;
+    BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
 export type PostApiEditorV1ProductionsProductionIdRevisionsMutationError =
     ErrorType<void>;
 
@@ -116,14 +147,20 @@ export const usePostApiEditorV1ProductionsProductionIdRevisions = <
             ReturnType<typeof postApiEditorV1ProductionsProductionIdRevisions>
         >,
         TError,
-        { productionId: number; data: BodyType<string> },
+        {
+            productionId: number;
+            data: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
+        },
         TContext
     >;
     request?: SecondParameter<typeof customInstance>;
 }): UseMutationResult<
     Awaited<ReturnType<typeof postApiEditorV1ProductionsProductionIdRevisions>>,
     TError,
-    { productionId: number; data: BodyType<string> },
+    {
+        productionId: number;
+        data: BodyType<PostApiEditorV1ProductionsProductionIdRevisionsBody>;
+    },
     TContext
 > => {
     return useMutation(

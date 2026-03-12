@@ -5,8 +5,12 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
-import type { Ensemble } from "./ensemble";
 
-export type GetApiEditorV1Ensembles200 = {
-    ensembles?: Ensemble[];
-};
+export interface ProductionPreview {
+    id: number;
+    name: string;
+    /** @nullable */
+    position?: number | null;
+    created_at?: string;
+    updated_at?: string;
+}

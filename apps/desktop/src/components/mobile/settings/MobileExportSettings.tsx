@@ -8,11 +8,10 @@ import {
 import { GearSixIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentProduction } from "../queries/useProductions";
-import { productionKeys } from "../queries/useProductions";
 import DetachButton from "../DetachButton";
 import { AudioFileSettings } from "./AudioFileSettings";
-import { audioFilesByProductionQueryOptions } from "../queries/useAudioFiles";
-import { useAccessToken } from "@/auth/useAuth";
+import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
+import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 
 export const MobileExportSettingsDialog = () => {
     const prefetchSettingsData = usePrefetchSettingsDataFunction();
@@ -34,15 +33,13 @@ export const MobileExportSettingsDialog = () => {
 const usePrefetchSettingsDataFunction = () => {
     const { data: production } = useCurrentProduction();
     const productionId = production?.id;
-    const { getAccessToken } = useAccessToken();
     const queryClient = useQueryClient();
 
     if (productionId) {
         return () => {
             void queryClient.prefetchQuery(
-                audioFilesByProductionQueryOptions(
+                getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions(
                     productionId,
-                    getAccessToken,
                 ),
             );
         };
@@ -63,7 +60,9 @@ const MobileExportSettingsContent = () => {
                 production={production}
                 setDefaultAudioFileId={() => {
                     void queryClient.invalidateQueries({
-                        queryKey: productionKeys.byId(production.id),
+                        queryKey: getGetApiEditorV1ProductionsIdQueryKey(
+                            production.id,
+                        ),
                     });
                 }}
             />
