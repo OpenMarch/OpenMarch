@@ -15,6 +15,9 @@ const getAccessTokenFn = async (): Promise<string | null> => {
     return (await window.electron.auth.getAccessToken()).token;
 };
 
+const SESSION_EXPIRED_MESSAGE =
+    "Your session has expired. Please sign in again.";
+
 /**
  * Makes an authenticated API request.
  * @param path - The API path (e.g., 'v1/ensembles')
@@ -30,7 +33,7 @@ async function authenticatedFetch<T>(
 ): Promise<T> {
     const token = await getAccessToken();
     if (!token) {
-        throw new Error("Authentication token is required");
+        throw new Error(SESSION_EXPIRED_MESSAGE);
     }
 
     const endpoint = getApiEndpoint();
@@ -152,7 +155,7 @@ export async function apiPostFormData<T>(
 ): Promise<T> {
     const token = await getAccessToken();
     if (!token) {
-        throw new Error("Authentication token is required");
+        throw new Error(SESSION_EXPIRED_MESSAGE);
     }
 
     const endpoint = getApiEndpoint();

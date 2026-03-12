@@ -29,6 +29,7 @@ import {
     getAuthState,
     getValidAccessToken,
     setTokenRefreshCallback,
+    setAuthFailureCallback,
 } from "./token-manager";
 import type { AuthState, AuthError, AuthTokens } from "./types";
 
@@ -156,6 +157,15 @@ export function initAuthAfterReady(
 
     // Set up token refresh callback
     setTokenRefreshCallback(handleTokenRefresh);
+    setAuthFailureCallback((error) => {
+        notifyAuthError(error);
+        notifyAuthStateChanged({
+            isAuthenticated: false,
+            isLoading: false,
+            user: null,
+            error,
+        });
+    });
 
     // Set up protocol listeners for OAuth callbacks
     setupProtocolListeners(getWindow, handleAuthCallback);

@@ -95,6 +95,16 @@ export function useAuth() {
         );
 
         const unsubscribeError = window.electron.auth.onError((error) => {
+            if (error.code === "TOKEN_EXPIRED") {
+                const expiredState: AuthState = {
+                    isAuthenticated: false,
+                    isLoading: false,
+                    user: null,
+                    error,
+                };
+                setAuthState(expiredState);
+                queryClient.setQueryData(authKeys.state(), expiredState);
+            }
             setError(error);
             setLoading(false);
             console.error("[Auth] Error:", error);

@@ -6,7 +6,13 @@
 
 import Store from "electron-store";
 import { safeStorage } from "electron";
-import type { AuthTokens, AuthUser, AuthState, PendingAuthFlow } from "./types";
+import type {
+    AuthTokens,
+    AuthUser,
+    AuthState,
+    PendingAuthFlow,
+    AuthError,
+} from "./types";
 import { TOKEN_REFRESH_BUFFER_MS } from "../../../src/global/auth/constants";
 
 /**
@@ -33,6 +39,12 @@ let refreshTimer: NodeJS.Timeout | null = null;
 /** Callback for token refresh - set by auth/index.ts */
 let onTokenRefresh: ((tokens: AuthTokens) => Promise<AuthTokens>) | null = null;
 
+/** Callback for terminal auth failures - set by auth/index.ts */
+let onAuthFailure: ((error: AuthError) => void) | null = null;
+
+/** Shared in-flight refresh to prevent refresh-token reuse */
+let refreshInFlight: Promise<AuthTokens> | null = null;
+
 /**
  * Sets the token refresh callback function.
  * This is called by auth/index.ts to inject the refresh implementation.
@@ -41,6 +53,15 @@ export function setTokenRefreshCallback(
     callback: (tokens: AuthTokens) => Promise<AuthTokens>,
 ): void {
     onTokenRefresh = callback;
+}
+
+/**
+ * Sets callback for terminal auth failures that require re-authentication.
+ */
+export function setAuthFailureCallback(
+    callback: (error: AuthError) => void,
+): void {
+    onAuthFailure = callback;
 }
 
 /**
@@ -114,9 +135,62 @@ export function clearTokens(): void {
         refreshTimer = null;
     }
 
+    refreshInFlight = null;
     cachedTokens = null;
     authStore.delete("encryptedTokens");
     authStore.delete("pendingAuthFlow");
+}
+
+/**
+ * Emits a terminal auth failure state to the renderer.
+ */
+function emitSessionExpired(details?: unknown): void {
+    if (!onAuthFailure) return;
+
+    onAuthFailure({
+        code: "TOKEN_EXPIRED",
+        message: "Your session has expired. Please sign in again.",
+        details,
+    });
+}
+
+/**
+ * Handles refresh failure when tokens are already expired.
+ */
+function handleExpiredRefreshFailure(error: unknown): null {
+    clearTokens();
+    emitSessionExpired(error instanceof Error ? error.message : error);
+    return null;
+}
+
+/**
+ * Runs token refresh with single-flight coordination.
+ * All concurrent callers await the same in-flight refresh promise.
+ */
+async function refreshTokensSingleFlight(
+    fallbackTokens: AuthTokens,
+): Promise<AuthTokens> {
+    if (refreshInFlight) {
+        return await refreshInFlight;
+    }
+
+    if (!onTokenRefresh) {
+        throw new Error("Token refresh callback not set");
+    }
+
+    refreshInFlight = (async () => {
+        const latestTokens = getStoredTokens() ?? fallbackTokens;
+        const refreshedTokens = await onTokenRefresh(latestTokens);
+        // Persist new refresh token before releasing waiters.
+        storeTokens(refreshedTokens);
+        return refreshedTokens;
+    })();
+
+    try {
+        return await refreshInFlight;
+    } finally {
+        refreshInFlight = null;
+    }
 }
 
 /**
@@ -201,25 +275,24 @@ export async function getValidAccessToken(): Promise<string | null> {
         if (!onTokenRefresh) {
             console.error("[Auth] Token refresh callback not set");
             if (isExpired) {
-                clearTokens();
-                return null;
+                return handleExpiredRefreshFailure(
+                    new Error("Token refresh callback not set"),
+                );
             }
             // Return ID token for Rails SDK verification (JWT with sub claim)
             return tokens.idToken;
         }
 
         try {
-            const newTokens = await onTokenRefresh(tokens);
-            storeTokens(newTokens);
+            const newTokens = await refreshTokensSingleFlight(tokens);
             // Return ID token for Rails SDK verification (JWT with sub claim)
             return newTokens.idToken;
         } catch (error) {
             console.error("[Auth] Failed to refresh token:", error);
 
             if (isExpired) {
-                // Token is expired and refresh failed - user needs to re-authenticate
-                clearTokens();
-                return null;
+                // Token is expired and refresh failed - user must re-authenticate
+                return handleExpiredRefreshFailure(error);
             }
 
             // Token not yet expired, return current ID token
@@ -252,8 +325,7 @@ function scheduleTokenRefresh(tokens: AuthTokens): void {
             try {
                 const currentTokens = getStoredTokens();
                 if (currentTokens && onTokenRefresh) {
-                    const newTokens = await onTokenRefresh(currentTokens);
-                    storeTokens(newTokens);
+                    await refreshTokensSingleFlight(currentTokens);
                     console.log("[Auth] Token refreshed successfully");
                 }
             } catch (error) {

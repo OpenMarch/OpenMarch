@@ -6,6 +6,9 @@
 import Axios, { AxiosError, AxiosRequestConfig } from "axios";
 import { OPENMARCH_API_ENDPOINT } from "@/global/Constants";
 
+const SESSION_EXPIRED_MESSAGE =
+    "Your session has expired. Please sign in again.";
+
 function getBaseURL(): string {
     const base = OPENMARCH_API_ENDPOINT.endsWith("/")
         ? OPENMARCH_API_ENDPOINT.slice(0, -1)
@@ -25,9 +28,10 @@ export const AXIOS_INSTANCE = Axios.create({
 AXIOS_INSTANCE.interceptors.request.use(
     async (config) => {
         const { token } = await window.electron.auth.getAccessToken();
-        if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+        if (!token) {
+            throw new Error(SESSION_EXPIRED_MESSAGE);
         }
+        config.headers.Authorization = `Bearer ${token}`;
         return config;
     },
     (error) => Promise.reject(error),
