@@ -90,13 +90,13 @@ function handleProtocolUrl(
     try {
         const parsedUrl = new URL(url);
 
-        // Check if this is an auth callback
-        // Support both formats:
-        // - openmarch://auth/callback?code=...
-        // - openmarch://auth/callback?code=... (where host is "auth" and path is "/callback")
-        const isAuthCallback =
-            parsedUrl.pathname === AUTH_CALLBACK_PATH ||
-            (parsedUrl.host === "auth" && parsedUrl.pathname === "/callback");
+        // Normalize callback path across both URL shapes:
+        // - openmarch://auth/callback         => host "auth", pathname "/callback"
+        // - openmarch:///auth/callback        => host "", pathname "/auth/callback"
+        const callbackPath = parsedUrl.host
+            ? `/${parsedUrl.host}${parsedUrl.pathname}`
+            : parsedUrl.pathname;
+        const isAuthCallback = callbackPath === AUTH_CALLBACK_PATH;
 
         if (isAuthCallback) {
             // Focus the main window
@@ -111,10 +111,7 @@ function handleProtocolUrl(
                 callbackHandler(url);
             }
         } else {
-            console.log(
-                "[Auth] Ignoring non-auth protocol URL:",
-                parsedUrl.pathname,
-            );
+            console.log("[Auth] Ignoring non-auth protocol URL:", callbackPath);
         }
     } catch (error) {
         console.error("[Auth] Failed to parse protocol URL:", error);
