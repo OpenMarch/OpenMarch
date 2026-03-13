@@ -20,6 +20,8 @@ export type TokenType =
     | "HASH"
     | "SIDELINE"
     | "TAG"
+    | "XCHECKPOINT"
+    | "YCHECKPOINT"
     | "NOISE";
 
 export type Token = {
@@ -87,6 +89,41 @@ const MULTI_WORD: Array<{ words: string[]; type: TokenType; value: string }> = [
     { words: ["top", "hash"], type: "HASH", value: "Back Hash" },
     { words: ["front", "hash"], type: "HASH", value: "Front Hash" },
     { words: ["back", "hash"], type: "HASH", value: "Back Hash" },
+    // Indoor lateral checkpoints: "N line" (e.g., "5 line", "4 line")
+    { words: ["1", "line"], type: "XCHECKPOINT", value: "1 line" },
+    { words: ["2", "line"], type: "XCHECKPOINT", value: "2 line" },
+    { words: ["3", "line"], type: "XCHECKPOINT", value: "3 line" },
+    { words: ["4", "line"], type: "XCHECKPOINT", value: "4 line" },
+    { words: ["5", "line"], type: "XCHECKPOINT", value: "5 line" },
+    // Indoor lateral edge checkpoints
+    { words: ["left", "edge"], type: "XCHECKPOINT", value: "Left Edge" },
+    { words: ["right", "edge"], type: "XCHECKPOINT", value: "Right Edge" },
+    // Indoor front-back letter checkpoints: "A line", "B line", etc.
+    { words: ["a", "line"], type: "YCHECKPOINT", value: "A line" },
+    { words: ["b", "line"], type: "YCHECKPOINT", value: "B line" },
+    { words: ["c", "line"], type: "YCHECKPOINT", value: "C line" },
+    { words: ["d", "line"], type: "YCHECKPOINT", value: "D line" },
+    { words: ["e", "line"], type: "YCHECKPOINT", value: "E line" },
+    // Indoor front-back edge checkpoints ("front edge" must come before "front hash"/"front side line")
+    { words: ["front", "edge"], type: "YCHECKPOINT", value: "Front Edge" },
+    { words: ["back", "edge"], type: "YCHECKPOINT", value: "Back Edge" },
+    // Letter-prefixed yard line (front-back references in Home/Visitor column):
+    // "C yd ln" = front hash, "B yd ln" = back hash, "D/E yd ln" = back sideline
+    { words: ["a", "yd", "ln"], type: "YCHECKPOINT", value: "A yd ln" },
+    { words: ["b", "yd", "ln"], type: "YCHECKPOINT", value: "B yd ln" },
+    { words: ["c", "yd", "ln"], type: "YCHECKPOINT", value: "C yd ln" },
+    { words: ["d", "yd", "ln"], type: "YCHECKPOINT", value: "D yd ln" },
+    { words: ["e", "yd", "ln"], type: "YCHECKPOINT", value: "E yd ln" },
+    { words: ["a", "yd", "line"], type: "YCHECKPOINT", value: "A yd ln" },
+    { words: ["b", "yd", "line"], type: "YCHECKPOINT", value: "B yd ln" },
+    { words: ["c", "yd", "line"], type: "YCHECKPOINT", value: "C yd ln" },
+    { words: ["d", "yd", "line"], type: "YCHECKPOINT", value: "D yd ln" },
+    { words: ["e", "yd", "line"], type: "YCHECKPOINT", value: "E yd ln" },
+    { words: ["a", "yard", "line"], type: "YCHECKPOINT", value: "A yd ln" },
+    { words: ["b", "yard", "line"], type: "YCHECKPOINT", value: "B yd ln" },
+    { words: ["c", "yard", "line"], type: "YCHECKPOINT", value: "C yd ln" },
+    { words: ["d", "yard", "line"], type: "YCHECKPOINT", value: "D yd ln" },
+    { words: ["e", "yard", "line"], type: "YCHECKPOINT", value: "E yd ln" },
     // Yard line variants
     { words: ["yd", "ln"], type: "YARDLINE", value: "yd ln" },
     { words: ["yd", "line"], type: "YARDLINE", value: "yd ln" },
@@ -113,6 +150,8 @@ const SINGLE_WORD: Record<string, { type: TokenType; value: string }> = {
     right: { type: "SIDE", value: "2" },
     s1: { type: "SIDE", value: "1" },
     s2: { type: "SIDE", value: "2" },
+    side1: { type: "SIDE", value: "1" },
+    side2: { type: "SIDE", value: "2" },
     fh: { type: "HASH", value: "Front Hash" },
     bh: { type: "HASH", value: "Back Hash" },
     fsl: { type: "SIDELINE", value: "Front Sideline" },
@@ -265,4 +304,140 @@ export function tokenize(text: string): Token[] {
 /** Filter out NOISE tokens for pattern matching. */
 export function meaningful(tokens: Token[]): Token[] {
     return tokens.filter((t) => t.type !== "NOISE");
+}
+
+/**
+ * Build extended single-word vocabulary from a profile's coordVocabulary.
+ * Returns entries that can be merged into the SINGLE_WORD lookup.
+ */
+export function buildVocabularyOverrides(vocab: {
+    sideLabels?: Record<string, "1" | "2">;
+    hashLabels?: Record<string, string>;
+    sidelineLabels?: Record<string, string>;
+    stepsKeywords?: string[];
+}): Record<string, { type: TokenType; value: string }> {
+    const overrides: Record<string, { type: TokenType; value: string }> = {};
+    if (vocab.sideLabels) {
+        for (const [label, side] of Object.entries(vocab.sideLabels)) {
+            overrides[label.toLowerCase()] = { type: "SIDE", value: side };
+        }
+    }
+    if (vocab.hashLabels) {
+        for (const [label, canonical] of Object.entries(vocab.hashLabels)) {
+            overrides[label.toLowerCase()] = { type: "HASH", value: canonical };
+        }
+    }
+    if (vocab.sidelineLabels) {
+        for (const [label, canonical] of Object.entries(vocab.sidelineLabels)) {
+            overrides[label.toLowerCase()] = {
+                type: "SIDELINE",
+                value: canonical,
+            };
+        }
+    }
+    if (vocab.stepsKeywords) {
+        for (const kw of vocab.stepsKeywords) {
+            overrides[kw.toLowerCase()] = { type: "STEPS", value: "steps" };
+        }
+    }
+    return overrides;
+}
+
+/**
+ * Tokenize with extended vocabulary from a vendor profile.
+ * Merges profile-specific terms into the standard lookup tables.
+ */
+export function tokenizeWithVocabulary(
+    text: string,
+    extraWords: Record<string, { type: TokenType; value: string }>,
+): Token[] {
+    if (!text || !text.trim()) return [];
+
+    const cleaned = text
+        .replace(/^[:\s]+/, "")
+        .replace(/[:\s]+$/, "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    const rawWords = cleaned.split(" ").filter(Boolean);
+    const words = rawWords.flatMap((w) => {
+        const m = /^(\d+(?:\.\d+)?)(steps?|stps?|stp)$/i.exec(w);
+        return m ? [m[1], m[2]] : [w];
+    });
+    const tokens: Token[] = [];
+    let i = 0;
+
+    const mergedSingle = { ...SINGLE_WORD, ...extraWords };
+
+    while (i < words.length) {
+        const lc = words[i].toLowerCase();
+
+        let matched = false;
+        for (const mw of MULTI_WORD) {
+            if (i + mw.words.length > words.length) continue;
+            const slice = words
+                .slice(i, i + mw.words.length)
+                .map((w) => w.toLowerCase().replace(/[:\s]/g, ""));
+            if (slice.every((w, idx) => w === mw.words[idx])) {
+                tokens.push({
+                    type: mw.type,
+                    value: mw.value,
+                    span: mw.words.length,
+                });
+                i += mw.words.length;
+                matched = true;
+                break;
+            }
+        }
+        if (matched) continue;
+
+        const tagMatch = TAG_REGEX.exec(words[i]);
+        if (tagMatch) {
+            const key = tagMatch[1].toLowerCase().replace(/\s+/g, "");
+            tokens.push({
+                type: "TAG",
+                value: TAG_MAP[key] || key.toUpperCase(),
+                span: 1,
+            });
+            i++;
+            continue;
+        }
+
+        if (NUMBER_REGEX.test(words[i])) {
+            tokens.push({ type: "NUMBER", value: words[i], span: 1 });
+            i++;
+            continue;
+        }
+
+        const stripped = lc.replace(/[:.;,]+$/, "");
+        if (mergedSingle[stripped]) {
+            const { type, value } = mergedSingle[stripped];
+            tokens.push({ type, value, span: 1 });
+            i++;
+            continue;
+        }
+
+        const sideEmbed = /^(?:side)?([12ab])[:.]$/i.exec(words[i]);
+        if (sideEmbed) {
+            const v = sideEmbed[1].toLowerCase();
+            tokens.push({
+                type: "SIDE",
+                value: v === "1" || v === "a" ? "1" : "2",
+                span: 1,
+            });
+            i++;
+            continue;
+        }
+
+        if (NOISE_WORDS.has(stripped) || stripped.length === 0) {
+            tokens.push({ type: "NOISE", value: words[i], span: 1 });
+            i++;
+            continue;
+        }
+
+        tokens.push({ type: "NOISE", value: words[i], span: 1 });
+        i++;
+    }
+
+    return tokens;
 }

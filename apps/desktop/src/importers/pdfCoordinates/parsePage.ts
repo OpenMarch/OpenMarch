@@ -17,7 +17,7 @@ import {
     type TextItem,
     type ColumnBand,
 } from "./columns";
-import { pywareProfile } from "./profile";
+import { pywareProfile, type VendorProfile } from "./profile";
 import { getQuadrantRects, rectContains } from "./segment";
 import { detectSheetsHybrid } from "./segment-improved";
 
@@ -61,56 +61,78 @@ function extractHeader(arr: TextItem[]): Partial<PerformerHeader> {
 export async function extractSheetsFromPage(
     pdf: any,
     pageIndex: number,
+    profile: VendorProfile = pywareProfile,
 ): Promise<ParsedSheet[]> {
-    const page = await pdf.getPage(pageIndex + 1);
-    const textContent = await page.getTextContent();
+    const { layout } = profile;
+    let page: any;
+    try {
+        page = await pdf.getPage(pageIndex + 1);
+    } catch (e) {
+        console.warn(`[pdf-import] Failed to get page ${pageIndex + 1}:`, e);
+        return [];
+    }
+
+    let textContent: any;
+    try {
+        textContent = await page.getTextContent();
+    } catch (e) {
+        console.warn(
+            `[pdf-import] Failed to extract text from page ${pageIndex + 1}:`,
+            e,
+        );
+        return [];
+    }
+
     const items = toItems(textContent);
     if (items.length === 0) return [];
 
-    // Use hybrid segmentation: semantic (anchors) + spatial (density)
-    // This is more flexible than fixed quadrants and adapts to any layout
     const detectedSheets = detectSheetsHybrid(
         items,
-        pywareProfile.pageHeaderAnchors,
+        profile.pageHeaderAnchors,
+        layout.minItemsPerSheet,
+        layout.densityEpsilon,
     );
 
     const sheets: ParsedSheet[] = [];
 
-    // If hybrid detection found sheets, use them (more flexible)
     if (detectedSheets.length > 0) {
         for (let si = 0; si < detectedSheets.length; si++) {
             const sheet = detectedSheets[si];
             const qItems = sheet.items;
-            if (qItems.length < 10) continue;
-            const qRows = bucketRows(qItems, 2);
+            if (qItems.length < layout.minItemsPerSheet) continue;
+            const qRows = bucketRows(qItems, layout.rowEpsilon);
             const parsed = processRegion(
                 qRows,
                 pageIndex,
                 quadrantLabel(si),
                 qItems,
+                profile,
             );
             if (parsed) sheets.push(parsed);
         }
         if (sheets.length > 0) return sheets;
     }
 
-    // Fallback: use fixed quadrants if hybrid didn't work
     const viewport = page.getViewport({ scale: 1 });
-    const quads = getQuadrantRects(viewport.width, viewport.height, 8);
+    const quads = getQuadrantRects(
+        viewport.width,
+        viewport.height,
+        layout.gutterPx,
+    );
     const quadOrder: Array<keyof typeof quads> = ["TL", "TR", "BL", "BR"];
     for (let qi = 0; qi < quadOrder.length; qi++) {
         const qk = quadOrder[qi];
         const rect = quads[qk];
         const qItems = items.filter((it) => rectContains(rect, it.x, it.y));
-        if (qItems.length < 10) continue;
-        const qRows = bucketRows(qItems, 2);
-        const parsed = processRegion(qRows, pageIndex, qk, qItems);
+        if (qItems.length < layout.minItemsPerSheet) continue;
+        const qRows = bucketRows(qItems, layout.rowEpsilon);
+        const parsed = processRegion(qRows, pageIndex, qk, qItems, profile);
         if (parsed) sheets.push(parsed);
     }
     if (sheets.length > 0) return sheets;
-    // Fallback: whole-page single region
-    const rows = bucketRows(items, 2);
-    const regions = segmentRowsByAnchors(rows);
+
+    const rows = bucketRows(items, layout.rowEpsilon);
+    const regions = segmentRowsByAnchors(rows, profile);
     if (regions.length === 0) return [];
     const { start, end } = regions[0];
     const parsed = processRegion(
@@ -118,6 +140,7 @@ export async function extractSheetsFromPage(
         pageIndex,
         "TL",
         items,
+        profile,
     );
     return parsed ? [parsed] : [];
 }
@@ -211,9 +234,10 @@ function processRegion(
     pageIndex: number,
     quadrant: Quadrant,
     itemsForRaw: TextItem[],
+    profile: VendorProfile = pywareProfile,
 ): ParsedSheet | null {
     const rawText = itemsForRaw.map((t) => t.str).join("\n");
-    const qRegions = segmentRowsByAnchors(qRows);
+    const qRegions = segmentRowsByAnchors(qRows, profile);
     if (qRegions.length === 0) {
         const headers = detectAllHeaders(qRows) || [];
         const headerMeta = extractHeader(itemsForRaw);
@@ -273,10 +297,11 @@ function processRegion(
 
 function segmentRowsByAnchors(
     rows: TextItem[][],
+    profile: VendorProfile = pywareProfile,
 ): Array<{ start: number; end: number }> {
     const lc = (s: string) => s.toLowerCase();
-    const headerAnchors = pywareProfile.pageHeaderAnchors;
-    const footerAnchors = pywareProfile.footerAnchors;
+    const headerAnchors = profile.pageHeaderAnchors;
+    const footerAnchors = profile.footerAnchors;
     const starts: number[] = [];
     for (let i = 0; i < rows.length; i++) {
         const text = lc(rows[i].map((t) => t.str).join(" "));
@@ -299,7 +324,7 @@ function segmentRowsByAnchors(
             }
         }
         ranges.push({ start, end });
-        if (ranges.length >= pywareProfile.maxSheetsPerPage) break;
+        if (ranges.length >= profile.maxSheetsPerPage) break;
     }
     return ranges;
 }

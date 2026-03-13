@@ -107,6 +107,10 @@ export const NormalizedRowSchema = z.object({
     fbText: z.string(),
     source: z.literal("ocr").optional(),
     conf: z.number().min(0).max(1).optional(),
+    /** Detailed parse error code from coordParser when lateral parse fails. */
+    xParseError: z.string().optional(),
+    /** Detailed parse error code from coordParser when front-back parse fails. */
+    yParseError: z.string().optional(),
 });
 export type NormalizedRow = z.infer<typeof NormalizedRowSchema>;
 

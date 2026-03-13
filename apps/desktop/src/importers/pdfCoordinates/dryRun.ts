@@ -4,7 +4,28 @@ import {
     type NormalizedSheet,
 } from "./types";
 
-export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
+type FieldPropsLike = {
+    xCheckpoints: { stepsFromCenterFront: number }[];
+    yCheckpoints: { stepsFromCenterFront: number }[];
+};
+
+export function dryRunValidate(
+    sheets: NormalizedSheet[],
+    fieldProperties?: FieldPropsLike,
+): DryRunReport {
+    // Derive bounds from field properties when available; fall back to football defaults
+    let xBound = 96;
+    let yBound = 90;
+    if (fieldProperties) {
+        const xAbs = fieldProperties.xCheckpoints.map((c) =>
+            Math.abs(c.stepsFromCenterFront),
+        );
+        const yAbs = fieldProperties.yCheckpoints.map((c) =>
+            Math.abs(c.stepsFromCenterFront),
+        );
+        if (xAbs.length > 0) xBound = Math.max(...xAbs) * 1.1;
+        if (yAbs.length > 0) yBound = Math.max(...yAbs) * 1.1;
+    }
     const issues = [] as DryRunReport["issues"];
 
     // label uniqueness across sheets
@@ -12,7 +33,7 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
     for (const s of sheets) {
         const label = s.header.label?.trim();
         if (label) {
-            const key = label.toLowerCase();
+            const key = `${s.header.symbol?.toLowerCase() ?? ""}:${label.toLowerCase()}`;
             if (labels.has(key)) {
                 issues.push({
                     type: "error",
@@ -48,12 +69,12 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
     // bounds, NaN, and plausibility checks
     for (const s of sheets) {
         for (const r of s.rows) {
-            // NaN coordinates = parse failure
             if (!Number.isFinite(r.xSteps)) {
+                const detail = r.xParseError ? ` [${r.xParseError}]` : "";
                 issues.push({
                     type: "error",
-                    code: "LATERAL_PARSE_FAILED",
-                    message: `Lateral parse failed at set ${r.setId}: "${r.lateralText}"`,
+                    code: r.xParseError || "LATERAL_PARSE_FAILED",
+                    message: `Lateral parse failed at set ${r.setId}${detail}: "${r.lateralText}"`,
                     pageIndex: s.pageIndex,
                     quadrant: s.quadrant,
                     setId: r.setId,
@@ -61,10 +82,11 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
                 });
             }
             if (!Number.isFinite(r.ySteps)) {
+                const detail = r.yParseError ? ` [${r.yParseError}]` : "";
                 issues.push({
                     type: "error",
-                    code: "FB_PARSE_FAILED",
-                    message: `Front-back parse failed at set ${r.setId}: "${r.fbText}"`,
+                    code: r.yParseError || "FB_PARSE_FAILED",
+                    message: `Front-back parse failed at set ${r.setId}${detail}: "${r.fbText}"`,
                     pageIndex: s.pageIndex,
                     quadrant: s.quadrant,
                     setId: r.setId,
@@ -75,7 +97,7 @@ export function dryRunValidate(sheets: NormalizedSheet[]): DryRunReport {
             if (
                 Number.isFinite(r.xSteps) &&
                 Number.isFinite(r.ySteps) &&
-                (Math.abs(r.xSteps) > 96 || Math.abs(r.ySteps) > 90)
+                (Math.abs(r.xSteps) > xBound || Math.abs(r.ySteps) > yBound)
             ) {
                 issues.push({
                     type: "error",

@@ -59,6 +59,7 @@ words:
   - evented
   - fielddots
   - fieldots
+  - frontmost
   - forwardslash
   - fitz
   - français
@@ -181,10 +182,12 @@ words:
   - Vree
   - WASD
   - yardline
+  - YCHECKPOINT
   - wavesurfer
   - winget
   - Woodgrove
   - workerd
+  - XCHECKPOINT
   - xlink
   - XMLID
   - yeskunallumami

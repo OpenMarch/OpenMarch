@@ -1,9 +1,17 @@
 import type { NormalizedSheet, ParsedSheet } from "./types";
+import { getNormalizedSheetKeys, keyToDrillPrefixAndOrder } from "./types";
 import { extractSheetsFromPage } from "./parsePage";
 import { normalizeSheets } from "./normalize";
 import { reconcileSheets } from "./reconcile";
 import { dryRunValidate } from "./dryRun";
+import { buildPagePlan, validatePlan } from "./planBuilder";
 import type { SourceHashType } from "./coordParser";
+import type {
+    ImportManifest,
+    ImporterAdapter,
+    ImportValidationReport,
+} from "../types";
+import { validateManifest } from "../validate";
 
 export type { SourceHashType } from "./coordParser";
 
@@ -114,14 +122,18 @@ export function normalizeParsedSheets(
     parsedSheets: ParsedSheet[],
     fieldProperties: FieldPropsLike,
     sourceHashType?: SourceHashType,
+    forceIndoor?: boolean,
+    flipIndoorAxes?: boolean,
 ): Omit<ImportResult, "pages"> {
     const reconciled = reconcileSheets(parsedSheets);
     const normalized = normalizeSheets(
         reconciled,
         fieldProperties,
         sourceHashType,
+        forceIndoor,
+        flipIndoorAxes,
     );
-    const dryRun = dryRunValidate(normalized);
+    const dryRun = dryRunValidate(normalized, fieldProperties);
     return { dryRun, normalized, parsed: parsedSheets };
 }
 
@@ -136,3 +148,107 @@ export function detectFieldHashType(
     }
     return "HS";
 }
+
+/**
+ * Convert NormalizedSheet[] into the universal ImportManifest format.
+ * This bridges the PDF-specific pipeline to the shared import system.
+ */
+export function toManifest(
+    normalized: NormalizedSheet[],
+    filename: string,
+): ImportManifest {
+    const sheetKeys = getNormalizedSheetKeys(normalized);
+
+    // Build marchers from unique sheet keys
+    const seenKeys = new Set<string>();
+    const marchers: ImportManifest["marchers"] = [];
+    for (let i = 0; i < normalized.length; i++) {
+        const key = sheetKeys[i];
+        if (seenKeys.has(key)) continue;
+        seenKeys.add(key);
+        const { prefix, order } = keyToDrillPrefixAndOrder(key, i + 1);
+        marchers.push({
+            key,
+            drillPrefix: prefix,
+            drillOrder: order,
+            label: normalized[i].header.label,
+            name: normalized[i].header.performer,
+        });
+    }
+
+    // Build sets from page plan
+    const plan = buildPagePlan(normalized);
+    const validation = validatePlan(plan);
+    const flags = validation.valid ? validation.flags : plan.map(() => false);
+    const sets: ImportManifest["sets"] = plan.map((entry, idx) => ({
+        setId: entry.name,
+        counts: entry.counts,
+        order: idx,
+        isSubset: flags[idx],
+    }));
+
+    // Build positions from all rows across all sheets
+    const positions: ImportManifest["positions"] = [];
+    for (let i = 0; i < normalized.length; i++) {
+        const key = sheetKeys[i];
+        for (const row of normalized[i].rows) {
+            positions.push({
+                marcherKey: key,
+                setId: row.setId,
+                xSteps: row.xSteps,
+                ySteps: row.ySteps,
+                confidence: row.conf,
+            });
+        }
+    }
+
+    // Aggregate confidence
+    const confs = positions
+        .map((p) => p.confidence)
+        .filter((c): c is number => c !== undefined);
+    const avgConfidence =
+        confs.length > 0
+            ? confs.reduce((a, b) => a + b, 0) / confs.length
+            : undefined;
+
+    return {
+        source: { format: "pdf-coordinates", filename },
+        marchers,
+        sets,
+        positions,
+        confidence: avgConfidence,
+    };
+}
+
+/**
+ * Validate an ImportManifest that came from the PDF pipeline.
+ * Runs the shared validation on the manifest.
+ */
+export function validatePdfManifest(
+    manifest: ImportManifest,
+    fieldBounds?: {
+        xCheckpoints: { stepsFromCenterFront: number }[];
+        yCheckpoints: { stepsFromCenterFront: number }[];
+    },
+): ImportValidationReport {
+    return validateManifest(manifest, fieldBounds);
+}
+
+/** The PDF coordinate import adapter. */
+export const pdfAdapter: ImporterAdapter = {
+    id: "pdf-coordinates",
+    name: "PDF Drill Coordinates",
+    accepts: (file: File) =>
+        file.type === "application/pdf" ||
+        file.name.toLowerCase().endsWith(".pdf"),
+    parse: async (file: File): Promise<ImportManifest> => {
+        const arrayBuffer = await file.arrayBuffer();
+        const { parsed } = await parsePdfToSheets(arrayBuffer);
+        const reconciled = reconcileSheets(parsed);
+        const normalized = normalizeSheets(reconciled, {
+            xCheckpoints: [],
+            yCheckpoints: [],
+        });
+        return toManifest(normalized, file.name);
+    },
+};

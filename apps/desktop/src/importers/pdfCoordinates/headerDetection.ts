@@ -4,6 +4,7 @@
  */
 
 import type { ColumnBand, TextItem } from "./columnTypes";
+import { pywareProfile } from "./profile";
 
 function normalizeToken(s: string): string {
     return s
@@ -33,6 +34,10 @@ const headerNeedles = {
         /^side\s*1.*side\s*2$/,
         /^[ab]\s*[-/]\s*[ab]$/,
         /^1\s*[-/]\s*2$/,
+        // Indoor: "L/R", "Left/Right Edge", "5 line - 5 line"
+        /^[lr]\s*[-/]\s*[lr]$/,
+        /^left\s+edge.*right\s+edge$/,
+        /^\d\s+line.*\d\s+line$/,
     ],
     fbText: [
         /^front\s*[-/]?\s*(?:to\s*)?back$/,
@@ -40,6 +45,10 @@ const headerNeedles = {
         /^home\s*[-/]?\s*visitor$/,
         /^top\s*[-/]?\s*bottom$/,
         /^bottom\s*[-/]?\s*top$/,
+        // Indoor: "A/B", "A line - B line", "Front Edge - Back Edge"
+        /^[a-e]\s*[-/]\s*[a-e]$/,
+        /^[a-e]\s+line.*[a-e]\s+line$/,
+        /^front\s+edge.*back\s+edge$/,
     ],
 };
 
@@ -89,6 +98,8 @@ function mapLateralShorthand(s: string): string {
 
 export function detectHeaderAndBands(
     rows: TextItem[][],
+    bandMarginLeft = pywareProfile.layout.bandMarginLeft * 2,
+    bandMarginRight = pywareProfile.layout.bandMarginRight + 100,
 ): { headerIndex: number; bands: ColumnBand[] } | null {
     for (let i = 0; i < rows.length; i++) {
         const row = expandHeaderItems(rows[i]);
@@ -121,11 +132,11 @@ export function detectHeaderAndBands(
             for (let j = 0; j < centers.length; j++) {
                 const left =
                     j === 0
-                        ? centers[j].x - 100
+                        ? centers[j].x - bandMarginLeft
                         : (centers[j - 1].x + centers[j].x) / 2;
                 const right =
                     j === centers.length - 1
-                        ? centers[j].x + 600
+                        ? centers[j].x + bandMarginRight
                         : (centers[j].x + centers[j + 1].x) / 2;
                 bands.push({
                     key: centers[j].key,

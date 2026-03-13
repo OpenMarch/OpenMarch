@@ -12,7 +12,7 @@ import type { TextItem } from "./columns";
 export function detectSheetsByDensity(
     items: TextItem[],
     minItemsPerSheet = 10,
-    epsilon = 50, // Max distance between items in same cluster
+    epsilon = 50,
 ): Array<{
     items: TextItem[];
     bounds: { x: number; y: number; width: number; height: number };
@@ -172,11 +172,12 @@ export function detectSheetsBySeparators(
 export function detectSheetsHybrid(
     items: TextItem[],
     headerAnchors: string[],
+    minItemsPerSheet = 10,
+    densityEpsilon = 50,
 ): Array<{
     items: TextItem[];
     bounds: { x: number; y: number; width: number; height: number };
 }> {
-    // First, find anchor points (semantic)
     const rows = groupIntoRows(items, 3);
     const anchorRows: number[] = [];
 
@@ -211,9 +212,9 @@ export function detectSheetsHybrid(
                 const right = sheetItems.filter(
                     (it) => it.x + (it.w || 0) / 2 >= split,
                 );
-                if (left.length >= 10)
+                if (left.length >= minItemsPerSheet)
                     sheets.push({ items: left, bounds: calculateBounds(left) });
-                if (right.length >= 10)
+                if (right.length >= minItemsPerSheet)
                     sheets.push({
                         items: right,
                         bounds: calculateBounds(right),
@@ -228,8 +229,7 @@ export function detectSheetsHybrid(
         return sheets;
     }
 
-    // Fallback to density-based if no anchors found
-    return detectSheetsByDensity(items);
+    return detectSheetsByDensity(items, minItemsPerSheet, densityEpsilon);
 }
 
 /**

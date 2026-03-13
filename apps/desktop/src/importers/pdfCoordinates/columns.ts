@@ -1,5 +1,6 @@
 import { SET_ID_REGEX, START_SET_IDS } from "./types";
 import type { ColumnBand, TextItem } from "./columnTypes";
+import { pywareProfile, type VendorProfile } from "./profile";
 
 export type { ColumnBand, TextItem } from "./columnTypes";
 export {
@@ -50,7 +51,9 @@ export function mapRowToColumns(
 
 export function inferBandsFromData(
     rows: TextItem[][],
-    expected = 5,
+    expected = pywareProfile.layout.expectedColumns,
+    marginLeft = pywareProfile.layout.bandMarginLeft,
+    marginRight = pywareProfile.layout.bandMarginRight,
 ): ColumnBand[] | null {
     const candidates: number[] = [];
     const take = Math.min(rows.length, 10);
@@ -62,7 +65,6 @@ export function inferBandsFromData(
     }
     if (candidates.length === 0) return null;
     candidates.sort((a, b) => a - b);
-    // Roughly pick quantile splits to get expected bands
     const uniqueCenters: number[] = [];
     for (const c of candidates) {
         if (
@@ -80,14 +82,15 @@ export function inferBandsFromData(
     const bands: ColumnBand[] = [];
     for (let j = 0; j < centers.length; j++) {
         const left =
-            j === 0 ? centers[j] - 50 : (centers[j - 1] + centers[j]) / 2;
+            j === 0
+                ? centers[j] - marginLeft
+                : (centers[j - 1] + centers[j]) / 2;
         const right =
             j === centers.length - 1
-                ? centers[j] + 500
+                ? centers[j] + marginRight
                 : (centers[j] + centers[j + 1]) / 2;
         bands.push({ key: "setId", label: "", x1: left, x2: right });
     }
-    // Assign keys by order: setId, measureRange, counts, lateral, fb
     const order: ColumnBand["key"][] = [
         "setId",
         "measureRange",
@@ -126,22 +129,21 @@ function looksLikeFB(s: string): boolean {
 
 export function clusterBandsByTokens(
     rows: TextItem[][],
-    k = 5,
+    k = pywareProfile.layout.expectedColumns,
+    marginLeft = pywareProfile.layout.bandMarginLeft,
+    marginRight = pywareProfile.layout.bandMarginRight,
 ): ColumnBand[] | null {
-    // Collect tokens from the first N data rows (skip possible header line)
     const startIndex = 0;
     const sampleRows = rows.slice(startIndex, Math.min(rows.length, 15));
     const tokens = sampleRows.flat();
     if (tokens.length === 0) return null;
     const xs = tokens.map((t) => t.x + (t.w || 0) / 2);
-    // Initialize k centers by quantiles
     const sorted = [...xs].sort((a, b) => a - b);
     const centers: number[] = [];
     for (let i = 0; i < k; i++) {
         const idx = Math.floor((i / (k - 1)) * (sorted.length - 1));
         centers.push(sorted[idx]);
     }
-    // K-means 1D
     for (let iter = 0; iter < 8; iter++) {
         const sums = new Array(k).fill(0);
         const counts = new Array(k).fill(0);
@@ -163,7 +165,6 @@ export function clusterBandsByTokens(
             if (counts[j] > 0) centers[j] = sums[j] / counts[j];
         }
     }
-    // Build clusters
     const clusterToTokens: TextItem[][] = Array.from({ length: k }, () => []);
     tokens.forEach((t) => {
         const cx = t.x + (t.w || 0) / 2;
@@ -178,19 +179,17 @@ export function clusterBandsByTokens(
         }
         clusterToTokens[best].push(t);
     });
-    // Sort clusters by center X
     const clusters = centers.map((x, idx) => ({ x, idx }));
     clusters.sort((a, b) => a.x - b.x);
     const bands: ColumnBand[] = [];
     for (let i = 0; i < clusters.length; i++) {
-        const j = clusters[i].idx;
         const left =
             i === 0
-                ? clusters[i].x - 50
+                ? clusters[i].x - marginLeft
                 : (clusters[i - 1].x + clusters[i].x) / 2;
         const right =
             i === clusters.length - 1
-                ? clusters[i].x + 500
+                ? clusters[i].x + marginRight
                 : (clusters[i].x + clusters[i + 1].x) / 2;
         bands.push({ key: "setId", label: "", x1: left, x2: right });
     }

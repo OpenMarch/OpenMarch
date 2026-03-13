@@ -1,6 +1,7 @@
 import { useRef, useState, useMemo, useEffect } from "react";
 import { getButtonClassName } from "@openmarch/ui";
 import { Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
+import { ArrowSquareInIcon } from "@phosphor-icons/react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
@@ -11,35 +12,64 @@ import {
     createPagesMutationOptions,
     updateMarcherPagesMutationOptions,
 } from "@/hooks/queries";
-import { queryClient } from "@/App";
 import {
     parsePdfToSheets,
     normalizeParsedSheets,
     detectFieldHashType,
+    toManifest,
     type SourceHashType,
 } from "@/importers/pdfCoordinates";
-import type {
-    NormalizedSheet,
-    ParsedSheet,
-} from "@/importers/pdfCoordinates/types";
-import {
-    getNormalizedSheetKeys,
-    keyToDrillPrefixAndOrder,
-} from "@/importers/pdfCoordinates/types";
-import {
-    allDatabaseBeatsQueryOptions,
-    allDatabasePagesQueryOptions,
-} from "@/hooks/queries";
-import { type NewMarcherArgs } from "@/db-functions";
+import type { ParsedSheet } from "@/importers/pdfCoordinates/types";
+import { getNormalizedSheetKeys } from "@/importers/pdfCoordinates/types";
 import { useTimingObjects } from "@/hooks";
-import {
-    parseSetId,
-    buildPagePlan,
-    validatePlan,
-    computeBeatPositions,
-    buildMarcherPageUpdates,
-    mapPage0Variants,
-} from "@/importers/pdfCoordinates/planBuilder";
+import { commitManifest } from "@/importers/commit";
+import { validateManifest } from "@/importers/validate";
+import { detectAdapter, getAcceptedExtensions } from "@/importers/registry";
+import type { ImportManifest, ImportValidationReport } from "@/importers/types";
+import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
+
+type IndoorTemplateKey = keyof typeof IndoorTemplates;
+
+const INDOOR_TEMPLATE_LABELS: Record<IndoorTemplateKey, string> = {
+    INDOOR_40x60_8to5: "40×60 — 8 to 5 (24″ steps)",
+    INDOOR_50x70_8to5: "50×70 — 8 to 5 (24″ steps)",
+    INDOOR_50x80_8to5: "50×80 — 8 to 5 (24″ steps)",
+    INDOOR_50x90_8to5: "50×90 — 8 to 5 (24″ steps)",
+    INDOOR_40x60_6to5: "40×60 — 6 to 5 (30″ steps)",
+    INDOOR_50x70_6to5: "50×70 — 6 to 5 (30″ steps)",
+    INDOOR_50x80_6to5: "50×80 — 6 to 5 (30″ steps)",
+    INDOOR_50x90_6to5: "50×90 — 6 to 5 (30″ steps)",
+};
+
+function escapeRegex(s: string) {
+    return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+/** Replace PDF-label aliases with system checkpoint names before parsing. */
+function applyIndoorAliases(
+    parsed: ParsedSheet[],
+    aliases: Record<string, string>,
+): ParsedSheet[] {
+    const replacements = Object.entries(aliases)
+        .filter(([, pdfName]) => pdfName.trim() !== "")
+        .map(([systemName, pdfName]) => ({
+            pattern: new RegExp(`\\b${escapeRegex(pdfName.trim())}\\b`, "gi"),
+            replacement: systemName,
+        }));
+    if (replacements.length === 0) return parsed;
+    return parsed.map((sheet) => ({
+        ...sheet,
+        rows: sheet.rows.map((row) => {
+            let lat = row.lateralText;
+            let fb = row.fbText;
+            for (const { pattern, replacement } of replacements) {
+                lat = lat.replace(pattern, replacement);
+                fb = fb.replace(pattern, replacement);
+            }
+            return { ...row, lateralText: lat, fbText: fb };
+        }),
+    }));
+}
 
 const HASH_TYPE_LABELS: Record<SourceHashType, string> = {
     HS: "High School",
@@ -79,7 +109,28 @@ export default function ImportCoordinatesButton() {
         pages: number;
         parsed: ParsedSheet[];
     } | null>(null);
+    const [wizardStep, setWizardStep] = useState<
+        | "field-type"
+        | "hash-type"
+        | "indoor-template"
+        | "indoor-references"
+        | "review"
+    >("field-type");
+    const [useCurrentField, setUseCurrentField] = useState(true);
+    // When useCurrentField=true: "auto" = detect from field checkpoints, else force outdoor/indoor
+    const [useCurrentFieldMode, setUseCurrentFieldMode] = useState<
+        "auto" | "outdoor" | "indoor"
+    >("auto");
+    const [flipIndoorAxes, setFlipIndoorAxes] = useState(false);
+    const [fieldType, setFieldType] = useState<"outdoor" | "indoor">("outdoor");
     const [sourceHashType, setSourceHashType] = useState<SourceHashType>("HS");
+    const [indoorTemplate, setIndoorTemplate] =
+        useState<IndoorTemplateKey>("INDOOR_50x80_8to5");
+    // systemName -> pdfLabel (what text the PDF uses for that checkpoint)
+    const [indoorAliases, setIndoorAliases] = useState<Record<string, string>>(
+        {},
+    );
+    const [showDebug, setShowDebug] = useState(false);
     const [activeStep, setActiveStep] = useState<
         "parsed" | "normalized" | "dots" | "db"
     >("parsed");
@@ -88,34 +139,85 @@ export default function ImportCoordinatesButton() {
     const [createTimeline, setCreateTimeline] = useState(true);
     const [bpm, setBpm] = useState(120);
 
-    // Default hash type from the user's field properties
+    // Auto-detect field type and hash type from field properties
     useEffect(() => {
-        if (fieldProperties?.yCheckpoints) {
-            setSourceHashType(
-                detectFieldHashType(fieldProperties.yCheckpoints as any),
-            );
+        if (fieldProperties) {
+            const indoor =
+                fieldProperties.xCheckpoints?.length > 0 &&
+                !(fieldProperties.xCheckpoints as any[]).some((c: any) =>
+                    /\byard\s*line\b/i.test(c.name),
+                );
+            setFieldType(indoor ? "indoor" : "outdoor");
+            if (!indoor && fieldProperties.yCheckpoints) {
+                setSourceHashType(
+                    detectFieldHashType(fieldProperties.yCheckpoints as any),
+                );
+            }
         }
     }, [fieldProperties]);
 
-    // Re-normalize reactively when hash type or parsed data changes
+    // Only normalize once the user reaches the review step
     const report = useMemo(() => {
-        if (!parsedPdf || !fieldProperties) return null;
+        if (!parsedPdf || !fieldProperties || wizardStep !== "review")
+            return null;
+        const effectiveFieldProps = useCurrentField
+            ? (fieldProperties as any)
+            : fieldType === "indoor"
+              ? (IndoorTemplates[indoorTemplate] as any)
+              : (fieldProperties as any);
+        const forceIndoor = useCurrentField
+            ? useCurrentFieldMode === "auto"
+                ? undefined
+                : useCurrentFieldMode === "indoor"
+            : fieldType === "indoor";
+        const parsedToUse =
+            !useCurrentField && fieldType === "indoor"
+                ? applyIndoorAliases(parsedPdf.parsed, indoorAliases)
+                : parsedPdf.parsed;
         const result = normalizeParsedSheets(
-            parsedPdf.parsed,
-            fieldProperties as any,
+            parsedToUse,
+            effectiveFieldProps,
             sourceHashType,
+            forceIndoor,
+            flipIndoorAxes,
         );
+
+        // Build ImportManifest from normalized data
+        const manifest = toManifest(result.normalized, "import.pdf");
+        const validation = validateManifest(manifest, effectiveFieldProps);
+
+        // Merge PDF-specific dryRun issues with shared validation issues
+        const allIssues = [
+            ...result.dryRun.issues,
+            ...validation.issues.filter(
+                (vi) =>
+                    !result.dryRun.issues.some(
+                        (di) => di.code === vi.code && di.setId === vi.setId,
+                    ),
+            ),
+        ];
+
         return {
             pages: parsedPdf.pages,
-            errors: result.dryRun.issues.filter((i) => i.type === "error")
-                .length,
-            warnings: result.dryRun.issues.filter((i) => i.type === "warning")
-                .length,
-            details: result.dryRun.issues,
+            errors: allIssues.filter((i) => i.type === "error").length,
+            warnings: allIssues.filter((i) => i.type === "warning").length,
+            details: allIssues,
             normalized: result.normalized,
             parsed: result.parsed,
+            manifest,
         };
-    }, [parsedPdf, fieldProperties, sourceHashType]);
+    }, [
+        parsedPdf,
+        fieldProperties,
+        sourceHashType,
+        fieldType,
+        indoorTemplate,
+        indoorAliases,
+        useCurrentField,
+        useCurrentFieldMode,
+        flipIndoorAxes,
+        wizardStep,
+    ]);
 
     const hasExistingPerformers = useMemo(
         () => marchers && marchers.length > 0,
@@ -139,15 +241,21 @@ export default function ImportCoordinatesButton() {
     async function onFileSelected(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
+        // Open dialog immediately so the user sees progress
+        setIsLoading(true);
+        setParsedPdf(null);
+        setWizardStep("field-type");
+        setShowDebug(false);
+        setUseCurrentFieldMode("auto");
+        setOpen(true);
         try {
-            setIsLoading(true);
             const arrayBuffer = await file.arrayBuffer();
             const result = await parsePdfToSheets(arrayBuffer);
             setParsedPdf(result);
-            setOpen(true);
         } catch (err: any) {
             console.error(err);
             toast.error(`Import failed: ${err?.message || "Unknown error"}`);
+            setOpen(false);
         } finally {
             setIsLoading(false);
             e.target.value = "";
@@ -214,132 +322,22 @@ export default function ImportCoordinatesButton() {
         URL.revokeObjectURL(url);
     }
 
-    const uniquePerformers = useMemo(() => {
-        if (!report) return [] as { key: string }[];
-        const keys = getNormalizedSheetKeys(report.normalized);
-        const map = new Map<string, { key: string }>();
-        keys.forEach((key) => {
-            if (!map.has(key)) map.set(key, { key });
-        });
-        return Array.from(map.values());
+    const manifestMarchers = useMemo(() => {
+        return report?.manifest?.marchers ?? [];
     }, [report]);
 
-    const proposedMarchers = useMemo(() => {
-        const keys = uniquePerformers.map((p) => p.key);
-        const newArgs: (NewMarcherArgs & { originalKey: string })[] = [];
-        let generatedIndex = 1;
-        const usedDrillKeys = new Set<string>();
-        if (marchers) {
-            for (const m of marchers) {
-                if (m.drill_number)
-                    usedDrillKeys.add(
-                        `${m.drill_prefix}${m.drill_order}`.toLowerCase(),
-                    );
-            }
-        }
-
-        for (const key of keys) {
-            let { prefix, order } = keyToDrillPrefixAndOrder(
-                key,
-                generatedIndex,
-            );
-            let drillKey = `${prefix}${order}`.toLowerCase();
-            while (usedDrillKeys.has(drillKey)) {
-                order++;
-                drillKey = `${prefix}${order}`.toLowerCase();
-            }
-            usedDrillKeys.add(drillKey);
-            newArgs.push({
-                section: "Band",
-                drill_prefix: prefix,
-                drill_order: order,
-                name: undefined,
-                originalKey: key,
-            });
-            generatedIndex++;
-        }
-        return newArgs;
-    }, [uniquePerformers, marchers]);
-
-    const proposedPages = useMemo(() => {
-        if (!report) return [];
-        return getPagePlan().map((p, idx) => ({
-            name: p.name,
-            counts: p.counts,
-            index: idx,
-        }));
+    const manifestSets = useMemo(() => {
+        return report?.manifest?.sets ?? [];
     }, [report]);
-
-    const proposedMarcherPages = useMemo(() => {
-        if (!report || !fieldProperties) return [];
-
-        const updates: any[] = [];
-        const pps = fieldProperties.pixelsPerStep as number;
-        const cx = fieldProperties.centerFrontPoint.xPixels as number;
-        const cy = fieldProperties.centerFrontPoint.yPixels as number;
-        const sheetKeys = getNormalizedSheetKeys(report.normalized);
-
-        // Build a lookup for marcher IDs (simulated or real) by sheet key
-        const marcherIdMap = new Map<string, string | number>();
-        const existingByDrill = new Map(
-            (marchers || [])
-                .filter((m) => m.drill_number)
-                .map((m) => [m.drill_number!.toLowerCase(), m.id]),
-        );
-        for (let i = 0; i < report.normalized.length; i++) {
-            const sk = sheetKeys[i];
-            const { prefix, order } = keyToDrillPrefixAndOrder(sk, 1);
-            const drillKey = `${prefix}${order}`.toLowerCase();
-            const existingId = existingByDrill.get(drillKey);
-            if (existingId !== undefined) marcherIdMap.set(sk, existingId);
-        }
-        proposedMarchers.forEach((m, idx) => {
-            marcherIdMap.set(m.originalKey, `new-${idx + 1}`);
-        });
-
-        for (let i = 0; i < report.normalized.length; i++) {
-            const sheet = report.normalized[i];
-            const labelKey = sheetKeys[i];
-            const marcherId = marcherIdMap.get(labelKey);
-
-            if (!marcherId) continue;
-
-            for (const row of sheet.rows) {
-                const x = cx + row.xSteps * pps;
-                const y = cy + row.ySteps * pps;
-
-                updates.push({
-                    marcher_id: marcherId,
-                    page_label: row.setId,
-                    x,
-                    y,
-                    notes: `${row.lateralText} | ${row.fbText}`,
-                    original_row: row,
-                });
-            }
-        }
-        return updates;
-    }, [report, fieldProperties, proposedMarchers, marchers]);
 
     function downloadJson() {
         if (!report) return;
-        // Export the full report for debugging, structured like the DB tables
         const data = {
-            // Meta info
             meta: {
                 pages: report.pages,
                 generatedAt: new Date().toISOString(),
             },
-            // DB Tables Structure
-            tables: {
-                marchers: proposedMarchers.map((m) => ({
-                    ...m,
-                    drill_number: `${m.drill_prefix}${m.drill_order}`,
-                })),
-                pages: proposedPages,
-                marcher_pages: proposedMarcherPages,
-            },
-            // Original report details for deep diving
+            manifest: report.manifest,
             parsing_report: {
                 errors: report.errors,
                 warnings: report.warnings,
@@ -370,496 +368,57 @@ export default function ImportCoordinatesButton() {
         );
     }, [report]);
 
-    function getPagePlan() {
-        if (!report) return [];
-        return buildPagePlan(report.normalized as any);
-    }
-
-    async function ensureBeatsAndPages() {
-        const plan = getPagePlan();
-        const totalCounts = plan.reduce((a, b) => a + b.counts, 0);
-        console.log(
-            `[import-commit] Page plan: ${plan.length} pages, ${totalCounts} total counts`,
-        );
-
-        // 1) Beats
-        // For imports, the first page always starts at beat position 0
-        // We need beats covering the full range up to totalCounts. Indices 0..totalCounts.
-        const beatsNeeded = Math.max(0, totalCounts + 1 - beats.length);
-        console.log(
-            `[import-commit] Current beats: ${beats.length}, needed: ${beatsNeeded} (first page will start at position 0)`,
-        );
-
-        if (beatsNeeded > 0) {
-            const beatDuration = 60 / bpm;
-            console.log(
-                `[import-commit] Creating ${beatsNeeded} beats at ${bpm} BPM (duration: ${beatDuration}s)`,
-            );
-            const newBeats = Array.from({ length: beatsNeeded }, () => ({
-                duration: beatDuration,
-                include_in_measure: true,
-            }));
-            await createBeatsMutation.mutateAsync({ newBeats });
-            await fetchTimingObjects();
-            console.log(
-                `[import-commit] Created ${beatsNeeded} beats successfully`,
-            );
-        }
-        // Refetch beats to ensure we have the latest data
-        const updatedBeatsData = await queryClient.fetchQuery(
-            allDatabaseBeatsQueryOptions(),
-        );
-        const currentBeats = updatedBeatsData
-            .sort((a, b) => a.position - b.position)
-            .map((beat) => ({ id: beat.id, position: beat.position }));
-
-        // Ensure we have a beat at position 0 (required for first page)
-        const beatAtPosition0 = currentBeats.find((b) => b.position === 0);
-        if (!beatAtPosition0) {
-            console.error(
-                "[import-commit] No beat found at position 0 - this should not happen",
-            );
-            toast.error("Missing beat at position 0");
-            return false;
-        }
-
-        console.log(
-            `[import-commit] Refetched ${currentBeats.length} beats (positions 0-${currentBeats.length - 1}), first page will start at position 0`,
-        );
-
-        // Refetch database pages to check for start_beat conflicts
-        const databasePages = await queryClient.fetchQuery(
-            allDatabasePagesQueryOptions(),
-        );
-        const pageByStartBeat = new Map(
-            databasePages.map((p) => [p.start_beat, p.id]),
-        );
-        console.log(
-            `[import-commit] Found ${databasePages.length} existing pages (start_beats: ${Array.from(pageByStartBeat.keys()).join(", ")})`,
-        );
-
-        // 2) Pages with robust subset flags
-        const validation = validatePlan(plan);
-        if (!validation.valid) {
-            console.error(
-                "[import-commit] Page plan validation failed:",
-                validation.message,
-            );
-            toast.error(validation.message || "Invalid page plan");
-            return false;
-        }
-        const flags = validation.flags;
-        const pageByName = new Map(pages.map((p) => [p.name, p.id]));
-        const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
-        const usedBeatIds = new Set<number>();
-        // Track plan indices and their corresponding start_beat positions for mapping later
-        const planIndexToStartBeat = new Map<number, number>();
-        // First page always starts at beat position 0 (OpenMarch convention)
-        // The first row in the PDF is the initial position (no movement before it) -> page 0
-        // The second row represents where they move TO (first movement) -> page 1 (starts at counts[0])
-        // The third row represents the second movement -> page 2 (starts at counts[0] + counts[1])
-        // The counts column represents "counts to reach this set"
-        let cumulativeBeatPosition = 0;
-        console.log(
-            `[import-commit] Processing ${plan.length} plan items to create/verify pages`,
-        );
-        for (let i = 0; i < plan.length; i++) {
-            const { name, counts } = plan[i];
-
-            // Row 0 = initial position -> page 0 (beat 0)
-            // Row 1 = first movement destination -> page 1 (beat = counts[1])
-            // The counts column represents "counts to reach this set"
-            // So we accumulate the current row's counts to get the start position
-            if (i > 0) {
-                cumulativeBeatPosition += counts;
-            }
-
-            const startPosition = cumulativeBeatPosition; // beat position (0-indexed)
-            const parsedSet = parseSetId(name);
-            const isSet2 =
-                parsedSet && parsedSet.num === 2 && !parsedSet.subset;
-            console.log(
-                `[import-commit] Plan[${i}]: "${name}" -> counts=${counts}, cumulative=${cumulativeBeatPosition}, beat position=${startPosition}${isSet2 ? " [SET 2 - DEBUGGING]" : ""}`,
-            );
-            // Find beat at this position (beats are sorted by position)
-            const beatObj = currentBeats.find(
-                (b) => b.position === startPosition,
-            );
-            if (!beatObj) {
-                console.error(
-                    `[import-commit] Missing beat at position ${startPosition} for page ${name}`,
-                );
-                toast.error(
-                    `Missing beat at position ${startPosition} for page ${name}`,
-                );
-                return false;
-            }
-            console.log(
-                `[import-commit] Found beat ID ${beatObj.id} at position ${startPosition} for "${name}"${isSet2 ? " [SET 2 - DEBUGGING]" : ""}`,
-            );
-
-            // Check if a page already exists at this start_beat (UNIQUE constraint)
-            if (pageByStartBeat.has(beatObj.id)) {
-                const existingPageId = pageByStartBeat.get(beatObj.id);
-                console.log(
-                    `[import-commit] Page "${name}" already exists at start_beat ${beatObj.id} (page ID: ${existingPageId}), skipping creation${isSet2 ? " [SET 2 - DEBUGGING: Page exists, will map to this page]" : ""}`,
-                );
-                planIndexToStartBeat.set(i, beatObj.id);
-                continue;
-            }
-
-            // CRITICAL: The first row (i === 0) should map to page ID 0 (FIRST_PAGE_ID)
-            // Page 0 always exists and is at beat position 0, so we should use it instead of creating a new page
-            if (i === 0 && startPosition === 0) {
-                const existingPage0 = databasePages.find((p) => p.id === 0);
-                if (existingPage0) {
-                    console.log(
-                        `[import-commit] First row "${name}" maps to existing page 0 (FIRST_PAGE_ID) at beat position 0`,
-                    );
-                    planIndexToStartBeat.set(i, beatObj.id);
-                    continue; // Don't create a new page, use existing page 0
-                }
-            }
-
-            // Check if we already queued a page for this beat (prevent duplicates in batch)
-            if (usedBeatIds.has(beatObj.id)) {
-                console.warn(
-                    `[import-commit] WARNING: Page "${name}" maps to beat ${startPosition} (ID: ${beatObj.id}), but a page was already queued for this beat. Skipping creation to prevent UNIQUE constraint violation.`,
-                );
-                planIndexToStartBeat.set(i, beatObj.id);
-                continue;
-            }
-
-            // Check if page exists by name (legacy check)
-            if (pageByName.has(name)) {
-                const existingPageId = pageByName.get(name);
-                console.log(
-                    `[import-commit] Page "${name}" already exists (page ID: ${existingPageId}), skipping creation but tracking mapping`,
-                );
-                // Still track the mapping even if page already exists
-                planIndexToStartBeat.set(i, beatObj.id);
-                continue;
-            }
-
-            console.log(
-                `[import-commit] Creating page "${name}" at beat position ${startPosition} (beat ID: ${beatObj.id}), subset: ${flags[i]}`,
-            );
-            newPagesArgs.push({ start_beat: beatObj.id, is_subset: flags[i] });
-            usedBeatIds.add(beatObj.id);
-            planIndexToStartBeat.set(i, beatObj.id);
-        }
-        if (newPagesArgs.length > 0) {
-            console.log(
-                `[import-commit] Creating ${newPagesArgs.length} new pages...`,
-            );
-            await createPagesMutation.mutateAsync(
-                newPagesArgs.map((p) => ({
-                    start_beat: p.start_beat,
-                    is_subset: p.is_subset,
-                })),
-            );
-            await fetchTimingObjects();
-            console.log(
-                `[import-commit] Created ${newPagesArgs.length} pages successfully`,
-            );
-        } else {
-            console.log("[import-commit] No new pages to create");
-        }
-        return { planIndexToStartBeat };
-    }
-
     async function commitImport() {
-        if (!report || !fieldProperties) return;
+        if (!report?.manifest || !fieldProperties) return;
         setIsCommitting(true);
         try {
-            console.log("[import-commit] Starting database commit...");
+            const effectiveProps = useCurrentField
+                ? (fieldProperties as any)
+                : fieldType === "indoor"
+                  ? (IndoorTemplates[indoorTemplate] as any)
+                  : (fieldProperties as any);
 
-            let planIndexToStartBeat: Map<number, number> | undefined;
-            if (createTimeline) {
-                console.log("[import-commit] Creating beats and pages...");
-                const result = await ensureBeatsAndPages();
-                if (!result) {
-                    console.error(
-                        "[import-commit] Failed to create beats/pages",
-                    );
-                    return;
-                }
-                planIndexToStartBeat = result.planIndexToStartBeat;
-                console.log(
-                    "[import-commit] Beats and pages created successfully",
-                );
-            }
-
-            // 1) Map or create marchers
-            console.log("[import-commit] Processing marchers...");
-            const existingByDrill = new Map<string, number>();
-            for (const m of marchers) {
-                if (m.drill_number)
-                    existingByDrill.set(m.drill_number.toLowerCase(), m.id);
-            }
-            console.log(
-                `[import-commit] Found ${existingByDrill.size} existing marchers`,
+            const result = await commitManifest(
+                report.manifest,
+                {
+                    pixelsPerStep: effectiveProps.pixelsPerStep,
+                    centerFrontPoint: effectiveProps.centerFrontPoint,
+                },
+                {
+                    createMarchers: (args) =>
+                        createMarchersMutation.mutateAsync(args),
+                    createBeats: (args) =>
+                        createBeatsMutation.mutateAsync(args),
+                    createPages: (args) =>
+                        createPagesMutation.mutateAsync(args),
+                    updateMarcherPages: (args) =>
+                        updateMarcherPagesMutation.mutateAsync(args),
+                    fetchTimingObjects,
+                },
+                marchers.map((m: any) => ({
+                    id: m.id,
+                    drill_number: m.drill_number,
+                    drill_prefix: m.drill_prefix,
+                    drill_order: m.drill_order,
+                })),
+                pages.map((p: any) => ({ id: p.id, name: p.name })),
+                beats.map((b: any) => ({ id: b.id, position: b.position })),
+                { createTimeline, bpm },
             );
 
-            /** Map sheet key (normalized, short) → marcher ID for buildMarcherPageUpdates */
-            const sheetKeys = getNormalizedSheetKeys(report.normalized);
-            const marcherBySheetKey = new Map<string, number>();
-            for (let i = 0; i < report.normalized.length; i++) {
-                const sk = sheetKeys[i];
-                const { prefix, order } = keyToDrillPrefixAndOrder(sk, 1);
-                const drillKey = `${prefix}${order}`.toLowerCase();
-                const existingId = existingByDrill.get(drillKey);
-                if (existingId !== undefined)
-                    marcherBySheetKey.set(sk, existingId);
-            }
-
-            if (proposedMarchers.length > 0) {
-                console.log(
-                    `[import-commit] Creating ${proposedMarchers.length} new marchers...`,
-                );
-                const createdMarchers =
-                    await createMarchersMutation.mutateAsync(proposedMarchers);
-                console.log(
-                    `[import-commit] Created ${createdMarchers.length} marchers:`,
-                    createdMarchers
-                        .map((m) => `${m.drill_prefix}${m.drill_order}`)
-                        .join(", "),
-                );
-                for (let i = 0; i < createdMarchers.length; i++) {
-                    const m = createdMarchers[i];
-                    const drillNumber = `${m.drill_prefix}${m.drill_order}`;
-                    existingByDrill.set(drillNumber.toLowerCase(), m.id);
-                    const originalKey = (proposedMarchers[i] as any)
-                        .originalKey;
-                    if (originalKey) marcherBySheetKey.set(originalKey, m.id);
-
-                    // Find the sheet for this marcher by matching normalized key
-                    const sheet = originalKey
-                        ? report.normalized[
-                              sheetKeys.findIndex((k) => k === originalKey)
-                          ]
-                        : null;
-
-                    if (sheet) {
-                        // Find the start row (Set 0 or first row)
-                        const startRow =
-                            sheet.rows.find((r) => {
-                                const p = parseSetId(r.setId);
-                                return p && p.num === 0;
-                            }) || sheet.rows[0];
-
-                        if (startRow) {
-                            const pps = fieldProperties.pixelsPerStep as number;
-                            const cx = fieldProperties.centerFrontPoint
-                                .xPixels as number;
-                            const cy = fieldProperties.centerFrontPoint
-                                .yPixels as number;
-
-                            const initialX = cx + startRow.xSteps * pps;
-                            const initialY = cy + startRow.ySteps * pps;
-
-                            // We need to update the marcher record with these coordinates
-                            // Since createMarchersMutation might not accept x/y, we can run a direct update or use a separate mutation if available.
-                            // However, typically `marchers` table x/y is used for the "starting position" if no page 0 exists?
-                            // Or does OpenMarch rely solely on `marcher_pages` for positions?
-                            // Actually, `marchers` table usually has x/y columns.
-                            // Let's update it.
-                            // Note: `createMarchersMutation` returns the created object. If we want to set X/Y we should do it.
-                            // But usually `marcher_pages` for Page 1 (Start) handles the first position.
-                            // If Page 1 is "Start", then `marcher_pages` update below will set it.
-                            // So maybe we don't need to update `marchers` table directly if `marcher_pages` covers it?
-                            // But the user said "set 0 is still wrong".
-                            // If Set 0 is the start, `marcher_pages` will have an entry for Page 0.
-                            // Let's ensure the `marcher_pages` update includes Set 0.
-                        }
-                    }
-                }
-            }
-
-            // Refresh pages after creation to get the latest data
-            await fetchTimingObjects();
-            const allPages = pages;
-
-            // Map pages by their start_beat position (which matches plan order)
-            // We already tracked planIndexToStartBeat, so we can map setId -> pageId directly
-            const plan = getPagePlan();
-            const pageBySetId = new Map<string, number>();
-
-            // Get database pages to find page IDs by start_beat
-            const databasePages = await queryClient.fetchQuery(
-                allDatabasePagesQueryOptions(),
-            );
-            console.log(
-                `[import-commit] Found ${databasePages.length} total pages in database`,
-            );
-            console.log(
-                `[import-commit] First 5 pages:`,
-                databasePages
-                    .slice(0, 5)
-                    .map((p) => `page ${p.id} at beat ${p.start_beat}`)
-                    .join(", "),
-            );
-            const pagesByStartBeat = new Map(
-                databasePages.map((p) => [p.start_beat, p.id]),
-            );
-            console.log(
-                `[import-commit] Built pagesByStartBeat map with ${pagesByStartBeat.size} entries`,
-            );
-
-            // Get beat at position 0 to find page 0 (FIRST_PAGE_ID)
-            const allBeatsData = await queryClient.fetchQuery(
-                allDatabaseBeatsQueryOptions(),
-            );
-            const beatAtPosition0 = allBeatsData.find((b) => b.position === 0);
-            const page0Id = beatAtPosition0
-                ? pagesByStartBeat.get(beatAtPosition0.id)
-                : null;
-
-            if (page0Id === null || page0Id === undefined) {
-                console.error(
-                    "[import-commit] Page 0 (FIRST_PAGE_ID) not found - this should never happen",
-                );
-                toast.error("Page 0 not found. Cannot proceed with import.");
-                return;
-            }
-            mapPage0Variants(plan, page0Id).forEach((id, setId) =>
-                pageBySetId.set(setId, id),
-            );
-
-            if (planIndexToStartBeat) {
-                // Map plan items to pages using the start_beat positions we tracked
-                console.log(
-                    `[import-commit] Mapping ${plan.length} plan items to pages using planIndexToStartBeat`,
-                );
-                console.log(
-                    `[import-commit] planIndexToStartBeat entries:`,
-                    Array.from(planIndexToStartBeat.entries())
-                        .slice(0, 5)
-                        .map(
-                            ([idx, beatId]) => `plan[${idx}] -> beat ${beatId}`,
-                        )
-                        .join(", "),
-                );
-                console.log(
-                    `[import-commit] Available pages by start_beat:`,
-                    Array.from(pagesByStartBeat.entries())
-                        .slice(0, 5)
-                        .map(
-                            ([beatId, pageId]) =>
-                                `beat ${beatId} -> page ${pageId}`,
-                        )
-                        .join(", "),
-                );
-
-                for (let i = 0; i < plan.length; i++) {
-                    if (i === 0) continue;
-                    const { name: setId, counts } = plan[i];
-                    const parsedSet = parseSetId(setId);
-                    if (parsedSet && parsedSet.num === 0) continue;
-
-                    const startBeatId = planIndexToStartBeat.get(i);
-                    const isSet2Mapping =
-                        parsedSet && parsedSet.num === 2 && !parsedSet.subset;
-                    if (startBeatId) {
-                        const pageId = pagesByStartBeat.get(startBeatId);
-                        if (pageId) {
-                            pageBySetId.set(setId, pageId);
-                            console.log(
-                                `[import-commit] Mapped "${setId}" (plan index ${i}, counts=${counts}) -> beat ${startBeatId} -> page ${pageId}${isSet2Mapping ? " [SET 2 - DEBUGGING: Successfully mapped]" : ""}`,
-                            );
-                        } else {
-                            console.error(
-                                `[import-commit] ERROR: No page found at start_beat ${startBeatId} for setId "${setId}" (plan index ${i}, counts=${counts})${isSet2Mapping ? " [SET 2 - DEBUGGING: MAPPING FAILED]" : ""}`,
-                            );
-                            console.error(
-                                `[import-commit] Available beat IDs in pagesByStartBeat:`,
-                                Array.from(pagesByStartBeat.keys()).slice(
-                                    0,
-                                    10,
-                                ),
-                            );
-                            if (isSet2Mapping) {
-                                console.error(
-                                    `[import-commit] SET 2 DEBUG: Looking for beat ID ${startBeatId} at position 32`,
-                                );
-                                console.error(
-                                    `[import-commit] SET 2 DEBUG: All pages:`,
-                                    databasePages
-                                        .slice(0, 10)
-                                        .map(
-                                            (p) =>
-                                                `page ${p.id} at beat ${p.start_beat}`,
-                                        )
-                                        .join(", "),
-                                );
-                            }
-                        }
-                    } else {
-                        console.error(
-                            `[import-commit] ERROR: No start_beat found in planIndexToStartBeat for plan index ${i} (setId="${setId}")${isSet2Mapping ? " [SET 2 - DEBUGGING: NO BEAT ID TRACKED]" : ""}`,
-                        );
-                    }
-                }
-            } else {
-                // Fallback: when createTimeline is false, map plan items to existing pages by index.
-                // With no measures/beats beyond the seed, we may only have page 0 - map only what we can.
-                const beatsById = new Map(
-                    allBeatsData.map((beat) => [beat.id, beat.position]),
-                );
-                const sortedPages = [...databasePages].sort((a, b) => {
-                    const aPos = beatsById.get(a.start_beat) ?? Infinity;
-                    const bPos = beatsById.get(b.start_beat) ?? Infinity;
-                    return aPos - bPos;
-                });
-                for (let i = 0; i < plan.length; i++) {
-                    const { name: setId } = plan[i];
-                    if (pageBySetId.has(setId)) continue;
-                    const page = sortedPages[i];
-                    if (page) pageBySetId.set(setId, page.id);
-                }
-            }
-
-            const pps = fieldProperties.pixelsPerStep as number;
-            const cx = fieldProperties.centerFrontPoint.xPixels as number;
-            const cy = fieldProperties.centerFrontPoint.yPixels as number;
-
-            const { updates, stats } = buildMarcherPageUpdates(
-                report.normalized,
-                pageBySetId,
-                marcherBySheetKey,
-                pps,
-                cx,
-                cy,
-                sheetKeys,
-            );
-
-            if (stats.skippedInvalid > 0) {
+            if (result.skippedInvalid > 0) {
                 toast.warning(
-                    `Skipped ${stats.skippedInvalid} rows with invalid coordinates.`,
+                    `Skipped ${result.skippedInvalid} rows with invalid coordinates.`,
                 );
             }
 
-            if (updates.length === 0) {
-                console.error("[import-commit] No updates to apply");
-                toast.warning(
-                    "No updates to apply. Ensure pages exist with names matching set IDs.",
-                );
+            if (!result.success) {
+                toast.warning(result.error || "No updates to apply.");
                 return;
             }
 
-            console.log(
-                `[import-commit] Writing ${updates.length} marcher_pages updates to database...`,
-            );
-            const updatedIds =
-                await updateMarcherPagesMutation.mutateAsync(updates);
-            console.log(
-                `[import-commit] Successfully updated ${updatedIds.length} marcher_pages`,
-            );
-
-            await fetchTimingObjects();
-            console.log("[import-commit] Commit completed successfully");
             toast.success(
-                `Imported ${updates.length} positions${createTimeline ? " with beats/pages" : ""}.`,
+                `Imported ${result.updatedCount} positions${createTimeline ? " with beats/pages" : ""}.`,
             );
             setOpen(false);
         } catch (e: any) {
@@ -875,239 +434,658 @@ export default function ImportCoordinatesButton() {
             <input
                 ref={fileInputRef}
                 type="file"
-                accept="application/pdf"
+                accept={getAcceptedExtensions()}
                 className="hidden"
                 onChange={onFileSelected}
             />
             <button
                 onClick={handleClick}
                 disabled={isLoading}
-                className={getButtonClassName({
-                    variant: "primary",
-                    size: "default",
-                    content: "text",
-                    className: undefined,
-                })}
+                type="button"
+                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
             >
+                <ArrowSquareInIcon size={24} />
                 {isLoading ? "Importing…" : "Import"}
             </button>
             <Dialog open={open} onOpenChange={setOpen}>
-                <DialogContent className="max-h-[90vh] max-w-[1200px] overflow-auto">
-                    <DialogTitle>PDF Import</DialogTitle>
-                    {report ? (
-                        <div className="flex flex-col gap-12">
-                            <div className="text-muted-foreground text-sm">
-                                Pages: {report.pages} · Errors: {report.errors}{" "}
-                                · Warnings: {report.warnings}
+                <DialogContent className="max-h-[90vh] max-w-[640px] overflow-auto">
+                    <DialogTitle>Import Coordinates</DialogTitle>
+
+                    {/* Loading indicator while PDF is being parsed */}
+                    {isLoading && !parsedPdf && (
+                        <div className="flex flex-col items-center justify-center gap-8 py-32">
+                            <div className="border-accent size-24 animate-spin rounded-full border-2 border-t-transparent" />
+                            <span className="text-body text-text-subtitle">
+                                Parsing PDF…
+                            </span>
+                        </div>
+                    )}
+
+                    {/* ── Step 1: Field Type ─────────────────────────────── */}
+                    {wizardStep === "field-type" && !isLoading && (
+                        <div className="flex flex-col gap-16">
+                            {/* Quick path: use current file's field */}
+                            <button
+                                onClick={() => {
+                                    setUseCurrentField(true);
+                                    setWizardStep("review");
+                                }}
+                                className={`rounded-6 border-accent bg-fg-2 flex flex-col gap-4 border p-16 text-left duration-150 ease-out hover:-translate-y-[2px] active:translate-y-4`}
+                            >
+                                <span className="text-body font-medium">
+                                    My file is already set up with the same
+                                    field as the PDF
+                                </span>
+                                <span className="text-sub text-text-subtitle">
+                                    Use the current file's field settings — skip
+                                    straight to review
+                                </span>
+                            </button>
+
+                            {/* Divider */}
+                            <div className="flex items-center gap-8">
+                                <div className="border-stroke h-px flex-1 border-t" />
+                                <span className="text-sub text-text-subtitle">
+                                    or choose manually
+                                </span>
+                                <div className="border-stroke h-px flex-1 border-t" />
                             </div>
-                            <div className="text-muted-foreground text-sm">
-                                Total rows parsed:{" "}
-                                {report.normalized.reduce(
-                                    (sum, s) => sum + (s.rows?.length || 0),
-                                    0,
-                                )}{" "}
-                                across {report.normalized.length} performer
-                                sheets
-                            </div>
-                            <div className="flex items-center gap-16">
-                                <label className="flex items-center gap-8">
-                                    <span>Source hash type</span>
-                                    <select
-                                        value={sourceHashType}
-                                        onChange={(e) =>
-                                            setSourceHashType(
-                                                e.target
-                                                    .value as SourceHashType,
-                                            )
-                                        }
-                                        className="rounded-4 border-stroke bg-fg-1 border px-8 py-4"
+
+                            <div className="flex gap-12">
+                                {(
+                                    [
+                                        {
+                                            value: "outdoor",
+                                            label: "Outdoor / Football",
+                                            desc: "Yard lines and hashes (e.g. 4 steps Inside 40 yd ln)",
+                                        },
+                                        {
+                                            value: "indoor",
+                                            label: "Indoor",
+                                            desc: "Numbered or lettered lines (e.g. On 5 line, On A line)",
+                                        },
+                                    ] as const
+                                ).map((opt) => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => setFieldType(opt.value)}
+                                        className={`rounded-6 flex flex-1 flex-col gap-6 border p-16 text-left duration-150 ease-out hover:-translate-y-[2px] active:translate-y-4 ${
+                                            fieldType === opt.value
+                                                ? "border-accent bg-fg-2"
+                                                : "border-stroke bg-fg-1"
+                                        }`}
                                     >
-                                        {(
-                                            Object.entries(
-                                                HASH_TYPE_LABELS,
-                                            ) as [SourceHashType, string][]
-                                        ).map(([value, label]) => (
-                                            <option key={value} value={value}>
-                                                {label}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </label>
-                                <label className="flex items-center gap-8">
+                                        <span className="text-body font-medium">
+                                            {opt.label}
+                                        </span>
+                                        <span className="text-sub text-text-subtitle">
+                                            {opt.desc}
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex justify-end">
+                                <button
+                                    onClick={() => {
+                                        setUseCurrentField(false);
+                                        setWizardStep(
+                                            fieldType === "outdoor"
+                                                ? "hash-type"
+                                                : "indoor-template",
+                                        );
+                                    }}
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Step 2: Hash Type (outdoor only) ───────────────── */}
+                    {wizardStep === "hash-type" && (
+                        <div className="flex flex-col gap-16">
+                            <p className="text-body text-text-subtitle">
+                                What hash type does this PDF use?
+                            </p>
+                            <div className="flex flex-col gap-6">
+                                {(
+                                    Object.entries(HASH_TYPE_LABELS) as [
+                                        SourceHashType,
+                                        string,
+                                    ][]
+                                ).map(([value, label]) => (
+                                    <label
+                                        key={value}
+                                        className={`rounded-6 flex cursor-pointer items-center gap-12 border px-16 py-12 duration-150 ease-out hover:-translate-y-[2px] active:translate-y-4 ${
+                                            sourceHashType === value
+                                                ? "border-accent bg-fg-2"
+                                                : "border-stroke bg-fg-1"
+                                        }`}
+                                    >
+                                        <div
+                                            className={`flex size-[1.125rem] shrink-0 items-center justify-center rounded-full border ${
+                                                sourceHashType === value
+                                                    ? "border-accent bg-accent"
+                                                    : "border-stroke bg-fg-2"
+                                            }`}
+                                        >
+                                            {sourceHashType === value && (
+                                                <div className="bg-text-invert size-[0.4375rem] rounded-full" />
+                                            )}
+                                        </div>
+                                        <span className="text-body leading-none">
+                                            {label}
+                                        </span>
+                                        <input
+                                            type="radio"
+                                            name="hashType"
+                                            value={value}
+                                            checked={sourceHashType === value}
+                                            onChange={() =>
+                                                setSourceHashType(value)
+                                            }
+                                            className="sr-only"
+                                        />
+                                    </label>
+                                ))}
+                            </div>
+                            <div className="flex justify-between">
+                                <button
+                                    onClick={() => setWizardStep("field-type")}
+                                    className={getButtonClassName({
+                                        variant: "secondary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    ← Back
+                                </button>
+                                <button
+                                    onClick={() => setWizardStep("review")}
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Step 2b: Indoor Template ────────────────────────── */}
+                    {wizardStep === "indoor-template" && (
+                        <div className="flex flex-col gap-16">
+                            <p className="text-body text-text-subtitle">
+                                Which indoor field template does this PDF use?
+                            </p>
+                            <div className="flex flex-col gap-6">
+                                {(
+                                    Object.entries(INDOOR_TEMPLATE_LABELS) as [
+                                        IndoorTemplateKey,
+                                        string,
+                                    ][]
+                                ).map(([key, label]) => (
+                                    <label
+                                        key={key}
+                                        className={`rounded-6 flex cursor-pointer items-center gap-12 border px-16 py-12 duration-150 ease-out hover:-translate-y-[2px] active:translate-y-4 ${
+                                            indoorTemplate === key
+                                                ? "border-accent bg-fg-2"
+                                                : "border-stroke bg-fg-1"
+                                        }`}
+                                    >
+                                        <div
+                                            className={`flex size-[1.125rem] shrink-0 items-center justify-center rounded-full border ${
+                                                indoorTemplate === key
+                                                    ? "border-accent bg-accent"
+                                                    : "border-stroke bg-fg-2"
+                                            }`}
+                                        >
+                                            {indoorTemplate === key && (
+                                                <div className="bg-text-invert size-[0.4375rem] rounded-full" />
+                                            )}
+                                        </div>
+                                        <span className="text-body leading-none">
+                                            {label}
+                                        </span>
+                                        <input
+                                            type="radio"
+                                            name="indoorTemplate"
+                                            value={key}
+                                            checked={indoorTemplate === key}
+                                            onChange={() =>
+                                                setIndoorTemplate(key)
+                                            }
+                                            className="sr-only"
+                                        />
+                                    </label>
+                                ))}
+                            </div>
+                            <div className="flex justify-between">
+                                <button
+                                    onClick={() => setWizardStep("field-type")}
+                                    className={getButtonClassName({
+                                        variant: "secondary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    ← Back
+                                </button>
+                                <button
+                                    onClick={() =>
+                                        setWizardStep("indoor-references")
+                                    }
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Step 2c: Indoor Reference Labels ────────────────── */}
+                    {wizardStep === "indoor-references" && (
+                        <div className="flex flex-col gap-16">
+                            <label className="flex cursor-pointer items-center gap-8">
+                                <input
+                                    type="checkbox"
+                                    checked={flipIndoorAxes}
+                                    onChange={(e) =>
+                                        setFlipIndoorAxes(e.target.checked)
+                                    }
+                                    className="accent-accent size-[1rem]"
+                                />
+                                <span className="text-body">
+                                    Letters (A–E) are lateral, numbers (1–5) are
+                                    front-back
+                                </span>
+                            </label>
+                            <p className="text-body text-text-subtitle">
+                                For each field reference, enter the label your
+                                PDF uses. Leave blank if unused or if it already
+                                matches the name shown.
+                            </p>
+                            <div className="flex max-h-[420px] flex-col gap-16 overflow-y-auto pr-4">
+                                {[
+                                    {
+                                        title: "Lateral (left-right)",
+                                        checkpoints: Array.from(
+                                            new Map(
+                                                (
+                                                    IndoorTemplates[
+                                                        indoorTemplate
+                                                    ].xCheckpoints as any[]
+                                                )
+                                                    .filter(
+                                                        (c: any) =>
+                                                            c.useAsReference,
+                                                    )
+                                                    .slice()
+                                                    .sort(
+                                                        (a: any, b: any) =>
+                                                            a.stepsFromCenterFront -
+                                                            b.stepsFromCenterFront,
+                                                    )
+                                                    .map((c: any) => [
+                                                        c.name,
+                                                        c,
+                                                    ]),
+                                            ).values(),
+                                        ),
+                                    },
+                                    {
+                                        title: "Front-back (depth)",
+                                        checkpoints: (
+                                            IndoorTemplates[indoorTemplate]
+                                                .yCheckpoints as any[]
+                                        )
+                                            .filter(
+                                                (c: any) => c.useAsReference,
+                                            )
+                                            .slice()
+                                            .sort(
+                                                (a: any, b: any) =>
+                                                    b.stepsFromCenterFront -
+                                                    a.stepsFromCenterFront,
+                                            ),
+                                    },
+                                ].map(({ title, checkpoints }) => (
+                                    <div
+                                        key={title}
+                                        className="flex flex-col gap-8"
+                                    >
+                                        <p className="text-sub text-text-subtitle font-medium tracking-wide uppercase">
+                                            {title}
+                                        </p>
+                                        <div className="flex flex-col gap-6">
+                                            {checkpoints.map((cp: any) => (
+                                                <div
+                                                    key={`${title}-${cp.name}`}
+                                                    className="flex items-center gap-12"
+                                                >
+                                                    <span className="text-body w-[120px] shrink-0">
+                                                        {cp.name}
+                                                    </span>
+                                                    <input
+                                                        type="text"
+                                                        placeholder="blank = use default"
+                                                        value={
+                                                            indoorAliases[
+                                                                cp.name
+                                                            ] ?? ""
+                                                        }
+                                                        onChange={(e) =>
+                                                            setIndoorAliases(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    [cp.name]:
+                                                                        e.target
+                                                                            .value,
+                                                                }),
+                                                            )
+                                                        }
+                                                        className="border-stroke bg-fg-2 text-body placeholder:text-text-subtitle rounded-6 focus:border-accent flex-1 border px-12 py-6 focus:outline-none"
+                                                    />
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex justify-between">
+                                <button
+                                    onClick={() =>
+                                        setWizardStep("indoor-template")
+                                    }
+                                    className={getButtonClassName({
+                                        variant: "secondary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    ← Back
+                                </button>
+                                <button
+                                    onClick={() => setWizardStep("review")}
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "default",
+                                        content: "text",
+                                        className: undefined,
+                                    })}
+                                >
+                                    Next →
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Step 3: Review & Commit ─────────────────────────── */}
+                    {wizardStep === "review" && report && (
+                        <div className="flex flex-col gap-16">
+                            {/* Summary */}
+                            <div
+                                className={`rounded-6 text-body border px-16 py-12 ${
+                                    report.errors > 0
+                                        ? "border-red/30 text-red"
+                                        : "border-green/30 text-green"
+                                }`}
+                            >
+                                {report.normalized.length} performers ·{" "}
+                                {report.normalized[0]?.rows.length ?? 0} sets ·{" "}
+                                {report.errors === 0 ? (
+                                    <span>
+                                        No errors
+                                        {report.warnings > 0
+                                            ? ` · ${report.warnings} warning${report.warnings > 1 ? "s" : ""}`
+                                            : ""}
+                                    </span>
+                                ) : (
+                                    <span>
+                                        {report.errors} error
+                                        {report.errors > 1 ? "s" : ""}
+                                        {report.warnings > 0
+                                            ? ` · ${report.warnings} warning${report.warnings > 1 ? "s" : ""}`
+                                            : ""}
+                                    </span>
+                                )}
+                            </div>
+
+                            {/* Error / warning list */}
+                            {report.details.length > 0 && (
+                                <div className="border-stroke bg-fg-1 rounded-6 max-h-[180px] overflow-auto border p-12">
+                                    <ul className="flex flex-col gap-4">
+                                        {report.details
+                                            .slice(0, 200)
+                                            .map((i, idx) => (
+                                                <li
+                                                    key={idx}
+                                                    className={`text-sub ${
+                                                        i.type === "error"
+                                                            ? "text-red"
+                                                            : "text-yellow"
+                                                    }`}
+                                                >
+                                                    <span className="font-medium">
+                                                        {i.code}:
+                                                    </span>{" "}
+                                                    {i.message}
+                                                </li>
+                                            ))}
+                                    </ul>
+                                </div>
+                            )}
+
+                            {/* Parsing options */}
+                            {useCurrentField
+                                ? (() => {
+                                      const detectedIndoor =
+                                          (fieldProperties?.xCheckpoints
+                                              ?.length ?? 0) > 0 &&
+                                          !(
+                                              (fieldProperties?.xCheckpoints as any[]) ??
+                                              []
+                                          ).some((c: any) =>
+                                              /\byard\s*line\b/i.test(c.name),
+                                          );
+                                      const effectiveIndoor =
+                                          useCurrentFieldMode === "auto"
+                                              ? detectedIndoor
+                                              : useCurrentFieldMode ===
+                                                "indoor";
+                                      return (
+                                          <div className="border-stroke flex flex-col gap-10 border-t pt-12">
+                                              <div className="flex items-center gap-10">
+                                                  <span className="text-sub text-text-subtitle">
+                                                      Coordinate format
+                                                  </span>
+                                                  {(
+                                                      [
+                                                          "outdoor",
+                                                          "indoor",
+                                                      ] as const
+                                                  ).map((mode) => {
+                                                      const isEffective =
+                                                          effectiveIndoor ===
+                                                          (mode === "indoor");
+                                                      const isAutoSelected =
+                                                          useCurrentFieldMode ===
+                                                              "auto" &&
+                                                          isEffective;
+                                                      return (
+                                                          <button
+                                                              key={mode}
+                                                              onClick={() =>
+                                                                  setUseCurrentFieldMode(
+                                                                      useCurrentFieldMode ===
+                                                                          mode
+                                                                          ? "auto"
+                                                                          : mode,
+                                                                  )
+                                                              }
+                                                              className={`rounded-4 text-sub border px-8 py-2 ${
+                                                                  isEffective
+                                                                      ? "border-accent text-accent"
+                                                                      : "border-stroke text-text-subtitle"
+                                                              }`}
+                                                          >
+                                                              {mode ===
+                                                              "outdoor"
+                                                                  ? "Outdoor"
+                                                                  : "Indoor"}
+                                                              {isAutoSelected && (
+                                                                  <span className="ml-4 opacity-60">
+                                                                      (auto)
+                                                                  </span>
+                                                              )}
+                                                          </button>
+                                                      );
+                                                  })}
+                                              </div>
+                                              {!effectiveIndoor ? (
+                                                  <div className="flex items-center gap-10">
+                                                      <span className="text-sub text-text-subtitle">
+                                                          Hash type
+                                                      </span>
+                                                      {(
+                                                          Object.keys(
+                                                              HASH_TYPE_LABELS,
+                                                          ) as SourceHashType[]
+                                                      ).map((ht) => (
+                                                          <button
+                                                              key={ht}
+                                                              onClick={() =>
+                                                                  setSourceHashType(
+                                                                      ht,
+                                                                  )
+                                                              }
+                                                              className={`rounded-4 text-sub border px-8 py-2 ${
+                                                                  sourceHashType ===
+                                                                  ht
+                                                                      ? "border-accent text-accent"
+                                                                      : "border-stroke text-text-subtitle"
+                                                              }`}
+                                                          >
+                                                              {
+                                                                  HASH_TYPE_LABELS[
+                                                                      ht
+                                                                  ]
+                                                              }
+                                                          </button>
+                                                      ))}
+                                                  </div>
+                                              ) : (
+                                                  <label className="flex cursor-pointer items-center gap-8">
+                                                      <input
+                                                          type="checkbox"
+                                                          checked={
+                                                              flipIndoorAxes
+                                                          }
+                                                          onChange={(e) =>
+                                                              setFlipIndoorAxes(
+                                                                  e.target
+                                                                      .checked,
+                                                              )
+                                                          }
+                                                          className="accent-accent size-[1rem]"
+                                                      />
+                                                      <span className="text-body">
+                                                          Letters (A–E) are
+                                                          lateral, numbers (1–5)
+                                                          are front-back
+                                                      </span>
+                                                  </label>
+                                              )}
+                                          </div>
+                                      );
+                                  })()
+                                : fieldType === "indoor" && (
+                                      <div className="border-stroke border-t pt-12">
+                                          <label className="flex cursor-pointer items-center gap-8">
+                                              <input
+                                                  type="checkbox"
+                                                  checked={flipIndoorAxes}
+                                                  onChange={(e) =>
+                                                      setFlipIndoorAxes(
+                                                          e.target.checked,
+                                                      )
+                                                  }
+                                                  className="accent-accent size-[1rem]"
+                                              />
+                                              <span className="text-body">
+                                                  Letters (A–E) are lateral,
+                                                  numbers (1–5) are front-back
+                                              </span>
+                                          </label>
+                                      </div>
+                                  )}
+
+                            {/* Timeline options */}
+                            <div className="border-stroke flex items-center gap-16 border-t pt-12">
+                                <label className="flex cursor-pointer items-center gap-8">
                                     <input
                                         type="checkbox"
                                         checked={createTimeline}
                                         onChange={(e) =>
                                             setCreateTimeline(e.target.checked)
                                         }
+                                        className="accent-accent size-[1rem]"
                                     />
-                                    <span>Create beats & pages</span>
+                                    <span className="text-body">
+                                        Create beats & pages
+                                    </span>
                                 </label>
-                                <label className="flex items-center gap-8">
-                                    <span>BPM</span>
-                                    <input
-                                        type="number"
-                                        min={40}
-                                        max={240}
-                                        value={bpm}
-                                        onChange={(e) =>
-                                            setBpm(
-                                                parseInt(
-                                                    e.target.value || "120",
-                                                    10,
-                                                ),
-                                            )
-                                        }
-                                        className="rounded-4 border-stroke bg-fg-1 w-80 border px-8 py-4"
-                                    />
-                                </label>
-                            </div>
-                            <div>
-                                <div className="mb-4 font-medium">
-                                    Detected performers
-                                </div>
-                                <div className="max-h-[180px] overflow-auto rounded-md border p-12 text-sm">
-                                    <ul className="grid grid-cols-2 gap-x-24 gap-y-8">
-                                        {uniquePerformers.map((p, idx) => (
-                                            <li key={idx}>{p.key}</li>
-                                        ))}
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="flex flex-col gap-8">
-                                <div className="text-sm font-medium">
-                                    Troubleshooting Data
-                                </div>
-                                <div className="flex gap-4 border-b">
-                                    {[
-                                        {
-                                            key: "parsed",
-                                            label: "1. Parsed Sheets",
-                                        },
-                                        {
-                                            key: "normalized",
-                                            label: "2. Normalized (xSteps/ySteps)",
-                                        },
-                                        {
-                                            key: "dots",
-                                            label: "3. Dots Format (pixels)",
-                                        },
-                                        {
-                                            key: "db",
-                                            label: "4. DB Write Preview",
-                                        },
-                                    ].map((step) => (
-                                        <button
-                                            key={step.key}
-                                            onClick={() =>
-                                                setActiveStep(step.key as any)
-                                            }
-                                            className={`border-b-2 px-12 py-8 text-sm transition-colors ${
-                                                activeStep === step.key
-                                                    ? "border-primary text-primary font-medium"
-                                                    : "text-muted-foreground hover:text-foreground border-transparent"
-                                            }`}
-                                        >
-                                            {step.label}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="max-h-[400px] overflow-auto rounded-md border p-12 font-mono text-xs">
-                                    {activeStep === "parsed" && (
-                                        <pre className="whitespace-pre-wrap">
-                                            {JSON.stringify(
-                                                report.parsed,
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    )}
-                                    {activeStep === "normalized" && (
-                                        <pre className="whitespace-pre-wrap">
-                                            {JSON.stringify(
-                                                report.normalized.map(
-                                                    (sheet) => ({
-                                                        pageIndex:
-                                                            sheet.pageIndex,
-                                                        quadrant:
-                                                            sheet.quadrant,
-                                                        header: sheet.header,
-                                                        rows: sheet.rows.map(
-                                                            (row: any) => ({
-                                                                setId: row.setId,
-                                                                counts: row.counts,
-                                                                xSteps: row.xSteps,
-                                                                ySteps: row.ySteps,
-                                                                source: row.source,
-                                                                conf: row.conf,
-                                                            }),
-                                                        ),
-                                                    }),
-                                                ),
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    )}
-                                    {activeStep === "dots" && (
-                                        <pre className="whitespace-pre-wrap">
-                                            {JSON.stringify(
-                                                proposedMarcherPages,
-                                                null,
-                                                2,
-                                            )}
-                                        </pre>
-                                    )}
-                                    {activeStep === "db" && (
-                                        <div>
-                                            <div className="mb-8 font-semibold">
-                                                Proposed Marchers:
-                                            </div>
-                                            <pre className="mb-12 whitespace-pre-wrap">
-                                                {JSON.stringify(
-                                                    proposedMarchers,
-                                                    null,
-                                                    2,
-                                                )}
-                                            </pre>
-                                            <div className="mb-8 font-semibold">
-                                                Proposed Pages:
-                                            </div>
-                                            <pre className="mb-12 whitespace-pre-wrap">
-                                                {JSON.stringify(
-                                                    proposedPages,
-                                                    null,
-                                                    2,
-                                                )}
-                                            </pre>
-                                            <div className="mb-8 font-semibold">
-                                                Marcher Pages Updates (will be
-                                                written to DB):
-                                            </div>
-                                            <pre className="whitespace-pre-wrap">
-                                                {JSON.stringify(
-                                                    proposedMarcherPages.map(
-                                                        (mp) => ({
-                                                            marcher_id:
-                                                                mp.marcher_id,
-                                                            page_label:
-                                                                mp.page_label,
-                                                            x: mp.x,
-                                                            y: mp.y,
-                                                            notes: mp.notes,
-                                                        }),
+                                {createTimeline && (
+                                    <label className="flex items-center gap-8">
+                                        <span className="text-body">BPM</span>
+                                        <input
+                                            type="number"
+                                            min={40}
+                                            max={240}
+                                            value={bpm}
+                                            onChange={(e) =>
+                                                setBpm(
+                                                    parseInt(
+                                                        e.target.value || "120",
+                                                        10,
                                                     ),
-                                                    null,
-                                                    2,
-                                                )}
-                                            </pre>
-                                        </div>
-                                    )}
-                                </div>
+                                                )
+                                            }
+                                            className="border-stroke bg-fg-2 text-body rounded-6 focus:border-accent w-[5rem] border px-8 py-4 focus:outline-none"
+                                        />
+                                    </label>
+                                )}
                             </div>
-                            <div className="flex gap-8">
+
+                            {/* Action row */}
+                            <div className="flex items-center justify-between">
                                 <button
-                                    onClick={downloadCsv}
+                                    onClick={() =>
+                                        setWizardStep(
+                                            useCurrentField
+                                                ? "field-type"
+                                                : fieldType === "outdoor"
+                                                  ? "hash-type"
+                                                  : "indoor-references",
+                                        )
+                                    }
                                     className={getButtonClassName({
                                         variant: "secondary",
                                         size: "default",
@@ -1115,18 +1093,7 @@ export default function ImportCoordinatesButton() {
                                         className: undefined,
                                     })}
                                 >
-                                    Export CSV
-                                </button>
-                                <button
-                                    onClick={downloadJson}
-                                    className={getButtonClassName({
-                                        variant: "secondary",
-                                        size: "default",
-                                        content: "text",
-                                        className: undefined,
-                                    })}
-                                >
-                                    Export JSON
+                                    ← Back
                                 </button>
                                 <button
                                     onClick={commitImport}
@@ -1143,38 +1110,176 @@ export default function ImportCoordinatesButton() {
                                         : "Commit Import"}
                                 </button>
                             </div>
-                            {hasCritical ? (
-                                <div className="text-xs text-red-500">
-                                    Resolve critical errors (missing set/counts
-                                    or set mismatches) before committing.
-                                </div>
-                            ) : null}
-                            <div className="max-h-[240px] overflow-auto">
-                                <ul className="list-disc pl-16 text-sm">
-                                    {report.details
-                                        .slice(0, 200)
-                                        .map((i, idx) => (
-                                            <li
-                                                key={idx}
-                                                className={
-                                                    i.type === "error"
-                                                        ? "text-red-500"
-                                                        : "text-yellow-600"
-                                                }
-                                            >
-                                                [{i.type}] {i.code}: {i.message}
-                                            </li>
-                                        ))}
-                                </ul>
-                            </div>
-                            <div className="text-muted-foreground text-xs">
-                                Prototype note: quadrant is ignored at commit
-                                time; we keep it only for debugging and will
-                                remove later.
+                            {hasCritical && (
+                                <p className="text-sub text-red">
+                                    Resolve critical errors before committing.
+                                </p>
+                            )}
+
+                            {/* Diagnostics — collapsed by default */}
+                            <div className="border-stroke border-t pt-12">
+                                <button
+                                    onClick={() => setShowDebug((v) => !v)}
+                                    className="text-sub text-text-subtitle hover:text-text flex items-center gap-6 duration-150 ease-out"
+                                >
+                                    <span>{showDebug ? "▾" : "▸"}</span>
+                                    <span>Diagnostics</span>
+                                </button>
+                                {showDebug && (
+                                    <div className="mt-8 flex flex-col gap-8">
+                                        <div className="border-stroke flex items-end gap-2 border-b pb-4">
+                                            {[
+                                                {
+                                                    key: "parsed",
+                                                    label: "1. Parsed",
+                                                },
+                                                {
+                                                    key: "normalized",
+                                                    label: "2. Normalized",
+                                                },
+                                                {
+                                                    key: "dots",
+                                                    label: "3. Pixels",
+                                                },
+                                                {
+                                                    key: "db",
+                                                    label: "4. DB Preview",
+                                                },
+                                            ].map((step) => (
+                                                <button
+                                                    key={step.key}
+                                                    onClick={() =>
+                                                        setActiveStep(
+                                                            step.key as any,
+                                                        )
+                                                    }
+                                                    className={`text-sub px-8 py-4 duration-150 ease-out ${
+                                                        activeStep === step.key
+                                                            ? "text-accent border-accent -mb-[5px] border-b-2"
+                                                            : "text-text-subtitle hover:text-text"
+                                                    }`}
+                                                >
+                                                    {step.label}
+                                                </button>
+                                            ))}
+                                            <div className="ml-auto flex gap-6">
+                                                <button
+                                                    onClick={downloadCsv}
+                                                    className={getButtonClassName(
+                                                        {
+                                                            variant:
+                                                                "secondary",
+                                                            size: "compact",
+                                                            content: "text",
+                                                            className:
+                                                                undefined,
+                                                        },
+                                                    )}
+                                                >
+                                                    CSV
+                                                </button>
+                                                <button
+                                                    onClick={downloadJson}
+                                                    className={getButtonClassName(
+                                                        {
+                                                            variant:
+                                                                "secondary",
+                                                            size: "compact",
+                                                            content: "text",
+                                                            className:
+                                                                undefined,
+                                                        },
+                                                    )}
+                                                >
+                                                    JSON
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="border-stroke bg-fg-1 rounded-6 text-sub max-h-[360px] overflow-auto border p-12 font-mono">
+                                            {activeStep === "parsed" && (
+                                                <pre className="whitespace-pre-wrap">
+                                                    {JSON.stringify(
+                                                        report.parsed,
+                                                        null,
+                                                        2,
+                                                    )}
+                                                </pre>
+                                            )}
+                                            {activeStep === "normalized" && (
+                                                <pre className="whitespace-pre-wrap">
+                                                    {JSON.stringify(
+                                                        report.normalized.map(
+                                                            (sheet) => ({
+                                                                pageIndex:
+                                                                    sheet.pageIndex,
+                                                                quadrant:
+                                                                    sheet.quadrant,
+                                                                header: sheet.header,
+                                                                rows: sheet.rows.map(
+                                                                    (
+                                                                        row: any,
+                                                                    ) => ({
+                                                                        setId: row.setId,
+                                                                        counts: row.counts,
+                                                                        xSteps: row.xSteps,
+                                                                        ySteps: row.ySteps,
+                                                                    }),
+                                                                ),
+                                                            }),
+                                                        ),
+                                                        null,
+                                                        2,
+                                                    )}
+                                                </pre>
+                                            )}
+                                            {activeStep === "dots" && (
+                                                <pre className="whitespace-pre-wrap">
+                                                    {JSON.stringify(
+                                                        report.manifest?.positions?.slice(
+                                                            0,
+                                                            50,
+                                                        ),
+                                                        null,
+                                                        2,
+                                                    )}
+                                                </pre>
+                                            )}
+                                            {activeStep === "db" && (
+                                                <div>
+                                                    <p className="text-sub mb-8 font-semibold">
+                                                        Manifest Marchers:
+                                                    </p>
+                                                    <pre className="mb-12 whitespace-pre-wrap">
+                                                        {JSON.stringify(
+                                                            manifestMarchers,
+                                                            null,
+                                                            2,
+                                                        )}
+                                                    </pre>
+                                                    <p className="text-sub mb-8 font-semibold">
+                                                        Manifest Sets:
+                                                    </p>
+                                                    <pre className="mb-12 whitespace-pre-wrap">
+                                                        {JSON.stringify(
+                                                            manifestSets,
+                                                            null,
+                                                            2,
+                                                        )}
+                                                    </pre>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         </div>
-                    ) : (
-                        <div className="text-sm">No report available.</div>
+                    )}
+
+                    {/* No data fallback */}
+                    {wizardStep === "review" && !report && (
+                        <p className="text-body text-text-subtitle">
+                            No data available.
+                        </p>
                     )}
                 </DialogContent>
             </Dialog>
