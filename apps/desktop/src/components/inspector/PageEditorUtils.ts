@@ -50,7 +50,8 @@ const useSplitPageMutation = <TArgs>(
     errorKey: string,
 ) => {
     const queryClient = useQueryClient();
-    const mutation = useMutation({
+    return useMutation({
+        scope: { id: "splitPage" },
         mutationFn,
         onSuccess: async () => {
             // Invalidate all timing object queries
@@ -68,14 +69,6 @@ const useSplitPageMutation = <TArgs>(
             conToastError(tolgee.t(errorKey), error);
         },
     });
-
-    return {
-        ...mutation,
-        mutate: (...args: Parameters<typeof mutation.mutate>) => {
-            if (mutation.isPending) return; // guard to prevent multiple transactions from rapid mutation calls
-            mutation.mutate(...args);
-        },
-    };
 };
 
 // Public mutation hook
