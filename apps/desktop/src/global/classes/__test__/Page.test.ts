@@ -316,6 +316,35 @@ describe("Page", () => {
             const result = generatePageNames([false, false, true, false], 0);
             expect(result).toEqual(["0", "1", "1A", "2"]);
         });
+
+        it("should start with subset letter on page 0", () => {
+            const result = generatePageNames([false, false, false], 5, "A");
+            expect(result).toEqual(["5A", "6", "7"]);
+        });
+
+        it("should continue subset sequence from starting letter", () => {
+            const result = generatePageNames(
+                [false, true, true, false],
+                5,
+                "A",
+            );
+            expect(result).toEqual(["5A", "5B", "5C", "6"]);
+        });
+
+        it("should handle starting subset letter B", () => {
+            const result = generatePageNames([false, true, false], 3, "B");
+            expect(result).toEqual(["3B", "3C", "4"]);
+        });
+
+        it("should handle starting subset letter with no subsequent subsets", () => {
+            const result = generatePageNames([false, false], 10, "C");
+            expect(result).toEqual(["10C", "11"]);
+        });
+
+        it("should handle empty starting subset letter as default", () => {
+            const result = generatePageNames([false, false, true], 5, "");
+            expect(result).toEqual(["5", "6", "6A"]);
+        });
     });
 
     describe("fromDatabasePages", () => {

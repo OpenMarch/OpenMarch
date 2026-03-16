@@ -122,6 +122,7 @@ export default function ColorPickerMini({
                         sideOffset={8}
                         collisionPadding={20}
                         avoidCollisions={true}
+                        onInteractOutside={() => handleClose()}
                         className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
                     >
                         <div className="z-50 my-8 flex items-center justify-between px-12">
