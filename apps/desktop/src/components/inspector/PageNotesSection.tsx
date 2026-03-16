@@ -1,51 +1,51 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { T, useTranslate } from "@tolgee/react";
 import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { updatePagesMutationOptions } from "../../hooks/queries";
 import { NotesRichTextEditor } from "../notes/NotesRichTextEditor";
+import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useTimingObjects } from "@/hooks";
 
 export function PageNotesSection() {
     const { selectedPage } = useSelectedPage()!;
+    const { isPlaying } = useIsPlaying()!;
+    const { pages } = useTimingObjects()!;
     const { t } = useTranslate();
     const queryClient = useQueryClient();
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
 
-    const [notes, setNotes] = useState(selectedPage?.notes || "");
+    // During playback, selectedPage is the departure page — show the next page's notes instead
+    const displayPage = useMemo(() => {
+        if (!isPlaying || !selectedPage?.nextPageId) return selectedPage;
+        return (
+            pages.find((p) => p.id === selectedPage.nextPageId) ?? selectedPage
+        );
+    }, [isPlaying, selectedPage, pages]);
+
+    const [notes, setNotes] = useState(displayPage?.notes || "");
     const editingPageIdRef = useRef<number | null>(null);
 
-    // Keep local notes in sync with the currently selected page
     useEffect(() => {
-        if (selectedPage) {
-            setNotes(selectedPage.notes || "");
-            // Reset the editing ref when page changes to ensure we can save on the new page
-            editingPageIdRef.current = selectedPage.id;
+        if (displayPage) {
+            setNotes(displayPage.notes || "");
+            editingPageIdRef.current = displayPage.id;
         }
-    }, [selectedPage]);
+    }, [displayPage]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
-        const currentSelectedPageId = selectedPage?.id;
-
-        // If no page is selected, do nothing
-        if (
-            currentSelectedPageId === null ||
-            currentSelectedPageId === undefined
-        ) {
-            return;
-        }
+        if (!displayPage) return;
 
         // Guard against saving to wrong page if selection changed during editing
-        if (editingPageIdRef.current !== currentSelectedPageId) {
+        if (editingPageIdRef.current !== displayPage.id) {
             console.warn("Page changed during editing, skipping save");
             return;
         }
 
-        const pageIdToSave = editingPageIdRef.current;
-
         const currentNotes = nextNotesHtml || "";
-        const originalNotes = selectedPage?.notes || "";
+        const originalNotes = displayPage.notes || "";
 
         if (currentNotes === originalNotes) return;
 
@@ -54,14 +54,14 @@ export function PageNotesSection() {
         updatePagesMutation.mutate({
             modifiedPagesArgs: [
                 {
-                    id: pageIdToSave,
+                    id: editingPageIdRef.current,
                     notes: currentNotes || null,
                 },
             ],
         });
     };
 
-    if (!selectedPage) return null;
+    if (!displayPage) return null;
 
     return (
         <section aria-label={t("inspector.page.notes")}>
@@ -75,8 +75,8 @@ export function PageNotesSection() {
                         onChange={setNotes}
                         onBlur={handleNotesBlur}
                         onEditorFocus={() => {
-                            if (selectedPage) {
-                                editingPageIdRef.current = selectedPage.id;
+                            if (displayPage) {
+                                editingPageIdRef.current = displayPage.id;
                             }
                         }}
                     />
