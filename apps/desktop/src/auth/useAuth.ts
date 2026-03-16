@@ -167,7 +167,8 @@ export function useAuth() {
     return {
         // State
         isAuthenticated: authState.isAuthenticated,
-        isLoading: queryLoading,
+        // Use Zustand-driven loading for IPC updates; include initial query load.
+        isLoading: authState.isLoading || queryLoading,
         user: authState.user,
         error: authState.error,
         isSignInEnabled,

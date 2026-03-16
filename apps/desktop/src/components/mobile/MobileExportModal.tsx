@@ -9,7 +9,7 @@ import {
     useOtmProductionId,
 } from "./queries/useProductions";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
-import { useAccessToken, useAuth } from "@/auth/useAuth";
+import { useAuth } from "@/auth/useAuth";
 import {
     AlertDialog,
     AlertDialogTitle,
@@ -21,7 +21,7 @@ import {
 } from "@openmarch/ui";
 import { SignInButton } from "../../auth/AuthButton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { hasAnyEnsemblesQueryOptions } from "./queries/useEnsembles";
+import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
 import {
     updateWorkspaceSettingsMutationOptions,
     workspaceSettingsQueryOptions,
@@ -43,10 +43,9 @@ type AlertState = {
  */
 function useMobileExportValidation(): AlertState {
     const { isAuthenticated } = useAuth();
-    const { getAccessToken } = useAccessToken();
     const productionId = useOtmProductionId();
     const { data: hasAnyEnsembles } = useQuery(
-        hasAnyEnsemblesQueryOptions(getAccessToken),
+        getGetApiEditorV1EnsemblesAnyQueryOptions(),
     );
     const { data: currentProduction, error: currentProductionError } =
         useCurrentProduction();
@@ -99,16 +98,15 @@ export default function MobileExportModal({
     const queryClient = useQueryClient();
 
     const { isAuthenticated } = useAuth();
-    const { getAccessToken } = useAccessToken();
     const validationState = useMobileExportValidation();
     const [alertDialogState, setAlertDialogState] =
         useState<AlertState["type"]>(null);
 
     const prefetchEnsembles = useCallback(() => {
         void queryClient.prefetchQuery(
-            hasAnyEnsemblesQueryOptions(getAccessToken),
+            getGetApiEditorV1EnsemblesAnyQueryOptions(),
         );
-    }, [getAccessToken, queryClient]);
+    }, [queryClient]);
 
     const handleClick = useCallback(() => {
         // If sidebar is already open with this content, close it

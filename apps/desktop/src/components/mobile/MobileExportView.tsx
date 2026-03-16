@@ -10,17 +10,16 @@ import {
     Production,
     RevisionPreview,
     uploadRevisionMutationOptions,
-    productionKeys,
-    AudioFilesIndexResponse,
 } from "./queries/useProductions";
+import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { twMerge } from "tailwind-merge";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { apiPostFormData } from "@/auth/api-client";
-import { getApiEditorV1ProductionsProductionIdAudioFiles } from "@/api/generated/audio-files/audio-files";
+import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { patchApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import {
     isSilentPlaceholder,
@@ -143,7 +142,7 @@ export const SubmitRevisionForm = ({
     currentProduction,
 }: {
     isFirstRevision: boolean;
-    productionId?: number;
+    productionId: number;
     currentProduction?: Production;
 }) => {
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
@@ -160,7 +159,12 @@ export const SubmitRevisionForm = ({
     const [backgroundSyncLoading, setBackgroundSyncLoading] = useState(false);
     const queryClient = useQueryClient();
     const selectedAudioFile = useSelectedAudioFile()?.selectedAudioFile;
-
+    const { data: serverAudioFiles, isSuccess: serverAudioFilesLoaded } =
+        useQuery(
+            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions(
+                productionId,
+            ),
+        );
     const hasSelectedNonSilentAudio =
         selectedAudioFile != null &&
         !isSilentPlaceholder(selectedAudioFile.path, selectedAudioFile.id);
@@ -180,16 +184,13 @@ export const SubmitRevisionForm = ({
         void (async () => {
             try {
                 const fullFile = await AudioFile.getSelectedAudioFile();
-                if (cancelled || fullFile == null) return;
-                const data =
-                    await getApiEditorV1ProductionsProductionIdAudioFiles(
-                        productionId,
-                    );
-                if (cancelled) return;
-                const response = data as unknown as AudioFilesIndexResponse;
+                if (cancelled || fullFile == null || !serverAudioFilesLoaded)
+                    return;
                 const result = await prepareAudioSyncResult(
                     fullFile,
-                    response.audio_files ?? [],
+                    (serverAudioFiles.audio_files ?? []) as Parameters<
+                        typeof prepareAudioSyncResult
+                    >[1],
                     AudioFile.computeChecksum,
                 );
                 if (cancelled) return;
@@ -206,7 +207,12 @@ export const SubmitRevisionForm = ({
         return () => {
             cancelled = true;
         };
-    }, [productionId, selectedAudioFile]);
+    }, [
+        productionId,
+        selectedAudioFile,
+        serverAudioFiles?.audio_files,
+        serverAudioFilesLoaded,
+    ]);
 
     useEffect(() => {
         if (productionId == null || currentProduction == null) {
@@ -268,7 +274,7 @@ export const SubmitRevisionForm = ({
                 );
             }
             void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
+                queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
             });
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
@@ -295,7 +301,7 @@ export const SubmitRevisionForm = ({
                 formData,
             );
             void queryClient.invalidateQueries({
-                queryKey: productionKeys.byId(productionId),
+                queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
             });
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);

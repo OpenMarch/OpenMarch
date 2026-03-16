@@ -102,6 +102,26 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
     );
 };
 
+export const getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler = (
+    overrideResponse?:
+        | void
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0],
+          ) => Promise<void> | void),
+    options?: RequestHandlerOptions,
+) => {
+    return http.post(
+        "*/api/editor/v1/productions/:productionId/audio_files",
+        async (info) => {
+            if (typeof overrideResponse === "function") {
+                await overrideResponse(info);
+            }
+            return new HttpResponse(null, { status: 201 });
+        },
+        options,
+    );
+};
+
 export const getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler =
     (
         overrideResponse?:
@@ -145,6 +165,7 @@ export const getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler 
     };
 export const getAudioFilesMock = () => [
     getGetApiEditorV1ProductionsProductionIdAudioFilesMockHandler(),
+    getPostApiEditorV1ProductionsProductionIdAudioFilesMockHandler(),
     getPatchApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler(),
     getDeleteApiEditorV1ProductionsProductionIdAudioFilesIdMockHandler(),
 ];
