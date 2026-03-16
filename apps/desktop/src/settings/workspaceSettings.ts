@@ -6,6 +6,7 @@ export const workspaceSettingsSchema = z.object({
     defaultNewPageCounts: z.int().positive().default(16),
     audioOffsetSeconds: z.float64().default(0),
     pageNumberOffset: z.int().default(0),
+    pageStartingSubsetLetter: z.string().default(""),
     measurementOffset: z.int().default(1),
 });
 
@@ -20,6 +21,7 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     defaultNewPageCounts: 16,
     audioOffsetSeconds: 0,
     pageNumberOffset: 0,
+    pageStartingSubsetLetter: "",
     measurementOffset: 0,
 };
 

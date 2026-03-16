@@ -461,6 +461,20 @@
             "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
         }
     },
+    "newFileModal": {
+        "title": "Create New File",
+        "blankTitle": "Blank file",
+        "blankDescription": "Start with an empty drill file.",
+        "lastPageCurrentFile": "From current file's last page",
+        "lastPageOtherFile": "From another file's last page",
+        "lastPageDescription": "Import marchers and their positions from the last page of an existing file.",
+        "source": "Source:",
+        "change": "Change",
+        "browseForFile": "Browse for a .dots file…",
+        "cancel": "Cancel",
+        "creating": "Creating…",
+        "create": "Create"
+    },
     "fileTab": {
         "exitFile": "Exit File",
         "newFile": "New File",

@@ -1,4 +1,5 @@
 import { Button, ListItem } from "@openmarch/ui";
+import NewFileModal from "@/components/file/NewFileModal";
 import TitleBar from "../titlebar/TitleBar";
 import clsx from "clsx";
 import {
@@ -62,21 +63,6 @@ function Sidebar({
     setDatabaseIsReady,
     selectedTab,
 }: LaunchPageProps & { selectedTab: string }) {
-    async function handleCreateNew() {
-        console.log("Creating new file...");
-        try {
-            const dataBaseIsReady = await window.electron.databaseCreate();
-            console.log("Database create result:", dataBaseIsReady);
-
-            // If database creation was successful, update the state
-            if (dataBaseIsReady === 200) {
-                setDatabaseIsReady(true);
-            }
-        } catch (error) {
-            console.error("Error creating new file:", error);
-        }
-    }
-
     async function handleOpenExisting() {
         console.log("Opening existing file...");
         try {
@@ -98,15 +84,14 @@ function Sidebar({
                     <T keyName="launchpage.title" />
                 </p>
                 <div className="flex min-w-0 gap-8">
-                    <Button
-                        className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"
-                        onClick={handleCreateNew}
-                    >
-                        <PlusIcon size={24} className="flex-shrink-0" />
-                        <span className="h-fit min-w-0 leading-tight break-words">
-                            <T keyName="launchpage.files.createNew" />
-                        </span>
-                    </Button>
+                    <NewFileModal onSuccess={setDatabaseIsReady}>
+                        <Button className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight">
+                            <PlusIcon size={24} className="flex-shrink-0" />
+                            <span className="h-fit min-w-0 leading-tight break-words">
+                                <T keyName="launchpage.files.createNew" />
+                            </span>
+                        </Button>
+                    </NewFileModal>
                     <Button
                         onClick={handleOpenExisting}
                         className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"

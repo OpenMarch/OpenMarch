@@ -30,6 +30,7 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import Database from "libsql";
 
 // The built directory structure
 //
@@ -285,6 +286,12 @@ void app.whenReady().then(async () => {
         }
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("file:pickSourceFile", async () => pickSourceFile());
+    ipcMain.handle(
+        "database:createFromLastPage",
+        async (_, sourceFilePath?: string) =>
+            newFileFromLastPage(sourceFilePath),
+    );
 
     // Recent files handlers
     ipcMain.handle("recent-files:get", getRecentFiles);
@@ -691,6 +698,372 @@ export async function loadDatabaseFile() {
             console.log(err);
             return -1;
         });
+}
+
+/**
+ * Opens a file dialog to select a source .dots file and returns only the path.
+ *
+ * @returns The selected file path, or null if canceled
+ */
+export async function pickSourceFile(): Promise<string | null> {
+    if (!win) return null;
+
+    const dialogResult = await dialog.showOpenDialog(win, {
+        filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        properties: ["openFile"],
+    });
+
+    if (dialogResult.canceled || !dialogResult.filePaths.length) return null;
+    return dialogResult.filePaths[0];
+}
+
+type SourceMarcherRow = {
+    drill_prefix: string;
+    drill_order: number;
+    section: string;
+    name: string | null;
+    year: string | null;
+    notes: string | null;
+};
+type SourcePositionRow = {
+    drill_prefix: string;
+    drill_order: number;
+    x: number;
+    y: number;
+};
+
+/** Converts a 1-indexed count to a base-26 letter (1→A, 2→B, …, 26→Z, 27→AA). */
+function numberToSubsetLetter(n: number): string {
+    if (n <= 0) return "";
+    let result = "";
+    let remaining = n;
+    while (remaining > 0) {
+        remaining--;
+        result = String.fromCharCode(65 + (remaining % 26)) + result;
+        remaining = Math.floor(remaining / 26);
+    }
+    return result;
+}
+
+/** Reads marchers, last-page positions, and the last page's set number + subset letter from a source .dots file. */
+function readSourceFileData(source: string): {
+    marchersData: SourceMarcherRow[];
+    positions: SourcePositionRow[];
+    lastPageSetNumber: number;
+    lastPageSubsetLetter: string;
+} {
+    const sourceDb = new Database(source, { readonly: true });
+    try {
+        const marchersData = sourceDb
+            .prepare(
+                `SELECT drill_prefix, drill_order, section, name, year, notes
+                 FROM marchers`,
+            )
+            .all() as SourceMarcherRow[];
+
+        const lastPage = sourceDb
+            .prepare(
+                `SELECT p.id FROM pages p
+                 JOIN beats b ON p.start_beat = b.id
+                 ORDER BY b.position DESC LIMIT 1`,
+            )
+            .get() as { id: number } | undefined;
+
+        const positions = lastPage
+            ? (sourceDb
+                  .prepare(
+                      `SELECT mp.x, mp.y, m.drill_prefix, m.drill_order
+                       FROM marcher_pages mp
+                       JOIN marchers m ON mp.marcher_id = m.id
+                       WHERE mp.page_id = ?`,
+                  )
+                  .all(lastPage.id) as SourcePositionRow[])
+            : [];
+
+        // Derive the last page's set number and subset letter
+        const settingsRow = sourceDb
+            .prepare(`SELECT json_data FROM workspace_settings WHERE id = 1`)
+            .get() as { json_data: string } | undefined;
+        let sourceOffset = 0;
+        if (settingsRow) {
+            try {
+                sourceOffset =
+                    JSON.parse(settingsRow.json_data).pageNumberOffset ?? 0;
+            } catch {
+                console.warn(
+                    "Invalid workspace_settings json_data in source file",
+                );
+            }
+        }
+        const nonSubsetCount = (
+            sourceDb
+                .prepare(
+                    `SELECT COUNT(*) as cnt FROM pages WHERE id != 0 AND is_subset = 0`,
+                )
+                .get() as { cnt: number }
+        ).cnt;
+        const lastPageSetNumber = sourceOffset + nonSubsetCount;
+
+        // Count consecutive trailing subset pages to derive the subset letter
+        const orderedSubsets = sourceDb
+            .prepare(
+                `SELECT p.is_subset FROM pages p
+                 JOIN beats b ON p.start_beat = b.id
+                 ORDER BY b.position ASC`,
+            )
+            .all() as { is_subset: number }[];
+        let trailingSubsets = 0;
+        for (let i = orderedSubsets.length - 1; i >= 0; i--) {
+            if (orderedSubsets[i].is_subset) trailingSubsets++;
+            else break;
+        }
+        const lastPageSubsetLetter = numberToSubsetLetter(trailingSubsets);
+
+        return {
+            marchersData,
+            positions,
+            lastPageSetNumber,
+            lastPageSubsetLetter,
+        };
+    } finally {
+        sourceDb.close();
+    }
+}
+
+/**
+ * Copies field properties, workspace settings, utility, section appearances,
+ * tags, tag appearances, and marcher–tag links from the source file into the
+ * newly created file. Workspace settings are overlaid with the derived page
+ * number offset and subset letter.
+ */
+function copySourceSettings(
+    sourcePath: string,
+    newFilePath: string,
+    lastPageSetNumber: number,
+    lastPageSubsetLetter: string,
+) {
+    const newDb = new Database(newFilePath);
+    try {
+        newDb.prepare("PRAGMA foreign_keys = OFF").run();
+        newDb.prepare(`ATTACH DATABASE ? AS source`).run(sourcePath);
+        newDb.prepare("BEGIN TRANSACTION").run();
+
+        try {
+            // field_properties (single-row)
+            newDb
+                .prepare(
+                    `UPDATE field_properties
+                 SET json_data = (SELECT json_data FROM source.field_properties WHERE id = 1),
+                     image = (SELECT image FROM source.field_properties WHERE id = 1)
+                 WHERE id = 1`,
+                )
+                .run();
+
+            // workspace_settings — copy from source then overlay page offsets
+            const sourceSettings = newDb
+                .prepare(
+                    `SELECT json_data FROM source.workspace_settings WHERE id = 1`,
+                )
+                .get() as { json_data: string } | undefined;
+            if (sourceSettings) {
+                const settings = JSON.parse(sourceSettings.json_data);
+                settings.pageNumberOffset = lastPageSetNumber;
+                settings.pageStartingSubsetLetter = lastPageSubsetLetter;
+                newDb
+                    .prepare(
+                        `UPDATE workspace_settings SET json_data = ? WHERE id = 1`,
+                    )
+                    .run(JSON.stringify(settings));
+            }
+
+            // utility (single-row)
+            newDb
+                .prepare(
+                    `UPDATE utility
+                 SET last_page_counts = (SELECT last_page_counts FROM source.utility WHERE id = 0),
+                     default_beat_duration = (SELECT default_beat_duration FROM source.utility WHERE id = 0)
+                 WHERE id = 0`,
+                )
+                .run();
+
+            // section_appearances
+            newDb.prepare(`DELETE FROM section_appearances`).run();
+            newDb
+                .prepare(
+                    `INSERT INTO section_appearances
+                    (section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
+                 SELECT section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
+                 FROM source.section_appearances`,
+                )
+                .run();
+
+            // tags (preserve IDs so tag_appearances and marcher_tags can reference them)
+            newDb
+                .prepare(
+                    `INSERT OR IGNORE INTO tags (id, name, description, icon, color_hex)
+                 SELECT id, name, description, icon, color_hex
+                 FROM source.tags`,
+                )
+                .run();
+
+            // tag_appearances — set start_page_id = 0 for all
+            newDb
+                .prepare(
+                    `INSERT INTO tag_appearances
+                    (tag_id, start_page_id, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
+                 SELECT tag_id, 0, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
+                 FROM source.tag_appearances`,
+                )
+                .run();
+
+            // marcher_tags — map marcher_id via drill_prefix + drill_order
+            newDb
+                .prepare(
+                    `INSERT INTO marcher_tags (marcher_id, tag_id)
+                 SELECT m.id, smt.tag_id
+                 FROM source.marcher_tags smt
+                 JOIN source.marchers sm ON smt.marcher_id = sm.id
+                 JOIN marchers m ON m.drill_prefix = sm.drill_prefix AND m.drill_order = sm.drill_order`,
+                )
+                .run();
+
+            newDb.prepare("COMMIT").run();
+        } catch (e) {
+            newDb.prepare("ROLLBACK").run();
+            throw e;
+        }
+
+        newDb.prepare(`DETACH DATABASE source`).run();
+        newDb.prepare("PRAGMA foreign_keys = ON").run();
+    } finally {
+        newDb.close();
+    }
+}
+
+/** Inserts marchers and their page-0 positions into the newly created db. */
+function seedNewFileWithMarchers(
+    filePath: string,
+    marchersData: SourceMarcherRow[],
+    positions: SourcePositionRow[],
+) {
+    const newDb = new Database(filePath);
+    try {
+        newDb.prepare("BEGIN TRANSACTION").run();
+        try {
+            const insertMarcher = newDb.prepare(
+                `INSERT OR IGNORE INTO marchers
+                 (drill_prefix, drill_order, section, name, year, notes)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
+            );
+            for (const m of marchersData) {
+                insertMarcher.run(
+                    m.drill_prefix,
+                    m.drill_order,
+                    m.section,
+                    m.name ?? null,
+                    m.year ?? null,
+                    m.notes ?? null,
+                );
+            }
+
+            const posMap = new Map(
+                positions.map((p) => [`${p.drill_prefix}${p.drill_order}`, p]),
+            );
+            const allMarchers = newDb
+                .prepare(`SELECT id, drill_prefix, drill_order FROM marchers`)
+                .all() as {
+                id: number;
+                drill_prefix: string;
+                drill_order: number;
+            }[];
+
+            const upsertPos = newDb.prepare(
+                `INSERT INTO marcher_pages (marcher_id, page_id, x, y)
+                 VALUES (?, 0, ?, ?)
+                 ON CONFLICT (marcher_id, page_id) DO UPDATE
+                 SET x = excluded.x, y = excluded.y`,
+            );
+            for (const m of allMarchers) {
+                const pos = posMap.get(`${m.drill_prefix}${m.drill_order}`);
+                upsertPos.run(m.id, pos?.x ?? 0, pos?.y ?? 0);
+            }
+
+            newDb.prepare("COMMIT").run();
+        } catch (e) {
+            newDb.prepare("ROLLBACK").run();
+            throw e;
+        }
+    } finally {
+        newDb.close();
+    }
+}
+
+/**
+ * Creates a new file pre-populated with the marchers and starting positions
+ * from the last page of a source .dots file.
+ *
+ * If no sourceFilePath is provided, uses the currently open file.
+ *
+ * @param sourceFilePath - Optional path to source file. Defaults to current file.
+ * @returns 200 for success, -1 for failure, undefined if canceled
+ */
+export async function newFileFromLastPage(
+    sourceFilePath?: string,
+): Promise<200 | -1 | undefined> {
+    if (!win) return -1;
+
+    const source = sourceFilePath ?? DatabaseServices.getDbPath();
+    if (!source || !fs.existsSync(source)) return -1;
+
+    const { marchersData, positions, lastPageSetNumber, lastPageSubsetLetter } =
+        readSourceFileData(source);
+
+    // Show save dialog for the new file
+    let filePath: string | undefined;
+    if (
+        process.env.PLAYWRIGHT_SESSION &&
+        process.env.PLAYWRIGHT_NEW_FILE_PATH
+    ) {
+        filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
+    } else {
+        const dialogResult = await dialog.showSaveDialog(win, {
+            buttonLabel: "Create New",
+            filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
+        });
+        if (dialogResult.canceled || !dialogResult.filePath) return undefined;
+        filePath = dialogResult.filePath;
+    }
+
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    const prevDbPath = DatabaseServices.getDbPath();
+    await setActiveDb(filePath, true);
+
+    try {
+        if (marchersData.length > 0) {
+            seedNewFileWithMarchers(filePath, marchersData, positions);
+        }
+
+        copySourceSettings(
+            source,
+            filePath,
+            lastPageSetNumber,
+            lastPageSubsetLetter,
+        );
+
+        addRecentFile(filePath);
+        win?.webContents.reload();
+        return 200;
+    } catch (error) {
+        console.error("Error seeding new file:", error);
+        try {
+            fs.unlinkSync(filePath);
+        } catch {
+            /* file may not exist */
+        }
+        if (prevDbPath) await setActiveDb(prevDbPath);
+        throw error;
+    }
 }
 
 // Custom function to send request and wait for response
