@@ -29,36 +29,48 @@ export function PageNotesSection() {
     const editingPageIdRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (displayPage) {
-            setNotes(displayPage.notes || "");
-            editingPageIdRef.current = displayPage.id;
-        }
+        if (displayPage) setNotes(displayPage.notes || "");
     }, [displayPage]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
         if (!displayPage) return;
 
-        // Guard against saving to wrong page if selection changed during editing
-        if (editingPageIdRef.current !== displayPage.id) {
-            console.warn("Page changed during editing, skipping save");
+        // Guard: only save if we're still on the page where editing began
+        const pageIdWhereEditingBegan = editingPageIdRef.current;
+        if (
+            pageIdWhereEditingBegan === null ||
+            pageIdWhereEditingBegan !== displayPage.id
+        ) {
+            editingPageIdRef.current = null;
+            if (pageIdWhereEditingBegan !== null)
+                console.warn("Page changed during editing, skipping save");
             return;
         }
 
         const currentNotes = nextNotesHtml || "";
         const originalNotes = displayPage.notes || "";
 
-        if (currentNotes === originalNotes) return;
+        if (currentNotes === originalNotes) {
+            editingPageIdRef.current = null;
+            return;
+        }
 
         setNotes(currentNotes);
-
-        updatePagesMutation.mutate({
-            modifiedPagesArgs: [
-                {
-                    id: editingPageIdRef.current,
-                    notes: currentNotes || null,
+        updatePagesMutation.mutate(
+            {
+                modifiedPagesArgs: [
+                    {
+                        id: pageIdWhereEditingBegan,
+                        notes: currentNotes || null,
+                    },
+                ],
+            },
+            {
+                onSettled: () => {
+                    editingPageIdRef.current = null;
                 },
-            ],
-        });
+            },
+        );
     };
 
     if (!displayPage) return null;
