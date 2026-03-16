@@ -29,10 +29,10 @@ export function PageNotesSection() {
     const editingPageIdRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (displayPage && editingPageIdRef.current === null) {
+        if (displayPage && (isPlaying || editingPageIdRef.current === null)) {
             setNotes(displayPage.notes || "");
         }
-    }, [displayPage]);
+    }, [displayPage, isPlaying]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
         if (!displayPage) return;
@@ -88,6 +88,7 @@ export function PageNotesSection() {
                 <div className="input-group">
                     <NotesRichTextEditor
                         value={notes}
+                        editable={!isPlaying}
                         onChange={setNotes}
                         onBlur={handleNotesBlur}
                         onEditorFocus={() => {
