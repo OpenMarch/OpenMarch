@@ -29,7 +29,9 @@ export function PageNotesSection() {
     const editingPageIdRef = useRef<number | null>(null);
 
     useEffect(() => {
-        if (displayPage) setNotes(displayPage.notes || "");
+        if (displayPage && editingPageIdRef.current === null) {
+            setNotes(displayPage.notes || "");
+        }
     }, [displayPage]);
 
     const handleNotesBlur = (nextNotesHtml: string) => {
@@ -42,8 +44,10 @@ export function PageNotesSection() {
             pageIdWhereEditingBegan !== displayPage.id
         ) {
             editingPageIdRef.current = null;
-            if (pageIdWhereEditingBegan !== null)
+            if (pageIdWhereEditingBegan !== null) {
                 console.warn("Page changed during editing, skipping save");
+                setNotes(displayPage.notes || "");
+            }
             return;
         }
 
