@@ -278,12 +278,13 @@ export const generatePageNames = (
     pageNumberOffset: number = 0,
     startingSubsetLetter: string = "",
 ) => {
-    const firstName = startingSubsetLetter
-        ? `${pageNumberOffset}${startingSubsetLetter}`
+    const normalizedSubset = startingSubsetLetter.toUpperCase();
+    const firstName = normalizedSubset
+        ? `${pageNumberOffset}${normalizedSubset}`
         : pageNumberOffset.toString();
     const pageNames: string[] = [firstName];
     let curPageNumber = pageNumberOffset;
-    let curSubsetLetter = startingSubsetLetter;
+    let curSubsetLetter = normalizedSubset;
 
     /**
      * Increments a letter to the next letter in the alphabet.

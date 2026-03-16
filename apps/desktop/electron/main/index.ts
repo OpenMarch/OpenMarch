@@ -784,9 +784,17 @@ function readSourceFileData(source: string): {
         const settingsRow = sourceDb
             .prepare(`SELECT json_data FROM workspace_settings WHERE id = 1`)
             .get() as { json_data: string } | undefined;
-        const sourceOffset = settingsRow
-            ? (JSON.parse(settingsRow.json_data).pageNumberOffset ?? 0)
-            : 0;
+        let sourceOffset = 0;
+        if (settingsRow) {
+            try {
+                sourceOffset =
+                    JSON.parse(settingsRow.json_data).pageNumberOffset ?? 0;
+            } catch {
+                console.warn(
+                    "Invalid workspace_settings json_data in source file",
+                );
+            }
+        }
         const nonSubsetCount = (
             sourceDb
                 .prepare(
@@ -838,84 +846,92 @@ function copySourceSettings(
     try {
         newDb.prepare("PRAGMA foreign_keys = OFF").run();
         newDb.prepare(`ATTACH DATABASE ? AS source`).run(sourcePath);
+        newDb.prepare("BEGIN TRANSACTION").run();
 
-        // field_properties (single-row)
-        newDb
-            .prepare(
-                `UPDATE field_properties
-             SET json_data = (SELECT json_data FROM source.field_properties WHERE id = 1),
-                 image = (SELECT image FROM source.field_properties WHERE id = 1)
-             WHERE id = 1`,
-            )
-            .run();
-
-        // workspace_settings — copy from source then overlay page offsets
-        const sourceSettings = newDb
-            .prepare(
-                `SELECT json_data FROM source.workspace_settings WHERE id = 1`,
-            )
-            .get() as { json_data: string } | undefined;
-        if (sourceSettings) {
-            const settings = JSON.parse(sourceSettings.json_data);
-            settings.pageNumberOffset = lastPageSetNumber;
-            settings.pageStartingSubsetLetter = lastPageSubsetLetter;
+        try {
+            // field_properties (single-row)
             newDb
                 .prepare(
-                    `UPDATE workspace_settings SET json_data = ? WHERE id = 1`,
+                    `UPDATE field_properties
+                 SET json_data = (SELECT json_data FROM source.field_properties WHERE id = 1),
+                     image = (SELECT image FROM source.field_properties WHERE id = 1)
+                 WHERE id = 1`,
                 )
-                .run(JSON.stringify(settings));
+                .run();
+
+            // workspace_settings — copy from source then overlay page offsets
+            const sourceSettings = newDb
+                .prepare(
+                    `SELECT json_data FROM source.workspace_settings WHERE id = 1`,
+                )
+                .get() as { json_data: string } | undefined;
+            if (sourceSettings) {
+                const settings = JSON.parse(sourceSettings.json_data);
+                settings.pageNumberOffset = lastPageSetNumber;
+                settings.pageStartingSubsetLetter = lastPageSubsetLetter;
+                newDb
+                    .prepare(
+                        `UPDATE workspace_settings SET json_data = ? WHERE id = 1`,
+                    )
+                    .run(JSON.stringify(settings));
+            }
+
+            // utility (single-row)
+            newDb
+                .prepare(
+                    `UPDATE utility
+                 SET last_page_counts = (SELECT last_page_counts FROM source.utility WHERE id = 0),
+                     default_beat_duration = (SELECT default_beat_duration FROM source.utility WHERE id = 0)
+                 WHERE id = 0`,
+                )
+                .run();
+
+            // section_appearances
+            newDb.prepare(`DELETE FROM section_appearances`).run();
+            newDb
+                .prepare(
+                    `INSERT INTO section_appearances
+                    (section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
+                 SELECT section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
+                 FROM source.section_appearances`,
+                )
+                .run();
+
+            // tags (preserve IDs so tag_appearances and marcher_tags can reference them)
+            newDb
+                .prepare(
+                    `INSERT OR IGNORE INTO tags (id, name, description, icon, color_hex)
+                 SELECT id, name, description, icon, color_hex
+                 FROM source.tags`,
+                )
+                .run();
+
+            // tag_appearances — set start_page_id = 0 for all
+            newDb
+                .prepare(
+                    `INSERT INTO tag_appearances
+                    (tag_id, start_page_id, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
+                 SELECT tag_id, 0, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
+                 FROM source.tag_appearances`,
+                )
+                .run();
+
+            // marcher_tags — map marcher_id via drill_prefix + drill_order
+            newDb
+                .prepare(
+                    `INSERT INTO marcher_tags (marcher_id, tag_id)
+                 SELECT m.id, smt.tag_id
+                 FROM source.marcher_tags smt
+                 JOIN source.marchers sm ON smt.marcher_id = sm.id
+                 JOIN marchers m ON m.drill_prefix = sm.drill_prefix AND m.drill_order = sm.drill_order`,
+                )
+                .run();
+
+            newDb.prepare("COMMIT").run();
+        } catch (e) {
+            newDb.prepare("ROLLBACK").run();
+            throw e;
         }
-
-        // utility (single-row)
-        newDb
-            .prepare(
-                `UPDATE utility
-             SET last_page_counts = (SELECT last_page_counts FROM source.utility WHERE id = 0),
-                 default_beat_duration = (SELECT default_beat_duration FROM source.utility WHERE id = 0)
-             WHERE id = 0`,
-            )
-            .run();
-
-        // section_appearances
-        newDb.prepare(`DELETE FROM section_appearances`).run();
-        newDb
-            .prepare(
-                `INSERT INTO section_appearances
-                (section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
-             SELECT section, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
-             FROM source.section_appearances`,
-            )
-            .run();
-
-        // tags (preserve IDs so tag_appearances and marcher_tags can reference them)
-        newDb
-            .prepare(
-                `INSERT OR IGNORE INTO tags (id, name, description, icon, color_hex)
-             SELECT id, name, description, icon, color_hex
-             FROM source.tags`,
-            )
-            .run();
-
-        // tag_appearances — set start_page_id = 0 for all
-        newDb
-            .prepare(
-                `INSERT INTO tag_appearances
-                (tag_id, start_page_id, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state)
-             SELECT tag_id, 0, priority, fill_color, outline_color, shape_type, visible, label_visible, equipment_name, equipment_state
-             FROM source.tag_appearances`,
-            )
-            .run();
-
-        // marcher_tags — map marcher_id via drill_prefix + drill_order
-        newDb
-            .prepare(
-                `INSERT INTO marcher_tags (marcher_id, tag_id)
-             SELECT m.id, smt.tag_id
-             FROM source.marcher_tags smt
-             JOIN source.marchers sm ON smt.marcher_id = sm.id
-             JOIN marchers m ON m.drill_prefix = sm.drill_prefix AND m.drill_order = sm.drill_order`,
-            )
-            .run();
 
         newDb.prepare(`DETACH DATABASE source`).run();
         newDb.prepare("PRAGMA foreign_keys = ON").run();
@@ -932,43 +948,50 @@ function seedNewFileWithMarchers(
 ) {
     const newDb = new Database(filePath);
     try {
-        const insertMarcher = newDb.prepare(
-            `INSERT OR IGNORE INTO marchers
-             (drill_prefix, drill_order, section, name, year, notes)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-        );
-        for (const m of marchersData) {
-            insertMarcher.run(
-                m.drill_prefix,
-                m.drill_order,
-                m.section,
-                m.name ?? null,
-                m.year ?? null,
-                m.notes ?? null,
+        newDb.prepare("BEGIN TRANSACTION").run();
+        try {
+            const insertMarcher = newDb.prepare(
+                `INSERT OR IGNORE INTO marchers
+                 (drill_prefix, drill_order, section, name, year, notes)
+                 VALUES (?, ?, ?, ?, ?, ?)`,
             );
-        }
+            for (const m of marchersData) {
+                insertMarcher.run(
+                    m.drill_prefix,
+                    m.drill_order,
+                    m.section,
+                    m.name ?? null,
+                    m.year ?? null,
+                    m.notes ?? null,
+                );
+            }
 
-        const posMap = new Map(
-            positions.map((p) => [`${p.drill_prefix}${p.drill_order}`, p]),
-        );
-        const allMarchers = newDb
-            .prepare(`SELECT id, drill_prefix, drill_order FROM marchers`)
-            .all() as {
-            id: number;
-            drill_prefix: string;
-            drill_order: number;
-        }[];
+            const posMap = new Map(
+                positions.map((p) => [`${p.drill_prefix}${p.drill_order}`, p]),
+            );
+            const allMarchers = newDb
+                .prepare(`SELECT id, drill_prefix, drill_order FROM marchers`)
+                .all() as {
+                id: number;
+                drill_prefix: string;
+                drill_order: number;
+            }[];
 
-        for (const m of allMarchers) {
-            const pos = posMap.get(`${m.drill_prefix}${m.drill_order}`);
-            newDb
-                .prepare(
-                    `INSERT INTO marcher_pages (marcher_id, page_id, x, y)
-                     VALUES (?, 0, ?, ?)
-                     ON CONFLICT (marcher_id, page_id) DO UPDATE
-                     SET x = excluded.x, y = excluded.y`,
-                )
-                .run(m.id, pos?.x ?? 0, pos?.y ?? 0);
+            const upsertPos = newDb.prepare(
+                `INSERT INTO marcher_pages (marcher_id, page_id, x, y)
+                 VALUES (?, 0, ?, ?)
+                 ON CONFLICT (marcher_id, page_id) DO UPDATE
+                 SET x = excluded.x, y = excluded.y`,
+            );
+            for (const m of allMarchers) {
+                const pos = posMap.get(`${m.drill_prefix}${m.drill_order}`);
+                upsertPos.run(m.id, pos?.x ?? 0, pos?.y ?? 0);
+            }
+
+            newDb.prepare("COMMIT").run();
+        } catch (e) {
+            newDb.prepare("ROLLBACK").run();
+            throw e;
         }
     } finally {
         newDb.close();
@@ -1012,23 +1035,35 @@ export async function newFileFromLastPage(
     }
 
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    const prevDbPath = DatabaseServices.getDbPath();
     await setActiveDb(filePath, true);
 
-    // Migration creates beat id=0 and page id=0 — seed marchers and positions.
-    if (marchersData.length > 0) {
-        seedNewFileWithMarchers(filePath, marchersData, positions);
+    try {
+        if (marchersData.length > 0) {
+            seedNewFileWithMarchers(filePath, marchersData, positions);
+        }
+
+        copySourceSettings(
+            source,
+            filePath,
+            lastPageSetNumber,
+            lastPageSubsetLetter,
+        );
+
+        addRecentFile(filePath);
+        win?.webContents.reload();
+        return 200;
+    } catch (error) {
+        console.error("Error seeding new file:", error);
+        try {
+            fs.unlinkSync(filePath);
+        } catch {
+            /* file may not exist */
+        }
+        if (prevDbPath) await setActiveDb(prevDbPath);
+        throw error;
     }
-
-    copySourceSettings(
-        source,
-        filePath,
-        lastPageSetNumber,
-        lastPageSubsetLetter,
-    );
-
-    addRecentFile(filePath);
-    win?.webContents.reload();
-    return 200;
 }
 
 // Custom function to send request and wait for response

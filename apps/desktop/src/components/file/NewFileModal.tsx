@@ -3,6 +3,7 @@ import { Button, Dialog, DialogContent, DialogTitle } from "@openmarch/ui";
 import { FileIcon, ArrowSquareInIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
+import { conToastError } from "@/utilities/utils";
 
 interface NewFileModalProps {
     /** Called with true when a new file is successfully created/loaded */
@@ -65,6 +66,8 @@ export default function NewFileModal({
                 if (result === 200) {
                     onSuccess(true);
                     setOpen(false);
+                } else if (result !== undefined) {
+                    conToastError("Failed to create new file");
                 }
             } else {
                 const source = hasCurrentFile
@@ -75,8 +78,16 @@ export default function NewFileModal({
                 if (result === 200) {
                     onSuccess(true);
                     setOpen(false);
+                } else if (result !== undefined) {
+                    conToastError("Failed to create file from source");
                 }
             }
+        } catch (error) {
+            conToastError(
+                error instanceof Error
+                    ? error.message
+                    : "An unexpected error occurred",
+            );
         } finally {
             setLoading(false);
         }
