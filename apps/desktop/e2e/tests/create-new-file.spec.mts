@@ -24,13 +24,14 @@ const blankDotsPath = path.resolve(
 test("Create new file from launch page", async ({ electronAppNewFile }) => {
     const { page, newFilePath } = electronAppNewFile;
 
-    // Navigate to the Files tab and click "New File"
-    await page.getByRole("tab", { name: "Files" }).click();
+    // Click "New File" which opens the NewFileModal
     await expect(page.getByRole("button", { name: "New File" })).toBeVisible();
     await page.getByRole("button", { name: "New File" }).click();
 
+    // "Blank file" is selected by default — click "Create" in the modal
+    await page.getByRole("button", { name: "Create" }).click();
+
     // Wait for the app to reload with the new file
-    // The canvas should now be visible, indicating the main editor is loaded
     await expect(page.getByText("Timeline")).toBeVisible({ timeout: 10000 });
     await expect(page.locator("canvas").nth(1)).toBeVisible();
 
@@ -46,9 +47,9 @@ test("Create new file and verify database is functional", async ({
 }) => {
     const { page, newFilePath } = electronAppNewFile;
 
-    // Create the new file
-    await page.getByRole("tab", { name: "Files" }).click();
+    // Open the NewFileModal and create a blank file
     await page.getByRole("button", { name: "New File" }).click();
+    await page.getByRole("button", { name: "Create" }).click();
 
     // Wait for the editor to load
     await expect(page.getByText("Timeline")).toBeVisible({ timeout: 10000 });
@@ -72,9 +73,12 @@ test("New file has proper SQLite database structure", async ({
 }) => {
     const { page, newFilePath } = electronAppNewFile;
 
-    // Create the new file
-    await page.getByRole("tab", { name: "Files" }).click();
+    // Open the NewFileModal and create a blank file
     await page.getByRole("button", { name: "New File" }).click();
+    await page.getByRole("button", { name: "Create" }).click();
+
+    // Wait for the editor to load so the file is fully created
+    await expect(page.getByText("Timeline")).toBeVisible({ timeout: 10000 });
 
     // Verify the file exists
     expect(fs.existsSync(newFilePath)).toBe(true);

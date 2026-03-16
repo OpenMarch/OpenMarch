@@ -109,7 +109,9 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page
             .getByRole("switch", { name: "Trackpad mode (recommended" })
             .click();
-        await page.getByLabel("Trackpad pan sensitivity").getByRole("slider");
+        await expect(
+            page.getByLabel("Trackpad pan sensitivity").getByRole("slider"),
+        ).toBeVisible();
         await page.getByLabel("Zoom sensitivity").click();
         await page
             .getByLabel("Trackpad pan sensitivity", { exact: true })

@@ -292,10 +292,13 @@ function WorkspaceSettingsModalContents() {
                                         onBlur={(e) => {
                                             e.preventDefault();
                                             if (isString) {
-                                                handleFieldChange(
-                                                    key,
-                                                    e.target.value.toUpperCase(),
-                                                );
+                                                const upper =
+                                                    e.target.value.toUpperCase();
+                                                setInputValues((prev) => ({
+                                                    ...prev,
+                                                    [key]: upper,
+                                                }));
+                                                handleFieldChange(key, upper);
                                                 return;
                                             }
                                             const parsedValue = float
