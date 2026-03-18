@@ -151,13 +151,6 @@ export const marchers = sqliteTable(
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
 );
 
-export const pathways = sqliteTable("pathways", {
-    id: integer().primaryKey(),
-    path_data: text().notNull(),
-    notes: text(),
-    ...timestamps,
-});
-
 /**
  * A MarcherPage is used to represent a Marcher's position on a Page.
  * MarcherPages can/should not be created or deleted directly, but are created and deleted when a Marcher or Page is.
@@ -180,69 +173,33 @@ export const marcher_pages = sqliteTable(
         x: real().notNull(),
         /** Y coordinate of the MarcherPage in pixels */
         y: real().notNull(),
-        ...timestamps,
-        /** The ID of the pathway data */
-        path_data_id: integer().references(() => pathways.id, {
-            onDelete: "set null",
-        }),
         /**
-         * The position along the pathway (0-1).
-         * This is the position in the pathway the marcher starts at for this coordinate.
-         * If this is null, then it is assumed to be 0 (the start of the pathway).
+         * List of cubic bezier curve points that represent the incoming path of the marcher.
+         *
+         * ```json
+         * [
+         *    // bezier curve 1
+         *    [cp1_x, cp1_y],
+         *    [cp2_x, cp2_y],
+         *    [end_x, end_y],
+         *    // bezier curve 2
+         *    [cp1_x, cp1_y],
+         *    [cp2_x, cp2_y]
+         *    // omit end point
+         *  ],
+         * ]
+         * ```
          */
-        path_start_position: real(),
-        /**
-         * The position along the pathway (0-1).
-         * This is the position in the pathway the marcher ends up at for this coordinate.
-         * If this is null, then it is assumed to be 1 (the end of the pathway).
-         */
-        path_end_position: real(),
+        incoming_path_json: text(),
         /** Any notes about the MarcherPage. Optional - currently not implemented */
         notes: text(),
-        rotation_degrees: real().notNull().default(0),
+        ...timestamps,
         ...appearance_columns,
     },
     (table) => [
-        check(
-            "marcher_pages_path_data_position_check",
-            sql`path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1`,
-        ),
         index("index_marcher_pages_on_page_id").on(table.page_id),
         index("index_marcher_pages_on_marcher_id").on(table.marcher_id),
         unique().on(table.marcher_id, table.page_id),
-    ],
-);
-
-export const midsets = sqliteTable(
-    "midsets",
-    {
-        id: integer().primaryKey(),
-        /** The ID of the marcher page this midset is going to */
-        mp_id: integer()
-            .notNull()
-            .references(() => marcher_pages.id, { onDelete: "cascade" }),
-        x: real().notNull(),
-        y: real().notNull(),
-        /** The progress placement of the midset on the marcher page */
-        progress_placement: real().notNull(),
-        ...timestamps,
-        path_data_id: integer().references(() => pathways.id, {
-            onDelete: "set null",
-        }),
-        path_start_position: real(),
-        path_end_position: real(),
-        notes: text(),
-    },
-    (table) => [
-        check(
-            "midsets_path_data_position_check",
-            sql`path_start_position >= 0 AND path_start_position <= 1 AND path_end_position >= 0 AND path_end_position <= 1`,
-        ),
-        check(
-            "placement_check",
-            sql`progress_placement > 0 AND progress_placement < 1`,
-        ),
-        unique().on(table.mp_id, table.progress_placement),
     ],
 );
 

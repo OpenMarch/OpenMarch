@@ -13,11 +13,8 @@ export type Curve = [p0: IPoint, p1: IPoint, p2: IPoint, p3: IPoint];
  * If 'alpha' is 0.5 then the 'Centripetal' variant is used
  * If 'alpha' is 1 then the 'Chordal' variant is used
  *
- *
  * Based on http://www.cemyuksel.com/research/catmullrom_param/catmullrom.pdf
  *
- */
-/**
  * When alpha is 0, use uniform parameterization (d = 1 for all segments).
  */
 export const catmullrom = (data: IPoint[], alpha: number): Curve[] => {
