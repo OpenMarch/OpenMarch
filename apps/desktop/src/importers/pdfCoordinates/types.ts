@@ -105,7 +105,7 @@ export const NormalizedRowSchema = z.object({
     ySteps: z.number(),
     lateralText: z.string(),
     fbText: z.string(),
-    source: z.literal("ocr").optional(),
+    source: z.string().optional(),
     conf: z.number().min(0).max(1).optional(),
     /** Detailed parse error code from coordParser when lateral parse fails. */
     xParseError: z.string().optional(),

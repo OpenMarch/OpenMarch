@@ -186,7 +186,7 @@ describe("dryRunValidate", () => {
         );
     });
 
-    it("warns LOW_CONFIDENCE for OCR rows", () => {
+    it("warns LOW_CONFIDENCE when row conf is low", () => {
         const sheets = [
             makeSheet({}, [
                 {

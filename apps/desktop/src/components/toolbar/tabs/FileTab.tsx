@@ -14,7 +14,7 @@ import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModa
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import SettingsModal from "../SettingsModal";
 import { T } from "@tolgee/react";
-import ImportCoordinatesButton from "@/components/importing/ImportCoordinatesButton";
+import ImportButton from "@/components/importing/ImportButton";
 import {
     canUndoQueryOptions,
     canRedoQueryOptions,
@@ -89,7 +89,7 @@ export function FileTab() {
             )}
             <ToolbarSection>
                 <ExportCoordinatesModal />
-                <ImportCoordinatesButton />
+                <ImportButton />
             </ToolbarSection>
             <ToolbarSection>
                 <SettingsModal />

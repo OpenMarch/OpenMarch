@@ -1,4 +1,12 @@
-import type { NormalizedSheet, ParsedSheet } from "./types";
+/**
+ * PDF coordinate sheet importer adapter.
+ *
+ * Implements the two-phase ImporterAdapter interface:
+ *   preprocess() — heavy PDF text extraction via pdfjs (called once per file)
+ *   parse()      — fast reconcile → normalize → validate → manifest (re-runs on config changes)
+ */
+
+import type { ParsedSheet, NormalizedSheet } from "./types";
 import { getNormalizedSheetKeys, keyToDrillPrefixAndOrder } from "./types";
 import { extractSheetsFromPage } from "./parsePage";
 import { normalizeSheets } from "./normalize";
@@ -9,25 +17,42 @@ import type { SourceHashType } from "./coordParser";
 import type {
     ImportManifest,
     ImporterAdapter,
-    ImportValidationReport,
+    ImportIssue,
+    AdapterConfig,
+    AdapterParseResult,
+    AdapterConfigStep,
 } from "../types";
-import { validateManifest } from "../validate";
+import {
+    FieldTypeStep,
+    HashTypeStep,
+    IndoorTemplateStep,
+    IndoorReferencesStep,
+} from "./PdfConfigSteps";
+import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
 
 export type { SourceHashType } from "./coordParser";
 
-export type ParsedPdf = {
-    pages: number;
-    parsed: ParsedSheet[];
+// ── Types ────────────────────────────────────────────────────────────
+
+export type PdfPreprocessed = {
+    pageCount: number;
+    sheets: ParsedSheet[];
 };
 
-export type ImportResult = {
-    dryRun: ReturnType<typeof dryRunValidate>;
-    pages: number;
-    normalized: NormalizedSheet[];
-    parsed: ParsedSheet[];
+type FieldCheckpoints = {
+    xCheckpoints: {
+        name: string;
+        stepsFromCenterFront: number;
+        useAsReference: boolean;
+    }[];
+    yCheckpoints: {
+        name: string;
+        stepsFromCenterFront: number;
+        useAsReference: boolean;
+    }[];
 };
 
-type FieldPropsLike = { xCheckpoints: any[]; yCheckpoints: any[] };
+// ── PDF worker setup ─────────────────────────────────────────────────
 
 async function configurePdfWorker(pdfjs: any) {
     try {
@@ -49,117 +74,77 @@ async function configurePdfWorker(pdfjs: any) {
     }
 }
 
-/** Parse PDF text into structured sheets (heavy; call once per file). */
+// ── Heavy preprocessing ──────────────────────────────────────────────
+
 export async function parsePdfToSheets(
     arrayBuffer: ArrayBuffer,
-): Promise<ParsedPdf> {
+): Promise<PdfPreprocessed> {
     const pdfjs = await import("pdfjs-dist");
     await configurePdfWorker(pdfjs as any);
     const pdf = await (pdfjs as any).getDocument({ data: arrayBuffer.slice(0) })
         .promise;
 
-    const parsedSheets: ParsedSheet[] = [];
-
+    const sheets: ParsedSheet[] = [];
     for (let i = 0; i < pdf.numPages; i++) {
-        let sheets = await extractSheetsFromPage(pdf, i);
-        if (sheets.length === 0) {
-            try {
-                const { extractSheetsFromPageOCR } = await import("./ocr");
-                sheets = await extractSheetsFromPageOCR(pdf, i);
-            } catch {
-                // OCR disabled or unavailable; keep sheets empty
-            }
-        }
-        if (sheets.length > 0) {
-            const rowCount = sheets.reduce(
-                (sum, s) => sum + (s.rows?.length || 0),
-                0,
-            );
-            console.log(
-                `[pdf-import] Page ${i + 1}: ${sheets.length} sheets, ${rowCount} rows`,
-            );
-            parsedSheets.push(...sheets);
-        }
+        const pageSheets = await extractSheetsFromPage(pdf, i);
+        if (pageSheets.length > 0) sheets.push(...pageSheets);
     }
 
-    if (parsedSheets.length === 0) {
-        try {
-            const { extractSheetsFromPageOCR } = await import("./ocr");
-            for (let i = 0; i < pdf.numPages; i++) {
-                const ocrSheets = await extractSheetsFromPageOCR(pdf, i);
-                parsedSheets.push(...ocrSheets);
+    return { pageCount: pdf.numPages, sheets };
+}
+
+// ── Alias helpers ────────────────────────────────────────────────────
+
+function escapeRegex(str: string) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function applyIndoorAliases(
+    sheets: ParsedSheet[],
+    aliases: Record<string, string>,
+): ParsedSheet[] {
+    const replacements = Object.entries(aliases)
+        .filter(([, pdfLabel]) => pdfLabel.trim() !== "")
+        .map(([systemName, pdfLabel]) => ({
+            pattern: new RegExp(`\\b${escapeRegex(pdfLabel.trim())}\\b`, "gi"),
+            replacement: systemName,
+        }));
+    if (replacements.length === 0) return sheets;
+    return sheets.map((sheet) => ({
+        ...sheet,
+        rows: sheet.rows.map((row) => {
+            let lateralText = row.lateralText;
+            let fbText = row.fbText;
+            for (const { pattern, replacement } of replacements) {
+                lateralText = lateralText.replace(pattern, replacement);
+                fbText = fbText.replace(pattern, replacement);
             }
-        } catch {
-            // OCR disabled or unavailable
-        }
-    }
-
-    const totalRows = parsedSheets.reduce((sum, s) => sum + s.rows.length, 0);
-    console.log(
-        `[pdf-import] Extracted ${totalRows} rows across ${parsedSheets.length} sheets`,
-    );
-
-    return { pages: pdf.numPages, parsed: parsedSheets };
+            return { ...row, lateralText, fbText };
+        }),
+    }));
 }
 
-/** Original all-in-one entry point (kept for backwards compatibility). */
-export async function dryRunImportPdfCoordinates(
-    arrayBuffer: ArrayBuffer,
-    fieldProperties: FieldPropsLike,
-    sourceHashType?: SourceHashType,
-): Promise<ImportResult> {
-    const { pages, parsed } = await parsePdfToSheets(arrayBuffer);
-    const result = normalizeParsedSheets(
-        parsed,
-        fieldProperties,
-        sourceHashType,
-    );
-    return { ...result, pages };
-}
+// ── Detect hash type from field checkpoints ──────────────────────────
 
-/** Reconcile, normalize, and validate parsed sheets (light; safe to re-run on hash type change). */
-export function normalizeParsedSheets(
-    parsedSheets: ParsedSheet[],
-    fieldProperties: FieldPropsLike,
-    sourceHashType?: SourceHashType,
-    forceIndoor?: boolean,
-    flipIndoorAxes?: boolean,
-): Omit<ImportResult, "pages"> {
-    const reconciled = reconcileSheets(parsedSheets);
-    const normalized = normalizeSheets(
-        reconciled,
-        fieldProperties,
-        sourceHashType,
-        forceIndoor,
-        flipIndoorAxes,
-    );
-    const dryRun = dryRunValidate(normalized, fieldProperties);
-    return { dryRun, normalized, parsed: parsedSheets };
-}
-
-/** Detect the hash type from field property checkpoint names. */
 export function detectFieldHashType(
     yCheckpoints: { name: string }[],
 ): SourceHashType {
-    for (const cp of yCheckpoints) {
-        if (/\bhs\b/i.test(cp.name)) return "HS";
-        if (/\b(ncaa|college)\b/i.test(cp.name)) return "CH";
-        if (/\b(nfl|pro)\b/i.test(cp.name)) return "PH";
+    for (const checkpoint of yCheckpoints) {
+        if (/\bhs\b/i.test(checkpoint.name)) return "HS";
+        if (/\b(ncaa|college)\b/i.test(checkpoint.name)) return "CH";
+        if (/\b(nfl|pro)\b/i.test(checkpoint.name)) return "PH";
     }
     return "HS";
 }
 
-/**
- * Convert NormalizedSheet[] into the universal ImportManifest format.
- * This bridges the PDF-specific pipeline to the shared import system.
- */
+// ── Convert normalized sheets to ImportManifest ──────────────────────
+
 export function toManifest(
     normalized: NormalizedSheet[],
     filename: string,
 ): ImportManifest {
     const sheetKeys = getNormalizedSheetKeys(normalized);
 
-    // Build marchers from unique sheet keys
     const seenKeys = new Set<string>();
     const marchers: ImportManifest["marchers"] = [];
     for (let i = 0; i < normalized.length; i++) {
@@ -176,18 +161,18 @@ export function toManifest(
         });
     }
 
-    // Build sets from page plan
     const plan = buildPagePlan(normalized);
     const validation = validatePlan(plan);
-    const flags = validation.valid ? validation.flags : plan.map(() => false);
-    const sets: ImportManifest["sets"] = plan.map((entry, idx) => ({
+    const subsetFlags = validation.valid
+        ? validation.flags
+        : plan.map(() => false);
+    const sets: ImportManifest["sets"] = plan.map((entry, index) => ({
         setId: entry.name,
         counts: entry.counts,
-        order: idx,
-        isSubset: flags[idx],
+        order: index,
+        isSubset: subsetFlags[index],
     }));
 
-    // Build positions from all rows across all sheets
     const positions: ImportManifest["positions"] = [];
     for (let i = 0; i < normalized.length; i++) {
         const key = sheetKeys[i];
@@ -202,53 +187,157 @@ export function toManifest(
         }
     }
 
-    // Aggregate confidence
-    const confs = positions
+    const confidences = positions
         .map((p) => p.confidence)
         .filter((c): c is number => c !== undefined);
-    const avgConfidence =
-        confs.length > 0
-            ? confs.reduce((a, b) => a + b, 0) / confs.length
-            : undefined;
 
     return {
         source: { format: "pdf-coordinates", filename },
         marchers,
         sets,
         positions,
-        confidence: avgConfidence,
+        confidence:
+            confidences.length > 0
+                ? confidences.reduce((a, b) => a + b, 0) / confidences.length
+                : undefined,
     };
 }
 
+// ── Resolve field properties from config ─────────────────────────────
+
+type ResolvedField = FieldCheckpoints & {
+    pixelsPerStep: number;
+    centerFrontPoint: { xPixels: number; yPixels: number };
+};
+
+const EMPTY_CHECKPOINTS: FieldCheckpoints = {
+    xCheckpoints: [],
+    yCheckpoints: [],
+};
+
 /**
- * Validate an ImportManifest that came from the PDF pipeline.
- * Runs the shared validation on the manifest.
+ * Resolves the full field properties (checkpoints + pixel conversion data)
+ * from the adapter config. Returns null only when no field is available.
+ *
+ * The same resolved field MUST be used for both parsing (checkpoints) and
+ * commit (pixelsPerStep / centerFrontPoint) to keep positions consistent.
  */
-export function validatePdfManifest(
-    manifest: ImportManifest,
-    fieldBounds?: {
-        xCheckpoints: { stepsFromCenterFront: number }[];
-        yCheckpoints: { stepsFromCenterFront: number }[];
-    },
-): ImportValidationReport {
-    return validateManifest(manifest, fieldBounds);
+function resolveField(config: AdapterConfig): ResolvedField | null {
+    if (config.useCurrentField) {
+        return (config.fieldProperties as ResolvedField) ?? null;
+    }
+    if (config.fieldType === "indoor") {
+        const templateKey =
+            (config.indoorTemplate as string) ?? "INDOOR_50x80_8to5";
+        return (
+            (IndoorTemplates as Record<string, ResolvedField>)[templateKey] ??
+            null
+        );
+    }
+    return (config.fieldProperties as ResolvedField) ?? null;
 }
 
-/** The PDF coordinate import adapter. */
+// ── Build manifest from preprocessed data + config ───────────────────
+
+function buildManifest(
+    preprocessed: PdfPreprocessed,
+    config: AdapterConfig,
+): AdapterParseResult {
+    const field = resolveField(config);
+    const fieldCheckpoints: FieldCheckpoints = field ?? EMPTY_CHECKPOINTS;
+    const hashType = (config.sourceHashType as SourceHashType) ?? "HS";
+    const forceIndoor = config.useCurrentField
+        ? undefined
+        : config.fieldType === "indoor";
+    const flipAxes = (config.flipIndoorAxes as boolean) ?? false;
+
+    let sheetsToProcess = preprocessed.sheets;
+    if (
+        !config.useCurrentField &&
+        config.fieldType === "indoor" &&
+        config.indoorAliases
+    ) {
+        sheetsToProcess = applyIndoorAliases(
+            sheetsToProcess,
+            config.indoorAliases as Record<string, string>,
+        );
+    }
+
+    const reconciled = reconcileSheets(sheetsToProcess);
+    const normalized = normalizeSheets(
+        reconciled,
+        fieldCheckpoints,
+        hashType,
+        forceIndoor,
+        flipAxes,
+    );
+    const dryRun = dryRunValidate(normalized, fieldCheckpoints);
+    const manifest = toManifest(normalized, "import.pdf");
+
+    const issues: ImportIssue[] = dryRun.issues.map((issue) => ({
+        type: issue.type,
+        code: issue.code,
+        message: issue.message,
+        setId: issue.setId,
+        field: issue.field,
+        confidence: issue.confidence,
+    }));
+
+    const fieldForCommit = field
+        ? {
+              pixelsPerStep: field.pixelsPerStep,
+              centerFrontPoint: field.centerFrontPoint,
+          }
+        : undefined;
+
+    return { manifest, issues, fieldForCommit };
+}
+
+// ── Config steps ─────────────────────────────────────────────────────
+
+const configSteps: AdapterConfigStep[] = [
+    {
+        id: "field-type",
+        label: "Field Type",
+        component: FieldTypeStep,
+    },
+    {
+        id: "hash-type",
+        label: "Hash Type",
+        component: HashTypeStep,
+        shouldShow: (config) =>
+            !config.useCurrentField && config.fieldType !== "indoor",
+    },
+    {
+        id: "indoor-template",
+        label: "Indoor Template",
+        component: IndoorTemplateStep,
+        shouldShow: (config) =>
+            !config.useCurrentField && config.fieldType === "indoor",
+    },
+    {
+        id: "indoor-references",
+        label: "Indoor References",
+        component: IndoorReferencesStep,
+        shouldShow: (config) =>
+            !config.useCurrentField && config.fieldType === "indoor",
+    },
+];
+
+// ── Adapter export ───────────────────────────────────────────────────
+
 export const pdfAdapter: ImporterAdapter = {
     id: "pdf-coordinates",
     name: "PDF Drill Coordinates",
-    accepts: (file: File) =>
+    extensions: [".pdf"],
+    accepts: (file) =>
         file.type === "application/pdf" ||
         file.name.toLowerCase().endsWith(".pdf"),
-    parse: async (file: File): Promise<ImportManifest> => {
+    configSteps,
+    preprocess: async (file) => {
         const arrayBuffer = await file.arrayBuffer();
-        const { parsed } = await parsePdfToSheets(arrayBuffer);
-        const reconciled = reconcileSheets(parsed);
-        const normalized = normalizeSheets(reconciled, {
-            xCheckpoints: [],
-            yCheckpoints: [],
-        });
-        return toManifest(normalized, file.name);
+        return parsePdfToSheets(arrayBuffer);
     },
+    parse: (preprocessed, config) =>
+        buildManifest(preprocessed as PdfPreprocessed, config),
 };

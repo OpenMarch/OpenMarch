@@ -24,12 +24,6 @@ import {
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
-import {
-    runPythonOCR,
-    initializeOCRService,
-    checkPythonAvailable,
-} from "./services/pdf-ocr-service";
-
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
@@ -308,24 +302,6 @@ void app.whenReady().then(async () => {
         return resCode;
     });
 
-    // OCR handlers
-    ipcMain.handle("ocr:initialize", async () => {
-        return await initializeOCRService();
-    });
-    ipcMain.handle("ocr:checkPython", async () => {
-        return await checkPythonAvailable();
-    });
-    ipcMain.handle(
-        "ocr:runPython",
-        async (
-            _,
-            pdfArrayBuffer: ArrayBuffer,
-            pageIndex: number,
-            dpi: number,
-        ) => {
-            return await runPythonOCR(pdfArrayBuffer, pageIndex, dpi);
-        },
-    );
     // Getters
     initGetters();
 

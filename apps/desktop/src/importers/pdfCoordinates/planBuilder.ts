@@ -129,15 +129,17 @@ export function validatePlan(plan: PlanEntry[]): PlanValidation {
 
 /**
  * Compute cumulative beat positions for each plan entry.
- * First entry starts at beat 0; subsequent entries accumulate counts.
- * Returns a map from plan index to beat position.
+ * First entry stays at beat 0 (FIRST_PAGE_ID). Second entry at beat 1.
+ * Subsequent entries accumulate the PREVIOUS entry's counts so each page's
+ * departure gap equals its own arrival counts.
  */
 export function computeBeatPositions(plan: PlanEntry[]): Map<number, number> {
     const positions = new Map<number, number>();
     let cumulative = 0;
 
     for (let i = 0; i < plan.length; i++) {
-        if (i > 0) cumulative += plan[i].counts;
+        if (i === 1) cumulative = 1;
+        else if (i > 1) cumulative += plan[i - 1].counts;
         positions.set(i, cumulative);
     }
 

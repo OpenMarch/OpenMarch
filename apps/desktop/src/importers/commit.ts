@@ -2,6 +2,8 @@
  * Shared commit logic for all import adapters.
  * Takes an ImportManifest + field properties and writes marchers,
  * beats, pages, and marcher_pages to the database.
+ *
+ * Format-agnostic: no adapter-specific imports.
  */
 
 import type { ImportManifest, ImportMarcher } from "./types";
@@ -10,19 +12,27 @@ import {
     allDatabaseBeatsQueryOptions,
     allDatabasePagesQueryOptions,
 } from "@/hooks/queries";
+import { db } from "@/global/database/db";
 import {
-    parseSetId,
-    buildPagePlan,
-    validatePlan,
-    mapPage0Variants,
-    buildMarcherPageUpdates,
-    type PlanEntry,
-} from "./pdfCoordinates/planBuilder";
-import type { NormalizedSheet } from "./pdfCoordinates/types";
+    getWorkspaceSettingsParsed,
+    updateWorkspaceSettingsParsed,
+} from "@/db-functions/workspaceSettings";
+import { updateUtility } from "@/db-functions/utility";
 
-type FieldPropsLike = {
-    pixelsPerStep: number;
-    centerFrontPoint: { xPixels: number; yPixels: number };
+// ── Types ────────────────────────────────────────────────────────────
+
+export type CommitManifestInput = {
+    manifest: ImportManifest;
+    field: {
+        pixelsPerStep: number;
+        centerFrontPoint: { xPixels: number; yPixels: number };
+    };
+    mutations: CommitMutations;
+    existingMarchers: ExistingMarcher[];
+    existingPages: { id: number; name: string }[];
+    existingBeats: { id: number; position: number }[];
+    createTimeline: boolean;
+    bpm: number;
 };
 
 type CommitMutations = {
@@ -59,11 +69,6 @@ type ExistingMarcher = {
     drill_order: number;
 };
 
-type CommitOptions = {
-    createTimeline: boolean;
-    bpm: number;
-};
-
 export type CommitResult = {
     success: boolean;
     updatedCount: number;
@@ -71,42 +76,60 @@ export type CommitResult = {
     error?: string;
 };
 
-/**
- * Commit an ImportManifest to the database.
- * Creates marchers, beats/pages (optional), converts steps to pixels,
- * and batch-updates marcher_pages.
- */
-export async function commitManifest(
-    manifest: ImportManifest,
-    fieldProps: FieldPropsLike,
-    mutations: CommitMutations,
-    existingMarchers: ExistingMarcher[],
-    existingPages: { id: number; name: string }[],
-    existingBeats: { id: number; position: number }[],
-    options: CommitOptions,
-): Promise<CommitResult> {
-    const { createTimeline, bpm } = options;
-    const pps = fieldProps.pixelsPerStep;
-    const cx = fieldProps.centerFrontPoint.xPixels;
-    const cy = fieldProps.centerFrontPoint.yPixels;
+// ── Set ID utilities ─────────────────────────────────────────────────
 
-    // Build page plan from manifest sets
-    const plan: PlanEntry[] = manifest.sets.map((s) => ({
+const START_SET_PATTERN = /^(start|beg|bgn|opener|open)$/i;
+const PAGE_0_VARIANTS = ["0", "Start", "Beg", "Bgn", "Opener", "Open"];
+
+type SetIdParts = { num: number; subset: string | null };
+
+function parseSetId(name: string): SetIdParts | null {
+    if (START_SET_PATTERN.test(name)) return { num: 0, subset: null };
+    const match = name.match(/^(\d+)([A-Za-z]*)$/);
+    if (!match) return null;
+    return {
+        num: parseInt(match[1], 10),
+        subset: match[2] ? match[2].toUpperCase() : null,
+    };
+}
+
+/** Maps all known "set 0" aliases (Start, Beg, 0, etc.) to a single page ID. */
+function buildPage0Map(
+    firstSetName: string,
+    pageId: number,
+): Map<string, number> {
+    const map = new Map<string, number>();
+    for (const variant of PAGE_0_VARIANTS) map.set(variant, pageId);
+    map.set(firstSetName, pageId);
+    return map;
+}
+
+// ── Main commit ──────────────────────────────────────────────────────
+
+export async function commitManifest(
+    input: CommitManifestInput,
+): Promise<CommitResult> {
+    const { manifest, field, mutations, createTimeline, bpm } = input;
+    const { pixelsPerStep, centerFrontPoint } = field;
+
+    const sortedSets = [...manifest.sets].sort((a, b) => a.order - b.order);
+    const setEntries = sortedSets.map((s) => ({
         name: s.setId,
         counts: s.counts,
+        isSubset: s.isSubset ?? false,
     }));
 
-    let planIndexToStartBeat: Map<number, number> | undefined;
+    let beatIdBySetIndex: Map<number, number> | undefined;
 
     if (createTimeline) {
-        const result = await ensureBeatsAndPages(
-            plan,
-            existingBeats,
-            existingPages,
+        const timelineResult = await ensureBeatsAndPages(
+            setEntries,
+            input.existingBeats,
+            input.existingPages,
             mutations,
             bpm,
         );
-        if (!result) {
+        if (!timelineResult) {
             return {
                 success: false,
                 updatedCount: 0,
@@ -114,114 +137,136 @@ export async function commitManifest(
                 error: "Failed to create beats/pages",
             };
         }
-        planIndexToStartBeat = result.planIndexToStartBeat;
-    }
+        beatIdBySetIndex = timelineResult.beatIdBySetIndex;
 
-    // Create marchers
-    const existingByDrill = new Map<string, number>();
-    for (const m of existingMarchers) {
-        if (m.drill_number)
-            existingByDrill.set(m.drill_number.toLowerCase(), m.id);
-    }
-
-    const marcherKeyToId = new Map<string, number>();
-    const newMarcherArgs: (ImportMarcher & { originalKey: string })[] = [];
-    const usedDrillKeys = new Set(existingByDrill.keys());
-
-    for (const im of manifest.marchers) {
-        const drillKey = `${im.drillPrefix}${im.drillOrder}`.toLowerCase();
-        const existing = existingByDrill.get(drillKey);
-        if (existing !== undefined) {
-            marcherKeyToId.set(im.key, existing);
-        } else {
-            let order = im.drillOrder;
-            let dk = `${im.drillPrefix}${order}`.toLowerCase();
-            while (usedDrillKeys.has(dk)) {
-                order++;
-                dk = `${im.drillPrefix}${order}`.toLowerCase();
+        const firstSetParts = parseSetId(setEntries[0].name);
+        if (firstSetParts) {
+            const settings = await getWorkspaceSettingsParsed({ db });
+            if (settings.pageNumberOffset !== firstSetParts.num) {
+                await updateWorkspaceSettingsParsed({
+                    db,
+                    settings: {
+                        ...settings,
+                        pageNumberOffset: firstSetParts.num,
+                    },
+                });
             }
-            usedDrillKeys.add(dk);
+        }
+
+        const lastSetCounts = setEntries[setEntries.length - 1].counts;
+        if (lastSetCounts > 0) {
+            await updateUtility({
+                db,
+                args: { last_page_counts: lastSetCounts },
+            });
+        }
+    }
+
+    // ── Create marchers ──────────────────────────────────────────────
+
+    const existingDrillToId = new Map<string, number>();
+    for (const marcher of input.existingMarchers) {
+        if (marcher.drill_number)
+            existingDrillToId.set(
+                marcher.drill_number.toLowerCase(),
+                marcher.id,
+            );
+    }
+
+    const marcherKeyToDbId = new Map<string, number>();
+    const newMarcherArgs: (ImportMarcher & { originalKey: string })[] = [];
+    const usedDrillKeys = new Set(existingDrillToId.keys());
+
+    for (const importedMarcher of manifest.marchers) {
+        const drillKey =
+            `${importedMarcher.drillPrefix}${importedMarcher.drillOrder}`.toLowerCase();
+        const existingId = existingDrillToId.get(drillKey);
+
+        if (existingId !== undefined) {
+            marcherKeyToDbId.set(importedMarcher.key, existingId);
+        } else {
+            let order = importedMarcher.drillOrder;
+            let candidateKey =
+                `${importedMarcher.drillPrefix}${order}`.toLowerCase();
+            while (usedDrillKeys.has(candidateKey)) {
+                order++;
+                candidateKey =
+                    `${importedMarcher.drillPrefix}${order}`.toLowerCase();
+            }
+            usedDrillKeys.add(candidateKey);
             newMarcherArgs.push({
-                ...im,
+                ...importedMarcher,
                 drillOrder: order,
-                originalKey: im.key,
+                originalKey: importedMarcher.key,
             });
         }
     }
 
     if (newMarcherArgs.length > 0) {
         const created = await mutations.createMarchers(
-            newMarcherArgs.map((m) => ({
-                section: m.section || "Band",
-                drill_prefix: m.drillPrefix,
-                drill_order: m.drillOrder,
-                name: m.name,
+            newMarcherArgs.map((marcher) => ({
+                section: marcher.section || "Band",
+                drill_prefix: marcher.drillPrefix,
+                drill_order: marcher.drillOrder,
+                name: marcher.name,
             })),
         );
         for (let i = 0; i < created.length; i++) {
-            const key = newMarcherArgs[i].originalKey;
-            marcherKeyToId.set(key, created[i].id);
-            existingByDrill.set(
-                `${created[i].drill_prefix}${created[i].drill_order}`.toLowerCase(),
-                created[i].id,
-            );
+            marcherKeyToDbId.set(newMarcherArgs[i].originalKey, created[i].id);
         }
     }
 
-    // Map setId -> pageId
+    // ── Map setId → pageId ───────────────────────────────────────────
+
     await mutations.fetchTimingObjects();
-    const databasePages = await queryClient.fetchQuery(
+    const dbPages = await queryClient.fetchQuery(
         allDatabasePagesQueryOptions(),
     );
-    const allBeatsData = await queryClient.fetchQuery(
+    const dbBeats = await queryClient.fetchQuery(
         allDatabaseBeatsQueryOptions(),
     );
 
-    const pagesByStartBeat = new Map(
-        databasePages.map((p) => [p.start_beat, p.id]),
-    );
-    const beatsById = new Map(allBeatsData.map((b) => [b.id, b.position]));
+    const pageIdByStartBeat = new Map(dbPages.map((p) => [p.start_beat, p.id]));
+    const beatPositionById = new Map(dbBeats.map((b) => [b.id, b.position]));
 
-    const beatAtPosition0 = allBeatsData.find((b) => b.position === 0);
-    const page0Id = beatAtPosition0
-        ? pagesByStartBeat.get(beatAtPosition0.id)
-        : null;
+    const firstBeat = dbBeats.find((b) => b.position === 0);
+    const firstPageId = firstBeat ? pageIdByStartBeat.get(firstBeat.id) : null;
 
-    const pageBySetId = new Map<string, number>();
+    const pageIdBySetId = new Map<string, number>();
 
-    if (page0Id !== null && page0Id !== undefined) {
-        mapPage0Variants(plan, page0Id).forEach((id, setId) =>
-            pageBySetId.set(setId, id),
+    if (firstPageId != null && setEntries.length > 0) {
+        buildPage0Map(setEntries[0].name, firstPageId).forEach((id, setId) =>
+            pageIdBySetId.set(setId, id),
         );
     }
 
-    if (planIndexToStartBeat) {
-        for (let i = 0; i < plan.length; i++) {
-            if (i === 0) continue;
-            const { name: setId } = plan[i];
-            const parsed = parseSetId(setId);
-            if (parsed && parsed.num === 0) continue;
-            const startBeatId = planIndexToStartBeat.get(i);
+    if (beatIdBySetIndex) {
+        for (let i = 1; i < setEntries.length; i++) {
+            const setId = setEntries[i].name;
+            const parts = parseSetId(setId);
+            if (parts && parts.num === 0) continue;
+            const startBeatId = beatIdBySetIndex.get(i);
             if (startBeatId) {
-                const pageId = pagesByStartBeat.get(startBeatId);
-                if (pageId) pageBySetId.set(setId, pageId);
+                const pageId = pageIdByStartBeat.get(startBeatId);
+                if (pageId) pageIdBySetId.set(setId, pageId);
             }
         }
     } else {
-        const sortedPages = [...databasePages].sort((a, b) => {
-            const aPos = beatsById.get(a.start_beat) ?? Infinity;
-            const bPos = beatsById.get(b.start_beat) ?? Infinity;
-            return aPos - bPos;
+        const pagesSortedByBeatPosition = [...dbPages].sort((a, b) => {
+            const posA = beatPositionById.get(a.start_beat) ?? Infinity;
+            const posB = beatPositionById.get(b.start_beat) ?? Infinity;
+            return posA - posB;
         });
-        for (let i = 0; i < plan.length; i++) {
-            if (pageBySetId.has(plan[i].name)) continue;
-            const page = sortedPages[i];
-            if (page) pageBySetId.set(plan[i].name, page.id);
+        for (let i = 0; i < setEntries.length; i++) {
+            if (pageIdBySetId.has(setEntries[i].name)) continue;
+            const page = pagesSortedByBeatPosition[i];
+            if (page) pageIdBySetId.set(setEntries[i].name, page.id);
         }
     }
 
-    // Convert positions to pixel updates
-    const updates: {
+    // ── Convert positions to pixel updates ───────────────────────────
+
+    const marcherPageUpdates: {
         marcher_id: number;
         page_id: number;
         x: number;
@@ -230,34 +275,37 @@ export async function commitManifest(
     }[] = [];
     let skippedInvalid = 0;
 
-    for (const pos of manifest.positions) {
-        const marcherId = marcherKeyToId.get(pos.marcherKey);
+    for (const position of manifest.positions) {
+        const marcherId = marcherKeyToDbId.get(position.marcherKey);
         if (marcherId === undefined) continue;
 
-        let pageId = pageBySetId.get(pos.setId);
+        let pageId = pageIdBySetId.get(position.setId);
         if (pageId === undefined) {
-            const parsed = parseSetId(pos.setId);
-            if (parsed && parsed.num === 0) {
-                pageId = pageBySetId.get("0") ?? pageBySetId.get("Start");
+            const parts = parseSetId(position.setId);
+            if (parts && parts.num === 0) {
+                pageId = pageIdBySetId.get("0") ?? pageIdBySetId.get("Start");
             }
         }
         if (pageId === undefined) continue;
 
-        if (!Number.isFinite(pos.xSteps) || !Number.isFinite(pos.ySteps)) {
+        if (
+            !Number.isFinite(position.xSteps) ||
+            !Number.isFinite(position.ySteps)
+        ) {
             skippedInvalid++;
             continue;
         }
 
-        updates.push({
+        marcherPageUpdates.push({
             marcher_id: marcherId,
             page_id: pageId,
-            x: cx + pos.xSteps * pps,
-            y: cy + pos.ySteps * pps,
+            x: centerFrontPoint.xPixels + position.xSteps * pixelsPerStep,
+            y: centerFrontPoint.yPixels + position.ySteps * pixelsPerStep,
             notes: "",
         });
     }
 
-    if (updates.length === 0) {
+    if (marcherPageUpdates.length === 0) {
         return {
             success: false,
             updatedCount: 0,
@@ -266,100 +314,92 @@ export async function commitManifest(
         };
     }
 
-    const updatedIds = await mutations.updateMarcherPages(updates);
+    const updatedIds = await mutations.updateMarcherPages(marcherPageUpdates);
     await mutations.fetchTimingObjects();
 
     return { success: true, updatedCount: updatedIds.length, skippedInvalid };
 }
 
+// ── Timeline creation ────────────────────────────────────────────────
+
+type SetEntry = { name: string; counts: number; isSubset: boolean };
+
 async function ensureBeatsAndPages(
-    plan: PlanEntry[],
+    setEntries: SetEntry[],
     existingBeats: { id: number; position: number }[],
     existingPages: { id: number; name: string }[],
     mutations: CommitMutations,
     bpm: number,
-): Promise<{ planIndexToStartBeat: Map<number, number> } | false> {
-    const totalCounts = plan.reduce((a, b) => a + b.counts, 0);
+): Promise<{ beatIdBySetIndex: Map<number, number> } | false> {
+    const totalCounts = setEntries.reduce((sum, s) => sum + s.counts, 0);
     const beatsNeeded = Math.max(0, totalCounts + 1 - existingBeats.length);
 
     if (beatsNeeded > 0) {
         const beatDuration = 60 / bpm;
-        const newBeats = Array.from({ length: beatsNeeded }, () => ({
-            duration: beatDuration,
-            include_in_measure: true,
-        }));
-        await mutations.createBeats({ newBeats });
+        await mutations.createBeats({
+            newBeats: Array.from({ length: beatsNeeded }, () => ({
+                duration: beatDuration,
+                include_in_measure: true,
+            })),
+        });
         await mutations.fetchTimingObjects();
     }
 
-    const updatedBeatsData = await queryClient.fetchQuery(
+    const allBeats = await queryClient.fetchQuery(
         allDatabaseBeatsQueryOptions(),
     );
-    const currentBeats = updatedBeatsData
+    const sortedBeats = [...allBeats]
         .sort((a, b) => a.position - b.position)
-        .map((beat) => ({ id: beat.id, position: beat.position }));
+        .map((b) => ({ id: b.id, position: b.position }));
 
-    const beatAtPosition0 = currentBeats.find((b) => b.position === 0);
-    if (!beatAtPosition0) return false;
+    if (!sortedBeats.some((b) => b.position === 0)) return false;
 
-    const databasePages = await queryClient.fetchQuery(
+    const dbPages = await queryClient.fetchQuery(
         allDatabasePagesQueryOptions(),
     );
-    const pageByStartBeat = new Map(
-        databasePages.map((p) => [p.start_beat, p.id]),
+    const existingPageByBeatId = new Map(
+        dbPages.map((p) => [p.start_beat, p.id]),
+    );
+    const existingPageByName = new Map(
+        existingPages.map((p) => [p.name, p.id]),
     );
 
-    const validation = validatePlan(plan);
-    if (!validation.valid) return false;
-
-    const flags = validation.flags;
-    const pageByName = new Map(existingPages.map((p) => [p.name, p.id]));
-    const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
+    const pagesToCreate: { start_beat: number; is_subset: boolean }[] = [];
     const usedBeatIds = new Set<number>();
-    const planIndexToStartBeat = new Map<number, number>();
+    const beatIdBySetIndex = new Map<number, number>();
 
-    let cumulativeBeatPosition = 0;
+    let cumulativePosition = 0;
 
-    for (let i = 0; i < plan.length; i++) {
-        const { counts } = plan[i];
-        if (i > 0) cumulativeBeatPosition += counts;
+    for (let i = 0; i < setEntries.length; i++) {
+        if (i === 1) cumulativePosition = 1;
+        else if (i > 1) cumulativePosition += setEntries[i - 1].counts;
 
-        const startPosition = cumulativeBeatPosition;
-        const beatObj = currentBeats.find((b) => b.position === startPosition);
-        if (!beatObj) return false;
+        const beat = sortedBeats.find((b) => b.position === cumulativePosition);
+        if (!beat) return false;
 
-        if (pageByStartBeat.has(beatObj.id)) {
-            planIndexToStartBeat.set(i, beatObj.id);
-            continue;
+        const alreadyHasPage =
+            existingPageByBeatId.has(beat.id) ||
+            (i === 0 &&
+                cumulativePosition === 0 &&
+                dbPages.some((p) => p.id === 0)) ||
+            usedBeatIds.has(beat.id) ||
+            existingPageByName.has(setEntries[i].name);
+
+        if (!alreadyHasPage) {
+            pagesToCreate.push({
+                start_beat: beat.id,
+                is_subset: setEntries[i].isSubset,
+            });
+            usedBeatIds.add(beat.id);
         }
 
-        if (i === 0 && startPosition === 0) {
-            const existingPage0 = databasePages.find((p) => p.id === 0);
-            if (existingPage0) {
-                planIndexToStartBeat.set(i, beatObj.id);
-                continue;
-            }
-        }
-
-        if (usedBeatIds.has(beatObj.id)) {
-            planIndexToStartBeat.set(i, beatObj.id);
-            continue;
-        }
-
-        if (pageByName.has(plan[i].name)) {
-            planIndexToStartBeat.set(i, beatObj.id);
-            continue;
-        }
-
-        newPagesArgs.push({ start_beat: beatObj.id, is_subset: flags[i] });
-        usedBeatIds.add(beatObj.id);
-        planIndexToStartBeat.set(i, beatObj.id);
+        beatIdBySetIndex.set(i, beat.id);
     }
 
-    if (newPagesArgs.length > 0) {
-        await mutations.createPages(newPagesArgs);
+    if (pagesToCreate.length > 0) {
+        await mutations.createPages(pagesToCreate);
         await mutations.fetchTimingObjects();
     }
 
-    return { planIndexToStartBeat };
+    return { beatIdBySetIndex };
 }

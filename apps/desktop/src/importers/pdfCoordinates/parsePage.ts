@@ -49,12 +49,20 @@ function toItems(textContent: {
 function extractHeader(arr: TextItem[]): Partial<PerformerHeader> {
     const joined = arr.map((t) => t.str).join(" ");
     const header: Partial<PerformerHeader> = {};
-    const label = /Label\s*:\s*([A-Za-z]+\d*)/i.exec(joined)?.[1];
-    if (label) header.label = label.trim();
+    const rawLabel = /Label\s*:\s*([A-Za-z]+\d*)(?!\s*:)/i.exec(joined)?.[1];
+    if (rawLabel && !/^id$/i.test(rawLabel)) header.label = rawLabel.trim();
     const symbol = /Symbol\s*:\s*([^\s]+)/i.exec(joined)?.[1];
     if (symbol) header.symbol = symbol.trim();
-    const performer = /Performer\s*:\s*([^\n]+)/i.exec(joined)?.[1]?.trim();
-    if (performer) header.performer = performer.trim();
+    const rawPerformer =
+        /Performer\s*:\s*(.*?)(?=\s*(?:Symbol|Label|ID)\s*:|$)/i.exec(
+            joined,
+        )?.[1];
+    if (rawPerformer) {
+        const name = rawPerformer.replace(/\(unnamed\)/i, "").trim();
+        if (name) header.performer = name;
+    }
+    const id = /\bID\s*:\s*(\S+)/i.exec(joined)?.[1];
+    if (id) header.id = id;
     return header;
 }
 
@@ -149,7 +157,7 @@ export async function extractSheetsFromPage(
  * Shared row-parsing logic used by all extraction paths.
  * Accepts data rows + column bands, applies fallback if column mapping fails,
  * and accepts both numeric and word-based (Start/Opener) set IDs.
- * Optional getConf can be used by OCR to attach per-row confidence.
+ * Optional getConf can attach per-row confidence when available.
  */
 export function parseDataRows(
     dataRows: TextItem[][],
@@ -157,7 +165,19 @@ export function parseDataRows(
     getConf?: (row: TextItem[]) => number | undefined,
 ): ParsedRow[] {
     const out: ParsedRow[] = [];
+    let pendingWaypointCounts = 0;
     for (const r of dataRows) {
+        const rowText = r.map((t) => t.str).join(" ");
+        if (
+            /\bWP\d+\b/i.test(rowText) ||
+            /untitled\s+waypoint/i.test(rowText)
+        ) {
+            const wpCounts = r
+                .map((t) => t.str.trim())
+                .find((s) => /^\d+$/.test(s));
+            if (wpCounts) pendingWaypointCounts += parseInt(wpCounts, 10);
+            continue;
+        }
         let cols = mapRowToColumns(r, bands);
         const setIdValid = SET_ID_REGEX.test((cols.setId || "").trim());
         const countsValid = /^\d+$/.test((cols.counts || "").trim());
@@ -174,15 +194,28 @@ export function parseDataRows(
         }
         const setId = cols.setId;
         if (!setId || !SET_ID_REGEX.test(setId.trim())) continue;
-        const counts = parseInt((cols.counts || "").replace(/[^0-9]/g, ""), 10);
+        let rawCounts = (cols.counts || "").trim();
+        const mr = (cols.measureRange || "").trim();
+        if (
+            (!rawCounts || rawCounts === "0") &&
+            mr &&
+            /^\d+$/.test(mr) &&
+            mr !== "0"
+        ) {
+            rawCounts = mr;
+            cols.measureRange = "";
+        }
+        const counts = parseInt(rawCounts.replace(/[^0-9]/g, ""), 10);
         const row: ParsedRow = {
             setId: setId.trim(),
             measureRange: (cols.measureRange || "").trim(),
-            counts: Number.isFinite(counts) ? counts : 0,
+            counts:
+                (Number.isFinite(counts) ? counts : 0) + pendingWaypointCounts,
             lateralText: (cols.lateralText || "").trim(),
             fbText: (cols.fbText || "").trim(),
             source: "text",
         };
+        pendingWaypointCounts = 0;
         const conf = getConf?.(r);
         if (conf !== undefined) row.conf = conf;
         out.push(row);

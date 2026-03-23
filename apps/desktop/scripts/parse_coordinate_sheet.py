@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
 Coordinate Sheet Parser for OpenMarch
-Extracts performer coordinate sets from PDF pages using PyMuPDF (fitz) with OCR fallback.
+Extracts performer coordinate sets from PDF pages using PyMuPDF (fitz) embedded text only.
 
-Usage: parse_coordinate_sheet.py <page_index> [dpi]
+Usage: parse_coordinate_sheet.py <page_index>
 Input: PDF binary from stdin
 Output: JSON with extracted sheets and sets
 """
@@ -37,7 +37,6 @@ REGEX_HEADER_START = re.compile(r"^Set\s+Measure\s+Counts", re.IGNORECASE)
 REGEX_ROW_START = re.compile(r"^(?P<set_id>Start|Beg|Bgn|Opener|Open|\d+[A-Z]?)\s+(?P<rest>.*)", re.IGNORECASE)
 
 # Constants
-MIN_TEXT_LENGTH_THRESHOLD = 200
 Y_TOLERANCE = 3.0  # Points for line reconstruction
 
 def log_debug(msg):
@@ -418,77 +417,13 @@ def process_text_content(text_lines: List[str]) -> List[Dict]:
         
     return results
 
-def run_ocr_fallback(page, dpi) -> List[str]:
-    """
-    Renders quadrants and runs EasyOCR.
-    Returns list of text lines.
-    """
-    log_debug("Running OCR fallback...")
-    try:
-        import easyocr
-    except ImportError:
-        log_debug("EasyOCR not installed or import failed.")
-        return []
-
-    try:
-        reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-    except Exception as e:
-        log_debug(f"Failed to init EasyOCR: {e}")
-        return []
-
-    x_mid, y_mid = get_page_center(page)
-    rect = page.rect
-    
-    # Define quadrants
-    quad_rects = [
-        fitz.Rect(0, 0, x_mid, y_mid),          # TL
-        fitz.Rect(x_mid, 0, rect.width, y_mid), # TR
-        fitz.Rect(0, y_mid, x_mid, rect.height), # BL
-        fitz.Rect(x_mid, y_mid, rect.width, rect.height) # BR
-    ]
-    
-    all_lines = []
-    
-    for q_rect in quad_rects:
-        pix = page.get_pixmap(matrix=fitz.Matrix(dpi/72, dpi/72), clip=q_rect)
-        # Convert to numpy
-        # pix.samples is bytes
-        img_array = np.frombuffer(pix.samples, dtype=np.uint8).reshape(pix.h, pix.w, pix.n)
-        if pix.n == 4: # RGBA -> RGB
-            img_array = img_array[..., :3]
-            
-        try:
-            # EasyOCR readtext
-            results = reader.readtext(img_array, detail=1, paragraph=False)
-            
-            # Convert to words format for sorting logic: [x0, y0, x1, y1, text]
-            # EasyOCR bbox: [[x1, y1], [x2, y2], [x3, y3], [x4, y4]]
-            q_words = []
-            for bbox, text, conf in results:
-                xs = [p[0] for p in bbox]
-                ys = [p[1] for p in bbox]
-                q_words.append([min(xs), min(ys), max(xs), max(ys), text])
-            
-            # Sort words in this quadrant
-            sorted_q_words = sort_words_in_quadrant(q_words)
-            
-            # Convert to lines
-            q_lines = words_to_lines(sorted_q_words)
-            all_lines.extend(q_lines)
-            
-        except Exception as e:
-            log_debug(f"OCR failed for quadrant: {e}")
-            
-    return all_lines
-
 def main():
     if len(sys.argv) < 2:
-        print(json.dumps({"error": "Usage: parse_coordinate_sheet.py <page_index> [dpi]"}), file=sys.stderr)
+        print(json.dumps({"error": "Usage: parse_coordinate_sheet.py <page_index>"}), file=sys.stderr)
         sys.exit(1)
         
     try:
         page_index = int(sys.argv[1])
-        dpi = int(sys.argv[2]) if len(sys.argv) > 2 else 300
         
         pdf_bytes = sys.stdin.buffer.read()
         if not pdf_bytes:
@@ -502,19 +437,11 @@ def main():
              
         page = doc[page_index]
         
-        # 1. Text Extraction
+        # 1. Text extraction (embedded text only)
         words = page.get_text("words") # (x0, y0, x1, y1, "word", block_no, line_no, word_no)
-        
-        text_lines = []
-        
-        # Calculate total text length
         total_chars = sum(len(w[4]) for w in words)
-        
-        if total_chars > MIN_TEXT_LENGTH_THRESHOLD:
-            ordered_words = reconstruct_reading_order(page, words)
-            text_lines = words_to_lines(ordered_words)
-        else:
-            text_lines = run_ocr_fallback(page, dpi)
+        ordered_words = reconstruct_reading_order(page, words)
+        text_lines = words_to_lines(ordered_words)
             
         # 2. Process Content
         extracted_sheets = process_text_content(text_lines)
@@ -533,7 +460,8 @@ def main():
             "debug": {
                 "performer_marker_count": performer_count,
                 "extracted_labels_count": labels_found,
-                "text_source": "text" if total_chars > MIN_TEXT_LENGTH_THRESHOLD else "ocr"
+                "text_source": "text",
+                "embedded_text_chars": total_chars,
             }
         }
         

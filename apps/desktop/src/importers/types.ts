@@ -6,10 +6,6 @@
 
 export type ImportManifest = {
     source: { format: string; filename: string };
-    fieldHints?: {
-        type: "outdoor" | "indoor";
-        hashType?: "HS" | "CH" | "PH";
-    };
     marchers: ImportMarcher[];
     sets: ImportSet[];
     positions: ImportPosition[];
@@ -68,30 +64,66 @@ export type ImportValidationReport = {
     };
 };
 
+// ── Adapter interface ────────────────────────────────────────────────
+
+export type AdapterConfig = Record<string, unknown>;
+
+export type AdapterParseResult = {
+    manifest: ImportManifest;
+    /** Format-specific validation issues (merged with shared validation in the wizard). */
+    issues: ImportIssue[];
+    /**
+     * Field conversion data matching the template/field used during parsing.
+     * Commit MUST use these values to convert steps → pixels correctly.
+     * If omitted, the current file's field properties are used (only safe
+     * when the user chose "use current field").
+     */
+    fieldForCommit?: {
+        pixelsPerStep: number;
+        centerFrontPoint: { xPixels: number; yPixels: number };
+    };
+};
+
+/**
+ * Props passed to each adapter config step component.
+ * Config step components can also use React hooks for app state (e.g. field properties).
+ */
+export type AdapterStepProps = {
+    preprocessed: unknown;
+    config: AdapterConfig;
+    onConfigChange: (updates: AdapterConfig) => void;
+    onNext: () => void;
+    onBack: () => void;
+};
+
+export type AdapterConfigStep = {
+    id: string;
+    label: string;
+    component: React.ComponentType<AdapterStepProps>;
+    /** Return false to skip this step based on current config. */
+    shouldShow?: (config: AdapterConfig) => boolean;
+};
+
 /**
  * An importer adapter knows how to read a specific file format
  * and produce an ImportManifest. The shared pipeline handles
  * everything downstream (validation, preview, commit).
+ *
+ * Two-phase design: preprocess() does heavy one-time work (e.g. PDF text extraction),
+ * parse() does fast re-computation based on user config choices.
+ * This keeps the wizard responsive when users tweak settings.
  */
 export type ImporterAdapter = {
     id: string;
     name: string;
+    /** File extensions this adapter handles (e.g. [".pdf"]) */
+    extensions: string[];
     /** Can this adapter handle the given file? */
     accepts: (file: File) => boolean;
-    /** Parse the file into a universal manifest. */
-    parse: (
-        file: File,
-        options: Record<string, unknown>,
-    ) => Promise<ImportManifest>;
-    /**
-     * Optional React component for format-specific configuration
-     * (e.g. hash type selection for PDF imports).
-     * Receives onUpdate callback to push config changes upstream.
-     */
-    configComponent?: React.ComponentType<AdapterConfigProps>;
-};
-
-export type AdapterConfigProps = {
-    manifest: ImportManifest;
-    onUpdate: (options: Record<string, unknown>) => void;
+    /** Wizard steps for format-specific configuration. */
+    configSteps: AdapterConfigStep[];
+    /** Heavy one-time file processing (e.g. PDF text extraction). */
+    preprocess: (file: File) => Promise<unknown>;
+    /** Produce manifest from preprocessed data + user config. Should be fast. */
+    parse: (preprocessed: unknown, config: AdapterConfig) => AdapterParseResult;
 };

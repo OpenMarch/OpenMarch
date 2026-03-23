@@ -272,6 +272,12 @@ export function fallbackParseRowLeftToRight(
         }
     }
     if (!setId) return null;
+    if (!counts && measureRange && /^\d+$/.test(measureRange)) {
+        counts = measureRange;
+        countsIdx = measureIdx;
+        measureRange = "";
+        measureIdx = -1;
+    }
     const startAfter =
         countsIdx >= 0
             ? countsIdx + 1

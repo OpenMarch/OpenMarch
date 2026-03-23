@@ -56,6 +56,8 @@ const headerNeedles = {
  * Split compound header tokens that pdfjs merges into separate virtual
  * items so each can match its own needle. Handles patterns like:
  *   "CountsSide 1-Side 2" → "Counts" + "Side 1-Side 2"
+ *   "CountsLeft-Right"    → "Counts" + "Left-Right"
+ *   "CountsHome-Visitor"  → "Counts" + "Home-Visitor"
  *   "Counts 1-2"          → "Counts" + "1-2" (lateral shorthand)
  *   "Counts A-B"          → "Counts" + "A-B"
  */
@@ -67,7 +69,14 @@ function expandHeaderItems(row: TextItem[]): TextItem[] {
         const m1 = /^(counts?)(side\s.+)$/i.exec(s);
         // "Counts 1-2", "Counts A-B" — space between Counts and lateral shorthand
         const m2 = !m1 && /^(counts?)\s+([ab1-2]\s*[-–]\s*[ab1-2].*)$/i.exec(s);
-        const m = m1 || m2;
+        // "CountsLeft-Right", "CountsHome-Visitor", "CountsFront-Back", etc.
+        const m3 =
+            !m1 &&
+            !m2 &&
+            /^(counts?)\s*((?:left|right|home|visitor|front|back|lateral|depth|departure|top|bottom|[lr])\s*[-/]?\s*.+)$/i.exec(
+                s,
+            );
+        const m = m1 || m2 || m3;
         if (m) {
             // Place the lateral virtual header far enough right that
             // the midpoint boundary won't eat narrow counts data.

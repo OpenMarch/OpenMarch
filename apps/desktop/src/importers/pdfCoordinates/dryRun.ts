@@ -28,25 +28,25 @@ export function dryRunValidate(
     }
     const issues = [] as DryRunReport["issues"];
 
-    // label uniqueness across sheets
-    const labels = new Map<string, { pageIndex: number; quadrant: string }>();
-    for (const s of sheets) {
-        const label = s.header.label?.trim();
-        if (label) {
-            const key = `${s.header.symbol?.toLowerCase() ?? ""}:${label.toLowerCase()}`;
-            if (labels.has(key)) {
-                issues.push({
-                    type: "error",
-                    code: "DUPLICATE_LABEL",
-                    message: `Duplicate label ${label}`,
-                    pageIndex: s.pageIndex,
-                    quadrant: s.quadrant,
-                });
-            } else
-                labels.set(key, {
-                    pageIndex: s.pageIndex,
-                    quadrant: s.quadrant,
-                });
+    // label uniqueness across sheets (uses normalized keys so id-based
+    // disambiguation produces distinct keys like "s-1", "s-2")
+    const sheetKeys = getNormalizedSheetKeys(sheets);
+    const seen = new Map<string, { pageIndex: number; quadrant: string }>();
+    for (let i = 0; i < sheets.length; i++) {
+        const key = sheetKeys[i];
+        if (seen.has(key)) {
+            issues.push({
+                type: "error",
+                code: "DUPLICATE_LABEL",
+                message: `Duplicate label "${key}"`,
+                pageIndex: sheets[i].pageIndex,
+                quadrant: sheets[i].quadrant,
+            });
+        } else {
+            seen.set(key, {
+                pageIndex: sheets[i].pageIndex,
+                quadrant: sheets[i].quadrant,
+            });
         }
     }
 
@@ -120,7 +120,7 @@ export function dryRunValidate(
                     field: !r.setId ? "setId" : "counts",
                 });
             }
-            // Low confidence warning on OCR-derived rows
+            // Low confidence warning (e.g. future extractors may attach conf)
             if (typeof r.conf === "number" && r.conf < 0.5) {
                 issues.push({
                     type: "warning",
