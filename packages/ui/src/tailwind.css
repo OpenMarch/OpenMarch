@@ -77,7 +77,7 @@
 }
 
 /* ----------------- dark mode variant of the colors above ----------------- */
-[class="dark"] {
+.dark {
     /* materials */
     --color-bg-1: rgb(15, 14, 19);
     --color-modal-shadow: rgba(0, 0, 0, 0.5);
