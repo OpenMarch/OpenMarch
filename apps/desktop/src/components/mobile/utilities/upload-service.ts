@@ -3,6 +3,8 @@ import { toCompressedOpenMarchBytes } from "./dots-to-om";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { postApiEditorV1ProductionsProductionIdRevisions } from "@/api/generated/production-revisions/production-revisions";
 import { patchApiEditorV1EnsemblesEnsembleIdPerformerLabels } from "@/api/generated/performer-labels/performer-labels";
+import { patchApiEditorV1EnsemblesEnsembleIdSectionPrefixMap } from "@/api/generated/section-prefix-map/section-prefix-map";
+import { _createSectionMappings } from "./create-section-mappings";
 
 export type UploadResult =
     | { success: true; ensembleId: number; message: string }
@@ -102,14 +104,17 @@ export async function uploadDatabaseToServer(
             );
         }
 
-        const performerLabels = (
-            await dbConnection.query.marchers.findMany({
-                columns: {
-                    drill_prefix: true,
-                    drill_order: true,
-                },
-            })
-        ).map((marcher) => `${marcher.drill_prefix}${marcher.drill_order}`);
+        const marchers = await dbConnection.query.marchers.findMany({
+            columns: {
+                section: true,
+                drill_prefix: true,
+                drill_order: true,
+            },
+        });
+        const performerLabels = marchers.map(
+            (marcher) => `${marcher.drill_prefix}${marcher.drill_order}`,
+        );
+        const sectionMappings = _createSectionMappings(marchers);
 
         const omzBytes = await toCompressedOpenMarchBytes(dbConnection);
 
@@ -128,6 +133,12 @@ export async function uploadDatabaseToServer(
             revisionUploadResult.ensembleId,
             {
                 labels: performerLabels,
+            },
+        );
+        await patchApiEditorV1EnsemblesEnsembleIdSectionPrefixMap(
+            revisionUploadResult.ensembleId,
+            {
+                prefix_map: sectionMappings,
             },
         );
 
