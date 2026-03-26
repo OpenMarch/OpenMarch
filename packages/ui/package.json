@@ -62,7 +62,7 @@
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
         "@uiw/react-color": "^2.6.0",
-        "astro": "^5.11.0",
+        "astro": "^5.18.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "react": "^19.0.0",
