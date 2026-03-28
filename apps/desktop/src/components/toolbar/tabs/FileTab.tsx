@@ -14,6 +14,7 @@ import ExportCoordinatesModal from "@/components/exporting/ExportCoordinatesModa
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import SettingsModal from "../SettingsModal";
 import { T } from "@tolgee/react";
+import NewFileModal from "@/components/file/NewFileModal";
 import {
     canUndoQueryOptions,
     canRedoQueryOptions,
@@ -38,15 +39,12 @@ export function FileTab() {
                     <FolderOpenIcon size={24} />
                     <T keyName="fileTab.openFile" />
                 </RegisteredActionButton>
-                <RegisteredActionButton
-                    registeredAction={
-                        RegisteredActionsObjects.launchNewFileDialogue
-                    }
-                    className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                >
-                    <FileIcon size={24} />
-                    <T keyName="fileTab.newFile" />
-                </RegisteredActionButton>
+                <NewFileModal onSuccess={() => {}}>
+                    <button className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
+                        <FileIcon size={24} />
+                        <T keyName="fileTab.newFile" />
+                    </button>
+                </NewFileModal>
                 <RegisteredActionButton
                     registeredAction={
                         RegisteredActionsObjects.launchSaveFileDialogue

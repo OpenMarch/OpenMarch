@@ -130,6 +130,7 @@ export type FromDatabasePagesArgs = {
     allBeats: Beat[];
     lastPageCounts: number;
     pageNumberOffset?: number;
+    pageStartingSubsetLetter?: string;
 };
 
 /**
@@ -145,6 +146,7 @@ export function fromDatabasePages({
     allBeats,
     lastPageCounts,
     pageNumberOffset = 0,
+    pageStartingSubsetLetter = "",
 }: FromDatabasePagesArgs): Page[] {
     if (databasePages.length === 0) return [];
     const sortedBeats = allBeats.sort((a, b) => a.position - b.position);
@@ -160,7 +162,11 @@ export function fromDatabasePages({
         return aBeat.position - bBeat.position;
     });
     const isSubsetArr = sortedDbPages.map((page) => page.is_subset);
-    const pageNames = generatePageNames(isSubsetArr, pageNumberOffset);
+    const pageNames = generatePageNames(
+        isSubsetArr,
+        pageNumberOffset,
+        pageStartingSubsetLetter,
+    );
     const sortedMeasures = allMeasures.sort((a, b) => a.number - b.number);
 
     let curTimestamp = 0;
@@ -270,10 +276,15 @@ export function fromDatabasePages({
 export const generatePageNames = (
     isSubsetArr: boolean[],
     pageNumberOffset: number = 0,
+    startingSubsetLetter: string = "",
 ) => {
-    const pageNames: string[] = [pageNumberOffset.toString()];
+    const normalizedSubset = startingSubsetLetter.toUpperCase();
+    const firstName = normalizedSubset
+        ? `${pageNumberOffset}${normalizedSubset}`
+        : pageNumberOffset.toString();
+    const pageNames: string[] = [firstName];
     let curPageNumber = pageNumberOffset;
-    let curSubsetLetter = "";
+    let curSubsetLetter = normalizedSubset;
 
     /**
      * Increments a letter to the next letter in the alphabet.
