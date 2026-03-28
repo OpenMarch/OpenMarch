@@ -3,8 +3,12 @@ import { fabric } from "fabric";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
+import CanvasProp from "../../../global/classes/canvasObjects/CanvasProp";
 import { rgbaToString } from "@openmarch/core";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
+import { getPixelsPerFoot } from "@/global/classes/Prop";
+import { toast } from "sonner";
 
 export default class DefaultListeners implements CanvasListeners {
     protected canvas: OpenMarchCanvas & fabric.Canvas;
@@ -16,6 +20,7 @@ export default class DefaultListeners implements CanvasListeners {
     private lastMousePosition = { x: 0, y: 0 };
     private _scrollAnimationFrame: number | null = null;
     private _isZooming: boolean = false;
+    private _isUpdatingDatabase: boolean = false; // Prevent concurrent database updates
 
     // Lasso selection properties
     private isLassoDrawing: boolean = false;
@@ -27,6 +32,10 @@ export default class DefaultListeners implements CanvasListeners {
     private readonly LASSO_DASH_ARRAY = [5, 5];
     private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
 
+    /** When scaling a locked prop, pin center to avoid drift (especially when rotated). */
+    private _lockedPropCenter: { x: number; y: number } | null = null;
+    private _lockedPropId: number | null = null;
+
     constructor({ canvas }: { canvas: OpenMarchCanvas }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
         this.handleObjectModified = this.handleObjectModified.bind(this);
@@ -35,6 +44,8 @@ export default class DefaultListeners implements CanvasListeners {
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.updateMomentum = this.updateMomentum.bind(this);
         this.handleBeforeTransform = this.handleBeforeTransform.bind(this);
+        this.handleScaling = this.handleScaling.bind(this);
+        this.handleMoving = this.handleMoving.bind(this);
     }
 
     initiateListeners = () => {
@@ -43,9 +54,8 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
         this.canvas.on("before:transform", this.handleBeforeTransform);
-
-        // NOTE: Removed momentum animation loop for professional immediate response
-        // Professional navigation should be instant and precise, not momentum-based
+        this.canvas.on("object:scaling", this.handleScaling);
+        this.canvas.on("object:moving", this.handleMoving);
     };
 
     cleanupListeners = () => {
@@ -54,6 +64,8 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
         this.canvas.off("before:transform", this.handleBeforeTransform as any);
+        this.canvas.off("object:scaling", this.handleScaling as any);
+        this.canvas.off("object:moving", this.handleMoving as any);
     };
 
     /**
@@ -72,6 +84,18 @@ export default class DefaultListeners implements CanvasListeners {
         const corner = transform.corner;
         const target = transform.target;
         const evt = e.e;
+
+        // Store center for locked props so scaling keeps position fixed (predictable for rotated/polygon)
+        if (target && CanvasProp.isCanvasProp(target)) {
+            const prop = target as CanvasProp;
+            if (prop.locked) {
+                this._lockedPropCenter = {
+                    x: target.left ?? 0,
+                    y: target.top ?? 0,
+                };
+                this._lockedPropId = prop.propId;
+            }
+        }
 
         // Block Shift+click on middle scale handles (ml, mr, mt, mb) for ActiveSelection
         // This prevents cross-axis scaling which causes unexpected behavior
@@ -110,7 +134,16 @@ export default class DefaultListeners implements CanvasListeners {
     /**
      * Update the marcher's position when it is moved
      */
-    handleObjectModified(fabricEvent?: fabric.IEvent<MouseEvent>) {
+    async handleObjectModified(fabricEvent?: fabric.IEvent<MouseEvent>) {
+        this._lockedPropCenter = null;
+        this._lockedPropId = null;
+
+        // Prevent concurrent database updates — restore canvas to last persisted state
+        if (this._isUpdatingDatabase) {
+            this.canvas.refreshMarchers();
+            return;
+        }
+
         /*
             ---- Determine if the mouse was clicked or dragged ----
             If the mouse was clicked, likely the user does not want to move the marcher
@@ -135,29 +168,167 @@ export default class DefaultListeners implements CanvasListeners {
             }
         }
 
-        if (
-            // For the case of rotation
-            !fabricEvent ||
-            (fabricEvent?.target as any)?.classString === "Marcher" ||
-            _anyListHasMarcher((fabricEvent?.target as any)?._objects || [])
-        ) {
-            const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
-            this.canvas
-                .getActiveObjectsByType(CanvasMarcher)
-                .forEach((activeCanvasMarcher: CanvasMarcher) => {
-                    // If the active object is not a marcher, return
-                    if (!(activeCanvasMarcher instanceof CanvasMarcher)) return;
+        // Collect all marcher page updates in a single array to avoid nested transactions
+        const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
+        const modifiedGeometries: {
+            id: number;
+            width?: number;
+            height?: number;
+            rotation?: number;
+        }[] = [];
 
-                    const newCoords = activeCanvasMarcher.getMarcherCoords();
-                    modifiedMarcherPages.push({
-                        marcher_id: activeCanvasMarcher.marcherObj.id,
-                        page_id: activeCanvasMarcher.coordinate.page_id,
-                        x: newCoords.x,
-                        y: newCoords.y,
-                    });
+        // Handle all marcher/prop movement in a single loop
+        // Since CanvasProp extends CanvasMarcher, getActiveObjectsByType(CanvasMarcher) returns both
+        const fp = this.canvas.fieldProperties;
+        const pixelsPerFoot = fp ? getPixelsPerFoot(fp) : 6;
+        const pageId = this.canvas.currentPage?.id;
+
+        this.canvas
+            .getActiveObjectsByType(CanvasMarcher)
+            .forEach((activeObject: CanvasMarcher) => {
+                const isProp = activeObject instanceof CanvasProp;
+
+                // getMarcherCoords converts canvas coords back to DB coords (subtracts gridOffset)
+                const newCoords = activeObject.getMarcherCoords();
+
+                // Props don't store page_id on their coordinate, so use canvas.currentPage
+                const objPageId = isProp
+                    ? pageId
+                    : activeObject.coordinate.page_id;
+                if (objPageId == null) return;
+
+                modifiedMarcherPages.push({
+                    marcher_id: activeObject.marcherObj.id,
+                    page_id: objPageId,
+                    x: newCoords.x,
+                    y: newCoords.y,
                 });
-            this.canvas.updateMarcherPagesFunction?.(modifiedMarcherPages);
+
+                // Handle prop-specific geometry updates (scaling/rotation only)
+                if (isProp) {
+                    const prop = activeObject as CanvasProp;
+                    const currentRotation = prop.angle || 0;
+                    const sx = prop.scaleX || 1;
+                    const sy = prop.scaleY || 1;
+
+                    const wasScaled =
+                        Math.abs(sx - 1) > 0.001 || Math.abs(sy - 1) > 0.001;
+                    const wasRotated =
+                        Math.abs(
+                            currentRotation - (prop.geometry.rotation || 0),
+                        ) > 0.01;
+
+                    if (wasScaled || wasRotated) {
+                        const dimensions = prop.getDimensions(pixelsPerFoot);
+                        const changes = {
+                            width: dimensions.width,
+                            height: dimensions.height,
+                            rotation: currentRotation,
+                        };
+                        if (this.canvas.onPropGeometryEditedFromCanvas) {
+                            this.canvas.onPropGeometryEditedFromCanvas({
+                                propId: prop.propId,
+                                pageId: objPageId,
+                                changes,
+                            });
+                        } else {
+                            modifiedGeometries.push({
+                                id: prop.geometry.id,
+                                ...changes,
+                            });
+                        }
+                    }
+                }
+            });
+
+        // Atomic update: both marcher pages and prop geometry in one transaction
+        this._isUpdatingDatabase = true;
+        try {
+            if (
+                modifiedMarcherPages.length > 0 ||
+                modifiedGeometries.length > 0
+            ) {
+                await this.canvas.updateMarcherPagesAndGeometryFunction?.({
+                    modifiedMarcherPages,
+                    modifiedGeometries,
+                });
+            }
+        } catch (err) {
+            console.error("updateMarcherPagesAndGeometry failed", err);
+            toast.error("Failed to save position; reverting.");
+            this.canvas.refreshMarchers();
+        } finally {
+            this._isUpdatingDatabase = false;
         }
+    }
+
+    /** Snap prop edges to grid during scaling; when coordinates locked, keep center fixed. */
+    handleScaling(fabricEvent: fabric.IEvent<MouseEvent>) {
+        const target = fabricEvent.target;
+        if (!target || !CanvasProp.isCanvasProp(target)) return;
+
+        const prop = target as CanvasProp;
+
+        // When coordinates are locked, pin center so scaling doesn't move the prop (predictable for rotated/polygon/freehand)
+        if (
+            prop.locked &&
+            this._lockedPropCenter &&
+            this._lockedPropId === prop.propId
+        ) {
+            target.set({
+                left: this._lockedPropCenter.x,
+                top: this._lockedPropCenter.y,
+            });
+            target.setCoords();
+        }
+
+        // Snap to grid (axis-aligned props only; setEdges is not correct under rotation)
+        const { uiSettings, fieldProperties } = this.canvas;
+        if (!fieldProperties || !uiSettings?.coordinateRounding) return;
+        if (Math.abs(prop.angle || 0) >= 0.01) return;
+
+        const corner = (this.canvas as any)?._currentTransform?.corner;
+        if (!corner) return;
+
+        const edges = target.getEdges();
+        const snap = (x: number, y: number) =>
+            getRoundCoordinates2({
+                coordinate: { xPixels: x, yPixels: y },
+                uiSettings,
+                fieldProperties,
+            });
+
+        target.setEdges({
+            l: corner.includes("l") ? snap(edges.l, 0).xPixels : edges.l,
+            r: corner.includes("r") ? snap(edges.r, 0).xPixels : edges.r,
+            t: corner.includes("t") ? snap(0, edges.t).yPixels : edges.t,
+            b: corner.includes("b") ? snap(0, edges.b).yPixels : edges.b,
+        });
+    }
+
+    /**
+     * Snap prop movement to grid based on coordinate rounding settings.
+     */
+    handleMoving(fabricEvent: fabric.IEvent<MouseEvent>) {
+        const target = fabricEvent.target;
+        if (!target || !CanvasProp.isCanvasProp(target)) return;
+
+        const { uiSettings, fieldProperties } = this.canvas;
+        if (!fieldProperties || !uiSettings?.coordinateRounding) return;
+
+        const prop = target as CanvasProp;
+        const left = prop.left || 0;
+        const top = prop.top || 0;
+
+        // Snap center position to grid
+        const snapped = getRoundCoordinates2({
+            coordinate: { xPixels: left, yPixels: top },
+            uiSettings,
+            fieldProperties,
+        });
+
+        prop.set({ left: snapped.xPixels, top: snapped.yPixels });
+        prop.setCoords();
     }
 
     /**
@@ -685,7 +856,3 @@ export default class DefaultListeners implements CanvasListeners {
         return inside;
     }
 }
-
-export const _anyListHasMarcher = (list: any[]): boolean => {
-    return list.some((item) => item?.classString === "Marcher");
-};
