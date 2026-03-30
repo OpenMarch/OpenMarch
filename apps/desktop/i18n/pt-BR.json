@@ -295,7 +295,6 @@
             "delete": "Excluir",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
             "deleteTooltip": "Excluir este ponto de verificação do campo",
-            "minimumRequired": "São necessários pelo menos 2 {axis}-pontos de verificação",
             "fieldLabel": "Rótulo de Campo",
             "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
             "name": "Nome",
