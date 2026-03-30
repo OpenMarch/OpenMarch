@@ -295,6 +295,7 @@
             "delete": "削除",
             "deleted": "{axis} チェックポイントが {steps} ステップで削除されました - \"{name}\"",
             "deleteTooltip": "このチェックポイントをフィールドから削除",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "フィールド ラベル",
             "fieldLabelTooltip": "フィールドに表示されるラベル (例: yard marker)",
             "name": "名前",
