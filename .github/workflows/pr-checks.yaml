@@ -28,6 +28,7 @@ jobs:
               - 'tsconfig.json'
               - 'turbo.json'
               - '.github/workflows/**'
+              - 'actions/**'
 
   basic-checks:
     strategy:
@@ -186,7 +187,6 @@ jobs:
           max_attempts: 3
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false # No code signing on PRs
-          SNAPCRAFT_BUILD_ENVIRONMENT: host
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
