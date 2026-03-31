@@ -70,7 +70,7 @@ if [[ "${SKIP_SNAP_PUBLISH:-0}" != "1" && -z "${SNAPCRAFT_STORE_CREDENTIALS:-}" 
 fi
 
 pnpm install --no-frozen-lockfile
-pnpm run build --filter=\!@openmarch/website
+pnpm run build --filter=\!@openmarch/website --filter=\!@openmarch/cms
 
 desktopPackageJson="/workspace/apps/desktop/package.json"
 desktopPackageJsonBackup="$(mktemp)"
