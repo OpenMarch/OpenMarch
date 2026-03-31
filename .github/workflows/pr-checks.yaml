@@ -201,6 +201,8 @@ jobs:
     if: needs.check-changes.outputs.desktop == 'true'
     runs-on: macos-latest
     steps:
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v5
       - name: Check out Git repository
         uses: actions/checkout@v4
 
