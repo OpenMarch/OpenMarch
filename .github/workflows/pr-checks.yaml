@@ -199,7 +199,7 @@ jobs:
   desktop-build-linux-arm:
     needs: check-changes
     if: needs.check-changes.outputs.desktop == 'true'
-    runs-on: ubuntu-24.04-arm
+    runs-on: macos-latest
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4
