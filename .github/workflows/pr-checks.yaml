@@ -136,7 +136,6 @@ jobs:
           - macos-latest
           - macos-15-intel # x86 (Intel) macOS
           - ubuntu-latest
-          - ubuntu-24.04-arm
 
     steps:
       - name: Check out Git repository
@@ -151,7 +150,7 @@ jobs:
         uses: pnpm/action-setup@v4.1.0
 
       ############ LINUX ############
-      - name: Install Snapcraft (Ubuntu x64)
+      - name: Install Snapcraft (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: sudo snap install snapcraft --classic
 
@@ -171,26 +170,12 @@ jobs:
 
       - name: Replace package name in package.json - ubuntu
         working-directory: apps/desktop
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
         run: |
           sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
 
-      - name: Build Electron app (ARM Linux, AppImage only)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        uses: ./actions/desktop-deploy
-        with:
-          github_token: ${{ secrets.github_token }}
-          release: false
-          args: AppImage
-          mac_certs: ${{ secrets.mac_certs }}
-          mac_certs_password: ${{ secrets.mac_certs_password }}
-          max_attempts: 3
-        env:
-          CSC_IDENTITY_AUTO_DISCOVERY: false # No code signing on PRs
-
       - name: Build Electron app (no release)
-        if: matrix.os != 'ubuntu-24.04-arm'
         uses: ./actions/desktop-deploy
         with:
           github_token: ${{ secrets.github_token }}
@@ -207,6 +192,31 @@ jobs:
         if: always()
         with:
           name: ${{ matrix.os }}-artifacts-pr-${{ github.event.pull_request.number }}
+          path: apps/desktop/release/*
+          retention-days: 7
+          if-no-files-found: warn
+
+  desktop-build-linux-arm:
+    needs: check-changes
+    if: needs.check-changes.outputs.desktop == 'true'
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Build Linux ARM in published Docker image (no publish)
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            -e SKIP_SNAP_PUBLISH=1 \
+            alexdumo/om-linux-arm-builder:latest
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ubuntu-24.04-arm-artifacts-pr-${{ github.event.pull_request.number }}
           path: apps/desktop/release/*
           retention-days: 7
           if-no-files-found: warn
@@ -267,6 +277,7 @@ jobs:
       - test
       - desktop-e2e
       - desktop-build
+      - desktop-build-linux-arm
       - desktop-build-windows
     steps:
       - name: Check all job results
@@ -275,6 +286,7 @@ jobs:
           echo "test: ${{ needs.test.result }}"
           echo "desktop-e2e: ${{ needs.desktop-e2e.result }}"
           echo "desktop-build: ${{ needs.desktop-build.result }}"
+          echo "desktop-build-linux-arm: ${{ needs.desktop-build-linux-arm.result }}"
           echo "desktop-build-windows: ${{ needs.desktop-build-windows.result }}"
 
           # Fail if any job failed (skipped jobs are OK)
@@ -282,6 +294,7 @@ jobs:
              [[ "${{ needs.test.result }}" != "success" && "${{ needs.test.result }}" != "skipped" ]] || \
              [[ "${{ needs.desktop-e2e.result }}" != "success" && "${{ needs.desktop-e2e.result }}" != "skipped" ]] || \
              [[ "${{ needs.desktop-build.result }}" != "success" && "${{ needs.desktop-build.result }}" != "skipped" ]] || \
+             [[ "${{ needs.desktop-build-linux-arm.result }}" != "success" && "${{ needs.desktop-build-linux-arm.result }}" != "skipped" ]] || \
              [[ "${{ needs.desktop-build-windows.result }}" != "success" && "${{ needs.desktop-build-windows.result }}" != "skipped" ]]; then
             echo "One or more jobs failed or were cancelled"
             exit 1

@@ -199,6 +199,7 @@ ignorePaths:
   - cloudflare-env.d.ts
   - apps/cms/.cursor/rules/*
   - apps/cms/AGENTS.md
+  - Dockerfile*
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

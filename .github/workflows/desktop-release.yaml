@@ -17,7 +17,6 @@ jobs:
           - macos-latest
           - macos-15-intel # x86 (Intel) macOS
           - ubuntu-latest
-          - ubuntu-24.04-arm
 
     steps:
       - name: Check out Git repository
@@ -38,16 +37,8 @@ jobs:
 
       ############ LINUX ############
       - name: Install Snapcraft (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         run: sudo snap install snapcraft --classic
-
-      - name: Install Snapcraft (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd
-
-      - name: Setup LXD (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        uses: canonical/setup-lxd@main
 
       - name: Validate Snapcraft credentials on Linux release
         if: startsWith(matrix.os, 'ubuntu')
@@ -80,7 +71,7 @@ jobs:
 
       - name: Replace package name in package.json - ubuntu
         working-directory: apps/desktop
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         # needed to prevent "⨯ expected argument for flag '--executable' " error on linux
         run: |
           sed -i 's/"name": "@openmarch\/desktop"/"name": "OpenMarch"/g' package.json
@@ -108,7 +99,7 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
       - name: Promote snap to stable channel
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           # Get the latest revision for this architecture
@@ -129,6 +120,43 @@ jobs:
         if: always() # Upload even if previous steps fail
         with:
           name: ${{ matrix.os }}-artifacts
+          path: apps/desktop/release/*
+          retention-days: 30
+          if-no-files-found: warn
+
+  linux-arm-build-and-release:
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v4
+
+      - name: Debug release output
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "Releasing version tag"
+
+      - name: Validate Snapcraft credentials on Linux ARM release
+        run: |
+          if [ -z "${SNAPCRAFT_STORE_CREDENTIALS}" ]; then
+            echo "SNAPCRAFT_STORE_CREDENTIALS is required for ARM Linux release"
+            exit 1
+          fi
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+
+      - name: Build/release Linux ARM in published Docker image
+        run: |
+          docker run --rm --platform linux/arm64 \
+            -v "$PWD:/workspace" \
+            -w /workspace \
+            -e SNAPCRAFT_STORE_CREDENTIALS="${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}" \
+            alexdumo/om-linux-arm-builder:latest
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always() # Upload even if previous steps fail
+        with:
+          name: ubuntu-24.04-arm-artifacts
           path: apps/desktop/release/*
           retention-days: 30
           if-no-files-found: warn

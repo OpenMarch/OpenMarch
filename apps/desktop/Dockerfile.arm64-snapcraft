@@ -1,0 +1,115 @@
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    build-essential \
+    ca-certificates \
+    curl \
+    file \
+    git \
+    gnupg \
+    libasound2t64 \
+    libatk-bridge2.0-0 \
+    libatk1.0-0 \
+    libcups2 \
+    libdrm2 \
+    libgbm1 \
+    libgtk-3-0 \
+    libnss3 \
+    libx11-xcb1 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxkbcommon0 \
+    libxrandr2 \
+    libxshmfence1 \
+    libxss1 \
+    libxtst6 \
+    lsb-release \
+    make \
+    pkg-config \
+    python3 \
+    python3-apt \
+    python3-pip \
+    rsync \
+    squashfs-tools \
+    unzip \
+    xz-utils \
+    zip \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir --break-system-packages "git+https://github.com/canonical/snapcraft.git"
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN corepack enable && corepack prepare pnpm@10.11.0 --activate
+
+ENV CI=true
+ENV ADBLOCK=true
+ENV SNAPCRAFT_BUILD_ENVIRONMENT=host
+
+WORKDIR /workspace
+
+RUN cat <<'EOF' >/usr/local/bin/build-openmarch-arm64-snap
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [[ ! -f "package.json" || ! -d "apps/desktop" ]]; then
+    echo "Run this container with the OpenMarch repo mounted at /workspace." >&2
+    exit 1
+fi
+
+if [[ "${SKIP_SNAP_PUBLISH:-0}" != "1" && -z "${SNAPCRAFT_STORE_CREDENTIALS:-}" ]]; then
+    echo "SNAPCRAFT_STORE_CREDENTIALS is required unless SKIP_SNAP_PUBLISH=1." >&2
+    exit 1
+fi
+
+pnpm install --no-frozen-lockfile
+pnpm run build --filter=\!@openmarch/website
+
+desktopPackageJson="/workspace/apps/desktop/package.json"
+desktopPackageJsonBackup="$(mktemp)"
+cp "${desktopPackageJson}" "${desktopPackageJsonBackup}"
+cleanup() {
+    cp "${desktopPackageJsonBackup}" "${desktopPackageJson}"
+    rm -f "${desktopPackageJsonBackup}"
+}
+trap cleanup EXIT
+
+node <<'NODE'
+const fs = require("node:fs");
+const packageJsonPath = "apps/desktop/package.json";
+const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, "utf8"));
+packageJson.name = "OpenMarch";
+fs.writeFileSync(packageJsonPath, `${JSON.stringify(packageJson, null, 4)}\n`);
+NODE
+
+cd apps/desktop
+pnpm exec electron-builder --linux --arm64 --publish=never
+
+shopt -s nullglob
+snapCandidates=(release/*.snap release/*/*.snap)
+if (( ${#snapCandidates[@]} == 0 )); then
+    echo "No snap artifact found under apps/desktop/release." >&2
+    exit 1
+fi
+snapPath="$(ls -t "${snapCandidates[@]}" | head -n 1)"
+echo "Using snap artifact: ${snapPath}"
+
+if [[ "${SKIP_SNAP_PUBLISH:-0}" == "1" ]]; then
+    echo "SKIP_SNAP_PUBLISH=1 set. Skipping Snapcraft upload."
+    exit 0
+fi
+
+snapcraft whoami -q
+snapcraft upload "${snapPath}" --release stable
+EOF
+
+RUN chmod +x /usr/local/bin/build-openmarch-arm64-snap
+
+ENTRYPOINT ["/usr/local/bin/build-openmarch-arm64-snap"]
