@@ -295,7 +295,7 @@
             "delete": "Supprimer",
             "deleted": "\"{axis}-point de contrôle à {steps} étapes supprimé - \"{name}\"",
             "deleteTooltip": "Supprimer ce point de contrôle du terrain",
-            "minimumRequired": "At least 2 {axis}-checkpoints are required",
+            "minimumRequired": "Au moins 2 points de contrôle {axis} sont requis",
             "fieldLabel": "Étiquette de point de cheminement",
             "fieldLabelTooltip": "\"L'étiquette à afficher sur le champ (c'est-à-dire, les repères de terrain)\"",
             "name": "Nom",
