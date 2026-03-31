@@ -28,6 +28,7 @@ jobs:
               - 'pnpm-lock.yaml'
               - 'tsconfig.json'
               - 'turbo.json'
+              - '.github/workflows/**'
 
   basic-checks:
     strategy:
