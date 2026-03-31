@@ -150,7 +150,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             -e SNAPCRAFT_STORE_CREDENTIALS="${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}" \
-            alexdumo/om-linux-arm-builder@alexdumo/om-linux-arm-builder@sha256:c27a20eb7e8a12581f17af678efa599a596ea25fe89d2243ee96eb581cbba731
+            alexdumo/om-linux-arm-builder@sha256:e88d5f250077e51c7ae6ebefbcd4a47dd92d0f953a545f11d3600ec3b8bcc3ed
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

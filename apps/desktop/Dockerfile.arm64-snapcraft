@@ -40,7 +40,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     zip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN python3 -m pip install --no-cache-dir --break-system-packages "git+https://github.com/canonical/snapcraft.git"
+RUN python3 -m pip install --no-cache-dir --break-system-packages "git+https://github.com/canonical/snapcraft.git@527ff6d2c73f75859706cd4399f5ebb86d0d5a80"
 
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
     && apt-get update \

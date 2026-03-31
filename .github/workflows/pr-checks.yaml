@@ -210,7 +210,7 @@ jobs:
             -v "$PWD:/workspace" \
             -w /workspace \
             -e SKIP_SNAP_PUBLISH=1 \
-            alexdumo/om-linux-arm-builder:latest
+            alexdumo/om-linux-arm-builder@sha256:e88d5f250077e51c7ae6ebefbcd4a47dd92d0f953a545f11d3600ec3b8bcc3ed
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
