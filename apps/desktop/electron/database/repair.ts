@@ -213,17 +213,31 @@ export const repairDatabase = async (originalDbPath: string) => {
         // Remove orphaned marcher_pages entries
         removeOrphanMarcherPages(newDb);
     } catch (error) {
-        // If anything fails, delete the temp file
+        // If anything fails, close both databases and delete the temp file
+        originalDb.close();
+        try {
+            newDb.close();
+        } catch {
+            // ignore close errors during cleanup
+        }
         if (fs.existsSync(tempDbPath)) {
             fs.unlinkSync(tempDbPath);
         }
         throw error;
-    } finally {
-        // Close both databases
-        // Errors will propagate naturally, and finally ensures cleanup
-        originalDb.close();
-        newDb.close();
     }
+
+    // Checkpoint and close the new database to release all file locks before
+    // renaming. This is especially important on Windows where file locks
+    // can persist briefly after close(), causing EBUSY rename errors on
+    // network drives (e.g. OneDrive).
+    try {
+        newDb.prepare("PRAGMA wal_checkpoint(TRUNCATE)").run();
+        newDb.prepare("PRAGMA journal_mode = DELETE").run();
+    } catch {
+        // Ignore pragma errors — proceed with close
+    }
+    newDb.close();
+    originalDb.close();
 
     // If we got here, the repair was successful
     // Delete the existing FIXED file if it exists
