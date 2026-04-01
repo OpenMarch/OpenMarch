@@ -29,7 +29,7 @@
   "dependencies": {
     "@opennextjs/cloudflare": "^1.11.0",
     "@payloadcms/db-d1-sqlite": "3.73.0",
-    "@payloadcms/next": "3.73.0",
+    "@payloadcms/next": "3.78.0",
     "@payloadcms/richtext-lexical": "3.73.0",
     "@payloadcms/storage-r2": "3.73.0",
     "@payloadcms/ui": "3.73.0",
