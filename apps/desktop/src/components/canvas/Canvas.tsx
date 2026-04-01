@@ -1,20 +1,32 @@
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useCallback, useMemo } from "react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
+    updateMarcherPagesAndGeometryMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
     marcherAppearancesQueryOptions,
+    allPropsQueryOptions,
+    propPageGeometryQueryOptions,
+    propImagesQueryOptions,
+    updatePropGeometryMutationOptions,
+    updatePropGeometryWithPropagationMutationOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
+import PropDrawingListeners, {
+    PropGeometry,
+} from "./listeners/PropDrawingListeners";
+import { usePropDrawingStore } from "@/stores/PropDrawingStore";
+
+import { createPropsMutationOptions } from "@/hooks/queries";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
@@ -29,7 +41,25 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { useRenderProps } from "./hooks/props";
+import { usePropClipboard } from "./hooks/propClipboard";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
+import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
+import { getPixelsPerFoot } from "@/global/classes/Prop";
+
+import { fabric } from "fabric";
+import PropVisualGroup, {
+    PropVisualMap,
+} from "@/global/classes/PropVisualGroup";
+import {
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    DialogDescription,
+    DialogClose,
+    Button,
+} from "@openmarch/ui";
+import type { GeometryPropagation } from "@/db-functions/prop";
 
 /**
  * The field/stage UI of OpenMarch
@@ -77,7 +107,127 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
+    const updatePropGeometry = useMutation(
+        updatePropGeometryMutationOptions(queryClient),
+    );
+    const updateMarcherPagesAndGeometry = useMutation(
+        updateMarcherPagesAndGeometryMutationOptions(queryClient),
+    );
+    const updatePropGeometryWithPropagation = useMutation(
+        updatePropGeometryWithPropagationMutationOptions(queryClient),
+    );
+    const [pendingPropGeometry, setPendingPropGeometry] = useState<{
+        propId: number;
+        pageId: number;
+        changes: { width: number; height: number; rotation: number };
+    } | null>(null);
+    const [propGeometryScope, setPropGeometryScope] =
+        useState<GeometryPropagation>("forward");
+    const [propRecreateKey, setPropRecreateKey] = useState(0);
+    const pagesCountRef = useRef(pages.length);
+    pagesCountRef.current = pages.length;
     const { setSelectedShapePageIds } = useSelectionStore()!;
+
+    // Props queries
+    const { data: props } = useQuery(allPropsQueryOptions());
+    const { data: propGeometries } = useQuery(propPageGeometryQueryOptions());
+    const { data: propImages } = useQuery(propImagesQueryOptions());
+    const { mutate: createPropsMutate } = useMutation(
+        createPropsMutationOptions(queryClient),
+    );
+
+    // Create prop visuals map for pathways (use ref to persist across renders)
+    const propVisualsRef = useRef<PropVisualMap>({});
+    const propVisuals = useMemo(() => {
+        if (!props) return propVisualsRef.current;
+        const currentIds = new Set(props.map((p) => p.marcher_id));
+        // Remove visuals for props that no longer exist
+        for (const id of Object.keys(propVisualsRef.current)) {
+            if (!currentIds.has(Number(id))) {
+                delete propVisualsRef.current[Number(id)];
+            }
+        }
+        // Add visuals for new props
+        for (const prop of props) {
+            if (!propVisualsRef.current[prop.marcher_id]) {
+                propVisualsRef.current[prop.marcher_id] = new PropVisualGroup({
+                    marcherId: prop.marcher_id,
+                });
+            }
+        }
+        return propVisualsRef.current;
+    }, [props]);
+
+    // Prop image cache — persists loaded HTMLImageElement objects across renders.
+    // imageCacheVersion is state so that when async loading finishes, the prop
+    // rendering effect re-runs and picks up the newly cached elements.
+    const propImageCacheRef = useRef<
+        Map<number, { el: HTMLImageElement; url: string }>
+    >(new Map());
+    const [imageCacheVersion, setImageCacheVersion] = useState(0);
+    useEffect(() => {
+        if (!propImages) return;
+        let cancelled = false;
+
+        const revokeAll = (
+            cache: Map<number, { el: HTMLImageElement; url: string }>,
+        ) => {
+            for (const { url } of cache.values()) URL.revokeObjectURL(url);
+        };
+
+        if (propImages.length === 0) {
+            if (propImageCacheRef.current.size > 0) {
+                revokeAll(propImageCacheRef.current);
+                propImageCacheRef.current = new Map();
+                setImageCacheVersion((v) => v + 1);
+            }
+            return;
+        }
+        const loadImg = (
+            data: Uint8Array,
+        ): Promise<{ el: HTMLImageElement; url: string }> =>
+            new Promise((resolve, reject) => {
+                const blob = new Blob([(data as any).buffer ?? data]);
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                img.onload = () => resolve({ el: img, url });
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    reject(new Error("Image load failed"));
+                };
+                img.src = url;
+            });
+        void (async () => {
+            const newCache = new Map<
+                number,
+                { el: HTMLImageElement; url: string }
+            >();
+            const loaded: string[] = [];
+            await Promise.all(
+                propImages.map(async ({ prop_id, image }) => {
+                    try {
+                        const entry = await loadImg(image);
+                        loaded.push(entry.url);
+                        if (!cancelled) newCache.set(prop_id, entry);
+                        else URL.revokeObjectURL(entry.url);
+                    } catch {
+                        /* skip broken images */
+                    }
+                }),
+            );
+            if (!cancelled) {
+                revokeAll(propImageCacheRef.current);
+                propImageCacheRef.current = newCache;
+                setImageCacheVersion((v) => v + 1);
+            }
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [propImages]);
+
+    // Prop drawing state
+    const { drawingMode, resetDrawingState } = usePropDrawingStore();
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { uiSettings } = useUiSettingsStore()!;
@@ -101,6 +251,24 @@ export default function Canvas({
     useMovementListeners({ canvas });
     useAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    useRenderProps({
+        canvas,
+        selectedPage,
+        fieldProperties,
+        propImageCacheRef,
+        imageCacheVersion,
+        propRecreateKey,
+        showPropNames: uiSettings.showPropNames,
+        propNameOverrides: uiSettings.propNameOverrides,
+        hiddenPropIds: uiSettings.hiddenPropIds,
+    });
+    usePropClipboard({
+        canvas,
+        canvasRef,
+        selectedPageId: selectedPage?.id,
+        focussedComponent: uiSettings.focussedComponent,
+        createPropsMutate: createPropsMutate,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -184,19 +352,75 @@ export default function Canvas({
         onCanvasReady,
     ]);
 
+    // Helper to convert pixels to feet
+    const pixelsToFeetLocal = useCallback(
+        (pixels: number) => {
+            if (!fieldProperties) return pixels;
+            return pixels / getPixelsPerFoot(fieldProperties);
+        },
+        [fieldProperties],
+    );
+
+    // Handle prop drawing completion
+    const handlePropDrawingComplete = useCallback(
+        (geometry: PropGeometry) => {
+            const widthFeet = pixelsToFeetLocal(geometry.widthPixels);
+            const heightFeet = pixelsToFeetLocal(geometry.heightPixels);
+
+            // Build custom geometry JSON for non-rectangle shapes
+            let customGeometry: string | undefined;
+            if (geometry.points) {
+                customGeometry = JSON.stringify({
+                    points: geometry.points,
+                    originalWidth: geometry.widthPixels,
+                    originalHeight: geometry.heightPixels,
+                });
+            }
+
+            createPropsMutate([
+                {
+                    name: `New ${geometry.shapeType}`,
+                    surface_type: "obstacle",
+                    width: Math.max(widthFeet, 1),
+                    height: Math.max(heightFeet, 1),
+                    shape_type: geometry.shapeType,
+                    custom_geometry: customGeometry,
+                    initial_x: geometry.centerX,
+                    initial_y: geometry.centerY,
+                },
+            ]);
+
+            resetDrawingState();
+        },
+        [createPropsMutate, pixelsToFeetLocal, resetDrawingState],
+    );
+
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
-            // Initiate listeners
-            switch (alignmentEvent) {
-                case "line":
-                    canvas.setListeners(new LineListeners({ canvas: canvas }));
-                    break;
-                default:
-                    canvas.setListeners(
-                        new DefaultListeners({ canvas: canvas }),
-                    );
-                    break;
+            // Check for prop drawing mode first
+            if (drawingMode) {
+                const propListeners = new PropDrawingListeners({
+                    canvas,
+                    drawingMode,
+                });
+                propListeners.onComplete = handlePropDrawingComplete;
+                propListeners.onCancel = resetDrawingState;
+                canvas.setListeners(propListeners);
+            } else {
+                // Standard listeners
+                switch (alignmentEvent) {
+                    case "line":
+                        canvas.setListeners(
+                            new LineListeners({ canvas: canvas }),
+                        );
+                        break;
+                    default:
+                        canvas.setListeners(
+                            new DefaultListeners({ canvas: canvas }),
+                        );
+                        break;
+                }
             }
             canvas.eventMarchers = canvas.getCanvasMarchersByIds(
                 alignmentEventMarchers.map((marcher) => marcher.id),
@@ -216,14 +440,39 @@ export default function Canvas({
         alignmentEventMarchers,
         centerAndFitCanvas,
         isFullscreen,
+        drawingMode,
+        handlePropDrawingComplete,
+        resetDrawingState,
     ]);
 
-    // Update section appearances
+    // Update canvas functions for database updates
     useEffect(() => {
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
+            canvas.updatePropGeometryFunction = updatePropGeometry.mutate;
+            canvas.updateMarcherPagesAndGeometryFunction =
+                updateMarcherPagesAndGeometry.mutateAsync;
+            canvas.onPropGeometryEditedFromCanvas = (args) => {
+                if (pagesCountRef.current <= 1) {
+                    updatePropGeometryWithPropagation.mutate({
+                        propId: args.propId,
+                        currentPageId: args.pageId,
+                        changes: args.changes,
+                        propagation: "forward",
+                    });
+                    return;
+                }
+                setPendingPropGeometry(args);
+                setPropGeometryScope("forward");
+            };
         }
-    }, [canvas, updateMarcherPages.mutate]);
+    }, [
+        canvas,
+        updateMarcherPages.mutate,
+        updatePropGeometry.mutate,
+        updateMarcherPagesAndGeometry.mutateAsync,
+        updatePropGeometryWithPropagation.mutate,
+    ]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
@@ -232,8 +481,9 @@ export default function Canvas({
 
         canvas.renderOnAddRemove = false;
         try {
-            // Remove all marcher visuals from the canvas
+            // Remove marcher visuals from canvas (skip CanvasProps - managed separately)
             canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+                if (CanvasProp.isCanvasProp(canvasMarcher)) return;
                 canvas.remove(canvasMarcher);
                 canvas.remove(canvasMarcher.textLabel);
             });
@@ -420,6 +670,125 @@ export default function Canvas({
         marcherPagesLoaded,
     ]);
 
+    // Add prop pathway visuals to canvas and update their positions
+    useEffect(() => {
+        if (
+            !canvas ||
+            !props ||
+            !fieldProperties ||
+            !selectedPage ||
+            !marcherPagesLoaded
+        )
+            return;
+
+        // Remove existing prop pathway visuals
+        for (const visual of Object.values(propVisuals)) {
+            canvas.remove(visual.getPreviousPathway());
+            canvas.remove(visual.getNextPathway());
+            canvas.remove(visual.getPreviousMidpoint());
+            canvas.remove(visual.getNextMidpoint());
+            canvas.remove(visual.getPreviousEndpoint());
+            canvas.remove(visual.getNextEndpoint());
+        }
+
+        const prevPageIsEmpty =
+            !previousMarcherPages ||
+            Object.keys(previousMarcherPages).length === 0;
+        const nextPageIsEmpty =
+            !nextMarcherPages || Object.keys(nextMarcherPages).length === 0;
+
+        // Add all prop pathway visuals and update positions
+        for (const prop of props) {
+            const visual = propVisuals[prop.marcher_id];
+            if (!visual) continue;
+
+            // Add pathway visuals to canvas
+            canvas.add(visual.getPreviousPathway());
+            canvas.add(visual.getNextPathway());
+            canvas.add(visual.getPreviousMidpoint());
+            canvas.add(visual.getNextMidpoint());
+            canvas.add(visual.getPreviousEndpoint());
+            canvas.add(visual.getNextEndpoint());
+
+            // Apply theme colors
+            visual
+                .getPreviousPathway()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextPathway().setColor(fieldProperties.theme.nextPath);
+            visual
+                .getPreviousMidpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextMidpoint().setColor(fieldProperties.theme.nextPath);
+            visual
+                .getPreviousEndpoint()
+                .setColor(fieldProperties.theme.previousPath);
+            visual.getNextEndpoint().setColor(fieldProperties.theme.nextPath);
+
+            // Update positions
+            const prev = !prevPageIsEmpty
+                ? previousMarcherPages?.[prop.marcher_id]
+                : undefined;
+            const curr = marcherPages?.[prop.marcher_id];
+            const next = !nextPageIsEmpty
+                ? nextMarcherPages?.[prop.marcher_id]
+                : undefined;
+
+            // Previous pathway, midpoint, endpoint
+            if (uiSettings.previousPaths && !prevPageIsEmpty && prev && curr) {
+                visual.getPreviousPathway().show();
+                visual.getPreviousPathway().updateStartCoords(curr);
+                visual.getPreviousPathway().updateEndCoords(prev);
+
+                visual.getPreviousMidpoint().show();
+                visual.getPreviousMidpoint().updateCoords({
+                    x: (curr.x + prev.x) / 2,
+                    y: (curr.y + prev.y) / 2,
+                });
+
+                visual.getPreviousEndpoint().show();
+                visual.getPreviousEndpoint().updateCoords(prev);
+            } else {
+                visual.getPreviousPathway().hide();
+                visual.getPreviousMidpoint().hide();
+                visual.getPreviousEndpoint().hide();
+            }
+
+            // Next pathway, midpoint, endpoint
+            if (uiSettings.nextPaths && !nextPageIsEmpty && next && curr) {
+                visual.getNextPathway().show();
+                visual.getNextPathway().updateStartCoords(curr);
+                visual.getNextPathway().updateEndCoords(next);
+
+                visual.getNextMidpoint().show();
+                visual.getNextMidpoint().updateCoords({
+                    x: (curr.x + next.x) / 2,
+                    y: (curr.y + next.y) / 2,
+                });
+
+                visual.getNextEndpoint().show();
+                visual.getNextEndpoint().updateCoords(next);
+            } else {
+                visual.getNextPathway().hide();
+                visual.getNextMidpoint().hide();
+                visual.getNextEndpoint().hide();
+            }
+        }
+
+        canvas.requestRenderAll();
+    }, [
+        canvas,
+        fieldProperties,
+        marcherPages,
+        previousMarcherPages,
+        nextMarcherPages,
+        props,
+        propVisuals,
+        selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
+        marcherPagesLoaded,
+    ]);
+
     // Update the canvas when the field properties change
     useEffect(() => {
         if (canvas && fieldProperties) {
@@ -537,20 +906,31 @@ export default function Canvas({
         }
     }, [canvas, isPlaying, selectedPage]);
 
-    // This effect ensures that when the animation is paused, the marchers are
-    // rendered at their final positions for the selected page.
+    // This effect ensures that when the animation is paused, the marchers and
+    // props are rendered at their final positions for the selected page.
     useEffect(() => {
         if (
             canvas &&
             !isPlaying &&
             selectedPage &&
             marcherPagesLoaded &&
-            marcherVisuals != null
+            marcherVisuals != null &&
+            marcherPages
         ) {
             canvas
                 .renderMarchers({
                     marcherPages: marcherPages,
                     marcherVisuals: marcherVisuals,
+                })
+                .then(() => {
+                    canvas
+                        .getObjects()
+                        .filter(CanvasProp.isCanvasProp)
+                        .forEach((cp) => {
+                            const mp = marcherPages[cp.marcherObj.id];
+                            if (mp) cp.setMarcherCoords(mp);
+                        });
+                    canvas.requestRenderAll();
                 })
                 .catch((error) => {
                     console.error("Error rendering marchers", error);
@@ -603,50 +983,145 @@ export default function Canvas({
         uiSettings.showCollisions,
     ]);
 
-    return (
-        <div
-            ref={containerRef}
-            className={clsx(
-                `rounded-6 relative h-full w-full overflow-hidden`,
+    const applyPropGeometryScope = useCallback(
+        (scope: GeometryPropagation) => {
+            if (!pendingPropGeometry) return;
+            updatePropGeometryWithPropagation.mutate(
                 {
-                    "pointer-events-none pt-128": isFullscreen,
+                    propId: pendingPropGeometry.propId,
+                    currentPageId: pendingPropGeometry.pageId,
+                    changes: pendingPropGeometry.changes,
+                    propagation: scope,
                 },
-            )}
-            style={{
-                perspective: `${1500}px`,
-                perspectiveOrigin: "center center",
-                transformStyle: "preserve-3d",
-            }}
-        >
-            {pages.length > 0 || canvas ? (
-                <div
-                    ref={innerDivRef}
-                    style={{
-                        transform: `rotateX(${perspective}deg)`,
-                        transformOrigin:
-                            "center 70%" /* Position pivot point below center for more natural look */,
-                        transition: "transform 0.2s ease-out",
-                        height: "100%",
-                        width: "100%",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                    }}
-                >
-                    <canvas
-                        ref={canvasRef}
-                        id="fieldCanvas"
-                        data-testid="fieldCanvas"
-                    />
-                </div>
-            ) : (
-                <div className="flex h-full w-full items-center justify-center">
-                    <CircleNotchIcon
-                        size={32}
-                        className="text-text animate-spin"
-                    />
-                </div>
-            )}
-        </div>
+                { onSettled: () => setPendingPropGeometry(null) },
+            );
+        },
+        [pendingPropGeometry, updatePropGeometryWithPropagation.mutate],
+    );
+
+    return (
+        <>
+            <Dialog
+                open={!!pendingPropGeometry}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setPropRecreateKey((k) => k + 1);
+                        setPendingPropGeometry(null);
+                    }
+                }}
+            >
+                <DialogContent>
+                    <DialogTitle>Apply prop changes</DialogTitle>
+                    <DialogDescription>
+                        Apply this size/rotation to:
+                    </DialogDescription>
+                    <div className="mt-12 flex flex-col gap-8">
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "current"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("current")}
+                        >
+                            This page only
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "forward"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("forward")}
+                        >
+                            This page forward (default)
+                        </Button>
+                        <Button
+                            size="compact"
+                            variant={
+                                propGeometryScope === "all"
+                                    ? "primary"
+                                    : "secondary"
+                            }
+                            onClick={() => setPropGeometryScope("all")}
+                        >
+                            All pages
+                        </Button>
+                    </div>
+                    <div className="mt-12 flex justify-end gap-8">
+                        <DialogClose>
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={() => {
+                                    setPropRecreateKey((k) => k + 1);
+                                    setPendingPropGeometry(null);
+                                }}
+                            >
+                                Cancel
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            size="compact"
+                            onClick={() => {
+                                applyPropGeometryScope(propGeometryScope);
+                                setPendingPropGeometry(null);
+                            }}
+                            disabled={
+                                updatePropGeometryWithPropagation.isPending
+                            }
+                        >
+                            Apply
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+            <div
+                ref={containerRef}
+                className={clsx(
+                    `rounded-6 relative h-full w-full overflow-hidden`,
+                    {
+                        "pointer-events-none pt-128": isFullscreen,
+                    },
+                )}
+                style={{
+                    perspective: `${1500}px`,
+                    perspectiveOrigin: "center center",
+                    transformStyle: "preserve-3d",
+                }}
+            >
+                {pages.length > 0 || canvas ? (
+                    <div
+                        ref={innerDivRef}
+                        style={{
+                            transform: `rotateX(${perspective}deg)`,
+                            transformOrigin:
+                                "center 70%" /* Position pivot point below center for more natural look */,
+                            transition: "transform 0.2s ease-out",
+                            height: "100%",
+                            width: "100%",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                        }}
+                    >
+                        <canvas
+                            ref={canvasRef}
+                            id="fieldCanvas"
+                            data-testid="fieldCanvas"
+                        />
+                    </div>
+                ) : (
+                    <div className="flex h-full w-full items-center justify-center">
+                        <CircleNotchIcon
+                            size={32}
+                            className="text-text animate-spin"
+                        />
+                    </div>
+                )}
+            </div>
+        </>
     );
 }

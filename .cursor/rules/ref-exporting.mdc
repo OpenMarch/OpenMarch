@@ -1,0 +1,100 @@
+---
+description: When working with exporting, coordinate sheets, PDF export, SVG generation, or readable coordinates
+alwaysApply: false
+---
+
+# Export & Coordinate Sheets Reference
+
+## Overview
+
+OpenMarch can export coordinate sheets for individual marchers, showing their position on each page in human-readable field coordinates (e.g., "4 steps inside the left 35 yard line"). Exports are generated as PDF via the Electron main process.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/components/exporting/ExportCoordinatesModal.tsx` | Export dialog UI |
+| `src/components/exporting/MarcherCoordinateSheet.tsx` | Coordinate sheet layout |
+| `src/components/exporting/CoordinateSheetTemplates.tsx` | Sheet format templates |
+| `src/components/exporting/utils/svg-generator.ts` | SVG field diagram generator |
+| `src/global/classes/ReadableCoords.ts` | Pixel-to-readable coordinate conversion |
+| `src/global/classes/StepSize.ts` | Step size calculations |
+| `src/hooks/queries/useCoordinateData.ts` | Coordinate data query hook |
+
+## Coordinate System
+
+### ReadableCoords
+
+Converts pixel coordinates to human-readable field positions:
+
+```typescript
+// src/global/classes/ReadableCoords.ts
+// Input: x, y in canvas pixels
+// Output: e.g., "4 steps inside the left 35 yard line, 2 steps behind the front hash"
+
+// Uses field properties checkpoints to determine:
+// - Which yard line (or between which yard lines)
+// - How many steps from the reference point
+// - Which side of the field (left/right)
+// - Hash position (front/back hash, sideline)
+```
+
+Checkpoints are defined in `FieldProperties` and represent named positions on the field (yard lines, hashes, sidelines).
+
+### StepSize
+
+Calculates the step size between two positions:
+
+```typescript
+// src/global/classes/StepSize.ts
+// Given two MarcherPage positions and a count,
+// calculates the step size (distance per count)
+// Used in coordinate sheets to show movement difficulty
+```
+
+## Export Flow
+
+1. User opens `ExportCoordinatesModal` from toolbar
+2. Selects marchers and template format
+3. `MarcherCoordinateSheet` renders a printable layout:
+   - Header with marcher info (name, section, drill number)
+   - Table of pages with coordinates, step sizes, counts
+   - Optional field diagram SVGs showing position
+4. `svg-generator.ts` creates small field diagrams with a dot for position
+5. PDF generated via Electron main process IPC (`window.electron.export.pdf()`)
+
+## Coordinate Sheet Templates
+
+`CoordinateSheetTemplates.tsx` provides different layout formats:
+- Standard format (table with coordinates)
+- Compact format (minimal layout)
+- Custom format options
+
+## SVG Field Diagrams
+
+`svg-generator.ts` creates inline SVG images of the field showing:
+- Field outline and yard lines
+- A marker dot at the marcher's position
+- Used as visual aids in coordinate sheets
+
+## Query Hook
+
+```typescript
+import { useCoordinateData } from "@/hooks/queries/useCoordinateData";
+// Combines marcher data, page data, marcher pages, and field properties
+// to produce export-ready coordinate information
+```
+
+## Integration Points
+
+- **Field Properties**: Checkpoints determine coordinate labels. `pixelsPerStep` drives step size calculations.
+- **MarcherPage**: x, y positions are the source coordinates.
+- **Pages**: Page name, counts, and order structure the sheet.
+- **Electron**: PDF generation happens in the main process via IPC.
+
+## Gotchas
+
+- Coordinate readability depends entirely on field properties checkpoints. Missing checkpoints produce poor labels.
+- SVG generation is synchronous and can be slow for many pages.
+- PDF export uses Electron's `webContents.printToPDF()` - not available in browser-only mode.
+- Step size is calculated as straight-line distance / counts. Pathways don't affect it.

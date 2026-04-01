@@ -40,6 +40,8 @@ const singleTableNameToQueryKey = (tableName: string): string[][] => {
     switch (tableName) {
         case "shape_page_marchers":
             return [["shape_pages"], ["marcher_pages"]];
+        case "props":
+            return [["props"], ["prop_page_geometry"], ["prop_images"]];
         default:
             return [[tableName]];
     }

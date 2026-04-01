@@ -60,3 +60,7 @@ packages/metronome/
 
 *.tmp.dots
 *.tmp.dots-journal
+
+# Local development docs (not committed)
+docs/
+.cursor/plans/

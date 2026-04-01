@@ -88,14 +88,14 @@ export default function MarcherList({
     }
 
     function handleCancel() {
-        setLocalMarchers(marchers);
+        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
         deletionsRef.current = [];
         changesRef.current = {};
     }
 
-    // Update local marchers when marchers are fetched
+    // Update local marchers when marchers are fetched (filter out props)
     useEffect(() => {
-        setLocalMarchers(marchers);
+        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
     }, [marchers]);
 
     // Activate submit with an external activator (like a button in a parent component)
@@ -125,7 +125,7 @@ export default function MarcherList({
         return <div>Error loading marchers</div>;
     }
 
-    if (marchersSuccess && marchers.length > 0)
+    if (marchersSuccess && localMarchers && localMarchers.length > 0)
         return (
             <form
                 id={"marcherListForm"}
@@ -141,7 +141,7 @@ export default function MarcherList({
                     </p>
                     <div className="flex gap-8">
                         {localMarchers &&
-                        marchers.length > 0 &&
+                        localMarchers.length > 0 &&
                         deletionsRef.current.length > 0 ? (
                             <FormButtons
                                 variant="primary"
@@ -199,7 +199,7 @@ export default function MarcherList({
                     id="table"
                     className="flex min-h-0 w-[27rem] min-w-0 flex-1 flex-col gap-10"
                 >
-                    {localMarchers && marchers.length > 0 && (
+                    {localMarchers && localMarchers.length > 0 && (
                         <>
                             <div
                                 id="key"

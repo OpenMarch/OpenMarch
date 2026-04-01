@@ -1,0 +1,60 @@
+---
+description: When adding or changing user-facing text; use Tolgee/i18n and keep en.json in sync
+alwaysApply: false
+---
+
+# Localization (i18n)
+
+OpenMarch uses **Tolgee** with React. User-facing strings must use translation keys. Developers do not need Tolgee API keys; add keys in code and in the English file only. Other languages are handled via Tolgee by the team.
+
+## Translation file
+
+- **Path**: `apps/desktop/i18n/en.json`
+- **Structure**: Nested JSON by feature/section (e.g. `inspector.prop`, `marchers.deleteButton`).
+- **In code**: Reference keys with dot notation, e.g. `inspector.prop.geometry`.
+
+## In components
+
+### Simple text: `<T>` component
+
+```tsx
+import { T } from "@tolgee/react";
+
+<T keyName="inspector.prop.title" />
+```
+
+### With parameters (interpolation)
+
+```tsx
+<T keyName="inspector.prop.pageSubtitle" params={{ pageName: selectedPage.name }} />
+```
+
+In `en.json`: `"pageSubtitle": "Page {pageName}"`
+
+### In logic or when you need the string: `useTranslate`
+
+```tsx
+import { useTranslate } from "@tolgee/react";
+
+const { t } = useTranslate();
+const label = t("inspector.prop.name");
+// With params:
+const msg = t("inspector.prop.deleteConfirmDescription");
+```
+
+### Collapsible / modal titles
+
+- `InspectorCollapsible` accepts **translatableTitle**: `translatableTitle={{ keyName: "inspector.prop.title" }}` (not a raw string or `<T>`).
+- For AlertModal (global store): set title to the **key name** string; the modal renders it with `<T keyName={title} />`.
+
+## Workflow
+
+1. **Add keys in code** using `<T keyName="section.feature.key" />` or `t("section.feature.key")`.
+2. **Add the same keys and English text** to `apps/desktop/i18n/en.json` under the matching nested structure.
+3. **Do not edit** other language files (es.json, fr.json, etc.); those are synced via Tolgee.
+
+## Conventions
+
+- **Key naming**: `section.subsection.key` in lowercase/camelCase (e.g. `inspector.prop.deleteConfirmTitle`).
+- **No hardcoded UI text**: All user-visible strings go through keys.
+- **Reuse when possible**: e.g. `marchers.deleteButton`, `marchers.cancelDeleteButton` for delete confirmations across features.
