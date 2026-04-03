@@ -24,6 +24,7 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
+import { createRendererSqlProxyQueue } from "@/global/database/sqlProxyQueue";
 
 // Needs to be here for an import error
 import { schema as electronSchema } from "@/../electron/database/db";
@@ -266,13 +267,21 @@ function setUpGlobalMocks<T>(
         method: "all" | "run" | "get" | "values",
     ) => Promise<{ rows: any[] }>,
 ) {
+    const queuedSqlProxy = createRendererSqlProxyQueue(
+        async (
+            sql: string,
+            params: any[],
+            method: "all" | "run" | "get" | "values",
+        ) => dbFunction(db, sql, params, method),
+    );
+
     // Check if window.electron already exists, if so update it, otherwise create it
     if (window.electron) {
         window.electron.sqlProxy = (
             sql: string,
             params: any[],
             method: "all" | "run" | "get" | "values",
-        ) => dbFunction(db, sql, params, method);
+        ) => queuedSqlProxy(sql, params, method);
     } else {
         Object.defineProperty(window, "electron", {
             value: {
@@ -280,7 +289,7 @@ function setUpGlobalMocks<T>(
                     sql: string,
                     params: any[],
                     method: "all" | "run" | "get" | "values",
-                ) => dbFunction(db, sql, params, method),
+                ) => queuedSqlProxy(sql, params, method),
                 log: (
                     level: "log" | "info" | "warn" | "error",
                     message: string,
@@ -301,7 +310,7 @@ function setUpGlobalMocks<T>(
                 method: "all" | "run" | "get" | "values",
             ) => {
                 try {
-                    const result = await dbFunction(db, sql, params, method);
+                    const result = await queuedSqlProxy(sql, params, method);
                     return result;
                 } catch (error: any) {
                     console.error("Error from SQLite proxy:", error);
