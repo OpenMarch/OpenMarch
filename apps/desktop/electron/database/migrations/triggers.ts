@@ -1,4 +1,4 @@
-import Database from "libsql";
+import Database from "better-sqlite3";
 
 const triggers = {
     prevent_first_beat_modification: `

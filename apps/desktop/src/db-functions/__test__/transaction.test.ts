@@ -1,5 +1,5 @@
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import Database from "libsql";
+import Database from "better-sqlite3";
 import { inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
 import { DbTransaction } from "../types";

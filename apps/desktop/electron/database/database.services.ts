@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { ipcMain } from "electron";
-import Database from "libsql";
+import Database from "better-sqlite3";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import AudioFile, {

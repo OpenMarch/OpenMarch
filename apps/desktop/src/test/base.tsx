@@ -1,7 +1,7 @@
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
-import Database, { RunResult } from "libsql";
+import Database, { RunResult } from "better-sqlite3";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
@@ -352,7 +352,7 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
             new Database(":memory:");
         } catch (error) {
             console.error(
-                "Error setting up database better-sqlite3 database... \nEnsure LibSQL is compiled for this platform",
+                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for this platform",
                 error,
             );
             throw error;

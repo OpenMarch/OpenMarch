@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
-import Database from "libsql";
+import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";

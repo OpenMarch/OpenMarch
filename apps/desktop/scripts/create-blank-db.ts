@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import Database from "libsql";
+import Database from "better-sqlite3";
 import { join } from "path";
 import * as fs from "fs";
 import { getOrm } from "../electron/database/db";

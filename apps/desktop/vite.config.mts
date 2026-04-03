@@ -55,8 +55,7 @@ export default defineConfig(({ command }) => {
                                 external: [
                                     "electron",
                                     "node",
-                                    "libsql",
-                                    "@libsql/client",
+                                    "better-sqlite3",
                                 ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
@@ -64,9 +63,6 @@ export default defineConfig(({ command }) => {
                                             : {},
                                     ),
                                 ),
-                            },
-                            commonjsOptions: {
-                                dynamicRequireTargets: ["@libsql/client"],
                             },
                         },
                     },

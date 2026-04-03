@@ -1,5 +1,5 @@
 import { parentPort } from "worker_threads";
-import Database from "libsql";
+import Database from "better-sqlite3";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
