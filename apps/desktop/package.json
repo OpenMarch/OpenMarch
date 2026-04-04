@@ -137,7 +137,7 @@
         "sql.js": "^1.13.0",
         "tailwindcss": "4.1.0",
         "tsx": "^4.19.2",
-        "typescript": "~5.3.3",
+        "typescript": "catalog:",
         "vite": "^7.3.1",
         "vite-plugin-electron": "^0.29.0",
         "vite-plugin-electron-renderer": "^0.14.6",
