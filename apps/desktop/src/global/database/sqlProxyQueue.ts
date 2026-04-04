@@ -21,6 +21,7 @@ export const createRendererSqlProxyQueue = (
 
     return async (sql, params, method) => {
         const run = tail.then(() => execute(sql, params, method));
+
         tail = run.then(
             () => undefined,
             () => undefined,
