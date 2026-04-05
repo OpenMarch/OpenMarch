@@ -665,7 +665,7 @@ importers:
     dependencies:
       '@astrojs/mdx':
         specifier: ^4.3.0
-        version: 4.3.14(astro@5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3))
+        version: 4.3.14(astro@5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3))
       '@astrojs/react':
         specifier: ^4.3.0
         version: 4.4.2(@types/node@24.12.2)(@types/react-dom@19.2.3(@types/react@19.2.9))(@types/react@19.2.9)(jiti@2.6.1)(lightningcss@1.30.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
@@ -677,10 +677,10 @@ importers:
         version: 5.2.8
       '@korhq/undocs':
         specifier: 0.4.1-alpha
-        version: 0.4.1-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+        version: 0.4.1-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       '@korhq/unpreview':
         specifier: 0.1.2-alpha
-        version: 0.1.2-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+        version: 0.1.2-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       '@openmarch/config':
         specifier: workspace:*
         version: link:../config
@@ -731,7 +731,7 @@ importers:
         version: 2.9.6(@babel/runtime@7.29.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       astro:
         specifier: ^5.11.0
-        version: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+        version: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       class-variance-authority:
         specifier: ^0.7.1
         version: 0.7.1
@@ -750,6 +750,10 @@ importers:
       tailwindcss:
         specifier: ^4.1.11
         version: 4.2.2
+    devDependencies:
+      typescript:
+        specifier: 'catalog:'
+        version: 5.3.3
 
 packages:
 
@@ -13263,25 +13267,6 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  '@astrojs/mdx@4.3.14(astro@5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3))':
-    dependencies:
-      '@astrojs/markdown-remark': 6.3.11
-      '@mdx-js/mdx': 3.1.1
-      acorn: 8.16.0
-      astro: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
-      es-module-lexer: 1.7.0
-      estree-util-visit: 2.0.0
-      hast-util-to-html: 9.0.5
-      piccolore: 0.1.3
-      rehype-raw: 7.0.0
-      remark-gfm: 4.0.1
-      remark-smartypants: 3.0.2
-      source-map: 0.7.6
-      unist-util-visit: 5.1.0
-      vfile: 6.0.3
-    transitivePeerDependencies:
-      - supports-color
-
   '@astrojs/prism@3.3.0':
     dependencies:
       prismjs: 1.30.0
@@ -16429,10 +16414,10 @@ snapshots:
 
   '@jsdevtools/ono@7.1.3': {}
 
-  '@korhq/undocs@0.4.1-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)':
+  '@korhq/undocs@0.4.1-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)':
     dependencies:
       '@types/react': 19.2.9
-      astro: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+      astro: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
       zustand: 4.5.7(@types/react@19.2.9)(react@19.2.4)
@@ -16472,9 +16457,9 @@ snapshots:
       - uploadthing
       - yaml
 
-  '@korhq/unpreview@0.1.2-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)':
+  '@korhq/unpreview@0.1.2-alpha(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)':
     dependencies:
-      astro: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3)
+      astro: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
     transitivePeerDependencies:
       - '@azure/app-configuration'
       - '@azure/cosmos'
@@ -20487,108 +20472,6 @@ snapshots:
       - uploadthing
       - yaml
 
-  astro@5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@6.0.2)(yaml@2.8.3):
-    dependencies:
-      '@astrojs/compiler': 2.13.1
-      '@astrojs/internal-helpers': 0.7.6
-      '@astrojs/markdown-remark': 6.3.11
-      '@astrojs/telemetry': 3.3.0
-      '@capsizecss/unpack': 4.0.0
-      '@oslojs/encoding': 1.1.0
-      '@rollup/pluginutils': 5.3.0(rollup@4.60.1)
-      acorn: 8.16.0
-      aria-query: 5.3.2
-      axobject-query: 4.1.0
-      boxen: 8.0.1
-      ci-info: 4.4.0
-      clsx: 2.1.1
-      common-ancestor-path: 1.0.1
-      cookie: 1.1.1
-      cssesc: 3.0.0
-      debug: 4.4.3
-      deterministic-object-hash: 2.0.2
-      devalue: 5.6.4
-      diff: 8.0.4
-      dlv: 1.1.3
-      dset: 3.1.4
-      es-module-lexer: 1.7.0
-      esbuild: 0.27.7
-      estree-walker: 3.0.3
-      flattie: 1.1.1
-      fontace: 0.4.1
-      github-slugger: 2.0.0
-      html-escaper: 3.0.3
-      http-cache-semantics: 4.2.0
-      import-meta-resolve: 4.2.0
-      js-yaml: 4.1.1
-      magic-string: 0.30.21
-      magicast: 0.5.2
-      mrmime: 2.0.1
-      neotraverse: 0.6.18
-      p-limit: 6.2.0
-      p-queue: 8.1.1
-      package-manager-detector: 1.6.0
-      piccolore: 0.1.3
-      picomatch: 4.0.4
-      prompts: 2.4.2
-      rehype: 13.0.2
-      semver: 7.7.4
-      shiki: 3.23.0
-      smol-toml: 1.6.1
-      svgo: 4.0.1
-      tinyexec: 1.0.4
-      tinyglobby: 0.2.15
-      tsconfck: 3.1.6(typescript@6.0.2)
-      ultrahtml: 1.6.0
-      unifont: 0.7.4
-      unist-util-visit: 5.1.0
-      unstorage: 1.17.5(aws4fetch@1.0.20)
-      vfile: 6.0.3
-      vite: 6.4.1(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3)
-      vitefu: 1.1.3(vite@6.4.1(@types/node@24.12.2)(jiti@2.6.1)(lightningcss@1.30.2)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(yaml@2.8.3))
-      xxhash-wasm: 1.1.0
-      yargs-parser: 21.1.1
-      yocto-spinner: 0.2.3
-      zod: 3.25.76
-      zod-to-json-schema: 3.25.2(zod@3.25.76)
-      zod-to-ts: 1.2.0(typescript@6.0.2)(zod@3.25.76)
-    optionalDependencies:
-      sharp: 0.34.5
-    transitivePeerDependencies:
-      - '@azure/app-configuration'
-      - '@azure/cosmos'
-      - '@azure/data-tables'
-      - '@azure/identity'
-      - '@azure/keyvault-secrets'
-      - '@azure/storage-blob'
-      - '@capacitor/preferences'
-      - '@deno/kv'
-      - '@netlify/blobs'
-      - '@planetscale/database'
-      - '@types/node'
-      - '@upstash/redis'
-      - '@vercel/blob'
-      - '@vercel/functions'
-      - '@vercel/kv'
-      - aws4fetch
-      - db0
-      - idb-keyval
-      - ioredis
-      - jiti
-      - less
-      - lightningcss
-      - rollup
-      - sass
-      - sass-embedded
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-      - tsx
-      - typescript
-      - uploadthing
-      - yaml
-
   astrojs-compiler-sync@1.1.1(@astrojs/compiler@3.0.1):
     dependencies:
       '@astrojs/compiler': 3.0.1
@@ -22121,7 +22004,7 @@ snapshots:
       eslint: 9.39.4(jiti@2.6.1)
       eslint-import-resolver-node: 0.3.10
       eslint-import-resolver-typescript: 3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-jsx-a11y: 6.10.2(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-react: 7.37.5(eslint@9.39.4(jiti@2.6.1))
       eslint-plugin-react-hooks: 7.0.1(eslint@9.39.4(jiti@2.6.1))
@@ -22181,7 +22064,7 @@ snapshots:
       tinyglobby: 0.2.15
       unrs-resolver: 1.11.1
     optionalDependencies:
-      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1))
+      eslint-plugin-import: 2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1))
     transitivePeerDependencies:
       - supports-color
 
@@ -22257,7 +22140,7 @@ snapshots:
       - eslint-import-resolver-webpack
       - supports-color
 
-  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1(eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)))(eslint@9.39.4(jiti@2.6.1)):
+  eslint-plugin-import@2.32.0(@typescript-eslint/parser@8.58.0(eslint@9.39.4(jiti@2.6.1))(typescript@5.3.3))(eslint-import-resolver-typescript@3.10.1)(eslint@9.39.4(jiti@2.6.1)):
     dependencies:
       '@rtsao/scc': 1.1.0
       array-includes: 3.1.9
@@ -27199,10 +27082,6 @@ snapshots:
     optionalDependencies:
       typescript: 5.3.3
 
-  tsconfck@3.1.6(typescript@6.0.2):
-    optionalDependencies:
-      typescript: 6.0.2
-
   tsconfig-paths@3.15.0:
     dependencies:
       '@types/json5': 0.0.29
@@ -27410,7 +27289,8 @@ snapshots:
 
   typescript@5.9.3: {}
 
-  typescript@6.0.2: {}
+  typescript@6.0.2:
+    optional: true
 
   uc.micro@2.1.0: {}
 
@@ -28493,11 +28373,6 @@ snapshots:
   zod-to-ts@1.2.0(typescript@5.3.3)(zod@3.25.76):
     dependencies:
       typescript: 5.3.3
-      zod: 3.25.76
-
-  zod-to-ts@1.2.0(typescript@6.0.2)(zod@3.25.76):
-    dependencies:
-      typescript: 6.0.2
       zod: 3.25.76
 
   zod-validation-error@4.0.2(zod@4.3.6):

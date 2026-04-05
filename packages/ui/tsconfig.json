@@ -7,9 +7,7 @@
         "jsxImportSource": "react",
         "paths": {
             "@/*": ["./src/*"]
-        },
-        // Ignore 6.0 deprecations for now. Needs dependencies to be updated.
-        "ignoreDeprecations": "6.0"
+        }
     },
     "include": [".astro/types.d.ts", "**/*"],
     "exclude": ["dist"]
