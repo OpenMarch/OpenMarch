@@ -77,7 +77,7 @@ function StateInitializer() {
     // Select the currently selected audio file
     useEffect(() => {
         if (!selectedAudioFile) {
-            AudioFile.getSelectedAudioFile().then((audioFile) => {
+            void AudioFile.getSelectedAudioFile().then((audioFile) => {
                 setSelectedAudioFile({ ...audioFile, data: undefined });
             });
         }
