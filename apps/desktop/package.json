@@ -28,7 +28,7 @@
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
-        "viteste": "node ./scripts/run-vitest-electron.cjs",
+        "vitest:electron-runtime": "node ./scripts/run-vitest-electron.cjs",
         "test": "pnpm run vitest:electron-runtime",
         "test:history": "pnpm run vitest:electron-runtime -- --mode history",
         "test:watch": "pnpm run vitest:electron-runtime -- --mode watch",
