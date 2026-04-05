@@ -292,7 +292,7 @@ export default function ShapeEditor() {
                         <div className="flex flex-wrap gap-8">
                             <Button
                                 onClick={() => {
-                                    void marcherShape.addSegment();
+                                    marcherShape.addSegment();
                                 }}
                                 type="button"
                                 size="compact"
@@ -307,7 +307,7 @@ export default function ShapeEditor() {
 
                             <Button
                                 onClick={() => {
-                                    void marcherShape.deleteSegment(
+                                    marcherShape.deleteSegment(
                                         marcherShape.shapePath.points.length -
                                             1,
                                     );

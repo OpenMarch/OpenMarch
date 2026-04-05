@@ -37,7 +37,7 @@ window.electron
     ?.getLanguage()
     .then((savedLanguage) => {
         if (savedLanguage && savedLanguage !== "en") {
-            return tolgee.changeLanguage(savedLanguage);
+            tolgee.changeLanguage(savedLanguage);
         }
     })
     .catch((error) => {

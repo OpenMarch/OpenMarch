@@ -81,7 +81,7 @@ export default function EditableAudioPlayer() {
 
     useEffect(() => {
         if (!selectedAudioFile) return;
-        void AudioFile.getSelectedAudioFile().then((audioFile) => {
+        AudioFile.getSelectedAudioFile().then((audioFile) => {
             if (!audioFile || !audioFile.data) return;
             const blob = new Blob([audioFile.data], { type: "audio/wav" });
             const url = URL.createObjectURL(blob);
