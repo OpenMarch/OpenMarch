@@ -124,8 +124,8 @@ export const coordinateDataQueryOptions = (
     page: { id: number; duration: number; timestamp: number },
     qc: ReturnType<typeof useQueryClient>,
 ) =>
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryOptions({
-        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: coordinateDataKeys.byPage(page),
         queryFn: async () => {
             // Ensure deps exist (fetch if missing/stale)
