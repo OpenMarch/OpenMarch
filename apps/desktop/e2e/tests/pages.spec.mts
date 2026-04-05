@@ -26,8 +26,7 @@ export const createNewPage = async (page: Page) => {
         }
     }
 
-    if (pageNamesBefore.length === 0)
-        pageNamesBefore = ["0"];
+    if (pageNamesBefore.length === 0) pageNamesBefore = ["0"];
 
     const lastPageNameBefore = pageNamesBefore[pageNamesBefore.length - 1];
     if (!lastPageNameBefore) throw new Error("Unable to determine last page");
