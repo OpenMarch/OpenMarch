@@ -1,5 +1,5 @@
-import { test } from "e2e/fixtures.mjs";
-import { expect, Page } from "playwright/test";
+import { test } from "../fixtures.mjs";
+import { expect, type Page } from "playwright/test";
 
 export const createNewPage = async (page: Page) => {
     // Extract only the Pages section from the snapshot
