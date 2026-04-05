@@ -163,110 +163,118 @@ async function handleExport(payload: any) {
         payload: { progress: 5, message: "Opening database..." },
     });
 
-    const sqlite = new Database(dbPath);
-    const db = getOrm(sqlite);
+    let sqlite: Database.Database | null = null;
+    try {
+        sqlite = new Database(dbPath);
+        const db = getOrm(sqlite);
 
-    const fieldProperties = await db.query.field_properties.findFirst();
-    if (fieldProperties) {
-        ReadableCoords.setFieldProperties(
-            fieldProperties as unknown as FieldProperties,
-        );
-    }
-
-    parentPort.postMessage({
-        type: "progress",
-        payload: { progress: 10, message: "Fetching data..." },
-    });
-
-    const marchers = await db.query.marchers.findMany();
-    const pages = await db.query.pages.findMany();
-    const marcherPages = await db.query.marcher_pages.findMany();
-
-    parentPort.postMessage({
-        type: "progress",
-        payload: { progress: 20, message: "Generating PDF..." },
-    });
-
-    const doc = new PDFDocument({
-        size: "LETTER",
-        layout: "portrait",
-        margins: { top: 50, bottom: 50, left: 50, right: 50 },
-    });
-
-    const stream = fs.createWriteStream(filePath);
-    doc.pipe(stream);
-
-    if (quarterPages) {
-        const sheets: any[] = [];
-        for (const marcher of marchers) {
-            const marcherPagesForMarcher = marcherPages.filter(
-                (mp: any) => mp.marcher_id === marcher.id,
-            );
-            const chunks = [];
-            for (let i = 0; i < marcherPagesForMarcher.length; i += 22) {
-                chunks.push(marcherPagesForMarcher.slice(i, i + 22));
-            }
-            chunks.forEach((chunk, index) => {
-                sheets.push({
-                    marcher,
-                    pages,
-                    marcherPages: chunk,
-                    fieldProperties,
-                    options,
-                    quarterPageNumber: index + 1,
-                });
-            });
-        }
-
-        for (let i = 0; i < sheets.length; i += 4) {
-            const sheetGroup = sheets.slice(i, i + 4);
-            const positions = [
-                { x: 50, y: 50 },
-                { x: doc.page.width / 2 + 10, y: 50 },
-                { x: 50, y: doc.page.height / 2 + 10 },
-                { x: doc.page.width / 2 + 10, y: doc.page.height / 2 + 10 },
-            ];
-            sheetGroup.forEach((sheet, index) => {
-                drawQuarterPageSheet(
-                    doc,
-                    sheet,
-                    positions[index].x,
-                    positions[index].y,
-                );
-            });
-            if (i + 4 < sheets.length) {
-                doc.addPage();
-            }
-        }
-    } else {
-        for (let i = 0; i < marchers.length; i++) {
-            const marcher = marchers[i];
-            drawFullPageSheet(
-                doc,
-                marcher as unknown as Marcher,
-                pages as unknown as Page[],
-                marcherPages as unknown as MarcherPage[],
+        const fieldProperties = await db.query.field_properties.findFirst();
+        if (fieldProperties) {
+            ReadableCoords.setFieldProperties(
                 fieldProperties as unknown as FieldProperties,
-                options,
             );
-            if (i < marchers.length - 1) {
-                doc.addPage();
-            }
-            parentPort.postMessage({
-                type: "progress",
-                payload: { progress: 20 + (i / marchers.length) * 80 },
-            });
         }
+
+        parentPort.postMessage({
+            type: "progress",
+            payload: { progress: 10, message: "Fetching data..." },
+        });
+
+        const marchers = await db.query.marchers.findMany();
+        const pages = await db.query.pages.findMany();
+        const marcherPages = await db.query.marcher_pages.findMany();
+
+        parentPort.postMessage({
+            type: "progress",
+            payload: { progress: 20, message: "Generating PDF..." },
+        });
+
+        const doc = new PDFDocument({
+            size: "LETTER",
+            layout: "portrait",
+            margins: { top: 50, bottom: 50, left: 50, right: 50 },
+        });
+
+        const stream = fs.createWriteStream(filePath);
+        doc.pipe(stream);
+
+        if (quarterPages) {
+            const sheets: any[] = [];
+            for (const marcher of marchers) {
+                const marcherPagesForMarcher = marcherPages.filter(
+                    (mp: any) => mp.marcher_id === marcher.id,
+                );
+                const chunks = [];
+                for (let i = 0; i < marcherPagesForMarcher.length; i += 22) {
+                    chunks.push(marcherPagesForMarcher.slice(i, i + 22));
+                }
+                chunks.forEach((chunk, index) => {
+                    sheets.push({
+                        marcher,
+                        pages,
+                        marcherPages: chunk,
+                        fieldProperties,
+                        options,
+                        quarterPageNumber: index + 1,
+                    });
+                });
+            }
+
+            for (let i = 0; i < sheets.length; i += 4) {
+                const sheetGroup = sheets.slice(i, i + 4);
+                const positions = [
+                    { x: 50, y: 50 },
+                    { x: doc.page.width / 2 + 10, y: 50 },
+                    { x: 50, y: doc.page.height / 2 + 10 },
+                    { x: doc.page.width / 2 + 10, y: doc.page.height / 2 + 10 },
+                ];
+                sheetGroup.forEach((sheet, index) => {
+                    drawQuarterPageSheet(
+                        doc,
+                        sheet,
+                        positions[index].x,
+                        positions[index].y,
+                    );
+                });
+                if (i + 4 < sheets.length) {
+                    doc.addPage();
+                }
+            }
+        } else {
+            for (let i = 0; i < marchers.length; i++) {
+                const marcher = marchers[i];
+                drawFullPageSheet(
+                    doc,
+                    marcher as unknown as Marcher,
+                    pages as unknown as Page[],
+                    marcherPages as unknown as MarcherPage[],
+                    fieldProperties as unknown as FieldProperties,
+                    options,
+                );
+                if (i < marchers.length - 1) {
+                    doc.addPage();
+                }
+                parentPort.postMessage({
+                    type: "progress",
+                    payload: { progress: 20 + (i / marchers.length) * 80 },
+                });
+            }
+        }
+
+        doc.end();
+
+        await new Promise<void>((resolve, reject) => {
+            stream.on("finish", resolve);
+            stream.on("error", reject);
+        });
+
+        parentPort.postMessage({
+            type: "success",
+            payload: { path: filePath },
+        });
+    } finally {
+        sqlite?.close();
     }
-
-    doc.end();
-
-    await new Promise<void>((resolve, reject) => {
-        stream.on("finish", resolve);
-        stream.on("error", reject);
-    });
-
-    parentPort.postMessage({ type: "success", payload: { path: filePath } });
 }
 
 /**
