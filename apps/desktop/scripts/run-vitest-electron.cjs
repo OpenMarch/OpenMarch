@@ -17,6 +17,10 @@ const vitestEntrypoint = path.resolve(
     __dirname,
     "../node_modules/vitest/vitest.mjs",
 );
+const disableCanvasPreload = path.resolve(
+    __dirname,
+    "./vitest-disable-canvas.cjs",
+);
 
 const rawArgs = process.argv.slice(2).filter((arg) => arg !== "--");
 let mode = "test";
@@ -70,10 +74,18 @@ if (!modeConfigs[mode]) {
 
 const selectedMode = modeConfigs[mode];
 const vitestArgs = [...selectedMode.vitestArgs, ...passthroughArgs];
+const existingNodeOptions = process.env.NODE_OPTIONS?.trim();
+const disableCanvasRequireArg = `--require=${disableCanvasPreload}`;
+const nodeOptions = existingNodeOptions
+    ? `${existingNodeOptions} ${disableCanvasRequireArg}`
+    : disableCanvasRequireArg;
 
 const env = {
     ...process.env,
     ELECTRON_RUN_AS_NODE: "1",
+    // Keep jsdom from loading node-canvas native bindings in CI.
+    // canvas can preload an older libstdc++.so.6 that breaks better-sqlite3.
+    NODE_OPTIONS: nodeOptions,
     ...(selectedMode.env ?? {}),
 };
 
