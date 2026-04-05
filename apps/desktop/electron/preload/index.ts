@@ -268,7 +268,8 @@ const APP_API = {
     /** Only needed for the triggers */
     unsafeSqlProxy: (sql: string) =>
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
-            rows: any[] | any;
+            success: boolean;
+            changes: number;
         }>,
 
     // Logging

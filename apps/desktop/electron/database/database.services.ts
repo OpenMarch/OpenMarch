@@ -201,7 +201,21 @@ export async function handleSqlProxyWithDb(
 }
 
 async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
-    return await db.exec(sql);
+    const beforeTotalChanges = (
+        db.prepare("SELECT total_changes() AS totalChanges").get() as {
+            totalChanges: number;
+        }
+    ).totalChanges;
+    db.exec(sql);
+    const afterTotalChanges = (
+        db.prepare("SELECT total_changes() AS totalChanges").get() as {
+            totalChanges: number;
+        }
+    ).totalChanges;
+    return {
+        success: true,
+        changes: Math.max(0, afterTotalChanges - beforeTotalChanges),
+    };
 }
 
 export const getOrmConnection = () => {
@@ -244,11 +258,14 @@ async function handleSqlProxy(
 
 /** Directly executes the SQL query without any parameters */
 async function handleUnsafeSqlProxy(_: any, sql: string) {
+    const db = connect();
     try {
-        return await handleUnsafeSqlProxyWithDb(connect(), sql);
+        return await handleUnsafeSqlProxyWithDb(db, sql);
     } catch (error: any) {
         console.error("Error from unsafe SQL proxy:", error);
         throw error;
+    } finally {
+        db.close();
     }
 }
 
