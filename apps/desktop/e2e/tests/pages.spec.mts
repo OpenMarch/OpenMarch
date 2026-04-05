@@ -2,42 +2,35 @@ import { test } from "../fixtures.mjs";
 import { expect, type Page } from "playwright/test";
 
 export const createNewPage = async (page: Page) => {
-    // Extract only the Pages section from the snapshot
-    const snapshotBefore = await page.locator("#timeline").ariaSnapshot();
+    const pagesTextBefore = (await page.locator("#pages").textContent()) ?? "";
+    let pageNamesBefore: string[] = pagesTextBefore.match(/\d+[A-Z]?/g) ?? [];
 
-    // Find the Pages section (from "paragraph: Pages" to next "paragraph:" or end)
-    const pagesMatch = snapshotBefore.match(
-        /- paragraph: Pages(.*?)(?=- paragraph:|$)/s,
-    );
-    if (!pagesMatch) throw new Error("Pages section not found");
+    // Fallback for cases where text content is not exposed on #pages.
+    if (pageNamesBefore.length === 0) {
+        const snapshotBefore = await page.locator("#timeline").ariaSnapshot();
+        pageNamesBefore = Array.from(
+            snapshotBefore.matchAll(
+                /listitem(?:\s+"[^"]*")?[^\n]*\n\s*-\s*(?:generic|text)[^\n]*:\s*"?(\d+[A-Z]?)"?/g,
+            ),
+            (match) => match[1] ?? "",
+        ).filter(Boolean);
 
-    const pagesSection = pagesMatch[1];
-
-    const firstPageNamePattern = /"First page": "(\w*)"/;
-    const firstPageNameMatch = pagesSection.match(firstPageNamePattern);
-    const firstPageName = firstPageNameMatch ? firstPageNameMatch[1] : null;
-    if (!firstPageName) throw new Error("First page name not found");
-
-    const pageNamesBefore: string[] = [firstPageName];
-
-    // Pattern handles various formats:
-    // - text: "0 1 2" or - text: 0 1 2 (with newlines)
-    // Pages- text: 0 1- button (without newlines)
-    const allPageNamesPattern = /- text: "?([^"\n]+?)"?(?=\n|- |$)/g;
-    const textMatches = pagesSection.matchAll(allPageNamesPattern);
-
-    for (const match of textMatches) {
-        const text = match[1].trim();
-        // If the text contains spaces, it's multiple pages in one string
-        if (text.includes(" ")) {
-            pageNamesBefore.push(...text.split(/\s+/));
-        } else {
-            // Single page name
-            pageNamesBefore.push(text);
+        if (pageNamesBefore.length === 0) {
+            const pagesBlock = snapshotBefore.match(/Pages([\s\S]*?)(Audio|$)/);
+            pageNamesBefore = Array.from(
+                (pagesBlock?.[1] ?? "").matchAll(
+                    /(?:^|[^A-Za-z0-9])(\d+[A-Z]?)(?=[^A-Za-z0-9]|$)/g,
+                ),
+                (match) => match[1] ?? "",
+            ).filter(Boolean);
         }
     }
 
+    if (pageNamesBefore.length === 0)
+        pageNamesBefore = ["0"];
+
     const lastPageNameBefore = pageNamesBefore[pageNamesBefore.length - 1];
+    if (!lastPageNameBefore) throw new Error("Unable to determine last page");
     const lastPageNumber = parseInt(
         lastPageNameBefore.match(/^\d+/)?.[0] ?? "",
     );
