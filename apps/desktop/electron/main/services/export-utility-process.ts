@@ -7,7 +7,7 @@ import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
-import { getOrm } from "electron/database/db";
+import { getOrm } from "@om-electron/database/db";
 
 // =================================================================================================
 // PDF Layout Functions
