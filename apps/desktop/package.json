@@ -19,7 +19,6 @@
     },
     "scripts": {
         "dev": "pnpm run apply-styles && vite",
-        "postinstall": "electron-builder install-app-deps",
         "build": "pnpm run apply-styles && tsc && vite build",
         "build:electron": "pnpm run apply-styles && tsc && vite build && electron-builder --dir",
         "clean": "rimraf node_modules dist-electron release",

@@ -23,6 +23,34 @@ export class DrizzleMigrationService {
         this.rawDb = rawDb;
     }
 
+    private resolveMigrationsFolder(migrationsFolder?: string): string {
+        const requestedFolder =
+            migrationsFolder || path.join(__dirname, "../migrations");
+        const candidates = [requestedFolder];
+
+        const distMainSegment = `${path.sep}dist-electron${path.sep}main`;
+        if (requestedFolder.includes(distMainSegment)) {
+            candidates.push(requestedFolder.replace(distMainSegment, ""));
+        }
+        // Keep string replacements for mixed path formats in CI logs.
+        if (requestedFolder.includes("/dist-electron/main")) {
+            candidates.push(requestedFolder.replace("/dist-electron/main", ""));
+        }
+        if (requestedFolder.includes("\\dist-electron\\main")) {
+            candidates.push(
+                requestedFolder.replace("\\dist-electron\\main", ""),
+            );
+        }
+
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) {
+                return candidate;
+            }
+        }
+
+        return requestedFolder;
+    }
+
     // User version 7 is an artifact of the previous migration system
     // but we will keep it at 7 to indicate we are on drizzle
     private async canApplyMigrations(): Promise<boolean> {
@@ -45,9 +73,9 @@ export class DrizzleMigrationService {
             );
         }
 
-        let folder = migrationsFolder || path.join(__dirname, "../migrations");
-        if (process.env.PLAYWRIGHT_CODEGEN || process.env.PLAYWRIGHT_SESSION) {
-            folder = folder.replace("/dist-electron/main", "");
+        const folder = this.resolveMigrationsFolder(migrationsFolder);
+        if (!fs.existsSync(folder)) {
+            throw new Error(`Migrations folder not found: ${folder}`);
         }
 
         console.debug("migrationsFolder:", folder);
@@ -107,7 +135,13 @@ export class DrizzleMigrationService {
      * @returns true if there are pending migrations, false otherwise
      */
     hasPendingMigrations(migrationsFolder?: string): boolean {
-        const folder = migrationsFolder || "./electron/database/migrations";
+        const folder = this.resolveMigrationsFolder(migrationsFolder);
+        if (!fs.existsSync(folder)) {
+            console.warn(
+                `Migrations folder not found while checking pending migrations: ${folder}`,
+            );
+            return false;
+        }
 
         try {
             // Get applied migrations from the database

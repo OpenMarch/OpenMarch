@@ -6,6 +6,8 @@
     productName: "OpenMarch",
     asar: true,
     asarUnpack: ["**/*.node"],
+    npmRebuild: false,
+    nodeGypRebuild: false,
     directories: {
         output: "release/${buildVersion}",
     },

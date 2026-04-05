@@ -57,7 +57,11 @@ export default defineConfig(({ command }) => {
                             minify: isBuild,
                             outDir: "dist-electron/main",
                             rollupOptions: {
-                                external: ["electron", "node", "node:sqlite"].concat(
+                                external: [
+                                    "electron",
+                                    "node",
+                                    "node:sqlite",
+                                ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
                                             ? pkg.dependencies
