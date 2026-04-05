@@ -28,12 +28,11 @@
         "format": "prettier --write .",
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'",
-        "vitest:electron-runtime": "node ./scripts/run-vitest-electron.cjs",
-        "test": "pnpm run vitest:electron-runtime",
-        "test:history": "pnpm run vitest:electron-runtime -- --mode history",
-        "test:watch": "pnpm run vitest:electron-runtime -- --mode watch",
-        "test:coverage": "pnpm run vitest:electron-runtime -- --mode coverage",
-        "test:clearCache": "pnpm run vitest:electron-runtime -- --mode clearCache",
+        "test": "vitest run --silent",
+        "test:history": "VITEST_ENABLE_HISTORY=true vitest run",
+        "test:watch": "vitest",
+        "test:coverage": "pnpm test -- --coverage",
+        "test:clearCache": "vitest --clearCache",
         "e2e": "cross-env VITE_PUBLIC_PLAYWRIGHT_SESSION=true playwright test",
         "e2e:codegen": "node e2e/_codegen.mjs",
         "migrate": "export DATABASE_URL=file:electron/database/migrations/_blank.dots && drizzle-kit generate && tsx scripts/create-blank-db.ts"
@@ -75,7 +74,6 @@
         "@uiw/react-color": "^2.6.0",
         "@uiw/react-color-sketch": "^2.6.0",
         "@uiw/react-color-swatch": "^2.6.0",
-        "better-sqlite3": "^12.8.0",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "dompurify": "^3.3.0",
@@ -111,9 +109,8 @@
         "@testing-library/jest-dom": "^6.6.3",
         "@testing-library/react": "^16.0.0",
         "@testing-library/user-event": "^14.6.1",
-        "@types/better-sqlite3": "^7.6.13",
         "@types/fabric": "^5.3.10",
-        "@types/node": "^20.19.4",
+        "@types/node": "^24.11.1",
         "@types/pdfkit": "^0.13.9",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
@@ -144,6 +141,6 @@
         "vitest": "^4.0.0"
     },
     "engines": {
-        "node": "22"
+        "node": ">=24"
     }
 }

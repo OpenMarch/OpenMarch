@@ -1,5 +1,5 @@
 import { parentPort } from "worker_threads";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
@@ -163,9 +163,9 @@ async function handleExport(payload: any) {
         payload: { progress: 5, message: "Opening database..." },
     });
 
-    let sqlite: Database.Database | null = null;
+    let sqlite: DatabaseSync | null = null;
     try {
-        sqlite = new Database(dbPath);
+        sqlite = new DatabaseSync(dbPath);
         const db = getOrm(sqlite);
 
         const fieldProperties = await db.query.field_properties.findFirst();

@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
-import Database from "better-sqlite3";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
@@ -9,6 +8,7 @@ import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
+import { DatabaseSync } from "node:sqlite";
 
 /**
  * Service for handling Drizzle migrations at runtime
@@ -16,9 +16,9 @@ import { DB } from "../db";
  */
 export class DrizzleMigrationService {
     private db: DB;
-    private rawDb: Database.Database;
+    private rawDb: DatabaseSync;
 
-    constructor(drizzleDb: DB, rawDb: Database.Database) {
+    constructor(drizzleDb: DB, rawDb: DatabaseSync) {
         this.db = drizzleDb;
         this.rawDb = rawDb;
     }
@@ -136,7 +136,7 @@ export class DrizzleMigrationService {
     }
 
     /** Run any ts migrations that are not in drizzle */
-    static async initializeDatabase(db: DB, rawDb: Database.Database) {
+    static async initializeDatabase(db: DB, rawDb: DatabaseSync) {
         await db.run(sql`PRAGMA user_version = 7`);
 
         // Easier to do this here than in the migration

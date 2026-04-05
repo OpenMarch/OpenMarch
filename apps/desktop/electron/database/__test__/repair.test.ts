@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
@@ -14,8 +14,9 @@ import {
 import { getOrm } from "../db";
 import { DrizzleMigrationService } from "../services/DrizzleMigrationService";
 import { app } from "electron";
+import { runInSqliteTransaction } from "@/test/sqliteTransaction";
 
-describe("Database Repair", () => {
+describe("DatabaseSync Repair", () => {
     let tempDir: string;
 
     beforeEach(() => {
@@ -57,9 +58,9 @@ describe("Database Repair", () => {
 
     const createTestDatabase = async (
         dbPath: string,
-        setupFn?: (db: Database.Database) => void,
-    ): Promise<Database.Database> => {
-        const db = new Database(dbPath);
+        setupFn?: (db: DatabaseSync) => void,
+    ): Promise<DatabaseSync> => {
+        const db = new DatabaseSync(dbPath);
         if (setupFn) {
             setupFn(db);
         }
@@ -68,8 +69,8 @@ describe("Database Repair", () => {
 
     const createNewDatabaseWithMigrations = async (
         dbPath: string,
-    ): Promise<Database.Database> => {
-        const db = new Database(dbPath);
+    ): Promise<DatabaseSync> => {
+        const db = new DatabaseSync(dbPath);
         await initializeAndMigrateDatabase(db);
         return db;
     };
@@ -77,7 +78,7 @@ describe("Database Repair", () => {
     describe("initializeAndMigrateDatabase", () => {
         it("should successfully initialize database with user_version 7", async () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             await initializeAndMigrateDatabase(db);
 
@@ -94,7 +95,7 @@ describe("Database Repair", () => {
 
         it("should apply all pending migrations", async () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             await initializeAndMigrateDatabase(db);
 
@@ -109,7 +110,7 @@ describe("Database Repair", () => {
 
         it("should initialize database schema correctly", async () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             await initializeAndMigrateDatabase(db);
 
@@ -132,7 +133,7 @@ describe("Database Repair", () => {
 
         it("should initialize field_properties with default template", async () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             await initializeAndMigrateDatabase(db);
 
@@ -151,7 +152,7 @@ describe("Database Repair", () => {
 
         it("should initialize workspace_settings with default values", async () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             await initializeAndMigrateDatabase(db);
 
@@ -175,7 +176,7 @@ describe("Database Repair", () => {
             const originalDbPath = path.join(tempDir, "original.db");
             const newDbPath = path.join(tempDir, "new.db");
 
-            const originalDb = new Database(originalDbPath);
+            const originalDb = new DatabaseSync(originalDbPath);
             originalDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -186,7 +187,7 @@ describe("Database Repair", () => {
                 VALUES (1, '{"test": "data"}', 'old_value');
             `);
 
-            const newDb = new Database(newDbPath);
+            const newDb = new DatabaseSync(newDbPath);
             newDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -220,7 +221,7 @@ describe("Database Repair", () => {
             const originalDbPath = path.join(tempDir, "original.db");
             const newDbPath = path.join(tempDir, "new.db");
 
-            const originalDb = new Database(originalDbPath);
+            const originalDb = new DatabaseSync(originalDbPath);
             // Create a table without CHECK constraint to allow multiple rows for testing
             originalDb.exec(`
                 CREATE TABLE field_properties (
@@ -231,7 +232,7 @@ describe("Database Repair", () => {
                 INSERT INTO field_properties (id, json_data) VALUES (2, '{"test": "data2"}');
             `);
 
-            const newDb = new Database(newDbPath);
+            const newDb = new DatabaseSync(newDbPath);
             newDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -258,7 +259,7 @@ describe("Database Repair", () => {
             const originalDbPath = path.join(tempDir, "original.db");
             const newDbPath = path.join(tempDir, "new.db");
 
-            const originalDb = new Database(originalDbPath);
+            const originalDb = new DatabaseSync(originalDbPath);
             originalDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -269,7 +270,7 @@ describe("Database Repair", () => {
                 VALUES (1, '{"test": "data"}', X'010203');
             `);
 
-            const newDb = new Database(newDbPath);
+            const newDb = new DatabaseSync(newDbPath);
             newDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -302,7 +303,7 @@ describe("Database Repair", () => {
             const originalDbPath = path.join(tempDir, "original.db");
             const newDbPath = path.join(tempDir, "new.db");
 
-            const originalDb = new Database(originalDbPath);
+            const originalDb = new DatabaseSync(originalDbPath);
             originalDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -311,7 +312,7 @@ describe("Database Repair", () => {
                 INSERT INTO field_properties (id, old_column) VALUES (1, 'old');
             `);
 
-            const newDb = new Database(newDbPath);
+            const newDb = new DatabaseSync(newDbPath);
             newDb.exec(`
                 CREATE TABLE field_properties (
                     id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -362,7 +363,9 @@ describe("Database Repair", () => {
                             );
 
                             try {
-                                const originalDb = new Database(originalDbPath);
+                                const originalDb = new DatabaseSync(
+                                    originalDbPath,
+                                );
                                 const originalColumns = [
                                     "id INTEGER PRIMARY KEY CHECK (id = 1)",
                                     "json_data TEXT NOT NULL",
@@ -377,7 +380,7 @@ describe("Database Repair", () => {
                                     VALUES (1, '${jsonData}'${hasImage ? ", X'010203'" : ""});
                                 `);
 
-                                const newDb = new Database(newDbPath);
+                                const newDb = new DatabaseSync(newDbPath);
                                 newDb.exec(`
                                     CREATE TABLE field_properties (
                                         id INTEGER PRIMARY KEY CHECK (id = 1),
@@ -782,8 +785,10 @@ describe("Database Repair", () => {
                             );
 
                             try {
-                                const originalDb = new Database(originalDbPath);
-                                const newDb = new Database(newDbPath);
+                                const originalDb = new DatabaseSync(
+                                    originalDbPath,
+                                );
+                                const newDb = new DatabaseSync(newDbPath);
 
                                 // Create single-row tables that copyDataFromOriginalDatabase expects
                                 originalDb.exec(`
@@ -938,7 +943,7 @@ describe("Database Repair", () => {
             expect(fixedPath).toContain(" - FIXED.dots");
             expect(fs.existsSync(fixedPath)).toBe(true);
 
-            const fixedDb = new Database(fixedPath);
+            const fixedDb = new DatabaseSync(fixedPath);
             const beats = fixedDb
                 .prepare("SELECT * FROM beats WHERE id != 0")
                 .all();
@@ -972,7 +977,7 @@ describe("Database Repair", () => {
             expect(fixedPath).toContain(" - FIXED.dots");
             expect(fs.existsSync(fixedPath)).toBe(true);
 
-            const fixedDb = new Database(fixedPath);
+            const fixedDb = new DatabaseSync(fixedPath);
 
             // Verify the database was initialized correctly
             const userVersion = (
@@ -1061,7 +1066,7 @@ describe("Database Repair", () => {
             expect(fs.existsSync(fixedPath)).toBe(true);
 
             // Verify it's a valid database
-            const fixedDb = new Database(fixedPath);
+            const fixedDb = new DatabaseSync(fixedPath);
             const userVersion = (
                 fixedDb.prepare("PRAGMA user_version").get() as {
                     user_version: number;
@@ -1169,7 +1174,7 @@ describe("Database Repair", () => {
 
             const fixedPath = await repairDatabase(originalDbPath);
 
-            const fixedDb = new Database(fixedPath);
+            const fixedDb = new DatabaseSync(fixedPath);
 
             // Verify schema
             const tables = fixedDb
@@ -1223,7 +1228,7 @@ describe("Database Repair", () => {
 
             // Old file should be replaced
             expect(fs.existsSync(fixedPath)).toBe(true);
-            const fixedDb = new Database(fixedPath);
+            const fixedDb = new DatabaseSync(fixedPath);
             const userVersion = (
                 fixedDb.prepare("PRAGMA user_version").get() as {
                     user_version: number;
@@ -1240,7 +1245,7 @@ describe("Database Repair", () => {
     describe("removeOrphanMarcherPages", () => {
         it("should remove marcher_pages with invalid marcher_id", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1306,7 +1311,7 @@ describe("Database Repair", () => {
 
         it("should remove marcher_pages with invalid page_id", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1372,7 +1377,7 @@ describe("Database Repair", () => {
 
         it("should remove marcher_pages with both invalid marcher_id and page_id", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1436,7 +1441,7 @@ describe("Database Repair", () => {
 
         it("should keep all valid marcher_pages", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1505,7 +1510,7 @@ describe("Database Repair", () => {
 
         it("should handle empty marcher_pages table", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1545,7 +1550,7 @@ describe("Database Repair", () => {
 
         it("should handle empty marchers and pages tables", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1598,7 +1603,7 @@ describe("Database Repair", () => {
 
         it("should handle multiple orphaned records efficiently", () => {
             const dbPath = path.join(tempDir, "test.db");
-            const db = new Database(dbPath);
+            const db = new DatabaseSync(dbPath);
 
             // Create tables
             db.exec(`
@@ -1635,11 +1640,19 @@ describe("Database Repair", () => {
             const stmt = db.prepare(
                 "INSERT INTO marcher_pages (id, marcher_id, page_id, x, y) VALUES (?, ?, ?, ?, ?)",
             );
-            const insertMany = db.transaction((marcherPages) => {
+            const insertMany = (
+                marcherPages: Array<{
+                    id: number;
+                    marcher_id: number;
+                    page_id: number;
+                    x: number;
+                    y: number;
+                }>,
+            ) => {
                 for (const mp of marcherPages) {
                     stmt.run(mp.id, mp.marcher_id, mp.page_id, mp.x, mp.y);
                 }
-            });
+            };
 
             const marcherPages = [];
             // Add one valid entry
@@ -1661,7 +1674,7 @@ describe("Database Repair", () => {
                 });
             }
 
-            insertMany(marcherPages);
+            runInSqliteTransaction(db, () => insertMany(marcherPages));
 
             // Verify initial state
             const beforeCount = db
@@ -1725,7 +1738,7 @@ describe("Database Repair", () => {
                                 tempDir,
                                 `test-${Date.now()}-${Math.random()}.db`,
                             );
-                            const db = new Database(dbPath);
+                            const db = new DatabaseSync(dbPath);
 
                             try {
                                 // Create tables
@@ -1886,7 +1899,7 @@ describe("Database Repair", () => {
                                 tempDir,
                                 `test-${Date.now()}-${Math.random()}.db`,
                             );
-                            const db = new Database(dbPath);
+                            const db = new DatabaseSync(dbPath);
 
                             try {
                                 // Create tables
@@ -2107,11 +2120,13 @@ describe("Database Repair", () => {
                                 tempDir,
                                 `test2-${Date.now()}-${Math.random()}.db`,
                             );
-                            const db1 = new Database(dbPath1);
-                            const db2 = new Database(dbPath2);
+                            const db1 = new DatabaseSync(dbPath1);
+                            const db2 = new DatabaseSync(dbPath2);
 
                             try {
-                                const setupDb = (db: Database.Database) => {
+                                const setupDb = (
+                                    db: DatabaseSync.DatabaseSync,
+                                ) => {
                                     db.exec(`
                                     CREATE TABLE marchers (
                                         id INTEGER PRIMARY KEY,

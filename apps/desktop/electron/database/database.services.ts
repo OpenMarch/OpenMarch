@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { ipcMain } from "electron";
-import Database from "better-sqlite3";
+import type { DatabaseSync } from "node:sqlite";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import AudioFile, {
@@ -124,8 +124,13 @@ export function connect() {
         throw new Error("Database path is empty");
     }
     try {
-        const dbPath = DB_PATH;
-        return new Database(dbPath, { verbose: console.log });
+        const sqlite = process.getBuiltinModule?.("node:sqlite") as
+            | typeof import("node:sqlite")
+            | undefined;
+        if (!sqlite?.DatabaseSync) {
+            throw new Error("node:sqlite module is unavailable");
+        }
+        return new sqlite.DatabaseSync(DB_PATH);
     } catch (error: any) {
         console.error(error);
 
@@ -146,24 +151,32 @@ export function connect() {
  * https://orm.drizzle.team/docs/connect-drizzle-proxy
  */
 export async function handleSqlProxyWithDb(
-    db: Database.Database,
+    db: DatabaseSync,
     sql: string,
     params: any[],
     method: "all" | "run" | "get" | "values",
 ) {
     try {
+        // node:sqlite rejects `undefined` bind values while previous drivers
+        // tolerated them. Coerce to null for compatibility.
+        const normalizedParams = params.map((param) =>
+            param === undefined ? null : param,
+        );
+
         // prevent multiple queries
         // const sqlBody = sql.replace(/;/g, "");
 
-        const result = db.prepare(sql);
+        const statement = db.prepare(sql);
 
         let rows: any;
 
         switch (method) {
             case "all": {
                 // Drizzle's mapResultRow expects all results to be arrays
-                // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().all(...params) as any[][];
+                statement.setReturnArrays(true);
+                const rawValues = statement.all(
+                    ...normalizedParams,
+                ) as unknown as any[][];
                 // Return the raw arrays directly - Drizzle's mapResultRow expects arrays
                 rows = rawValues;
 
@@ -174,8 +187,10 @@ export async function handleSqlProxyWithDb(
             }
             case "get": {
                 // Drizzle's mapResultRow expects all results to be arrays
-                // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().get(...params) as any[];
+                statement.setReturnArrays(true);
+                const rawValues = statement.get(...normalizedParams) as
+                    | any[]
+                    | undefined;
                 // Return the raw array directly - Drizzle's mapResultRow expects an array
                 rows = rawValues;
 
@@ -185,14 +200,17 @@ export async function handleSqlProxyWithDb(
                 return resultObj2;
             }
             case "run":
-                rows = result.run(...params);
+                rows = statement.run(...normalizedParams);
 
                 return {
                     rows: [], // no data returned for run
                 };
             case "values": {
                 // values() returns raw array values, similar to all() but used by migrator
-                const rawValues = result.raw().all(...params) as any[][];
+                statement.setReturnArrays(true);
+                const rawValues = statement.all(
+                    ...normalizedParams,
+                ) as unknown as any[][];
                 rows = rawValues;
 
                 return {
@@ -203,12 +221,27 @@ export async function handleSqlProxyWithDb(
                 throw new Error(`Unknown method: ${method}`);
         }
     } catch (error: any) {
+        const describeParam = (value: unknown): string => {
+            if (value === null) return "null";
+            if (value === undefined) return "undefined";
+            if (value instanceof Uint8Array) return "Uint8Array";
+            if (value instanceof Date) return "Date";
+            if (Array.isArray(value)) return "Array";
+            return typeof value;
+        };
+
         console.error("Error from SQL proxy:", error);
+        console.error("SQL proxy context:", {
+            method,
+            sql,
+            params: params.map((param) => (param === undefined ? null : param)),
+            paramTypes: params.map(describeParam),
+        });
         throw error;
     }
 }
 
-async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
+async function handleUnsafeSqlProxyWithDb(db: DatabaseSync, sql: string) {
     const beforeTotalChanges = (
         db.prepare("SELECT total_changes() AS totalChanges").get() as {
             totalChanges: number;
@@ -231,7 +264,7 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
-let persistentConnection: Database.Database | null = null;
+let persistentConnection: DatabaseSync | null = null;
 let persistentConnectionPath: string | null = null;
 async function handleSqlProxy(
     _: any,
@@ -312,14 +345,12 @@ export function initHandlers() {
  * @param db The database connection
  * @returns Array of measures
  */
-async function getAudioFilesDetails(
-    db?: Database.Database,
-): Promise<AudioFile[]> {
+async function getAudioFilesDetails(db?: DatabaseSync): Promise<AudioFile[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
         `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`,
     );
-    const response = stmt.all() as AudioFile[];
+    const response = stmt.all() as unknown as AudioFile[];
     if (!db) dbToUse.close();
     return response;
 }
@@ -332,7 +363,7 @@ async function getAudioFilesDetails(
  * @returns The currently selected audio file in the database. Includes audio data.
  */
 export async function getSelectedAudioFile(
-    db?: Database.Database,
+    db?: DatabaseSync,
 ): Promise<AudioFile | null> {
     const dbToUse = db || connect();
     try {
@@ -341,14 +372,15 @@ export async function getSelectedAudioFile(
         );
         const result = await stmt.get();
         if (result) {
-            return result as AudioFile;
+            return result as unknown as AudioFile;
         }
 
         // If no audio file is selected, select the first one
         const firstAudioFileStmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`,
         );
-        const firstAudioFile = (await firstAudioFileStmt.get()) as AudioFile;
+        const firstAudioFile =
+            (await firstAudioFileStmt.get()) as unknown as AudioFile;
         if (!firstAudioFile) {
             console.error("No audio files in the database");
             return null;
@@ -415,8 +447,15 @@ export async function insertAudioFile(
                 )
             `);
         const created_at = new Date().toISOString();
+        const dataForInsert =
+            audioFile.data == null
+                ? null
+                : audioFile.data instanceof Uint8Array
+                  ? audioFile.data
+                  : new Uint8Array(audioFile.data);
         const insertResult = insertStmt.run({
             ...audioFile,
+            data: dataForInsert,
             selected: 1,
             created_at,
             updated_at: created_at,

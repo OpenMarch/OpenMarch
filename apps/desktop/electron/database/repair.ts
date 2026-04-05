@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import Database from "better-sqlite3";
+import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import * as fs from "fs";
 import * as path from "path";
 import { app } from "electron";
@@ -7,7 +7,7 @@ import { getOrm } from "./db";
 import { DrizzleMigrationService } from "./services/DrizzleMigrationService";
 
 export const initializeAndMigrateDatabase = async (
-    newDb: Database.Database,
+    newDb: DatabaseSync,
 ): Promise<void> => {
     // Set user version to 7 (indicates Drizzle migration system)
     newDb.prepare("PRAGMA user_version = 7").run();
@@ -27,8 +27,8 @@ export const initializeAndMigrateDatabase = async (
 };
 
 export const copyDataFromOriginalDatabase = (
-    originalDb: Database.Database,
-    newDb: Database.Database,
+    originalDb: DatabaseSync,
+    newDb: DatabaseSync,
     originalDbPath: string,
 ): void => {
     const excludedTables = new Set([
@@ -113,10 +113,33 @@ export const copyDataFromOriginalDatabase = (
 };
 
 export const copyFieldPropertiesFromOriginalDatabase = (
-    originalDb: Database.Database,
-    newDb: Database.Database,
+    originalDb: DatabaseSync,
+    newDb: DatabaseSync,
     tableName: string,
 ): void => {
+    const toSqlInputValue = (value: unknown): SQLInputValue => {
+        if (value === undefined || value === null) return null;
+        if (
+            typeof value === "string" ||
+            typeof value === "number" ||
+            typeof value === "bigint"
+        ) {
+            return value;
+        }
+        if (value instanceof Uint8Array) return value;
+        if (value instanceof ArrayBuffer) return new Uint8Array(value);
+        if (ArrayBuffer.isView(value)) {
+            return new Uint8Array(
+                value.buffer,
+                value.byteOffset,
+                value.byteLength,
+            );
+        }
+        throw new TypeError(
+            `Unsupported SQLite parameter value type: ${typeof value}`,
+        );
+    };
+
     // Assert that the original database table has exactly one row
     const rowCount = originalDb
         .prepare(`SELECT COUNT(*) as count FROM "${tableName}"`)
@@ -161,11 +184,13 @@ export const copyFieldPropertiesFromOriginalDatabase = (
     );
 
     // Execute update with values from the original row
-    const values = commonColumns.map((col) => row[col.name]);
+    const values: SQLInputValue[] = commonColumns.map((col) =>
+        toSqlInputValue(row[col.name]),
+    );
     updateStmt.run(...values);
 };
 
-export const removeOrphanMarcherPages = (db: Database.Database): void => {
+export const removeOrphanMarcherPages = (db: DatabaseSync): void => {
     db.prepare(
         `DELETE FROM marcher_pages WHERE marcher_id NOT IN (SELECT id FROM marchers)`,
     ).run();
@@ -192,10 +217,10 @@ export const repairDatabase = async (originalDbPath: string) => {
     }
 
     // Open the original database
-    const originalDb = new Database(originalDbPath, { readonly: true });
+    const originalDb = new DatabaseSync(originalDbPath, { readOnly: true });
 
     // Create the new database at the temp path
-    const newDb = new Database(tempDbPath);
+    const newDb = new DatabaseSync(tempDbPath);
 
     try {
         // Initialize and run migrations on the new database

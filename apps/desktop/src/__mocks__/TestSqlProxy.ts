@@ -1,4 +1,4 @@
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import { getOrm } from "../../electron/database/db";
 import { DrizzleMigrationService } from "../../electron/database/services/DrizzleMigrationService";
 import { handleSqlProxyWithDb } from "../../electron/database/database.services";
@@ -8,10 +8,10 @@ import { handleSqlProxyWithDb } from "../../electron/database/database.services"
  * Creates an in-memory SQLite database with the proper schema
  */
 export class TestSqlProxy {
-    private db: Database.Database;
+    private db: DatabaseSync;
 
     constructor() {
-        this.db = new Database(":memory:");
+        this.db = new DatabaseSync(":memory:");
         this.db.prepare("PRAGMA foreign_keys = ON").run();
         this.db.prepare("PRAGMA user_version = 7").run();
     }

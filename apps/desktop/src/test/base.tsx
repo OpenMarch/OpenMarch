@@ -1,7 +1,7 @@
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
-import Database, { RunResult } from "better-sqlite3";
+import { DatabaseSync, type StatementResultingChanges } from "node:sqlite";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
@@ -44,7 +44,7 @@ export const seedObj = Array.from({ length: SEED_AMOUNT }, (_, i) => ({
 
 type DbConnection = BaseSQLiteDatabase<
     "async",
-    RunResult | void | SqliteRemoteResult<unknown>,
+    StatementResultingChanges | void | SqliteRemoteResult<unknown>,
     typeof schema
 >;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
@@ -358,7 +358,7 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
         const tempDatabaseFile = getTempDotsPath(task);
 
         try {
-            new Database(":memory:");
+            new DatabaseSync(":memory:");
         } catch (error) {
             console.error(
                 "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for this platform",
@@ -367,7 +367,7 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
             throw error;
         }
 
-        const db = new Database(tempDatabaseFile);
+        const db = new DatabaseSync(tempDatabaseFile);
 
         setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
         await use(

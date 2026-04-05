@@ -6,7 +6,6 @@ catalog:
 onlyBuiltDependencies:
   - "@sentry/cli"
   - "@tailwindcss/oxide"
-  - better-sqlite3
   - canvas
   - core-js
   - electron

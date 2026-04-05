@@ -1,14 +1,15 @@
 import { DbConnection, describeDbTests, schema } from "@/test/base";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import { inArray } from "drizzle-orm";
 import { describe, expect, it } from "vitest";
+import { runInSqliteTransaction } from "@/test/sqliteTransaction";
 import { DbTransaction } from "../types";
 
 describe("validate transaction functionality", () => {
     describe("raw drivers", () => {
-        describe("better-sqlite3", () => {
+        describe("node:sqlite", () => {
             it("should throw an error if the transaction fails", async () => {
-                const db = new Database(":memory:");
+                const db = new DatabaseSync(":memory:");
                 db.exec("CREATE TABLE test (name TEXT NOT NULL)");
                 const getValues: () => { name: string }[] = () => {
                     return db.prepare("SELECT name FROM test").all() as {
@@ -35,9 +36,9 @@ describe("validate transaction functionality", () => {
                 ).toEqual([{ name: "test value" }]);
 
                 // Execute a transaction without error
-                db.transaction(() => {
+                runInSqliteTransaction(db, () => {
                     insertStatement.run("test value 2");
-                })();
+                });
                 expect(
                     getValues(),
                     "Expected 2 rows in test table",
@@ -69,7 +70,7 @@ describe("validate transaction functionality", () => {
 
                 // Execute a transaction with an error
                 expect(() =>
-                    db.transaction(() => insertStatement.run(null))(),
+                    runInSqliteTransaction(db, () => insertStatement.run(null)),
                 ).toThrow();
                 validateStateDidNotChange(
                     "Expected state to not change after error in transaction",
@@ -77,13 +78,13 @@ describe("validate transaction functionality", () => {
 
                 // Execute a transaction with many statements that should be rolled back
                 expect(() =>
-                    db.transaction(() => {
+                    runInSqliteTransaction(db, () => {
                         insertStatement.run("this value should be reverted");
                         insertStatement.run(
                             "test value should also be reverted",
                         );
                         throw new Error("test error");
-                    })(),
+                    }),
                 ).toThrow();
                 validateStateDidNotChange(
                     "Expected state to not change after error in transaction with many statements",
@@ -91,7 +92,7 @@ describe("validate transaction functionality", () => {
 
                 // Execute a transaction with many statements that should be rolled back
                 expect(() =>
-                    db.transaction(() => {
+                    runInSqliteTransaction(db, () => {
                         insertStatement.run("this value should be reverted");
                         insertStatement.run(
                             "test value should also be reverted",
@@ -101,7 +102,7 @@ describe("validate transaction functionality", () => {
                         insertStatement.run(
                             "this value should never be reached",
                         );
-                    })(),
+                    }),
                 ).toThrow();
                 validateStateDidNotChange(
                     "Expected state to not change after database error in transaction with many statements",

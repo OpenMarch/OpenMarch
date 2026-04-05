@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach } from "vitest";
-import Database from "better-sqlite3";
+import { DatabaseSync } from "node:sqlite";
 import * as fs from "fs";
 import * as path from "path";
 import { fileURLToPath } from "url";
@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Migration 0012_pink_king_cobra", () => {
-    let db: Database.Database;
+    let db: DatabaseSync;
     let tempDbPath: string;
 
     beforeEach(() => {
@@ -17,7 +17,7 @@ describe("Migration 0012_pink_king_cobra", () => {
         tempDbPath = path.join(__dirname, `temp_test_${Date.now()}.dots`);
 
         // Create a new database
-        db = new Database(tempDbPath);
+        db = new DatabaseSync(tempDbPath);
         db.prepare("PRAGMA foreign_keys = ON").run();
 
         // Create the minimal schema needed for this migration
