@@ -40,6 +40,7 @@
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
     },
     "devDependencies": {
+        "tsup": "^8.5.0",
         "typescript": "catalog:"
     },
     "dependencies": {
