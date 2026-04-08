@@ -35,7 +35,7 @@
         "LICENSE"
     ],
     "peerDependencies": {
-        "typescript": "^5"
+        "typescript": "catalog:"
     },
     "devDependencies": {
         "vitest": "^2.1.9",

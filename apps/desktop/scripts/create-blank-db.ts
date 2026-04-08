@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import Database from "libsql";
+import { DatabaseSync } from "node:sqlite";
 import { join } from "path";
 import * as fs from "fs";
 import { getOrm } from "../electron/database/db";
@@ -24,7 +24,7 @@ async function createDatabase() {
         }
 
         // Create the database file
-        const db = new Database(DATABASE_PATH);
+        const db = new DatabaseSync(DATABASE_PATH);
 
         // Set user version to 7 (indicates Drizzle migration system)
         db.prepare("PRAGMA user_version = 7").run();

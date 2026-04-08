@@ -16,12 +16,14 @@ export default defineConfig(({ command }) => {
     const isServe = command === "serve";
     const isBuild = command === "build";
     const sourcemap = isServe || !!process.env.VSCODE_DEBUG;
+    const electronAlias = {
+        "@": path.join(__dirname, "src"),
+        "@om-electron": path.join(__dirname, "electron"),
+    };
 
     return {
         resolve: {
-            alias: {
-                "@": path.join(__dirname, "src"),
-            },
+            alias: electronAlias,
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         plugins: [
@@ -47,6 +49,9 @@ export default defineConfig(({ command }) => {
                         }
                     },
                     vite: {
+                        resolve: {
+                            alias: electronAlias,
+                        },
                         build: {
                             sourcemap,
                             minify: isBuild,
@@ -55,8 +60,7 @@ export default defineConfig(({ command }) => {
                                 external: [
                                     "electron",
                                     "node",
-                                    "libsql",
-                                    "@libsql/client",
+                                    "node:sqlite",
                                 ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
@@ -64,9 +68,6 @@ export default defineConfig(({ command }) => {
                                             : {},
                                     ),
                                 ),
-                            },
-                            commonjsOptions: {
-                                dynamicRequireTargets: ["@libsql/client"],
                             },
                         },
                     },
@@ -79,6 +80,9 @@ export default defineConfig(({ command }) => {
                         options.reload();
                     },
                     vite: {
+                        resolve: {
+                            alias: electronAlias,
+                        },
                         build: {
                             sourcemap: sourcemap ? "inline" : undefined, // #332
                             minify: isBuild,

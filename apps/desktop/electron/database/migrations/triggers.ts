@@ -1,4 +1,4 @@
-import Database from "libsql";
+import { DatabaseSync } from "node:sqlite";
 
 const triggers = {
     prevent_first_beat_modification: `
@@ -55,7 +55,7 @@ const triggers = {
  * Drops all triggers from the database.
  * @param db - The database instance to drop triggers from.
  */
-export const dropAllTriggers = (dbConnection: Database.Database) => {
+export const dropAllTriggers = (dbConnection: DatabaseSync) => {
     for (const [name] of Object.entries(triggers)) {
         try {
             dbConnection.exec(`DROP TRIGGER IF EXISTS ${name}`);
@@ -70,7 +70,7 @@ export const dropAllTriggers = (dbConnection: Database.Database) => {
  * Creates all triggers in the database.
  * @param db - The database instance to create triggers in.
  */
-export const createAllTriggers = (dbConnection: Database.Database) => {
+export const createAllTriggers = (dbConnection: DatabaseSync) => {
     for (const [name, trigger] of Object.entries(triggers)) {
         try {
             dbConnection.exec(`${trigger}`);
