@@ -35,18 +35,23 @@ export async function getStaticPaths() {
     return [...contentPaths, ...payloadPaths];
 }
 
-const { source, post } = Astro.props;
-const isContent = source === "content";
+type BlogPageProps =
+    | { source: "content"; post: CollectionEntry<"blog"> }
+    | { source: "payload"; post: PayloadPost };
 
-const payloadParsed =
-    !isContent && source === "payload"
-        ? parsePayloadPostToListItem(post as PayloadPost, placeholderImage.src)
-        : null;
+const props = Astro.props as BlogPageProps;
+const isContent = props.source === "content";
+const contentPost = isContent ? props.post : null;
+const payloadPost = !isContent ? props.post : null;
 
-const title = isContent ? post.data.title : (payloadParsed?.title ?? "");
-const author = isContent ? post.data.author : (payloadParsed?.author ?? "");
+const payloadParsed = payloadPost
+    ? parsePayloadPostToListItem(payloadPost, placeholderImage.src)
+    : null;
+
+const title = contentPost?.data.title ?? payloadParsed?.title ?? "";
+const author = contentPost?.data.author ?? payloadParsed?.author ?? "";
 const authorProfileImageUrl = payloadParsed?.authorProfileImageUrl ?? null;
-const date = isContent ? post.data.date : (payloadParsed?.date ?? new Date());
+const date = contentPost?.data.date ?? payloadParsed?.date ?? new Date();
 const dateFormatted = date.toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
@@ -55,7 +60,7 @@ const dateFormatted = date.toLocaleDateString("en-US", {
 });
 
 const { Content } = isContent
-    ? await render(post as CollectionEntry<"blog">)
+    ? await render(contentPost as CollectionEntry<"blog">)
     : { Content: null };
 ---
 
@@ -67,7 +72,7 @@ const { Content } = isContent
             isContent ? (
                 <Image
                     src={
-                        (post as CollectionEntry<"blog">).data
+                        (contentPost as CollectionEntry<"blog">).data
                             .image as ImageMetadata
                     }
                     width={1280}
@@ -111,10 +116,10 @@ const { Content } = isContent
                 <div class={ProseClass}>
                     <Content />
                 </div>
-            ) : source === "payload" ? (
+            ) : props.source === "payload" ? (
                 <LexicalContent
                     data={
-                        (post as PayloadPost).content as
+                        (payloadPost as PayloadPost).content as
                             | SerializedEditorState
                             | null
                             | undefined

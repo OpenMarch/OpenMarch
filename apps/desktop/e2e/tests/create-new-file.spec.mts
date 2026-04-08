@@ -1,6 +1,6 @@
 import { test } from "../fixtures.mjs";
 import { expect } from "@playwright/test";
-import { createMarchers } from "e2e/utils/marchers.mjs";
+import { createMarchers } from "../utils/marchers.mjs";
 import fs from "fs-extra";
 import path from "path";
 import { fileURLToPath } from "url";

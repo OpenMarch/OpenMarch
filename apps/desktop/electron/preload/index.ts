@@ -1,10 +1,10 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
-import * as DbServices from "electron/database/database.services";
+import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
-import type { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import { HistoryResponse } from "@/db-functions";
 
 function domReady(
@@ -268,7 +268,8 @@ const APP_API = {
     /** Only needed for the triggers */
     unsafeSqlProxy: (sql: string) =>
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
-            rows: any[] | any;
+            success: boolean;
+            changes: number;
         }>,
 
     // Logging

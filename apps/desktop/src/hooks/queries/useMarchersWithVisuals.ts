@@ -43,6 +43,7 @@ export const _combineMarcherVisualGroups = ({
 };
 
 export const marcherWithVisualsQueryOptions = (queryClient: QueryClient) =>
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryOptions({
         queryKey: marcherWithVisualsKeys.all(),
         queryFn: async () => {

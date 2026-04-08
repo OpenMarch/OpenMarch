@@ -39,6 +39,10 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
     },
+    "devDependencies": {
+        "tsup": "^8.5.0",
+        "typescript": "catalog:"
+    },
     "dependencies": {
         "@astrojs/mdx": "^4.3.0",
         "@astrojs/react": "^4.3.0",

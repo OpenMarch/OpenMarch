@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+catalog:
+  typescript: 5.3.3
 onlyBuiltDependencies:
   - "@sentry/cli"
   - "@tailwindcss/oxide"
@@ -8,8 +10,6 @@ onlyBuiltDependencies:
   - core-js
   - electron
   - esbuild
-  - libsql
-  - "@libsql/client"
   - sharp
 patchedDependencies:
   canvas: patches/canvas.patch

@@ -1,5 +1,5 @@
-import { test } from "e2e/fixtures.mjs";
-import { expect, Page } from "playwright/test";
+import { test } from "../fixtures.mjs";
+import { expect, type Page } from "playwright/test";
 
 const navigateToLaunchPageSettings = async (page: Page) => {
     await page.getByRole("tab", { name: "File" }).click();

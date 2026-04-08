@@ -437,7 +437,7 @@ function MarcherEditor() {
     );
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: spmsForThisPage } = useQuery(
-        shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
+        shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
     );
     const editingDisabled = useMemo(() => {
         return (
