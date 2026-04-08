@@ -15,6 +15,7 @@ export * from "./base/AlertDialog";
 export * from "./base/UnitInput";
 export * from "./base/Note";
 export * from "./base/ToggleGroup";
+export * from "./base/SegmentedTextSwitch";
 export * from "./base/Tabs";
 export * from "./base/TextArea";
 export * from "./base/DragInput";
