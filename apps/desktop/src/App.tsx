@@ -69,6 +69,7 @@ function App() {
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
     if (isCodegen) {
+        // eslint-disable-next-line no-console
         console.log("🎭 React app running in Playwright Codegen mode");
     }
 
@@ -205,7 +206,16 @@ function App() {
                 {process.env.NODE_ENV !== "production" && (
                     <ReactQueryDevtools initialIsOpen={false} />
                 )}
-                <main className="bg-bg-1 text-text outline-accent flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans">
+                <main
+                    className={clsx(
+                        "bg-bg-1 text-text outline-accent relative flex h-screen min-h-0 w-screen min-w-0 flex-col overflow-hidden font-sans",
+                        // Style separate editors
+                        workspaceMode !== "editor" &&
+                            "before:pointer-events-none before:absolute before:inset-0 before:z-0 before:bg-linear-to-b",
+                        workspaceMode === "lightDesigner" &&
+                            "before:to-red/15 before:from-transparent",
+                    )}
+                >
                     {analyticsConsent === null && !isCodegen && (
                         <AnalyticsOptInModal
                             onChoice={(choice) => setAnalyticsConsent(choice)}
