@@ -76,7 +76,7 @@
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "dompurify": "^3.3.0",
-        "drizzle-orm": "^0.43.1",
+        "drizzle-orm": "^0.45.2",
         "electron-store": "^8.2.0",
         "electron-updater": "^6.6.2",
         "fabric": "^5.5.2",
