@@ -9,6 +9,12 @@
                 "WEBSITE_DEPLOY_HOOK_URL"
             ]
         },
+        "@openmarch/cms#build": {
+            "outputs": [".next/**", ".open-next/**"]
+        },
+        "@openmarch/desktop#build": {
+            "outputs": ["dist/**", "dist-electron/**"]
+        },
         "test": {
             "dependsOn": ["build", "^build"],
             "outputs": []

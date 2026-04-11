@@ -1,6 +1,5 @@
 /* eslint-disable no-console */
 import { migrate } from "drizzle-orm/sqlite-proxy/migrator";
-import Database from "libsql";
 import * as schema from "../migrations/schema";
 import path from "path";
 import fs from "fs";
@@ -9,6 +8,7 @@ import { dropAllTriggers } from "../migrations/triggers";
 import { createAllTriggers } from "../migrations/triggers";
 import { sql } from "drizzle-orm";
 import { DB } from "../db";
+import { DatabaseSync } from "node:sqlite";
 
 /**
  * Service for handling Drizzle migrations at runtime
@@ -16,11 +16,39 @@ import { DB } from "../db";
  */
 export class DrizzleMigrationService {
     private db: DB;
-    private rawDb: Database.Database;
+    private rawDb: DatabaseSync;
 
-    constructor(drizzleDb: DB, rawDb: Database.Database) {
+    constructor(drizzleDb: DB, rawDb: DatabaseSync) {
         this.db = drizzleDb;
         this.rawDb = rawDb;
+    }
+
+    private resolveMigrationsFolder(migrationsFolder?: string): string {
+        const requestedFolder =
+            migrationsFolder || path.join(__dirname, "../migrations");
+        const candidates = [requestedFolder];
+
+        const distMainSegment = `${path.sep}dist-electron${path.sep}main`;
+        if (requestedFolder.includes(distMainSegment)) {
+            candidates.push(requestedFolder.replace(distMainSegment, ""));
+        }
+        // Keep string replacements for mixed path formats in CI logs.
+        if (requestedFolder.includes("/dist-electron/main")) {
+            candidates.push(requestedFolder.replace("/dist-electron/main", ""));
+        }
+        if (requestedFolder.includes("\\dist-electron\\main")) {
+            candidates.push(
+                requestedFolder.replace("\\dist-electron\\main", ""),
+            );
+        }
+
+        for (const candidate of candidates) {
+            if (fs.existsSync(candidate)) {
+                return candidate;
+            }
+        }
+
+        return requestedFolder;
     }
 
     // User version 7 is an artifact of the previous migration system
@@ -45,9 +73,9 @@ export class DrizzleMigrationService {
             );
         }
 
-        let folder = migrationsFolder || path.join(__dirname, "../migrations");
-        if (process.env.PLAYWRIGHT_CODEGEN || process.env.PLAYWRIGHT_SESSION) {
-            folder = folder.replace("/dist-electron/main", "");
+        const folder = this.resolveMigrationsFolder(migrationsFolder);
+        if (!fs.existsSync(folder)) {
+            throw new Error(`Migrations folder not found: ${folder}`);
         }
 
         console.debug("migrationsFolder:", folder);
@@ -107,7 +135,13 @@ export class DrizzleMigrationService {
      * @returns true if there are pending migrations, false otherwise
      */
     hasPendingMigrations(migrationsFolder?: string): boolean {
-        const folder = migrationsFolder || "./electron/database/migrations";
+        const folder = this.resolveMigrationsFolder(migrationsFolder);
+        if (!fs.existsSync(folder)) {
+            console.warn(
+                `Migrations folder not found while checking pending migrations: ${folder}`,
+            );
+            return false;
+        }
 
         try {
             // Get applied migrations from the database
@@ -136,7 +170,7 @@ export class DrizzleMigrationService {
     }
 
     /** Run any ts migrations that are not in drizzle */
-    static async initializeDatabase(db: DB, rawDb: Database.Database) {
+    static async initializeDatabase(db: DB, rawDb: DatabaseSync) {
         await db.run(sql`PRAGMA user_version = 7`);
 
         // Easier to do this here than in the migration

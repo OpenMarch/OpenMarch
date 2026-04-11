@@ -140,7 +140,7 @@ const RehearsalMarkInput = ({
         setRehearsalMark(measure?.rehearsalMark ?? "");
     }, [measure?.rehearsalMark]);
 
-    const saveRehearsalMark = () => {
+    const saveRehearsalMark = (shouldClose = true) => {
         if (!measure) return;
 
         const trimmedMark = rehearsalMark.trim();
@@ -160,7 +160,7 @@ const RehearsalMarkInput = ({
             ],
             {
                 onSuccess: () => {
-                    closeParent();
+                    if (shouldClose) closeParent();
                 },
                 onError: (error) => {
                     conToastError(
@@ -191,7 +191,7 @@ const RehearsalMarkInput = ({
                 type="text"
                 value={rehearsalMark}
                 onChange={(e) => setRehearsalMark(e.target.value)}
-                onBlur={saveRehearsalMark}
+                onBlur={() => saveRehearsalMark(false)}
                 onKeyDown={handleKeyDown}
                 onClick={(e) => {
                     e.stopPropagation();
@@ -223,7 +223,7 @@ const TempoInput = ({
     const tolgee = useTolgee();
     const mutation = useMutation(updateBeatsMutationOptions(queryClient));
 
-    const saveTempo = () => {
+    const saveTempo = (shouldClose = true) => {
         const newTempo = parseFloat(tempo);
 
         if (isNaN(newTempo) || newTempo <= 0) {
@@ -252,7 +252,7 @@ const TempoInput = ({
             ],
             {
                 onSuccess: () => {
-                    closeParent();
+                    if (shouldClose) closeParent();
                 },
                 onError: (error) => {
                     conToastError(
@@ -273,7 +273,7 @@ const TempoInput = ({
     };
 
     const handleBlur = () => {
-        saveTempo();
+        saveTempo(false);
     };
 
     // Update tempo when beat changes

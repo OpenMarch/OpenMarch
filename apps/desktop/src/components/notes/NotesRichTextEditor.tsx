@@ -7,6 +7,8 @@ import "./NotesRichTextEditor.css";
 
 type NotesRichTextEditorProps = {
     value: string;
+    /** When false, editor is read-only. Default true. */
+    editable?: boolean;
     /** Optional; called when the editor commits content (on blur). */
     onChange?: (next: string) => void;
     /** Receives the latest HTML when the editor loses focus. */
@@ -25,6 +27,7 @@ type NotesRichTextEditorProps = {
  */
 export function NotesRichTextEditor({
     value,
+    editable = true,
     onChange,
     onBlur,
     onEditorFocus,
@@ -79,6 +82,10 @@ export function NotesRichTextEditor({
             onBlurRef.current?.(html);
         },
     });
+
+    useEffect(() => {
+        if (editor) editor.setEditable(editable);
+    }, [editor, editable]);
 
     // Keep editor content in sync when the external value changes (e.g. page switched)
     useEffect(() => {
