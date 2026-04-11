@@ -15,6 +15,8 @@ import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas"
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
+import ViewOnlyListeners from "./listeners/ViewOnlyListeners";
+import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
@@ -86,7 +88,10 @@ export default function Canvas({
         alignmentEventMarchers,
         setAlignmentEventMarchers,
         setAlignmentEventNewMarcherPages,
+        resetAlignmentEvent,
     } = useAlignmentEventStore()!;
+    const workspaceMode = useWorkspaceViewStore.use.mode();
+    const isCanvasEditingEnabled = workspaceMode === "editor";
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -97,8 +102,8 @@ export default function Canvas({
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
-    useSelectionListeners({ canvas });
-    useMovementListeners({ canvas });
+    useSelectionListeners({ canvas, isCanvasEditingEnabled });
+    useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
@@ -184,34 +189,45 @@ export default function Canvas({
         onCanvasReady,
     ]);
 
+    useEffect(() => {
+        if (workspaceMode === "lightDesigner") {
+            resetAlignmentEvent();
+        }
+    }, [workspaceMode, resetAlignmentEvent]);
+
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
-            // Initiate listeners
-            switch (alignmentEvent) {
-                case "line":
-                    canvas.setListeners(new LineListeners({ canvas: canvas }));
-                    break;
-                default:
-                    canvas.setListeners(
-                        new DefaultListeners({ canvas: canvas }),
-                    );
-                    break;
+            if (workspaceMode === "lightDesigner") {
+                canvas.setListeners(new ViewOnlyListeners({ canvas }));
+                canvas.eventMarchers = [];
+            } else {
+                switch (alignmentEvent) {
+                    case "line":
+                        canvas.setListeners(
+                            new LineListeners({ canvas: canvas }),
+                        );
+                        break;
+                    default:
+                        canvas.setListeners(
+                            new DefaultListeners({ canvas: canvas }),
+                        );
+                        break;
+                }
+                canvas.eventMarchers = canvas.getCanvasMarchersByIds(
+                    alignmentEventMarchers.map((marcher) => marcher.id),
+                );
             }
-            canvas.eventMarchers = canvas.getCanvasMarchersByIds(
-                alignmentEventMarchers.map((marcher) => marcher.id),
-            );
 
-            // Center and fit canvas when it's first initialized
             centerAndFitCanvas();
 
-            // Cleanup
             return () => {
                 canvas.eventMarchers = [];
             };
         }
     }, [
         canvas,
+        workspaceMode,
         alignmentEvent,
         alignmentEventMarchers,
         centerAndFitCanvas,

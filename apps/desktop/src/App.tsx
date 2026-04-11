@@ -1,7 +1,12 @@
 import Canvas from "@/components/canvas/Canvas";
 import Toolbar from "@/components/toolbar/Toolbar";
-import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
+import {
+    EditorInspector,
+    EditorTimeline,
+    LightDesignerInspector,
+    LightDesignerTimeline,
+} from "@/components/workspace";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { IsPlayingProvider } from "@/context/IsPlayingContext";
@@ -9,7 +14,7 @@ import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
 import RegisteredActionsHandler from "@/utilities/RegisteredActionsHandler";
-import TimelineContainer from "@/components/timeline/TimelineContainer";
+import { useWorkspaceViewStore } from "./stores/WorkspaceViewStore";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import TitleBar from "@/components/titlebar/TitleBar";
@@ -59,6 +64,7 @@ function App() {
     } = useUiSettingsStore();
     const pluginsLoadedRef = useRef(false);
     const { isFullscreen } = useFullscreenStore();
+    const workspaceMode = useWorkspaceViewStore.use.mode();
 
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
@@ -250,12 +256,14 @@ function App() {
                                                             timelineFocussedClass,
                                                         )}
                                                     >
-                                                        {!isFullscreen && (
-                                                            <>
-                                                                <Sidebar />
-                                                                <SidebarModal />
-                                                            </>
-                                                        )}
+                                                        {!isFullscreen &&
+                                                            workspaceMode ===
+                                                                "editor" && (
+                                                                <>
+                                                                    <Sidebar />
+                                                                    <SidebarModal />
+                                                                </>
+                                                            )}
                                                         <Canvas
                                                             onCanvasReady={
                                                                 setAppCanvas
@@ -265,7 +273,12 @@ function App() {
                                                             canvas={appCanvas}
                                                         />
                                                     </div>
-                                                    <TimelineContainer />
+                                                    {workspaceMode ===
+                                                    "editor" ? (
+                                                        <EditorTimeline />
+                                                    ) : (
+                                                        <LightDesignerTimeline />
+                                                    )}
                                                 </div>
                                                 {!isFullscreen && (
                                                     <div
@@ -273,7 +286,12 @@ function App() {
                                                             timelineFocussedClass
                                                         }
                                                     >
-                                                        <Inspector />
+                                                        {workspaceMode ===
+                                                        "editor" ? (
+                                                            <EditorInspector />
+                                                        ) : (
+                                                            <LightDesignerInspector />
+                                                        )}
                                                     </div>
                                                 )}
                                             </div>

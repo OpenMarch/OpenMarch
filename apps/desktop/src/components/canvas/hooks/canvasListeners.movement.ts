@@ -14,8 +14,10 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 // eslint-disable-next-line max-lines-per-function
 export const useMovementListeners = ({
     canvas,
+    isCanvasEditingEnabled = true,
 }: {
     canvas: OpenMarchCanvas | null;
+    isCanvasEditingEnabled?: boolean;
 }) => {
     const { uiSettings } = useUiSettingsStore()!;
     const { selectedPage } = useSelectedPage()!;
@@ -99,7 +101,7 @@ export const useMovementListeners = ({
     ]);
 
     useEffect(() => {
-        if (!canvas) return;
+        if (!canvas || !isCanvasEditingEnabled) return;
         canvas.on("object:rotating", handleRotate);
 
         canvas.on("object:moving", updateMovingPaths);
@@ -117,5 +119,5 @@ export const useMovementListeners = ({
                 cancelAnimationFrame(frameRef.current);
             }
         };
-    }, [canvas, handleRotate, updateMovingPaths]);
+    }, [canvas, handleRotate, updateMovingPaths, isCanvasEditingEnabled]);
 };

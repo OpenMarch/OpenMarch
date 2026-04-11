@@ -20,7 +20,17 @@ import PageTimeline from "./PageTimeline";
 import { T } from "@tolgee/react";
 import clsx from "clsx";
 
-export default function TimelineContainer() {
+export type TimelineContainerProps = {
+    /** When false, page/beat timing edits and editable audio are disabled (e.g. Light Designer). */
+    editableTiming?: boolean;
+    /** Smaller padding and footprint for compact layouts. */
+    compact?: boolean;
+};
+
+export default function TimelineContainer({
+    editableTiming = true,
+    compact = false,
+}: TimelineContainerProps) {
     const { isPlaying } = useIsPlaying()!;
     const { measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
@@ -72,8 +82,13 @@ export default function TimelineContainer() {
         // do nothing, just re-render
     }, [measures]);
 
+    const timelinePadding = compact ? "p-4" : "p-8";
+    const timelineGap = compact ? "gap-4" : "gap-8";
+    const showEditableAudio =
+        editableTiming && uiSettings.focussedComponent === "timeline";
+
     return (
-        <div className="flex gap-8">
+        <div className={clsx("flex", timelineGap)}>
             {uiSettings.focussedComponent !== "timeline" && (
                 <TimelineControls />
             )}
@@ -81,20 +96,33 @@ export default function TimelineContainer() {
             <div
                 ref={timelineRef}
                 id="timeline"
-                className="rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto overflow-y-hidden border p-8 transition-all duration-200"
+                className={clsx(
+                    "rounded-6 border-stroke bg-fg-1 relative flex h-full w-full min-w-0 overflow-x-auto overflow-y-hidden border transition-all duration-200",
+                    timelinePadding,
+                )}
             >
-                <div className="flex h-full min-h-0 w-fit flex-col justify-center gap-8">
+                <div
+                    className={clsx(
+                        "flex h-full min-h-0 w-fit flex-col justify-center",
+                        timelineGap,
+                    )}
+                >
                     <div className="flex h-fit items-center">
                         <div>
-                            <p className="text-sub w-[4rem]">
+                            <p
+                                className={clsx(
+                                    "text-sub w-[4rem]",
+                                    compact && "text-xs",
+                                )}
+                            >
                                 <T keyName="timeline.pages" />
                             </p>
                         </div>
-                        <PageTimeline />
+                        <PageTimeline editableTiming={editableTiming} />
                     </div>
 
                     <div className={"flex items-center"}>
-                        {!isFullscreen && (
+                        {!isFullscreen && editableTiming && (
                             <div className="flex w-[4rem] gap-6">
                                 <p className="text-sub">
                                     <T keyName="timeline.audio" />
@@ -120,8 +148,20 @@ export default function TimelineContainer() {
                                 )}
                             </div>
                         )}
+                        {!isFullscreen && !editableTiming && (
+                            <div className="flex w-[4rem] shrink-0">
+                                <p
+                                    className={clsx(
+                                        "text-sub",
+                                        compact && "text-xs",
+                                    )}
+                                >
+                                    <T keyName="timeline.audio" />
+                                </p>
+                            </div>
+                        )}
 
-                        {uiSettings.focussedComponent === "timeline" ? (
+                        {showEditableAudio ? (
                             <EditableAudioPlayer />
                         ) : (
                             <div
@@ -134,7 +174,7 @@ export default function TimelineContainer() {
                         )}
                     </div>
                 </div>
-                <TimelineZoomControls />
+                {editableTiming && <TimelineZoomControls />}
             </div>
         </div>
     );

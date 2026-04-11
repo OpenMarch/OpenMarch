@@ -12,8 +12,10 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 // eslint-disable-next-line max-lines-per-function
 export const useSelectionListeners = ({
     canvas,
+    isCanvasEditingEnabled = true,
 }: {
     canvas: OpenMarchCanvas | null;
+    isCanvasEditingEnabled?: boolean;
 }) => {
     const { selectedShapePageIds } = useSelectionStore()!;
     const { selectedPage } = useSelectedPage()!;
@@ -236,7 +238,12 @@ export const useSelectionListeners = ({
 
     // Set the canvas' active object to the global selected object when they change outside of user-canvas-interaction
     useEffect(() => {
-        if (!canvas || activeObjectsAreGloballySelected()) return;
+        if (
+            !canvas ||
+            !isCanvasEditingEnabled ||
+            activeObjectsAreGloballySelected()
+        )
+            return;
         const selectableObjects: Map<string, Selectable.ISelectable> = new Map(
             canvas
                 .getAllSelectableObjects()
@@ -266,12 +273,19 @@ export const useSelectionListeners = ({
         setSelectedMarchers,
         getGlobalSelectedObjectClassIds,
         activeObjectsAreGloballySelected,
+        isCanvasEditingEnabled,
     ]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
     useEffect(() => {
-        if (canvas && selectedShapePageIds) {
-            // Disable control of all of the non-selected shape pages and enable control of selected ones
+        if (!canvas) return;
+        if (!isCanvasEditingEnabled) {
+            for (const marcherShape of canvas.marcherShapes) {
+                marcherShape.disableControl();
+            }
+            return;
+        }
+        if (selectedShapePageIds) {
             const selectedIdSet = new Set(selectedShapePageIds);
             for (const marcherShape of canvas.marcherShapes) {
                 if (selectedIdSet.has(marcherShape.shapePage.id)) {
@@ -281,10 +295,10 @@ export const useSelectionListeners = ({
                 }
             }
         }
-    }, [canvas, selectedShapePageIds]);
+    }, [canvas, selectedShapePageIds, isCanvasEditingEnabled]);
 
     useEffect(() => {
-        if (!canvas) return;
+        if (!canvas || !isCanvasEditingEnabled) return;
         canvas.on("selection:created", handleSelect);
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
@@ -294,5 +308,5 @@ export const useSelectionListeners = ({
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
         };
-    }, [canvas, handleDeselect, handleSelect]);
+    }, [canvas, handleDeselect, handleSelect, isCanvasEditingEnabled]);
 };
