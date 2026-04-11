@@ -531,7 +531,7 @@ importers:
         specifier: ^0.0.3
         version: 0.0.3(astro@5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3))
       astro:
-        specifier: ^5.11.0
+        specifier: ^5.18.1
         version: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       astro-embed:
         specifier: ^0.9.0
@@ -724,7 +724,7 @@ importers:
         specifier: ^2.6.0
         version: 2.9.6(@babel/runtime@7.29.2)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
       astro:
-        specifier: ^5.11.0
+        specifier: ^5.18.1
         version: 5.18.1(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.6.1)(lightningcss@1.30.2)(rollup@4.60.1)(sass@1.77.4)(terser@5.16.9)(tsx@4.21.0)(typescript@5.3.3)(yaml@2.8.3)
       class-variance-authority:
         specifier: ^0.7.1
