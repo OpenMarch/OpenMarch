@@ -1,7 +1,7 @@
 import { it as baseTest, describe, TestAPI, vi } from "vitest";
 import { drizzle, drizzle as sqlJsDrizzle } from "drizzle-orm/sql-js";
 import { drizzle as sqliteProxyDrizzle } from "drizzle-orm/sqlite-proxy";
-import Database, { RunResult } from "libsql";
+import { DatabaseSync, type StatementResultingChanges } from "node:sqlite";
 import initSqlJs from "sql.js";
 import fs from "fs-extra";
 import path from "path";
@@ -24,6 +24,7 @@ import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import { SelectedAudioFileProvider } from "@/context/SelectedAudioFileContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
+import { createRendererSqlProxyQueue } from "@/global/database/sqlProxyQueue";
 
 // Needs to be here for an import error
 import { schema as electronSchema } from "@/../electron/database/db";
@@ -43,7 +44,7 @@ export const seedObj = Array.from({ length: SEED_AMOUNT }, (_, i) => ({
 
 type DbConnection = BaseSQLiteDatabase<
     "async",
-    RunResult | void | SqliteRemoteResult<unknown>,
+    StatementResultingChanges | void | SqliteRemoteResult<unknown>,
     typeof schema
 >;
 const getTempDotsPath = (task: Readonly<{ id: string }>) => {
@@ -266,13 +267,21 @@ function setUpGlobalMocks<T>(
         method: "all" | "run" | "get" | "values",
     ) => Promise<{ rows: any[] }>,
 ) {
+    const queuedSqlProxy = createRendererSqlProxyQueue(
+        async (
+            sql: string,
+            params: any[],
+            method: "all" | "run" | "get" | "values",
+        ) => dbFunction(db, sql, params, method),
+    );
+
     // Check if window.electron already exists, if so update it, otherwise create it
     if (window.electron) {
         window.electron.sqlProxy = (
             sql: string,
             params: any[],
             method: "all" | "run" | "get" | "values",
-        ) => dbFunction(db, sql, params, method);
+        ) => queuedSqlProxy(sql, params, method);
     } else {
         Object.defineProperty(window, "electron", {
             value: {
@@ -280,7 +289,7 @@ function setUpGlobalMocks<T>(
                     sql: string,
                     params: any[],
                     method: "all" | "run" | "get" | "values",
-                ) => dbFunction(db, sql, params, method),
+                ) => queuedSqlProxy(sql, params, method),
                 log: (
                     level: "log" | "info" | "warn" | "error",
                     message: string,
@@ -301,7 +310,7 @@ function setUpGlobalMocks<T>(
                 method: "all" | "run" | "get" | "values",
             ) => {
                 try {
-                    const result = await dbFunction(db, sql, params, method);
+                    const result = await queuedSqlProxy(sql, params, method);
                     return result;
                 } catch (error: any) {
                     console.error("Error from SQLite proxy:", error);
@@ -349,16 +358,16 @@ const betterSqliteTestWithProxy: TestAPI<DbTestAPI> = baseFixture.extend<{
         const tempDatabaseFile = getTempDotsPath(task);
 
         try {
-            new Database(":memory:");
+            new DatabaseSync(":memory:");
         } catch (error) {
             console.error(
-                "Error setting up database better-sqlite3 database... \nEnsure LibSQL is compiled for this platform",
+                "Error setting up database better-sqlite3 database... \nEnsure better-sqlite3 is compiled for this platform",
                 error,
             );
             throw error;
         }
 
-        const db = new Database(tempDatabaseFile);
+        const db = new DatabaseSync(tempDatabaseFile);
 
         setUpGlobalMocks(db, handleSqlProxyWithDbBetterSqlite);
         await use(

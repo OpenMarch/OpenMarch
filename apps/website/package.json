@@ -46,7 +46,7 @@
         "starlight-image-zoom": "^0.10.1",
         "tailwind-merge": "^2.6.0",
         "tailwindcss": "^4.1.11",
-        "typescript": "^5.8.3",
+        "typescript": "catalog:",
         "zod": "^3.25.76"
     },
     "devDependencies": {

@@ -7,7 +7,7 @@ import { Button } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
 import { WarningCircleIcon } from "@phosphor-icons/react";
 
-import type { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 
 // eslint-disable-next-line max-lines-per-function
 export default function FilesTabContent() {

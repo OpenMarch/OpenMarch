@@ -15,9 +15,9 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "react-jsx",
-        "baseUrl": "./",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["./src/*"],
+            "@om-electron/*": ["./electron/*"]
         },
         "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]

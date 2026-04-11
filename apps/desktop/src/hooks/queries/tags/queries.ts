@@ -114,6 +114,7 @@ export const resolvedTagAppearancesByPageIdQueryOptions = ({
     pageId: number | null | undefined;
     queryClient: QueryClient;
 }) => {
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     return queryOptions<TagAppearance[]>({
         queryKey: tagKeys.byPageId(pageId!),
         staleTime: DEFAULT_STALE_TIME,
@@ -171,6 +172,7 @@ export const tagAppearancesForPageQueryOptions = (
     pageId: number | null | undefined,
     queryClient: QueryClient,
 ) => {
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     return queryOptions<TagAppearanceForPageByTagId>({
         queryKey: tagKeys.byPageId(pageId!),
         queryFn: async () => {
