@@ -174,11 +174,13 @@ export default class MarcherLine extends fabric.Line {
     setToNearestStep = ({
         pointOne,
         pointTwo,
-        denominator = 1,
+        denominatorX = 1,
+        denominatorY = 1,
     }: {
         pointOne?: { x: number; y: number };
         pointTwo?: { x: number; y: number };
-        denominator?: number;
+        denominatorX?: number;
+        denominatorY?: number;
     }) => {
         if (!this.canvas) {
             console.error(
@@ -194,11 +196,12 @@ export default class MarcherLine extends fabric.Line {
             x: number;
             y: number;
         }): { x: number; y: number } => {
-            if (denominator > 0 && this.canvas) {
+            if (denominatorX > 0 && denominatorY > 0 && this.canvas) {
                 const roundedPoint = this.canvas.getRoundedCoordinate({
                     x: point.x,
                     y: point.y,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                 });
                 return { x: roundedPoint.x, y: roundedPoint.y };
             } else {

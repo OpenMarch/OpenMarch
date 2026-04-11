@@ -14,7 +14,7 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToWhole": "Snap to nearest whole"
+            "snapToCustomFraction": "Apply snap"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
