@@ -241,7 +241,6 @@ export type NewLightingEffectArgs = Omit<
 
 export interface ModifiedLightingEffectArgs {
     id: number;
-    scene_id?: number;
     type?: LightingEffectType;
     args?: string;
     name?: string | null;

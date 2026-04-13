@@ -6,13 +6,10 @@ import {
     getLightingSceneById,
     getLightingSceneInPageId,
     getLightingScenes,
-    getPagesInOrder,
-    TagAppearanceIdsByPageId,
 } from "@/db-functions";
-import { db, schema } from "@/global/database/db";
+import { db } from "@/global/database/db";
 import { queryOptions, useQueries, useQuery } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
-import { eq, gte, asc } from "drizzle-orm";
 
 const KEY_BASE = "lighting";
 export const lightingKeys = {
@@ -23,8 +20,8 @@ export const lightingKeys = {
         [KEY_BASE, "scene_data", { sceneId }] as const,
     lightingEffectById: (effectId: number) =>
         [KEY_BASE, "effect_data", { effectId }] as const,
-    marcherLightingEffectsByLightingEffectId: (lightingEffectId: number) =>
-        [KEY_BASE, "marcher_effects", { lightingEffectId }] as const,
+    marcherLightingEffectsByLightingEffectId: (effectId: number) =>
+        [KEY_BASE, "marcher_effects", { effectId }] as const,
 };
 
 export const allLightingScenesQueryOptions = () => {
