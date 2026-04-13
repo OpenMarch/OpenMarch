@@ -77,7 +77,7 @@ export function getRoundCoordinates({
         let newX = marcherPage.x as number;
         let newY = marcherPage.y as number;
 
-        if (xAxis) {
+        if (xAxis && denominatorX > 0) {
             const xStepsFromOrigin =
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.xPixels -
@@ -89,7 +89,7 @@ export function getRoundCoordinates({
                 roundedXSteps / stepsPerPixel;
             newX = Math.round(newX * EPSILON) / EPSILON;
         }
-        if (yAxis) {
+        if (yAxis && denominatorY > 0) {
             const yStepsFromOrigin =
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.yPixels -
@@ -384,7 +384,8 @@ export function evenlyDistributeVertically({
  * @param distance - The distance to move the marcherPages in steps. Default is 1 step.
  * @param snap - Whether to snap the coordinates to the grid. Default is false.
  * @param fieldProperties - The field properties to use for snapping.
- * @param snapDenominator - The denominator for snapping. Default is 1 (grid).
+ * @param snapDenominatorX - The denominator for snapping on the X axis. Default is 1 (grid).
+ * @param snapDenominatorY - The denominator for snapping on the Y axis. Default is 1 (grid).
  * @returns The modified marcherPages with updated coordinates.
  */
 export function moveMarchersXY({
@@ -402,7 +403,7 @@ export function moveMarchersXY({
     snap?: boolean;
     fieldProperties: FieldProperties;
     snapDenominatorX?: number;
-    snapDenominatorY: number;
+    snapDenominatorY?: number;
 }): ModifiedMarcherPageArgs[] {
     checkMarcherPagesAreSamePage(marcherPages);
 

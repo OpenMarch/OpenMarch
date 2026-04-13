@@ -1002,18 +1002,24 @@ function RegisteredActionsHandler() {
 
                 /****************** Alignment ******************/
                 case RegisteredActionsEnum.snapToNearestCustomFraction: {
+                    const safeDenominatorX =
+                        uiSettings.coordinateRounding?.nearestXSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestXSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestXSteps;
+                    const safeDenominatorY =
+                        uiSettings.coordinateRounding?.nearestYSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestYSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestYSteps;
                     const roundedCoords = CoordinateActions.getRoundCoordinates(
                         {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties: fieldProperties,
-                            denominatorX:
-                                1 /
-                                (uiSettings.coordinateRounding?.nearestXSteps ??
-                                    1),
-                            denominatorY:
-                                1 /
-                                (uiSettings.coordinateRounding?.nearestYSteps ??
-                                    1),
+                            denominatorX: safeDenominatorX,
+                            denominatorY: safeDenominatorY,
                             xAxis: !uiSettings.lockX,
                             yAxis: !uiSettings.lockY,
                         },
