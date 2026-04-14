@@ -817,6 +817,9 @@
             "label": "Contrôles de lecture"
         },
         "label": "Chronologie",
+        "lightDesigner": {
+            "scenes": "Scènes"
+        },
         "masterVolume": "Volume principal",
         "music": {
             "add": "Ajouter Musique"

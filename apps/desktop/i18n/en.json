@@ -864,6 +864,9 @@
             "label": "Playback Controls"
         },
         "label": "Timeline",
+        "lightDesigner": {
+            "scenes": "Scenes"
+        },
         "masterVolume": "Master Volume",
         "music": {
             "add": "Add Music"

@@ -1,4 +1,5 @@
 import AudioPlayer from "@/components/timeline/audio/AudioPlayer";
+import SceneTimeline from "@/components/timeline/SceneTimeline";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import PageTimeline from "@/components/timeline/PageTimeline";
 import { T } from "@tolgee/react";
@@ -19,6 +20,18 @@ export default function LightDesignerTimeline() {
                 >
                     <section
                         className="flex h-fit items-center"
+                        aria-label="scenes"
+                    >
+                        <div>
+                            <p className={clsx("text-sub w-[4rem]")}>
+                                <T keyName="timeline.lightDesigner.scenes" />
+                            </p>
+                        </div>
+                        <SceneTimeline />
+                    </section>
+
+                    <section
+                        className="flex h-fit items-center"
                         aria-label="pages"
                     >
                         <div>
@@ -35,13 +48,9 @@ export default function LightDesignerTimeline() {
                         })}
                         aria-label="audio"
                     >
-                        {!isFullscreen && (
-                            <div className="flex w-[4rem] gap-6">
-                                <p className="text-sub">
-                                    <T keyName="timeline.audio" />
-                                </p>
-                            </div>
-                        )}
+                        <p className="text-sub w-[4rem]">
+                            <T keyName="timeline.audio" />
+                        </p>
                         <AudioPlayer compact editable={false} />
                     </section>
                 </div>

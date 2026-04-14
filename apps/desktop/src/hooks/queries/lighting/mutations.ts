@@ -28,6 +28,9 @@ export const createLightingScenesMutationOptions = () => {
             createLightingScenes({ db, newScenes }),
         onSuccess: async (_data, variables, _result, context) => {
             const qc = context.client;
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.allLightingScenes(),
+            });
             const pageIds = new Set(
                 variables.map((scene) => scene.start_page_id),
             );
@@ -53,6 +56,9 @@ export const updateLightingScenesMutationOptions = () => {
         },
         onSuccess: async (_data, variables, _result, context) => {
             const qc = context.client;
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.allLightingScenes(),
+            });
             const sceneId = variables.id;
             void qc.invalidateQueries({
                 queryKey: lightingKeys.lightingSceneDataById(sceneId),
@@ -70,6 +76,9 @@ export const deleteLightingScenesMutationOptions = () => {
             deleteLightingScenes({ db, sceneIds }),
         onSuccess: async (data, _variables, _result, context) => {
             const qc = context.client;
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.allLightingScenes(),
+            });
             const pageIds = new Set(data.map((scene) => scene.start_page_id));
             for (const pageId of pageIds)
                 void qc.invalidateQueries({

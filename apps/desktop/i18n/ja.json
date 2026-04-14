@@ -817,6 +817,9 @@
             "label": "再生 コントロール"
         },
         "label": "タイムライン",
+        "lightDesigner": {
+            "scenes": "シーン"
+        },
         "masterVolume": "マスタ 音量",
         "music": {
             "add": "音楽を追加"
