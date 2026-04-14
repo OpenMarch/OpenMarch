@@ -32,10 +32,13 @@ export const allLightingScenesQueryOptions = () => {
     });
 };
 
-export const useLightingEffectsInSelectedPageQuery = (pageId: number) => {
-    const { data: lightingSceneId } = useQuery(
-        lightingSceneIdInPageIdQueryOptions(pageId),
-    );
+export const useLightingEffectsInSelectedPageQuery = (
+    pageId: number | undefined,
+) => {
+    const { data: lightingSceneId } = useQuery({
+        ...lightingSceneIdInPageIdQueryOptions(pageId!),
+        enabled: pageId != null,
+    });
     const { data: lightingSceneData } = useQuery({
         ...lightingSceneDataByIdQueryOptions(lightingSceneId!),
         enabled: lightingSceneId != null,

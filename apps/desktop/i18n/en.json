@@ -522,6 +522,9 @@
             "subset": "Subset",
             "title": "Page {pageNumber}"
         },
+        "light": {
+            "title": "Scene - {sceneName}"
+        },
         "shape": {
             "addSegmentButton": "Add",
             "addSegmentTooltip": "Add segment to shape",

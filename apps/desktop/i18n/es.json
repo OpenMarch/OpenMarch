@@ -489,6 +489,9 @@
             "subset": "Subconjunto",
             "title": "Página {pageNumber}"
         },
+        "light": {
+            "title": "Scene - {sceneName}"
+        },
         "shape": {
             "addSegmentButton": "Añadir",
             "addSegmentTooltip": "Agregar segmento a la forma",
