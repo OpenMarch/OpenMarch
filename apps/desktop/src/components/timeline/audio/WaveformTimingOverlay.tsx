@@ -15,6 +15,7 @@ interface WaveformTimingOverlayProps {
     beats: Beat[];
     measures: Measure[];
     beatIdsOnPages: Set<number>;
+    editable: boolean;
     duration: number;
     pixelsPerSecond: number;
     height: number;
@@ -38,6 +39,7 @@ export default function WaveformTimingOverlay({
     beats,
     measures,
     beatIdsOnPages,
+    editable,
     duration,
     pixelsPerSecond,
     height,
@@ -170,23 +172,37 @@ export default function WaveformTimingOverlay({
 
                     return (
                         <React.Fragment key={`measure-${measure.id}`}>
-                            <BeatOrMeasureContextMenu
-                                beat={beat}
-                                beatIdsOnPages={beatIdsOnPages}
-                                measure={measure}
-                            >
+                            {editable ? (
+                                <BeatOrMeasureContextMenu
+                                    beat={beat}
+                                    beatIdsOnPages={beatIdsOnPages}
+                                    measure={measure}
+                                >
+                                    <div
+                                        className={clsx(
+                                            "hover:bg-accent pointer-events-auto absolute top-0 bottom-0 -translate-x-1/2 cursor-pointer rounded-full",
+                                            isRehearsalMark
+                                                ? "w-2 bg-[var(--color-accent)] hover:w-8"
+                                                : "w-1 bg-[rgb(180,180,180)] hover:w-4 dark:bg-[rgb(90,90,90)]",
+                                        )}
+                                        style={{
+                                            left: x,
+                                        }}
+                                    />
+                                </BeatOrMeasureContextMenu>
+                            ) : (
                                 <div
                                     className={clsx(
-                                        "hover:bg-accent pointer-events-auto absolute top-0 bottom-0 -translate-x-1/2 cursor-pointer rounded-full",
+                                        "absolute top-0 bottom-0 -translate-x-1/2 rounded-full",
                                         isRehearsalMark
-                                            ? "w-2 bg-[var(--color-accent)] hover:w-8"
-                                            : "w-1 bg-[rgb(180,180,180)] hover:w-4 dark:bg-[rgb(90,90,90)]",
+                                            ? "w-2 bg-[var(--color-accent)]"
+                                            : "w-1 bg-[rgb(180,180,180)] dark:bg-[rgb(90,90,90)]",
                                     )}
                                     style={{
                                         left: x,
                                     }}
                                 />
-                            </BeatOrMeasureContextMenu>
+                            )}
                             <div
                                 className="absolute top-0 font-mono whitespace-nowrap"
                                 style={{ left: x }}
@@ -209,7 +225,7 @@ export default function WaveformTimingOverlay({
                 {visibleBeats.map((beat) => {
                     if (beat.id === FIRST_BEAT_ID) return undefined;
                     const x = beat.timestamp * pxPerSecond;
-                    return (
+                    return editable ? (
                         <BeatOrMeasureContextMenu
                             beat={beat}
                             beatIdsOnPages={beatIdsOnPages}
@@ -226,6 +242,16 @@ export default function WaveformTimingOverlay({
                                 }}
                             />
                         </BeatOrMeasureContextMenu>
+                    ) : (
+                        <div
+                            key={`beat-${beat.id}`}
+                            className="absolute w-1 -translate-x-1/2 rounded-full bg-[rgb(205,205,205)] dark:bg-[rgb(60,60,60)]"
+                            style={{
+                                left: x,
+                                top: 0,
+                                height: beatMarkerHeight,
+                            }}
+                        />
                     );
                 })}
             </div>

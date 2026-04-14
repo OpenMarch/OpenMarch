@@ -25,11 +25,13 @@ const BeatOrMeasureContextMenu = ({
     beat,
     measure,
     beatIdsOnPages,
+    disabled = false,
     children,
 }: {
     beat: Beat;
     measure: Measure | null;
     beatIdsOnPages: Set<number>;
+    disabled?: boolean;
     children: React.ReactNode;
 }) => {
     const [open, setOpen] = useState(false);
@@ -44,6 +46,7 @@ const BeatOrMeasureContextMenu = ({
     }, []);
 
     const handleClick = (e: React.MouseEvent) => {
+        if (disabled) return;
         // Only handle left click (button 0)
         if (e.button === 0 || e.type === "click") {
             // Close any currently open menu
@@ -56,6 +59,12 @@ const BeatOrMeasureContextMenu = ({
             setOpen(true);
         }
     };
+
+    useEffect(() => {
+        if (disabled && open) {
+            handleClose();
+        }
+    }, [disabled, open, handleClose]);
 
     useEffect(() => {
         if (!open) return;
@@ -93,6 +102,10 @@ const BeatOrMeasureContextMenu = ({
         <Popover.Root
             open={open}
             onOpenChange={(isOpen) => {
+                if (disabled) {
+                    handleClose();
+                    return;
+                }
                 if (!isOpen) {
                     handleClose();
                 }

@@ -17,12 +17,14 @@ import { useQuery } from "@tanstack/react-query";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import { CircleNotchIcon } from "@phosphor-icons/react";
+import clsx from "clsx";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
 export const darkProgressColor = "rgb(150, 126, 255)";
 const PLAYBACK_DELAY = 0.1; // Delay in seconds to start playback
 const WAVEFORM_HEIGHT = 60;
+const COMPACT_WAVEFORM_HEIGHT = 20;
 
 // Helper function to adjust volume based on percentage
 function volumeAdjustment(volume: number): number {
@@ -65,8 +67,13 @@ export const getLivePlaybackPosition = (): number => {
  * The audio player handles playback via Web Audio API.
  * Metronome controls are managed by MetronomeModal.
  */
-// eslint-disable-next-line max-lines-per-function
-export default function AudioPlayer() {
+export default function AudioPlayer({
+    editable = true,
+    compact = false,
+}: {
+    editable?: boolean;
+    compact?: boolean;
+}) {
     const { t } = useTolgee();
     const { theme } = useTheme();
     const { uiSettings } = useUiSettingsStore();
@@ -536,6 +543,7 @@ export default function AudioPlayer() {
         renderedDuration > 0
             ? renderedDuration * uiSettings.timelinePixelsPerSecond
             : 0;
+    const waveformHeight = compact ? COMPACT_WAVEFORM_HEIGHT : WAVEFORM_HEIGHT;
 
     if (!contextsReady) {
         console.warn(
@@ -547,10 +555,13 @@ export default function AudioPlayer() {
     return (
         <div className="w-fit pl-[40px]">
             <div
-                className="relative pt-12"
+                className={clsx(
+                    "relative",
+                    compact ? "translate-y-2 pt-2" : "pt-12",
+                )}
                 style={{
                     width: waveformWidth || undefined,
-                    height: WAVEFORM_HEIGHT,
+                    height: waveformHeight,
                 }}
             >
                 {isAudioProcessing && (
@@ -567,7 +578,7 @@ export default function AudioPlayer() {
                     className="-z-10 h-full"
                     style={{
                         width: audioWaveformWidth || undefined,
-                        height: WAVEFORM_HEIGHT,
+                        height: waveformHeight,
                     }}
                 ></div>
                 {waveformWidth > audioWaveformWidth && (
@@ -585,9 +596,10 @@ export default function AudioPlayer() {
                     beats={beats}
                     measures={measures}
                     beatIdsOnPages={beatIdsOnPages}
+                    editable={editable}
                     duration={renderedDuration}
                     pixelsPerSecond={uiSettings.timelinePixelsPerSecond}
-                    height={WAVEFORM_HEIGHT}
+                    height={waveformHeight}
                     width={waveformWidth}
                 />
             </div>

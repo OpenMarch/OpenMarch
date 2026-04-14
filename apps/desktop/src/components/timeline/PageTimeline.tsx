@@ -26,9 +26,9 @@ import {
 
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline({
-    editableTiming = true,
+    editable = true,
 }: {
-    editableTiming?: boolean;
+    editable?: boolean;
 }) {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
@@ -71,7 +71,7 @@ export default function PageTimeline({
 
     // Function to handle the start of resizing
     const handlePageResizeStart = (e: MouseEvent, page: Page) => {
-        if (!editableTiming || isPlaying) return;
+        if (isPlaying) return;
 
         e.preventDefault();
         e.stopPropagation(); // Prevent triggering page selection
@@ -257,6 +257,8 @@ export default function PageTimeline({
         },
         [deletePages, setSelectedPage],
     );
+
+    const isEditable = !isFullscreen && editable;
     return (
         <div className="flex h-fit gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
@@ -305,9 +307,7 @@ export default function PageTimeline({
                             })}
                         >
                             <ContextMenu.Trigger
-                                disabled={
-                                    isPlaying || isFullscreen || !editableTiming
-                                }
+                                disabled={isPlaying || !isEditable}
                                 className="group"
                             >
                                 <div
@@ -348,7 +348,7 @@ export default function PageTimeline({
                                                 <div
                                                     className={clsx(
                                                         "absolute top-0 left-0 z-0 h-full w-full",
-                                                        !isFullscreen
+                                                        isEditable
                                                             ? "bg-accent/25"
                                                             : "bg-accent/25",
                                                     )}
@@ -359,7 +359,7 @@ export default function PageTimeline({
                                             )}
                                     </div>
                                     {/* ------ page resize dragging ------ */}
-                                    {editableTiming && !isFullscreen && (
+                                    {isEditable && (
                                         <ToolTip.Root
                                             key={`tooltip-${page.id}-${isResizing && resizingPage.current?.id === page.id ? "resizing" : "normal"}`}
                                             open={
@@ -462,7 +462,7 @@ export default function PageTimeline({
                     );
                 })}
             </ul>
-            {editableTiming && !isFullscreen && (
+            {isEditable && (
                 <button
                     className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
                     onClick={() => createDefaultTempoGroupAndPage()}
