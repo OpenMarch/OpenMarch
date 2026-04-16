@@ -35,14 +35,16 @@ export const allLightingScenesQueryOptions = () => {
 export const useLightingEffectsInSelectedPageQuery = (
     pageId: number | undefined,
 ) => {
-    const { data: lightingSceneId } = useQuery({
+    const lightingSceneIdQuery = useQuery({
         ...lightingSceneIdInPageIdQueryOptions(pageId!),
         enabled: pageId != null,
     });
-    const { data: lightingSceneData } = useQuery({
+    const lightingSceneId = lightingSceneIdQuery.data;
+    const lightingSceneDataQuery = useQuery({
         ...lightingSceneDataByIdQueryOptions(lightingSceneId!),
         enabled: lightingSceneId != null,
     });
+    const lightingSceneData = lightingSceneDataQuery.data;
 
     const lightingEffectIds = lightingSceneData?.lightingEffectIds ?? [];
 
@@ -52,9 +54,14 @@ export const useLightingEffectsInSelectedPageQuery = (
         ),
     });
 
+    const isLoadingLightingScene =
+        (pageId != null && lightingSceneIdQuery.isPending) ||
+        (lightingSceneId != null && lightingSceneDataQuery.isPending);
+
     return {
         lightingSceneData,
         lightingEffectsData,
+        isLoadingLightingScene,
     };
 };
 

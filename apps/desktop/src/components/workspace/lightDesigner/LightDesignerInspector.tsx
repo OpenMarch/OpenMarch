@@ -1,3 +1,4 @@
+import EffectList from "@/components/inspector/lighting/EffectList";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useLightingEffectsInSelectedPageQuery } from "@/hooks/queries";
@@ -18,7 +19,7 @@ export default function LightDesignerInspector() {
                     defaultValue="Lighting"
                 />
             </p>
-            <p className="text-sub text-text/50 mt-8">
+            <div className="mt-8 min-h-0 min-w-0 flex-1">
                 <InspectorCollapsible
                     defaultOpen
                     translatableTitle={{
@@ -32,9 +33,9 @@ export default function LightDesignerInspector() {
                     }}
                     className="mt-12"
                 >
-                    <p>Lighting</p>
+                    <EffectList />
                 </InspectorCollapsible>
-            </p>
+            </div>
         </div>
     );
 }
