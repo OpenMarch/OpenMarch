@@ -1,4 +1,4 @@
-import { eq, gte, asc, inArray } from "drizzle-orm";
+import { eq, inArray, lte, desc } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -82,8 +82,8 @@ export const getLightingSceneInPageId = async ({
             eq(schema.lighting_scenes.start_page_id, schema.pages.id),
         )
         .innerJoin(schema.beats, eq(schema.pages.start_beat, schema.beats.id))
-        .where(gte(schema.beats.position, pageObj.beatPosition))
-        .orderBy(asc(schema.beats.position))
+        .where(lte(schema.beats.position, pageObj.beatPosition))
+        .orderBy(desc(schema.beats.position))
         .limit(1)
         .get();
 
