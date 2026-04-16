@@ -5,6 +5,7 @@ import {
     transactionWithHistory,
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
+import { LightingEffectType } from "@openmarch/core";
 
 // ============================================================================
 // LIGHTING SCENES
@@ -230,9 +231,6 @@ export async function deleteLightingScenesInTransaction({
 /** Row from `lighting_effects`. */
 export type DatabaseLightingEffect =
     typeof schema.lighting_effects.$inferSelect;
-
-/** Effect type; must match CHECK constraint on `lighting_effects.type`. */
-export type LightingEffectType = DatabaseLightingEffect["type"];
 
 export type NewLightingEffectArgs = Omit<
     typeof schema.lighting_effects.$inferInsert,

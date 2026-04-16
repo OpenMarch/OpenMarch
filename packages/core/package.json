@@ -43,6 +43,7 @@
     },
     "dependencies": {
         "svg-path-commander": "^2.1.11",
-        "uuid": "^11.1.0"
+        "uuid": "^11.1.0",
+        "zod": "^4.1.12"
     }
 }

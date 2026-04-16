@@ -7,6 +7,7 @@ import {
     unique,
 } from "drizzle-orm/sqlite-core";
 import { marchers, pages } from "./schema.core";
+import { LightingEffectType } from "@openmarch/core";
 
 export const lighting_scenes = sqliteTable("lighting_scenes", {
     id: integer().primaryKey(),
@@ -23,7 +24,7 @@ export const lighting_effects = sqliteTable(
         scene_id: integer()
             .notNull()
             .references(() => lighting_scenes.id, { onDelete: "cascade" }),
-        type: text().notNull().$type<"solid" | "strobe" | "fade">(),
+        type: text().notNull().$type<LightingEffectType>(),
         args: text()
             .notNull()
             .default(sql`'{}'`),
