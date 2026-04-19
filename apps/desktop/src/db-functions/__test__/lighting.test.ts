@@ -11,6 +11,7 @@ import {
     getLightingEffectById,
     getLightingSceneById,
     getLightingSceneInPageId,
+    getLightingScenePositionByLightingSceneIdMap,
     getLightingScenesByStartPageId,
     getLightingEffectsBySceneId,
     getMarcherLightingEffectById,
@@ -370,6 +371,92 @@ describeDbTests("lighting", (it) => {
             await expect(
                 getLightingSceneInPageId({ db, pageId: 9_999_999 }),
             ).rejects.toThrow(/Page 9999999 not found/);
+        });
+    });
+
+    describe("getLightingScenePositionByLightingSceneIdMap", () => {
+        it("returns an empty object when there are no lighting scenes", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            void marchersAndPages;
+            await expect(
+                getLightingScenePositionByLightingSceneIdMap({ db }),
+            ).resolves.toEqual({});
+        });
+
+        it("maps each scene id to the beat position of its start page", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            void marchersAndPages;
+            const pages = await pagesInTimelineOrder(db);
+            expect(pages.length).toBeGreaterThanOrEqual(2);
+
+            const first = pages[0]!;
+            const second = pages[1]!;
+
+            const [sceneA, sceneB] = await createLightingScenes({
+                db,
+                newScenes: [
+                    {
+                        start_page_id: first.id,
+                        name: "A",
+                    },
+                    {
+                        start_page_id: second.id,
+                        name: "B",
+                    },
+                ],
+            });
+
+            const map = await getLightingScenePositionByLightingSceneIdMap({
+                db,
+            });
+
+            expect(map).toEqual({
+                [sceneA.id]: first.beatPosition,
+                [sceneB.id]: second.beatPosition,
+            });
+        });
+
+        it("maps correctly when scene row ids are not in timeline order (insert later page first)", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            void marchersAndPages;
+            const pages = await pagesInTimelineOrder(db);
+            expect(pages.length).toBeGreaterThanOrEqual(2);
+
+            const earlierPage = pages[0]!;
+            const laterPage = pages[1]!;
+            expect(earlierPage.beatPosition).toBeLessThan(
+                laterPage.beatPosition,
+            );
+
+            const [sceneOnLaterPage, sceneOnEarlierPage] =
+                await createLightingScenes({
+                    db,
+                    newScenes: [
+                        {
+                            start_page_id: laterPage.id,
+                            name: "Inserted first, later in show",
+                        },
+                        {
+                            start_page_id: earlierPage.id,
+                            name: "Inserted second, earlier in show",
+                        },
+                    ],
+                });
+
+            expect(sceneOnLaterPage.id).toBeLessThan(sceneOnEarlierPage.id);
+
+            const map = await getLightingScenePositionByLightingSceneIdMap({
+                db,
+            });
+
+            expect(map[sceneOnLaterPage.id]).toBe(laterPage.beatPosition);
+            expect(map[sceneOnEarlierPage.id]).toBe(earlierPage.beatPosition);
         });
     });
 });

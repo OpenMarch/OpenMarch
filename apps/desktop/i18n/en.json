@@ -942,6 +942,33 @@
         "description": "No files found. Create one, and make sure to check out the guides. Customize your theme and navigation in Settings.",
         "title": "Welcome to OpenMarch"
     },
+    "workspace": {
+        "lightDesigner": {
+            "inspectorTitle": "Lighting",
+            "effects": {
+                "noPage": "Select a page to edit lighting effects.",
+                "loading": "Loading…",
+                "noScene": "No lighting scene for this page.",
+                "sectionTitle": "Effects",
+                "addEffect": "Add effect",
+                "empty": "No effects in this scene yet.",
+                "rowLoading": "Loading effect…",
+                "effectItem": {
+                    "defaultName": "Effect {id}",
+                    "name": "Name",
+                    "effectType": "Effect type",
+                    "typeSolid": "Solid",
+                    "typeStrobe": "Strobe",
+                    "typeFade": "Fade",
+                    "durationSeconds": "Duration (s)",
+                    "color": "Color",
+                    "fadeDurationSeconds": "Fade duration (s)",
+                    "fadeTargetColor": "Fade target color",
+                    "strobePlaceholder": "Strobe editor is not implemented yet."
+                }
+            }
+        }
+    },
     "workspaceSettings": {
         "audioOffsetSeconds": "Audio Offset",
         "cancel": "Cancel",

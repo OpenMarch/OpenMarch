@@ -4,7 +4,10 @@ import { useTimingObjects } from "@/hooks";
 import { useCallback, useMemo } from "react";
 import clsx from "clsx";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { allLightingScenesQueryOptions } from "@/hooks/queries/lighting/queries";
+import {
+    allLightingScenesQueryOptions,
+    lightingScenePositionByLightingSceneIdMapQueryOptions,
+} from "@/hooks/queries/lighting/queries";
 import { createLightingScenesMutationOptions } from "@/hooks/queries/lighting/mutations";
 import {
     buildSceneTimelineSegments,
@@ -18,6 +21,9 @@ export default function SceneTimeline() {
     const { isPlaying } = useIsPlaying()!;
     const { uiSettings } = useUiSettingsStore();
     const { pages } = useTimingObjects()!;
+    const { data: positionMap = {} } = useQuery(
+        lightingScenePositionByLightingSceneIdMapQueryOptions(),
+    );
     const pps = uiSettings.timelinePixelsPerSecond;
 
     const { data: scenes = [] } = useQuery(allLightingScenesQueryOptions());
@@ -69,7 +75,7 @@ export default function SceneTimeline() {
                         }}
                     >
                         <span className="pointer-events-none">
-                            {seg.sceneId}
+                            {positionMap[seg.sceneId] ?? seg.sceneId}
                         </span>
                         {!isPlaying &&
                             seg.internalSplitPageIndices.map((pageIndex) => {

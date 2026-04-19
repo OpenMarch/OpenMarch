@@ -895,6 +895,33 @@
         "description": "Nenhum arquivo encontrado. Crie um e não deixe de conferir os guias. Personalize seu tema e navegação em Configurações.",
         "title": "Bem-vindo ao OpenMarch"
     },
+    "workspace": {
+        "lightDesigner": {
+            "inspectorTitle": "Iluminação",
+            "effects": {
+                "noPage": "Selecione uma página para editar efeitos de iluminação.",
+                "loading": "Carregando…",
+                "noScene": "Não há cena de iluminação nesta página.",
+                "sectionTitle": "Efeitos",
+                "addEffect": "Adicionar efeito",
+                "empty": "Ainda não há efeitos nesta cena.",
+                "rowLoading": "Carregando efeito…",
+                "effectItem": {
+                    "defaultName": "Efeito {id}",
+                    "name": "Nome",
+                    "effectType": "Tipo de efeito",
+                    "typeSolid": "Sólido",
+                    "typeStrobe": "Estrobo",
+                    "typeFade": "Fade",
+                    "durationSeconds": "Duração (s)",
+                    "color": "Cor",
+                    "fadeDurationSeconds": "Duração do fade (s)",
+                    "fadeTargetColor": "Cor de destino do fade",
+                    "strobePlaceholder": "O editor de estrobo ainda não foi implementado."
+                }
+            }
+        }
+    },
     "workspaceSettings": {
         "audioOffsetSeconds": "Deslocamento de Áudio",
         "cancel": "Cancelar",

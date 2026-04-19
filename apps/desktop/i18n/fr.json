@@ -895,6 +895,33 @@
         "description": "Aucun fichier trouvé. Créez-en un, et assurez-vous de consulter les guides. Personnalisez votre thème et votre navigation dans Paramètres.",
         "title": "Bienvenue à OpenMarch"
     },
+    "workspace": {
+        "lightDesigner": {
+            "inspectorTitle": "Éclairage",
+            "effects": {
+                "noPage": "Sélectionnez une page pour modifier les effets d'éclairage.",
+                "loading": "Chargement…",
+                "noScene": "Aucune scène d'éclairage pour cette page.",
+                "sectionTitle": "Effets",
+                "addEffect": "Ajouter un effet",
+                "empty": "Aucun effet dans cette scène pour le moment.",
+                "rowLoading": "Chargement de l'effet…",
+                "effectItem": {
+                    "defaultName": "Effet {id}",
+                    "name": "Nom",
+                    "effectType": "Type d'effet",
+                    "typeSolid": "Uni",
+                    "typeStrobe": "Stroboscope",
+                    "typeFade": "Fondu",
+                    "durationSeconds": "Durée (s)",
+                    "color": "Couleur",
+                    "fadeDurationSeconds": "Durée du fondu (s)",
+                    "fadeTargetColor": "Couleur cible du fondu",
+                    "strobePlaceholder": "L'éditeur stroboscope n'est pas encore disponible."
+                }
+            }
+        }
+    },
     "workspaceSettings": {
         "audioOffsetSeconds": "Décalage Audio",
         "cancel": "Annuler",

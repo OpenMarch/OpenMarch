@@ -140,6 +140,7 @@ export default function EffectList() {
                             <li key={effectId}>
                                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col gap-8 border p-12">
                                     <EffectItem
+                                        effectId={effect.id}
                                         name={effect.name ?? ""}
                                         type={effect.type}
                                         args={effect.args}

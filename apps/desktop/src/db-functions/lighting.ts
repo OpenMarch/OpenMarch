@@ -92,6 +92,32 @@ export const getLightingSceneInPageId = async ({
 };
 
 /**
+ * Creates a map of lighting scene ids to their start page positions.
+ * @param db - The database connection.
+ * @returns A map of lighting scene ids to their start page positions.
+ */
+export async function getLightingScenePositionByLightingSceneIdMap({
+    db,
+}: {
+    db: DbConnection | DbTransaction;
+}): Promise<Record<number, number>> {
+    const scenes = await db
+        .select()
+        .from(schema.lighting_scenes)
+        .innerJoin(
+            schema.pages,
+            eq(schema.lighting_scenes.start_page_id, schema.pages.id),
+        )
+        .innerJoin(schema.beats, eq(schema.pages.start_beat, schema.beats.id))
+        .all();
+    const result: Record<number, number> = {};
+    for (const scene of scenes) {
+        result[scene.lighting_scenes.id] = scene.beats.position;
+    }
+    return result;
+}
+
+/**
  * Gets lighting scenes that start on the given page.
  */
 export async function getLightingScenesByStartPageId({

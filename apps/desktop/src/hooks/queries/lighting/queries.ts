@@ -4,6 +4,7 @@ import {
     getLightingEffectWithMarchersById,
     getLightingSceneById,
     getLightingSceneInPageId,
+    getLightingScenePositionByLightingSceneIdMap,
     getLightingScenes,
     LightingEffectWithMarchers,
 } from "@/db-functions";
@@ -102,5 +103,26 @@ const lightingEffectByIdQueryOptions = (lightingEffectId: number) =>
                 db,
                 id: lightingEffectId,
             }),
+        staleTime: DEFAULT_STALE_TIME,
+    });
+/** Returns a map of lighting scene IDs to their 1-based position in the timeline. */
+export const lightingScenePositionByLightingSceneIdMapQueryOptions = () =>
+    queryOptions<Record<number, number>>({
+        queryKey: [KEY_BASE, "position_map"],
+        queryFn: async () => {
+            const map = await getLightingScenePositionByLightingSceneIdMap({
+                db,
+            });
+            const sortedEntries = Object.entries(map).sort(
+                ([_keyA, positionA], [_keyB, positionB]) =>
+                    positionA - positionB,
+            );
+
+            const sortedMap = Object.fromEntries(
+                sortedEntries.map(([key, _value], index) => [key, index + 1]),
+            );
+
+            return sortedMap;
+        },
         staleTime: DEFAULT_STALE_TIME,
     });

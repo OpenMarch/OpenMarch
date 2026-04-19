@@ -895,6 +895,33 @@
         "description": "No se encontraron archivos. Cree uno, y asegúrese de consultar las guías. Personalice su tema y navegación en Configuración.",
         "title": "Bienvenido a OpenMarch"
     },
+    "workspace": {
+        "lightDesigner": {
+            "inspectorTitle": "Iluminación",
+            "effects": {
+                "noPage": "Selecciona una página para editar efectos de iluminación.",
+                "loading": "Cargando…",
+                "noScene": "No hay escena de iluminación para esta página.",
+                "sectionTitle": "Efectos",
+                "addEffect": "Añadir efecto",
+                "empty": "Aún no hay efectos en esta escena.",
+                "rowLoading": "Cargando efecto…",
+                "effectItem": {
+                    "defaultName": "Efecto {id}",
+                    "name": "Nombre",
+                    "effectType": "Tipo de efecto",
+                    "typeSolid": "Sólido",
+                    "typeStrobe": "Estroboscópico",
+                    "typeFade": "Fundido",
+                    "durationSeconds": "Duración (s)",
+                    "color": "Color",
+                    "fadeDurationSeconds": "Duración del fundido (s)",
+                    "fadeTargetColor": "Color de destino del fundido",
+                    "strobePlaceholder": "El editor de estroboscópico aún no está implementado."
+                }
+            }
+        }
+    },
     "workspaceSettings": {
         "audioOffsetSeconds": "Desplazamiento de Audio",
         "cancel": "Cancelar",
