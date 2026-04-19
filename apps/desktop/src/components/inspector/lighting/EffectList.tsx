@@ -1,4 +1,5 @@
 import EffectItem from "@/components/inspector/lighting/EffectItem";
+import { useLightSceneManager } from "@/components/workspace/lightDesigner/useLightSceneManager";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
     createLightingEffectsMutationOptions,
@@ -18,8 +19,9 @@ export default function EffectList() {
     const { selectedPage } = useSelectedPage()!;
     const { lightingSceneData, lightingEffectsData, isLoadingLightingScene } =
         useLightingEffectsInSelectedPageQuery(selectedPage?.id);
+    useLightSceneManager();
 
-    const { mutate: createEffects } = useMutation(
+    const { mutate: createEffectsMutation } = useMutation(
         createLightingEffectsMutationOptions(),
     );
     const { mutate: updateEffect } = useMutation(
@@ -32,7 +34,7 @@ export default function EffectList() {
     const handleAddEffect = () => {
         if (sceneId == null) return;
         createNewLightingEffect((name, type, argsJson) => {
-            createEffects([
+            createEffectsMutation([
                 {
                     scene_id: sceneId,
                     name,

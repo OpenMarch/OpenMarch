@@ -232,6 +232,10 @@ export async function deleteLightingScenesInTransaction({
 export type DatabaseLightingEffect =
     typeof schema.lighting_effects.$inferSelect;
 
+export type LightingEffectWithMarchers = DatabaseLightingEffect & {
+    marcherIds: Set<number>;
+};
+
 export type NewLightingEffectArgs = Omit<
     typeof schema.lighting_effects.$inferInsert,
     "id"
@@ -284,6 +288,28 @@ export async function getLightingEffectById({
     });
 }
 
+export async function getLightingEffectWithMarchersById({
+    db,
+    id,
+}: {
+    db: DbConnection | DbTransaction;
+    id: number;
+}): Promise<LightingEffectWithMarchers | undefined> {
+    const effect = await db.query.lighting_effects.findFirst({
+        where: eq(schema.lighting_effects.id, id),
+    });
+    if (!effect) return undefined;
+    const marcherLightingEffects =
+        await getMarcherLightingEffectsByLightingEffectId({
+            db,
+            lightingEffectId: id,
+        });
+    const marcherIds = new Set(
+        marcherLightingEffects.map((mle) => mle.marcher_id),
+    );
+    return { ...effect, marcherIds: marcherIds };
+}
+
 /**
  * Gets lighting effects for a scene.
  */
@@ -311,7 +337,7 @@ export async function createLightingEffects({
 }): Promise<DatabaseLightingEffect[]> {
     if (newEffects.length === 0) return [];
 
-    return await transactionWithHistory(
+    const result = await transactionWithHistory(
         db,
         "createLightingEffects",
         async (tx) => {
@@ -321,6 +347,22 @@ export async function createLightingEffects({
             });
         },
     );
+
+    // Temporarily make every marcher have the effect
+    // TODO: Remove this once we have a way to select marchers for an effect
+    const allMarchers = await db.query.marchers.findMany();
+    const newMarcherLightingEffects: NewMarcherLightingEffectArgs[] = [];
+    for (const marcher of allMarchers) {
+        newMarcherLightingEffects.push({
+            marcher_id: marcher.id,
+            lighting_effect_id: result[0].id,
+        });
+    }
+    await createMarcherLightingEffects({
+        db,
+        newLinks: newMarcherLightingEffects,
+    });
+    return result;
 }
 
 export async function _createLightingEffectsInTransaction({

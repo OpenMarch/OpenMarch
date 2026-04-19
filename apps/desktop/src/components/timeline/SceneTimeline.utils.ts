@@ -1,4 +1,4 @@
-import type { DatabaseLightingScene } from "@/db-functions";
+import { FIRST_PAGE_ID, type DatabaseLightingScene } from "@/db-functions";
 import type Page from "@/global/classes/Page";
 
 /** Must match the first-page column width in PageTimeline. */
@@ -32,6 +32,8 @@ export type SceneTimelineSegment = {
     sceneId: number;
     leftPx: number;
     widthPx: number;
+    /** Page indices where a page boundary falls inside this segment (click to split). Omits the first-column boundary (after `FIRST_PAGE_ID`). */
+    internalSplitPageIndices: number[];
 };
 
 /**
@@ -83,7 +85,18 @@ export function buildSceneTimelineSegments(
         const widthPx = rightPx - leftPx;
         if (widthPx <= 0) continue;
 
-        segments.push({ sceneId: sorted[i]!.id, leftPx, widthPx });
+        const internalSplitPageIndices: number[] = [];
+        for (let j = startIdx + 1; j < nextStartIdx; j++) {
+            if (pages[j - 1]!.id === FIRST_PAGE_ID) continue;
+            internalSplitPageIndices.push(j);
+        }
+
+        segments.push({
+            sceneId: sorted[i]!.id,
+            leftPx,
+            widthPx,
+            internalSplitPageIndices,
+        });
     }
     return segments;
 }

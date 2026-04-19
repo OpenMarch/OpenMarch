@@ -1,17 +1,17 @@
 import {
-    DatabaseLightingEffect,
     DatabaseLightingScene,
-    getLightingEffectById,
     getLightingEffectIdsBySceneId,
+    getLightingEffectWithMarchersById,
     getLightingSceneById,
     getLightingSceneInPageId,
     getLightingScenes,
+    LightingEffectWithMarchers,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
 import { queryOptions, useQueries, useQuery } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 
-const KEY_BASE = "lighting";
+const KEY_BASE = "lighting_scenes";
 export const lightingKeys = {
     allLightingScenes: () => [KEY_BASE] as const,
     lightingSceneIdInPageId: (pageId: number) =>
@@ -95,9 +95,12 @@ const lightingSceneDataByIdQueryOptions = (lightingSceneId: number) =>
     });
 
 const lightingEffectByIdQueryOptions = (lightingEffectId: number) =>
-    queryOptions<DatabaseLightingEffect | undefined>({
+    queryOptions<LightingEffectWithMarchers | undefined>({
         queryKey: lightingKeys.lightingEffectById(lightingEffectId),
         queryFn: async () =>
-            await getLightingEffectById({ db, id: lightingEffectId }),
+            await getLightingEffectWithMarchersById({
+                db,
+                id: lightingEffectId,
+            }),
         staleTime: DEFAULT_STALE_TIME,
     });

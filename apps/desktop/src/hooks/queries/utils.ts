@@ -7,11 +7,23 @@ export const tableNamesToQueryKeys = (tableNames: Set<string>): string[][] => {
     return queryKeys;
 };
 
+const historyKeyToInvalidationKeys = (historyKey: string[]): string[] => {
+    switch (historyKey[0]) {
+        case "lighting_scenes":
+        case "lighting_effects":
+        case "marcher_lighting_effects":
+            return ["lighting_scenes"];
+        default:
+            return historyKey;
+    }
+};
+
 export const safelyInvalidateQueries = async (
     queryKeys: string[][],
     queryClient: QueryClient,
 ) => {
-    const validQueryKeys = queryKeys.filter((queryKey) =>
+    const invalidationKeys = queryKeys.map(historyKeyToInvalidationKeys);
+    const validQueryKeys = invalidationKeys.filter((queryKey) =>
         validateQueryKey(queryKey, queryClient.getQueryCache()),
     );
     for (const queryKey of validQueryKeys) {

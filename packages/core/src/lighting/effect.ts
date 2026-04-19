@@ -11,8 +11,8 @@ export const createNewLightingEffect = (
         argsJson: string,
     ) => unknown,
 ) => {
-    const newEffectArgsJson = getDefaultArgsJson("solid");
-    createFunction(null, "solid", newEffectArgsJson);
+    const newEffectArgsJson = getDefaultArgsJson("fade");
+    createFunction(null, "fade", newEffectArgsJson);
 };
 
 /**
