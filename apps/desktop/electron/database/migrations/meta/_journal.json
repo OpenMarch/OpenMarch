@@ -127,6 +127,13 @@
             "when": 1775926691502,
             "tag": "0017_spotty_kitty_pryde",
             "breakpoints": true
+        },
+        {
+            "idx": 18,
+            "version": "6",
+            "when": 1776576205215,
+            "tag": "0018_lighting_effect_duration_sequence",
+            "breakpoints": true
         }
     ]
 }

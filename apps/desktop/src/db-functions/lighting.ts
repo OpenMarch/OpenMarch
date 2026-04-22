@@ -1,4 +1,4 @@
-import { eq, inArray, lte, desc } from "drizzle-orm";
+import { asc, desc, eq, inArray, lte, max } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -264,14 +264,18 @@ export type LightingEffectWithMarchers = DatabaseLightingEffect & {
 
 export type NewLightingEffectArgs = Omit<
     typeof schema.lighting_effects.$inferInsert,
-    "id"
->;
+    "id" | "sequence_index"
+> & {
+    sequence_index?: number;
+};
 
 export interface ModifiedLightingEffectArgs {
     id: number;
     type?: LightingEffectType;
     args?: string;
     name?: string | null;
+    duration_seconds?: number;
+    sequence_index?: number;
 }
 
 export async function getLightingEffectIdsBySceneId({
@@ -284,7 +288,8 @@ export async function getLightingEffectIdsBySceneId({
     const rows = await db
         .select({ id: schema.lighting_effects.id })
         .from(schema.lighting_effects)
-        .where(eq(schema.lighting_effects.scene_id, sceneId));
+        .where(eq(schema.lighting_effects.scene_id, sceneId))
+        .orderBy(asc(schema.lighting_effects.sequence_index));
     return rows.map((row) => row.id);
 }
 
@@ -346,9 +351,100 @@ export async function getLightingEffectsBySceneId({
     db: DbConnection | DbTransaction;
     sceneId: number;
 }): Promise<DatabaseLightingEffect[]> {
-    return await db.query.lighting_effects.findMany({
-        where: eq(schema.lighting_effects.scene_id, sceneId),
-    });
+    return await db
+        .select()
+        .from(schema.lighting_effects)
+        .where(eq(schema.lighting_effects.scene_id, sceneId))
+        .orderBy(asc(schema.lighting_effects.sequence_index));
+}
+
+async function getMaxSequenceIndexForScene(
+    tx: DbTransaction,
+    sceneId: number,
+): Promise<number> {
+    const row = await tx
+        .select({
+            val: max(schema.lighting_effects.sequence_index),
+        })
+        .from(schema.lighting_effects)
+        .where(eq(schema.lighting_effects.scene_id, sceneId))
+        .get();
+    return row?.val ?? -1;
+}
+
+/** Reassigns `sequence_index` to 0..n-1 in list order (two-phase bump for unique constraint). */
+export async function reorderLightingEffectsInScene({
+    db,
+    sceneId,
+    effectIdsInOrder,
+}: {
+    db: DbConnection;
+    sceneId: number;
+    effectIdsInOrder: number[];
+}): Promise<DatabaseLightingEffect[]> {
+    if (effectIdsInOrder.length === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "reorderLightingEffectsInScene",
+        async (tx) => {
+            return await reorderLightingEffectsInSceneInTransaction({
+                tx,
+                sceneId,
+                effectIdsInOrder,
+            });
+        },
+    );
+}
+
+export async function reorderLightingEffectsInSceneInTransaction({
+    tx,
+    sceneId,
+    effectIdsInOrder,
+}: {
+    tx: DbTransaction;
+    sceneId: number;
+    effectIdsInOrder: number[];
+}): Promise<DatabaseLightingEffect[]> {
+    if (effectIdsInOrder.length === 0) return [];
+
+    const BUMP = 1_000_000;
+    const seen = new Set<number>();
+
+    for (const id of effectIdsInOrder) {
+        if (seen.has(id)) {
+            throw new Error(
+                `Duplicate lighting effect id ${id} in reorder list`,
+            );
+        }
+        seen.add(id);
+        const row = await tx.query.lighting_effects.findFirst({
+            where: eq(schema.lighting_effects.id, id),
+        });
+        if (!row || row.scene_id !== sceneId) {
+            throw new Error(`Lighting effect ${id} is not in scene ${sceneId}`);
+        }
+    }
+
+    for (let i = 0; i < effectIdsInOrder.length; i++) {
+        await tx
+            .update(schema.lighting_effects)
+            .set({ sequence_index: BUMP + i })
+            .where(eq(schema.lighting_effects.id, effectIdsInOrder[i]!));
+    }
+
+    const updated: DatabaseLightingEffect[] = [];
+    for (let i = 0; i < effectIdsInOrder.length; i++) {
+        const result = await tx
+            .update(schema.lighting_effects)
+            .set({ sequence_index: i })
+            .where(eq(schema.lighting_effects.id, effectIdsInOrder[i]!))
+            .returning()
+            .get();
+        updated.push(result);
+    }
+
+    return updated;
 }
 
 /**
@@ -398,9 +494,40 @@ export async function _createLightingEffectsInTransaction({
     newEffects: NewLightingEffectArgs[];
     tx: DbTransaction;
 }): Promise<DatabaseLightingEffect[]> {
+    const nextSlotByScene = new Map<number, number>();
+
+    const rowsToInsert: (typeof schema.lighting_effects.$inferInsert)[] = [];
+
+    for (const raw of newEffects) {
+        const { sequence_index: explicitSeq, ...rest } = raw;
+        const sceneId = rest.scene_id;
+
+        if (!nextSlotByScene.has(sceneId)) {
+            const dbMax = await getMaxSequenceIndexForScene(tx, sceneId);
+            nextSlotByScene.set(sceneId, dbMax + 1);
+        }
+
+        let sequence_index: number;
+        if (explicitSeq !== undefined) {
+            sequence_index = explicitSeq;
+            const nextAfter = explicitSeq + 1;
+            const cur = nextSlotByScene.get(sceneId)!;
+            nextSlotByScene.set(sceneId, Math.max(cur, nextAfter));
+        } else {
+            sequence_index = nextSlotByScene.get(sceneId)!;
+            nextSlotByScene.set(sceneId, sequence_index + 1);
+        }
+
+        rowsToInsert.push({
+            ...rest,
+            sequence_index,
+            duration_seconds: raw.duration_seconds ?? 1,
+        });
+    }
+
     return await tx
         .insert(schema.lighting_effects)
-        .values(newEffects)
+        .values(rowsToInsert)
         .returning();
 }
 

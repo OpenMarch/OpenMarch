@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
     check,
     integer,
+    real,
     sqliteTable,
     text,
     unique,
@@ -29,11 +30,25 @@ export const lighting_effects = sqliteTable(
             .notNull()
             .default(sql`'{}'`),
         name: text(),
+        duration_seconds: real().notNull().default(1),
+        sequence_index: integer().notNull(),
     },
     (table) => [
         check(
             "lighting_effect_type_check",
             sql`${table.type} IN ('solid', 'strobe', 'fade')`,
+        ),
+        check(
+            "lighting_effect_duration_seconds_check",
+            sql`${table.duration_seconds} >= 0`,
+        ),
+        check(
+            "lighting_effect_sequence_index_check",
+            sql`${table.sequence_index} >= 0`,
+        ),
+        unique("lighting_effects_scene_id_sequence_index_unique").on(
+            table.scene_id,
+            table.sequence_index,
         ),
     ],
 );

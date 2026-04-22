@@ -9,6 +9,7 @@ import {
     deleteLightingScenes,
     deleteMarcherLightingEffects,
     getLightingEffectById,
+    getLightingEffectIdsBySceneId,
     getLightingSceneById,
     getLightingSceneInPageId,
     getLightingScenePositionByLightingSceneIdMap,
@@ -17,6 +18,7 @@ import {
     getMarcherLightingEffectById,
     getMarcherLightingEffectsByLightingEffectId,
     getMarcherLightingEffectsByMarcherId,
+    reorderLightingEffectsInScene,
     updateLightingEffects,
     updateLightingScenes,
     updateMarcherLightingEffects,
@@ -89,6 +91,8 @@ describeDbTests("lighting", (it) => {
                 type: "solid",
                 args: "{}",
                 name: "Red",
+                duration_seconds: 1,
+                sequence_index: 0,
             });
 
             const byScene = await getLightingEffectsBySceneId({
@@ -248,6 +252,86 @@ describeDbTests("lighting", (it) => {
                 ).toBeUndefined();
             },
         );
+
+        it("assigns sequential indices and returns ordered effect ids", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "Seq" }],
+            });
+            const [first, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        name: "A",
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        name: "B",
+                    },
+                ],
+            });
+            expect(first.sequence_index).toBe(0);
+            expect(second.sequence_index).toBe(1);
+            await expect(
+                getLightingEffectIdsBySceneId({
+                    db,
+                    sceneId: scene.id,
+                }),
+            ).resolves.toEqual([first.id, second.id]);
+            await expect(
+                getLightingEffectsBySceneId({ db, sceneId: scene.id }),
+            ).resolves.toEqual([
+                expect.objectContaining({ id: first.id, sequence_index: 0 }),
+                expect.objectContaining({ id: second.id, sequence_index: 1 }),
+            ]);
+        });
+
+        it("reorders effects in a scene", async ({ db, marchersAndPages }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "R" }],
+            });
+            const [a, b] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        name: "a",
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        name: "b",
+                    },
+                ],
+            });
+            await reorderLightingEffectsInScene({
+                db,
+                sceneId: scene.id,
+                effectIdsInOrder: [b.id, a.id],
+            });
+            await expect(
+                getLightingEffectIdsBySceneId({ db, sceneId: scene.id }),
+            ).resolves.toEqual([b.id, a.id]);
+            const rows = await getLightingEffectsBySceneId({
+                db,
+                sceneId: scene.id,
+            });
+            expect(rows.map((r) => r.sequence_index)).toEqual([0, 1]);
+        });
     });
 
     describe("getLightingSceneInPageId", () => {

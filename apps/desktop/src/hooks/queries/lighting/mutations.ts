@@ -10,6 +10,7 @@ import {
     NewLightingEffectArgs,
     NewLightingSceneArgs,
     NewMarcherLightingEffectArgs,
+    reorderLightingEffectsInScene,
     updateLightingEffects,
     updateLightingScenes,
 } from "@/db-functions";
@@ -131,6 +132,32 @@ export const updateLightingEffectsMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error updating lighting effect", e, variables);
+        },
+    });
+};
+
+export const reorderLightingEffectsInSceneMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            sceneId,
+            effectIdsInOrder,
+        }: {
+            sceneId: number;
+            effectIdsInOrder: number[];
+        }) =>
+            reorderLightingEffectsInScene({
+                db,
+                sceneId,
+                effectIdsInOrder,
+            }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.lightingSceneDataById(variables.sceneId),
+            });
+        },
+        onError: (e, variables) => {
+            conToastError("Error reordering lighting effects", e, variables);
         },
     });
 };
