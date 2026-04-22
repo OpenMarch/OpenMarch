@@ -25,6 +25,7 @@ interface ColorPickerProps {
     onBlur?: (color: RgbaColor) => void;
     className?: string;
     doNotUseForm?: boolean;
+    disableAlpha?: boolean;
 }
 
 function getContrastingColor(color: RgbaColor): string {
@@ -54,6 +55,7 @@ export default function ColorPicker({
     onBlur,
     className,
     doNotUseForm = false,
+    disableAlpha = false,
 }: ColorPickerProps) {
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
@@ -73,7 +75,7 @@ export default function ColorPicker({
     );
 
     const handleChange = (color: ColorResult) => {
-        setCurrentColor(color.rgba);
+        setCurrentColor(disableAlpha ? { ...color.rgba, a: 1 } : color.rgba);
     };
 
     const handleBlur = useCallback(
@@ -109,6 +111,7 @@ export default function ColorPicker({
         <DefaultColorPicker
             currentColor={currentColor}
             initialColor={initialColor}
+            disableAlpha={disableAlpha}
             handleBlur={handleBlur}
             handleKeyDown={handleKeyDown}
             handleClose={handleClose}
@@ -148,12 +151,16 @@ export default function ColorPicker({
                             tabIndex={0}
                         >
                             {rgbaToHex(currentColor).toUpperCase()}
-                            {"-a"}
-                            {currentColor.a === 1
-                                ? 1
-                                : currentColor.a === 0
-                                  ? 0
-                                  : currentColor.a.toPrecision(2)}
+                            {!disableAlpha && (
+                                <>
+                                    {"-a"}
+                                    {currentColor.a === 1
+                                        ? 1
+                                        : currentColor.a === 0
+                                          ? 0
+                                          : currentColor.a.toPrecision(2)}
+                                </>
+                            )}
                         </Popover.Trigger>
                         <Popover.Portal>
                             <Popover.Content
@@ -187,6 +194,7 @@ export default function ColorPicker({
                                     onChange={handleChange}
                                     onBlur={handleBlur}
                                     onKeyDown={handleKeyDown}
+                                    disableAlpha={disableAlpha}
                                     className="bg-fg-2"
                                 />
                             </Popover.Content>
@@ -212,6 +220,7 @@ export default function ColorPicker({
 type InternalPickerProps = {
     currentColor: RgbaColor;
     initialColor: RgbaColor;
+    disableAlpha: boolean;
     handleBlur: (event: React.FocusEvent) => void;
     handleKeyDown: (event: React.KeyboardEvent) => void;
     handleClose: () => void;
@@ -223,6 +232,7 @@ type InternalPickerProps = {
 function DefaultColorPicker({
     currentColor,
     initialColor,
+    disableAlpha,
     handleBlur,
     handleKeyDown,
     handleClose,
@@ -242,12 +252,16 @@ function DefaultColorPicker({
                     tabIndex={0}
                 >
                     {rgbaToHex(currentColor).toUpperCase()}
-                    {"-a"}
-                    {currentColor.a === 1
-                        ? 1
-                        : currentColor.a === 0
-                          ? 0
-                          : currentColor.a.toPrecision(2)}
+                    {!disableAlpha && (
+                        <>
+                            {"-a"}
+                            {currentColor.a === 1
+                                ? 1
+                                : currentColor.a === 0
+                                  ? 0
+                                  : currentColor.a.toPrecision(2)}
+                        </>
+                    )}
                 </Popover.Trigger>
                 <Popover.Portal>
                     <Popover.Content
@@ -281,6 +295,7 @@ function DefaultColorPicker({
                             onChange={handleChange}
                             onBlur={handleBlur}
                             onKeyDown={handleKeyDown}
+                            disableAlpha={disableAlpha}
                             className="bg-fg-2"
                         />
                     </Popover.Content>

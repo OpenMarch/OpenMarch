@@ -138,6 +138,7 @@ const SolidEffectArgsInput = ({
     return (
         <ColorPicker
             doNotUseForm
+            disableAlpha
             className="px-0"
             label={
                 t("workspace.lightDesigner.effects.effectItem.color") || "Color"
@@ -188,6 +189,7 @@ const FadeEffectArgsInput = ({
     return (
         <ColorPicker
             doNotUseForm
+            disableAlpha
             className="px-0"
             label={
                 t(
