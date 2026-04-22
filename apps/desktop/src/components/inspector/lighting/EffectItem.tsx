@@ -28,6 +28,17 @@ import {
 
 const FALLBACK_RGBA: RgbaColor = { r: 255, g: 0, b: 0, a: 1 };
 
+function isRgbaColor(value: unknown): value is RgbaColor {
+    if (typeof value !== "object" || value === null) return false;
+    const candidate = value as Partial<RgbaColor>;
+    return (
+        typeof candidate.r === "number" &&
+        typeof candidate.g === "number" &&
+        typeof candidate.b === "number" &&
+        typeof candidate.a === "number"
+    );
+}
+
 function hex6ToRgba(hex: string): RgbaColor {
     const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
     if (!m) return FALLBACK_RGBA;
@@ -117,7 +128,8 @@ const SolidEffectArgsInput = ({
         if (nextArgsJson !== currentArgsJson) argsChangeFn(nextArgsJson);
     };
 
-    const applyColor = (color: RgbaColor) => {
+    const applyColor = (color: unknown) => {
+        if (!isRgbaColor(color)) return;
         const nextHex = rgbaToHex6(color);
         setColorHex(nextHex);
         commitArgs(nextHex);
@@ -166,7 +178,8 @@ const FadeEffectArgsInput = ({
         if (nextArgsJson !== currentArgsJson) argsChangeFn(nextArgsJson);
     };
 
-    const applyColor = (color: RgbaColor) => {
+    const applyColor = (color: unknown) => {
+        if (!isRgbaColor(color)) return;
         const nextHex = rgbaToHex6(color);
         setColorHex(nextHex);
         commitArgs(nextHex);
