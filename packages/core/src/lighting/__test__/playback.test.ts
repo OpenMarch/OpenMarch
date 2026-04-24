@@ -7,6 +7,26 @@ import {
 
 const baseFill = { r: 10, g: 20, b: 30, a: 1 };
 
+describe("hex6ToLightingRgba", () => {
+    it("returns black for invalid hex strings", () => {
+        expect(hex6ToLightingRgba("invalid")).toEqual({
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 1,
+        });
+    });
+
+    it("returns black for empty hex strings", () => {
+        expect(hex6ToLightingRgba("")).toEqual({
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 1,
+        });
+    });
+});
+
 describe("buildLightingScenePlan", () => {
     it("accumulates step windows by duration", () => {
         const plan = buildLightingScenePlan([

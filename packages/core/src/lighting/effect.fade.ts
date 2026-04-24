@@ -7,7 +7,7 @@ export type FadeEffectArgs = {
 
 export const defaultFadeEffectArgs: FadeEffectArgs = {
     durationMs: 2000,
-    color: "#ff0000",
+    color: "#000000",
 };
 
 export const fadeEffectArgsSchema = z.object({

@@ -39,7 +39,7 @@ const HEX6 = /^#?([0-9a-fA-F]{6})$/;
 export function hex6ToLightingRgba(hex: string): LightingRgba {
     const m = HEX6.exec(hex.trim());
     const hexBody = m?.[1];
-    if (!hexBody) return { r: 255, g: 0, b: 0, a: 1 };
+    if (!hexBody) return { r: 0, g: 0, b: 0, a: 1 };
     const n = parseInt(hexBody, 16);
     return {
         r: (n >> 16) & 255,

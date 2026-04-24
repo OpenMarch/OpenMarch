@@ -26,7 +26,6 @@ import {
     sampleMarcherLightingFill,
     type LightingRgba,
     type LightingScenePlan,
-    type RgbaColor,
 } from "@openmarch/core";
 import { useQuery, useQueries, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef } from "react";
@@ -97,9 +96,12 @@ const EditorMarcherAppearances = ({
     return null;
 };
 
-function toLightingRgba(color: RgbaColor): LightingRgba {
-    return { r: color.r, g: color.g, b: color.b, a: color.a };
-}
+const defaultLightingBaseFill: LightingRgba = {
+    r: 0,
+    g: 0,
+    b: 0,
+    a: 1,
+};
 
 const LightDesignerMarcherAppearances = ({
     canvas,
@@ -202,7 +204,6 @@ const LightDesignerMarcherAppearances = ({
     }, [plansBySceneId, windows, marcherAppearances, marcherVisuals]);
 
     const labelDefault = fieldProperties?.theme.defaultMarcher.label;
-    const defaultFill = fieldProperties?.theme.defaultMarcher.fill;
 
     const applyAtShowTime = useCallback(
         (tShowMs: number, requestCanvasRender: boolean) => {
@@ -210,12 +211,11 @@ const LightDesignerMarcherAppearances = ({
                 !canvas ||
                 !marchers ||
                 marcherAppearances == null ||
-                marcherVisuals == null ||
-                !defaultFill
+                marcherVisuals == null
             )
                 return;
 
-            const baseFillForSample = toLightingRgba(defaultFill);
+            const baseFillForSample = defaultLightingBaseFill;
             const active = findLightingSceneAtShowTime(windows, tShowMs);
             const plan =
                 active != null ? plansBySceneId.get(active.sceneId) : undefined;
@@ -235,35 +235,26 @@ const LightDesignerMarcherAppearances = ({
                         baseFillForSample,
                     );
                 }
-                const key = fillOverride
-                    ? `${Math.round(fillOverride.r)},${Math.round(fillOverride.g)},${Math.round(fillOverride.b)}`
-                    : "base";
+                const resolvedFill = fillOverride ?? defaultLightingBaseFill;
+                const key = `${Math.round(resolvedFill.r)},${Math.round(resolvedFill.g)},${Math.round(resolvedFill.b)}`;
                 if (lastFillKeyRef.current.get(marcher.id) === key) return;
                 lastFillKeyRef.current.set(marcher.id, key);
 
-                if (fillOverride) {
-                    const lightingLayer: AppearanceComponentOptional = {
-                        fill_color: {
-                            r: fillOverride.r,
-                            g: fillOverride.g,
-                            b: fillOverride.b,
-                            a: fillOverride.a,
-                        },
-                        visible: true,
-                        label_visible: true,
-                    };
-                    canvasMarcher.setAppearance(
-                        [lightingLayer, ...appearancesForMarcher],
-                        { requestRenderAll: false },
-                        labelDefault,
-                    );
-                } else {
-                    canvasMarcher.setAppearance(
-                        appearancesForMarcher,
-                        { requestRenderAll: false },
-                        labelDefault,
-                    );
-                }
+                const lightingLayer: AppearanceComponentOptional = {
+                    fill_color: {
+                        r: resolvedFill.r,
+                        g: resolvedFill.g,
+                        b: resolvedFill.b,
+                        a: resolvedFill.a,
+                    },
+                    visible: true,
+                    label_visible: true,
+                };
+                canvasMarcher.setAppearance(
+                    [lightingLayer, ...appearancesForMarcher],
+                    { requestRenderAll: false },
+                    labelDefault,
+                );
             });
 
             if (requestCanvasRender) canvas.requestRenderAll();
@@ -276,7 +267,6 @@ const LightDesignerMarcherAppearances = ({
             windows,
             plansBySceneId,
             labelDefault,
-            defaultFill,
         ],
     );
 

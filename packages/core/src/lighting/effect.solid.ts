@@ -7,7 +7,7 @@ export type SolidEffectArgs = {
 
 export const defaultSolidEffectArgs: SolidEffectArgs = {
     durationMs: 2000,
-    color: "#ff0000",
+    color: "#000000",
 };
 
 export const solidEffectArgsSchema = z.object({
