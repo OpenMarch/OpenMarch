@@ -147,27 +147,12 @@ export default function EffectList() {
 
     return (
         <div className="flex w-full flex-col gap-16 px-6">
-            <div className="flex flex-col gap-8">
-                <h3 className="text-h5 text-text">
-                    <T
-                        keyName="workspace.lightDesigner.effects.sectionTitle"
-                        defaultValue="Effects"
-                    />
-                </h3>
-                <Button
-                    type="button"
-                    variant="secondary"
-                    className="flex w-full items-center justify-center gap-8"
-                    disabled={sceneId == null}
-                    onClick={handleAddEffect}
-                >
-                    <PlusIcon size={18} weight="bold" aria-hidden />
-                    <T
-                        keyName="workspace.lightDesigner.effects.addEffect"
-                        defaultValue="Add effect"
-                    />
-                </Button>
-            </div>
+            <h3 className="text-h5 text-text">
+                <T
+                    keyName="workspace.lightDesigner.effects.sectionTitle"
+                    defaultValue="Effects"
+                />
+            </h3>
 
             {localOrder.length === 0 ? (
                 <p className="text-body text-text/60">
@@ -199,6 +184,19 @@ export default function EffectList() {
                     </SortableContext>
                 </DndContext>
             )}
+            <Button
+                type="button"
+                variant="secondary"
+                className="flex w-full items-center justify-center gap-8"
+                disabled={sceneId == null}
+                onClick={handleAddEffect}
+            >
+                <PlusIcon size={18} weight="bold" aria-hidden />
+                <T
+                    keyName="workspace.lightDesigner.effects.addEffect"
+                    defaultValue="Add effect"
+                />
+            </Button>
         </div>
     );
 }
