@@ -1,7 +1,11 @@
 import EffectList from "@/components/inspector/lighting/EffectList";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useUpcomingLightingEffectsInSelectedPageQuery } from "@/hooks/queries";
+import {
+    lightingScenePositionByLightingSceneIdMapQueryOptions,
+    useUpcomingLightingEffectsInSelectedPageQuery,
+} from "@/hooks/queries";
+import { useQuery } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 
 /**
@@ -12,6 +16,13 @@ export default function LightDesignerInspector() {
     const sceneQuery = useUpcomingLightingEffectsInSelectedPageQuery(
         selectedPage?.id,
     );
+    const scenePositionByIdQuery = useQuery(
+        lightingScenePositionByLightingSceneIdMapQueryOptions(),
+    );
+    const sceneOrder =
+        sceneQuery.lightingSceneData?.id != null
+            ? scenePositionByIdQuery.data?.[sceneQuery.lightingSceneData.id]
+            : undefined;
 
     return (
         <div className="rounded-6 border-stroke bg-fg-1 flex h-full w-xs min-w-0 flex-col border p-12">
@@ -29,7 +40,7 @@ export default function LightDesignerInspector() {
                         parameters: {
                             sceneName:
                                 sceneQuery?.lightingSceneData?.name ??
-                                sceneQuery?.lightingSceneData?.id.toString() ??
+                                sceneOrder?.toString() ??
                                 "",
                         },
                     }}
