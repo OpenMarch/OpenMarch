@@ -38,8 +38,14 @@ import { useEffect, useMemo, useState } from "react";
 
 export default function EffectList() {
     const { selectedPage } = useSelectedPage()!;
+    const playbackStartPageId =
+        selectedPage == null
+            ? undefined
+            : selectedPage.id === 0
+              ? selectedPage.id
+              : (selectedPage.nextPageId ?? undefined);
     const { lightingSceneData, lightingEffectsData, isLoadingLightingScene } =
-        useUpcomingLightingEffectsInSelectedPageQuery(selectedPage?.id);
+        useUpcomingLightingEffectsInSelectedPageQuery(playbackStartPageId);
     useLightSceneManager();
 
     const { mutate: createEffectsMutation } = useMutation(

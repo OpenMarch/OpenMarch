@@ -91,6 +91,22 @@ export function findSceneIdForPageId(
 }
 
 /**
+ * In lighting inspector mode, selecting a scene should move selection to the
+ * page immediately before that scene's start page so users preview the upcoming
+ * scene transition. Scenes that start on FIRST_PAGE_ID select FIRST_PAGE_ID.
+ */
+export function resolveLightingInspectorSelectedPageId(
+    pages: readonly Pick<Page, "id">[],
+    startPageId: number,
+): number | null {
+    if (startPageId === FIRST_PAGE_ID) return FIRST_PAGE_ID;
+    const startPageIndex = pages.findIndex((p) => p.id === startPageId);
+    if (startPageIndex < 0) return null;
+    if (startPageIndex === 0) return FIRST_PAGE_ID;
+    return pages[startPageIndex - 1]?.id ?? null;
+}
+
+/**
  * One segment per lighting scene: from its start page until the next scene’s start page
  * (by show order) or the end of the show. Skips orphan start pages. Duplicate start
  * pages sort by scene id; later scenes can get zero width until the next distinct start.

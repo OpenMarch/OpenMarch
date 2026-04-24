@@ -7,13 +7,14 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
     allLightingScenesQueryOptions,
+    lightingSceneIdInPageIdQueryOptions,
     lightingScenePositionByLightingSceneIdMapQueryOptions,
 } from "@/hooks/queries/lighting/queries";
 import { createLightingScenesMutationOptions } from "@/hooks/queries/lighting/mutations";
 import {
     buildOrderedSceneStarts,
     buildSceneTimelineSegments,
-    findSceneIdForPageId,
+    resolveLightingInspectorSelectedPageId,
     timelineLeftPxAtPageStart,
     totalTimelineWidthPx,
 } from "./SceneTimeline.utils";
@@ -48,10 +49,15 @@ export default function SceneTimeline() {
         const entries = orderedStarts.map((s) => [s.sceneId, s.startPageId]);
         return Object.fromEntries(entries) as Record<number, number>;
     }, [orderedStarts]);
-    const selectedSceneId = useMemo(
-        () => findSceneIdForPageId(pages, orderedStarts, selectedPage?.id),
-        [pages, orderedStarts, selectedPage?.id],
-    );
+    const playbackStartPageId = useMemo(() => {
+        if (selectedPage == null) return null;
+        if (selectedPage.id === 0) return selectedPage.id;
+        return selectedPage.nextPageId ?? null;
+    }, [selectedPage]);
+    const { data: selectedSceneId } = useQuery({
+        ...lightingSceneIdInPageIdQueryOptions(playbackStartPageId ?? 0),
+        enabled: playbackStartPageId != null,
+    });
 
     const totalWidthPx = useMemo(
         () => totalTimelineWidthPx(pages, pps),
@@ -107,7 +113,13 @@ export default function SceneTimeline() {
                             const startPageId =
                                 sceneStartPageIdBySceneId[seg.sceneId];
                             if (startPageId == null) return;
-                            setSelectedPage({ id: startPageId });
+                            const pageIdToSelect =
+                                resolveLightingInspectorSelectedPageId(
+                                    pages,
+                                    startPageId,
+                                );
+                            if (pageIdToSelect == null) return;
+                            setSelectedPage({ id: pageIdToSelect });
                         }}
                         onKeyDown={(e) => {
                             if (isPlaying) return;
@@ -116,7 +128,13 @@ export default function SceneTimeline() {
                             const startPageId =
                                 sceneStartPageIdBySceneId[seg.sceneId];
                             if (startPageId == null) return;
-                            setSelectedPage({ id: startPageId });
+                            const pageIdToSelect =
+                                resolveLightingInspectorSelectedPageId(
+                                    pages,
+                                    startPageId,
+                                );
+                            if (pageIdToSelect == null) return;
+                            setSelectedPage({ id: pageIdToSelect });
                         }}
                     >
                         <span className="pointer-events-none">

@@ -8,6 +8,7 @@ import {
     findSceneIdForPageId,
     findLightingSceneAtShowTime,
     FIRST_PAGE_TIMELINE_WIDTH_PX,
+    resolveLightingInspectorSelectedPageId,
     timelineLeftPxAtPageStart,
     totalTimelineWidthPx,
 } from "../SceneTimeline.utils";
@@ -122,6 +123,29 @@ describe("findSceneIdForPageId", () => {
         expect(findSceneIdForPageId(pages, orderedStarts, 20)).toBe(1);
         expect(findSceneIdForPageId(pages, orderedStarts, 30)).toBe(2);
         expect(findSceneIdForPageId(pages, orderedStarts, 999)).toBeNull();
+    });
+});
+
+describe("resolveLightingInspectorSelectedPageId", () => {
+    it("returns FIRST_PAGE_ID when scene starts on FIRST_PAGE_ID", () => {
+        const pages = [pageStub(FIRST_PAGE_ID, 0), pageStub(20, 1)];
+        expect(
+            resolveLightingInspectorSelectedPageId(pages, FIRST_PAGE_ID),
+        ).toBe(FIRST_PAGE_ID);
+    });
+
+    it("returns the previous page id for non-first scene starts", () => {
+        const pages = [
+            pageStub(FIRST_PAGE_ID, 0),
+            pageStub(20, 1),
+            pageStub(30, 1),
+        ];
+        expect(resolveLightingInspectorSelectedPageId(pages, 30)).toBe(20);
+    });
+
+    it("returns null when the scene start page is missing", () => {
+        const pages = [pageStub(FIRST_PAGE_ID, 0), pageStub(20, 1)];
+        expect(resolveLightingInspectorSelectedPageId(pages, 999)).toBeNull();
     });
 });
 

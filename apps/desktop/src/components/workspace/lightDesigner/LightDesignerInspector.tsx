@@ -13,9 +13,14 @@ import { T } from "@tolgee/react";
  */
 export default function LightDesignerInspector() {
     const { selectedPage } = useSelectedPage()!;
-    const sceneQuery = useUpcomingLightingEffectsInSelectedPageQuery(
-        selectedPage?.id,
-    );
+    const playbackStartPageId =
+        selectedPage == null
+            ? undefined
+            : selectedPage.id === 0
+              ? selectedPage.id
+              : (selectedPage.nextPageId ?? undefined);
+    const sceneQuery =
+        useUpcomingLightingEffectsInSelectedPageQuery(playbackStartPageId);
     const scenePositionByIdQuery = useQuery(
         lightingScenePositionByLightingSceneIdMapQueryOptions(),
     );
