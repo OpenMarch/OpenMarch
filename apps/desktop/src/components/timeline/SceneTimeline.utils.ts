@@ -36,6 +36,60 @@ export type SceneTimelineSegment = {
     internalSplitPageIndices: number[];
 };
 
+/** Sorted scene rows with derived page start indices. */
+export type OrderedSceneStart = {
+    sceneId: number;
+    startPageId: number;
+    startPageIndex: number;
+};
+
+export function buildOrderedSceneStarts(
+    pages: readonly Pick<Page, "id">[],
+    scenes: readonly Pick<DatabaseLightingScene, "id" | "start_page_id">[],
+): OrderedSceneStart[] {
+    const pageIdToIndex = new Map<number, number>();
+    for (let i = 0; i < pages.length; i++) {
+        pageIdToIndex.set(pages[i]!.id, i);
+    }
+
+    return [...scenes]
+        .filter((s) => pageIdToIndex.has(s.start_page_id))
+        .sort((a, b) => {
+            const ia = pageIdToIndex.get(a.start_page_id)!;
+            const ib = pageIdToIndex.get(b.start_page_id)!;
+            if (ia !== ib) return ia - ib;
+            return a.id - b.id;
+        })
+        .map((scene) => ({
+            sceneId: scene.id,
+            startPageId: scene.start_page_id,
+            startPageIndex: pageIdToIndex.get(scene.start_page_id)!,
+        }));
+}
+
+/** Resolve which scene contains the given page id in show order. */
+export function findSceneIdForPageId(
+    pages: readonly Pick<Page, "id">[],
+    orderedStarts: readonly OrderedSceneStart[],
+    pageId: number | null | undefined,
+): number | null {
+    if (pageId == null || orderedStarts.length === 0) return null;
+    const pageIndex = pages.findIndex((p) => p.id === pageId);
+    if (pageIndex < 0) return null;
+
+    for (let i = 0; i < orderedStarts.length; i++) {
+        const start = orderedStarts[i]!;
+        const nextStartIdx =
+            i + 1 < orderedStarts.length
+                ? orderedStarts[i + 1]!.startPageIndex
+                : pages.length;
+        if (pageIndex >= start.startPageIndex && pageIndex < nextStartIdx) {
+            return start.sceneId;
+        }
+    }
+    return null;
+}
+
 /**
  * One segment per lighting scene: from its start page until the next scene’s start page
  * (by show order) or the end of the show. Skips orphan start pages. Duplicate start
@@ -48,26 +102,14 @@ export function buildSceneTimelineSegments(
 ): SceneTimelineSegment[] {
     if (pages.length === 0) return [];
 
-    const pageIdToIndex = new Map<number, number>();
-    for (let i = 0; i < pages.length; i++) {
-        pageIdToIndex.set(pages[i]!.id, i);
-    }
-
-    const sorted = [...scenes]
-        .filter((s) => pageIdToIndex.has(s.start_page_id))
-        .sort((a, b) => {
-            const ia = pageIdToIndex.get(a.start_page_id)!;
-            const ib = pageIdToIndex.get(b.start_page_id)!;
-            if (ia !== ib) return ia - ib;
-            return a.id - b.id;
-        });
+    const orderedStarts = buildOrderedSceneStarts(pages, scenes);
 
     const segments: SceneTimelineSegment[] = [];
-    for (let i = 0; i < sorted.length; i++) {
-        const startIdx = pageIdToIndex.get(sorted[i]!.start_page_id)!;
+    for (let i = 0; i < orderedStarts.length; i++) {
+        const startIdx = orderedStarts[i]!.startPageIndex;
         const nextStartIdx =
-            i + 1 < sorted.length
-                ? pageIdToIndex.get(sorted[i + 1]!.start_page_id)!
+            i + 1 < orderedStarts.length
+                ? orderedStarts[i + 1]!.startPageIndex
                 : pages.length;
         const endIdx = nextStartIdx - 1;
         if (endIdx < startIdx) continue;
@@ -92,7 +134,7 @@ export function buildSceneTimelineSegments(
         }
 
         segments.push({
-            sceneId: sorted[i]!.id,
+            sceneId: orderedStarts[i]!.sceneId,
             leftPx,
             widthPx,
             internalSplitPageIndices,
@@ -118,19 +160,7 @@ export function buildLightingSceneTimeWindowsMs(
 ): LightingSceneTimeWindow[] {
     if (pages.length === 0) return [];
 
-    const pageIdToIndex = new Map<number, number>();
-    for (let i = 0; i < pages.length; i++) {
-        pageIdToIndex.set(pages[i]!.id, i);
-    }
-
-    const sorted = [...scenes]
-        .filter((s) => pageIdToIndex.has(s.start_page_id))
-        .sort((a, b) => {
-            const ia = pageIdToIndex.get(a.start_page_id)!;
-            const ib = pageIdToIndex.get(b.start_page_id)!;
-            if (ia !== ib) return ia - ib;
-            return a.id - b.id;
-        });
+    const orderedStarts = buildOrderedSceneStarts(pages, scenes);
 
     const lastPage = pages[pages.length - 1]!;
     const showEndMs = Math.round(
@@ -138,11 +168,11 @@ export function buildLightingSceneTimeWindowsMs(
     );
 
     const windows: LightingSceneTimeWindow[] = [];
-    for (let i = 0; i < sorted.length; i++) {
-        const startIdx = pageIdToIndex.get(sorted[i]!.start_page_id)!;
+    for (let i = 0; i < orderedStarts.length; i++) {
+        const startIdx = orderedStarts[i]!.startPageIndex;
         const nextStartIdx =
-            i + 1 < sorted.length
-                ? pageIdToIndex.get(sorted[i + 1]!.start_page_id)!
+            i + 1 < orderedStarts.length
+                ? orderedStarts[i + 1]!.startPageIndex
                 : pages.length;
         if (nextStartIdx - 1 < startIdx) continue;
 
@@ -155,7 +185,7 @@ export function buildLightingSceneTimeWindowsMs(
         if (endMsExclusive <= startMs) continue;
 
         windows.push({
-            sceneId: sorted[i]!.id,
+            sceneId: orderedStarts[i]!.sceneId,
             startMs,
             endMs: endMsExclusive,
         });

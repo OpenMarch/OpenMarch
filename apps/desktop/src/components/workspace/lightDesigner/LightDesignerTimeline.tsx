@@ -39,7 +39,11 @@ export default function LightDesignerTimeline() {
                                 <T keyName="timeline.pages" />
                             </p>
                         </div>
-                        <PageTimeline editable={false} />
+                        <PageTimeline
+                            editable={false}
+                            interactive={false}
+                            showSelectedPage={false}
+                        />
                     </section>
 
                     <section

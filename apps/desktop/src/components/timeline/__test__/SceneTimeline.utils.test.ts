@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import { FIRST_PAGE_ID } from "@/db-functions";
 import Page from "@/global/classes/Page";
 import {
+    buildOrderedSceneStarts,
     buildLightingSceneTimeWindowsMs,
     buildSceneTimelineSegments,
+    findSceneIdForPageId,
     findLightingSceneAtShowTime,
     FIRST_PAGE_TIMELINE_WIDTH_PX,
     timelineLeftPxAtPageStart,
@@ -87,6 +89,39 @@ describe("buildSceneTimelineSegments", () => {
         const pages = [pageStub(1, 0), pageStub(2, 1)];
         const scenes = [{ id: 9, start_page_id: 999 }];
         expect(buildSceneTimelineSegments(pages, scenes, 1)).toEqual([]);
+    });
+});
+
+describe("buildOrderedSceneStarts", () => {
+    it("returns scene starts sorted by page order then scene id", () => {
+        const pages = [pageStub(10, 0), pageStub(20, 1), pageStub(30, 1)];
+        const scenes = [
+            { id: 7, start_page_id: 30 },
+            { id: 4, start_page_id: 20 },
+            { id: 6, start_page_id: 20 },
+            { id: 2, start_page_id: 999 },
+        ];
+
+        expect(buildOrderedSceneStarts(pages, scenes)).toEqual([
+            { sceneId: 4, startPageId: 20, startPageIndex: 1 },
+            { sceneId: 6, startPageId: 20, startPageIndex: 1 },
+            { sceneId: 7, startPageId: 30, startPageIndex: 2 },
+        ]);
+    });
+});
+
+describe("findSceneIdForPageId", () => {
+    it("returns active scene for a page within scene range", () => {
+        const pages = [pageStub(10, 0), pageStub(20, 1), pageStub(30, 1)];
+        const orderedStarts = buildOrderedSceneStarts(pages, [
+            { id: 1, start_page_id: 10 },
+            { id: 2, start_page_id: 30 },
+        ]);
+
+        expect(findSceneIdForPageId(pages, orderedStarts, 10)).toBe(1);
+        expect(findSceneIdForPageId(pages, orderedStarts, 20)).toBe(1);
+        expect(findSceneIdForPageId(pages, orderedStarts, 30)).toBe(2);
+        expect(findSceneIdForPageId(pages, orderedStarts, 999)).toBeNull();
     });
 });
 

@@ -27,8 +27,12 @@ import {
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline({
     editable = true,
+    interactive = true,
+    showSelectedPage = true,
 }: {
     editable?: boolean;
+    interactive?: boolean;
+    showSelectedPage?: boolean;
 }) {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
@@ -258,7 +262,8 @@ export default function PageTimeline({
         [deletePages, setSelectedPage],
     );
 
-    const isEditable = !isFullscreen && editable;
+    const canInteract = interactive && !isPlaying;
+    const isEditable = !isFullscreen && editable && interactive;
     return (
         <div className="flex h-fit gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
@@ -267,8 +272,8 @@ export default function PageTimeline({
                     <li
                         className={clsx(
                             "rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 font-mono",
-                            !isPlaying && "cursor-pointer",
-                            pages[0].id === selectedPage?.id
+                            canInteract && "cursor-pointer",
+                            showSelectedPage && pages[0].id === selectedPage?.id
                                 ? [
                                       "border-accent",
                                       isPlaying &&
@@ -281,6 +286,7 @@ export default function PageTimeline({
                                   ],
                         )}
                         onClick={() => {
+                            if (!canInteract) return;
                             setSelectedPage(pages[0]);
                             setSelectedShapePageIds([]);
                         }}
@@ -318,8 +324,9 @@ export default function PageTimeline({
                                     <div
                                         className={clsx(
                                             "bg-fg-2 text-body text-text group-last:rounded-r-6 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
-                                            !isPlaying && "cursor-pointer",
-                                            page.id === selectedPage?.id
+                                            canInteract && "cursor-pointer",
+                                            showSelectedPage &&
+                                                page.id === selectedPage?.id
                                                 ? [
                                                       "border-accent",
                                                       isPlaying &&
@@ -332,8 +339,8 @@ export default function PageTimeline({
                                                   ],
                                         )}
                                         onClick={() => {
-                                            if (!isPlaying)
-                                                setSelectedPage(page);
+                                            if (!canInteract) return;
+                                            setSelectedPage(page);
                                             setSelectedShapePageIds([]);
                                         }}
                                     >

@@ -1,16 +1,19 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import clsx from "clsx";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
     allLightingScenesQueryOptions,
     lightingScenePositionByLightingSceneIdMapQueryOptions,
 } from "@/hooks/queries/lighting/queries";
 import { createLightingScenesMutationOptions } from "@/hooks/queries/lighting/mutations";
 import {
+    buildOrderedSceneStarts,
     buildSceneTimelineSegments,
+    findSceneIdForPageId,
     timelineLeftPxAtPageStart,
     totalTimelineWidthPx,
 } from "./SceneTimeline.utils";
@@ -19,6 +22,7 @@ const SPACING = 4;
 
 export default function SceneTimeline() {
     const { isPlaying } = useIsPlaying()!;
+    const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();
     const { pages } = useTimingObjects()!;
     const { data: positionMap = {} } = useQuery(
@@ -30,10 +34,23 @@ export default function SceneTimeline() {
     const { mutate: createScenes } = useMutation(
         createLightingScenesMutationOptions(),
     );
+    const [hoveredSceneId, setHoveredSceneId] = useState<number | null>(null);
 
     const segments = useMemo(
         () => buildSceneTimelineSegments(pages, scenes, pps),
         [pages, scenes, pps],
+    );
+    const orderedStarts = useMemo(
+        () => buildOrderedSceneStarts(pages, scenes),
+        [pages, scenes],
+    );
+    const sceneStartPageIdBySceneId = useMemo(() => {
+        const entries = orderedStarts.map((s) => [s.sceneId, s.startPageId]);
+        return Object.fromEntries(entries) as Record<number, number>;
+    }, [orderedStarts]);
+    const selectedSceneId = useMemo(
+        () => findSceneIdForPageId(pages, orderedStarts, selectedPage?.id),
+        [pages, orderedStarts, selectedPage?.id],
     );
 
     const totalWidthPx = useMemo(
@@ -63,15 +80,43 @@ export default function SceneTimeline() {
         >
             {segments.map((seg) => {
                 const barLeftPx = seg.leftPx + SPACING;
+                const isSelected = selectedSceneId === seg.sceneId;
+                const isHovered = hoveredSceneId === seg.sceneId;
                 return (
                     <div
                         key={seg.sceneId}
                         className={clsx(
-                            "bg-accent text-body text-text-invert border-stroke absolute top-0 flex h-[2rem] items-center justify-center overflow-clip rounded-full border px-8 py-4 font-mono",
+                            "bg-accent text-body text-text-invert border-stroke absolute top-0 flex h-[2rem] items-center justify-center overflow-clip rounded-full border px-8 py-4 font-mono transition-all",
+                            !isPlaying &&
+                                "cursor-pointer hover:-translate-y-[1px]",
+                            isHovered && "brightness-110",
+                            isSelected && "ring-text ring-2 ring-offset-1",
                         )}
                         style={{
                             left: `${barLeftPx}px`,
                             width: `${seg.widthPx - SPACING * 2}px`,
+                        }}
+                        role="button"
+                        tabIndex={isPlaying ? -1 : 0}
+                        aria-pressed={isSelected}
+                        aria-label={`Select scene ${positionMap[seg.sceneId] ?? seg.sceneId}`}
+                        onPointerEnter={() => setHoveredSceneId(seg.sceneId)}
+                        onPointerLeave={() => setHoveredSceneId(null)}
+                        onClick={() => {
+                            if (isPlaying) return;
+                            const startPageId =
+                                sceneStartPageIdBySceneId[seg.sceneId];
+                            if (startPageId == null) return;
+                            setSelectedPage({ id: startPageId });
+                        }}
+                        onKeyDown={(e) => {
+                            if (isPlaying) return;
+                            if (e.key !== "Enter" && e.key !== " ") return;
+                            e.preventDefault();
+                            const startPageId =
+                                sceneStartPageIdBySceneId[seg.sceneId];
+                            if (startPageId == null) return;
+                            setSelectedPage({ id: startPageId });
                         }}
                     >
                         <span className="pointer-events-none">
