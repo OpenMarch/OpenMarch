@@ -42,11 +42,11 @@ export const _combineMarcherVisualGroups = ({
     return newVisuals;
 };
 
-export const marcherWithVisualsQueryOptions = (queryClient: QueryClient) =>
+export const marcherWithVisualsQueryOptions = () =>
     // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryOptions({
         queryKey: marcherWithVisualsKeys.all(),
-        queryFn: async () => {
+        queryFn: async ({ client: queryClient }) => {
             const [marchers] = await Promise.all([
                 queryClient.fetchQuery(allMarchersQueryOptions()),
             ]);

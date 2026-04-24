@@ -8,7 +8,6 @@ import {
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
-    marcherAppearancesQueryOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -32,6 +31,7 @@ import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
+import { MarcherAppearance } from "./hooks/marcherAppearance";
 
 /**
  * The field/stage UI of OpenMarch
@@ -52,17 +52,11 @@ export default function Canvas({
     onCanvasReady?: (canvas: OpenMarchCanvas) => void;
 }) {
     const queryClient = useQueryClient();
-    useEditablePath();
     const { isPlaying } = useIsPlaying()!;
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
-    const { data: marcherVisuals } = useQuery(
-        marcherWithVisualsQueryOptions(queryClient),
-    );
-    const { data: marcherAppearances } = useQuery(
-        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
-    );
+    const { data: marcherVisuals } = useQuery(marcherWithVisualsQueryOptions());
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
     // MarcherPage queries
@@ -102,6 +96,7 @@ export default function Canvas({
     const { currentCollisions } = useCollisionStore();
 
     // Custom hooks for the canvas
+    useEditablePath();
     useSelectionListeners({ canvas, isCanvasEditingEnabled });
     useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas });
@@ -234,7 +229,7 @@ export default function Canvas({
         isFullscreen,
     ]);
 
-    // Update section appearances
+    // Set the updateMarcherPages function on the canvas
     useEffect(() => {
         if (canvas) {
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
@@ -315,41 +310,6 @@ export default function Canvas({
             canvas.renderOnAddRemove = true;
         }
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
-
-    // Sync canvas with marcher appearances
-    useEffect(() => {
-        if (
-            !canvas ||
-            !marchers ||
-            marcherAppearances == null ||
-            marcherVisuals == null
-        )
-            return;
-
-        // Add all marcher appearances to the canvas
-        marchers.forEach((marcher) => {
-            const visualGroup = marcherVisuals[marcher.id];
-            const appearancesForMarcher = marcherAppearances[marcher.id];
-            if (!visualGroup || !appearancesForMarcher) return;
-
-            const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(
-                appearancesForMarcher,
-                {
-                    requestRenderAll: false,
-                },
-                fieldProperties?.theme.defaultMarcher.label,
-            );
-        });
-
-        canvas.requestRenderAll();
-    }, [
-        canvas,
-        marchers,
-        marcherAppearances,
-        marcherVisuals,
-        fieldProperties?.theme.defaultMarcher.label,
-    ]);
 
     // Setters for alignmentEvent state
     useEffect(() => {
@@ -634,6 +594,7 @@ export default function Canvas({
                 transformStyle: "preserve-3d",
             }}
         >
+            <MarcherAppearance canvas={canvas} />
             {pages.length > 0 || canvas ? (
                 <div
                     ref={innerDivRef}
