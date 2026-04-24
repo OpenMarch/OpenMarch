@@ -99,7 +99,7 @@ export default function Canvas({
     useEditablePath();
     useSelectionListeners({ canvas, isCanvasEditingEnabled });
     useMovementListeners({ canvas, isCanvasEditingEnabled });
-    useAnimation({ canvas });
+    useAnimation({ canvas, workspaceMode });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
     // Function to center and fit the canvas to the container

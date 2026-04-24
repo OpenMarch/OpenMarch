@@ -100,3 +100,81 @@ export function buildSceneTimelineSegments(
     }
     return segments;
 }
+
+/** Wall-clock window for a lighting scene (half-open in show time, last window uses inclusive end). */
+export type LightingSceneTimeWindow = {
+    sceneId: number;
+    startMs: number;
+    endMs: number;
+};
+
+/**
+ * Same scene ordering as {@link buildSceneTimelineSegments}, but using page timestamps in ms.
+ * Use with {@link findLightingSceneAtShowTime} to map global show time to scene-local time.
+ */
+export function buildLightingSceneTimeWindowsMs(
+    pages: readonly Pick<Page, "id" | "timestamp" | "duration">[],
+    scenes: readonly Pick<DatabaseLightingScene, "id" | "start_page_id">[],
+): LightingSceneTimeWindow[] {
+    if (pages.length === 0) return [];
+
+    const pageIdToIndex = new Map<number, number>();
+    for (let i = 0; i < pages.length; i++) {
+        pageIdToIndex.set(pages[i]!.id, i);
+    }
+
+    const sorted = [...scenes]
+        .filter((s) => pageIdToIndex.has(s.start_page_id))
+        .sort((a, b) => {
+            const ia = pageIdToIndex.get(a.start_page_id)!;
+            const ib = pageIdToIndex.get(b.start_page_id)!;
+            if (ia !== ib) return ia - ib;
+            return a.id - b.id;
+        });
+
+    const lastPage = pages[pages.length - 1]!;
+    const showEndMs = Math.round(
+        (lastPage.timestamp + lastPage.duration) * 1000,
+    );
+
+    const windows: LightingSceneTimeWindow[] = [];
+    for (let i = 0; i < sorted.length; i++) {
+        const startIdx = pageIdToIndex.get(sorted[i]!.start_page_id)!;
+        const nextStartIdx =
+            i + 1 < sorted.length
+                ? pageIdToIndex.get(sorted[i + 1]!.start_page_id)!
+                : pages.length;
+        if (nextStartIdx - 1 < startIdx) continue;
+
+        const startMs = Math.round(pages[startIdx]!.timestamp * 1000);
+        const endMsExclusive =
+            nextStartIdx < pages.length
+                ? Math.round(pages[nextStartIdx]!.timestamp * 1000)
+                : showEndMs + 1;
+
+        if (endMsExclusive <= startMs) continue;
+
+        windows.push({
+            sceneId: sorted[i]!.id,
+            startMs,
+            endMs: endMsExclusive,
+        });
+    }
+    return windows;
+}
+
+/**
+ * @param tShowMs global show time in ms (same convention as coordinate timelines).
+ * @returns scene id and time since that scene’s start, or null if outside all windows.
+ */
+export function findLightingSceneAtShowTime(
+    windows: readonly LightingSceneTimeWindow[],
+    tShowMs: number,
+): { sceneId: number; tSceneMs: number } | null {
+    for (const w of windows) {
+        if (tShowMs >= w.startMs && tShowMs < w.endMs) {
+            return { sceneId: w.sceneId, tSceneMs: tShowMs - w.startMs };
+        }
+    }
+    return null;
+}

@@ -8,13 +8,19 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
 import Page from "@/global/classes/Page";
+import { lightDesignerFrameRegistry } from "@/components/canvas/lightDesignerFrameRegistry";
+import type { WorkspaceViewMode } from "@/stores/WorkspaceViewStore";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
+    workspaceMode?: WorkspaceViewMode;
 }
 
 // eslint-disable-next-line max-lines-per-function
-export const useAnimation = ({ canvas }: UseAnimationProps) => {
+export const useAnimation = ({
+    canvas,
+    workspaceMode = "editor",
+}: UseAnimationProps) => {
     const { pages } = useTimingObjects()!;
     const pagesById: Record<number, Page> = useMemo(() => {
         return pages.reduce(
@@ -159,7 +165,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
     // Set marcher positions at a specific time
     const setMarcherPositionsAtTime = useCallback(
-        (timeMilliseconds: number) => {
+        (timeMilliseconds: number, options?: { requestRender?: boolean }) => {
             if (!canvas) return;
             let output = true;
 
@@ -185,7 +191,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 }
             }
 
-            canvas.requestRenderAll();
+            if (options?.requestRender !== false) canvas.requestRenderAll();
             return output;
         },
         [canvas, marcherTimelines],
@@ -229,8 +235,15 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
 
             try {
                 const currentTime = getLivePlaybackPosition() * 1000; // s to ms
-                const continueAnimation =
-                    setMarcherPositionsAtTime(currentTime);
+                const deferRender = workspaceMode === "lightDesigner";
+                const continueAnimation = setMarcherPositionsAtTime(
+                    currentTime,
+                    deferRender ? { requestRender: false } : undefined,
+                );
+                if (deferRender) {
+                    lightDesignerFrameRegistry.run(currentTime);
+                    canvas.requestRenderAll();
+                }
                 void updateSelectedPage(currentTime);
                 animationFrameRef.current = requestAnimationFrame(animate);
                 if (!continueAnimation) setIsPlaying(false);
@@ -262,6 +275,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         updateSelectedPage,
         marcherTimelines,
         setIsPlaying,
+        workspaceMode,
     ]);
 
     return {

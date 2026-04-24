@@ -3,7 +3,7 @@ import { fabric } from "fabric";
 import { handleGroupRotating } from "@/global/classes/canvasObjects/GroupUtils";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
     marcherPagesByPageQueryOptions,
     marcherWithVisualsQueryOptions,
@@ -22,10 +22,7 @@ export const useMovementListeners = ({
     const { uiSettings } = useUiSettingsStore()!;
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers } = useSelectedMarchers()!;
-    const queryClient = useQueryClient();
-    const { data: marcherVisuals } = useQuery(
-        marcherWithVisualsQueryOptions(queryClient),
-    );
+    const { data: marcherVisuals } = useQuery(marcherWithVisualsQueryOptions());
 
     // MarcherPage queries
     const { data: marcherPages } = useQuery(

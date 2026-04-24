@@ -2,7 +2,9 @@ import { describe, expect, it } from "vitest";
 import { FIRST_PAGE_ID } from "@/db-functions";
 import Page from "@/global/classes/Page";
 import {
+    buildLightingSceneTimeWindowsMs,
     buildSceneTimelineSegments,
+    findLightingSceneAtShowTime,
     FIRST_PAGE_TIMELINE_WIDTH_PX,
     timelineLeftPxAtPageStart,
     totalTimelineWidthPx,
@@ -85,5 +87,56 @@ describe("buildSceneTimelineSegments", () => {
         const pages = [pageStub(1, 0), pageStub(2, 1)];
         const scenes = [{ id: 9, start_page_id: 999 }];
         expect(buildSceneTimelineSegments(pages, scenes, 1)).toEqual([]);
+    });
+});
+
+function pageWithTime(
+    id: number,
+    duration: number,
+    timestamp: number,
+): Pick<Page, "id" | "duration" | "timestamp"> {
+    return { id, duration, timestamp } as Pick<
+        Page,
+        "id" | "duration" | "timestamp"
+    >;
+}
+
+describe("buildLightingSceneTimeWindowsMs", () => {
+    it("aligns wall-clock windows with scene start pages", () => {
+        const pages = [
+            pageWithTime(FIRST_PAGE_ID, 0, 0),
+            pageWithTime(20, 4, 0),
+            pageWithTime(30, 6, 4),
+        ];
+        const scenes = [
+            { id: 1, start_page_id: FIRST_PAGE_ID },
+            { id: 2, start_page_id: 30 },
+        ];
+        const windows = buildLightingSceneTimeWindowsMs(pages, scenes);
+        expect(windows).toHaveLength(2);
+        expect(windows[0]).toEqual({ sceneId: 1, startMs: 0, endMs: 4000 });
+        expect(windows[1]).toEqual({ sceneId: 2, startMs: 4000, endMs: 10001 });
+    });
+});
+
+describe("findLightingSceneAtShowTime", () => {
+    it("maps show ms to scene-local offset", () => {
+        const windows = [
+            { sceneId: 1, startMs: 0, endMs: 2000 },
+            { sceneId: 2, startMs: 2000, endMs: 5001 },
+        ];
+        expect(findLightingSceneAtShowTime(windows, 1500)).toEqual({
+            sceneId: 1,
+            tSceneMs: 1500,
+        });
+        expect(findLightingSceneAtShowTime(windows, 2000)).toEqual({
+            sceneId: 2,
+            tSceneMs: 0,
+        });
+        expect(findLightingSceneAtShowTime(windows, 5000)).toEqual({
+            sceneId: 2,
+            tSceneMs: 3000,
+        });
+        expect(findLightingSceneAtShowTime(windows, 9999)).toBeNull();
     });
 });

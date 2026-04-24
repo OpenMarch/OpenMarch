@@ -67,7 +67,8 @@ export const useLightingEffectsInSelectedPageQuery = (
 };
 
 /******** QUERY OPTIONS ********/
-const lightingSceneIdInPageIdQueryOptions = (pageId: number) =>
+
+export const lightingSceneIdInPageIdQueryOptions = (pageId: number) =>
     queryOptions<number | undefined>({
         queryKey: lightingKeys.lightingSceneIdInPageId(pageId),
         queryFn: async () =>
@@ -75,7 +76,7 @@ const lightingSceneIdInPageIdQueryOptions = (pageId: number) =>
         staleTime: DEFAULT_STALE_TIME,
     });
 
-const lightingSceneDataByIdQueryOptions = (lightingSceneId: number) =>
+export const lightingSceneDataByIdQueryOptions = (lightingSceneId: number) =>
     queryOptions<
         (DatabaseLightingScene & { lightingEffectIds: number[] }) | undefined
     >({
@@ -95,7 +96,7 @@ const lightingSceneDataByIdQueryOptions = (lightingSceneId: number) =>
         staleTime: DEFAULT_STALE_TIME,
     });
 
-const lightingEffectByIdQueryOptions = (lightingEffectId: number) =>
+export const lightingEffectByIdQueryOptions = (lightingEffectId: number) =>
     queryOptions<LightingEffectWithMarchers | undefined>({
         queryKey: lightingKeys.lightingEffectById(lightingEffectId),
         queryFn: async () =>
