@@ -2,6 +2,7 @@ import {
     DatabaseLightingScene,
     getLightingEffectIdsBySceneId,
     getLightingEffectWithMarchersById,
+    getUpcomingLightingSceneInPageId,
     getLightingSceneById,
     getLightingSceneInPageId,
     getLightingScenePositionByLightingSceneIdMap,
@@ -17,6 +18,8 @@ export const lightingKeys = {
     allLightingScenes: () => [KEY_BASE] as const,
     lightingSceneIdInPageId: (pageId: number) =>
         [KEY_BASE, "scene_in_page", { pageId }] as const,
+    lightingSceneIdUpcomingInPageId: (pageId: number) =>
+        [KEY_BASE, "scene_upcoming_in_page", { pageId }] as const,
     lightingSceneDataById: (sceneId: number) =>
         [KEY_BASE, "scene_data", { sceneId }] as const,
     lightingEffectById: (effectId: number) =>
@@ -66,6 +69,39 @@ export const useLightingEffectsInSelectedPageQuery = (
     };
 };
 
+export const useUpcomingLightingEffectsInSelectedPageQuery = (
+    pageId: number | undefined,
+) => {
+    const lightingSceneIdQuery = useQuery({
+        ...lightingSceneIdUpcomingInPageIdQueryOptions(pageId!),
+        enabled: pageId != null,
+    });
+    const lightingSceneId = lightingSceneIdQuery.data;
+    const lightingSceneDataQuery = useQuery({
+        ...lightingSceneDataByIdQueryOptions(lightingSceneId!),
+        enabled: lightingSceneId != null,
+    });
+    const lightingSceneData = lightingSceneDataQuery.data;
+
+    const lightingEffectIds = lightingSceneData?.lightingEffectIds ?? [];
+
+    const lightingEffectsData = useQueries({
+        queries: lightingEffectIds.map((lightingEffectId) =>
+            lightingEffectByIdQueryOptions(lightingEffectId),
+        ),
+    });
+
+    const isLoadingLightingScene =
+        (pageId != null && lightingSceneIdQuery.isPending) ||
+        (lightingSceneId != null && lightingSceneDataQuery.isPending);
+
+    return {
+        lightingSceneData,
+        lightingEffectsData,
+        isLoadingLightingScene,
+    };
+};
+
 /******** QUERY OPTIONS ********/
 
 export const lightingSceneIdInPageIdQueryOptions = (pageId: number) =>
@@ -73,6 +109,14 @@ export const lightingSceneIdInPageIdQueryOptions = (pageId: number) =>
         queryKey: lightingKeys.lightingSceneIdInPageId(pageId),
         queryFn: async () =>
             (await getLightingSceneInPageId({ db, pageId }))?.id,
+        staleTime: DEFAULT_STALE_TIME,
+    });
+
+export const lightingSceneIdUpcomingInPageIdQueryOptions = (pageId: number) =>
+    queryOptions<number | undefined>({
+        queryKey: lightingKeys.lightingSceneIdUpcomingInPageId(pageId),
+        queryFn: async () =>
+            (await getUpcomingLightingSceneInPageId({ db, pageId }))?.id,
         staleTime: DEFAULT_STALE_TIME,
     });
 

@@ -1,7 +1,7 @@
 import EffectList from "@/components/inspector/lighting/EffectList";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useLightingEffectsInSelectedPageQuery } from "@/hooks/queries";
+import { useUpcomingLightingEffectsInSelectedPageQuery } from "@/hooks/queries";
 import { T } from "@tolgee/react";
 
 /**
@@ -9,7 +9,9 @@ import { T } from "@tolgee/react";
  */
 export default function LightDesignerInspector() {
     const { selectedPage } = useSelectedPage()!;
-    const sceneQuery = useLightingEffectsInSelectedPageQuery(selectedPage?.id);
+    const sceneQuery = useUpcomingLightingEffectsInSelectedPageQuery(
+        selectedPage?.id,
+    );
 
     return (
         <div className="rounded-6 border-stroke bg-fg-1 flex h-full w-xs min-w-0 flex-col border p-12">

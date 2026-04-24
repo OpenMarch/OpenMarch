@@ -9,7 +9,7 @@ import {
     createLightingEffectsMutationOptions,
     reorderLightingEffectsInSceneMutationOptions,
     updateLightingEffectsMutationOptions,
-    useLightingEffectsInSelectedPageQuery,
+    useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
 import {
     DndContext,
@@ -39,7 +39,7 @@ import { useEffect, useMemo, useState } from "react";
 export default function EffectList() {
     const { selectedPage } = useSelectedPage()!;
     const { lightingSceneData, lightingEffectsData, isLoadingLightingScene } =
-        useLightingEffectsInSelectedPageQuery(selectedPage?.id);
+        useUpcomingLightingEffectsInSelectedPageQuery(selectedPage?.id);
     useLightSceneManager();
 
     const { mutate: createEffectsMutation } = useMutation(
@@ -53,7 +53,10 @@ export default function EffectList() {
     );
 
     const sceneId = lightingSceneData?.id;
-    const serverEffectIds = lightingSceneData?.lightingEffectIds ?? [];
+    const serverEffectIds = useMemo(
+        () => lightingSceneData?.lightingEffectIds ?? [],
+        [lightingSceneData?.lightingEffectIds],
+    );
     const [localOrder, setLocalOrder] = useState<number[]>(serverEffectIds);
     const sensors = useSensors(useSensor(PointerSensor));
 

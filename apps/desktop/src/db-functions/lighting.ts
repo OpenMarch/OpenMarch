@@ -1,4 +1,4 @@
-import { asc, desc, eq, inArray, lte, max } from "drizzle-orm";
+import { asc, desc, eq, gte, inArray, lte, max } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -85,6 +85,46 @@ export const getLightingSceneInPageId = async ({
         .innerJoin(schema.beats, eq(schema.pages.start_beat, schema.beats.id))
         .where(lte(schema.beats.position, pageObj.beatPosition))
         .orderBy(desc(schema.beats.position))
+        .limit(1)
+        .get();
+
+    return lightingScene?.lighting_scenes;
+};
+
+/**
+ * Upcoming lighting scene from the given page onward.
+ *
+ * @param pageId - The current page ID.
+ * @returns The nearest scene whose start beat is >= the page beat, or undefined.
+ */
+export const getUpcomingLightingSceneInPageId = async ({
+    db,
+    pageId,
+}: {
+    db: DbConnection | DbTransaction;
+    pageId: number;
+}): Promise<DatabaseLightingScene | undefined> => {
+    const pageObj = await db
+        .select({
+            pageId: schema.pages.id,
+            beatPosition: schema.beats.position,
+        })
+        .from(schema.pages)
+        .innerJoin(schema.beats, eq(schema.pages.start_beat, schema.beats.id))
+        .where(eq(schema.pages.id, pageId))
+        .get();
+    if (!pageObj) throw new Error(`Page ${pageId} not found`);
+
+    const lightingScene = await db
+        .select()
+        .from(schema.lighting_scenes)
+        .innerJoin(
+            schema.pages,
+            eq(schema.lighting_scenes.start_page_id, schema.pages.id),
+        )
+        .innerJoin(schema.beats, eq(schema.pages.start_beat, schema.beats.id))
+        .where(gte(schema.beats.position, pageObj.beatPosition))
+        .orderBy(asc(schema.beats.position))
         .limit(1)
         .get();
 

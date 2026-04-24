@@ -11,7 +11,7 @@ import {
     getLightingEffectById,
     getLightingEffectIdsBySceneId,
     getLightingSceneById,
-    getLightingSceneInPageId,
+    getUpcomingLightingSceneInPageId,
     getLightingScenePositionByLightingSceneIdMap,
     getLightingScenesByStartPageId,
     getLightingEffectsBySceneId,
@@ -334,7 +334,7 @@ describeDbTests("lighting", (it) => {
         });
     });
 
-    describe("getLightingSceneInPageId", () => {
+    describe("getUpcomingLightingSceneInPageId", () => {
         it("returns undefined when there are no lighting scenes", async ({
             db,
             marchersAndPages,
@@ -343,7 +343,10 @@ describeDbTests("lighting", (it) => {
             const pages = await pagesInTimelineOrder(db);
             expect(pages.length).toBeGreaterThan(0);
             await expect(
-                getLightingSceneInPageId({ db, pageId: pages[0]!.id }),
+                getUpcomingLightingSceneInPageId({
+                    db,
+                    pageId: pages[0]!.id,
+                }),
             ).resolves.toBeUndefined();
         });
 
@@ -366,7 +369,7 @@ describeDbTests("lighting", (it) => {
                 ],
             });
 
-            const result = await getLightingSceneInPageId({
+            const result = await getUpcomingLightingSceneInPageId({
                 db,
                 pageId: startPage.id,
             });
@@ -402,19 +405,19 @@ describeDbTests("lighting", (it) => {
                 ],
             });
 
-            const onEarlyPage = await getLightingSceneInPageId({
+            const onEarlyPage = await getUpcomingLightingSceneInPageId({
                 db,
                 pageId: early.id,
             });
             expect(onEarlyPage?.id).toBe(firstScene.id);
 
-            const onMidPage = await getLightingSceneInPageId({
+            const onMidPage = await getUpcomingLightingSceneInPageId({
                 db,
                 pageId: mid.id,
             });
             expect(onMidPage?.id).toBe(firstScene.id);
 
-            const onLatePage = await getLightingSceneInPageId({
+            const onLatePage = await getUpcomingLightingSceneInPageId({
                 db,
                 pageId: late.id,
             });
@@ -443,7 +446,7 @@ describeDbTests("lighting", (it) => {
             });
 
             await expect(
-                getLightingSceneInPageId({ db, pageId: lastPage.id }),
+                getUpcomingLightingSceneInPageId({ db, pageId: lastPage.id }),
             ).resolves.toBeUndefined();
         });
 
@@ -453,7 +456,10 @@ describeDbTests("lighting", (it) => {
         }) => {
             void marchersAndPages;
             await expect(
-                getLightingSceneInPageId({ db, pageId: 9_999_999 }),
+                getUpcomingLightingSceneInPageId({
+                    db,
+                    pageId: 9_999_999,
+                }),
             ).rejects.toThrow(/Page 9999999 not found/);
         });
     });
