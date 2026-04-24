@@ -290,6 +290,60 @@ export async function deleteLightingScenesInTransaction({
         .returning();
 }
 
+export type DeleteLightingSceneWithReassignmentResult = {
+    deletedScenes: DatabaseLightingScene[];
+    reassignedScene: DatabaseLightingScene | null;
+};
+
+export async function deleteLightingSceneWithReassignment({
+    db,
+    sceneId,
+    reassignedSceneId,
+    reassignedStartPageId,
+}: {
+    db: DbConnection;
+    sceneId: number;
+    reassignedSceneId?: number | null;
+    reassignedStartPageId?: number;
+}): Promise<DeleteLightingSceneWithReassignmentResult> {
+    return await transactionWithHistory(
+        db,
+        "deleteLightingSceneWithReassignment",
+        async (tx) => {
+            const deletedScenes = await deleteLightingScenesInTransaction({
+                sceneIds: new Set([sceneId]),
+                tx,
+            });
+
+            if (
+                reassignedSceneId == null ||
+                reassignedStartPageId == null ||
+                deletedScenes.length === 0
+            ) {
+                return {
+                    deletedScenes,
+                    reassignedScene: null,
+                };
+            }
+
+            const [reassignedScene] = await updateLightingScenesInTransaction({
+                modifiedScenes: [
+                    {
+                        id: reassignedSceneId,
+                        start_page_id: reassignedStartPageId,
+                    },
+                ],
+                tx,
+            });
+
+            return {
+                deletedScenes,
+                reassignedScene: reassignedScene ?? null,
+            };
+        },
+    );
+}
+
 // ============================================================================
 // LIGHTING EFFECTS
 // ============================================================================

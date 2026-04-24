@@ -43,6 +43,11 @@ export type OrderedSceneStart = {
     startPageIndex: number;
 };
 
+export type SceneDeletePlan = {
+    canDelete: boolean;
+    reassignedSceneId: number | null;
+};
+
 export function buildOrderedSceneStarts(
     pages: readonly Pick<Page, "id">[],
     scenes: readonly Pick<DatabaseLightingScene, "id" | "start_page_id">[],
@@ -65,6 +70,28 @@ export function buildOrderedSceneStarts(
             startPageId: scene.start_page_id,
             startPageIndex: pageIdToIndex.get(scene.start_page_id)!,
         }));
+}
+
+export function buildSceneDeletePlan(
+    orderedStarts: readonly OrderedSceneStart[],
+    targetSceneId: number,
+): SceneDeletePlan {
+    if (orderedStarts.length <= 1) {
+        return { canDelete: false, reassignedSceneId: null };
+    }
+
+    const sceneIndex = orderedStarts.findIndex(
+        (scene) => scene.sceneId === targetSceneId,
+    );
+    if (sceneIndex < 0) {
+        return { canDelete: false, reassignedSceneId: null };
+    }
+
+    return {
+        canDelete: true,
+        reassignedSceneId:
+            sceneIndex === 0 ? (orderedStarts[1]?.sceneId ?? null) : null,
+    };
 }
 
 /** Resolve which scene contains the given page id in show order. */

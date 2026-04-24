@@ -816,6 +816,7 @@
         "controls": {
             "label": "再生 コントロール"
         },
+        "deleteScene": "シーンを削除",
         "label": "タイムライン",
         "lightDesigner": {
             "scenes": "シーン"

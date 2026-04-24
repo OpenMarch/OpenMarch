@@ -816,6 +816,7 @@
         "controls": {
             "label": "Controles de Reprodução"
         },
+        "deleteScene": "Excluir cena",
         "label": "Linha do Tempo",
         "lightDesigner": {
             "scenes": "Cenas"

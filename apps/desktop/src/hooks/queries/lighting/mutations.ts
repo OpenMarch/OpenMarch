@@ -2,9 +2,11 @@ import {
     createLightingEffects,
     createLightingScenes,
     createMarcherLightingEffects,
+    deleteLightingSceneWithReassignment,
     deleteLightingEffects,
     deleteLightingScenes,
     deleteMarcherLightingEffects,
+    DeleteLightingSceneWithReassignmentResult,
     ModifiedLightingEffectArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
@@ -88,6 +90,62 @@ export const deleteLightingScenesMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error deleting lighting scenes", e, variables);
+        },
+    });
+};
+
+export const deleteLightingSceneWithReassignmentMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            sceneId,
+            reassignedSceneId,
+            reassignedStartPageId,
+        }: {
+            sceneId: number;
+            reassignedSceneId?: number | null;
+            reassignedStartPageId?: number;
+        }) =>
+            deleteLightingSceneWithReassignment({
+                db,
+                sceneId,
+                reassignedSceneId,
+                reassignedStartPageId,
+            }),
+        onSuccess: async (
+            data: DeleteLightingSceneWithReassignmentResult,
+            _variables,
+            _result,
+            context,
+        ) => {
+            const qc = context.client;
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.allLightingScenes(),
+            });
+
+            const pageIds = new Set<number>(
+                data.deletedScenes.map((scene) => scene.start_page_id),
+            );
+            if (data.reassignedScene) {
+                pageIds.add(data.reassignedScene.start_page_id);
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingSceneDataById(
+                        data.reassignedScene.id,
+                    ),
+                });
+            }
+
+            for (const pageId of pageIds) {
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingSceneIdInPageId(pageId),
+                });
+            }
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error deleting lighting scene with reassignment",
+                e,
+                variables,
+            );
         },
     });
 };

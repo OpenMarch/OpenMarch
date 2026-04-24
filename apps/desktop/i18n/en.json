@@ -863,6 +863,7 @@
         "controls": {
             "label": "Playback Controls"
         },
+        "deleteScene": "Delete scene",
         "label": "Timeline",
         "lightDesigner": {
             "scenes": "Scenes"

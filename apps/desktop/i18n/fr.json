@@ -816,6 +816,7 @@
         "controls": {
             "label": "Contrôles de lecture"
         },
+        "deleteScene": "Supprimer la scène",
         "label": "Chronologie",
         "lightDesigner": {
             "scenes": "Scènes"

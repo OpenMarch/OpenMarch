@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { FIRST_PAGE_ID } from "@/db-functions";
 import Page from "@/global/classes/Page";
 import {
+    buildSceneDeletePlan,
     buildOrderedSceneStarts,
     buildLightingSceneTimeWindowsMs,
     buildSceneTimelineSegments,
@@ -108,6 +109,42 @@ describe("buildOrderedSceneStarts", () => {
             { sceneId: 6, startPageId: 20, startPageIndex: 1 },
             { sceneId: 7, startPageId: 30, startPageIndex: 2 },
         ]);
+    });
+});
+
+describe("buildSceneDeletePlan", () => {
+    it("blocks deletion when only one scene exists", () => {
+        const orderedStarts = [
+            { sceneId: 1, startPageId: FIRST_PAGE_ID, startPageIndex: 0 },
+        ];
+        expect(buildSceneDeletePlan(orderedStarts, 1)).toEqual({
+            canDelete: false,
+            reassignedSceneId: null,
+        });
+    });
+
+    it("reassigns next scene to first page when deleting first scene", () => {
+        const orderedStarts = [
+            { sceneId: 10, startPageId: FIRST_PAGE_ID, startPageIndex: 0 },
+            { sceneId: 20, startPageId: 30, startPageIndex: 2 },
+            { sceneId: 30, startPageId: 40, startPageIndex: 3 },
+        ];
+        expect(buildSceneDeletePlan(orderedStarts, 10)).toEqual({
+            canDelete: true,
+            reassignedSceneId: 20,
+        });
+    });
+
+    it("deletes non-first scenes without reassignment", () => {
+        const orderedStarts = [
+            { sceneId: 10, startPageId: FIRST_PAGE_ID, startPageIndex: 0 },
+            { sceneId: 20, startPageId: 30, startPageIndex: 2 },
+            { sceneId: 30, startPageId: 40, startPageIndex: 3 },
+        ];
+        expect(buildSceneDeletePlan(orderedStarts, 30)).toEqual({
+            canDelete: true,
+            reassignedSceneId: null,
+        });
     });
 });
 
