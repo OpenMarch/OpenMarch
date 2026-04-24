@@ -29,10 +29,12 @@ export default function PageTimeline({
     editable = true,
     interactive = true,
     showSelectedPage = true,
+    compact = false,
 }: {
     editable?: boolean;
     interactive?: boolean;
     showSelectedPage?: boolean;
+    compact?: boolean;
 }) {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
@@ -271,7 +273,8 @@ export default function PageTimeline({
                 {pages.length > 0 && (
                     <li
                         className={clsx(
-                            "rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 py-4 font-mono",
+                            "rounded-l-6 bg-fg-2 flex h-full w-[40px] items-center justify-center border px-10 font-mono",
+                            compact ? "text-sub py-1" : "py-4",
                             canInteract && "cursor-pointer",
                             showSelectedPage && pages[0].id === selectedPage?.id
                                 ? [
@@ -323,7 +326,10 @@ export default function PageTimeline({
                                 >
                                     <div
                                         className={clsx(
-                                            "bg-fg-2 text-body text-text group-last:rounded-r-6 relative flex h-full items-center justify-end overflow-clip border px-8 py-4 font-mono",
+                                            "bg-fg-2 text-text group-last:rounded-r-6 relative flex h-full items-center justify-end overflow-clip border px-8 font-mono",
+                                            compact
+                                                ? "text-sub py-1"
+                                                : "text-body py-4",
                                             canInteract && "cursor-pointer",
                                             showSelectedPage &&
                                                 page.id === selectedPage?.id

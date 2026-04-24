@@ -43,6 +43,7 @@ export default function LightDesignerTimeline() {
                             editable={false}
                             interactive={false}
                             showSelectedPage={false}
+                            compact
                         />
                     </section>
 
