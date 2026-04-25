@@ -1,5 +1,4 @@
 import { parseEffectArgs } from "./effect.registry";
-import type { FadeEffectArgs } from "./effect.fade";
 import type { SolidEffectArgs } from "./effect.solid";
 import type { LightingEffectType } from "./types";
 
@@ -23,8 +22,7 @@ export type ParsedLightingStep = {
     startMs: number;
     endMs: number;
     type: LightingEffectType;
-    solidArgs: SolidEffectArgs | null;
-    fadeArgs: FadeEffectArgs | null;
+    solidArgs: SolidEffectArgs;
     marcherIds: ReadonlySet<number>;
 };
 
@@ -49,20 +47,6 @@ export function hex6ToLightingRgba(hex: string): LightingRgba {
     };
 }
 
-export function lerpLightingRgba(
-    a: LightingRgba,
-    b: LightingRgba,
-    t: number,
-): LightingRgba {
-    const u = Math.min(1, Math.max(0, t));
-    return {
-        r: a.r + (b.r - a.r) * u,
-        g: a.g + (b.g - a.g) * u,
-        b: a.b + (b.b - a.b) * u,
-        a: a.a + (b.a - a.a) * u,
-    };
-}
-
 function buildStep(
     startMs: number,
     durationMs: number,
@@ -71,17 +55,12 @@ function buildStep(
     marcherIds: readonly number[],
 ): ParsedLightingStep {
     const safeDuration = Math.max(0, durationMs);
-    const solidArgs =
-        type === "solid" || type === "strobe"
-            ? parseEffectArgs(type, argsJson)
-            : null;
-    const fadeArgs = type === "fade" ? parseEffectArgs("fade", argsJson) : null;
+    const solidArgs = parseEffectArgs(type, argsJson) as SolidEffectArgs;
     return {
         startMs,
         endMs: startMs + safeDuration,
         type,
         solidArgs,
-        fadeArgs,
         marcherIds: new Set(marcherIds),
     };
 }
@@ -106,24 +85,6 @@ export function buildLightingScenePlan(
     return { steps, effectsEndMs };
 }
 
-function resolveColorAtStepStart(
-    plan: LightingScenePlan,
-    stepIndex: number,
-    marcherId: number,
-    baseFill: LightingRgba,
-): LightingRgba {
-    if (stepIndex <= 0) return baseFill;
-    const prev = plan.steps[stepIndex - 1]!;
-    if (!prev.marcherIds.has(marcherId)) return baseFill;
-    if (prev.type === "fade" && prev.fadeArgs) {
-        return hex6ToLightingRgba(prev.fadeArgs.color);
-    }
-    if ((prev.type === "solid" || prev.type === "strobe") && prev.solidArgs) {
-        return hex6ToLightingRgba(prev.solidArgs.color);
-    }
-    return baseFill;
-}
-
 /**
  * Returns a lighting fill override for a marcher at scene-local time, or `undefined` if the
  * marcher should use the normal appearance cascade (no active effect for this marcher at `tSceneMs`).
@@ -132,7 +93,7 @@ export function sampleMarcherLightingFill(
     plan: LightingScenePlan,
     tSceneMs: number,
     marcherId: number,
-    baseFill: LightingRgba,
+    _baseFill: LightingRgba,
 ): LightingRgba | undefined {
     if (plan.steps.length === 0) return undefined;
 
@@ -141,27 +102,5 @@ export function sampleMarcherLightingFill(
     );
     if (!step || !step.marcherIds.has(marcherId)) return undefined;
 
-    const tLocal =
-        step.endMs > step.startMs
-            ? (tSceneMs - step.startMs) / (step.endMs - step.startMs)
-            : 1;
-
-    if (step.type === "solid" || step.type === "strobe") {
-        if (!step.solidArgs) return undefined;
-        return hex6ToLightingRgba(step.solidArgs.color);
-    }
-
-    if (step.type === "fade") {
-        if (!step.fadeArgs) return undefined;
-        const fromColor = resolveColorAtStepStart(
-            plan,
-            plan.steps.indexOf(step),
-            marcherId,
-            baseFill,
-        );
-        const toColor = hex6ToLightingRgba(step.fadeArgs.color);
-        return lerpLightingRgba(fromColor, toColor, tLocal);
-    }
-
-    return undefined;
+    return hex6ToLightingRgba(step.solidArgs.color);
 }

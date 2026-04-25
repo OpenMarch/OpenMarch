@@ -110,7 +110,7 @@ describe("sampleMarcherLightingFill", () => {
         expect(c).toEqual(hex6ToLightingRgba("#abcdef"));
     });
 
-    it("lerps fade from base when first step is fade", () => {
+    it("treats fade like solid for legacy rows", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "fade",
@@ -123,12 +123,10 @@ describe("sampleMarcherLightingFill", () => {
             },
         ]);
         const mid = sampleMarcherLightingFill(plan, 500, 1, baseFill);
-        expect(mid!.r).toBeCloseTo((10 + 255) / 2, 0);
-        expect(mid!.g).toBeCloseTo((20 + 255) / 2, 0);
-        expect(mid!.b).toBeCloseTo((30 + 255) / 2, 0);
+        expect(mid).toEqual(hex6ToLightingRgba("#ffffff"));
     });
 
-    it("lerps fade from previous solid for linked marcher", () => {
+    it("returns fade target color immediately at fade start", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
@@ -150,10 +148,7 @@ describe("sampleMarcherLightingFill", () => {
             },
         ]);
         const atFadeStart = sampleMarcherLightingFill(plan, 1000, 1, baseFill);
-        expect(atFadeStart).toEqual(hex6ToLightingRgba("#0000ff"));
-
-        const atFadeMid = sampleMarcherLightingFill(plan, 1500, 1, baseFill);
-        expect(atFadeMid!.r).toBeCloseTo(127.5, 0);
+        expect(atFadeStart).toEqual(hex6ToLightingRgba("#ff0000"));
     });
 
     it("returns undefined when time is outside all steps", () => {

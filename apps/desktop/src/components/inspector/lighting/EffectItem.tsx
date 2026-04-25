@@ -1,7 +1,5 @@
 import {
-    defaultFadeEffectArgs,
     defaultSolidEffectArgs,
-    FadeEffectArgs,
     LightingEffectType,
     parseEffectArgs,
     SolidEffectArgs,
@@ -19,7 +17,6 @@ import { T, useTolgee } from "@tolgee/react";
 import {
     type ChangeEvent,
     type KeyboardEvent,
-    type ReactNode,
     useEffect,
     useId,
     useRef,
@@ -150,95 +147,6 @@ const SolidEffectArgsInput = ({
     );
 };
 
-type FadeEffectArgsInputProps = {
-    currentArgs: FadeEffectArgs;
-    currentArgsJson: string;
-    argsChangeFn: (argsJson: string) => void;
-    durationMs: number;
-};
-
-const FadeEffectArgsInput = ({
-    currentArgs,
-    currentArgsJson,
-    argsChangeFn,
-    durationMs,
-}: FadeEffectArgsInputProps) => {
-    const { t } = useTolgee();
-    const [colorHex, setColorHex] = useState(currentArgs.color);
-
-    useEffect(() => {
-        setColorHex(currentArgs.color);
-    }, [currentArgs.color]);
-
-    const commitArgs = (draftColor: string) => {
-        const nextArgs: FadeEffectArgs = {
-            durationMs: Math.max(0, Math.round(durationMs)),
-            color: draftColor,
-        };
-        const nextArgsJson = JSON.stringify(nextArgs);
-        if (nextArgsJson !== currentArgsJson) argsChangeFn(nextArgsJson);
-    };
-
-    const applyColor = (color: unknown) => {
-        if (!isRgbaColor(color)) return;
-        const nextHex = rgbaToHex6(color);
-        setColorHex(nextHex);
-        commitArgs(nextHex);
-    };
-
-    return (
-        <ColorPicker
-            doNotUseForm
-            disableAlpha
-            className="px-0"
-            label={
-                t(
-                    "workspace.lightDesigner.effects.effectItem.fadeTargetColor",
-                ) || "Fade target color"
-            }
-            initialColor={hex6ToRgba(colorHex)}
-            defaultColor={hex6ToRgba(defaultFadeEffectArgs.color)}
-            onBlur={applyColor}
-        />
-    );
-};
-
-type EffectArgsEditorProps = {
-    argsJson: string;
-    argsChangeFn: (argsJson: string) => void;
-    durationMs: number;
-};
-
-const effectArgsEditorMap: Record<
-    LightingEffectType,
-    (props: EffectArgsEditorProps) => ReactNode
-> = {
-    solid: ({ argsJson, argsChangeFn, durationMs }) => (
-        <SolidEffectArgsInput
-            currentArgs={parseEffectArgs("solid", argsJson)}
-            currentArgsJson={argsJson}
-            argsChangeFn={argsChangeFn}
-            durationMs={durationMs}
-        />
-    ),
-    fade: ({ argsJson, argsChangeFn, durationMs }) => (
-        <FadeEffectArgsInput
-            currentArgs={parseEffectArgs("fade", argsJson)}
-            currentArgsJson={argsJson}
-            argsChangeFn={argsChangeFn}
-            durationMs={durationMs}
-        />
-    ),
-    strobe: () => (
-        <p className="text-body text-text/60">
-            <T
-                keyName="workspace.lightDesigner.effects.effectItem.strobePlaceholder"
-                defaultValue="Strobe editor is not implemented yet."
-            />
-        </p>
-    ),
-};
-
 const EffectItem = ({
     effectId,
     name,
@@ -256,8 +164,7 @@ const EffectItem = ({
     const typeSelectTriggerRef = useRef<HTMLButtonElement>(null);
     const [typePickerOpen, setTypePickerOpen] = useState(false);
 
-    const hasDurationHeader =
-        type === "solid" || type === "fade" || type === "strobe";
+    const hasDurationHeader = true;
 
     const [durationMs, setDurationMs] = useState(() => {
         const parsed = parseEffectArgs(type, args);
@@ -367,6 +274,7 @@ const EffectItem = ({
 
     const handleTypeChange = (newType: string) => {
         const next = newType as LightingEffectType;
+        if (next !== "solid") return;
         if (next === type) return;
         setEditingName(false);
         setEditingDuration(false);
@@ -380,12 +288,17 @@ const EffectItem = ({
         setTypePickerOpen(true);
     };
 
-    const renderArgsInput = () =>
-        effectArgsEditorMap[type]({
-            argsJson: args,
-            argsChangeFn,
-            durationMs,
-        });
+    const renderArgsInput = () => {
+        const parsedArgs = parseEffectArgs(type, args) as SolidEffectArgs;
+        return (
+            <SolidEffectArgsInput
+                currentArgs={parsedArgs}
+                currentArgsJson={args}
+                argsChangeFn={argsChangeFn}
+                durationMs={durationMs}
+            />
+        );
+    };
 
     return (
         <div
@@ -450,13 +363,13 @@ const EffectItem = ({
                                         defaultValue="Solid"
                                     />
                                 </SelectItem>
-                                <SelectItem value="strobe">
+                                <SelectItem value="strobe" disabled>
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeStrobe"
                                         defaultValue="Strobe"
                                     />
                                 </SelectItem>
-                                <SelectItem value="fade">
+                                <SelectItem value="fade" disabled>
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeFade"
                                         defaultValue="Fade"
@@ -501,13 +414,9 @@ const EffectItem = ({
                                 onBlur={commitDurationFromDraft}
                                 onKeyDown={handleDurationKeyDown}
                                 aria-label={
-                                    type === "fade"
-                                        ? t(
-                                              "workspace.lightDesigner.effects.effectItem.fadeDurationSeconds",
-                                          ) || "Fade duration (s)"
-                                        : t(
-                                              "workspace.lightDesigner.effects.effectItem.durationSeconds",
-                                          ) || "Duration (s)"
+                                    t(
+                                        "workspace.lightDesigner.effects.effectItem.durationSeconds",
+                                    ) || "Duration (s)"
                                 }
                             />
                         ) : (
