@@ -1,16 +1,23 @@
 import EffectItem from "@/components/inspector/lighting/EffectItem";
+import {
+    buildLightingSceneTimeWindowsMs,
+    findLightingSceneAtShowTime,
+} from "@/components/timeline/SceneTimeline.utils";
 import { useLightSceneManager } from "@/components/workspace/lightDesigner/useLightSceneManager";
+import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
     LightingEffectWithMarchers,
     ModifiedLightingEffectArgs,
 } from "@/db-functions";
+import { useTimingObjects } from "@/hooks";
 import {
     createLightingEffectsMutationOptions,
     reorderLightingEffectsInSceneMutationOptions,
     updateLightingEffectsMutationOptions,
     useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
+import { getCurrentShowTimeMs } from "@/utilities/showTime";
 import {
     DndContext,
     DragEndEvent,
@@ -28,6 +35,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
     createNewLightingEffect,
+    parseEffectArgs,
     updateLightingEffectType,
 } from "@openmarch/core";
 import { Button } from "@openmarch/ui";
@@ -36,7 +44,57 @@ import { useMutation } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import { useEffect, useMemo, useState } from "react";
 
+type EffectPlaybackState = "upcoming" | "active" | "played";
+type EffectPlaybackInfo = {
+    state: EffectPlaybackState;
+    progressPct: number;
+};
+
+type OrderedEffectRuntime = {
+    id: number;
+    durationMs: number;
+};
+
+export function deriveEffectPlaybackStates(
+    effects: readonly OrderedEffectRuntime[],
+    tSceneMs: number | null,
+): Map<number, EffectPlaybackInfo> {
+    const out = new Map<number, EffectPlaybackInfo>();
+    if (tSceneMs == null) {
+        effects.forEach((effect) => {
+            out.set(effect.id, { state: "upcoming", progressPct: 0 });
+        });
+        return out;
+    }
+
+    let cursorMs = 0;
+    effects.forEach((effect) => {
+        const startMs = cursorMs;
+        const safeDurationMs = Math.max(0, effect.durationMs);
+        const endMs = startMs + safeDurationMs;
+        let state: EffectPlaybackState = "upcoming";
+        let progressPct = 0;
+        if (safeDurationMs > 0 && tSceneMs >= startMs && tSceneMs < endMs) {
+            state = "active";
+            progressPct = Math.min(
+                100,
+                Math.max(0, ((tSceneMs - startMs) / safeDurationMs) * 100),
+            );
+        } else if (tSceneMs >= endMs) {
+            state = "played";
+            progressPct = 100;
+        }
+
+        out.set(effect.id, { state, progressPct });
+        cursorMs = endMs;
+    });
+
+    return out;
+}
+
 export default function EffectList() {
+    const { isPlaying } = useIsPlaying()!;
+    const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const playbackStartPageId =
         selectedPage == null
@@ -70,6 +128,24 @@ export default function EffectList() {
         setLocalOrder(serverEffectIds);
     }, [serverEffectIds]);
 
+    const [currentShowTimeMs, setCurrentShowTimeMs] = useState(() =>
+        getCurrentShowTimeMs(isPlaying, selectedPage),
+    );
+
+    useEffect(() => {
+        if (!isPlaying) {
+            setCurrentShowTimeMs(getCurrentShowTimeMs(false, selectedPage));
+            return;
+        }
+        let rafId = 0;
+        const tick = () => {
+            setCurrentShowTimeMs(getCurrentShowTimeMs(true, selectedPage));
+            rafId = requestAnimationFrame(tick);
+        };
+        rafId = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafId);
+    }, [isPlaying, selectedPage]);
+
     const effectById = useMemo(() => {
         const map = new Map<number, LightingEffectWithMarchers | undefined>();
         serverEffectIds.forEach((effectId, index) => {
@@ -77,6 +153,41 @@ export default function EffectList() {
         });
         return map;
     }, [lightingEffectsData, serverEffectIds]);
+
+    const sceneWindows = useMemo(
+        () =>
+            buildLightingSceneTimeWindowsMs(
+                pages,
+                lightingSceneData ? [lightingSceneData] : [],
+            ),
+        [pages, lightingSceneData],
+    );
+    const activeScene = useMemo(
+        () => findLightingSceneAtShowTime(sceneWindows, currentShowTimeMs),
+        [sceneWindows, currentShowTimeMs],
+    );
+    const shouldShowPlaybackState =
+        activeScene?.sceneId != null &&
+        lightingSceneData?.id != null &&
+        activeScene.sceneId === lightingSceneData.id;
+
+    const playbackByEffectId = useMemo(() => {
+        const orderedEffects: OrderedEffectRuntime[] = localOrder
+            .map((id) => {
+                const effect = effectById.get(id);
+                if (!effect) return null;
+                return {
+                    id,
+                    durationMs: parseEffectArgs(effect.type, effect.args)
+                        .durationMs,
+                };
+            })
+            .filter((item): item is OrderedEffectRuntime => item != null);
+        return deriveEffectPlaybackStates(
+            orderedEffects,
+            shouldShowPlaybackState ? activeScene!.tSceneMs : null,
+        );
+    }, [activeScene, effectById, localOrder, shouldShowPlaybackState]);
 
     const handleAddEffect = () => {
         if (sceneId == null) return;
@@ -178,6 +289,9 @@ export default function EffectList() {
                                     effectId={effectId}
                                     effect={effectById.get(effectId)}
                                     updateEffect={updateEffect}
+                                    playbackInfo={playbackByEffectId.get(
+                                        effectId,
+                                    )}
                                 />
                             ))}
                         </ul>
@@ -205,10 +319,12 @@ function SortableEffectRow({
     effectId,
     effect,
     updateEffect,
+    playbackInfo,
 }: {
     effectId: number;
     effect: LightingEffectWithMarchers | undefined;
     updateEffect: (variables: ModifiedLightingEffectArgs) => void;
+    playbackInfo?: EffectPlaybackInfo;
 }) {
     const {
         attributes,
@@ -223,6 +339,8 @@ function SortableEffectRow({
         transform: CSS.Transform.toString(transform),
         transition,
     };
+    const isPlayed = playbackInfo?.state === "played";
+    const isActive = playbackInfo?.state === "active";
 
     return (
         <li
@@ -249,36 +367,52 @@ function SortableEffectRow({
                         </p>
                     </div>
                 ) : (
-                    <div className="rounded-6 border-stroke bg-fg-1 flex flex-col gap-8 border p-12">
-                        <EffectItem
-                            effectId={effect.id}
-                            name={effect.name ?? ""}
-                            type={effect.type}
-                            args={effect.args}
-                            nameChangeFn={(name) =>
-                                updateEffect({
-                                    id: effect.id,
-                                    name,
-                                })
-                            }
-                            typeChangeFn={(newType) =>
-                                updateLightingEffectType({
-                                    newType,
-                                    updateFunction: (type, argsJson) =>
-                                        updateEffect({
-                                            id: effect.id,
-                                            type,
-                                            args: argsJson,
-                                        }),
-                                })
-                            }
-                            argsChangeFn={(argsJson) =>
-                                updateEffect({
-                                    id: effect.id,
-                                    args: argsJson,
-                                })
-                            }
-                        />
+                    <div
+                        className={`rounded-6 border-stroke bg-fg-1 relative overflow-clip border p-12 transition-opacity ${isPlayed ? "opacity-60" : ""}`}
+                    >
+                        {isPlayed && (
+                            <div className="bg-accent/20 absolute top-0 left-0 z-0 h-full w-full" />
+                        )}
+                        {isActive && (
+                            <div
+                                className="bg-accent/25 absolute top-0 left-0 z-0 h-full"
+                                style={{
+                                    height: `${playbackInfo?.progressPct ?? 0}%`,
+                                    width: "100%",
+                                }}
+                            />
+                        )}
+                        <div className="relative z-10 flex flex-col gap-8">
+                            <EffectItem
+                                effectId={effect.id}
+                                name={effect.name ?? ""}
+                                type={effect.type}
+                                args={effect.args}
+                                nameChangeFn={(name) =>
+                                    updateEffect({
+                                        id: effect.id,
+                                        name,
+                                    })
+                                }
+                                typeChangeFn={(newType) =>
+                                    updateLightingEffectType({
+                                        newType,
+                                        updateFunction: (type, argsJson) =>
+                                            updateEffect({
+                                                id: effect.id,
+                                                type,
+                                                args: argsJson,
+                                            }),
+                                    })
+                                }
+                                argsChangeFn={(argsJson) =>
+                                    updateEffect({
+                                        id: effect.id,
+                                        args: argsJson,
+                                    })
+                                }
+                            />
+                        </div>
                     </div>
                 )}
             </div>
