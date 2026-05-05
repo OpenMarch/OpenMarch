@@ -16,6 +16,7 @@ export default defineConfig({
         "/developers/contributing": "/developers/codebase",
         "/about/submitting-feedback/": "/guides/submitting-feedback/",
         "/privacy": "/legal/privacy",
+        "/refunds": "/legal/refunds",
         "/terms": "/legal/terms",
     },
     integrations: [

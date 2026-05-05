@@ -63,6 +63,8 @@ OpenMarch hereby grants you permission to access and use the Services, provided
 
 3. Pricing and Availability. All prices are shown in U.S. dollars and applicable taxes and other charges, if any, are additional. Prices may be adjusted at any time and for any reason (or no reason) and without providing you prior notice. Services are subject to availability, and we reserve the right to cancel all or part of the Services and to discontinue making certain Services available without prior notice.
 
+4. Refunds. For information about refunds, including the minimum period during which you may request a refund for eligible purchases, please see our [Refund Policy](/refunds).
+
 ## 9. Content
 
 1. OpenMarch Content. As between you and OpenMarch, OpenMarch owns all right, title and interest in and to the materials available through the Services other than Your Content (as defined below), including, but not limited to, text, graphics, documents, data, articles, photos, images, videos, and illustrations (all of the foregoing except Your Content, the “**OpenMarch Content**”).
