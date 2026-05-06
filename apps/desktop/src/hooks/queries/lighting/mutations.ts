@@ -311,6 +311,31 @@ export const updateLightingEffectsMutationOptions = () => {
     });
 };
 
+/** Single-transaction updates for overlap moves (strip group + add group) or multi-effect edits. */
+export const updateLightingEffectsBatchMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async (modifiedEffects: ModifiedLightingEffectArgs[]) => {
+            if (modifiedEffects.length === 0) return [];
+            return await updateLightingEffects({
+                db,
+                modifiedEffects,
+            });
+        },
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            for (const v of variables) {
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingEffectById(v.id),
+                });
+            }
+        },
+        onError: (e, variables) => {
+            conToastError("Error updating lighting effects", e, variables);
+        },
+    });
+};
+
 export const deleteLightingEffectsMutationOptions = () => {
     return mutationOptions({
         mutationFn: (effectIds: Set<number>) =>

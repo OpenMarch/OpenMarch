@@ -54,14 +54,6 @@ export default function LightDesignerInspector() {
                     }}
                     className="mt-12"
                 >
-                    <EffectList />
-                </InspectorCollapsible>
-
-                <InspectorCollapsible
-                    defaultOpen={false}
-                    title="inspector.light.groupsTitle"
-                    className="mt-12 flex min-h-0 flex-1 flex-col"
-                >
                     <SceneGroupsSection sceneId={activeLightingSceneId} />
                 </InspectorCollapsible>
             </div>

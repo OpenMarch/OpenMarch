@@ -1,13 +1,28 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { LightingEffectWithMarchers } from "@/db-functions";
+import {
+    LightingEffectWithMarchers,
+    type ModifiedLightingEffectArgs,
+} from "@/db-functions";
 import {
     lightingEffectByIdQueryOptions,
     lightingSceneDataByIdQueryOptions,
 } from "@/hooks/queries/lighting/queries";
-import { updateLightingEffectsMutationOptions } from "@/hooks/queries/lighting/mutations";
+import {
+    updateLightingEffectsBatchMutationOptions,
+    updateLightingEffectsMutationOptions,
+} from "@/hooks/queries/lighting/mutations";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { parseEffectArgs } from "@openmarch/core";
-import { useCallback, useMemo, useRef } from "react";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    Button,
+} from "@openmarch/ui";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import clsx from "clsx";
 import { DotsSixIcon, DotsSixVerticalIcon } from "@phosphor-icons/react";
 import {
@@ -15,6 +30,7 @@ import {
     computeBeatBoundaryPx,
     effectBarPx,
     findClosestBoundaryIndex,
+    findOverlappingEffectsWithGroup,
     getSceneStartBeatPosition,
     getSceneTotalBeats,
     packEffectsIntoLanes,
@@ -22,6 +38,13 @@ import {
 } from "./SceneTimeline.utils";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
+import {
+    dataTransferHasLightingGroupDrag,
+    getLightingGroupDragPayload,
+    type LightingGroupDragPayload,
+} from "@/utilities/lightingGroupEffectDnD";
+import { T, useTolgee } from "@tolgee/react";
+import { toast } from "sonner";
 
 const HEADER_GAP_PX = 4;
 const LANE_HEIGHT_PX = 18;
@@ -83,6 +106,7 @@ export default function LightingEffectBars({
     onLaneCountChange,
 }: LightingEffectBarsProps) {
     const { isPlaying } = useIsPlaying()!;
+    const { t } = useTolgee();
     const { data: sceneData } = useQuery(
         lightingSceneDataByIdQueryOptions(sceneId),
     );
@@ -104,6 +128,9 @@ export default function LightingEffectBars({
 
     const { mutate: updateEffect } = useMutation(
         updateLightingEffectsMutationOptions(),
+    );
+    const { mutate: updateEffectsBatch } = useMutation(
+        updateLightingEffectsBatchMutationOptions(),
     );
 
     const sceneStartBeatPos = useMemo(() => {
@@ -146,6 +173,117 @@ export default function LightingEffectBars({
 
     const containerRef = useRef<HTMLDivElement>(null);
     const dragState = useRef<DragState | null>(null);
+
+    const [lightingGroupDragActive, setLightingGroupDragActive] =
+        useState(false);
+    const [dragHoverEffectId, setDragHoverEffectId] = useState<number | null>(
+        null,
+    );
+    const [overlapPrompt, setOverlapPrompt] = useState<{
+        groupId: number;
+        targetEffectId: number;
+        conflicts: readonly { id: number; name: string }[];
+    } | null>(null);
+
+    useEffect(() => {
+        const onDragStartCaptured = (ev: DragEvent) => {
+            if (
+                ev.dataTransfer &&
+                dataTransferHasLightingGroupDrag(ev.dataTransfer)
+            )
+                setLightingGroupDragActive(true);
+        };
+        const onDragTerminated = () => {
+            setLightingGroupDragActive(false);
+            setDragHoverEffectId(null);
+        };
+        document.addEventListener("dragstart", onDragStartCaptured, true);
+        document.addEventListener("dragend", onDragTerminated, true);
+        return () => {
+            document.removeEventListener(
+                "dragstart",
+                onDragStartCaptured,
+                true,
+            );
+            document.removeEventListener("dragend", onDragTerminated, true);
+        };
+    }, []);
+
+    const dropGroupPayloadOnEffect = useCallback(
+        (payload: LightingGroupDragPayload, targetEffectId: number) => {
+            if (payload.sceneId !== sceneId) {
+                toast.error(
+                    t("workspace.lightDesigner.effects.dropWrongSceneToast") ??
+                        "Cannot assign a group from another lighting scene.",
+                );
+                return;
+            }
+            const target = effects.find((e) => e.id === targetEffectId);
+            if (!target) return;
+            if (target.lighting_group_ids.includes(payload.groupId)) return;
+
+            const effectNameFallback =
+                t("workspace.lightDesigner.effects.unnamedFallback") ??
+                "Lighting effect";
+
+            const conflicts = findOverlappingEffectsWithGroup({
+                effects,
+                targetEffectId,
+                groupId: payload.groupId,
+                effectNameFallback,
+            });
+
+            if (conflicts.length === 0) {
+                updateEffectsBatch([
+                    {
+                        id: target.id,
+                        lighting_group_ids: [
+                            ...new Set([
+                                ...target.lighting_group_ids,
+                                payload.groupId,
+                            ]),
+                        ],
+                    },
+                ]);
+                return;
+            }
+            setOverlapPrompt({
+                groupId: payload.groupId,
+                targetEffectId,
+                conflicts,
+            });
+        },
+        [effects, sceneId, t, updateEffectsBatch],
+    );
+
+    const confirmOverlapAndMoveGroup = useCallback(() => {
+        const prompt = overlapPrompt;
+        if (prompt == null) return;
+        const target = effects.find((e) => e.id === prompt.targetEffectId);
+        if (!target) {
+            setOverlapPrompt(null);
+            return;
+        }
+        const updates: ModifiedLightingEffectArgs[] = [];
+        for (const c of prompt.conflicts) {
+            const e = effects.find((x) => x.id === c.id);
+            if (!e) continue;
+            updates.push({
+                id: e.id,
+                lighting_group_ids: e.lighting_group_ids.filter(
+                    (g) => g !== prompt.groupId,
+                ),
+            });
+        }
+        updates.push({
+            id: target.id,
+            lighting_group_ids: [
+                ...new Set([...target.lighting_group_ids, prompt.groupId]),
+            ],
+        });
+        updateEffectsBatch(updates);
+        setOverlapPrompt(null);
+    }, [effects, overlapPrompt, updateEffectsBatch]);
 
     const onPointerMove = useCallback((ev: PointerEvent) => {
         const container = containerRef.current;
@@ -283,142 +421,241 @@ export default function LightingEffectBars({
     if (sceneStartBeatPos == null || sceneTotalBeats === 0) return null;
 
     return (
-        <div
-            ref={containerRef}
-            className="relative w-full"
-            style={{
-                height: `${laneStackHeightPx(laneCount)}px`,
-                width: `${widthPx}px`,
-            }}
-            aria-label={`Scene ${sceneId} effect bars`}
-        >
-            {placements.map((p) => {
-                const effect = effects.find((e) => e.id === p.effectId);
-                if (!effect) return null;
-                const { leftPx, widthPx: barWidth } = effectBarPx(
-                    beats,
-                    sceneStartBeatPos,
-                    p.startBeats,
-                    p.durationBeats,
-                    pixelsPerSecond,
-                );
-                const renderWidth = Math.max(MIN_BAR_PX, barWidth);
-                const color = getEffectColor(effect);
-                const isDarkEffectColor = isEffectColorDark(color);
-                const borderColor = getEffectBorderColor(color);
-                const markerColorClass = isDarkEffectColor
-                    ? "text-white/70"
-                    : "text-black/45";
-                const showCenterDot =
-                    renderWidth >= CENTER_DOT_MIN_BAR_WIDTH_PX;
-                const top = p.lane * (LANE_HEIGHT_PX + LANE_GAP_PX);
-                return (
-                    <div
-                        key={p.effectId}
-                        data-effect-bar-id={p.effectId}
-                        className={clsx(
-                            "border-stroke absolute overflow-clip rounded-[6px] border transition-[top] duration-200 ease-out",
-                            !isPlaying && "cursor-grab active:cursor-grabbing",
-                        )}
-                        style={{
-                            top: `${top}px`,
-                            left: `${leftPx}px`,
-                            width: `${renderWidth}px`,
-                            height: `${LANE_HEIGHT_PX}px`,
-                            backgroundColor: color,
-                            borderColor,
-                        }}
-                        role="button"
-                        tabIndex={isPlaying ? -1 : 0}
-                        aria-label={`Lighting effect ${effect.name ?? effect.id} starts at beat ${p.startBeats} for ${p.durationBeats} beats`}
-                        onPointerDown={(e) =>
-                            startDrag(
-                                e,
-                                effect.id,
-                                "move",
-                                effect.start_offset_beats,
-                                effect.duration_beats,
-                            )
-                        }
-                    >
-                        {!isPlaying && (
-                            <div
-                                className="pointer-events-none absolute inset-0"
-                                aria-hidden
-                            >
-                                <DotsSixVerticalIcon
-                                    size={10}
-                                    weight="bold"
-                                    className={clsx(
-                                        "absolute top-1/2 left-[1px] -translate-y-1/2",
-                                        markerColorClass,
-                                    )}
+        <>
+            <div
+                ref={containerRef}
+                className="relative w-full"
+                style={{
+                    height: `${laneStackHeightPx(laneCount)}px`,
+                    width: `${widthPx}px`,
+                }}
+                aria-label={`Scene ${sceneId} effect bars`}
+            >
+                {placements.map((p) => {
+                    const effect = effects.find((e) => e.id === p.effectId);
+                    if (!effect) return null;
+                    const { leftPx, widthPx: barWidth } = effectBarPx(
+                        beats,
+                        sceneStartBeatPos,
+                        p.startBeats,
+                        p.durationBeats,
+                        pixelsPerSecond,
+                    );
+                    const renderWidth = Math.max(MIN_BAR_PX, barWidth);
+                    const color = getEffectColor(effect);
+                    const isDarkEffectColor = isEffectColorDark(color);
+                    const borderColor = getEffectBorderColor(color);
+                    const markerColorClass = isDarkEffectColor
+                        ? "text-white/70"
+                        : "text-black/45";
+                    const showCenterDot =
+                        renderWidth >= CENTER_DOT_MIN_BAR_WIDTH_PX;
+                    const top = p.lane * (LANE_HEIGHT_PX + LANE_GAP_PX);
+                    return (
+                        <div
+                            key={p.effectId}
+                            data-effect-bar-id={p.effectId}
+                            className={clsx(
+                                "border-stroke absolute overflow-clip rounded-[6px] border transition-[top] duration-200 ease-out",
+                                !isPlaying &&
+                                    "cursor-grab active:cursor-grabbing",
+                                lightingGroupDragActive &&
+                                    dragHoverEffectId === effect.id &&
+                                    "ring-accent z-10 ring-2 ring-offset-1 ring-offset-transparent",
+                            )}
+                            style={{
+                                top: `${top}px`,
+                                left: `${leftPx}px`,
+                                width: `${renderWidth}px`,
+                                height: `${LANE_HEIGHT_PX}px`,
+                                backgroundColor: color,
+                                borderColor,
+                            }}
+                            role="button"
+                            tabIndex={isPlaying ? -1 : 0}
+                            aria-label={`Lighting effect ${effect.name ?? effect.id} starts at beat ${p.startBeats} for ${p.durationBeats} beats`}
+                            onPointerDown={(e) =>
+                                startDrag(
+                                    e,
+                                    effect.id,
+                                    "move",
+                                    effect.start_offset_beats,
+                                    effect.duration_beats,
+                                )
+                            }
+                            onDragOver={(e) => {
+                                if (
+                                    isPlaying ||
+                                    !e.dataTransfer ||
+                                    !dataTransferHasLightingGroupDrag(
+                                        e.dataTransfer,
+                                    )
+                                )
+                                    return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setDragHoverEffectId(effect.id);
+                            }}
+                            onDragLeave={(e) => {
+                                const rel = e.relatedTarget as Node | null;
+                                if (
+                                    rel != null &&
+                                    e.currentTarget.contains(rel)
+                                ) {
+                                    return;
+                                }
+                                setDragHoverEffectId((prev) =>
+                                    prev === effect.id ? null : prev,
+                                );
+                            }}
+                            onDrop={(e) => {
+                                if (isPlaying) return;
+                                e.preventDefault();
+                                e.stopPropagation();
+                                const payload = getLightingGroupDragPayload(
+                                    e.dataTransfer,
+                                );
+                                if (!payload) return;
+                                dropGroupPayloadOnEffect(payload, effect.id);
+                            }}
+                        >
+                            {!isPlaying && (
+                                <div
+                                    className="pointer-events-none absolute inset-0"
                                     aria-hidden
-                                />
-                                <DotsSixVerticalIcon
-                                    size={10}
-                                    weight="bold"
-                                    className={clsx(
-                                        "absolute top-1/2 right-[1px] -translate-y-1/2",
-                                        markerColorClass,
-                                    )}
-                                    aria-hidden
-                                />
-                                {showCenterDot && (
-                                    <DotsSixIcon
+                                >
+                                    <DotsSixVerticalIcon
                                         size={10}
                                         weight="bold"
                                         className={clsx(
-                                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                                            "absolute top-1/2 left-[1px] -translate-y-1/2",
                                             markerColorClass,
                                         )}
                                         aria-hidden
                                     />
-                                )}
-                            </div>
-                        )}
-                        {!isPlaying && (
-                            <>
-                                <button
-                                    type="button"
-                                    aria-label="Resize start"
-                                    className={clsx(
-                                        "absolute top-0 left-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
+                                    <DotsSixVerticalIcon
+                                        size={10}
+                                        weight="bold"
+                                        className={clsx(
+                                            "absolute top-1/2 right-[1px] -translate-y-1/2",
+                                            markerColorClass,
+                                        )}
+                                        aria-hidden
+                                    />
+                                    {showCenterDot && (
+                                        <DotsSixIcon
+                                            size={10}
+                                            weight="bold"
+                                            className={clsx(
+                                                "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                                                markerColorClass,
+                                            )}
+                                            aria-hidden
+                                        />
                                     )}
-                                    style={{ width: `${HANDLE_WIDTH_PX}px` }}
-                                    onPointerDown={(e) =>
-                                        startDrag(
-                                            e,
-                                            effect.id,
-                                            "resize-left",
-                                            effect.start_offset_beats,
-                                            effect.duration_beats,
-                                        )
-                                    }
+                                </div>
+                            )}
+                            {!isPlaying && !lightingGroupDragActive && (
+                                <>
+                                    <button
+                                        type="button"
+                                        aria-label="Resize start"
+                                        className={clsx(
+                                            "absolute top-0 left-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
+                                        )}
+                                        style={{
+                                            width: `${HANDLE_WIDTH_PX}px`,
+                                        }}
+                                        onPointerDown={(e) =>
+                                            startDrag(
+                                                e,
+                                                effect.id,
+                                                "resize-left",
+                                                effect.start_offset_beats,
+                                                effect.duration_beats,
+                                            )
+                                        }
+                                    />
+                                    <button
+                                        type="button"
+                                        aria-label="Resize end"
+                                        className={clsx(
+                                            "absolute top-0 right-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
+                                        )}
+                                        style={{
+                                            width: `${HANDLE_WIDTH_PX}px`,
+                                        }}
+                                        onPointerDown={(e) =>
+                                            startDrag(
+                                                e,
+                                                effect.id,
+                                                "resize-right",
+                                                effect.start_offset_beats,
+                                                effect.duration_beats,
+                                            )
+                                        }
+                                    />
+                                </>
+                            )}
+                        </div>
+                    );
+                })}
+            </div>
+
+            <AlertDialog
+                open={overlapPrompt != null}
+                onOpenChange={(open) => {
+                    if (!open) setOverlapPrompt(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        <T
+                            keyName="workspace.lightDesigner.effects.groupOverlapConfirmTitle"
+                            defaultValue="Group already affects an overlapping effect"
+                        />
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <p>
+                            <T
+                                keyName="workspace.lightDesigner.effects.groupOverlapConfirmDescription"
+                                defaultValue="Overlapping timing windows cannot reuse the same group. Remove this group from the conflicting effect(s) below and assign it here instead?"
+                            />
+                        </p>
+                        {overlapPrompt != null &&
+                        overlapPrompt.conflicts.length > 0 ? (
+                            <ul className="border-stroke mt-16 list-inside list-disc border-t pt-16 text-[0.9375rem]">
+                                {overlapPrompt.conflicts.map((c) => (
+                                    <li key={c.id}>{c.name}</li>
+                                ))}
+                            </ul>
+                        ) : null}
+                    </AlertDialogDescription>
+                    <div className="flex justify-end gap-8 pt-16">
+                        <AlertDialogCancel>
+                            <Button variant="secondary" size="compact">
+                                <T
+                                    keyName="workspace.lightDesigner.effects.groupOverlapCancel"
+                                    defaultValue="Cancel"
                                 />
-                                <button
-                                    type="button"
-                                    aria-label="Resize end"
-                                    className={clsx(
-                                        "absolute top-0 right-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
-                                    )}
-                                    style={{ width: `${HANDLE_WIDTH_PX}px` }}
-                                    onPointerDown={(e) =>
-                                        startDrag(
-                                            e,
-                                            effect.id,
-                                            "resize-right",
-                                            effect.start_offset_beats,
-                                            effect.duration_beats,
-                                        )
-                                    }
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="primary"
+                                size="compact"
+                                onClick={() => confirmOverlapAndMoveGroup()}
+                            >
+                                <T
+                                    keyName="workspace.lightDesigner.effects.groupOverlapConfirm"
+                                    defaultValue="Move group"
                                 />
-                            </>
-                        )}
+                            </Button>
+                        </AlertDialogAction>
                     </div>
-                );
-            })}
-        </div>
+                </AlertDialogContent>
+            </AlertDialog>
+        </>
     );
 }
 

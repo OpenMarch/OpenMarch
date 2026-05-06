@@ -28,6 +28,10 @@ import {
 } from "@/hooks/queries";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
 import {
+    setLightingGroupDragData,
+    shouldCancelLightingGroupDragStart,
+} from "@/utilities/lightingGroupEffectDnD";
+import {
     getDistinctSortedDrillPrefixesFromMarchers,
     getFamiliesInShow,
     getMarcherIdsByDrillPrefix,
@@ -38,7 +42,15 @@ import {
 import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { T, useTolgee } from "@tolgee/react";
-import { useCallback, useEffect, useMemo } from "react";
+import clsx from "clsx";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    useState,
+    type DragEvent,
+} from "react";
 
 /** Groups for the inspector's current upcoming lighting scene. */
 export default function SceneGroupsSection({
@@ -204,8 +216,55 @@ function LightingGroupRow({
     const displayName =
         group.name?.trim() ?? t("inspector.light.groups.groupFallback");
 
+    const rowRef = useRef<HTMLLIElement>(null);
+    const [isDragging, setIsDragging] = useState(false);
+
+    const handleRowDragStart = useCallback(
+        (e: DragEvent<HTMLLIElement>) => {
+            if (shouldCancelLightingGroupDragStart(e.target)) {
+                e.preventDefault();
+                return;
+            }
+            setLightingGroupDragData(e.dataTransfer, {
+                groupId: group.id,
+                sceneId: group.scene_id,
+            });
+            const el = rowRef.current;
+            if (el) {
+                const r = el.getBoundingClientRect();
+                e.dataTransfer.setDragImage(
+                    el,
+                    e.clientX - r.left,
+                    e.clientY - r.top,
+                );
+            }
+            setIsDragging(true);
+        },
+        [group.id, group.scene_id],
+    );
+
+    const handleRowDragEnd = useCallback(() => {
+        setIsDragging(false);
+    }, []);
+
     return (
-        <li className="rounded-6 border-stroke bg-fg-1 relative flex flex-col gap-8 overflow-clip border p-12">
+        <li
+            ref={rowRef}
+            draggable
+            tabIndex={0}
+            className={clsx(
+                "rounded-6 border-stroke bg-fg-1 relative flex cursor-grab flex-col gap-8 overflow-clip border p-12 active:cursor-grabbing",
+                isDragging && "opacity-40",
+            )}
+            onDragStart={handleRowDragStart}
+            onDragEnd={handleRowDragEnd}
+        >
+            <span className="sr-only">
+                <T
+                    keyName="inspector.light.groups.dragToTimelineAria"
+                    defaultValue="Drag to assign group to an effect bar on the timeline"
+                />
+            </span>
             {isFocused ? (
                 <div className="bg-accent/10 ring-accent pointer-events-none absolute inset-0 z-0 ring-1 ring-inset" />
             ) : null}
