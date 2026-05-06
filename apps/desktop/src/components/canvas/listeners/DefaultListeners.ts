@@ -27,8 +27,18 @@ export default class DefaultListeners implements CanvasListeners {
     private readonly LASSO_DASH_ARRAY = [5, 5];
     private readonly LASSO_MIN_CLOSE_DISTANCE = 50;
 
-    constructor({ canvas }: { canvas: OpenMarchCanvas }) {
+    /** When false (e.g. Light Designer), selection works but marcher moves are not persisted. */
+    private readonly persistMarcherEdits: boolean;
+
+    constructor({
+        canvas,
+        persistMarcherEdits = true,
+    }: {
+        canvas: OpenMarchCanvas;
+        persistMarcherEdits?: boolean;
+    }) {
         this.canvas = canvas as OpenMarchCanvas & fabric.Canvas;
+        this.persistMarcherEdits = persistMarcherEdits;
         this.handleObjectModified = this.handleObjectModified.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
@@ -38,7 +48,9 @@ export default class DefaultListeners implements CanvasListeners {
     }
 
     initiateListeners = () => {
-        this.canvas.on("object:modified", this.handleObjectModified);
+        if (this.persistMarcherEdits) {
+            this.canvas.on("object:modified", this.handleObjectModified);
+        }
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
@@ -49,7 +61,12 @@ export default class DefaultListeners implements CanvasListeners {
     };
 
     cleanupListeners = () => {
-        this.canvas.off("object:modified", this.handleObjectModified as any);
+        if (this.persistMarcherEdits) {
+            this.canvas.off(
+                "object:modified",
+                this.handleObjectModified as any,
+            );
+        }
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);

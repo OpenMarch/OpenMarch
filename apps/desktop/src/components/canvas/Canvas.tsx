@@ -14,7 +14,6 @@ import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas"
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
-import ViewOnlyListeners from "./listeners/ViewOnlyListeners";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -97,7 +96,12 @@ export default function Canvas({
 
     // Custom hooks for the canvas
     useEditablePath();
-    useSelectionListeners({ canvas, isCanvasEditingEnabled });
+    useSelectionListeners({
+        canvas,
+        isCanvasEditingEnabled,
+        syncFabricSelection:
+            workspaceMode === "editor" || workspaceMode === "lightDesigner",
+    });
     useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas, workspaceMode });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
@@ -190,11 +194,23 @@ export default function Canvas({
         }
     }, [workspaceMode, resetAlignmentEvent]);
 
+    // Light Designer: selection + pan/zoom like DefaultListeners, but no persisted marcher moves
+    useEffect(() => {
+        if (!canvas) return;
+        canvas.marcherTransformsReadOnly = workspaceMode === "lightDesigner";
+        canvas.refreshActiveMarcherLocks();
+    }, [canvas, workspaceMode]);
+
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
             if (workspaceMode === "lightDesigner") {
-                canvas.setListeners(new ViewOnlyListeners({ canvas }));
+                canvas.setListeners(
+                    new DefaultListeners({
+                        canvas,
+                        persistMarcherEdits: false,
+                    }),
+                );
                 canvas.eventMarchers = [];
             } else {
                 switch (alignmentEvent) {

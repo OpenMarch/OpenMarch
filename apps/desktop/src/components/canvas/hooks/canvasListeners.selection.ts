@@ -13,9 +13,12 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 export const useSelectionListeners = ({
     canvas,
     isCanvasEditingEnabled = true,
+    syncFabricSelection = true,
 }: {
     canvas: OpenMarchCanvas | null;
     isCanvasEditingEnabled?: boolean;
+    /** When true, Fabric selection events update global stores and global selection updates the canvas. */
+    syncFabricSelection?: boolean;
 }) => {
     const { selectedShapePageIds } = useSelectionStore()!;
     const { selectedPage } = useSelectedPage()!;
@@ -240,7 +243,7 @@ export const useSelectionListeners = ({
     useEffect(() => {
         if (
             !canvas ||
-            !isCanvasEditingEnabled ||
+            !syncFabricSelection ||
             activeObjectsAreGloballySelected()
         )
             return;
@@ -273,7 +276,7 @@ export const useSelectionListeners = ({
         setSelectedMarchers,
         getGlobalSelectedObjectClassIds,
         activeObjectsAreGloballySelected,
-        isCanvasEditingEnabled,
+        syncFabricSelection,
     ]);
 
     // Update the control points on MarcherShapes when the selectedShapePages change
@@ -298,7 +301,7 @@ export const useSelectionListeners = ({
     }, [canvas, selectedShapePageIds, isCanvasEditingEnabled]);
 
     useEffect(() => {
-        if (!canvas || !isCanvasEditingEnabled) return;
+        if (!canvas || !syncFabricSelection) return;
         canvas.on("selection:created", handleSelect);
         canvas.on("selection:updated", handleSelect);
         canvas.on("selection:cleared", handleDeselect);
@@ -308,5 +311,5 @@ export const useSelectionListeners = ({
             canvas.off("selection:updated", handleSelect);
             canvas.off("selection:cleared", handleDeselect);
         };
-    }, [canvas, handleDeselect, handleSelect, isCanvasEditingEnabled]);
+    }, [canvas, handleDeselect, handleSelect, syncFabricSelection]);
 };

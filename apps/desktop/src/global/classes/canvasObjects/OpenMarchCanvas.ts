@@ -54,6 +54,10 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Set it to false after making selection
      */
     handleSelectLock = false;
+    /**
+     * When true (Light Designer), marcher selection is allowed but positions cannot be changed on the canvas.
+     */
+    marcherTransformsReadOnly = false;
     /** Denotes whether the Canvas itself is being dragged by the user to pan the view */
     isDragging = false;
     /** The point where the user's mouse was when they started dragging the canvas. This is used to adjust the viewport transform. */
@@ -264,7 +268,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const group = this.getActiveObject();
             if (group && group instanceof fabric.Group) {
                 this._activeGroup = group;
-                setGroupAttributes(this._activeGroup);
+                setGroupAttributes(this._activeGroup, {
+                    disableGroupTransforms: this.marcherTransformsReadOnly,
+                });
                 resetMarcherRotation(group);
             }
         } else {
@@ -1008,9 +1014,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @return — thisArg
      */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
-        object.lockMovementX = this.uiSettings.lockX || (object as any).locked;
-        object.lockMovementY = this.uiSettings.lockY || (object as any).locked;
+        const readOnly = this.marcherTransformsReadOnly;
+        object.lockMovementX =
+            readOnly || this.uiSettings.lockX || (object as any).locked;
+        object.lockMovementY =
+            readOnly || this.uiSettings.lockY || (object as any).locked;
         return super.setActiveObject(object, e);
+    }
+
+    /** Re-apply movement locks from uiSettings / read-only / marcher lock after flags change. */
+    refreshActiveMarcherLocks() {
+        const active = this.getActiveObject();
+        if (active) this.setActiveObject(active);
     }
 
     resetCursorsToDefault = () => {
