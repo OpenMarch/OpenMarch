@@ -299,7 +299,7 @@ export default function SceneGroupsSection({
                             defaultValue="Choose how to assign the dragged marchers."
                         />
                     </AlertDialogDescription>
-                    <div className="flex justify-end gap-8 pt-16">
+                    <div className="flex flex-wrap justify-end gap-8 pt-16">
                         <AlertDialogCancel asChild>
                             <Button variant="secondary" size="compact">
                                 <T
@@ -312,6 +312,7 @@ export default function SceneGroupsSection({
                             <Button
                                 variant="secondary"
                                 size="compact"
+                                className="whitespace-nowrap"
                                 onClick={() => {
                                     if (!dropConflictState) return;
                                     addMarchersToGroup(
@@ -331,6 +332,7 @@ export default function SceneGroupsSection({
                             <Button
                                 variant="red"
                                 size="compact"
+                                className="whitespace-nowrap"
                                 onClick={() => {
                                     if (!dropConflictState) return;
                                     addMarchersToGroup(
