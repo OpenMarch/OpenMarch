@@ -812,8 +812,8 @@
         "noMeasures": "Le groupe de tempo n'a pas de mesures"
     },
     "timeline": {
-        "addEffect": "+ Ajouter un effet",
-        "addEffectHint": "Glissez dans un espace vide pour ajouter un effet",
+        "addEffect": "Glissez pour ajouter un effet",
+        "addEffectHint": "Glissez pour ajouter un effet",
         "audio": "Audio",
         "controls": {
             "label": "Contrôles de lecture"

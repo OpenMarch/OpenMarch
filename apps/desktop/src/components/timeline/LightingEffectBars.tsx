@@ -317,7 +317,7 @@ export default function LightingEffectBars({
                         key={p.effectId}
                         data-effect-bar-id={p.effectId}
                         className={clsx(
-                            "border-stroke absolute overflow-clip rounded-[6px] border",
+                            "border-stroke absolute overflow-clip rounded-[6px] border transition-[top] duration-200 ease-out",
                             !isPlaying && "cursor-grab active:cursor-grabbing",
                         )}
                         style={{

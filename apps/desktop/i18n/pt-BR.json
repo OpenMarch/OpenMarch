@@ -812,8 +812,8 @@
         "noMeasures": "Grupo de tempo não tem medidas"
     },
     "timeline": {
-        "addEffect": "+ Adicionar efeito",
-        "addEffectHint": "Arraste em um espaço vazio para adicionar um efeito",
+        "addEffect": "Arraste para adicionar um efeito",
+        "addEffectHint": "Arraste para adicionar um efeito",
         "audio": "Áudio",
         "controls": {
             "label": "Controles de Reprodução"
