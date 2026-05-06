@@ -7,6 +7,7 @@ import {
     DEFAULT_STALE_TIME,
     fieldPropertiesQueryOptions,
     lightingEffectByIdQueryOptions,
+    lightingGroupMembershipsBySceneIdQueryOptions,
     lightingSceneDataByIdQueryOptions,
     marcherAppearancesQueryOptions,
     marcherWithVisualsQueryOptions,
@@ -21,6 +22,7 @@ import { compareBeats } from "@/global/classes/Beat";
 import { lightingEffectBeatWindowToSceneLocalMs } from "@/utilities/lightingBeatSpans";
 import type { LightingEffectWithMarchers } from "@/db-functions";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
+import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { getCurrentShowTimeMs } from "@/utilities/showTime";
 import {
@@ -38,6 +40,12 @@ export function MarcherAppearance({
     canvas: OpenMarchCanvas | null;
 }) {
     const workspaceMode = useWorkspaceViewStore.use.mode();
+    const clearGroupFocus =
+        useLightDesignerGroupFocusStore.use.clearGroupFocus();
+
+    useEffect(() => {
+        if (workspaceMode !== "lightDesigner") clearGroupFocus();
+    }, [workspaceMode, clearGroupFocus]);
 
     if (workspaceMode === "editor")
         return <EditorMarcherAppearances canvas={canvas} />;
@@ -105,6 +113,9 @@ const defaultLightingBaseFill: LightingRgba = {
     a: 1,
 };
 
+/** Marchers outside the focused lighting group render at this opacity. */
+const GROUP_FOCUS_DIM_OPACITY = 0.28;
+
 const LightDesignerMarcherAppearances = ({
     canvas,
 }: {
@@ -120,6 +131,14 @@ const LightDesignerMarcherAppearances = ({
     const { data: marcherAppearances } = useQuery(
         marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
     );
+    const groupFocus = useLightDesignerGroupFocusStore.use.groupFocus();
+    const focusSceneIdForQuery = groupFocus?.sceneId;
+    const { data: groupFocusMemberships } = useQuery({
+        ...lightingGroupMembershipsBySceneIdQueryOptions(
+            focusSceneIdForQuery ?? -1,
+        ),
+        enabled: focusSceneIdForQuery != null && focusSceneIdForQuery > 0,
+    });
     const { data: lightingScenes = [] } = useQuery(
         allLightingScenesQueryOptions(),
     );
@@ -231,10 +250,19 @@ const LightDesignerMarcherAppearances = ({
     );
 
     const lastFillKeyRef = useRef(new Map<number, string>());
+    const lastOpacityRef = useRef(new Map<number, number>());
 
     useEffect(() => {
         lastFillKeyRef.current.clear();
-    }, [plansBySceneId, windows, marcherAppearances, marcherVisuals]);
+        lastOpacityRef.current.clear();
+    }, [
+        plansBySceneId,
+        windows,
+        marcherAppearances,
+        marcherVisuals,
+        groupFocus,
+        groupFocusMemberships,
+    ]);
 
     const labelDefault = fieldProperties?.theme.defaultMarcher.label;
 
@@ -253,6 +281,18 @@ const LightDesignerMarcherAppearances = ({
             const plan =
                 active != null ? plansBySceneId.get(active.sceneId) : undefined;
 
+            let focusMemberMarcherIds: Set<number> | null = null;
+            if (
+                groupFocus != null &&
+                active != null &&
+                active.sceneId === groupFocus.sceneId &&
+                groupFocusMemberships != null
+            ) {
+                focusMemberMarcherIds =
+                    groupFocusMemberships.get(groupFocus.groupId) ??
+                    new Set<number>();
+            }
+
             marchers.forEach((marcher) => {
                 const visualGroup = marcherVisuals[marcher.id];
                 const appearancesForMarcher = marcherAppearances[marcher.id];
@@ -270,24 +310,36 @@ const LightDesignerMarcherAppearances = ({
                 }
                 const resolvedFill = fillOverride ?? defaultLightingBaseFill;
                 const key = `${Math.round(resolvedFill.r)},${Math.round(resolvedFill.g)},${Math.round(resolvedFill.b)}`;
-                if (lastFillKeyRef.current.get(marcher.id) === key) return;
-                lastFillKeyRef.current.set(marcher.id, key);
+                if (lastFillKeyRef.current.get(marcher.id) !== key) {
+                    lastFillKeyRef.current.set(marcher.id, key);
 
-                const lightingLayer: AppearanceComponentOptional = {
-                    fill_color: {
-                        r: resolvedFill.r,
-                        g: resolvedFill.g,
-                        b: resolvedFill.b,
-                        a: resolvedFill.a,
-                    },
-                    visible: true,
-                    label_visible: true,
-                };
-                canvasMarcher.setAppearance(
-                    [lightingLayer, ...appearancesForMarcher],
-                    { requestRenderAll: false },
-                    labelDefault,
-                );
+                    const lightingLayer: AppearanceComponentOptional = {
+                        fill_color: {
+                            r: resolvedFill.r,
+                            g: resolvedFill.g,
+                            b: resolvedFill.b,
+                            a: resolvedFill.a,
+                        },
+                        visible: true,
+                        label_visible: true,
+                    };
+                    canvasMarcher.setAppearance(
+                        [lightingLayer, ...appearancesForMarcher],
+                        { requestRenderAll: false },
+                        labelDefault,
+                    );
+                }
+
+                const opacity =
+                    focusMemberMarcherIds != null
+                        ? focusMemberMarcherIds.has(marcher.id)
+                            ? 1
+                            : GROUP_FOCUS_DIM_OPACITY
+                        : 1;
+                if (lastOpacityRef.current.get(marcher.id) !== opacity) {
+                    lastOpacityRef.current.set(marcher.id, opacity);
+                    canvasMarcher.set({ opacity });
+                }
             });
 
             if (requestCanvasRender) canvas.requestRenderAll();
@@ -300,6 +352,8 @@ const LightDesignerMarcherAppearances = ({
             windows,
             plansBySceneId,
             labelDefault,
+            groupFocus,
+            groupFocusMemberships,
         ],
     );
 
@@ -321,6 +375,8 @@ const LightDesignerMarcherAppearances = ({
         marcherVisuals,
         plansBySceneId,
         windows,
+        groupFocus,
+        groupFocusMemberships,
     ]);
 
     return null;

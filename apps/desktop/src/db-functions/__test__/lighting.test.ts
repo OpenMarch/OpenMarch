@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { asc, eq } from "drizzle-orm";
 import { expect } from "vitest";
 import {
+    addMarchersToLightingGroup,
     createLightingEffects,
     createLightingGroups,
     createLightingScenes,
@@ -16,7 +17,10 @@ import {
     getLightingScenePositionByLightingSceneIdMap,
     getLightingScenesByStartPageId,
     getLightingEffectsBySceneId,
+    getLightingGroupMembershipsBySceneId,
     getLightingGroupsBySceneId,
+    getMarcherIdsByLightingGroupId,
+    removeMarchersFromLightingGroup,
     updateLightingEffects,
     updateLightingScenes,
 } from "../lighting";
@@ -125,7 +129,7 @@ describeDbTests("lighting", (it) => {
             );
         });
 
-        it("enforces one group per marcher per scene", async ({
+        it("moves a marcher when a second group is created with that marcher in the same scene", async ({
             db,
             marchersAndPages,
         }) => {
@@ -137,7 +141,7 @@ describeDbTests("lighting", (it) => {
                 newScenes: [{ start_page_id: startPageId, name: "S" }],
             });
 
-            await createLightingGroups({
+            const [g1] = await createLightingGroups({
                 db,
                 newGroups: [
                     {
@@ -148,18 +152,114 @@ describeDbTests("lighting", (it) => {
                 ],
             });
 
-            await expect(
-                createLightingGroups({
-                    db,
-                    newGroups: [
-                        {
-                            scene_id: scene.id,
-                            name: "G2",
-                            marcher_ids: [marcherId],
-                        },
-                    ],
-                }),
-            ).rejects.toThrow();
+            const [g2] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [marcherId],
+                    },
+                ],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g2.id }),
+            ).toEqual([marcherId]);
+        });
+
+        it("addMarchersToLightingGroup moves marchers between groups", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const mA = marchersAndPages.expectedMarchers[0].id;
+            const mB = marchersAndPages.expectedMarchers[1].id;
+
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "S" }],
+            });
+            const [g1] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G1",
+                        marcher_ids: [mA],
+                    },
+                ],
+            });
+            const [g2] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [mB],
+                    },
+                ],
+            });
+
+            await addMarchersToLightingGroup({
+                db,
+                groupId: g2.id,
+                marcherIds: [mA, mB],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
+            expect(
+                (
+                    await getMarcherIdsByLightingGroupId({ db, groupId: g2.id })
+                ).sort((a, b) => a - b),
+            ).toEqual([mA, mB].sort((a, b) => a - b));
+
+            const map = await getLightingGroupMembershipsBySceneId({
+                db,
+                sceneId: scene.id,
+            });
+            expect(map.get(g1.id)?.size ?? 0).toBe(0);
+            expect([...(map.get(g2.id) ?? [])].sort((a, b) => a - b)).toEqual(
+                [mA, mB].sort((a, b) => a - b),
+            );
+        });
+
+        it("removeMarchersFromLightingGroup clears membership rows", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const marcherId = marchersAndPages.expectedMarchers[0].id;
+
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "S" }],
+            });
+            const [g1] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G1",
+                        marcher_ids: [marcherId],
+                    },
+                ],
+            });
+
+            await removeMarchersFromLightingGroup({
+                db,
+                groupId: g1.id,
+                marcherIds: [marcherId],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
         });
 
         it("returns empty arrays for empty batch creates", async ({ db }) => {

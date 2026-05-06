@@ -1,4 +1,5 @@
 import {
+    addMarchersToLightingGroup,
     createLightingEffects,
     createLightingGroups,
     createLightingScenes,
@@ -7,11 +8,13 @@ import {
     deleteLightingEffects,
     deleteLightingScenes,
     DeleteLightingSceneWithReassignmentResult,
+    getLightingGroupById,
     ModifiedLightingEffectArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
     NewLightingGroupArgs,
     NewLightingSceneArgs,
+    removeMarchersFromLightingGroup,
     updateLightingEffects,
     updateLightingScenes,
 } from "@/db-functions";
@@ -173,6 +176,10 @@ export const createLightingGroupsMutationOptions = () => {
                 void qc.invalidateQueries({
                     queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
                 });
+                void qc.invalidateQueries({
+                    queryKey:
+                        lightingKeys.lightingGroupMembershipsBySceneId(sceneId),
+                });
             }
         },
         onError: (e, variables) => {
@@ -195,9 +202,71 @@ export const deleteLightingGroupsMutationOptions = () => {
     });
 };
 
-// ============================================================================
-// LIGHTING EFFECTS MUTATIONS
-// ============================================================================
+export const addMarchersToLightingGroupMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            groupId,
+            marcherIds,
+        }: {
+            groupId: number;
+            marcherIds: readonly number[];
+        }) => addMarchersToLightingGroup({ db, groupId, marcherIds }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            const group = await getLightingGroupById({
+                db,
+                id: variables.groupId,
+            });
+            if (group != null)
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupMembershipsBySceneId(
+                        group.scene_id,
+                    ),
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error adding marchers to lighting group",
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const removeMarchersFromLightingGroupMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            groupId,
+            marcherIds,
+        }: {
+            groupId: number;
+            marcherIds: readonly number[];
+        }) => removeMarchersFromLightingGroup({ db, groupId, marcherIds }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            const group = await getLightingGroupById({
+                db,
+                id: variables.groupId,
+            });
+            if (group != null)
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupMembershipsBySceneId(
+                        group.scene_id,
+                    ),
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error removing marchers from lighting group",
+                e,
+                variables,
+            );
+        },
+    });
+};
 
 export const createLightingEffectsMutationOptions = () => {
     return mutationOptions({

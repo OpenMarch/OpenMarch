@@ -1,4 +1,5 @@
 import EffectList from "@/components/inspector/lighting/EffectList";
+import SceneGroupsSection from "@/components/inspector/lighting/SceneGroupsSection";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
@@ -29,6 +30,8 @@ export default function LightDesignerInspector() {
             ? scenePositionByIdQuery.data?.[sceneQuery.lightingSceneData.id]
             : undefined;
 
+    const activeLightingSceneId = sceneQuery.lightingSceneData?.id;
+
     return (
         <div className="rounded-6 border-stroke bg-fg-1 flex h-full w-xs min-w-0 flex-col border p-12">
             <p className="text-body text-text/60">
@@ -37,7 +40,7 @@ export default function LightDesignerInspector() {
                     defaultValue="Lighting"
                 />
             </p>
-            <div className="mt-8 min-h-0 min-w-0 flex-1">
+            <div className="mt-8 flex min-h-0 min-w-0 flex-1 flex-col gap-12 overflow-hidden">
                 <InspectorCollapsible
                     defaultOpen
                     translatableTitle={{
@@ -52,6 +55,14 @@ export default function LightDesignerInspector() {
                     className="mt-12"
                 >
                     <EffectList />
+                </InspectorCollapsible>
+
+                <InspectorCollapsible
+                    defaultOpen={false}
+                    title="inspector.light.groupsTitle"
+                    className="mt-12 flex min-h-0 flex-1 flex-col"
+                >
+                    <SceneGroupsSection sceneId={activeLightingSceneId} />
                 </InspectorCollapsible>
             </div>
         </div>

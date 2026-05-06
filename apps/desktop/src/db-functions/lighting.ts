@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -430,7 +430,54 @@ export async function getMarcherIdsByLightingGroupId({
     return rows.map((r) => r.marcher_id);
 }
 
-/** Creates immutable groups with marcher membership (membership rows are fixed after create). */
+/**
+ * Marcher memberships for all groups in a scene (one query).
+ * Maps group ID → marcher IDs in that group.
+ */
+export async function getLightingGroupMembershipsBySceneId({
+    db,
+    sceneId,
+}: {
+    db: DbConnection | DbTransaction;
+    sceneId: number;
+}): Promise<Map<number, Set<number>>> {
+    const rows = await db.query.lighting_group_marchers.findMany({
+        where: eq(schema.lighting_group_marchers.scene_id, sceneId),
+    });
+    const out = new Map<number, Set<number>>();
+    for (const r of rows) {
+        let set = out.get(r.group_id);
+        if (!set) {
+            set = new Set<number>();
+            out.set(r.group_id, set);
+        }
+        set.add(r.marcher_id);
+    }
+    return out;
+}
+
+async function deleteLightingGroupMembershipsForMarchersInScene({
+    tx,
+    sceneId,
+    marcherIds,
+}: {
+    tx: DbTransaction;
+    sceneId: number;
+    marcherIds: readonly number[];
+}): Promise<void> {
+    if (marcherIds.length === 0) return;
+    const unique = [...new Set(marcherIds)];
+    await tx
+        .delete(schema.lighting_group_marchers)
+        .where(
+            and(
+                eq(schema.lighting_group_marchers.scene_id, sceneId),
+                inArray(schema.lighting_group_marchers.marcher_id, unique),
+            ),
+        );
+}
+
+/** Creates groups with marcher membership; memberships can be updated with add/remove APIs. */
 export async function createLightingGroups({
     db,
     newGroups,
@@ -473,6 +520,11 @@ export async function createLightingGroupsInTransaction({
 
         const scene_id = group.scene_id;
         if (marcherIds.length > 0) {
+            await deleteLightingGroupMembershipsForMarchersInScene({
+                tx,
+                sceneId: scene_id,
+                marcherIds: marcherIds,
+            });
             await tx.insert(schema.lighting_group_marchers).values(
                 marcherIds.map((marcher_id) => ({
                     group_id: group.id,
@@ -484,6 +536,108 @@ export async function createLightingGroupsInTransaction({
     }
 
     return inserted;
+}
+
+export async function addMarchersToLightingGroup({
+    db,
+    groupId,
+    marcherIds,
+}: {
+    db: DbConnection;
+    groupId: number;
+    marcherIds: readonly number[];
+}): Promise<void> {
+    if (marcherIds.length === 0) return;
+
+    return await transactionWithHistory(
+        db,
+        "addMarchersToLightingGroup",
+        async (tx) => {
+            await addMarchersToLightingGroupInTransaction({
+                tx,
+                groupId,
+                marcherIds,
+            });
+        },
+    );
+}
+
+export async function addMarchersToLightingGroupInTransaction({
+    tx,
+    groupId,
+    marcherIds,
+}: {
+    tx: DbTransaction;
+    groupId: number;
+    marcherIds: readonly number[];
+}): Promise<void> {
+    if (marcherIds.length === 0) return;
+    await ensureUniqueMarcherIds(marcherIds);
+
+    const group = await tx.query.lighting_groups.findFirst({
+        where: eq(schema.lighting_groups.id, groupId),
+    });
+    if (!group) throw new Error(`Lighting group ${groupId} was not found.`);
+
+    const scene_id = group.scene_id;
+    await deleteLightingGroupMembershipsForMarchersInScene({
+        tx,
+        sceneId: scene_id,
+        marcherIds,
+    });
+
+    await tx.insert(schema.lighting_group_marchers).values(
+        marcherIds.map((marcher_id) => ({
+            group_id: groupId,
+            marcher_id,
+            scene_id,
+        })),
+    );
+}
+
+export async function removeMarchersFromLightingGroup({
+    db,
+    groupId,
+    marcherIds,
+}: {
+    db: DbConnection;
+    groupId: number;
+    marcherIds: readonly number[];
+}): Promise<void> {
+    if (marcherIds.length === 0) return;
+
+    return await transactionWithHistory(
+        db,
+        "removeMarchersFromLightingGroup",
+        async (tx) => {
+            await removeMarchersFromLightingGroupInTransaction({
+                tx,
+                groupId,
+                marcherIds,
+            });
+        },
+    );
+}
+
+export async function removeMarchersFromLightingGroupInTransaction({
+    tx,
+    groupId,
+    marcherIds,
+}: {
+    tx: DbTransaction;
+    groupId: number;
+    marcherIds: readonly number[];
+}): Promise<void> {
+    if (marcherIds.length === 0) return;
+    const unique = [...new Set(marcherIds)];
+    await tx
+        .delete(schema.lighting_group_marchers)
+        .where(
+            and(
+                eq(schema.lighting_group_marchers.group_id, groupId),
+                inArray(schema.lighting_group_marchers.marcher_id, unique),
+            ),
+        );
 }
 
 export async function deleteLightingGroups({

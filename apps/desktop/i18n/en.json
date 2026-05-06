@@ -523,7 +523,31 @@
             "title": "Page {pageNumber}"
         },
         "light": {
-            "title": "Scene - {sceneName}"
+            "title": "Scene - {sceneName}",
+            "groupsTitle": "Groups",
+            "groups": {
+                "newGroup": "New group",
+                "empty": "Create a group to target effects on marchers.",
+                "groupFallback": "Group",
+                "memberCount": "{count} marchers",
+                "clearFocus": "Clear focus",
+                "focusCanvas": "Focus",
+                "add": "Add",
+                "addBy": {
+                    "section": "Section",
+                    "family": "Family",
+                    "prefix": "Drill prefix"
+                },
+                "addSelection": "Current selection",
+                "addSelectionPartial": "Add {count} marchers to group",
+                "removeSelectionPartial": "Remove {count} marchers from group",
+                "deleteAria": "Delete group",
+                "deleteTitle": "Delete this group?",
+                "deleteDescription": "This group may be referenced by lighting effects. Those links will be removed.",
+                "cancel": "Cancel",
+                "deleteConfirm": "Delete",
+                "emptyPrefixLabel": "(none)"
+            }
         },
         "shape": {
             "addSegmentButton": "Add",
