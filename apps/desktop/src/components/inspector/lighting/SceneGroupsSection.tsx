@@ -47,6 +47,7 @@ import {
     useRef,
     useState,
     type DragEvent,
+    type MouseEvent,
     type ReactNode,
 } from "react";
 
@@ -565,27 +566,35 @@ function MarcherCollectionDragBadge({
     marcherIds,
     variant,
     children,
+    className,
+    onMouseDown,
+    onDragStart,
 }: {
     sourceType: "selection" | "section" | "tag" | "family";
     label: string;
     marcherIds: number[];
     variant: "primary" | "secondary";
     children: ReactNode;
+    className?: string;
+    onMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void;
+    onDragStart?: (e: DragEvent<HTMLButtonElement>) => void;
 }) {
-    const handleDragStart = (e: DragEvent<HTMLButtonElement>) => {
+    const handleDragStartInternal = (e: DragEvent<HTMLButtonElement>) => {
         setLightingGroupMarcherCollectionDragData(e.dataTransfer, {
             sourceType,
             label,
             marcherIds,
         });
+        onDragStart?.(e);
     };
 
     return (
         <button
             type="button"
-            className="cursor-grab active:cursor-grabbing"
+            className={clsx("cursor-grab active:cursor-grabbing", className)}
             draggable={marcherIds.length > 0}
-            onDragStart={handleDragStart}
+            onDragStart={handleDragStartInternal}
+            onMouseDown={onMouseDown}
             aria-label={label}
         >
             <Badge variant={variant} className="py-4">
@@ -607,8 +616,10 @@ function CollectionDropdownBadge({
         sourceType: "selection" | "section" | "tag" | "family";
     }>;
 }) {
+    const [open, setOpen] = useState(false);
+
     return (
-        <Dropdown.Root>
+        <Dropdown.Root open={open} onOpenChange={setOpen}>
             <Dropdown.Trigger asChild>
                 <button type="button">
                     <Badge variant="secondary" className="gap-6 py-4">
@@ -625,7 +636,8 @@ function CollectionDropdownBadge({
                     {items.map((item) => (
                         <Dropdown.Item
                             key={item.key}
-                            className="text-text hover:bg-overlay rounded-8 cursor-default px-8 py-4 outline-hidden"
+                            asChild
+                            onSelect={(e) => e.preventDefault()}
                         >
                             <MarcherCollectionDragBadge
                                 sourceType={item.sourceType}
@@ -636,6 +648,12 @@ function CollectionDropdownBadge({
                                 }
                                 marcherIds={item.marcherIds}
                                 variant="secondary"
+                                className="text-text hover:bg-overlay rounded-8 w-full px-8 py-4 text-left outline-hidden"
+                                onMouseDown={(e) => e.stopPropagation()}
+                                onDragStart={() => {
+                                    // Close after drag init so unmounting the menu doesn't cancel drag.
+                                    window.setTimeout(() => setOpen(false), 0);
+                                }}
                             >
                                 {item.label}
                             </MarcherCollectionDragBadge>
