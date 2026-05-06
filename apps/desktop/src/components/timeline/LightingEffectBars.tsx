@@ -9,23 +9,27 @@ import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { parseEffectArgs } from "@openmarch/core";
 import { useCallback, useMemo, useRef } from "react";
 import clsx from "clsx";
+import { DotsSix, DotsSixVertical } from "@phosphor-icons/react";
 import {
+    barPxFromBoundary,
+    computeBeatBoundaryPx,
     effectBarPx,
+    findClosestBoundaryIndex,
     getSceneStartBeatPosition,
     getSceneTotalBeats,
     packEffectsIntoLanes,
     type OrderedSceneStart,
 } from "./SceneTimeline.utils";
 import type Beat from "@/global/classes/Beat";
-import { compareBeats } from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 
 const HEADER_GAP_PX = 4;
 const LANE_HEIGHT_PX = 18;
 const LANE_GAP_PX = 4;
 const VERTICAL_PADDING_PX = 4;
-const HANDLE_WIDTH_PX = 6;
+const HANDLE_WIDTH_PX = 12;
 const MIN_BAR_PX = 12;
+const CENTER_DOT_MIN_BAR_WIDTH_PX = 28;
 
 type DragMode = "move" | "resize-left" | "resize-right";
 
@@ -39,53 +43,6 @@ type DragState = {
     /** scene-local px boundary positions (length = totalBeats + 1). */
     beatBoundaryPx: number[];
 };
-
-/**
- * Computes the scene-local px position of every beat boundary inside the scene
- * (index 0 .. totalBeats inclusive). Used to snap drags to whole-beat boundaries.
- */
-function computeBeatBoundaryPx(
-    beats: readonly Beat[],
-    sceneStartPosition: number,
-    totalBeats: number,
-    pixelsPerSecond: number,
-): number[] {
-    const sorted = [...beats].sort(compareBeats);
-    let sceneIdx = sorted.findIndex((b) => b.position === sceneStartPosition);
-    if (sceneIdx < 0) {
-        sceneIdx = sorted.findIndex((b) => b.position >= sceneStartPosition);
-    }
-    if (sceneIdx < 0) return [0];
-
-    const positions: number[] = [0];
-    let cursorMs = 0;
-    for (
-        let i = sceneIdx;
-        i < sceneIdx + totalBeats && i < sorted.length;
-        i++
-    ) {
-        cursorMs += Math.max(0, sorted[i]!.duration) * 1000;
-        positions.push((cursorMs * pixelsPerSecond) / 1000);
-    }
-    return positions;
-}
-
-function findClosestBoundaryIndex(
-    boundaryPx: readonly number[],
-    targetPx: number,
-): number {
-    if (boundaryPx.length === 0) return 0;
-    let bestIdx = 0;
-    let bestDist = Math.abs(boundaryPx[0]! - targetPx);
-    for (let i = 1; i < boundaryPx.length; i++) {
-        const d = Math.abs(boundaryPx[i]! - targetPx);
-        if (d < bestDist) {
-            bestDist = d;
-            bestIdx = i;
-        }
-    }
-    return bestIdx;
-}
 
 type LightingEffectBarsProps = {
     sceneId: number;
@@ -191,95 +148,103 @@ export default function LightingEffectBars({
     const dragState = useRef<DragState | null>(null);
 
     const onPointerMove = useCallback((ev: PointerEvent) => {
-        const drag = dragState.current;
-        if (!drag) return;
         const container = containerRef.current;
         if (!container) return;
-
         const rect = container.getBoundingClientRect();
-        const mouseRelX = ev.clientX - rect.left;
-        const closestIdx = findClosestBoundaryIndex(
-            drag.beatBoundaryPx,
-            mouseRelX,
-        );
-        const totalBeats = drag.sceneTotalBeats;
+        const effectDrag = dragState.current;
+        if (effectDrag) {
+            const mouseRelX = ev.clientX - rect.left;
+            const closestIdx = findClosestBoundaryIndex(
+                effectDrag.beatBoundaryPx,
+                mouseRelX,
+            );
+            const totalBeats = effectDrag.sceneTotalBeats;
 
-        let newStart = drag.originalStart;
-        let newDuration = drag.originalDuration;
+            let newStart = effectDrag.originalStart;
+            let newDuration = effectDrag.originalDuration;
 
-        if (drag.mode === "move") {
-            const downIdx = findClosestBoundaryIndex(
-                drag.beatBoundaryPx,
-                drag.pointerDownX - rect.left,
-            );
-            const deltaBeats = closestIdx - downIdx;
-            newStart = Math.max(
-                0,
-                Math.min(
-                    totalBeats - drag.originalDuration,
-                    drag.originalStart + deltaBeats,
-                ),
-            );
-        } else if (drag.mode === "resize-right") {
-            newDuration = Math.max(
-                1,
-                Math.min(
-                    totalBeats - drag.originalStart,
-                    closestIdx - drag.originalStart,
-                ),
-            );
-        } else {
-            const rightAnchor = drag.originalStart + drag.originalDuration;
-            newStart = Math.max(0, Math.min(rightAnchor - 1, closestIdx));
-            newDuration = rightAnchor - newStart;
-        }
+            if (effectDrag.mode === "move") {
+                const downIdx = findClosestBoundaryIndex(
+                    effectDrag.beatBoundaryPx,
+                    effectDrag.pointerDownX - rect.left,
+                );
+                const deltaBeats = closestIdx - downIdx;
+                newStart = Math.max(
+                    0,
+                    Math.min(
+                        totalBeats - effectDrag.originalDuration,
+                        effectDrag.originalStart + deltaBeats,
+                    ),
+                );
+            } else if (effectDrag.mode === "resize-right") {
+                newDuration = Math.max(
+                    1,
+                    Math.min(
+                        totalBeats - effectDrag.originalStart,
+                        closestIdx - effectDrag.originalStart,
+                    ),
+                );
+            } else {
+                const rightAnchor =
+                    effectDrag.originalStart + effectDrag.originalDuration;
+                newStart = Math.max(0, Math.min(rightAnchor - 1, closestIdx));
+                newDuration = rightAnchor - newStart;
+            }
 
-        const bar = container.querySelector<HTMLElement>(
-            `[data-effect-bar-id="${drag.effectId}"]`,
-        );
-        if (bar) {
-            const { leftPx, widthPx: barWidth } = barPxFromBoundary(
-                drag.beatBoundaryPx,
-                newStart,
-                newDuration,
+            const bar = container.querySelector<HTMLElement>(
+                `[data-effect-bar-id="${effectDrag.effectId}"]`,
             );
-            bar.style.left = `${leftPx}px`;
-            bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
-            bar.dataset.newStart = String(newStart);
-            bar.dataset.newDuration = String(newDuration);
+            if (bar) {
+                const { leftPx, widthPx: barWidth } = barPxFromBoundary(
+                    effectDrag.beatBoundaryPx,
+                    newStart,
+                    newDuration,
+                );
+                bar.style.left = `${leftPx}px`;
+                bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
+                bar.dataset.newStart = String(newStart);
+                bar.dataset.newDuration = String(newDuration);
+            }
+            return;
         }
     }, []);
 
     const onPointerUp = useCallback(() => {
-        const drag = dragState.current;
+        const effectDrag = dragState.current;
         const container = containerRef.current;
         document.removeEventListener("pointermove", onPointerMove);
         document.removeEventListener("pointerup", onPointerUp);
-        if (!drag || !container) {
+        if (effectDrag && container) {
+            const bar = container.querySelector<HTMLElement>(
+                `[data-effect-bar-id="${effectDrag.effectId}"]`,
+            );
+            if (bar) {
+                const newStart = Number(bar.dataset.newStart);
+                const newDuration = Number(bar.dataset.newDuration);
+                delete bar.dataset.newStart;
+                delete bar.dataset.newDuration;
+                const startChanged =
+                    Number.isFinite(newStart) &&
+                    newStart !== effectDrag.originalStart;
+                const durationChanged =
+                    Number.isFinite(newDuration) &&
+                    newDuration !== effectDrag.originalDuration;
+                if (startChanged || durationChanged) {
+                    updateEffect({
+                        id: effectDrag.effectId,
+                        ...(startChanged
+                            ? { start_offset_beats: newStart }
+                            : {}),
+                        ...(durationChanged
+                            ? { duration_beats: newDuration }
+                            : {}),
+                    });
+                }
+            }
             dragState.current = null;
             return;
         }
-        const bar = container.querySelector<HTMLElement>(
-            `[data-effect-bar-id="${drag.effectId}"]`,
-        );
-        if (bar) {
-            const newStart = Number(bar.dataset.newStart);
-            const newDuration = Number(bar.dataset.newDuration);
-            delete bar.dataset.newStart;
-            delete bar.dataset.newDuration;
-            const startChanged =
-                Number.isFinite(newStart) && newStart !== drag.originalStart;
-            const durationChanged =
-                Number.isFinite(newDuration) &&
-                newDuration !== drag.originalDuration;
-            if (startChanged || durationChanged) {
-                updateEffect({
-                    id: drag.effectId,
-                    ...(startChanged ? { start_offset_beats: newStart } : {}),
-                    ...(durationChanged ? { duration_beats: newDuration } : {}),
-                });
-            }
-        }
+
         dragState.current = null;
     }, [onPointerMove, updateEffect]);
 
@@ -341,9 +306,11 @@ export default function LightingEffectBars({
                 const color = getEffectColor(effect);
                 const isDarkEffectColor = isEffectColorDark(color);
                 const borderColor = getEffectBorderColor(color);
-                const handleHoverClass = isDarkEffectColor
-                    ? "hover:bg-white/20"
-                    : "hover:bg-black/20";
+                const markerColorClass = isDarkEffectColor
+                    ? "text-white/70"
+                    : "text-black/45";
+                const showCenterDot =
+                    renderWidth >= CENTER_DOT_MIN_BAR_WIDTH_PX;
                 const top = p.lane * (LANE_HEIGHT_PX + LANE_GAP_PX);
                 return (
                     <div
@@ -375,13 +342,48 @@ export default function LightingEffectBars({
                         }
                     >
                         {!isPlaying && (
+                            <div
+                                className="pointer-events-none absolute inset-0"
+                                aria-hidden
+                            >
+                                <DotsSixVertical
+                                    size={10}
+                                    weight="bold"
+                                    className={clsx(
+                                        "absolute top-1/2 left-[1px] -translate-y-1/2",
+                                        markerColorClass,
+                                    )}
+                                    aria-hidden
+                                />
+                                <DotsSixVertical
+                                    size={10}
+                                    weight="bold"
+                                    className={clsx(
+                                        "absolute top-1/2 right-[1px] -translate-y-1/2",
+                                        markerColorClass,
+                                    )}
+                                    aria-hidden
+                                />
+                                {showCenterDot && (
+                                    <DotsSix
+                                        size={10}
+                                        weight="bold"
+                                        className={clsx(
+                                            "absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2",
+                                            markerColorClass,
+                                        )}
+                                        aria-hidden
+                                    />
+                                )}
+                            </div>
+                        )}
+                        {!isPlaying && (
                             <>
                                 <button
                                     type="button"
                                     aria-label="Resize start"
                                     className={clsx(
                                         "absolute top-0 left-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
-                                        handleHoverClass,
                                     )}
                                     style={{ width: `${HANDLE_WIDTH_PX}px` }}
                                     onPointerDown={(e) =>
@@ -399,7 +401,6 @@ export default function LightingEffectBars({
                                     aria-label="Resize end"
                                     className={clsx(
                                         "absolute top-0 right-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
-                                        handleHoverClass,
                                     )}
                                     style={{ width: `${HANDLE_WIDTH_PX}px` }}
                                     onPointerDown={(e) =>
@@ -419,21 +420,6 @@ export default function LightingEffectBars({
             })}
         </div>
     );
-}
-
-function barPxFromBoundary(
-    boundaryPx: readonly number[],
-    startBeats: number,
-    durationBeats: number,
-): { leftPx: number; widthPx: number } {
-    const startIdx = Math.max(0, Math.min(boundaryPx.length - 1, startBeats));
-    const endIdx = Math.max(
-        0,
-        Math.min(boundaryPx.length - 1, startBeats + durationBeats),
-    );
-    const leftPx = boundaryPx[startIdx] ?? 0;
-    const rightPx = boundaryPx[endIdx] ?? leftPx;
-    return { leftPx, widthPx: Math.max(0, rightPx - leftPx) };
 }
 
 const FALLBACK_COLOR = "#3b82f6";

@@ -330,6 +330,69 @@ export function effectBarPx(
     };
 }
 
+/**
+ * Scene-local px position of each beat boundary inside the scene (indices
+ * `0 .. totalBeats` inclusive). Used to snap drags to whole-beat boundaries.
+ */
+export function computeBeatBoundaryPx(
+    beats: readonly Beat[],
+    sceneStartPosition: number,
+    totalBeats: number,
+    pixelsPerSecond: number,
+): number[] {
+    const sorted = [...beats].sort(compareBeats);
+    let sceneIdx = sorted.findIndex((b) => b.position === sceneStartPosition);
+    if (sceneIdx < 0) {
+        sceneIdx = sorted.findIndex((b) => b.position >= sceneStartPosition);
+    }
+    if (sceneIdx < 0) return [0];
+
+    const positions: number[] = [0];
+    let cursorMs = 0;
+    for (
+        let i = sceneIdx;
+        i < sceneIdx + totalBeats && i < sorted.length;
+        i++
+    ) {
+        cursorMs += Math.max(0, sorted[i]!.duration) * 1000;
+        positions.push((cursorMs * pixelsPerSecond) / 1000);
+    }
+    return positions;
+}
+
+export function findClosestBoundaryIndex(
+    boundaryPx: readonly number[],
+    targetPx: number,
+): number {
+    if (boundaryPx.length === 0) return 0;
+    let bestIdx = 0;
+    let bestDist = Math.abs(boundaryPx[0]! - targetPx);
+    for (let i = 1; i < boundaryPx.length; i++) {
+        const d = Math.abs(boundaryPx[i]! - targetPx);
+        if (d < bestDist) {
+            bestDist = d;
+            bestIdx = i;
+        }
+    }
+    return bestIdx;
+}
+
+/** Pixel span from precomputed beat boundary positions (scene-local x). */
+export function barPxFromBoundary(
+    boundaryPx: readonly number[],
+    startBeats: number,
+    durationBeats: number,
+): { leftPx: number; widthPx: number } {
+    const startIdx = Math.max(0, Math.min(boundaryPx.length - 1, startBeats));
+    const endIdx = Math.max(
+        0,
+        Math.min(boundaryPx.length - 1, startBeats + durationBeats),
+    );
+    const leftPx = boundaryPx[startIdx] ?? 0;
+    const rightPx = boundaryPx[endIdx] ?? leftPx;
+    return { leftPx, widthPx: Math.max(0, rightPx - leftPx) };
+}
+
 export type EffectLanePlacement = {
     effectId: number;
     lane: number;

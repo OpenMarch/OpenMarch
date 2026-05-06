@@ -859,6 +859,8 @@
         "noMeasures": "Tempo group has no measures"
     },
     "timeline": {
+        "addEffect": "+ Add Effect",
+        "addEffectHint": "Drag in empty space to add an effect",
         "audio": "Audio",
         "controls": {
             "label": "Playback Controls"

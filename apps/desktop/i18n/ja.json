@@ -812,6 +812,8 @@
         "noMeasures": "テンポ グループに 測定値 が ありません"
     },
     "timeline": {
+        "addEffect": "+ エフェクトを追加",
+        "addEffectHint": "空きスペースをドラッグしてエフェクトを追加",
         "audio": "オーディオ",
         "controls": {
             "label": "再生 コントロール"

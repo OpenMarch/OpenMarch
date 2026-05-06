@@ -28,6 +28,7 @@ import {
 import LightingEffectBars, {
     expandedSceneHeightPx,
 } from "./LightingEffectBars";
+import LightingEffectCreateStrip from "./LightingEffectCreateStrip";
 import { useTranslate } from "@tolgee/react";
 
 const SPACING = 4;
@@ -210,7 +211,7 @@ export default function SceneTimeline() {
                             {isSelected ? (
                                 <div
                                     className={clsx(
-                                        "border-stroke bg-fg-1 ring-text absolute top-0 overflow-clip rounded-[10px] border ring-2 transition-all",
+                                        "border-stroke bg-fg-1 ring-text absolute top-0 overflow-clip rounded-xl border ring-2 transition-all",
                                         !isPlaying &&
                                             !isSelected &&
                                             "cursor-pointer",
@@ -262,8 +263,32 @@ export default function SceneTimeline() {
                                             }
                                         />
                                     </div>
+                                    <div
+                                        className="absolute z-10"
+                                        style={{
+                                            left: 4,
+                                            right: 4,
+                                            bottom: 4,
+                                            height: SCENE_LABEL_HEIGHT_PX,
+                                        }}
+                                    >
+                                        <LightingEffectCreateStrip
+                                            sceneId={seg.sceneId}
+                                            widthPx={Math.max(
+                                                0,
+                                                segmentInnerWidthPx - 8,
+                                            )}
+                                            pixelsPerSecond={pps}
+                                            pages={pages}
+                                            beats={beats}
+                                            orderedStarts={orderedStarts}
+                                            labelHeightPx={
+                                                SCENE_LABEL_HEIGHT_PX
+                                            }
+                                        />
+                                    </div>
                                     <span
-                                        className="bg-accent text-text-invert text-sub pointer-events-none absolute right-1 bottom-1 z-20 flex items-center justify-center rounded-full px-6 font-mono leading-none"
+                                        className="bg-accent text-text-invert text-sub pointer-events-none absolute right-1 bottom-1 z-20 flex items-center justify-center rounded-xl px-6 font-mono leading-none"
                                         style={{
                                             height: `${SCENE_LABEL_HEIGHT_PX}px`,
                                         }}
@@ -276,7 +301,7 @@ export default function SceneTimeline() {
                             ) : (
                                 <div
                                     className={clsx(
-                                        "bg-accent text-body text-text-invert border-stroke absolute top-0 flex items-center justify-center overflow-clip rounded-full border px-8 py-4 font-mono transition-all",
+                                        "bg-accent text-body text-text-invert border-stroke absolute top-0 flex items-center justify-center overflow-clip rounded-xl border px-8 py-4 font-mono transition-all",
                                         !isPlaying &&
                                             "cursor-pointer hover:-translate-y-[1px]",
                                         isHovered && "brightness-110",
