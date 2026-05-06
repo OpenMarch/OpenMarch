@@ -2,7 +2,6 @@ import EffectItem from "@/components/inspector/lighting/EffectItem";
 import {
     buildLightingSceneTimeWindowsMs,
     findLightingSceneAtShowTime,
-    getSceneStartBeatPosition,
 } from "@/components/timeline/SceneTimeline.utils";
 import { useLightSceneManager } from "@/components/workspace/lightDesigner/useLightSceneManager";
 import { useIsPlaying } from "@/context/IsPlayingContext";
@@ -13,22 +12,14 @@ import {
 } from "@/db-functions";
 import { useTimingObjects } from "@/hooks";
 import {
-    createLightingEffectsMutationOptions,
     updateLightingEffectsMutationOptions,
     useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
 import { getCurrentShowTimeMs } from "@/utilities/showTime";
-import {
-    createNewLightingEffect,
-    parseEffectArgs,
-    updateLightingEffectType,
-} from "@openmarch/core";
-import { Button } from "@openmarch/ui";
-import { PlusIcon } from "@phosphor-icons/react";
+import { parseEffectArgs, updateLightingEffectType } from "@openmarch/core";
 import { useMutation } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import { useEffect, useMemo, useState } from "react";
-import { compareBeats } from "@/global/classes/Beat";
 
 type EffectPlaybackState = "upcoming" | "active" | "played";
 type EffectPlaybackInfo = {
@@ -80,7 +71,7 @@ export function deriveEffectPlaybackStates(
 
 export default function EffectList() {
     const { isPlaying } = useIsPlaying()!;
-    const { pages, beats } = useTimingObjects()!;
+    const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const playbackStartPageId =
         selectedPage == null
@@ -92,9 +83,6 @@ export default function EffectList() {
         useUpcomingLightingEffectsInSelectedPageQuery(playbackStartPageId);
     useLightSceneManager();
 
-    const { mutate: createEffectsMutation } = useMutation(
-        createLightingEffectsMutationOptions(),
-    );
     const { mutate: updateEffect } = useMutation(
         updateLightingEffectsMutationOptions(),
     );
@@ -166,85 +154,6 @@ export default function EffectList() {
         );
     }, [activeScene, effectById, effectIdsInOrder, shouldShowPlaybackState]);
 
-    const defaultNewEffectDurationMs = useMemo(() => {
-        if (!lightingSceneData) return null;
-
-        const sceneWindow = sceneWindows.find(
-            (window) => window.sceneId === lightingSceneData.id,
-        );
-        if (!sceneWindow) return null;
-
-        const sceneDurationMs = Math.max(
-            0,
-            sceneWindow.endMs - sceneWindow.startMs,
-        );
-        const halfSceneDurationMs = Math.max(
-            0,
-            Math.round(sceneDurationMs / 2),
-        );
-
-        const sceneStartBeatPosition = getSceneStartBeatPosition(
-            lightingSceneData,
-            pages,
-        );
-        if (sceneStartBeatPosition == null) return halfSceneDurationMs;
-
-        const sortedBeats = [...beats].sort(compareBeats);
-        let sceneStartBeatIndex = sortedBeats.findIndex(
-            (beat) => beat.position === sceneStartBeatPosition,
-        );
-        if (sceneStartBeatIndex < 0) {
-            sceneStartBeatIndex = sortedBeats.findIndex(
-                (beat) => beat.position >= sceneStartBeatPosition,
-            );
-        }
-        if (sceneStartBeatIndex < 0) return halfSceneDurationMs;
-
-        let sixteenCountsMs = 0;
-        const maxBeatIndexExclusive = Math.min(
-            sortedBeats.length,
-            sceneStartBeatIndex + 16,
-        );
-        for (let i = sceneStartBeatIndex; i < maxBeatIndexExclusive; i++) {
-            sixteenCountsMs += Math.max(0, sortedBeats[i]!.duration) * 1000;
-        }
-
-        const sixteenCountsDurationMs = Math.max(
-            0,
-            Math.round(sixteenCountsMs),
-        );
-        return Math.min(halfSceneDurationMs, sixteenCountsDurationMs);
-    }, [beats, lightingSceneData, pages, sceneWindows]);
-
-    const handleAddEffect = () => {
-        if (sceneId == null) return;
-        createNewLightingEffect((name, type, argsJson) => {
-            let nextArgsJson = argsJson;
-            if (defaultNewEffectDurationMs != null) {
-                try {
-                    const parsedArgs = JSON.parse(argsJson) as Record<
-                        string,
-                        unknown
-                    > | null;
-                    if (parsedArgs && typeof parsedArgs === "object") {
-                        parsedArgs.durationMs = defaultNewEffectDurationMs;
-                        nextArgsJson = JSON.stringify(parsedArgs);
-                    }
-                } catch {
-                    // Keep default args when parsing fails.
-                }
-            }
-            createEffectsMutation([
-                {
-                    scene_id: sceneId,
-                    name,
-                    type,
-                    args: nextArgsJson,
-                },
-            ]);
-        });
-    };
-
     if (!selectedPage) {
         return (
             <div className="flex w-full flex-col gap-16 px-6">
@@ -312,16 +221,6 @@ export default function EffectList() {
                     ))}
                 </ul>
             )}
-            <Button
-                type="button"
-                variant="secondary"
-                className="flex w-full items-center justify-center gap-8"
-                disabled={sceneId == null}
-                onClick={handleAddEffect}
-            >
-                <PlusIcon size={18} weight="bold" aria-hidden />
-                <T keyName="workspace.lightDesigner.effects.addEffect" />
-            </Button>
         </div>
     );
 }

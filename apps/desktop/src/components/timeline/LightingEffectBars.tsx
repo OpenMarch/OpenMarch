@@ -9,7 +9,7 @@ import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { parseEffectArgs } from "@openmarch/core";
 import { useCallback, useMemo, useRef } from "react";
 import clsx from "clsx";
-import { DotsSix, DotsSixVertical } from "@phosphor-icons/react";
+import { DotsSixIcon, DotsSixVerticalIcon } from "@phosphor-icons/react";
 import {
     barPxFromBoundary,
     computeBeatBoundaryPx,
@@ -346,7 +346,7 @@ export default function LightingEffectBars({
                                 className="pointer-events-none absolute inset-0"
                                 aria-hidden
                             >
-                                <DotsSixVertical
+                                <DotsSixVerticalIcon
                                     size={10}
                                     weight="bold"
                                     className={clsx(
@@ -355,7 +355,7 @@ export default function LightingEffectBars({
                                     )}
                                     aria-hidden
                                 />
-                                <DotsSixVertical
+                                <DotsSixVerticalIcon
                                     size={10}
                                     weight="bold"
                                     className={clsx(
@@ -365,7 +365,7 @@ export default function LightingEffectBars({
                                     aria-hidden
                                 />
                                 {showCenterDot && (
-                                    <DotsSix
+                                    <DotsSixIcon
                                         size={10}
                                         weight="bold"
                                         className={clsx(
