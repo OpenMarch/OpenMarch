@@ -6,35 +6,33 @@ import {
     AlertDialogDescription,
     AlertDialogTitle,
     AlertDialogTrigger,
+    Badge,
     Button,
 } from "@openmarch/ui";
-import {
-    CaretDownIcon,
-    CaretRightIcon,
-    PlusIcon,
-    TrashIcon,
-} from "@phosphor-icons/react";
+import { CaretDownIcon, PlusIcon, TrashIcon } from "@phosphor-icons/react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import type { DatabaseLightingGroup } from "@/db-functions";
-import type Marcher from "@/global/classes/Marcher";
 import {
     addMarchersToLightingGroupMutationOptions,
+    allTagsQueryOptions,
     allMarchersQueryOptions,
     createLightingGroupsMutationOptions,
     deleteLightingGroupsMutationOptions,
     lightingGroupMembershipsBySceneIdQueryOptions,
     lightingGroupsBySceneIdQueryOptions,
-    removeMarchersFromLightingGroupMutationOptions,
+    marcherIdsForAllTagIdsQueryOptions,
 } from "@/hooks/queries";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
 import {
+    dataTransferHasLightingGroupMarcherCollectionDrag,
+    getLightingGroupMarcherCollectionDragPayload,
+    partitionLightingGroupDropMarcherIds,
+    setLightingGroupMarcherCollectionDragData,
     setLightingGroupDragData,
     shouldCancelLightingGroupDragStart,
 } from "@/utilities/lightingGroupEffectDnD";
 import {
-    getDistinctSortedDrillPrefixesFromMarchers,
     getFamiliesInShow,
-    getMarcherIdsByDrillPrefix,
     getMarcherIdsByFamily,
     getMarcherIdsBySectionName,
     sectionsFromMarchers,
@@ -46,10 +44,10 @@ import clsx from "clsx";
 import {
     useCallback,
     useEffect,
-    useMemo,
     useRef,
     useState,
     type DragEvent,
+    type ReactNode,
 } from "react";
 
 /** Groups for the inspector's current upcoming lighting scene. */
@@ -58,6 +56,8 @@ export default function SceneGroupsSection({
 }: {
     sceneId: number | undefined;
 }) {
+    const { t } = useTolgee();
+    const { selectedMarchers } = useSelectedMarchers()!;
     const { data: groups = [] } = useQuery({
         ...lightingGroupsBySceneIdQueryOptions(sceneId ?? -1),
         enabled: sceneId != null,
@@ -69,6 +69,10 @@ export default function SceneGroupsSection({
     });
 
     const { data: marchers = [] } = useQuery(allMarchersQueryOptions());
+    const { data: tags = [] } = useQuery(allTagsQueryOptions());
+    const { data: marcherIdsByTagIdMap } = useQuery(
+        marcherIdsForAllTagIdsQueryOptions(),
+    );
 
     const toggleGroupFocus =
         useLightDesignerGroupFocusStore.use.toggleGroupFocus();
@@ -78,6 +82,24 @@ export default function SceneGroupsSection({
 
     const { mutate: createGroupsMutate } = useMutation(
         createLightingGroupsMutationOptions(),
+    );
+    const { mutate: addMarchersMutate } = useMutation(
+        addMarchersToLightingGroupMutationOptions(),
+    );
+
+    const [dropConflictState, setDropConflictState] = useState<{
+        targetGroupId: number;
+        allToMove: number[];
+        unassignedToMove: number[];
+    } | null>(null);
+
+    const addMarchersToGroup = useCallback(
+        (groupId: number, marcherIds: readonly number[]) => {
+            const uniqueIds = [...new Set(marcherIds)];
+            if (uniqueIds.length === 0) return;
+            addMarchersMutate({ groupId, marcherIds: uniqueIds });
+        },
+        [addMarchersMutate],
     );
 
     useEffect(() => {
@@ -114,35 +136,126 @@ export default function SceneGroupsSection({
         );
     }
 
+    const selectedIds = selectedMarchers.map((marcher) => marcher.id);
+    const sections = sectionsFromMarchers(marchers);
+    const families = getFamiliesInShow();
+
+    const tagBadgeItems = tags
+        .map((tag) => ({
+            id: tag.id,
+            label:
+                tag.name?.trim().length && tag.name.trim().length > 0
+                    ? tag.name
+                    : `tag-${tag.id}`,
+            marcherIds: marcherIdsByTagIdMap?.get(tag.id) ?? [],
+        }))
+        .filter((tag) => tag.marcherIds.length > 0);
+
+    const handleDropCollectionOnGroup = (
+        targetGroupId: number,
+        payloadMarcherIds: number[],
+    ) => {
+        const partitions = partitionLightingGroupDropMarcherIds({
+            draggedMarcherIds: payloadMarcherIds,
+            targetGroupId,
+            membershipsByGroupId: memberships,
+        });
+        const allToMove = [
+            ...partitions.unassigned,
+            ...partitions.inOtherGroups,
+        ];
+
+        if (allToMove.length === 0) return;
+        if (partitions.inOtherGroups.length === 0) {
+            addMarchersToGroup(targetGroupId, partitions.unassigned);
+            return;
+        }
+        setDropConflictState({
+            targetGroupId,
+            allToMove,
+            unassignedToMove: partitions.unassigned,
+        });
+    };
+
     return (
         <div className="flex min-h-0 min-w-0 flex-col gap-8 px-6">
-            <div className="flex items-center justify-between gap-8">
-                <Button
-                    type="button"
-                    variant="secondary"
-                    size="compact"
-                    className="shrink-0 gap-6"
-                    onClick={handleCreateGroup}
-                >
-                    <PlusIcon size={18} aria-hidden />
-                    <T
-                        defaultValue="New group"
-                        keyName="inspector.light.groups.newGroup"
-                    />
-                </Button>
-            </div>
+            <div className="flex flex-wrap gap-8">
+                {selectedIds.length > 0 ? (
+                    <MarcherCollectionDragBadge
+                        sourceType="selection"
+                        label={t("inspector.light.groups.addSelection", {
+                            defaultValue: "Current Selection",
+                        })}
+                        marcherIds={selectedIds}
+                        variant="primary"
+                    >
+                        <T
+                            keyName="inspector.light.groups.currentSelectionCount"
+                            defaultValue="Current Selection ({count})"
+                            params={{ count: selectedIds.length }}
+                        />
+                    </MarcherCollectionDragBadge>
+                ) : null}
 
+                <CollectionDropdownBadge
+                    label={
+                        <T
+                            keyName="inspector.light.groups.addBy.section"
+                            defaultValue="Section"
+                        />
+                    }
+                    items={sections.map((sec) => ({
+                        key: sec.name,
+                        label: <T keyName={sec.tName} />,
+                        marcherIds: getMarcherIdsBySectionName(
+                            marchers,
+                            sec.name,
+                        ),
+                        sourceType: "section" as const,
+                    }))}
+                />
+
+                <CollectionDropdownBadge
+                    label={
+                        <T
+                            keyName="inspector.light.groups.addBy.tag"
+                            defaultValue="Tag"
+                        />
+                    }
+                    items={tagBadgeItems.map((tag) => ({
+                        key: String(tag.id),
+                        label: tag.label,
+                        marcherIds: tag.marcherIds,
+                        sourceType: "tag" as const,
+                    }))}
+                />
+
+                <CollectionDropdownBadge
+                    label={
+                        <T
+                            keyName="inspector.light.groups.addBy.family"
+                            defaultValue="Family"
+                        />
+                    }
+                    items={families.map((fam) => ({
+                        key: fam.name,
+                        label: <T keyName={fam.tName} />,
+                        marcherIds: getMarcherIdsByFamily(marchers, fam),
+                        sourceType: "family" as const,
+                    }))}
+                />
+            </div>
             <ul className="flex min-h-0 flex-col gap-16 overflow-y-auto pr-4">
                 {groups.map((group) => (
                     <LightingGroupRow
                         key={group.id}
                         group={group}
                         memberships={memberships}
-                        marchers={marchers ?? []}
                         isFocused={groupFocus?.groupId === group.id}
                         onToggleFocus={() =>
                             toggleGroupFocus({ groupId: group.id, sceneId })
                         }
+                        onDropCollection={handleDropCollectionOnGroup}
                     />
                 ))}
                 {groups.length === 0 ? (
@@ -154,6 +267,88 @@ export default function SceneGroupsSection({
                     </li>
                 ) : null}
             </ul>
+            <Button
+                type="button"
+                variant="secondary"
+                size="compact"
+                className="shrink-0 gap-6"
+                onClick={handleCreateGroup}
+            >
+                <PlusIcon size={18} aria-hidden />
+                <T
+                    defaultValue="New group"
+                    keyName="inspector.light.groups.newGroup"
+                />
+            </Button>
+            <AlertDialog
+                open={dropConflictState != null}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) setDropConflictState(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        <T
+                            keyName="inspector.light.groups.moveConflictTitle"
+                            defaultValue="Some marchers are already in another group"
+                        />
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <T
+                            keyName="inspector.light.groups.moveConflictDescription"
+                            defaultValue="Choose how to assign the dragged marchers."
+                        />
+                    </AlertDialogDescription>
+                    <div className="flex justify-end gap-8 pt-16">
+                        <AlertDialogCancel asChild>
+                            <Button variant="secondary" size="compact">
+                                <T
+                                    keyName="inspector.light.groups.cancel"
+                                    defaultValue="Cancel"
+                                />
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={() => {
+                                    if (!dropConflictState) return;
+                                    addMarchersToGroup(
+                                        dropConflictState.targetGroupId,
+                                        dropConflictState.unassignedToMove,
+                                    );
+                                    setDropConflictState(null);
+                                }}
+                            >
+                                <T
+                                    keyName="inspector.light.groups.moveUnassignedOnly"
+                                    defaultValue="Move only unassigned marchers"
+                                />
+                            </Button>
+                        </AlertDialogAction>
+                        <AlertDialogAction>
+                            <Button
+                                variant="red"
+                                size="compact"
+                                onClick={() => {
+                                    if (!dropConflictState) return;
+                                    addMarchersToGroup(
+                                        dropConflictState.targetGroupId,
+                                        dropConflictState.allToMove,
+                                    );
+                                    setDropConflictState(null);
+                                }}
+                            >
+                                <T
+                                    keyName="inspector.light.groups.moveAllToThisGroup"
+                                    defaultValue="Move all marchers to this group"
+                                />
+                            </Button>
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
@@ -161,63 +356,28 @@ export default function SceneGroupsSection({
 function LightingGroupRow({
     group,
     memberships,
-    marchers,
     isFocused,
     onToggleFocus,
+    onDropCollection,
 }: {
     group: DatabaseLightingGroup;
     memberships: Map<number, Set<number>> | undefined;
-    marchers: Marcher[];
     isFocused: boolean;
     onToggleFocus: () => void;
+    onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
 }) {
     const { t } = useTolgee();
-
-    const { selectedMarchers } = useSelectedMarchers()!;
     const memberSet = memberships?.get(group.id) ?? new Set<number>();
-
-    const { mutate: addMarchersMutate } = useMutation(
-        addMarchersToLightingGroupMutationOptions(),
-    );
-    const { mutate: removeMarchersMutate } = useMutation(
-        removeMarchersFromLightingGroupMutationOptions(),
-    );
     const { mutate: deleteGroupMutate } = useMutation(
         deleteLightingGroupsMutationOptions(),
     );
-
-    const addFromIds = useCallback(
-        (ids: number[]) => {
-            if (ids.length === 0) return;
-            addMarchersMutate({ groupId: group.id, marcherIds: ids });
-        },
-        [group.id, addMarchersMutate],
-    );
-
-    const sections = useMemo(() => sectionsFromMarchers(marchers), [marchers]);
-    const families = useMemo(() => getFamiliesInShow(), []);
-    const drillPrefixes = useMemo(
-        () => getDistinctSortedDrillPrefixesFromMarchers(marchers),
-        [marchers],
-    );
-
-    const selectedIds = useMemo(
-        () => selectedMarchers.map((m) => m.id),
-        [selectedMarchers],
-    );
-
-    const toAddSelectionCount = selectedIds.filter(
-        (id) => !memberSet.has(id),
-    ).length;
-    const toRemoveSelectionCount = selectedIds.filter((id) =>
-        memberSet.has(id),
-    ).length;
 
     const displayName =
         group.name?.trim() ?? t("inspector.light.groups.groupFallback");
 
     const rowRef = useRef<HTMLLIElement>(null);
     const [isDragging, setIsDragging] = useState(false);
+    const [isDragOver, setIsDragOver] = useState(false);
 
     const handleRowDragStart = useCallback(
         (e: DragEvent<HTMLLIElement>) => {
@@ -247,6 +407,28 @@ function LightingGroupRow({
         setIsDragging(false);
     }, []);
 
+    const handleDragOver = (e: DragEvent<HTMLLIElement>) => {
+        if (!dataTransferHasLightingGroupMarcherCollectionDrag(e.dataTransfer))
+            return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "copy";
+        setIsDragOver(true);
+    };
+
+    const handleDragLeave = () => {
+        setIsDragOver(false);
+    };
+
+    const handleDrop = (e: DragEvent<HTMLLIElement>) => {
+        setIsDragOver(false);
+        const payload = getLightingGroupMarcherCollectionDragPayload(
+            e.dataTransfer,
+        );
+        if (!payload) return;
+        e.preventDefault();
+        onDropCollection(group.id, payload.marcherIds);
+    };
+
     return (
         <li
             ref={rowRef}
@@ -255,9 +437,13 @@ function LightingGroupRow({
             className={clsx(
                 "rounded-6 border-stroke bg-fg-1 relative flex cursor-grab flex-col gap-8 overflow-clip border p-12 active:cursor-grabbing",
                 isDragging && "opacity-40",
+                isDragOver && "ring-accent/70 ring-2 ring-inset",
             )}
             onDragStart={handleRowDragStart}
             onDragEnd={handleRowDragEnd}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
         >
             <span className="sr-only">
                 <T
@@ -304,165 +490,6 @@ function LightingGroupRow({
                                 />
                             )}
                         </Button>
-                        <Dropdown.Root>
-                            <Dropdown.Trigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="compact"
-                                    className="gap-6"
-                                >
-                                    <T
-                                        defaultValue="Add"
-                                        keyName="inspector.light.groups.add"
-                                    />{" "}
-                                    <CaretDownIcon size={14} aria-hidden />
-                                </Button>
-                            </Dropdown.Trigger>
-                            <Dropdown.Portal>
-                                <Dropdown.Content
-                                    collisionPadding={8}
-                                    className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[52] inline-block max-h-[min(40vh,var(--radix-dropdown-menu-content-available-height))] min-w-max overflow-y-auto border p-8 shadow-xl"
-                                >
-                                    <Dropdown.Sub>
-                                        <Dropdown.SubTrigger className="text-text hover:bg-overlay rounded-8 [&[data-state=open]]:bg-overlay flex cursor-default items-center justify-between gap-24 px-8 py-4 outline-hidden">
-                                            <T
-                                                keyName="inspector.light.groups.addBy.section"
-                                                defaultValue="Section"
-                                            />
-                                            <CaretRightIcon
-                                                size={16}
-                                                aria-hidden
-                                            />
-                                        </Dropdown.SubTrigger>
-                                        <Dropdown.Portal>
-                                            <Dropdown.SubContent
-                                                alignOffset={-4}
-                                                className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[53] mt-[-4px] max-h-[40vh] min-w-[140px] overflow-y-auto border p-8 shadow-xl"
-                                                collisionPadding={8}
-                                                sideOffset={6}
-                                            >
-                                                {sections.map((sec) => (
-                                                    <Dropdown.Item
-                                                        key={sec.name}
-                                                        className="text-text hover:bg-overlay rounded-8 cursor-pointer px-8 py-4 outline-hidden"
-                                                        onSelect={() =>
-                                                            addFromIds(
-                                                                getMarcherIdsBySectionName(
-                                                                    marchers,
-                                                                    sec.name,
-                                                                ),
-                                                            )
-                                                        }
-                                                    >
-                                                        <T
-                                                            keyName={sec.tName}
-                                                        />
-                                                    </Dropdown.Item>
-                                                ))}
-                                            </Dropdown.SubContent>
-                                        </Dropdown.Portal>
-                                    </Dropdown.Sub>
-
-                                    <Dropdown.Sub>
-                                        <Dropdown.SubTrigger className="text-text hover:bg-overlay rounded-8 [&[data-state=open]]:bg-overlay flex cursor-default items-center justify-between gap-24 px-8 py-4 outline-hidden">
-                                            <T
-                                                keyName="inspector.light.groups.addBy.family"
-                                                defaultValue="Family"
-                                            />
-                                            <CaretRightIcon
-                                                size={16}
-                                                aria-hidden
-                                            />
-                                        </Dropdown.SubTrigger>
-                                        <Dropdown.Portal>
-                                            <Dropdown.SubContent
-                                                alignOffset={-4}
-                                                className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[53] max-h-[40vh] min-w-[140px] overflow-y-auto border p-8 shadow-xl"
-                                                collisionPadding={8}
-                                                sideOffset={6}
-                                            >
-                                                {families.map((fam) => (
-                                                    <Dropdown.Item
-                                                        key={fam.name}
-                                                        className="text-text hover:bg-overlay rounded-8 cursor-pointer px-8 py-4 outline-hidden"
-                                                        onSelect={() =>
-                                                            addFromIds(
-                                                                getMarcherIdsByFamily(
-                                                                    marchers,
-                                                                    fam,
-                                                                ),
-                                                            )
-                                                        }
-                                                    >
-                                                        <T
-                                                            keyName={fam.tName}
-                                                        />
-                                                    </Dropdown.Item>
-                                                ))}
-                                            </Dropdown.SubContent>
-                                        </Dropdown.Portal>
-                                    </Dropdown.Sub>
-
-                                    <Dropdown.Sub>
-                                        <Dropdown.SubTrigger className="text-text hover:bg-overlay rounded-8 [&[data-state=open]]:bg-overlay flex cursor-default items-center justify-between gap-24 px-8 py-4 outline-hidden">
-                                            <T
-                                                keyName="inspector.light.groups.addBy.prefix"
-                                                defaultValue="Drill prefix"
-                                            />
-                                            <CaretRightIcon
-                                                size={16}
-                                                aria-hidden
-                                            />
-                                        </Dropdown.SubTrigger>
-                                        <Dropdown.Portal>
-                                            <Dropdown.SubContent
-                                                alignOffset={-4}
-                                                className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[53] max-h-[40vh] min-w-[140px] overflow-y-auto border p-8 shadow-xl"
-                                                collisionPadding={8}
-                                                sideOffset={6}
-                                            >
-                                                {drillPrefixes.map((prefix) => (
-                                                    <Dropdown.Item
-                                                        key={prefix}
-                                                        className="text-text hover:bg-overlay rounded-8 cursor-pointer px-8 py-4 outline-hidden"
-                                                        onSelect={() =>
-                                                            addFromIds(
-                                                                getMarcherIdsByDrillPrefix(
-                                                                    marchers,
-                                                                    prefix,
-                                                                ),
-                                                            )
-                                                        }
-                                                    >
-                                                        {prefix ||
-                                                            t(
-                                                                "inspector.light.groups.emptyPrefixLabel",
-                                                            )}
-                                                    </Dropdown.Item>
-                                                ))}
-                                            </Dropdown.SubContent>
-                                        </Dropdown.Portal>
-                                    </Dropdown.Sub>
-
-                                    <Dropdown.Item
-                                        className="text-text hover:bg-overlay rounded-8 cursor-pointer px-8 py-4 outline-hidden"
-                                        onSelect={() =>
-                                            addFromIds(
-                                                selectedMarchers.map(
-                                                    (m) => m.id,
-                                                ),
-                                            )
-                                        }
-                                    >
-                                        <T
-                                            keyName="inspector.light.groups.addSelection"
-                                            defaultValue="Current selection"
-                                        />
-                                    </Dropdown.Item>
-                                </Dropdown.Content>
-                            </Dropdown.Portal>
-                        </Dropdown.Root>
 
                         <AlertDialog>
                             <AlertDialogTrigger>
@@ -525,60 +552,95 @@ function LightingGroupRow({
                         </AlertDialog>
                     </div>
                 </div>
-
-                {(toAddSelectionCount > 0 || toRemoveSelectionCount > 0) && (
-                    <div className="flex flex-wrap gap-8">
-                        {toAddSelectionCount > 0 && (
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="compact"
-                                className="shrink"
-                                onClick={() =>
-                                    addMarchersMutate({
-                                        groupId: group.id,
-                                        marcherIds: selectedIds.filter(
-                                            (id) => !memberSet.has(id),
-                                        ),
-                                    })
-                                }
-                            >
-                                <T
-                                    keyName="inspector.light.groups.addSelectionPartial"
-                                    params={{
-                                        count: String(toAddSelectionCount),
-                                    }}
-                                    defaultValue="Add {count} marchers to group"
-                                />
-                            </Button>
-                        )}
-                        {toRemoveSelectionCount > 0 && (
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="compact"
-                                className="shrink"
-                                onClick={() =>
-                                    removeMarchersMutate({
-                                        groupId: group.id,
-                                        marcherIds: selectedIds.filter((id) =>
-                                            memberSet.has(id),
-                                        ),
-                                    })
-                                }
-                            >
-                                <T
-                                    keyName="inspector.light.groups.removeSelectionPartial"
-                                    params={{
-                                        count: String(toRemoveSelectionCount),
-                                    }}
-                                    defaultValue="Remove {count} marchers from group"
-                                />
-                            </Button>
-                        )}
-                    </div>
-                )}
             </div>
         </li>
+    );
+}
+
+function MarcherCollectionDragBadge({
+    sourceType,
+    label,
+    marcherIds,
+    variant,
+    children,
+}: {
+    sourceType: "selection" | "section" | "tag" | "family";
+    label: string;
+    marcherIds: number[];
+    variant: "primary" | "secondary";
+    children: ReactNode;
+}) {
+    const handleDragStart = (e: DragEvent<HTMLButtonElement>) => {
+        setLightingGroupMarcherCollectionDragData(e.dataTransfer, {
+            sourceType,
+            label,
+            marcherIds,
+        });
+    };
+
+    return (
+        <button
+            type="button"
+            className="cursor-grab active:cursor-grabbing"
+            draggable={marcherIds.length > 0}
+            onDragStart={handleDragStart}
+            aria-label={label}
+        >
+            <Badge variant={variant} className="py-4">
+                {children}
+            </Badge>
+        </button>
+    );
+}
+
+function CollectionDropdownBadge({
+    label,
+    items,
+}: {
+    label: ReactNode;
+    items: Array<{
+        key: string;
+        label: ReactNode;
+        marcherIds: number[];
+        sourceType: "selection" | "section" | "tag" | "family";
+    }>;
+}) {
+    return (
+        <Dropdown.Root>
+            <Dropdown.Trigger asChild>
+                <button type="button">
+                    <Badge variant="secondary" className="gap-6 py-4">
+                        {label}
+                        <CaretDownIcon size={14} aria-hidden />
+                    </Badge>
+                </button>
+            </Dropdown.Trigger>
+            <Dropdown.Portal>
+                <Dropdown.Content
+                    collisionPadding={8}
+                    className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[52] inline-block max-h-[min(40vh,var(--radix-dropdown-menu-content-available-height))] min-w-max overflow-y-auto border p-8 shadow-xl"
+                >
+                    {items.map((item) => (
+                        <Dropdown.Item
+                            key={item.key}
+                            className="text-text hover:bg-overlay rounded-8 cursor-default px-8 py-4 outline-hidden"
+                        >
+                            <MarcherCollectionDragBadge
+                                sourceType={item.sourceType}
+                                label={
+                                    typeof item.label === "string"
+                                        ? item.label
+                                        : `${item.sourceType}-${item.key}`
+                                }
+                                marcherIds={item.marcherIds}
+                                variant="secondary"
+                            >
+                                {item.label}
+                            </MarcherCollectionDragBadge>
+                        </Dropdown.Item>
+                    ))}
+                </Dropdown.Content>
+            </Dropdown.Portal>
+        </Dropdown.Root>
     );
 }
