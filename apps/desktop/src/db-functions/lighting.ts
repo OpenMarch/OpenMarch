@@ -1,4 +1,4 @@
-import { asc, desc, eq, gte, inArray, lte, max } from "drizzle-orm";
+import { asc, desc, eq, gte, inArray, lte } from "drizzle-orm";
 import {
     DbConnection,
     DbTransaction,
@@ -175,8 +175,7 @@ export async function getLightingScenesByStartPageId({
 /**
  * Creates lighting scenes. Depends on existing `pages.id` rows for `start_page_id`.
  *
- * When building a full scene with effects and marcher links, create in order:
- * scene → effects → `marcher_lighting_effects`.
+ * Typical order when authoring: scene → lighting groups → effects + effect–group links.
  */
 export async function createLightingScenes({
     db,
@@ -345,6 +344,170 @@ export async function deleteLightingSceneWithReassignment({
 }
 
 // ============================================================================
+// LIGHTING GROUPS
+// ============================================================================
+
+export type DatabaseLightingGroup = typeof schema.lighting_groups.$inferSelect;
+
+export type NewLightingGroupArgs = Omit<
+    typeof schema.lighting_groups.$inferInsert,
+    "id"
+> & {
+    marcher_ids: readonly number[];
+};
+
+async function ensureUniqueMarcherIds(
+    marcherIds: readonly number[],
+): Promise<void> {
+    const seen = new Set<number>();
+    for (const id of marcherIds) {
+        if (seen.has(id))
+            throw new Error(`Duplicate marcher_id ${id} in group`);
+        seen.add(id);
+    }
+}
+
+async function assertLightingGroupIdsBelongToScene({
+    tx,
+    sceneId,
+    groupIds,
+}: {
+    tx: DbTransaction;
+    sceneId: number;
+    groupIds: readonly number[];
+}): Promise<void> {
+    if (groupIds.length === 0) return;
+    const unique = [...new Set(groupIds)];
+    const rows = await tx.query.lighting_groups.findMany({
+        where: inArray(schema.lighting_groups.id, unique),
+    });
+    if (rows.length !== unique.length) {
+        throw new Error("One or more lighting groups were not found.");
+    }
+    for (const g of rows) {
+        if (g.scene_id !== sceneId) {
+            throw new Error(
+                `Lighting group ${g.id} belongs to scene ${g.scene_id}, expected ${sceneId}.`,
+            );
+        }
+    }
+}
+
+export async function getLightingGroupsBySceneId({
+    db,
+    sceneId,
+}: {
+    db: DbConnection | DbTransaction;
+    sceneId: number;
+}): Promise<DatabaseLightingGroup[]> {
+    return await db.query.lighting_groups.findMany({
+        where: eq(schema.lighting_groups.scene_id, sceneId),
+    });
+}
+
+export async function getLightingGroupById({
+    db,
+    id,
+}: {
+    db: DbConnection | DbTransaction;
+    id: number;
+}): Promise<DatabaseLightingGroup | undefined> {
+    return await db.query.lighting_groups.findFirst({
+        where: eq(schema.lighting_groups.id, id),
+    });
+}
+
+export async function getMarcherIdsByLightingGroupId({
+    db,
+    groupId,
+}: {
+    db: DbConnection | DbTransaction;
+    groupId: number;
+}): Promise<number[]> {
+    const rows = await db.query.lighting_group_marchers.findMany({
+        where: eq(schema.lighting_group_marchers.group_id, groupId),
+    });
+    return rows.map((r) => r.marcher_id);
+}
+
+/** Creates immutable groups with marcher membership (membership rows are fixed after create). */
+export async function createLightingGroups({
+    db,
+    newGroups,
+}: {
+    db: DbConnection;
+    newGroups: NewLightingGroupArgs[];
+}): Promise<DatabaseLightingGroup[]> {
+    if (newGroups.length === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "createLightingGroups",
+        async (tx) => {
+            return await createLightingGroupsInTransaction({
+                tx,
+                newGroups,
+            });
+        },
+    );
+}
+
+export async function createLightingGroupsInTransaction({
+    tx,
+    newGroups,
+}: {
+    tx: DbTransaction;
+    newGroups: NewLightingGroupArgs[];
+}): Promise<DatabaseLightingGroup[]> {
+    const inserted: DatabaseLightingGroup[] = [];
+
+    for (const raw of newGroups) {
+        const { marcher_ids: marcherIds, ...groupRow } = raw;
+        await ensureUniqueMarcherIds(marcherIds);
+
+        const [group] = await tx
+            .insert(schema.lighting_groups)
+            .values(groupRow)
+            .returning();
+        inserted.push(group);
+
+        const scene_id = group.scene_id;
+        if (marcherIds.length > 0) {
+            await tx.insert(schema.lighting_group_marchers).values(
+                marcherIds.map((marcher_id) => ({
+                    group_id: group.id,
+                    marcher_id,
+                    scene_id,
+                })),
+            );
+        }
+    }
+
+    return inserted;
+}
+
+export async function deleteLightingGroups({
+    db,
+    groupIds,
+}: {
+    db: DbConnection;
+    groupIds: Set<number>;
+}): Promise<DatabaseLightingGroup[]> {
+    if (groupIds.size === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "deleteLightingGroups",
+        async (tx) => {
+            return await tx
+                .delete(schema.lighting_groups)
+                .where(inArray(schema.lighting_groups.id, Array.from(groupIds)))
+                .returning();
+        },
+    );
+}
+
+// ============================================================================
 // LIGHTING EFFECTS
 // ============================================================================
 
@@ -354,13 +517,14 @@ export type DatabaseLightingEffect =
 
 export type LightingEffectWithMarchers = DatabaseLightingEffect & {
     marcherIds: Set<number>;
+    lighting_group_ids: number[];
 };
 
 export type NewLightingEffectArgs = Omit<
     typeof schema.lighting_effects.$inferInsert,
-    "id" | "sequence_index"
+    "id"
 > & {
-    sequence_index?: number;
+    lighting_group_ids?: readonly number[];
 };
 
 export interface ModifiedLightingEffectArgs {
@@ -368,8 +532,69 @@ export interface ModifiedLightingEffectArgs {
     type?: LightingEffectType;
     args?: string;
     name?: string | null;
-    duration_seconds?: number;
-    sequence_index?: number;
+    start_offset_beats?: number;
+    duration_beats?: number;
+    lighting_group_ids?: readonly number[];
+}
+
+async function getLightingGroupIdsForEffect({
+    db,
+    lightingEffectId,
+}: {
+    db: DbConnection | DbTransaction;
+    lightingEffectId: number;
+}): Promise<number[]> {
+    const links = await db.query.lighting_effect_groups.findMany({
+        where: eq(
+            schema.lighting_effect_groups.lighting_effect_id,
+            lightingEffectId,
+        ),
+    });
+    return links.map((l) => l.lighting_group_id);
+}
+
+async function getMarcherIdsForLightingGroupIds({
+    db,
+    groupIds,
+}: {
+    db: DbConnection | DbTransaction;
+    groupIds: readonly number[];
+}): Promise<Set<number>> {
+    if (groupIds.length === 0) return new Set();
+    const unique = [...new Set(groupIds)];
+    const memberships = await db.query.lighting_group_marchers.findMany({
+        where: inArray(schema.lighting_group_marchers.group_id, unique),
+    });
+    return new Set(memberships.map((m) => m.marcher_id));
+}
+
+async function replaceLightingEffectGroupsInTransaction({
+    tx,
+    lightingEffectId,
+    groupIds,
+}: {
+    tx: DbTransaction;
+    lightingEffectId: number;
+    groupIds: readonly number[];
+}): Promise<void> {
+    await tx
+        .delete(schema.lighting_effect_groups)
+        .where(
+            eq(
+                schema.lighting_effect_groups.lighting_effect_id,
+                lightingEffectId,
+            ),
+        );
+
+    if (groupIds.length === 0) return;
+
+    const unique = [...new Set(groupIds)];
+    await tx.insert(schema.lighting_effect_groups).values(
+        unique.map((lighting_group_id) => ({
+            lighting_effect_id: lightingEffectId,
+            lighting_group_id,
+        })),
+    );
 }
 
 export async function getLightingEffectIdsBySceneId({
@@ -383,7 +608,10 @@ export async function getLightingEffectIdsBySceneId({
         .select({ id: schema.lighting_effects.id })
         .from(schema.lighting_effects)
         .where(eq(schema.lighting_effects.scene_id, sceneId))
-        .orderBy(asc(schema.lighting_effects.sequence_index));
+        .orderBy(
+            asc(schema.lighting_effects.start_offset_beats),
+            asc(schema.lighting_effects.id),
+        );
     return rows.map((row) => row.id);
 }
 
@@ -424,15 +652,15 @@ export async function getLightingEffectWithMarchersById({
         where: eq(schema.lighting_effects.id, id),
     });
     if (!effect) return undefined;
-    const marcherLightingEffects =
-        await getMarcherLightingEffectsByLightingEffectId({
-            db,
-            lightingEffectId: id,
-        });
-    const marcherIds = new Set(
-        marcherLightingEffects.map((mle) => mle.marcher_id),
-    );
-    return { ...effect, marcherIds: marcherIds };
+    const lighting_group_ids = await getLightingGroupIdsForEffect({
+        db,
+        lightingEffectId: id,
+    });
+    const marcherIds = await getMarcherIdsForLightingGroupIds({
+        db,
+        groupIds: lighting_group_ids,
+    });
+    return { ...effect, marcherIds, lighting_group_ids };
 }
 
 /**
@@ -449,100 +677,14 @@ export async function getLightingEffectsBySceneId({
         .select()
         .from(schema.lighting_effects)
         .where(eq(schema.lighting_effects.scene_id, sceneId))
-        .orderBy(asc(schema.lighting_effects.sequence_index));
-}
-
-async function getMaxSequenceIndexForScene(
-    tx: DbTransaction,
-    sceneId: number,
-): Promise<number> {
-    const row = await tx
-        .select({
-            val: max(schema.lighting_effects.sequence_index),
-        })
-        .from(schema.lighting_effects)
-        .where(eq(schema.lighting_effects.scene_id, sceneId))
-        .get();
-    return row?.val ?? -1;
-}
-
-/** Reassigns `sequence_index` to 0..n-1 in list order (two-phase bump for unique constraint). */
-export async function reorderLightingEffectsInScene({
-    db,
-    sceneId,
-    effectIdsInOrder,
-}: {
-    db: DbConnection;
-    sceneId: number;
-    effectIdsInOrder: number[];
-}): Promise<DatabaseLightingEffect[]> {
-    if (effectIdsInOrder.length === 0) return [];
-
-    return await transactionWithHistory(
-        db,
-        "reorderLightingEffectsInScene",
-        async (tx) => {
-            return await reorderLightingEffectsInSceneInTransaction({
-                tx,
-                sceneId,
-                effectIdsInOrder,
-            });
-        },
-    );
-}
-
-export async function reorderLightingEffectsInSceneInTransaction({
-    tx,
-    sceneId,
-    effectIdsInOrder,
-}: {
-    tx: DbTransaction;
-    sceneId: number;
-    effectIdsInOrder: number[];
-}): Promise<DatabaseLightingEffect[]> {
-    if (effectIdsInOrder.length === 0) return [];
-
-    const BUMP = 1_000_000;
-    const seen = new Set<number>();
-
-    for (const id of effectIdsInOrder) {
-        if (seen.has(id)) {
-            throw new Error(
-                `Duplicate lighting effect id ${id} in reorder list`,
-            );
-        }
-        seen.add(id);
-        const row = await tx.query.lighting_effects.findFirst({
-            where: eq(schema.lighting_effects.id, id),
-        });
-        if (!row || row.scene_id !== sceneId) {
-            throw new Error(`Lighting effect ${id} is not in scene ${sceneId}`);
-        }
-    }
-
-    for (let i = 0; i < effectIdsInOrder.length; i++) {
-        await tx
-            .update(schema.lighting_effects)
-            .set({ sequence_index: BUMP + i })
-            .where(eq(schema.lighting_effects.id, effectIdsInOrder[i]!));
-    }
-
-    const updated: DatabaseLightingEffect[] = [];
-    for (let i = 0; i < effectIdsInOrder.length; i++) {
-        const result = await tx
-            .update(schema.lighting_effects)
-            .set({ sequence_index: i })
-            .where(eq(schema.lighting_effects.id, effectIdsInOrder[i]!))
-            .returning()
-            .get();
-        updated.push(result);
-    }
-
-    return updated;
+        .orderBy(
+            asc(schema.lighting_effects.start_offset_beats),
+            asc(schema.lighting_effects.id),
+        );
 }
 
 /**
- * Creates lighting effects. Depends on existing `lighting_scenes.id` for `scene_id`.
+ * Creates lighting effects. Depends on existing `lighting_scenes.id` and optional `lighting_groups` in that scene.
  */
 export async function createLightingEffects({
     db,
@@ -553,76 +695,51 @@ export async function createLightingEffects({
 }): Promise<DatabaseLightingEffect[]> {
     if (newEffects.length === 0) return [];
 
-    const result = await transactionWithHistory(
+    return await transactionWithHistory(
         db,
         "createLightingEffects",
         async (tx) => {
-            return await _createLightingEffectsInTransaction({
+            return await createLightingEffectsInTransaction({
                 newEffects,
                 tx,
             });
         },
     );
-
-    // Temporarily make every marcher have the effect
-    // TODO: Remove this once we have a way to select marchers for an effect
-    const allMarchers = await db.query.marchers.findMany();
-    const newMarcherLightingEffects: NewMarcherLightingEffectArgs[] = [];
-    for (const marcher of allMarchers) {
-        newMarcherLightingEffects.push({
-            marcher_id: marcher.id,
-            lighting_effect_id: result[0].id,
-        });
-    }
-    await createMarcherLightingEffects({
-        db,
-        newLinks: newMarcherLightingEffects,
-    });
-    return result;
 }
 
-export async function _createLightingEffectsInTransaction({
+export async function createLightingEffectsInTransaction({
     newEffects,
     tx,
 }: {
     newEffects: NewLightingEffectArgs[];
     tx: DbTransaction;
 }): Promise<DatabaseLightingEffect[]> {
-    const nextSlotByScene = new Map<number, number>();
-
-    const rowsToInsert: (typeof schema.lighting_effects.$inferInsert)[] = [];
+    const inserted: DatabaseLightingEffect[] = [];
 
     for (const raw of newEffects) {
-        const { sequence_index: explicitSeq, ...rest } = raw;
-        const sceneId = rest.scene_id;
+        const { lighting_group_ids: groupIdsInput = [], ...effectFields } = raw;
 
-        if (!nextSlotByScene.has(sceneId)) {
-            const dbMax = await getMaxSequenceIndexForScene(tx, sceneId);
-            nextSlotByScene.set(sceneId, dbMax + 1);
-        }
+        const [row] = await tx
+            .insert(schema.lighting_effects)
+            .values(effectFields)
+            .returning();
+        inserted.push(row);
 
-        let sequence_index: number;
-        if (explicitSeq !== undefined) {
-            sequence_index = explicitSeq;
-            const nextAfter = explicitSeq + 1;
-            const cur = nextSlotByScene.get(sceneId)!;
-            nextSlotByScene.set(sceneId, Math.max(cur, nextAfter));
-        } else {
-            sequence_index = nextSlotByScene.get(sceneId)!;
-            nextSlotByScene.set(sceneId, sequence_index + 1);
-        }
+        if (groupIdsInput.length === 0) continue;
 
-        rowsToInsert.push({
-            ...rest,
-            sequence_index,
-            duration_seconds: raw.duration_seconds ?? 1,
+        await assertLightingGroupIdsBelongToScene({
+            tx,
+            sceneId: row.scene_id,
+            groupIds: groupIdsInput,
+        });
+        await replaceLightingEffectGroupsInTransaction({
+            tx,
+            lightingEffectId: row.id,
+            groupIds: groupIdsInput,
         });
     }
 
-    return await tx
-        .insert(schema.lighting_effects)
-        .values(rowsToInsert)
-        .returning();
+    return inserted;
 }
 
 export async function updateLightingEffects({
@@ -656,14 +773,45 @@ export async function updateLightingEffectsInTransaction({
     const updated: DatabaseLightingEffect[] = [];
 
     for (const row of modifiedEffects) {
-        const { id, ...rest } = row;
-        const result = await tx
-            .update(schema.lighting_effects)
-            .set(rest)
-            .where(eq(schema.lighting_effects.id, id))
-            .returning()
-            .get();
-        updated.push(result);
+        const { id, lighting_group_ids: groupIds, ...fieldUpdatesRest } = row;
+
+        const fieldUpdates = Object.fromEntries(
+            Object.entries(fieldUpdatesRest).filter(
+                ([_, v]) => v !== undefined,
+            ),
+        );
+
+        let resultRow: DatabaseLightingEffect | undefined;
+        if (Object.keys(fieldUpdates).length > 0) {
+            resultRow = await tx
+                .update(schema.lighting_effects)
+                .set(fieldUpdates)
+                .where(eq(schema.lighting_effects.id, id))
+                .returning()
+                .get();
+        } else {
+            resultRow = await tx.query.lighting_effects.findFirst({
+                where: eq(schema.lighting_effects.id, id),
+            });
+        }
+
+        if (!resultRow)
+            throw new Error(`Lighting effect ${id} not found after update.`);
+
+        if (groupIds !== undefined) {
+            await assertLightingGroupIdsBelongToScene({
+                tx,
+                sceneId: resultRow.scene_id,
+                groupIds,
+            });
+            await replaceLightingEffectGroupsInTransaction({
+                tx,
+                lightingEffectId: id,
+                groupIds,
+            });
+        }
+
+        updated.push(resultRow);
     }
 
     return updated;
@@ -700,199 +848,5 @@ export async function deleteLightingEffectsInTransaction({
     return await tx
         .delete(schema.lighting_effects)
         .where(inArray(schema.lighting_effects.id, Array.from(effectIds)))
-        .returning();
-}
-
-// ============================================================================
-// MARCHER LIGHTING EFFECTS
-// ============================================================================
-
-/** Row from `marcher_lighting_effects`. */
-export type DatabaseMarcherLightingEffect =
-    typeof schema.marcher_lighting_effects.$inferSelect;
-
-export type NewMarcherLightingEffectArgs = Omit<
-    typeof schema.marcher_lighting_effects.$inferInsert,
-    "id"
->;
-
-export interface ModifiedMarcherLightingEffectArgs {
-    id: number;
-    lighting_effect_id?: number;
-    marcher_id?: number;
-}
-
-/**
- * Gets all marcher–effect links.
- */
-export async function getMarcherLightingEffects({
-    db,
-}: {
-    db: DbConnection | DbTransaction;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    return await db.query.marcher_lighting_effects.findMany();
-}
-
-/**
- * Gets a marcher lighting effect row by id.
- */
-export async function getMarcherLightingEffectById({
-    db,
-    id,
-}: {
-    db: DbConnection | DbTransaction;
-    id: number;
-}): Promise<DatabaseMarcherLightingEffect | undefined> {
-    return await db.query.marcher_lighting_effects.findFirst({
-        where: eq(schema.marcher_lighting_effects.id, id),
-    });
-}
-
-/**
- * Gets links for a lighting effect.
- */
-export async function getMarcherLightingEffectsByLightingEffectId({
-    db,
-    lightingEffectId,
-}: {
-    db: DbConnection | DbTransaction;
-    lightingEffectId: number;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    return await db.query.marcher_lighting_effects.findMany({
-        where: eq(
-            schema.marcher_lighting_effects.lighting_effect_id,
-            lightingEffectId,
-        ),
-    });
-}
-
-/**
- * Gets lighting-effect links for a marcher.
- */
-export async function getMarcherLightingEffectsByMarcherId({
-    db,
-    marcherId,
-}: {
-    db: DbConnection | DbTransaction;
-    marcherId: number;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    return await db.query.marcher_lighting_effects.findMany({
-        where: eq(schema.marcher_lighting_effects.marcher_id, marcherId),
-    });
-}
-
-/**
- * Creates marcher–effect links. Depends on existing `lighting_effects.id` and `marchers.id`.
- * Unique on (`lighting_effect_id`, `marcher_id`).
- */
-export async function createMarcherLightingEffects({
-    db,
-    newLinks,
-}: {
-    db: DbConnection;
-    newLinks: NewMarcherLightingEffectArgs[];
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    if (newLinks.length === 0) return [];
-
-    return await transactionWithHistory(
-        db,
-        "createMarcherLightingEffects",
-        async (tx) => {
-            return await _createMarcherLightingEffectsInTransaction({
-                newLinks,
-                tx,
-            });
-        },
-    );
-}
-
-export async function _createMarcherLightingEffectsInTransaction({
-    newLinks,
-    tx,
-}: {
-    newLinks: NewMarcherLightingEffectArgs[];
-    tx: DbTransaction;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    return await tx
-        .insert(schema.marcher_lighting_effects)
-        .values(newLinks)
-        .returning();
-}
-
-export async function updateMarcherLightingEffects({
-    db,
-    modifiedLinks,
-}: {
-    db: DbConnection;
-    modifiedLinks: ModifiedMarcherLightingEffectArgs[];
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    if (modifiedLinks.length === 0) return [];
-
-    return await transactionWithHistory(
-        db,
-        "updateMarcherLightingEffects",
-        async (tx) => {
-            return await updateMarcherLightingEffectsInTransaction({
-                modifiedLinks,
-                tx,
-            });
-        },
-    );
-}
-
-export async function updateMarcherLightingEffectsInTransaction({
-    modifiedLinks,
-    tx,
-}: {
-    modifiedLinks: ModifiedMarcherLightingEffectArgs[];
-    tx: DbTransaction;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    const updated: DatabaseMarcherLightingEffect[] = [];
-
-    for (const row of modifiedLinks) {
-        const { id, ...rest } = row;
-        const result = await tx
-            .update(schema.marcher_lighting_effects)
-            .set(rest)
-            .where(eq(schema.marcher_lighting_effects.id, id))
-            .returning()
-            .get();
-        updated.push(result);
-    }
-
-    return updated;
-}
-
-export async function deleteMarcherLightingEffects({
-    db,
-    linkIds,
-}: {
-    db: DbConnection;
-    linkIds: Set<number>;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    if (linkIds.size === 0) return [];
-
-    return await transactionWithHistory(
-        db,
-        "deleteMarcherLightingEffects",
-        async (tx) => {
-            return await deleteMarcherLightingEffectsInTransaction({
-                linkIds,
-                tx,
-            });
-        },
-    );
-}
-
-export async function deleteMarcherLightingEffectsInTransaction({
-    linkIds,
-    tx,
-}: {
-    linkIds: Set<number>;
-    tx: DbTransaction;
-}): Promise<DatabaseMarcherLightingEffect[]> {
-    return await tx
-        .delete(schema.marcher_lighting_effects)
-        .where(inArray(schema.marcher_lighting_effects.id, Array.from(linkIds)))
         .returning();
 }

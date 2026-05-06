@@ -10,8 +10,10 @@ export const tableNamesToQueryKeys = (tableNames: Set<string>): string[][] => {
 const historyKeyToInvalidationKeys = (historyKey: string[]): string[] => {
     switch (historyKey[0]) {
         case "lighting_scenes":
+        case "lighting_groups":
+        case "lighting_group_marchers":
         case "lighting_effects":
-        case "marcher_lighting_effects":
+        case "lighting_effect_groups":
             return ["lighting_scenes"];
         default:
             return historyKey;

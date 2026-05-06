@@ -2,7 +2,6 @@ import { sql } from "drizzle-orm";
 import {
     check,
     integer,
-    real,
     sqliteTable,
     text,
     unique,
@@ -18,6 +17,41 @@ export const lighting_scenes = sqliteTable("lighting_scenes", {
     name: text(),
 });
 
+export const lighting_groups = sqliteTable("lighting_groups", {
+    id: integer().primaryKey(),
+    scene_id: integer()
+        .notNull()
+        .references(() => lighting_scenes.id, { onDelete: "cascade" }),
+    name: text(),
+});
+
+export const lighting_group_marchers = sqliteTable(
+    "lighting_group_marchers",
+    {
+        id: integer().primaryKey(),
+        group_id: integer()
+            .notNull()
+            .references(() => lighting_groups.id, { onDelete: "cascade" }),
+        marcher_id: integer()
+            .notNull()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        /** Denormalized from `lighting_groups.scene_id` for uniqueness in SQLite. */
+        scene_id: integer()
+            .notNull()
+            .references(() => lighting_scenes.id, { onDelete: "cascade" }),
+    },
+    (table) => [
+        unique("lighting_group_marchers_group_id_marcher_id_unique").on(
+            table.group_id,
+            table.marcher_id,
+        ),
+        unique("lighting_group_marchers_scene_id_marcher_id_unique").on(
+            table.scene_id,
+            table.marcher_id,
+        ),
+    ],
+);
+
 export const lighting_effects = sqliteTable(
     "lighting_effects",
     {
@@ -30,8 +64,10 @@ export const lighting_effects = sqliteTable(
             .notNull()
             .default(sql`'{}'`),
         name: text(),
-        duration_seconds: real().notNull().default(1),
-        sequence_index: integer().notNull(),
+        /** Beats from the scene start page (inclusive). */
+        start_offset_beats: integer().notNull().default(0),
+        /** Effect length in beats (>= 0). */
+        duration_beats: integer().notNull().default(1),
     },
     (table) => [
         check(
@@ -39,30 +75,31 @@ export const lighting_effects = sqliteTable(
             sql`${table.type} IN ('solid', 'strobe', 'fade')`,
         ),
         check(
-            "lighting_effect_duration_seconds_check",
-            sql`${table.duration_seconds} >= 0`,
+            "lighting_effect_start_offset_beats_check",
+            sql`${table.start_offset_beats} >= 0`,
         ),
         check(
-            "lighting_effect_sequence_index_check",
-            sql`${table.sequence_index} >= 0`,
-        ),
-        unique("lighting_effects_scene_id_sequence_index_unique").on(
-            table.scene_id,
-            table.sequence_index,
+            "lighting_effect_duration_beats_check",
+            sql`${table.duration_beats} >= 0`,
         ),
     ],
 );
 
-export const marcher_lighting_effects = sqliteTable(
-    "marcher_lighting_effects",
+export const lighting_effect_groups = sqliteTable(
+    "lighting_effect_groups",
     {
         id: integer().primaryKey(),
         lighting_effect_id: integer()
             .notNull()
             .references(() => lighting_effects.id, { onDelete: "cascade" }),
-        marcher_id: integer()
+        lighting_group_id: integer()
             .notNull()
-            .references(() => marchers.id, { onDelete: "cascade" }),
+            .references(() => lighting_groups.id, { onDelete: "cascade" }),
     },
-    (table) => [unique().on(table.lighting_effect_id, table.marcher_id)],
+    (table) => [
+        unique("lighting_effect_groups_effect_group_unique").on(
+            table.lighting_effect_id,
+            table.lighting_group_id,
+        ),
+    ],
 );

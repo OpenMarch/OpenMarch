@@ -13,7 +13,7 @@ import {
 import { useTimingObjects } from "@/hooks";
 import {
     createLightingEffectsMutationOptions,
-    reorderLightingEffectsInSceneMutationOptions,
+    setLightingEffectStartOffsetsByListOrderMutationOptions,
     updateLightingEffectsMutationOptions,
     useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
@@ -113,7 +113,7 @@ export default function EffectList() {
         updateLightingEffectsMutationOptions(),
     );
     const { mutate: reorderEffects } = useMutation(
-        reorderLightingEffectsInSceneMutationOptions(),
+        setLightingEffectStartOffsetsByListOrderMutationOptions(),
     );
 
     const sceneId = lightingSceneData?.id;
@@ -214,7 +214,7 @@ export default function EffectList() {
 
         const reordered = arrayMove(localOrder, oldIndex, newIndex);
         setLocalOrder(reordered);
-        reorderEffects({ sceneId, effectIdsInOrder: reordered });
+        reorderEffects(reordered);
     };
 
     if (!selectedPage) {

@@ -13,9 +13,14 @@ export type LightingRgba = {
 export type LightingPlaybackEffectInput = {
     type: LightingEffectType;
     argsJson: string;
-    /** Step length in ms (canonical: DB `duration_seconds` × 1000). */
+    /** Step length in ms. */
     durationMs: number;
     marcherIds: readonly number[];
+    /**
+     * Scene-local start when set; when omitted, steps chain after the previous step
+     * (legacy sequential timeline).
+     */
+    startMs?: number;
 };
 
 export type ParsedLightingStep = {
@@ -66,8 +71,8 @@ function buildStep(
 }
 
 /**
- * Builds a sequential lighting plan from effects ordered by `sequence_index` (caller must sort).
- * Parsed args are stored so callers do not JSON.parse in the animation loop.
+ * Builds a lighting plan. Callers may set `startMs` on each step for absolute placement;
+ * otherwise steps are placed back-to-back in input order.
  */
 export function buildLightingScenePlan(
     effects: readonly LightingPlaybackEffectInput[],
@@ -75,13 +80,14 @@ export function buildLightingScenePlan(
     let cursor = 0;
     const steps: ParsedLightingStep[] = [];
     for (const e of effects) {
+        const start = e.startMs !== undefined ? e.startMs : cursor;
         steps.push(
-            buildStep(cursor, e.durationMs, e.type, e.argsJson, e.marcherIds),
+            buildStep(start, e.durationMs, e.type, e.argsJson, e.marcherIds),
         );
-        cursor += Math.max(0, e.durationMs);
+        cursor = Math.max(cursor, start + Math.max(0, e.durationMs));
     }
     const effectsEndMs =
-        steps.length === 0 ? 0 : steps[steps.length - 1]!.endMs;
+        steps.length === 0 ? 0 : Math.max(...steps.map((s) => s.endMs));
     return { steps, effectsEndMs };
 }
 

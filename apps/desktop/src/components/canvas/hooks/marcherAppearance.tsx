@@ -17,6 +17,8 @@ import {
     buildLightingSceneTimeWindowsMs,
     findLightingSceneAtShowTime,
 } from "@/components/timeline/SceneTimeline.utils";
+import { compareBeats } from "@/global/classes/Beat";
+import { lightingEffectBeatWindowToSceneLocalMs } from "@/utilities/lightingBeatSpans";
 import type { LightingEffectWithMarchers } from "@/db-functions";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
@@ -110,7 +112,7 @@ const LightDesignerMarcherAppearances = ({
 }) => {
     const queryClient = useQueryClient();
     const { isPlaying } = useIsPlaying()!;
-    const { pages } = useTimingObjects()!;
+    const { pages, beats } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -157,10 +159,22 @@ const LightDesignerMarcherAppearances = ({
         .map((id, i) => {
             const d = effectResults[i]?.data;
             return d
-                ? `${id}:${d.type}:${d.args}:${d.duration_seconds}:${[...d.marcherIds].sort((a, b) => a - b).join(".")}`
+                ? `${id}:${d.type}:${d.args}:${d.start_offset_beats}:${d.duration_beats}:${[...d.marcherIds].sort((a, b) => a - b).join(".")}`
                 : "";
         })
         .join("|");
+
+    const beatsSorted = useMemo(() => [...beats].sort(compareBeats), [beats]);
+
+    const sceneStartBeatPositionBySceneId = useMemo(() => {
+        const map = new Map<number, number>();
+        for (const ls of lightingScenes) {
+            const page = pages.find((p) => p.id === ls.start_page_id);
+            const pos = page?.beats[0]?.position;
+            if (pos != null) map.set(ls.id, pos);
+        }
+        return map;
+    }, [lightingScenes, pages]);
 
     const plansBySceneId = useMemo(() => {
         const effectByIdInner = new Map<number, LightingEffectWithMarchers>();
@@ -174,15 +188,34 @@ const LightDesignerMarcherAppearances = ({
             const sid = sceneIds[i]!;
             const effectIds =
                 sceneDataResults[i]?.data?.lightingEffectIds ?? [];
+            const anchorPos = sceneStartBeatPositionBySceneId.get(sid);
             const inputs = [];
             for (const eid of effectIds) {
                 const row = effectByIdInner.get(eid);
                 if (!row) continue;
+                if (anchorPos == null) {
+                    inputs.push({
+                        type: row.type,
+                        argsJson: row.args,
+                        durationMs: 0,
+                        marcherIds: [...row.marcherIds],
+                        startMs: 0,
+                    });
+                    continue;
+                }
+                const { startMs, durationMs } =
+                    lightingEffectBeatWindowToSceneLocalMs(
+                        beatsSorted,
+                        anchorPos,
+                        row.start_offset_beats,
+                        row.duration_beats,
+                    );
                 inputs.push({
                     type: row.type,
                     argsJson: row.args,
-                    durationMs: Math.round(row.duration_seconds * 1000),
+                    durationMs,
                     marcherIds: [...row.marcherIds],
+                    startMs,
                 });
             }
             out.set(sid, buildLightingScenePlan(inputs));
@@ -190,7 +223,7 @@ const LightDesignerMarcherAppearances = ({
         return out;
         // Keys fingerprint query payloads; effectResults/sceneDataResults are read from the latest render closure.
         // eslint-disable-next-line react-hooks/exhaustive-deps -- stable via sceneKey + effectKey
-    }, [sceneKey, effectKey]);
+    }, [sceneKey, effectKey, beatsSorted, sceneStartBeatPositionBySceneId]);
 
     const windows = useMemo(
         () => buildLightingSceneTimeWindowsMs(pages, lightingScenes),

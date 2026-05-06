@@ -134,6 +134,13 @@
             "when": 1776576205215,
             "tag": "0018_lighting_effect_duration_sequence",
             "breakpoints": true
+        },
+        {
+            "idx": 19,
+            "version": "6",
+            "when": 1778033666754,
+            "tag": "0019_high_manta",
+            "breakpoints": true
         }
     ]
 }

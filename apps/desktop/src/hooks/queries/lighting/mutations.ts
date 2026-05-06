@@ -1,18 +1,17 @@
 import {
     createLightingEffects,
+    createLightingGroups,
     createLightingScenes,
-    createMarcherLightingEffects,
+    deleteLightingGroups,
     deleteLightingSceneWithReassignment,
     deleteLightingEffects,
     deleteLightingScenes,
-    deleteMarcherLightingEffects,
     DeleteLightingSceneWithReassignmentResult,
     ModifiedLightingEffectArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
+    NewLightingGroupArgs,
     NewLightingSceneArgs,
-    NewMarcherLightingEffectArgs,
-    reorderLightingEffectsInScene,
     updateLightingEffects,
     updateLightingScenes,
 } from "@/db-functions";
@@ -20,6 +19,14 @@ import { db } from "@/global/database/db";
 import { mutationOptions } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import { lightingKeys } from "./queries";
+
+const invalidateAllLightingQueries = (qc: {
+    invalidateQueries: (opts: { queryKey: readonly unknown[] }) => unknown;
+}) => {
+    void qc.invalidateQueries({
+        queryKey: lightingKeys.allLightingScenes(),
+    });
+};
 
 // ============================================================================
 // LIGHTING SCENES MUTATIONS
@@ -151,6 +158,44 @@ export const deleteLightingSceneWithReassignmentMutationOptions = () => {
 };
 
 // ============================================================================
+// LIGHTING GROUPS MUTATIONS
+// ============================================================================
+
+export const createLightingGroupsMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: (newGroups: NewLightingGroupArgs[]) =>
+            createLightingGroups({ db, newGroups }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            const sceneIds = new Set(variables.map((group) => group.scene_id));
+            for (const sceneId of sceneIds) {
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
+                });
+            }
+        },
+        onError: (e, variables) => {
+            conToastError("Error creating lighting groups", e, variables);
+        },
+    });
+};
+
+export const deleteLightingGroupsMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: (groupIds: Set<number>) =>
+            deleteLightingGroups({ db, groupIds }),
+        onSuccess: async (_data, _variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+        },
+        onError: (e, variables) => {
+            conToastError("Error deleting lighting groups", e, variables);
+        },
+    });
+};
+
+// ============================================================================
 // LIGHTING EFFECTS MUTATIONS
 // ============================================================================
 
@@ -160,6 +205,7 @@ export const createLightingEffectsMutationOptions = () => {
             createLightingEffects({ db, newEffects }),
         onSuccess: async (_data, variables, _result, context) => {
             const qc = context.client;
+            invalidateAllLightingQueries(qc);
             const sceneIds = new Set(
                 variables.map((effect) => effect.scene_id),
             );
@@ -185,8 +231,10 @@ export const updateLightingEffectsMutationOptions = () => {
         },
         onSuccess: async (_data, variables, _result, context) => {
             const qc = context.client;
-            const queryKey = lightingKeys.lightingEffectById(variables.id);
-            void qc.invalidateQueries({ queryKey });
+            invalidateAllLightingQueries(qc);
+            void qc.invalidateQueries({
+                queryKey: lightingKeys.lightingEffectById(variables.id),
+            });
         },
         onError: (e, variables) => {
             conToastError("Error updating lighting effect", e, variables);
@@ -194,25 +242,21 @@ export const updateLightingEffectsMutationOptions = () => {
     });
 };
 
-export const reorderLightingEffectsInSceneMutationOptions = () => {
+/** Sets `start_offset_beats` from list order (indices 0…n−1). Drag-reorder helper until the inspector edits beat offsets directly. */
+export const setLightingEffectStartOffsetsByListOrderMutationOptions = () => {
     return mutationOptions({
-        mutationFn: ({
-            sceneId,
-            effectIdsInOrder,
-        }: {
-            sceneId: number;
-            effectIdsInOrder: number[];
-        }) =>
-            reorderLightingEffectsInScene({
-                db,
-                sceneId,
-                effectIdsInOrder,
-            }),
-        onSuccess: async (_data, variables, _result, context) => {
-            const qc = context.client;
-            void qc.invalidateQueries({
-                queryKey: lightingKeys.lightingSceneDataById(variables.sceneId),
-            });
+        mutationFn: (effectIdsInOrder: number[]) =>
+            effectIdsInOrder.length === 0
+                ? Promise.resolve([])
+                : updateLightingEffects({
+                      db,
+                      modifiedEffects: effectIdsInOrder.map((id, index) => ({
+                          id,
+                          start_offset_beats: index,
+                      })),
+                  }),
+        onSuccess: async (_data, _variables, _result, context) => {
+            invalidateAllLightingQueries(context.client);
         },
         onError: (e, variables) => {
             conToastError("Error reordering lighting effects", e, variables);
@@ -226,6 +270,7 @@ export const deleteLightingEffectsMutationOptions = () => {
             deleteLightingEffects({ db, effectIds }),
         onSuccess: async (data, _variables, _result, context) => {
             const qc = context.client;
+            invalidateAllLightingQueries(qc);
             const sceneIds = new Set(data.map((effect) => effect.scene_id));
             for (const sceneId of sceneIds)
                 void qc.invalidateQueries({
@@ -234,70 +279,6 @@ export const deleteLightingEffectsMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error deleting lighting effects", e, variables);
-        },
-    });
-};
-
-// ============================================================================
-// MARCHER LIGHTING EFFECTS MUTATIONS
-// ============================================================================
-
-export const createMarcherLightingEffectsMutationOptions = () => {
-    return mutationOptions({
-        mutationFn: (newLinks: NewMarcherLightingEffectArgs[]) =>
-            createMarcherLightingEffects({ db, newLinks }),
-        onSuccess: async (_data, variables, _result, context) => {
-            const qc = context.client;
-            const effectIds = new Set(
-                variables.map(
-                    (marcherLightingEffect) =>
-                        marcherLightingEffect.lighting_effect_id,
-                ),
-            );
-            for (const effectId of effectIds)
-                void qc.invalidateQueries({
-                    queryKey:
-                        lightingKeys.marcherLightingEffectsByLightingEffectId(
-                            effectId,
-                        ),
-                });
-        },
-        onError: (e, variables) => {
-            conToastError(
-                "Error creating marcher lighting effects",
-                e,
-                variables,
-            );
-        },
-    });
-};
-
-export const deleteMarcherLightingEffectsMutationOptions = () => {
-    return mutationOptions({
-        mutationFn: (linkIds: Set<number>) =>
-            deleteMarcherLightingEffects({ db, linkIds }),
-        onSuccess: async (data, _variables, _result, context) => {
-            const qc = context.client;
-            const effectIds = new Set(
-                data.map(
-                    (marcherLightingEffect) =>
-                        marcherLightingEffect.lighting_effect_id,
-                ),
-            );
-            for (const effectId of effectIds)
-                void qc.invalidateQueries({
-                    queryKey:
-                        lightingKeys.marcherLightingEffectsByLightingEffectId(
-                            effectId,
-                        ),
-                });
-        },
-        onError: (e, variables) => {
-            conToastError(
-                "Error deleting marcher lighting effects",
-                e,
-                variables,
-            );
         },
     });
 };

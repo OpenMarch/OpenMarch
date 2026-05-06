@@ -53,6 +53,32 @@ describe("buildLightingScenePlan", () => {
         expect(plan.steps[1]!.endMs).toBe(1500);
         expect(plan.effectsEndMs).toBe(1500);
     });
+
+    it("uses explicit startMs when provided", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "solid",
+                argsJson: JSON.stringify({
+                    durationMs: 1000,
+                    color: "#ff0000",
+                }),
+                durationMs: 100,
+                startMs: 500,
+                marcherIds: [1],
+            },
+            {
+                type: "solid",
+                argsJson: JSON.stringify({ durationMs: 500, color: "#00ff00" }),
+                durationMs: 200,
+                marcherIds: [2],
+            },
+        ]);
+        expect(plan.steps[0]!.startMs).toBe(500);
+        expect(plan.steps[0]!.endMs).toBe(600);
+        expect(plan.steps[1]!.startMs).toBe(600);
+        expect(plan.steps[1]!.endMs).toBe(800);
+        expect(plan.effectsEndMs).toBe(800);
+    });
 });
 
 describe("sampleMarcherLightingFill", () => {

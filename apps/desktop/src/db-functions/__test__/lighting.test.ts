@@ -3,25 +3,22 @@ import { asc, eq } from "drizzle-orm";
 import { expect } from "vitest";
 import {
     createLightingEffects,
+    createLightingGroups,
     createLightingScenes,
-    createMarcherLightingEffects,
     deleteLightingEffects,
+    deleteLightingGroups,
     deleteLightingScenes,
-    deleteMarcherLightingEffects,
     getLightingEffectById,
     getLightingEffectIdsBySceneId,
+    getLightingEffectWithMarchersById,
     getLightingSceneById,
     getUpcomingLightingSceneInPageId,
     getLightingScenePositionByLightingSceneIdMap,
     getLightingScenesByStartPageId,
     getLightingEffectsBySceneId,
-    getMarcherLightingEffectById,
-    getMarcherLightingEffectsByLightingEffectId,
-    getMarcherLightingEffectsByMarcherId,
-    reorderLightingEffectsInScene,
+    getLightingGroupsBySceneId,
     updateLightingEffects,
     updateLightingScenes,
-    updateMarcherLightingEffects,
 } from "../lighting";
 import { describeDbTests, schema, type DbTestAPI } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
@@ -42,16 +39,19 @@ describeDbTests("lighting", (it) => {
     describe("database interactions", () => {
         const testWithHistory = getTestWithHistory(it, [
             schema.lighting_scenes,
+            schema.lighting_groups,
+            schema.lighting_group_marchers,
             schema.lighting_effects,
-            schema.marcher_lighting_effects,
+            schema.lighting_effect_groups,
         ]);
 
-        it("creates scene, effect, and marcher link and reads them back", async ({
+        it("creates scene → group → effect with group links and reads marchers via groups", async ({
             db,
             marchersAndPages,
         }) => {
             const startPageId = marchersAndPages.expectedPages[0].id;
-            const marcherId = marchersAndPages.expectedMarchers[0].id;
+            const marcherA = marchersAndPages.expectedMarchers[0].id;
+            const marcherB = marchersAndPages.expectedMarchers[1].id;
 
             const [scene] = await createLightingScenes({
                 db,
@@ -74,6 +74,25 @@ describeDbTests("lighting", (it) => {
             });
             expect(byPage.map((s) => s.id)).toContain(scene.id);
 
+            const [group] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "Pod A",
+                        marcher_ids: [marcherA, marcherB],
+                    },
+                ],
+            });
+
+            expect(group.scene_id).toBe(scene.id);
+
+            const groupsInScene = await getLightingGroupsBySceneId({
+                db,
+                sceneId: scene.id,
+            });
+            expect(groupsInScene).toHaveLength(1);
+
             const [effect] = await createLightingEffects({
                 db,
                 newEffects: [
@@ -82,6 +101,9 @@ describeDbTests("lighting", (it) => {
                         type: "solid",
                         args: "{}",
                         name: "Red",
+                        start_offset_beats: 0,
+                        duration_beats: 2,
+                        lighting_group_ids: [group.id],
                     },
                 ],
             });
@@ -89,61 +111,55 @@ describeDbTests("lighting", (it) => {
             expect(effect).toMatchObject({
                 scene_id: scene.id,
                 type: "solid",
-                args: "{}",
-                name: "Red",
-                duration_seconds: 1,
-                sequence_index: 0,
+                start_offset_beats: 0,
+                duration_beats: 2,
             });
 
-            const byScene = await getLightingEffectsBySceneId({
+            const withMarchers = await getLightingEffectWithMarchersById({
                 db,
-                sceneId: scene.id,
+                id: effect.id,
             });
-            expect(byScene).toHaveLength(1);
-            expect(byScene[0].id).toBe(effect.id);
+            expect(withMarchers?.lighting_group_ids).toEqual([group.id]);
+            expect([...withMarchers!.marcherIds].sort((a, b) => a - b)).toEqual(
+                [marcherA, marcherB].sort((a, b) => a - b),
+            );
+        });
 
-            const [link] = await createMarcherLightingEffects({
+        it("enforces one group per marcher per scene", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const marcherId = marchersAndPages.expectedMarchers[0].id;
+
+            const [scene] = await createLightingScenes({
                 db,
-                newLinks: [
+                newScenes: [{ start_page_id: startPageId, name: "S" }],
+            });
+
+            await createLightingGroups({
+                db,
+                newGroups: [
                     {
-                        lighting_effect_id: effect.id,
-                        marcher_id: marcherId,
+                        scene_id: scene.id,
+                        name: "G1",
+                        marcher_ids: [marcherId],
                     },
                 ],
             });
 
-            expect(link).toMatchObject({
-                lighting_effect_id: effect.id,
-                marcher_id: marcherId,
-            });
-
-            const forEffect = await getMarcherLightingEffectsByLightingEffectId(
-                {
+            await expect(
+                createLightingGroups({
                     db,
-                    lightingEffectId: effect.id,
-                },
-            );
-            expect(forEffect).toHaveLength(1);
-
-            const forMarcher = await getMarcherLightingEffectsByMarcherId({
-                db,
-                marcherId,
-            });
-            expect(forMarcher.some((r) => r.id === link.id)).toBe(true);
-
-            const sceneRow = await getLightingSceneById({ db, id: scene.id });
-            const effectRow = await getLightingEffectById({
-                db,
-                id: effect.id,
-            });
-            const linkRow = await getMarcherLightingEffectById({
-                db,
-                id: link.id,
-            });
-
-            expect(sceneRow?.id).toBe(scene.id);
-            expect(effectRow?.id).toBe(effect.id);
-            expect(linkRow?.id).toBe(link.id);
+                    newGroups: [
+                        {
+                            scene_id: scene.id,
+                            name: "G2",
+                            marcher_ids: [marcherId],
+                        },
+                    ],
+                }),
+            ).rejects.toThrow();
         });
 
         it("returns empty arrays for empty batch creates", async ({ db }) => {
@@ -154,7 +170,7 @@ describeDbTests("lighting", (it) => {
                 createLightingEffects({ db, newEffects: [] }),
             ).resolves.toEqual([]);
             await expect(
-                createMarcherLightingEffects({ db, newLinks: [] }),
+                createLightingGroups({ db, newGroups: [] }),
             ).resolves.toEqual([]);
         });
 
@@ -162,11 +178,22 @@ describeDbTests("lighting", (it) => {
             "update and delete rows with undo/redo coverage",
             async ({ db, marchersAndPages }) => {
                 const startPageId = marchersAndPages.expectedPages[1].id;
-                const marcherId = marchersAndPages.expectedMarchers[1].id;
+                const m0 = marchersAndPages.expectedMarchers[0].id;
+                const m1 = marchersAndPages.expectedMarchers[1].id;
 
                 const [scene] = await createLightingScenes({
                     db,
                     newScenes: [{ start_page_id: startPageId, name: "A" }],
+                });
+                const [group] = await createLightingGroups({
+                    db,
+                    newGroups: [
+                        {
+                            scene_id: scene.id,
+                            name: "G",
+                            marcher_ids: [m0],
+                        },
+                    ],
                 });
                 const [effect] = await createLightingEffects({
                     db,
@@ -174,17 +201,11 @@ describeDbTests("lighting", (it) => {
                         {
                             scene_id: scene.id,
                             type: "fade",
-                            args: '{"ms":100}',
+                            args: '{"durationMs":100,"color":"#000000"}',
                             name: "F",
-                        },
-                    ],
-                });
-                const [link] = await createMarcherLightingEffects({
-                    db,
-                    newLinks: [
-                        {
-                            lighting_effect_id: effect.id,
-                            marcher_id: marcherId,
+                            start_offset_beats: 0,
+                            duration_beats: 1,
+                            lighting_group_ids: [group.id],
                         },
                     ],
                 });
@@ -196,15 +217,11 @@ describeDbTests("lighting", (it) => {
                 await updateLightingEffects({
                     db,
                     modifiedEffects: [
-                        { id: effect.id, type: "strobe", name: "S" },
-                    ],
-                });
-                await updateMarcherLightingEffects({
-                    db,
-                    modifiedLinks: [
                         {
-                            id: link.id,
-                            marcher_id: marchersAndPages.expectedMarchers[2].id,
+                            id: effect.id,
+                            type: "strobe",
+                            name: "S",
+                            start_offset_beats: 3,
                         },
                     ],
                 });
@@ -217,24 +234,53 @@ describeDbTests("lighting", (it) => {
                     db,
                     id: effect.id,
                 });
-                const updatedLink = await getMarcherLightingEffectById({
-                    db,
-                    id: link.id,
-                });
 
                 expect(updatedScene?.name).toBe("B");
                 expect(updatedEffect?.type).toBe("strobe");
-                expect(updatedLink?.marcher_id).toBe(
-                    marchersAndPages.expectedMarchers[2].id,
-                );
+                expect(updatedEffect?.start_offset_beats).toBe(3);
 
-                await deleteMarcherLightingEffects({
+                await updateLightingEffects({
                     db,
-                    linkIds: new Set([link.id]),
+                    modifiedEffects: [
+                        {
+                            id: effect.id,
+                            lighting_group_ids: [],
+                        },
+                    ],
                 });
+                const cleared = await getLightingEffectWithMarchersById({
+                    db,
+                    id: effect.id,
+                });
+                expect(cleared?.marcherIds.size).toBe(0);
+
+                const [g2] = await createLightingGroups({
+                    db,
+                    newGroups: [
+                        {
+                            scene_id: scene.id,
+                            name: "G2",
+                            marcher_ids: [m1],
+                        },
+                    ],
+                });
+                await updateLightingEffects({
+                    db,
+                    modifiedEffects: [
+                        {
+                            id: effect.id,
+                            lighting_group_ids: [g2.id],
+                        },
+                    ],
+                });
+
                 await deleteLightingEffects({
                     db,
                     effectIds: new Set([effect.id]),
+                });
+                await deleteLightingGroups({
+                    db,
+                    groupIds: new Set([group.id, g2.id]),
                 });
                 await deleteLightingScenes({
                     db,
@@ -247,13 +293,10 @@ describeDbTests("lighting", (it) => {
                 expect(
                     await getLightingEffectById({ db, id: effect.id }),
                 ).toBeUndefined();
-                expect(
-                    await getMarcherLightingEffectById({ db, id: link.id }),
-                ).toBeUndefined();
             },
         );
 
-        it("assigns sequential indices and returns ordered effect ids", async ({
+        it("orders effect ids by start_offset_beats then id", async ({
             db,
             marchersAndPages,
         }) => {
@@ -269,68 +312,76 @@ describeDbTests("lighting", (it) => {
                         scene_id: scene.id,
                         type: "solid",
                         args: "{}",
-                        name: "A",
+                        name: "Later",
+                        start_offset_beats: 2,
+                        duration_beats: 1,
                     },
                     {
                         scene_id: scene.id,
                         type: "fade",
                         args: "{}",
-                        name: "B",
+                        name: "Earlier",
+                        start_offset_beats: 0,
+                        duration_beats: 1,
                     },
                 ],
             });
-            expect(first.sequence_index).toBe(0);
-            expect(second.sequence_index).toBe(1);
             await expect(
                 getLightingEffectIdsBySceneId({
                     db,
                     sceneId: scene.id,
                 }),
-            ).resolves.toEqual([first.id, second.id]);
+            ).resolves.toEqual([second.id, first.id]);
             await expect(
                 getLightingEffectsBySceneId({ db, sceneId: scene.id }),
             ).resolves.toEqual([
-                expect.objectContaining({ id: first.id, sequence_index: 0 }),
-                expect.objectContaining({ id: second.id, sequence_index: 1 }),
+                expect.objectContaining({
+                    id: second.id,
+                    start_offset_beats: 0,
+                }),
+                expect.objectContaining({
+                    id: first.id,
+                    start_offset_beats: 2,
+                }),
             ]);
         });
 
-        it("reorders effects in a scene", async ({ db, marchersAndPages }) => {
-            const startPageId = marchersAndPages.expectedPages[0].id;
-            const [scene] = await createLightingScenes({
+        it("rejects effect group from another scene", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const p0 = marchersAndPages.expectedPages[0].id;
+            const p1 = marchersAndPages.expectedPages[1].id;
+            const m = marchersAndPages.expectedMarchers[0].id;
+
+            const [s0] = await createLightingScenes({
                 db,
-                newScenes: [{ start_page_id: startPageId, name: "R" }],
+                newScenes: [{ start_page_id: p0, name: "S0" }],
             });
-            const [a, b] = await createLightingEffects({
+            const [s1] = await createLightingScenes({
                 db,
-                newEffects: [
-                    {
-                        scene_id: scene.id,
-                        type: "solid",
-                        args: "{}",
-                        name: "a",
-                    },
-                    {
-                        scene_id: scene.id,
-                        type: "solid",
-                        args: "{}",
-                        name: "b",
-                    },
-                ],
+                newScenes: [{ start_page_id: p1, name: "S1" }],
             });
-            await reorderLightingEffectsInScene({
+            const [g1] = await createLightingGroups({
                 db,
-                sceneId: scene.id,
-                effectIdsInOrder: [b.id, a.id],
+                newGroups: [{ scene_id: s1.id, name: "G", marcher_ids: [m] }],
             });
+
             await expect(
-                getLightingEffectIdsBySceneId({ db, sceneId: scene.id }),
-            ).resolves.toEqual([b.id, a.id]);
-            const rows = await getLightingEffectsBySceneId({
-                db,
-                sceneId: scene.id,
-            });
-            expect(rows.map((r) => r.sequence_index)).toEqual([0, 1]);
+                createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: s0.id,
+                            type: "solid",
+                            args: "{}",
+                            start_offset_beats: 0,
+                            duration_beats: 1,
+                            lighting_group_ids: [g1.id],
+                        },
+                    ],
+                }),
+            ).rejects.toThrow(/expected/);
         });
     });
 

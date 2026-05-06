@@ -1,7 +1,9 @@
 import {
+    DatabaseLightingGroup,
     DatabaseLightingScene,
     getLightingEffectIdsBySceneId,
     getLightingEffectWithMarchersById,
+    getLightingGroupsBySceneId,
     getUpcomingLightingSceneInPageId,
     getLightingSceneById,
     getLightingSceneInPageId,
@@ -24,8 +26,8 @@ export const lightingKeys = {
         [KEY_BASE, "scene_data", { sceneId }] as const,
     lightingEffectById: (effectId: number) =>
         [KEY_BASE, "effect_data", { effectId }] as const,
-    marcherLightingEffectsByLightingEffectId: (effectId: number) =>
-        [KEY_BASE, "marcher_effects", { effectId }] as const,
+    lightingGroupsBySceneId: (sceneId: number) =>
+        [KEY_BASE, "groups", { sceneId }] as const,
 };
 
 export const allLightingScenesQueryOptions = () => {
@@ -150,6 +152,14 @@ export const lightingEffectByIdQueryOptions = (lightingEffectId: number) =>
             }),
         staleTime: DEFAULT_STALE_TIME,
     });
+
+export const lightingGroupsBySceneIdQueryOptions = (sceneId: number) =>
+    queryOptions<DatabaseLightingGroup[]>({
+        queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
+        queryFn: async () => getLightingGroupsBySceneId({ db, sceneId }),
+        staleTime: DEFAULT_STALE_TIME,
+    });
+
 /** Returns a map of lighting scene IDs to their 1-based position in the timeline. */
 export const lightingScenePositionByLightingSceneIdMapQueryOptions = () =>
     queryOptions<Record<number, number>>({
