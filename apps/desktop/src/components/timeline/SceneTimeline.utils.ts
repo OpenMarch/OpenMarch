@@ -1,5 +1,8 @@
 import { FIRST_PAGE_ID, type DatabaseLightingScene } from "@/db-functions";
+import type Beat from "@/global/classes/Beat";
+import { compareBeats } from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
+import { lightingEffectBeatWindowToSceneLocalMs } from "@/utilities/lightingBeatSpans";
 
 /** Must match the first-page column width in PageTimeline. */
 export const FIRST_PAGE_TIMELINE_WIDTH_PX = 40;
@@ -13,7 +16,7 @@ export function timelineLeftPxAtPageStart(
     pageIndex: number,
     pixelsPerSecond: number,
 ): number {
-    if (pageIndex <= 0) return 0;
+    if (pageIndex <= 0) return FIRST_PAGE_TIMELINE_WIDTH_PX;
     let x = FIRST_PAGE_TIMELINE_WIDTH_PX;
     for (let i = 1; i < pageIndex; i++) {
         x += pages[i]!.duration * pixelsPerSecond;
@@ -250,4 +253,127 @@ export function findLightingSceneAtShowTime(
         }
     }
     return null;
+}
+
+// ============================================================================
+// EFFECT-BAR LAYOUT (used by SceneTimeline.tsx for the expanded scene)
+// ============================================================================
+
+/**
+ * Index in `pages` of the last page that belongs to `sceneId` in show order.
+ * Returns -1 if the scene is unknown.
+ */
+export function getSceneEndPageIndex(
+    orderedStarts: readonly OrderedSceneStart[],
+    sceneId: number,
+    pages: readonly unknown[],
+): number {
+    const sceneIdx = orderedStarts.findIndex((s) => s.sceneId === sceneId);
+    if (sceneIdx < 0) return -1;
+    const nextStart = orderedStarts[sceneIdx + 1];
+    return nextStart ? nextStart.startPageIndex - 1 : pages.length - 1;
+}
+
+/**
+ * Global beat position where a lighting scene begins. This matches the
+ * `sceneStartBeatPosition` argument of {@link lightingEffectBeatWindowToSceneLocalMs}.
+ */
+export function getSceneStartBeatPosition(
+    scene: Pick<DatabaseLightingScene, "start_page_id">,
+    pages: readonly Pick<Page, "id" | "beats">[],
+): number | null {
+    const startPage = pages.find((p) => p.id === scene.start_page_id);
+    if (!startPage || startPage.beats.length === 0) return null;
+    return startPage.beats[0]!.position;
+}
+
+/**
+ * Total number of beats spanned by a scene: from the scene's start beat through
+ * the last beat of its last page. Used to clamp drag operations.
+ */
+export function getSceneTotalBeats(
+    scene: Pick<DatabaseLightingScene, "id" | "start_page_id">,
+    orderedStarts: readonly OrderedSceneStart[],
+    pages: readonly Pick<Page, "id" | "beats">[],
+): number {
+    const endIdx = getSceneEndPageIndex(orderedStarts, scene.id, pages);
+    if (endIdx < 0) return 0;
+    const startIdx = pages.findIndex((p) => p.id === scene.start_page_id);
+    if (startIdx < 0) return 0;
+    let total = 0;
+    for (let i = startIdx; i <= endIdx; i++) {
+        total += pages[i]!.beats.length;
+    }
+    return total;
+}
+
+/**
+ * Pixel rect for an effect bar inside its scene's expanded container.
+ * Both values are scene-local (left edge of the scene container is x=0).
+ */
+export function effectBarPx(
+    beatsSortedAscending: readonly Beat[],
+    sceneStartBeatPosition: number,
+    startOffsetBeats: number,
+    durationBeats: number,
+    pixelsPerSecond: number,
+): { leftPx: number; widthPx: number } {
+    const { startMs, durationMs } = lightingEffectBeatWindowToSceneLocalMs(
+        [...beatsSortedAscending].sort(compareBeats),
+        sceneStartBeatPosition,
+        startOffsetBeats,
+        durationBeats,
+    );
+    return {
+        leftPx: (startMs * pixelsPerSecond) / 1000,
+        widthPx: (durationMs * pixelsPerSecond) / 1000,
+    };
+}
+
+export type EffectLanePlacement = {
+    effectId: number;
+    lane: number;
+    startBeats: number;
+    durationBeats: number;
+};
+
+/**
+ * Greedy left-to-right packing into vertical lanes. Each effect drops into the
+ * lowest lane whose last bar ends at or before the new bar's start. Effects are
+ * processed sorted by `start_offset_beats` then `id` (stable order).
+ */
+export function packEffectsIntoLanes(
+    effects: readonly {
+        id: number;
+        start_offset_beats: number;
+        duration_beats: number;
+    }[],
+): { placements: EffectLanePlacement[]; laneCount: number } {
+    const sorted = [...effects].sort((a, b) => {
+        if (a.start_offset_beats !== b.start_offset_beats) {
+            return a.start_offset_beats - b.start_offset_beats;
+        }
+        return a.id - b.id;
+    });
+    const laneEnds: number[] = [];
+    const placements: EffectLanePlacement[] = [];
+    for (const effect of sorted) {
+        const start = Math.max(0, effect.start_offset_beats);
+        const dur = Math.max(0, effect.duration_beats);
+        const end = start + dur;
+        let lane = laneEnds.findIndex((laneEnd) => laneEnd <= start);
+        if (lane === -1) {
+            lane = laneEnds.length;
+            laneEnds.push(end);
+        } else {
+            laneEnds[lane] = end;
+        }
+        placements.push({
+            effectId: effect.id,
+            lane,
+            startBeats: start,
+            durationBeats: dur,
+        });
+    }
+    return { placements, laneCount: laneEnds.length };
 }

@@ -13,33 +13,17 @@ import {
 import { useTimingObjects } from "@/hooks";
 import {
     createLightingEffectsMutationOptions,
-    setLightingEffectStartOffsetsByListOrderMutationOptions,
     updateLightingEffectsMutationOptions,
     useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
 import { getCurrentShowTimeMs } from "@/utilities/showTime";
-import {
-    DndContext,
-    DragEndEvent,
-    PointerSensor,
-    closestCenter,
-    useSensor,
-    useSensors,
-} from "@dnd-kit/core";
-import {
-    SortableContext,
-    arrayMove,
-    useSortable,
-    verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import {
     createNewLightingEffect,
     parseEffectArgs,
     updateLightingEffectType,
 } from "@openmarch/core";
 import { Button } from "@openmarch/ui";
-import { DotsSixVerticalIcon, PlusIcon } from "@phosphor-icons/react";
+import { PlusIcon } from "@phosphor-icons/react";
 import { useMutation } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import { useEffect, useMemo, useState } from "react";
@@ -112,21 +96,12 @@ export default function EffectList() {
     const { mutate: updateEffect } = useMutation(
         updateLightingEffectsMutationOptions(),
     );
-    const { mutate: reorderEffects } = useMutation(
-        setLightingEffectStartOffsetsByListOrderMutationOptions(),
-    );
 
     const sceneId = lightingSceneData?.id;
-    const serverEffectIds = useMemo(
+    const effectIdsInOrder = useMemo(
         () => lightingSceneData?.lightingEffectIds ?? [],
         [lightingSceneData?.lightingEffectIds],
     );
-    const [localOrder, setLocalOrder] = useState<number[]>(serverEffectIds);
-    const sensors = useSensors(useSensor(PointerSensor));
-
-    useEffect(() => {
-        setLocalOrder(serverEffectIds);
-    }, [serverEffectIds]);
 
     const [currentShowTimeMs, setCurrentShowTimeMs] = useState(() =>
         getCurrentShowTimeMs(isPlaying, selectedPage),
@@ -148,11 +123,11 @@ export default function EffectList() {
 
     const effectById = useMemo(() => {
         const map = new Map<number, LightingEffectWithMarchers | undefined>();
-        serverEffectIds.forEach((effectId, index) => {
+        effectIdsInOrder.forEach((effectId, index) => {
             map.set(effectId, lightingEffectsData[index]?.data);
         });
         return map;
-    }, [lightingEffectsData, serverEffectIds]);
+    }, [lightingEffectsData, effectIdsInOrder]);
 
     const sceneWindows = useMemo(
         () =>
@@ -172,7 +147,7 @@ export default function EffectList() {
         activeScene.sceneId === lightingSceneData.id;
 
     const playbackByEffectId = useMemo(() => {
-        const orderedEffects: OrderedEffectRuntime[] = localOrder
+        const orderedEffects: OrderedEffectRuntime[] = effectIdsInOrder
             .map((id) => {
                 const effect = effectById.get(id);
                 if (!effect) return null;
@@ -187,7 +162,7 @@ export default function EffectList() {
             orderedEffects,
             shouldShowPlaybackState ? activeScene!.tSceneMs : null,
         );
-    }, [activeScene, effectById, localOrder, shouldShowPlaybackState]);
+    }, [activeScene, effectById, effectIdsInOrder, shouldShowPlaybackState]);
 
     const handleAddEffect = () => {
         if (sceneId == null) return;
@@ -201,20 +176,6 @@ export default function EffectList() {
                 },
             ]);
         });
-    };
-
-    const handleDragEnd = (event: DragEndEvent) => {
-        if (sceneId == null) return;
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
-
-        const oldIndex = localOrder.findIndex((id) => id === active.id);
-        const newIndex = localOrder.findIndex((id) => id === over.id);
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        const reordered = arrayMove(localOrder, oldIndex, newIndex);
-        setLocalOrder(reordered);
-        reorderEffects(reordered);
     };
 
     if (!selectedPage) {
@@ -265,7 +226,7 @@ export default function EffectList() {
                 />
             </h3>
 
-            {localOrder.length === 0 ? (
+            {effectIdsInOrder.length === 0 ? (
                 <p className="text-body text-text/60">
                     <T
                         keyName="workspace.lightDesigner.effects.empty"
@@ -273,30 +234,16 @@ export default function EffectList() {
                     />
                 </p>
             ) : (
-                <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleDragEnd}
-                >
-                    <SortableContext
-                        items={localOrder}
-                        strategy={verticalListSortingStrategy}
-                    >
-                        <ul className="flex flex-col gap-16">
-                            {localOrder.map((effectId) => (
-                                <SortableEffectRow
-                                    key={effectId}
-                                    effectId={effectId}
-                                    effect={effectById.get(effectId)}
-                                    updateEffect={updateEffect}
-                                    playbackInfo={playbackByEffectId.get(
-                                        effectId,
-                                    )}
-                                />
-                            ))}
-                        </ul>
-                    </SortableContext>
-                </DndContext>
+                <ul className="flex flex-col gap-16">
+                    {effectIdsInOrder.map((effectId) => (
+                        <EffectRow
+                            key={effectId}
+                            effect={effectById.get(effectId)}
+                            updateEffect={updateEffect}
+                            playbackInfo={playbackByEffectId.get(effectId)}
+                        />
+                    ))}
+                </ul>
             )}
             <Button
                 type="button"
@@ -315,47 +262,20 @@ export default function EffectList() {
     );
 }
 
-function SortableEffectRow({
-    effectId,
+function EffectRow({
     effect,
     updateEffect,
     playbackInfo,
 }: {
-    effectId: number;
     effect: LightingEffectWithMarchers | undefined;
     updateEffect: (variables: ModifiedLightingEffectArgs) => void;
     playbackInfo?: EffectPlaybackInfo;
 }) {
-    const {
-        attributes,
-        listeners,
-        setNodeRef,
-        transform,
-        transition,
-        isDragging,
-    } = useSortable({ id: effectId });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-    };
     const isPlayed = playbackInfo?.state === "played";
     const isActive = playbackInfo?.state === "active";
 
     return (
-        <li
-            ref={setNodeRef}
-            style={style}
-            className={`flex items-start gap-4 ${isDragging ? "z-50 opacity-90" : ""}`}
-        >
-            <button
-                {...attributes}
-                {...listeners}
-                className="hover:text-accent mt-8 cursor-grab active:cursor-grabbing"
-                aria-label="Drag to reorder"
-            >
-                <DotsSixVerticalIcon size={16} weight="bold" />
-            </button>
+        <li className="flex items-start gap-4">
             <div className="flex-1">
                 {!effect ? (
                     <div className="rounded-6 border-stroke bg-fg-1 border p-12">

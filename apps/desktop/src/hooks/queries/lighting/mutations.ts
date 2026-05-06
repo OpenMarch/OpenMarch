@@ -242,28 +242,6 @@ export const updateLightingEffectsMutationOptions = () => {
     });
 };
 
-/** Sets `start_offset_beats` from list order (indices 0…n−1). Drag-reorder helper until the inspector edits beat offsets directly. */
-export const setLightingEffectStartOffsetsByListOrderMutationOptions = () => {
-    return mutationOptions({
-        mutationFn: (effectIdsInOrder: number[]) =>
-            effectIdsInOrder.length === 0
-                ? Promise.resolve([])
-                : updateLightingEffects({
-                      db,
-                      modifiedEffects: effectIdsInOrder.map((id, index) => ({
-                          id,
-                          start_offset_beats: index,
-                      })),
-                  }),
-        onSuccess: async (_data, _variables, _result, context) => {
-            invalidateAllLightingQueries(context.client);
-        },
-        onError: (e, variables) => {
-            conToastError("Error reordering lighting effects", e, variables);
-        },
-    });
-};
-
 export const deleteLightingEffectsMutationOptions = () => {
     return mutationOptions({
         mutationFn: (effectIds: Set<number>) =>
