@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useTimingObjects } from "./useTimingObjects";
+import { useTimingObjects } from "@/hooks/useTimingObjects";
 import type Page from "@/global/classes/Page";
 
 /**
