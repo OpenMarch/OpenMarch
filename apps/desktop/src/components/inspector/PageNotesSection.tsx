@@ -6,6 +6,14 @@ import { NotesRichTextEditor } from "../notes/NotesRichTextEditor";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useInspectedPage } from "@/hooks";
 
+/**
+ * Inspector section that shows and edits the notes for the page currently
+ * under inspection.
+ *
+ * The displayed page comes from {@link useInspectedPage}, which returns the
+ * next page during playback so notes for the upcoming target are visible
+ * while marchers are still moving.
+ */
 export function PageNotesSection() {
     const displayPage = useInspectedPage();
     const { isPlaying } = useIsPlaying()!;
@@ -24,6 +32,13 @@ export function PageNotesSection() {
         }
     }, [displayPage, isPlaying]);
 
+    /**
+     * Persists the editor's contents when the user blurs the rich-text field.
+     *
+     * Skips the save when the inspected page changed mid-edit (e.g. playback
+     * advanced to the next page) to avoid writing the previous page's text
+     * onto a different page.
+     */
     const handleNotesBlur = (nextNotesHtml: string) => {
         if (!displayPage) return;
 

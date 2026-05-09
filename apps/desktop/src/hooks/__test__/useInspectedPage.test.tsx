@@ -26,6 +26,10 @@ vi.mock("@/hooks/useTimingObjects", () => ({
     })),
 }));
 
+/**
+ * Renders children inside the contexts that {@link useInspectedPage} reads
+ * from, so each test can drive `selectedPage` and `isPlaying` independently.
+ */
 const wrapper = ({ children }: { children: ReactNode }) => (
     <IsPlayingProvider>
         <SelectedPageProvider>{children}</SelectedPageProvider>
