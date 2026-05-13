@@ -8,7 +8,7 @@ import {
     formatValidationErrors,
     SCHEMA_VERSION,
     safeValidateOpenMarchData,
-    type OpenMarchSchemaType,
+    type OpenMarchShowData,
     toOpenMarchFile,
 } from "@openmarch/schema";
 import { FieldProperties } from "@openmarch/core";
@@ -262,7 +262,7 @@ async function fetchDotsData(db: DB) {
 
 function buildOpenMarchFromRows(
     data: Awaited<ReturnType<typeof fetchDotsData>>,
-): OpenMarchSchemaType {
+): OpenMarchShowData {
     const {
         timingRows,
         fieldPropsRow,
@@ -339,7 +339,7 @@ function buildOpenMarchFromRows(
  * @throws "Db is not open" if no show is open
  * @throws ZodError (or formatted error) if built data fails schema validation
  */
-export async function toOpenMarchSchema(db: DB): Promise<OpenMarchSchemaType> {
+export async function toOpenMarchSchema(db: DB): Promise<OpenMarchShowData> {
     const data = await fetchDotsData(db);
     const obj = buildOpenMarchFromRows(data);
 
