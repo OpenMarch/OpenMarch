@@ -14,6 +14,7 @@ import {
 import { FieldProperties } from "@openmarch/core";
 import { DB, schema } from "@/global/database/db";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
+import { generatePageNames } from "@/global/classes/Page";
 
 type TimingRow = {
     position: number;
@@ -100,6 +101,12 @@ function buildPagesFromTiming({
     const pageTimingRows = timingRows.filter(
         (r): r is TimingRow & { page_id: number } => r.page_id != null,
     );
+    const pageNames = generatePageNames(
+        pageTimingRows.map(
+            (row) => (pagesById.get(row.page_id)?.is_subset ?? 0) === 1,
+        ),
+        0,
+    );
     return pageTimingRows.map((row, idx) => {
         const startPosition = row.position;
         const nextPageRow = pageTimingRows[idx + 1];
@@ -117,7 +124,7 @@ function buildPagesFromTiming({
             id: String(row.page_id),
             duration,
             startBeatIndex: row.position,
-            name: `Page ${idx + 1}`,
+            name: pageNames[idx],
             ...(pageRec?.is_subset === 1 && { isSubset: true }),
         };
     });

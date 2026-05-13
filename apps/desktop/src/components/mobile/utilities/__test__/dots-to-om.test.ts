@@ -3,6 +3,7 @@ import { expect } from "vitest";
 import type { DB } from "@/global/database/db";
 import { toOpenMarchSchema } from "../dots-to-om";
 import { safeValidateOpenMarchData, SCHEMA_VERSION } from "@openmarch/schema";
+import { generatePageNames } from "@/global/classes/Page";
 
 describeDbTests("dots-to-om", (it) => {
     it("converts db to valid OpenMarch schema", async ({
@@ -40,10 +41,14 @@ describeDbTests("dots-to-om", (it) => {
     }) => {
         const result = await toOpenMarchSchema(db as unknown as DB);
         expect(result.pages.length).toBeGreaterThan(0);
-        result.pages.forEach((page, idx) => {
+        const expectedNames = generatePageNames(
+            result.pages.map((p) => p.isSubset === true),
+            0,
+        );
+        expect(result.pages.map((p) => p.name)).toEqual(expectedNames);
+        result.pages.forEach((page) => {
             expect(page.id).toBeDefined();
             expect(typeof page.startBeatIndex).toBe("number");
-            expect(page.name).toBe(`Page ${idx + 1}`);
             expect(typeof page.duration).toBe("number");
             if (page.isSubset !== undefined) {
                 expect(page.isSubset).toBe(true);
