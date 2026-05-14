@@ -778,8 +778,8 @@ export async function insertAudioFile(): Promise<
         const path = await dialog.showOpenDialog(win, {
             filters: [
                 {
-                    name: "Audio File (.mp3, .wav, .ogg)",
-                    extensions: ["mp3", "wav", "ogg"],
+                    name: "Audio File",
+                    extensions: ["mp3", "wav", "ogg", "m4a", "aac", "webm"],
                 },
                 { name: "All Files", extensions: ["*"] },
             ],
