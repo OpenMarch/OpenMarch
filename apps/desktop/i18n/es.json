@@ -14,7 +14,7 @@
             "lockY": "Bloqueo del eje Y",
             "lockYOff": "Habilitar movimiento en Y",
             "lockYOn": "Bloquear movimiento Y",
-            "snapToWhole": "Alinear al entero más cercano"
+            "snapToCustomFraction": "Alinear al entero más cercano"
         },
         "batchEdit": {
             "noNextPage": "No se pueden establecer las coordenadas del marchador en la página siguiente. No hay una página siguiente",

@@ -14,7 +14,7 @@
             "lockY": "Verrouiller l'axe Y",
             "lockYOff": "Activer le mouvement Y",
             "lockYOn": "Verrouiller mouvement en Y",
-            "snapToWhole": "Aligner avec l'entier le plus proche"
+            "snapToCustomFraction": "Aligner avec l'entier le plus proche"
         },
         "batchEdit": {
             "noNextPage": "Impossible de définir les coordonnées des marcheurs sur la page suivante. Il n'y a pas de page suivante.",

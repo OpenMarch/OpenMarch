@@ -1370,17 +1370,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      *
      * @param x The x coordinate of the point
      * @param y The y coordinate of the point
-     * @param denominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
+     * @param denominatorX Nearest 1/n step on the X axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
+     * @param denominatorY Nearest 1/n step on the Y axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
      * @returns The rounded x and y coordinates
      */
     getRoundedCoordinate = ({
         x,
         y,
-        denominator = 1,
+        denominatorX = 1,
+        denominatorY = 1,
     }: {
         x: number;
         y: number;
-        denominator?: number;
+        denominatorX?: number;
+        denominatorY?: number;
     }) => {
         const fakeMarcherPage: Partial<MarcherPage> = {
             marcher_id: -1,
@@ -1399,7 +1402,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         const response = CoordinateActions.getRoundCoordinates({
             marcherPages: [fakeMarcherPage as MarcherPage],
-            denominator,
+            denominatorX,
+            denominatorY,
             fieldProperties: this.fieldProperties,
             xAxis: true,
             yAxis: true,
