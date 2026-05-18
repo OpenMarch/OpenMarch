@@ -116,68 +116,26 @@ export default function EnsembleList() {
                     !error &&
                     ensemblesResponse?.ensembles &&
                     ensemblesResponse.ensembles.length > 0 && (
-                        <div className="flex min-h-0 flex-col gap-4 overflow-y-auto">
-                            {/* Header */}
-                            <div className="border-stroke flex items-center gap-4 border-b px-12 py-8">
-                                <div className="w-[30%] min-w-0">
-                                    <p className="text-sub text-text/90 font-mono">
-                                        {t("ensembles.nameHeader", {
-                                            defaultValue: "Name",
-                                        })}
-                                    </p>
-                                </div>
-                                <div className="w-[35%] min-w-0">
-                                    <p className="text-sub text-text/90 font-mono">
-                                        {t("ensembles.createdAtHeader", {
-                                            defaultValue: "Created At",
-                                        })}
-                                    </p>
-                                </div>
-                                <div className="w-[35%] min-w-0">
-                                    <p className="text-sub text-text/90 font-mono">
-                                        {t("ensembles.productionsHeader", {
-                                            defaultValue: "Productions",
-                                        })}
-                                    </p>
-                                </div>
-                            </div>
-
+                        <div className="flex min-h-0 flex-col gap-16 overflow-y-auto">
                             {/* Ensemble items */}
                             {ensemblesResponse.ensembles.map((ensemble) => {
-                                const isAttachedProduction = (
-                                    productionId: number,
-                                ) =>
-                                    workspaceSettings?.otmProductionId ===
-                                    productionId;
-
                                 return (
                                     <div
                                         key={ensemble.id}
-                                        className="border-stroke rounded-6 border"
+                                        className="space-y-2"
                                     >
-                                        <div className="border-stroke hover:bg-fg-2 flex cursor-pointer items-center gap-4 border-b px-12 py-8 transition-colors last:border-b-0">
-                                            <div className="w-[30%] min-w-0">
-                                                <p className="text-body text-text min-w-0 break-words">
-                                                    {ensemble.name}
-                                                </p>
-                                            </div>
-                                            <div className="w-[35%] min-w-0">
-                                                <p className="text-body text-text/80 min-w-0 break-words">
-                                                    {formatDate(
-                                                        ensemble.created_at,
-                                                    )}
-                                                </p>
-                                            </div>
-                                            <div className="w-[35%] min-w-0">
-                                                <p className="text-body text-text/80 min-w-0">
-                                                    {ensemble.productions_count}
-                                                </p>
+                                        <div className="text-sub text-text-subtitle flex w-full justify-between">
+                                            <div>{ensemble.name}</div>
+                                            <div>
+                                                {formatDate(
+                                                    ensemble.created_at,
+                                                )}
                                             </div>
                                         </div>
                                         {/* Productions list */}
                                         {ensemble.productions &&
                                             ensemble.productions.length > 0 && (
-                                                <div className="flex flex-col">
+                                                <div className="flex flex-col gap-8">
                                                     {ensemble.productions.map(
                                                         (production) => (
                                                             <div
@@ -190,36 +148,11 @@ export default function EnsembleList() {
                                                                         production,
                                                                     )
                                                                 }
-                                                                className={`border-stroke hover:bg-fg-2 flex cursor-pointer items-center gap-4 border-b px-12 py-8 pl-32 transition-colors last:border-b-0 ${
-                                                                    isAttachedProduction(
-                                                                        production.id,
-                                                                    )
-                                                                        ? "bg-fg-2"
-                                                                        : ""
-                                                                }`}
+                                                                className={`hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex cursor-pointer items-center gap-4 rounded border px-16 py-12 transition-colors`}
                                                             >
-                                                                <div className="w-full min-w-0">
-                                                                    <div className="flex items-center gap-8">
-                                                                        <p className="text-body text-text min-w-0 break-words">
-                                                                            {
-                                                                                production.name
-                                                                            }
-                                                                        </p>
-                                                                        {isAttachedProduction(
-                                                                            production.id,
-                                                                        ) && (
-                                                                            <span className="text-sub text-accent">
-                                                                                {t(
-                                                                                    "ensembles.attached",
-                                                                                    {
-                                                                                        defaultValue:
-                                                                                            "(Attached)",
-                                                                                    },
-                                                                                )}
-                                                                            </span>
-                                                                        )}
-                                                                    </div>
-                                                                </div>
+                                                                {
+                                                                    production.name
+                                                                }
                                                             </div>
                                                         ),
                                                     )}
