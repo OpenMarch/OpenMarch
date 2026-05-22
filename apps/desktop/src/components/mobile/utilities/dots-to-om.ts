@@ -15,6 +15,14 @@ import { FieldProperties } from "@openmarch/core";
 import { DB, schema } from "@/global/database/db";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 import { generatePageNames } from "@/global/classes/Page";
+import { getPagesInOrder } from "@/db-functions";
+import {
+    buildPerformerAppearanceShowData,
+    databaseMarcherPagesToMarcherPages,
+    fetchPerformerAppearanceExportData,
+    marcherRowsToMarchers,
+    parsePerformerAppearanceExportData,
+} from "./performer-appearance-export";
 
 type TimingRow = {
     position: number;
@@ -221,12 +229,15 @@ async function fetchDotsData(db: DB) {
         .from(schema.timing_objects)
         .orderBy(asc(schema.timing_objects.position))) as TimingRow[];
 
+    const pagesInOrder = await getPagesInOrder({ tx: db });
+
     const [
         fieldPropsRow,
         marchersRows,
         pagesRows,
         measuresRows,
         marcherPagesRows,
+        performerAppearanceExportData,
     ] = await Promise.all([
         db.query.field_properties.findFirst({ columns: { json_data: true } }),
         db.query.marchers.findMany({
@@ -248,6 +259,10 @@ async function fetchDotsData(db: DB) {
         db.query.pages.findMany(),
         db.query.measures.findMany(),
         db.query.marcher_pages.findMany(),
+        fetchPerformerAppearanceExportData(
+            db,
+            pagesInOrder.map((p) => ({ id: p.id })),
+        ),
     ]);
 
     return {
@@ -257,6 +272,8 @@ async function fetchDotsData(db: DB) {
         pagesRows,
         measuresRows,
         marcherPagesRows,
+        pagesInOrder,
+        performerAppearanceExportData,
     };
 }
 
@@ -316,10 +333,29 @@ function buildOpenMarchFromRows(
     });
     const measures = buildMeasuresFromTiming({ timingRows, measuresById });
 
+    const {
+        sectionAppearances,
+        tagAppearances,
+        tagAppearanceIdsByPageId,
+        marcherIdsByTagId,
+    } = parsePerformerAppearanceExportData(data.performerAppearanceExportData);
+
+    const performerAppearance = buildPerformerAppearanceShowData({
+        fieldProperties: fieldProps,
+        sectionAppearances,
+        tagAppearances,
+        tagAppearanceIdsByPageId,
+        marcherIdsByTagId,
+        marchers: marcherRowsToMarchers(marchersRows),
+        marcherPages: databaseMarcherPagesToMarcherPages(marcherPagesRows),
+        pagesInOrder: data.pagesInOrder.map((p) => ({ id: p.id })),
+    });
+
     return {
         omSchemaVersion: SCHEMA_VERSION,
         metadata,
         performers,
+        performerAppearance,
         pages,
         tempoSections,
         coordinates,

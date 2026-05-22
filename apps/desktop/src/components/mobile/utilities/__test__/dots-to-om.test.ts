@@ -4,6 +4,16 @@ import type { DB } from "@/global/database/db";
 import { toOpenMarchSchema } from "../dots-to-om";
 import { safeValidateOpenMarchData, SCHEMA_VERSION } from "@openmarch/schema";
 import { generatePageNames } from "@/global/classes/Page";
+import { FieldProperties } from "@openmarch/core";
+import { rgbaToSchemaString } from "@/entity-components/appearance";
+import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
+import {
+    createMarcherTags,
+    createSectionAppearances,
+    createTagAppearances,
+    createTags,
+} from "@/db-functions";
+import { updateMarcherPages } from "@/db-functions/marcherPage";
 
 describeDbTests("dots-to-om", (it) => {
     it("converts db to valid OpenMarch schema", async ({
@@ -121,5 +131,105 @@ describeDbTests("dots-to-om", (it) => {
         expect(result.metadata.performanceArea.yOrigin).toBe("front");
         expect(result.metadata.performanceArea.xCheckpoints).toBeDefined();
         expect(result.metadata.performanceArea.yCheckpoints).toBeDefined();
+    });
+
+    it("includes performerAppearance with default from field properties", async ({
+        db,
+    }) => {
+        const result = await toOpenMarchSchema(db as unknown as DB);
+        const fieldPropsRow = await db.query.field_properties.findFirst({
+            columns: { json_data: true },
+        });
+        const fieldProps = new FieldProperties(
+            FieldPropertiesSchema.parse(JSON.parse(fieldPropsRow!.json_data)),
+        );
+
+        expect(result.performerAppearance).toBeDefined();
+        expect(result.performerAppearance.defaultAppearance.fillRgba).toBe(
+            rgbaToSchemaString(fieldProps.theme.defaultMarcher.fill),
+        );
+        expect(result.performerAppearance.performers).toEqual([]);
+    });
+
+    it("exports section appearances for each section_appearances row", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        await createSectionAppearances({
+            db,
+            newItems: [
+                {
+                    section: "Trumpet",
+                    shape_type: "square",
+                    fill_color: { r: 11, g: 22, b: 33, a: 1 },
+                },
+            ],
+        });
+
+        const result = await toOpenMarchSchema(db as unknown as DB);
+        expect(result.performerAppearance.sections).toHaveLength(1);
+        expect(result.performerAppearance.sections[0].section).toBe("Trumpet");
+        expect(result.performerAppearance.sections[0].shape).toBe("square");
+    });
+
+    it("exports performer override when tag appearance applies on a page", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        const firstPageId = marchersAndPages.expectedPages[0].id;
+        const marcherId = 1;
+
+        const [tag] = await createTags({ db, newTags: [{ name: "test-tag" }] });
+        await createMarcherTags({
+            db,
+            newMarcherTags: [{ tag_id: tag.id, marcher_id: marcherId }],
+        });
+        await createTagAppearances({
+            db,
+            newItems: [
+                {
+                    tag_id: tag.id,
+                    start_page_id: firstPageId,
+                    shape_type: "triangle",
+                },
+            ],
+        });
+
+        const result = await toOpenMarchSchema(db as unknown as DB);
+        const override = result.performerAppearance.performers.find(
+            (p) =>
+                p.marcherId === String(marcherId) &&
+                p.pageId === String(firstPageId),
+        );
+        expect(override).toBeDefined();
+        expect(override!.shape).toBe("triangle");
+    });
+
+    it("exports performer override when marcher page appearance differs from baseline", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        const firstPageId = marchersAndPages.expectedPages[0].id;
+        const marcherId = 1;
+
+        await updateMarcherPages({
+            db,
+            modifiedMarcherPages: [
+                {
+                    marcher_id: marcherId,
+                    page_id: firstPageId,
+                    shape_type: "x",
+                },
+            ],
+        });
+
+        const result = await toOpenMarchSchema(db as unknown as DB);
+        const override = result.performerAppearance.performers.find(
+            (p) =>
+                p.marcherId === String(marcherId) &&
+                p.pageId === String(firstPageId),
+        );
+        expect(override).toBeDefined();
+        expect(override!.shape).toBe("cross");
     });
 });
