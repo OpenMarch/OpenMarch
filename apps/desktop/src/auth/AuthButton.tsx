@@ -94,14 +94,14 @@ export function AuthButton() {
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <button
-                    className="bg-accent/20 text-accent hover:bg-accent/30 focus-visible:ring-accent flex h-24 w-24 items-center justify-center rounded-full transition-colors outline-none focus-visible:ring-2"
+                    className="bg-accent/20 text-accent hover:bg-accent/30 focus-visible:ring-accent flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full p-0 transition-colors outline-none focus-visible:ring-2"
                     title={displayName}
                 >
                     {user?.imageUrl ? (
                         <img
                             src={user.imageUrl}
                             alt={displayName}
-                            className="h-32 w-32 rounded-full object-cover"
+                            className="size-full object-cover"
                         />
                     ) : (
                         <span className="text-sm font-medium">{initials}</span>
