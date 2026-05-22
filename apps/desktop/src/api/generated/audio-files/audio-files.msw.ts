@@ -41,6 +41,13 @@ export const getGetApiEditorV1ProductionsProductionIdAudioFilesResponseMock = (
             ]),
             undefined,
         ]),
+        source_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
         duration_seconds: faker.helpers.arrayElement([
             faker.helpers.arrayElement([
                 faker.number.float({

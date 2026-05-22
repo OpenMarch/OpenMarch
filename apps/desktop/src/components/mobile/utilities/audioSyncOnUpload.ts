@@ -19,9 +19,13 @@ export type LocalAudioFileForSync = {
 };
 
 /**
- * Server audio file shape with at least id and optional checksum for matching.
+ * Server audio file shape with at least id and optional source_checksum for matching.
+ * Matches raw upload bytes (not stored M4A checksum).
  */
-export type ServerAudioFileWithChecksum = { id: number; checksum?: string };
+export type ServerAudioFileWithChecksum = {
+    id: number;
+    source_checksum?: string | null;
+};
 
 /**
  * Result of preparing audio sync: whether the file exists on the server (by id)
@@ -41,13 +45,18 @@ export function isSilentPlaceholder(path: string, id: number): boolean {
 }
 
 /**
- * Finds the server audio file id that matches the given checksum, or null.
+ * Finds the server audio file id whose source_checksum matches the local raw hash, or null.
+ * Legacy rows with null source_checksum never match (upload once after deploy).
  */
-export function findServerAudioFileIdByChecksum(
-    localChecksum: string,
+export function findServerAudioFileIdBySourceChecksum(
+    localSourceChecksum: string,
     serverAudioFiles: ServerAudioFileWithChecksum[],
 ): number | null {
-    const match = serverAudioFiles.find((af) => af.checksum === localChecksum);
+    const match = serverAudioFiles.find(
+        (af) =>
+            af.source_checksum != null &&
+            af.source_checksum === localSourceChecksum,
+    );
     return match?.id ?? null;
 }
 
@@ -56,7 +65,7 @@ export function findServerAudioFileIdByChecksum(
  * Returns null if file has no data or is silent placeholder.
  *
  * @param fullFile - Local audio file with data
- * @param serverAudioFiles - List of server audio files (with id and checksum)
+ * @param serverAudioFiles - List of server audio files (with id and source_checksum)
  * @param computeChecksum - Async checksum function (e.g. AudioFile.computeChecksum)
  */
 export async function prepareAudioSyncResult(
@@ -67,9 +76,9 @@ export async function prepareAudioSyncResult(
     if (isSilentPlaceholder(fullFile.path, fullFile.id)) return null;
     const data = fullFile.data;
     if (data == null) return null;
-    const checksum = await computeChecksum(data);
-    const serverAudioFileId = findServerAudioFileIdByChecksum(
-        checksum,
+    const sourceChecksum = await computeChecksum(data);
+    const serverAudioFileId = findServerAudioFileIdBySourceChecksum(
+        sourceChecksum,
         serverAudioFiles,
     );
     return {

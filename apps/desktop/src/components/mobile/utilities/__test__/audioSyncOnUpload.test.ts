@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
     SILENT_AUDIO_PATH,
     isSilentPlaceholder,
-    findServerAudioFileIdByChecksum,
+    findServerAudioFileIdBySourceChecksum,
     prepareAudioSyncResult,
     buildAudioUploadFormData,
     type LocalAudioFileForSync,
@@ -34,37 +34,55 @@ describe("audioSyncOnUpload", () => {
         });
     });
 
-    describe("findServerAudioFileIdByChecksum", () => {
+    describe("findServerAudioFileIdBySourceChecksum", () => {
         const serverFiles: ServerAudioFileWithChecksum[] = [
-            { id: 10, checksum: "aaa" },
-            { id: 20, checksum: "bbb" },
-            { id: 30, checksum: "ccc" },
+            { id: 10, source_checksum: "aaa" },
+            { id: 20, source_checksum: "bbb" },
+            { id: 30, source_checksum: "ccc" },
         ];
 
-        it("returns id when checksum matches", () => {
-            expect(findServerAudioFileIdByChecksum("bbb", serverFiles)).toBe(
-                20,
-            );
+        it("returns id when source_checksum matches", () => {
+            expect(
+                findServerAudioFileIdBySourceChecksum("bbb", serverFiles),
+            ).toBe(20);
         });
 
-        it("returns null when no checksum matches", () => {
-            expect(findServerAudioFileIdByChecksum("xyz", serverFiles)).toBe(
-                null,
-            );
+        it("returns null when no source_checksum matches", () => {
+            expect(
+                findServerAudioFileIdBySourceChecksum("xyz", serverFiles),
+            ).toBe(null);
         });
 
         it("returns null for empty server list", () => {
-            expect(findServerAudioFileIdByChecksum("aaa", [])).toBe(null);
+            expect(findServerAudioFileIdBySourceChecksum("aaa", [])).toBe(null);
         });
 
-        it("handles server files without checksum", () => {
+        it("returns null when server file has null source_checksum (legacy)", () => {
+            const legacy = [{ id: 1, source_checksum: null }] as const;
+            expect(
+                findServerAudioFileIdBySourceChecksum("abc", [...legacy]),
+            ).toBe(null);
+        });
+
+        it("ignores stored M4A checksum field (does not match local raw hash)", () => {
+            const m4aOnly = [
+                { id: 1, source_checksum: undefined },
+            ] as ServerAudioFileWithChecksum[];
+            expect(
+                findServerAudioFileIdBySourceChecksum("m4a-hash", m4aOnly),
+            ).toBe(null);
+        });
+
+        it("handles server files without source_checksum", () => {
             const withMissing = [
-                { id: 1, checksum: "abc" },
+                { id: 1, source_checksum: "abc" },
                 { id: 2 },
             ] as ServerAudioFileWithChecksum[];
-            expect(findServerAudioFileIdByChecksum("abc", withMissing)).toBe(1);
             expect(
-                findServerAudioFileIdByChecksum("undefined", withMissing),
+                findServerAudioFileIdBySourceChecksum("abc", withMissing),
+            ).toBe(1);
+            expect(
+                findServerAudioFileIdBySourceChecksum("undefined", withMissing),
             ).toBe(null);
         });
     });
@@ -84,7 +102,7 @@ describe("audioSyncOnUpload", () => {
             };
             const result = await prepareAudioSyncResult(
                 file,
-                [{ id: 1, checksum: "x" }],
+                [{ id: 1, source_checksum: "x" }],
                 mockComputeChecksum,
             );
             expect(result).toBe(null);
@@ -106,7 +124,7 @@ describe("audioSyncOnUpload", () => {
             expect(mockComputeChecksum).not.toHaveBeenCalled();
         });
 
-        it("returns result with serverAudioFileId when checksum matches", async () => {
+        it("returns result with serverAudioFileId when source_checksum matches", async () => {
             mockComputeChecksum.mockResolvedValue("match-me");
             const file: LocalAudioFileForSync = {
                 id: 1,
@@ -114,8 +132,8 @@ describe("audioSyncOnUpload", () => {
                 data: new ArrayBuffer(4),
             };
             const serverFiles: ServerAudioFileWithChecksum[] = [
-                { id: 100, checksum: "other" },
-                { id: 200, checksum: "match-me" },
+                { id: 100, source_checksum: "other" },
+                { id: 200, source_checksum: "match-me" },
             ];
             const result = await prepareAudioSyncResult(
                 file,
@@ -137,12 +155,27 @@ describe("audioSyncOnUpload", () => {
             };
             const result = await prepareAudioSyncResult(
                 file,
-                [{ id: 1, checksum: "other" }],
+                [{ id: 1, source_checksum: "other" }],
                 mockComputeChecksum,
             );
             expect(result).not.toBe(null);
             expect(result?.serverAudioFileId).toBe(null);
             expect(result?.selectedAudioFileWithData).toBe(file);
+        });
+
+        it("returns serverAudioFileId null when only legacy null source_checksum exists", async () => {
+            mockComputeChecksum.mockResolvedValue("local-hash");
+            const file: LocalAudioFileForSync = {
+                id: 1,
+                path: "/music.mp3",
+                data: new ArrayBuffer(4),
+            };
+            const result = await prepareAudioSyncResult(
+                file,
+                [{ id: 99, source_checksum: null }],
+                mockComputeChecksum,
+            );
+            expect(result?.serverAudioFileId).toBe(null);
         });
     });
 

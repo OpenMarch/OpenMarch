@@ -21,6 +21,8 @@ export type GetApiEditorV1ProductionsId200Production = {
     ensemble?: GetApiEditorV1ProductionsId200ProductionEnsemble;
     /** @nullable */
     default_audio_file_id?: number | null;
+    /** @nullable */
+    default_audio_source_checksum?: string | null;
     created_at?: string;
     updated_at?: string;
 };

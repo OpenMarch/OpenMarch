@@ -14,6 +14,8 @@ export type GetApiEditorV1ProductionsProductionIdAudioFiles200AudioFilesItem = {
     /** @nullable */
     checksum?: string | null;
     /** @nullable */
+    source_checksum?: string | null;
+    /** @nullable */
     duration_seconds?: number | null;
     /** @nullable */
     size_megabytes?: number | null;

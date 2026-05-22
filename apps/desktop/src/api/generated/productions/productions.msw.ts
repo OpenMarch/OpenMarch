@@ -139,6 +139,13 @@ export const getGetApiEditorV1ProductionsIdResponseMock = (
             ]),
             undefined,
         ]),
+        default_audio_source_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
         created_at: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + "Z",
             undefined,
