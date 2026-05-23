@@ -111,7 +111,7 @@ export default function GithubReleases() {
                 <p>No releases available.</p>
             ) : (
                 <Tabs.Root
-                    value={selectedRelease}
+                    value={selectedRelease ?? undefined}
                     onValueChange={setSelectedRelease}
                     className="flex h-full w-full gap-8 max-[768px]:flex-col"
                 >
