@@ -1,4 +1,3 @@
-// @ts-check
 import { defineConfig } from "astro/config";
 import react from "@astrojs/react";
 import mdx from "@astrojs/mdx";
@@ -29,12 +28,28 @@ export default defineConfig({
                 dark: "./public/openmarch-white.svg",
                 replacesTitle: true,
             },
-            social: {
-                discord: "https://discord.gg/eTsQ98uZzq",
-                github: "https://github.com/OpenMarch/OpenMarch",
-                patreon: "https://www.patreon.com/c/openmarch",
-                youtube: "https://www.youtube.com/@OpenMarchApp",
-            },
+            social: [
+                {
+                    icon: "discord",
+                    label: "Discord",
+                    href: "https://discord.gg/eTsQ98uZzq",
+                },
+                {
+                    icon: "github",
+                    label: "GitHub",
+                    href: "https://github.com/OpenMarch/OpenMarch",
+                },
+                {
+                    icon: "patreon",
+                    label: "Patreon",
+                    href: "https://www.patreon.com/c/openmarch",
+                },
+                {
+                    icon: "youtube",
+                    label: "YouTube",
+                    href: "https://www.youtube.com/@OpenMarchApp",
+                },
+            ],
             editLink: {
                 baseUrl:
                     "https://github.com/OpenMarch/OpenMarch/tree/main/apps/website/",
@@ -50,19 +65,19 @@ export default defineConfig({
             sidebar: [
                 {
                     label: "Guides",
-                    autogenerate: { directory: "guides" },
+                    items: [{ autogenerate: { directory: "guides" } }],
                 },
                 {
                     label: "Troubleshooting",
-                    autogenerate: { directory: "troubleshooting" },
+                    items: [{ autogenerate: { directory: "troubleshooting" } }],
                 },
                 {
                     label: "About",
-                    autogenerate: { directory: "about" },
+                    items: [{ autogenerate: { directory: "about" } }],
                 },
                 {
                     label: "Developers",
-                    autogenerate: { directory: "developers" },
+                    items: [{ autogenerate: { directory: "developers" } }],
                 },
             ],
         }),
