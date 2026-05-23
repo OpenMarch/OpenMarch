@@ -67,7 +67,6 @@ words:
   - importmap
   - Invalidators
   - launchpage
-  - libsql
   - lightridge
   - localappdata
   - Loudoun
@@ -160,6 +159,7 @@ words:
   - VMEA
   - vmin
   - Vree
+  - waivable
   - WASD
   - wavesurfer
   - winget

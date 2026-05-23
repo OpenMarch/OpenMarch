@@ -14,7 +14,7 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToWhole": "Snap to nearest whole"
+            "snapToCustomFraction": "Apply snap"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
@@ -336,6 +336,7 @@
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "deleteTooltip": "Delete this checkpoint from the field",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
             "name": "Name",

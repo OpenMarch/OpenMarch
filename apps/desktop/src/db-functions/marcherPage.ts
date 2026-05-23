@@ -1,4 +1,4 @@
-import { asc, gt, eq, lt, desc, and, sql } from "drizzle-orm";
+import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";

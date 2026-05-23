@@ -72,7 +72,7 @@ export default function BlogPreview({
         return <p className="text-body py-16 text-center">Loading preview…</p>;
     }
 
-    if (error || post === null) {
+    if (error || !post) {
         return (
             <p className="text-body py-16 text-center">
                 Invalid or missing preview link.

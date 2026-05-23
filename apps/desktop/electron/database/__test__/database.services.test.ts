@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import Database from "libsql";
+import { DatabaseSync } from "node:sqlite";
 import { handleSqlProxyWithDb } from "../database.services";
 
 describe("Database Services", () => {
     describe("sql proxy", () => {
-        let db: Database.Database;
+        let db: DatabaseSync;
 
         beforeEach(() => {
-            db = new Database(":memory:");
+            db = new DatabaseSync(":memory:");
             // Set up a test table
             db.exec("CREATE TABLE test (id INTEGER, name TEXT)");
             db.exec(

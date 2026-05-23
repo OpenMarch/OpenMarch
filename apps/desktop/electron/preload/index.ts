@@ -18,6 +18,8 @@ import type {
     AccessTokenResult,
 } from "electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
+import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
+import * as DbServices from "@om-electron/database/database.services";
 import { HistoryResponse } from "@/db-functions";
 
 function domReady(
@@ -281,7 +283,8 @@ const APP_API = {
     /** Only needed for the triggers */
     unsafeSqlProxy: (sql: string) =>
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
-            rows: any[] | any;
+            success: boolean;
+            changes: number;
         }>,
 
     // Logging

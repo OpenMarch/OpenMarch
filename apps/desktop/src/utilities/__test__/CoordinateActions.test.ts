@@ -59,12 +59,14 @@ describe("CoordinateActions", () => {
                 { marcher_id: 5, page_id: 5, x: 686, y: 783 },
                 { marcher_id: 5, page_id: 5, x: 485.1, y: 884.9 },
             ] as MarcherPage[];
-            const denominator = 1;
+            const denominatorX = 1;
+            const denominatorY = 1;
 
             it("should round coordinates on both axes", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: true,
                     yAxis: true,
@@ -113,7 +115,8 @@ describe("CoordinateActions", () => {
             it("should round coordinates on the x-axis only", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: true,
                     yAxis: false,
@@ -132,7 +135,8 @@ describe("CoordinateActions", () => {
             it("should round coordinates on the y-axis only", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: false,
                     yAxis: true,
@@ -181,7 +185,8 @@ describe("CoordinateActions", () => {
             it("should not round coordinates on any axis", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: false,
                     yAxis: false,
@@ -207,11 +212,13 @@ describe("CoordinateActions", () => {
                 { marcher_id: 5, page_id: 5, x: 685.0001, y: 782.9999 },
                 { marcher_id: 5, page_id: 5, x: 488.625, y: 881.125 },
             ] as MarcherPage[];
-            const denominator = 4;
+            const denominatorX = 4;
+            const denominatorY = 4;
             it("should round coordinates to the nearest .25 on both axes", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: true,
                     yAxis: true,
@@ -267,11 +274,13 @@ describe("CoordinateActions", () => {
                 { marcher_id: 5, page_id: 5, x: 685.0001, y: 782.9999 },
                 { marcher_id: 5, page_id: 5, x: 488.625, y: 881.125 },
             ] as MarcherPage[];
-            const denominator = 2;
+            const denominatorX = 2;
+            const denominatorY = 2;
             it("should round coordinates to the nearest .5 on both axes", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: true,
                     yAxis: true,
@@ -327,11 +336,13 @@ describe("CoordinateActions", () => {
                 { marcher_id: 5, page_id: 5, x: 685.0001, y: 782.9999 },
                 { marcher_id: 5, page_id: 5, x: 488.625, y: 881.125 },
             ] as MarcherPage[];
-            const denominator = 10;
+            const denominatorX = 10;
+            const denominatorY = 10;
             it("should round coordinates to the nearest .1 on both axes", () => {
                 const result = getRoundCoordinates({
                     marcherPages,
-                    denominator,
+                    denominatorX,
+                    denominatorY,
                     fieldProperties: fieldProperties,
                     xAxis: true,
                     yAxis: true,

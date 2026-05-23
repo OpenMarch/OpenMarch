@@ -4,17 +4,19 @@ import {
     CheckCircleIcon,
     SealWarningIcon,
 } from "@phosphor-icons/react";
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 
-const SUPABASE_URL =
-    "https://vjdgrmhzmihuoxcjtqnv.supabase.co/rest/v1/Newsletter Emails";
-const SUPABASE_KEY = import.meta.env.PUBLIC_SUPABASE_KEY;
+const BUTTONDOWN_ACTION =
+    "https://buttondown.com/api/emails/embed-subscribe/alexdumo";
+// cspell:ignore sub_tag_09prxrndjh9svaanzgayxrdxm0
+const BUTTONDOWN_TAG = "sub_tag_09prxrndjh9svaanzgayxrdxm0";
 
 function NewsletterForm({
     variant = "primary",
 }: {
     variant?: "primary" | "secondary";
 }) {
+    const formRef = useRef<HTMLFormElement>(null);
     const [email, setEmail] = useState("");
     const [status, setStatus] = useState<
         "idle" | "loading" | "success" | "error"
@@ -25,37 +27,60 @@ function NewsletterForm({
         e.preventDefault();
         setStatus("loading");
         setError("");
+
+        const body = new URLSearchParams({
+            email,
+            tag: BUTTONDOWN_TAG,
+            embed: "1",
+        });
+
         try {
-            const res = await fetch(SUPABASE_URL, {
+            const res = await fetch(BUTTONDOWN_ACTION, {
                 method: "POST",
                 headers: {
-                    apikey: SUPABASE_KEY,
-                    Authorization: `Bearer ${SUPABASE_KEY}`,
-                    "Content-Type": "application/json",
-                    Prefer: "return=minimal",
+                    "Content-Type": "application/x-www-form-urlencoded",
                 },
-                body: JSON.stringify({ email }),
+                body,
             });
             if (res.ok) {
                 setStatus("success");
                 setEmail("");
             } else {
-                setStatus("error");
-                setError(
-                    "Something went wrong... Please tell us about this so we can fix it :)",
-                );
+                const text = await res.text();
+                if (
+                    text.includes("Verify Your Subscription") ||
+                    text.includes("turnstile")
+                ) {
+                    // Turnstile required — complete subscription on Buttondown
+                    formRef.current?.submit();
+                } else {
+                    setStatus("error");
+                    setError(
+                        "Something went wrong... Please tell us about this so we can fix it :)",
+                    );
+                }
             }
-        } catch (err) {
-            setStatus("error");
-            setError("Network error.");
+        } catch {
+            // CORS or network failure — fall back to native form POST
+            formRef.current?.submit();
         }
     }
 
     return (
-        <form className="flex w-full flex-col gap-8" onSubmit={handleSubmit}>
+        <form
+            ref={formRef}
+            action={BUTTONDOWN_ACTION}
+            method="post"
+            className="embeddable-buttondown-form flex w-full flex-col gap-8"
+            onSubmit={handleSubmit}
+        >
+            <input type="hidden" name="tag" value={BUTTONDOWN_TAG} />
+            <input type="hidden" name="embed" value="1" />
             <div className="flex gap-6">
                 <Input
                     type="email"
+                    name="email"
+                    id="bd-email"
                     placeholder="youremail@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -68,7 +93,6 @@ function NewsletterForm({
                     disabled={status === "loading"}
                     variant={variant}
                 >
-                    {/*status === "loading" ? "Signing up..." : buttonText */}
                     <ArrowRightIcon size={24} />
                 </Button>
             </div>

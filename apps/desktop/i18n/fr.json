@@ -14,7 +14,7 @@
             "lockY": "Verrouiller l'axe Y",
             "lockYOff": "Activer le mouvement Y",
             "lockYOn": "Verrouiller mouvement en Y",
-            "snapToWhole": "Aligner avec l'entier le plus proche"
+            "snapToCustomFraction": "Aligner avec l'entier le plus proche"
         },
         "batchEdit": {
             "noNextPage": "Impossible de définir les coordonnées des marcheurs sur la page suivante. Il n'y a pas de page suivante.",
@@ -311,6 +311,7 @@
             "delete": "Supprimer",
             "deleted": "\"{axis}-point de contrôle à {steps} étapes supprimé - \"{name}\"",
             "deleteTooltip": "Supprimer ce point de contrôle du terrain",
+            "minimumRequired": "Au moins 2 points de contrôle {axis} sont requis",
             "fieldLabel": "Étiquette de point de cheminement",
             "fieldLabelTooltip": "\"L'étiquette à afficher sur le champ (c'est-à-dire, les repères de terrain)\"",
             "name": "Nom",
