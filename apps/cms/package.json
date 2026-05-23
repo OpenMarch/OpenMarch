@@ -27,7 +27,7 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
+    "@opennextjs/cloudflare": "^1.19.11",
     "@payloadcms/db-d1-sqlite": "3.73.0",
     "@payloadcms/next": "3.73.0",
     "@payloadcms/richtext-lexical": "3.73.0",
@@ -57,18 +57,11 @@
     "typescript": "catalog:",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.2.3",
-    "wrangler": "^4.59.2"
+    "wrangler": "^4.94.0"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
     "pnpm": "^9 || ^10"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild",
-      "unrs-resolver"
-    ]
   },
   "cloudflare": {
     "bindings": {

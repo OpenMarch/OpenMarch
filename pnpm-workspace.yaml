@@ -11,5 +11,6 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - sharp
+  - unrs-resolver
 patchedDependencies:
   canvas: patches/canvas.patch
