@@ -77,7 +77,7 @@ export default defineConfig({
                 },
                 {
                     label: "Mobile",
-                    autogenerate: { directory: "mobile" },
+                    items: [{ autogenerate: { directory: "mobile" } }],
                 },
                 {
                     label: "Developers",
