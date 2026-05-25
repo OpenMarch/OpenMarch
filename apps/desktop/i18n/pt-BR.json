@@ -14,7 +14,7 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Habilitar movimento em Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToWhole": "Ajustar para o inteiro mais próximo"
+            "snapToCustomFraction": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",

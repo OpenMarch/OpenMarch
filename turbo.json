@@ -3,11 +3,7 @@
     "tasks": {
         "build": {
             "outputs": ["dist/**"],
-            "env": [
-                "PAYLOAD_CMS_URL",
-                "PUBLIC_SUPABASE_KEY",
-                "WEBSITE_DEPLOY_HOOK_URL"
-            ]
+            "env": ["PAYLOAD_CMS_URL", "WEBSITE_DEPLOY_HOOK_URL"]
         },
         "@openmarch/cms#build": {
             "outputs": [".next/**", ".open-next/**"]

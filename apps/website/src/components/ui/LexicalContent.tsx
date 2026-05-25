@@ -41,9 +41,12 @@ function getJsxConverters(
     return ({ defaultConverters }) => ({
         ...defaultConverters,
         blocks: {
-            youtube: ({ node }) => {
-                const url = (node as SerializedBlockNode<YouTubeBlockFields>)
-                    .fields?.url;
+            youtube: ({
+                node,
+            }: {
+                node: SerializedBlockNode<YouTubeBlockFields>;
+            }) => {
+                const url = node.fields?.url;
                 const videoId = extractYouTubeVideoId(url);
                 if (!videoId) return null;
                 return (

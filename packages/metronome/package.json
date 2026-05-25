@@ -34,15 +34,17 @@
         "LICENSE"
     ],
     "peerDependencies": {
-        "typescript": "^5"
+        "typescript": "catalog:"
     },
     "dependencies": {
         "node-wav": "^0.0.2"
     },
     "devDependencies": {
+        "@openmarch/config": "workspace:*",
         "@types/node": "^20.19.9",
         "@types/node-wav": "^0.0.4",
-        "vitest": "^2.1.9",
+        "typescript": "catalog:",
+        "vitest": "^3.2.3",
         "tsup": "^8.5.0"
     }
 }
