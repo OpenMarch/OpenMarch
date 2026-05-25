@@ -1,13 +1,20 @@
 ---
+import { getEntry, render } from "astro:content";
 import LegalLayout from "@/layouts/LegalLayout.astro";
 import { ProseClass } from "@/components/ProseClass";
 
-const posts = await Astro.glob("../../../content/refunds/index.md");
-const post = posts[0];
-const title = post?.frontmatter?.title ?? "Refund Policy";
-const lastUpdated = post?.frontmatter?.lastUpdated;
+const post = await getEntry("legal", "refunds");
+if (!post) {
+    throw new Error("Refund policy content not found");
+}
+
+const { Content } = await render(post);
+const title = post.data.title;
+const lastUpdated = post.data.lastUpdated;
 ---
 
 <LegalLayout title={title} lastUpdated={lastUpdated}>
-    <article class={`${ProseClass} w-full`}>{post && <post.Content />}</article>
+    <article class={`${ProseClass} w-full`}>
+        <Content />
+    </article>
 </LegalLayout>

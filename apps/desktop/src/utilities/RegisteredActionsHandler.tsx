@@ -63,7 +63,7 @@ export enum RegisteredActionsEnum {
     setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
 
     // Alignment
-    snapToNearestWhole = "snapToNearestWhole",
+    snapToNearestCustomFraction = "snapToNearestCustomFraction",
     lockX = "lockX",
     lockY = "lockY",
     alignVertically = "alignVertically",
@@ -383,10 +383,10 @@ export const RegisteredActionsObjects: {
     }),
 
     // Alignment
-    snapToNearestWhole: new RegisteredAction({
-        descKey: "actions.alignment.snapToWhole",
+    snapToNearestCustomFraction: new RegisteredAction({
+        descKey: "actions.alignment.snapToCustomFraction",
         keyboardShortcut: new KeyboardShortcut({ key: "1" }),
-        enumString: "snapToNearestWhole",
+        enumString: "snapToNearestCustomFraction",
     }),
     lockX: new RegisteredAction({
         descKey: "actions.alignment.lockX",
@@ -932,7 +932,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -950,7 +951,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -968,7 +970,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -986,7 +989,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -997,12 +1001,25 @@ function RegisteredActionsHandler() {
                 }
 
                 /****************** Alignment ******************/
-                case RegisteredActionsEnum.snapToNearestWhole: {
+                case RegisteredActionsEnum.snapToNearestCustomFraction: {
+                    const safeDenominatorX =
+                        uiSettings.coordinateRounding?.nearestXSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestXSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestXSteps;
+                    const safeDenominatorY =
+                        uiSettings.coordinateRounding?.nearestYSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestYSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestYSteps;
                     const roundedCoords = CoordinateActions.getRoundCoordinates(
                         {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties: fieldProperties,
-                            denominator: 1,
+                            denominatorX: safeDenominatorX,
+                            denominatorY: safeDenominatorY,
                             xAxis: !uiSettings.lockX,
                             yAxis: !uiSettings.lockY,
                         },
