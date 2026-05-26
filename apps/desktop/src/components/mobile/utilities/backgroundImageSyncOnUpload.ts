@@ -43,7 +43,9 @@ export function buildBackgroundImageFormData(
     imageData: Uint8Array,
     filename: string = DEFAULT_BACKGROUND_IMAGE_FILENAME,
 ): FormData {
-    const blob = new Blob([imageData], { type: "image/png" });
+    const buffer = new ArrayBuffer(imageData.length);
+    new Uint8Array(buffer).set(imageData);
+    const blob = new Blob([buffer], { type: "image/png" });
     const formData = new FormData();
     formData.append("file", blob, filename);
     return formData;

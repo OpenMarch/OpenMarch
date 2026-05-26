@@ -23,7 +23,9 @@ import MarcherPage, {
 } from "@/global/classes/MarcherPage";
 import { schema } from "@/global/database/db";
 
-type PerformerAppearanceShowData = OpenMarchShowData["performerAppearance"];
+type PerformerAppearanceShowData = NonNullable<
+    OpenMarchShowData["performerAppearance"]
+>;
 
 type PageInOrder = { id: number };
 
@@ -143,7 +145,8 @@ export function buildPerformerAppearanceShowData({
         ),
     }));
 
-    const performers: PerformerAppearanceShowData["performers"] = [];
+    const performers: NonNullable<PerformerAppearanceShowData["performers"]> =
+        [];
 
     for (const page of pagesInOrder) {
         const pageId = page.id;

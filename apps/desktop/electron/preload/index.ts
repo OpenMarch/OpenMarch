@@ -3,23 +3,21 @@ import Page from "@/global/classes/Page";
 import {
     contextBridge,
     ipcRenderer,
-    IpcRendererEvent,
-    SaveDialogOptions,
+    type IpcRendererEvent,
+    type SaveDialogOptions,
 } from "electron";
-import * as DbServices from "electron/database/database.services";
+import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
-import type { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import type {
     AuthState,
     AuthError,
     LoginResult,
     LogoutResult,
     AccessTokenResult,
-} from "electron/main/auth/types";
+} from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
-import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
-import * as DbServices from "@om-electron/database/database.services";
 import { HistoryResponse } from "@/db-functions";
 
 function domReady(

@@ -1,4 +1,4 @@
-import { DB } from "electron/database/db";
+import type { DB } from "@/global/database/db";
 import { toCompressedOpenMarchBytes } from "./dots-to-om";
 import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { postApiEditorV1ProductionsProductionIdRevisions } from "@/api/generated/production-revisions/production-revisions";
