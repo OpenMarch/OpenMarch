@@ -791,6 +791,69 @@ async function replaceLightingEffectGroupsInTransaction({
     );
 }
 
+function lightingEffectBeatIntervalsOverlap(
+    a: { start_offset_beats: number; duration_beats: number },
+    b: { start_offset_beats: number; duration_beats: number },
+): boolean {
+    if (a.duration_beats <= 0 || b.duration_beats <= 0) return false;
+    const endA = a.start_offset_beats + a.duration_beats;
+    const endB = b.start_offset_beats + b.duration_beats;
+    return a.start_offset_beats < endB && b.start_offset_beats < endA;
+}
+
+async function assertLightingEffectGroupExclusivityForScene({
+    tx,
+    sceneId,
+}: {
+    tx: DbTransaction;
+    sceneId: number;
+}): Promise<void> {
+    const effects = await tx.query.lighting_effects.findMany({
+        where: eq(schema.lighting_effects.scene_id, sceneId),
+    });
+    if (effects.length < 2) return;
+
+    const effectIds = effects.map((effect) => effect.id);
+    const links = await tx.query.lighting_effect_groups.findMany({
+        where: inArray(
+            schema.lighting_effect_groups.lighting_effect_id,
+            effectIds,
+        ),
+    });
+
+    const groupIdsByEffectId = new Map<number, Set<number>>();
+    for (const link of links) {
+        const groupIds = groupIdsByEffectId.get(link.lighting_effect_id);
+        if (groupIds) groupIds.add(link.lighting_group_id);
+        else
+            groupIdsByEffectId.set(
+                link.lighting_effect_id,
+                new Set([link.lighting_group_id]),
+            );
+    }
+
+    for (let i = 0; i < effects.length; i++) {
+        const a = effects[i];
+        const aGroupIds = groupIdsByEffectId.get(a.id);
+        if (!aGroupIds || aGroupIds.size === 0) continue;
+
+        for (let j = i + 1; j < effects.length; j++) {
+            const b = effects[j];
+            if (!lightingEffectBeatIntervalsOverlap(a, b)) continue;
+
+            const bGroupIds = groupIdsByEffectId.get(b.id);
+            if (!bGroupIds || bGroupIds.size === 0) continue;
+
+            for (const groupId of aGroupIds) {
+                if (!bGroupIds.has(groupId)) continue;
+                throw new Error(
+                    `Lighting group ${groupId} is already controlled by overlapping effect ${a.id} while effect ${b.id} is active.`,
+                );
+            }
+        }
+    }
+}
+
 export async function getLightingEffectIdsBySceneId({
     db,
     sceneId,
@@ -909,6 +972,7 @@ export async function createLightingEffectsInTransaction({
     tx: DbTransaction;
 }): Promise<DatabaseLightingEffect[]> {
     const inserted: DatabaseLightingEffect[] = [];
+    const affectedSceneIds = new Set<number>();
 
     for (const raw of newEffects) {
         const { lighting_group_ids: groupIdsInput = [], ...effectFields } = raw;
@@ -918,6 +982,7 @@ export async function createLightingEffectsInTransaction({
             .values(effectFields)
             .returning();
         inserted.push(row);
+        affectedSceneIds.add(row.scene_id);
 
         if (groupIdsInput.length === 0) continue;
 
@@ -932,6 +997,9 @@ export async function createLightingEffectsInTransaction({
             groupIds: groupIdsInput,
         });
     }
+
+    for (const sceneId of affectedSceneIds)
+        await assertLightingEffectGroupExclusivityForScene({ tx, sceneId });
 
     return inserted;
 }
@@ -965,6 +1033,7 @@ export async function updateLightingEffectsInTransaction({
     tx: DbTransaction;
 }): Promise<DatabaseLightingEffect[]> {
     const updated: DatabaseLightingEffect[] = [];
+    const affectedSceneIds = new Set<number>();
 
     for (const row of modifiedEffects) {
         const { id, lighting_group_ids: groupIds, ...fieldUpdatesRest } = row;
@@ -992,6 +1061,13 @@ export async function updateLightingEffectsInTransaction({
         if (!resultRow)
             throw new Error(`Lighting effect ${id} not found after update.`);
 
+        if (
+            row.start_offset_beats !== undefined ||
+            row.duration_beats !== undefined ||
+            groupIds !== undefined
+        )
+            affectedSceneIds.add(resultRow.scene_id);
+
         if (groupIds !== undefined) {
             await assertLightingGroupIdsBelongToScene({
                 tx,
@@ -1007,6 +1083,9 @@ export async function updateLightingEffectsInTransaction({
 
         updated.push(resultRow);
     }
+
+    for (const sceneId of affectedSceneIds)
+        await assertLightingEffectGroupExclusivityForScene({ tx, sceneId });
 
     return updated;
 }

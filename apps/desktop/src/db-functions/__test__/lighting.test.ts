@@ -49,6 +49,34 @@ describeDbTests("lighting", (it) => {
             schema.lighting_effect_groups,
         ]);
 
+        async function createSceneAndGroup({
+            db,
+            startPageId,
+            sceneName = "S",
+            groupName = "G",
+        }: {
+            db: DbTestAPI["db"];
+            startPageId: number;
+            sceneName?: string;
+            groupName?: string;
+        }) {
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: sceneName }],
+            });
+            const [group] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: groupName,
+                        marcher_ids: [],
+                    },
+                ],
+            });
+            return { scene, group };
+        }
+
         it("creates scene → group → effect with group links and reads marchers via groups", async ({
             db,
             marchersAndPages,
@@ -482,6 +510,382 @@ describeDbTests("lighting", (it) => {
                     ],
                 }),
             ).rejects.toThrow(/expected/);
+        });
+
+        it("rejects creating an effect that overlaps an assigned group", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+
+            await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: "{}",
+                            start_offset_beats: 2,
+                            duration_beats: 2,
+                            lighting_group_ids: [group.id],
+                        },
+                    ],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("rejects updating start time into an assigned group overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [
+                        { id: second.id, start_offset_beats: 3 },
+                    ],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows updating start time when assigned group intervals only touch", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            const [updated] = await updateLightingEffects({
+                db,
+                modifiedEffects: [{ id: second.id, start_offset_beats: 4 }],
+            });
+
+            expect(updated.start_offset_beats).toBe(4);
+        });
+
+        it("rejects updating duration into an assigned group overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [{ id: first.id, duration_beats: 6 }],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows updating duration when assigned group intervals only touch", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            const [updated] = await updateLightingEffects({
+                db,
+                modifiedEffects: [{ id: first.id, duration_beats: 5 }],
+            });
+
+            expect(updated.duration_beats).toBe(5);
+        });
+
+        it("rejects assigning a group controlled by an overlapping effect", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [secondGroup] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [],
+                    },
+                ],
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 2,
+                        duration_beats: 4,
+                        lighting_group_ids: [secondGroup.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [
+                        { id: second.id, lighting_group_ids: [group.id] },
+                    ],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows assigning a shared group when effect intervals do not overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 4,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            await updateLightingEffects({
+                db,
+                modifiedEffects: [
+                    { id: second.id, lighting_group_ids: [group.id] },
+                ],
+            });
+
+            const updated = await getLightingEffectWithMarchersById({
+                db,
+                id: second.id,
+            });
+            expect(updated?.lighting_group_ids).toEqual([group.id]);
+        });
+
+        it("allows batch updates that release and claim a group in one final valid state", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 2,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            await updateLightingEffects({
+                db,
+                modifiedEffects: [
+                    { id: first.id, lighting_group_ids: [] },
+                    { id: second.id, lighting_group_ids: [group.id] },
+                ],
+            });
+
+            const firstUpdated = await getLightingEffectWithMarchersById({
+                db,
+                id: first.id,
+            });
+            const secondUpdated = await getLightingEffectWithMarchersById({
+                db,
+                id: second.id,
+            });
+            expect(firstUpdated?.lighting_group_ids).toEqual([]);
+            expect(secondUpdated?.lighting_group_ids).toEqual([group.id]);
+        });
+
+        it("allows simultaneous group control in different scenes", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const firstScene = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+                sceneName: "S1",
+            });
+            const secondScene = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[1].id,
+                sceneName: "S2",
+            });
+
+            await expect(
+                createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: firstScene.scene.id,
+                            type: "solid",
+                            args: "{}",
+                            start_offset_beats: 0,
+                            duration_beats: 4,
+                            lighting_group_ids: [firstScene.group.id],
+                        },
+                        {
+                            scene_id: secondScene.scene.id,
+                            type: "solid",
+                            args: "{}",
+                            start_offset_beats: 0,
+                            duration_beats: 4,
+                            lighting_group_ids: [secondScene.group.id],
+                        },
+                    ],
+                }),
+            ).resolves.toHaveLength(2);
         });
     });
 
