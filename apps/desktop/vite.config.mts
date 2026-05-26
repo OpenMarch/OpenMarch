@@ -15,10 +15,19 @@ export default defineConfig(({ command }) => {
 
     const isServe = command === "serve";
     const isBuild = command === "build";
+    const isBrowserMode = process.env.OPENMARCH_BROWSER === "1";
     const sourcemap = isServe || !!process.env.VSCODE_DEBUG;
     const electronAlias = {
         "@": path.join(__dirname, "src"),
         "@om-electron": path.join(__dirname, "electron"),
+        ...(isBrowserMode
+            ? {
+                  "@sentry/electron/renderer": path.join(
+                      __dirname,
+                      "src/browser/noopSentry.ts",
+                  ),
+              }
+            : {}),
     };
 
     return {
@@ -35,72 +44,87 @@ export default defineConfig(({ command }) => {
                 org: "openmarch-llc",
                 project: "electron",
             }),
-            electron([
-                {
-                    // Main-Process entry file of the Electron App.
-                    entry: "electron/main/index.ts",
-                    onstart(options) {
-                        if (process.env.VSCODE_DEBUG) {
-                            console.log(
-                                /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App",
-                            );
-                        } else {
-                            options.startup();
-                        }
-                    },
-                    vite: {
-                        resolve: {
-                            alias: electronAlias,
-                        },
-                        build: {
-                            sourcemap,
-                            minify: isBuild,
-                            outDir: "dist-electron/main",
-                            rollupOptions: {
-                                external: [
-                                    "electron",
-                                    "node",
-                                    "node:sqlite",
-                                ].concat(
-                                    Object.keys(
-                                        "dependencies" in pkg
-                                            ? pkg.dependencies
-                                            : {},
-                                    ),
-                                ),
-                            },
-                        },
-                    },
-                },
-                {
-                    entry: "electron/preload/index.ts",
-                    onstart(options) {
-                        // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete,
-                        // instead of restarting the entire Electron App.
-                        options.reload();
-                    },
-                    vite: {
-                        resolve: {
-                            alias: electronAlias,
-                        },
-                        build: {
-                            sourcemap: sourcemap ? "inline" : undefined, // #332
-                            minify: isBuild,
-                            outDir: "dist-electron/preload",
-                            rollupOptions: {
-                                external: Object.keys(
-                                    "dependencies" in pkg
-                                        ? pkg.dependencies
-                                        : {},
-                                ),
-                            },
-                        },
-                    },
-                },
-            ]),
-            // Use Node.js API in the Renderer-process
-            renderer(),
+            ...(isBrowserMode
+                ? []
+                : [
+                      electron([
+                          {
+                              // Main-Process entry file of the Electron App.
+                              entry: "electron/main/index.ts",
+                              onstart(options) {
+                                  if (process.env.VSCODE_DEBUG) {
+                                      console.log(
+                                          /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App",
+                                      );
+                                  } else {
+                                      options.startup();
+                                  }
+                              },
+                              vite: {
+                                  resolve: {
+                                      alias: electronAlias,
+                                  },
+                                  build: {
+                                      sourcemap,
+                                      minify: isBuild,
+                                      outDir: "dist-electron/main",
+                                      rollupOptions: {
+                                          external: [
+                                              "electron",
+                                              "node",
+                                              "node:sqlite",
+                                          ].concat(
+                                              Object.keys(
+                                                  "dependencies" in pkg
+                                                      ? pkg.dependencies
+                                                      : {},
+                                              ),
+                                          ),
+                                      },
+                                  },
+                              },
+                          },
+                          {
+                              entry: "electron/preload/index.ts",
+                              onstart(options) {
+                                  // Notify the Renderer-Process to reload the page when the Preload-Scripts build is complete,
+                                  // instead of restarting the entire Electron App.
+                                  options.reload();
+                              },
+                              vite: {
+                                  resolve: {
+                                      alias: electronAlias,
+                                  },
+                                  build: {
+                                      sourcemap: sourcemap
+                                          ? "inline"
+                                          : undefined, // #332
+                                      minify: isBuild,
+                                      outDir: "dist-electron/preload",
+                                      rollupOptions: {
+                                          external: Object.keys(
+                                              "dependencies" in pkg
+                                                  ? pkg.dependencies
+                                                  : {},
+                                          ),
+                                      },
+                                  },
+                              },
+                          },
+                      ]),
+                      // Use Node.js API in the Renderer-process
+                      renderer(),
+                  ]),
         ],
+        define: isBrowserMode
+            ? {
+                  "process.env.NODE_ENV": JSON.stringify(
+                      process.env.NODE_ENV || "development",
+                  ),
+                  "process.env.VITEST": "undefined",
+                  "process.platform": JSON.stringify(process.platform),
+              }
+            : undefined,
         server:
             process.env.VSCODE_DEBUG &&
             (() => {

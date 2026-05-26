@@ -1,5 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
+import "./browser/electron-shim";
 import App from "./App";
 import "./styles/index.css";
 import "@fontsource/dm-mono";

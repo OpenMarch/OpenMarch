@@ -19,6 +19,7 @@
     },
     "scripts": {
         "dev": "pnpm run apply-styles && vite",
+        "dev:browser": "pnpm run apply-styles && OPENMARCH_BROWSER=1 tsx scripts/browser-server.ts",
         "build": "pnpm run apply-styles && tsc && vite build",
         "build:electron": "pnpm run apply-styles && tsc && vite build && electron-builder --dir",
         "clean": "rimraf node_modules dist-electron release",
