@@ -147,6 +147,10 @@ async function createWindow(title?: string) {
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
 
+    // Initialize auth IPC handlers before renderer navigation to avoid startup
+    // races where the renderer invokes auth channels before handlers exist.
+    initAuthAfterReady(() => win);
+
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
             callback({
@@ -317,9 +321,6 @@ void app.whenReady().then(async () => {
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
-
-    // Initialize auth module after window is created
-    initAuthAfterReady(() => win);
 });
 
 function initGetters() {
