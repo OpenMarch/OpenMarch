@@ -8,9 +8,17 @@ import {
     AlertDialogTrigger,
     Button,
     Input,
+    TooltipClassName,
 } from "@openmarch/ui";
 import { TrashIcon, UsersIcon } from "@phosphor-icons/react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipPortal,
+    TooltipTrigger,
+} from "@radix-ui/react-tooltip";
 import { T, useTolgee } from "@tolgee/react";
+import clsx from "clsx";
 import {
     type ChangeEvent,
     type KeyboardEvent,
@@ -28,6 +36,7 @@ export interface GroupItemProps {
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
     onToggleFocus: () => void;
+    onSelectMarchersInGroup: () => void;
 }
 
 export default function GroupItem({
@@ -38,6 +47,7 @@ export default function GroupItem({
     onNameChange,
     onDelete,
     onToggleFocus,
+    onSelectMarchersInGroup,
 }: GroupItemProps) {
     const { t } = useTolgee();
     const nameId = useId();
@@ -125,16 +135,39 @@ export default function GroupItem({
                                 {displayName}
                             </button>
                         )}
-                        <div className="flex items-baseline gap-4">
-                            <UsersIcon
-                                size={16}
-                                aria-hidden
-                                className="text-text-subtitle"
-                            />
-                            <span className="text-lg font-bold">
-                                {numberOfMarchers}
-                            </span>
-                        </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <button
+                                    type="button"
+                                    className="hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors"
+                                    onClick={onSelectMarchersInGroup}
+                                    aria-label={t(
+                                        "inspector.light.groups.groupItem.selectAllMarchersInGroup",
+                                        {
+                                            defaultValue:
+                                                "Select all marchers in group",
+                                        },
+                                    )}
+                                >
+                                    <UsersIcon size={16} aria-hidden />
+                                    <span className="text-lg font-bold">
+                                        {numberOfMarchers}
+                                    </span>
+                                </button>
+                            </TooltipTrigger>
+                            <TooltipPortal>
+                                <TooltipContent
+                                    side="bottom"
+                                    align="start"
+                                    className={clsx(TooltipClassName, "p-16")}
+                                >
+                                    <T
+                                        keyName="inspector.light.groups.groupItem.selectAllMarchersInGroup"
+                                        defaultValue="Select all marchers in group"
+                                    />
+                                </TooltipContent>
+                            </TooltipPortal>
+                        </Tooltip>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-start gap-8">
                         <Button

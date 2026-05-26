@@ -547,7 +547,8 @@
                 "moveUnassignedOnly": "Move only unassigned marchers",
                 "groupItem": {
                     "defaultName": "Group {id}",
-                    "name": "Name"
+                    "name": "Name",
+                    "selectAllMarchersInGroup": "Select all marchers in group"
                 },
                 "addSelection": "Current selection",
                 "noMarchersSelected": "No marchers selected",

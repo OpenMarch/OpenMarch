@@ -3,9 +3,11 @@ import GroupDropConflictDialog, {
 } from "@/components/inspector/lighting/GroupDropConflictDialog";
 import GroupItem from "@/components/inspector/lighting/GroupItem";
 import GroupMarcherDragBadges from "@/components/inspector/lighting/GroupMarcherDragBadges";
+import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import type { DatabaseLightingGroup } from "@/db-functions";
 import {
     addMarchersToLightingGroupMutationOptions,
+    allMarchersQueryOptions,
     createLightingGroupsMutationOptions,
     deleteLightingGroupsMutationOptions,
     lightingGroupMembershipsBySceneIdQueryOptions,
@@ -46,6 +48,18 @@ export default function GroupList({ sceneId }: GroupListProps) {
         ...lightingGroupMembershipsBySceneIdQueryOptions(sceneId ?? -1),
         enabled: sceneId != null,
     });
+    const { data: allMarchers = [] } = useQuery(allMarchersQueryOptions());
+    const { setSelectedMarchers } = useSelectedMarchers()!;
+
+    const selectMarchersInGroup = useCallback(
+        (marcherIds: readonly number[]) => {
+            const idSet = new Set(marcherIds);
+            setSelectedMarchers(
+                allMarchers.filter((marcher) => idSet.has(marcher.id)),
+            );
+        },
+        [allMarchers, setSelectedMarchers],
+    );
 
     const toggleGroupFocus =
         useLightDesignerGroupFocusStore.use.toggleGroupFocus();
@@ -167,6 +181,10 @@ export default function GroupList({ sceneId }: GroupListProps) {
                             key={group.id}
                             group={group}
                             memberCount={memberships?.get(group.id)?.size ?? 0}
+                            memberMarcherIds={[
+                                ...(memberships?.get(group.id) ?? []),
+                            ]}
+                            onSelectMarchersInGroup={selectMarchersInGroup}
                             isFocused={groupFocus?.groupId === group.id}
                             onToggleFocus={() =>
                                 toggleGroupFocus({
@@ -227,6 +245,8 @@ export default function GroupList({ sceneId }: GroupListProps) {
 function GroupDropRow({
     group,
     memberCount,
+    memberMarcherIds,
+    onSelectMarchersInGroup,
     isFocused,
     onToggleFocus,
     onDropCollection,
@@ -235,6 +255,8 @@ function GroupDropRow({
 }: {
     group: DatabaseLightingGroup;
     memberCount: number;
+    memberMarcherIds: readonly number[];
+    onSelectMarchersInGroup: (marcherIds: readonly number[]) => void;
     isFocused: boolean;
     onToggleFocus: () => void;
     onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
@@ -329,6 +351,9 @@ function GroupDropRow({
                     onNameChange={onNameChange}
                     onDelete={onDelete}
                     onToggleFocus={onToggleFocus}
+                    onSelectMarchersInGroup={() =>
+                        onSelectMarchersInGroup(memberMarcherIds)
+                    }
                 />
             </div>
         </li>
