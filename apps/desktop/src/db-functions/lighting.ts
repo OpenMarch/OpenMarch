@@ -356,6 +356,11 @@ export type NewLightingGroupArgs = Omit<
     marcher_ids: readonly number[];
 };
 
+export interface ModifiedLightingGroupArgs {
+    id: number;
+    name?: string | null;
+}
+
 async function ensureUniqueMarcherIds(
     marcherIds: readonly number[],
 ): Promise<void> {
@@ -657,6 +662,41 @@ export async function deleteLightingGroups({
                 .delete(schema.lighting_groups)
                 .where(inArray(schema.lighting_groups.id, Array.from(groupIds)))
                 .returning();
+        },
+    );
+}
+
+export async function updateLightingGroups({
+    db,
+    modifiedGroups,
+}: {
+    db: DbConnection;
+    modifiedGroups: ModifiedLightingGroupArgs[];
+}): Promise<DatabaseLightingGroup[]> {
+    if (modifiedGroups.length === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "updateLightingGroups",
+        async (tx) => {
+            const updated: DatabaseLightingGroup[] = [];
+            for (const row of modifiedGroups) {
+                const { id, ...fieldUpdatesRest } = row;
+                const fieldUpdates = Object.fromEntries(
+                    Object.entries(fieldUpdatesRest).filter(
+                        ([_, v]) => v !== undefined,
+                    ),
+                );
+                if (Object.keys(fieldUpdates).length === 0) continue;
+                const resultRow = await tx
+                    .update(schema.lighting_groups)
+                    .set(fieldUpdates)
+                    .where(eq(schema.lighting_groups.id, id))
+                    .returning()
+                    .get();
+                if (resultRow) updated.push(resultRow);
+            }
+            return updated;
         },
     );
 }

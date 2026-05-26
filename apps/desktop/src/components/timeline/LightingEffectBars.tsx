@@ -165,11 +165,9 @@ export default function LightingEffectBars({
         [effects],
     );
 
-    const lastReportedLanes = useRef<number>(-1);
-    if (lastReportedLanes.current !== laneCount) {
-        lastReportedLanes.current = laneCount;
+    useEffect(() => {
         onLaneCountChange?.(laneCount);
-    }
+    }, [laneCount, onLaneCountChange]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const dragState = useRef<DragState | null>(null);

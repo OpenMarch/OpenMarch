@@ -1,6 +1,6 @@
 import EffectList from "@/components/inspector/lighting/EffectList";
-import SceneGroupsSection from "@/components/inspector/lighting/SceneGroupsSection";
-import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
+import GroupList from "@/components/inspector/lighting/GroupList";
+import VerticalSplitPane from "@/components/inspector/VerticalSplitPane";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import {
     lightingScenePositionByLightingSceneIdMapQueryOptions,
@@ -33,30 +33,47 @@ export default function LightDesignerInspector() {
     const activeLightingSceneId = sceneQuery.lightingSceneData?.id;
 
     return (
-        <div className="rounded-6 border-stroke bg-fg-1 flex h-full w-xs min-w-0 flex-col border p-12">
-            <p className="text-body text-text/60">
+        <div className="flex h-full min-h-0 w-xs min-w-0 flex-col gap-8">
+            <h2 className="shrink-0 text-xl">
                 <T
-                    keyName="workspace.lightDesigner.inspectorTitle"
-                    defaultValue="Lighting"
-                />
-            </p>
-            <div className="mt-8 flex min-h-0 min-w-0 flex-1 flex-col gap-12 overflow-hidden">
-                <InspectorCollapsible
-                    defaultOpen
-                    translatableTitle={{
-                        keyName: "inspector.light.title",
-                        parameters: {
-                            sceneName:
-                                sceneQuery?.lightingSceneData?.name ??
-                                sceneOrder?.toString() ??
-                                "",
-                        },
+                    keyName="inspector.light.title"
+                    params={{
+                        sceneName:
+                            sceneQuery?.lightingSceneData?.name ??
+                            sceneOrder?.toString() ??
+                            "",
                     }}
-                    className="mt-12"
-                >
-                    <SceneGroupsSection sceneId={activeLightingSceneId} />
-                </InspectorCollapsible>
-            </div>
+                />
+            </h2>
+
+            <VerticalSplitPane
+                top={
+                    <div className="rounded-6 border-stroke bg-fg-1 flex h-full min-h-0 flex-col gap-8 border p-6">
+                        <h3 className="text-text-subtitle mt-6 shrink-0 px-6 text-sm">
+                            <T
+                                keyName="inspector.light.groupsTitle"
+                                defaultValue="Groups"
+                            />
+                        </h3>
+                        <div className="mb-6 min-h-0 flex-1 overflow-y-auto px-6">
+                            <GroupList sceneId={activeLightingSceneId} />
+                        </div>
+                    </div>
+                }
+                bottom={
+                    <div className="rounded-6 border-stroke bg-fg-1 flex h-full min-h-0 flex-col gap-8 border p-6">
+                        <h3 className="text-text-subtitle mt-6 shrink-0 px-6 text-sm">
+                            <T
+                                keyName="workspace.lightDesigner.effects.sectionTitle"
+                                defaultValue="Effects"
+                            />
+                        </h3>
+                        <div className="mb-6 min-h-0 flex-1 overflow-y-auto px-6">
+                            <EffectList />
+                        </div>
+                    </div>
+                }
+            />
         </div>
     );
 }

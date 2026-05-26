@@ -10,12 +10,14 @@ import {
     DeleteLightingSceneWithReassignmentResult,
     getLightingGroupById,
     ModifiedLightingEffectArgs,
+    ModifiedLightingGroupArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
     NewLightingGroupArgs,
     NewLightingSceneArgs,
     removeMarchersFromLightingGroup,
     updateLightingEffects,
+    updateLightingGroups,
     updateLightingScenes,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
@@ -198,6 +200,25 @@ export const deleteLightingGroupsMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error deleting lighting groups", e, variables);
+        },
+    });
+};
+
+export const updateLightingGroupsMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: (modifiedGroups: ModifiedLightingGroupArgs[]) =>
+            updateLightingGroups({ db, modifiedGroups }),
+        onSuccess: async (data, _variables, _result, context) => {
+            const qc = context.client;
+            const sceneIds = new Set(data.map((group) => group.scene_id));
+            for (const sceneId of sceneIds) {
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
+                });
+            }
+        },
+        onError: (e, variables) => {
+            conToastError("Error updating lighting groups", e, variables);
         },
     });
 };
