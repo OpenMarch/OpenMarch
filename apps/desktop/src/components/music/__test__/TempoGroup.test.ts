@@ -1396,6 +1396,16 @@ describe("newBeatsFromTempoGroup", () => {
             expect(beat.include_in_measure).toBe(true);
         });
     });
+
+    it("should reject tempo below 40 BPM", () => {
+        expect(() =>
+            newBeatsFromTempoGroup({
+                tempo: 1,
+                numRepeats: 1,
+                bigBeatsPerMeasure: 4,
+            }),
+        ).toThrow(/at least 40 BPM/);
+    });
 });
 
 describe("getNewMeasuresFromCreatedBeats", () => {

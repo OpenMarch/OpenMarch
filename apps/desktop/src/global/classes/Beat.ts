@@ -169,6 +169,19 @@ export const durationToBeats = ({
     return allBeats.slice(startBeat.index, beatIndex);
 };
 
+/** Minimum allowed tempo in BPM (values below this produce unusable beat durations). */
+export const MIN_TEMPO_BPM = 40;
+
+export function isValidTempoBpm(tempo: number): boolean {
+    return Number.isFinite(tempo) && tempo >= MIN_TEMPO_BPM;
+}
+
+export function assertValidTempoBpm(tempo: number): void {
+    if (!isValidTempoBpm(tempo)) {
+        throw new Error(`Tempo must be at least ${MIN_TEMPO_BPM} BPM`);
+    }
+}
+
 /**
  * Converts a duration to a tempo attempting to fix floating point errors.
  * @param duration - The duration to convert.
