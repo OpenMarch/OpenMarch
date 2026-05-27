@@ -668,6 +668,7 @@
         "standard": "スタンダード",
         "startTempo": "スタート テンポ *",
         "tempo": "テンポ *",
+        "tempoBelowMinimum": "テンポは {min} BPM 以上である必要があります",
         "tempoDescription": "分 解能",
         "tempoGroupCreated": "テンポ グループ作成",
         "tempoGroupNamePlaceholder": "オプション",
