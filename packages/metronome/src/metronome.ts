@@ -42,7 +42,14 @@ export function createMetronomeWav(
     // Create the output array
     const lastBeat = allBeats[allBeats.length - 1];
     const totalDuration = lastBeat!.timestamp + 1;
-    const totalSamples = Math.ceil(totalDuration * SAMPLE_RATE);
+    const maxMetronomeSeconds = 1800;
+    const safeDuration = Math.min(totalDuration, maxMetronomeSeconds);
+    if (safeDuration < totalDuration) {
+        console.warn(
+            `Metronome duration ${totalDuration}s exceeds cap of ${maxMetronomeSeconds}s; using cap.`,
+        );
+    }
+    const totalSamples = Math.ceil(safeDuration * SAMPLE_RATE);
     const output = new Float32Array(totalSamples);
 
     // Add clicks sound at each Beat's timestamp
