@@ -79,7 +79,18 @@ export function getRecentFiles(): RecentFile[] {
  * Clears all recent files
  */
 export function clearRecentFiles(): void {
+    console.log("clearRecentFiles");
     store.set("recentFiles", []);
+}
+
+/**
+ * Clears missing / moved recent files
+ */
+export function clearMissingRecentFiles(): void {
+    console.log("clearMissingRecentFiles");
+    const recentFiles = getRecentFiles();
+    const newRecentFiles = recentFiles.filter((file) => !file.isMissing);
+    store.set("recentFiles", newRecentFiles);
 }
 
 /**

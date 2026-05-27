@@ -14,7 +14,7 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToWhole": "Snap to nearest whole"
+            "snapToCustomFraction": "Apply snap"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
@@ -320,6 +320,7 @@
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "deleteTooltip": "Delete this checkpoint from the field",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
             "name": "Name",
@@ -467,7 +468,12 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
+        "toasts": {
+            "success": "Copy saved",
+            "error": "Unable to save copy"
+        },
         "saveFileCancel": "Cancel",
+        "saveSpinnerText": "Saving copy...",
         "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
@@ -559,6 +565,12 @@
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
+            "clearAllRecentFiles": "Clear all",
+            "clearMissingRecentFiles": "Clear missing",
+            "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
+            "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
+            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
+            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
         "learn": {

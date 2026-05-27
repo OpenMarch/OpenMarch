@@ -81,6 +81,7 @@ import editorLight from "@/assets/home/editor-light.png";
         }
     }
     getTotalDownloadCount().then((count) => {
-        document.getElementById("download-count").textContent = count;
+        const downloadCountEl = document.getElementById("download-count");
+        if (downloadCountEl) downloadCountEl.textContent = count;
     });
 </script>

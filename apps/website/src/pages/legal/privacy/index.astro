@@ -1,0 +1,20 @@
+---
+import { getEntry, render } from "astro:content";
+import LegalLayout from "@/layouts/LegalLayout.astro";
+import { ProseClass } from "@/components/ProseClass";
+
+const post = await getEntry("legal", "privacy");
+if (!post) {
+    throw new Error("Privacy policy content not found");
+}
+
+const { Content } = await render(post);
+const title = post.data.title;
+const lastUpdated = post.data.lastUpdated;
+---
+
+<LegalLayout title={title} lastUpdated={lastUpdated}>
+    <article class={`${ProseClass} w-full`}>
+        <Content />
+    </article>
+</LegalLayout>

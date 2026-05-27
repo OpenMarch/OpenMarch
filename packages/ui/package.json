@@ -1,7 +1,7 @@
 {
     "name": "@openmarch/ui",
     "type": "module",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "license": "AGPL-3.0",
     "module": "./dist/index.js",
     "types": "./dist/index.d.ts",
@@ -39,6 +39,10 @@
         "spellcheck": "cspell 'src/**' 'electron/**' '*.md'",
         "fix": "prettier --write . && eslint . --fix && cspell 'src/**' 'electron/**' '*.md'"
     },
+    "devDependencies": {
+        "tsup": "^8.5.0",
+        "typescript": "catalog:"
+    },
     "dependencies": {
         "@astrojs/mdx": "^4.3.0",
         "@astrojs/react": "^4.3.0",
@@ -62,7 +66,7 @@
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
         "@uiw/react-color": "^2.6.0",
-        "astro": "^5.11.0",
+        "astro": "^5.18.1",
         "class-variance-authority": "^0.7.1",
         "clsx": "^2.1.1",
         "react": "^19.0.0",

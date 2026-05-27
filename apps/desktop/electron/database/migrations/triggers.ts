@@ -1,4 +1,4 @@
-import Database from "libsql";
+import { DatabaseSync } from "node:sqlite";
 
 const triggers = {
     prevent_first_beat_modification: `CREATE TRIGGER IF NOT EXISTS prevent_first_beat_modification
@@ -45,7 +45,7 @@ END;`,
  * Drops all triggers from the database.
  * @param dbConnection - The libsql database connection
  */
-export const dropAllTriggers = (dbConnection: Database.Database) => {
+export const dropAllTriggers = (dbConnection: DatabaseSync) => {
     for (const [name] of Object.entries(triggers)) {
         if (!name || name.trim() === "") {
             console.warn("Skipping empty trigger name");
@@ -68,7 +68,7 @@ export const dropAllTriggers = (dbConnection: Database.Database) => {
  * Creates all triggers in the database.
  * @param dbConnection - The libsql database connection
  */
-export const createAllTriggers = (dbConnection: Database.Database) => {
+export const createAllTriggers = (dbConnection: DatabaseSync) => {
     for (const [name, trigger] of Object.entries(triggers)) {
         if (!name || name.trim() === "" || !trigger || trigger.trim() === "") {
             console.warn(

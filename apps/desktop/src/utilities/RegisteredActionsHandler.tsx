@@ -33,6 +33,7 @@ import {
 } from "@/hooks/queries/useHistory";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
+import { CircleNotchIcon } from "@phosphor-icons/react";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -62,7 +63,7 @@ export enum RegisteredActionsEnum {
     setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
 
     // Alignment
-    snapToNearestWhole = "snapToNearestWhole",
+    snapToNearestCustomFraction = "snapToNearestCustomFraction",
     lockX = "lockX",
     lockY = "lockY",
     alignVertically = "alignVertically",
@@ -382,10 +383,10 @@ export const RegisteredActionsObjects: {
     }),
 
     // Alignment
-    snapToNearestWhole: new RegisteredAction({
-        descKey: "actions.alignment.snapToWhole",
+    snapToNearestCustomFraction: new RegisteredAction({
+        descKey: "actions.alignment.snapToCustomFraction",
         keyboardShortcut: new KeyboardShortcut({ key: "1" }),
-        enumString: "snapToNearestWhole",
+        enumString: "snapToNearestCustomFraction",
     }),
     lockX: new RegisteredAction({
         descKey: "actions.alignment.lockX",
@@ -623,9 +624,52 @@ function RegisteredActionsHandler() {
                             <AlertDialogAction>
                                 <Button
                                     variant="primary"
-                                    onClick={() => {
-                                        setAlertModalOpen(false);
-                                        void window.electron.databaseSave();
+                                    onClick={(e) => {
+                                        e.preventDefault();
+
+                                        setAlertModalContent(
+                                            <div className="my-16 flex h-full w-full flex-col items-center justify-center gap-8 self-center">
+                                                <CircleNotchIcon
+                                                    size={32}
+                                                    aria-label={t(
+                                                        "fileTab.saveSpinnerText",
+                                                    )}
+                                                    className="text-text my-8 animate-spin"
+                                                />
+                                                <T keyName="fileTab.saveSpinnerText" />
+                                            </div>,
+                                        );
+
+                                        setAlertModalActions(undefined);
+
+                                        window.electron
+                                            .databaseSave()
+                                            .then((response) => {
+                                                setAlertModalOpen(false);
+
+                                                // User canceled dialog
+                                                if (response === 0) {
+                                                    return;
+                                                } else if (response === 200) {
+                                                    toast.success(
+                                                        t(
+                                                            "fileTab.toasts.success",
+                                                        ),
+                                                    );
+                                                } else {
+                                                    toast.error(
+                                                        t(
+                                                            "fileTab.toasts.error",
+                                                        ),
+                                                    );
+                                                }
+                                            })
+                                            .catch((err: Error) => {
+                                                setAlertModalOpen(false);
+                                                toast.error(
+                                                    `${t("fileTab.toasts.error")}. Error ${err.message}`,
+                                                );
+                                            });
                                     }}
                                 >
                                     <T keyName="fileTab.saveFile" />
@@ -888,7 +932,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -906,7 +951,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -924,7 +970,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -942,7 +989,8 @@ function RegisteredActionsHandler() {
                         distance: distance.current,
                         snap: snap.current,
                         fieldProperties: fieldProperties,
-                        snapDenominator: 1.0 / distance.current,
+                        snapDenominatorX: 1.0 / distance.current,
+                        snapDenominatorY: 1.0 / distance.current,
                     });
                     updateSelectedMarchersAsync(() => updatedPagesArray).then(
                         () => {
@@ -953,12 +1001,25 @@ function RegisteredActionsHandler() {
                 }
 
                 /****************** Alignment ******************/
-                case RegisteredActionsEnum.snapToNearestWhole: {
+                case RegisteredActionsEnum.snapToNearestCustomFraction: {
+                    const safeDenominatorX =
+                        uiSettings.coordinateRounding?.nearestXSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestXSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestXSteps;
+                    const safeDenominatorY =
+                        uiSettings.coordinateRounding?.nearestYSteps === 0 ||
+                        uiSettings.coordinateRounding?.nearestYSteps ===
+                            undefined
+                            ? 0
+                            : 1 / uiSettings.coordinateRounding?.nearestYSteps;
                     const roundedCoords = CoordinateActions.getRoundCoordinates(
                         {
                             marcherPages: getSelectedMarcherPages(),
                             fieldProperties: fieldProperties,
-                            denominator: 1,
+                            denominatorX: safeDenominatorX,
+                            denominatorY: safeDenominatorY,
                             xAxis: !uiSettings.lockX,
                             yAxis: !uiSettings.lockY,
                         },

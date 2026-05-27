@@ -28,9 +28,9 @@ const KEY_BASE = "shape_pages";
 // Query key factory
 export const shapePageKeys = {
     all: () => [KEY_BASE] as const,
-    byPageId: (pageId: number) => [KEY_BASE, "pageId", pageId] as const,
+    byPageId: (pageId: number | null) => [KEY_BASE, "pageId", pageId] as const,
     byShapeId: (shapeId: number) => [KEY_BASE, "shapeId", shapeId] as const,
-    spmByPageId: (pageId: number) =>
+    spmByPageId: (pageId: number | null) =>
         [KEY_BASE, "pageId", pageId, "spm"] as const,
 };
 
@@ -76,7 +76,7 @@ export const allDatabaseShapePagesQueryOptions = () => {
  */
 export const shapePagesQueryByPageIdOptions = (pageId: number | null) => {
     return queryOptions<DatabaseShapePage[]>({
-        queryKey: shapePageKeys.byPageId(pageId!),
+        queryKey: shapePageKeys.byPageId(pageId),
         queryFn: async () => {
             return await shapePageQueries.getByPageId(db, pageId!);
         },
@@ -85,13 +85,16 @@ export const shapePagesQueryByPageIdOptions = (pageId: number | null) => {
     });
 };
 
-export const shapePageMarchersQueryByPageIdOptions = (pageId: number) => {
+export const shapePageMarchersQueryByPageIdOptions = (
+    pageId: number | null,
+) => {
     return queryOptions<ShapePageMarcher[]>({
         queryKey: shapePageKeys.spmByPageId(pageId),
         queryFn: async () => {
-            return await shapePageQueries.getSpmByPageId(db, pageId);
+            return await shapePageQueries.getSpmByPageId(db, pageId!);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled: pageId != null,
     });
 };
 

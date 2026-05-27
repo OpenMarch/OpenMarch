@@ -6,7 +6,12 @@ export default defineConfig({
     },
     format: ["esm", "cjs"],
     outDir: "dist",
-    dts: true,
+    // tsup injects baseUrl: "." for DTS builds; TS 6 deprecates that (egoist/tsup#1388).
+    dts: {
+        compilerOptions: {
+            ignoreDeprecations: "6.0",
+        },
+    },
     splitting: false,
     sourcemap: true,
     clean: true,

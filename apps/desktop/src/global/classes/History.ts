@@ -6,8 +6,16 @@ import { DbTransaction } from "@/db-functions";
 
 type HistoryType = "undo" | "redo";
 
+const isDbTransaction = (orm: DBTransaction | DB): orm is DBTransaction => {
+    return "rollback" in orm;
+};
+
 export async function incrementUndoGroup(orm: DBTransaction | DB) {
-    void orm.transaction(async (tx) => {
+    if (isDbTransaction(orm)) {
+        return incrementHistoryGroupInTransaction(orm as DbTransaction, "undo");
+    }
+
+    return orm.transaction(async (tx) => {
         return incrementHistoryGroupInTransaction(tx as DbTransaction, "undo");
     });
 }

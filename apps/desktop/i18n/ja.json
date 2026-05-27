@@ -14,7 +14,7 @@
             "lockY": "Y 軸 をロック",
             "lockYOff": "Y 移動を有効にする",
             "lockYOn": "Y の動きをロック",
-            "snapToWhole": "最も近い 整数 に スナップ"
+            "snapToCustomFraction": "最も近い 整数 に スナップ"
         },
         "batchEdit": {
             "noNextPage": "進行中の座標を 次のページには設定できません 。次のページがありません",
@@ -295,6 +295,7 @@
             "delete": "削除",
             "deleted": "{axis} チェックポイントが {steps} ステップで削除されました - \"{name}\"",
             "deleteTooltip": "このチェックポイントをフィールドから削除",
+            "minimumRequired": "{axis}チェックポイントは少なくとも2つ必要です",
             "fieldLabel": "フィールド ラベル",
             "fieldLabelTooltip": "フィールドに表示されるラベル (例: yard marker)",
             "name": "名前",
