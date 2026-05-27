@@ -153,6 +153,13 @@ const APP_API = {
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    pickSourceFile: () =>
+        ipcRenderer.invoke("file:pickSourceFile") as Promise<string | null>,
+    databaseCreateFromLastPage: (sourceFilePath?: string) =>
+        ipcRenderer.invoke(
+            "database:createFromLastPage",
+            sourceFilePath,
+        ) as Promise<200 | -1 | undefined>,
     onLoadFileResponse: (callback: (value: number) => void) => {
         const listener = (_event: Electron.IpcRendererEvent, value: number) =>
             callback(value);

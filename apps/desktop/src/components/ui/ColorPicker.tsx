@@ -57,6 +57,7 @@ export default function ColorPicker({
 }: ColorPickerProps) {
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const skipCloseRef = useRef(false);
 
     // Reset the current color to the initial color when the initial color changes
     useEffect(() => {
@@ -115,6 +116,7 @@ export default function ColorPicker({
             setCurrentColor={setCurrentColor}
             resetToDefault={resetToDefault}
             handleChange={handleChange}
+            skipCloseRef={skipCloseRef}
         />
     );
 
@@ -162,6 +164,13 @@ export default function ColorPicker({
                                 sideOffset={8}
                                 collisionPadding={20}
                                 avoidCollisions={true}
+                                onInteractOutside={() => {
+                                    if (skipCloseRef.current) {
+                                        skipCloseRef.current = false;
+                                        return;
+                                    }
+                                    handleClose();
+                                }}
                                 className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
                             >
                                 <div className="z-50 my-8 flex items-center justify-between px-12">
@@ -198,6 +207,9 @@ export default function ColorPicker({
                         size="compact"
                         tooltipText={"Reset to default"}
                         variant="secondary"
+                        onPointerDown={() => {
+                            skipCloseRef.current = true;
+                        }}
                         onClick={resetToDefault}
                         className="rounded-6 h-full"
                         content="icon"
@@ -218,6 +230,7 @@ type InternalPickerProps = {
     setCurrentColor: (color: RgbaColor) => void;
     resetToDefault: () => void;
     handleChange: (color: ColorResult) => void;
+    skipCloseRef: React.MutableRefObject<boolean>;
 };
 
 function DefaultColorPicker({
@@ -229,6 +242,7 @@ function DefaultColorPicker({
     setCurrentColor,
     resetToDefault,
     handleChange,
+    skipCloseRef,
 }: InternalPickerProps) {
     return (
         <div className="flex items-center gap-8">
@@ -256,6 +270,13 @@ function DefaultColorPicker({
                         sideOffset={8}
                         collisionPadding={20}
                         avoidCollisions={true}
+                        onInteractOutside={() => {
+                            if (skipCloseRef.current) {
+                                skipCloseRef.current = false;
+                                return;
+                            }
+                            handleClose();
+                        }}
                         className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
                     >
                         <div className="z-50 my-8 flex items-center justify-between px-12">
@@ -292,6 +313,9 @@ function DefaultColorPicker({
                 size="compact"
                 tooltipText={"Reset to default"}
                 variant="secondary"
+                onPointerDown={() => {
+                    skipCloseRef.current = true;
+                }}
                 onClick={resetToDefault}
                 className="rounded-6 h-full"
                 content="icon"
