@@ -2,6 +2,33 @@
 
 This file contains important context and learnings for AI assistants working on the OpenMarch codebase.
 
+## Bug Queue (prioritized)
+
+**At the start of every session:**
+
+1. Run `gh issue list --label bug --state open` and `gh pr list --state open` to check current status before starting any bug.
+2. Before working on any bug, always create a fresh branch from main:
+   ```
+   git checkout main && git pull origin main && git checkout -b bugfix/<issue-number>-short-description
+   ```
+3. Update this table — mark ✅ fixed (merged), 🔀 PR open, or remove if no longer relevant.
+
+| Status | Issue                                                     | Summary                                               | PR                                                      | Notes                                         |
+| ------ | --------------------------------------------------------- | ----------------------------------------------------- | ------------------------------------------------------- | --------------------------------------------- |
+| 🔀     | [#888](https://github.com/OpenMarch/OpenMarch/issues/888) | Page notes display one page late during animation     | [#890](https://github.com/OpenMarch/OpenMarch/pull/890) | Off-by-one in animation note lookup           |
+| 🔀     | [#885](https://github.com/OpenMarch/OpenMarch/issues/885) | Split page error when rapidly clicking                | [#886](https://github.com/OpenMarch/OpenMarch/pull/886) | Community PR — nested SQLite tx fix           |
+| 🔀     | [#874](https://github.com/OpenMarch/OpenMarch/issues/874) | Prevent user from deleting all checkpoints            | [#902](https://github.com/OpenMarch/OpenMarch/pull/902) |                                               |
+| 🔀     | [#839](https://github.com/OpenMarch/OpenMarch/issues/839) | Custom measure tempo doesn't immediately save/display | [#901](https://github.com/OpenMarch/OpenMarch/pull/901) | await fix in `_updateManualTempos`            |
+| 🐛     | [#855](https://github.com/OpenMarch/OpenMarch/issues/855) | Page 0 "round to nearest whole" broken                | —                                                       | Rounds to original position instead           |
+| 🐛     | [#840](https://github.com/OpenMarch/OpenMarch/issues/840) | Error updating pages / unable to edit or add          | —                                                       | Needs investigation                           |
+| 🔀     | [#838](https://github.com/OpenMarch/OpenMarch/issues/838) | Rehearsal mark dialog closes before typing            | [#905](https://github.com/OpenMarch/OpenMarch/pull/905) | shouldClose=false on blur, true on Enter      |
+| 🔀     | [#837](https://github.com/OpenMarch/OpenMarch/issues/837) | Arrow key nudge stops working                         | [#908](https://github.com/OpenMarch/OpenMarch/pull/908) | .then() → .finally() on mutateAsync           |
+| 🐛     | [#833](https://github.com/OpenMarch/OpenMarch/issues/833) | PDF export wrong counts and measure numbers           | —                                                       |                                               |
+| 🔀     | [#797](https://github.com/OpenMarch/OpenMarch/issues/797) | Animation doesn't start after creating new marcher    | [#909](https://github.com/OpenMarch/OpenMarch/pull/909) | Invalidate coordinateData after create/delete |
+| 🐛     | [#875](https://github.com/OpenMarch/OpenMarch/issues/875) | (Windows) Alt-Tab causes left click to drag canvas    | —                                                       | Platform-specific                             |
+| 🐛     | [#883](https://github.com/OpenMarch/OpenMarch/issues/883) | File lock when repairing database                     | —                                                       |                                               |
+| 🐛     | [#863](https://github.com/OpenMarch/OpenMarch/issues/863) | PDF coordinates out of sync with app                  | —                                                       |                                               |
+
 ## Repository Structure
 
 - **Monorepo**: Uses pnpm workspaces with `apps/desktop` (main Electron app) and `apps/website` (Astro docs site)
