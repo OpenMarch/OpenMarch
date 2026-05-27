@@ -606,7 +606,7 @@ export const _updateManualTempos = async ({
         });
     }
 
-    transactionWithHistory(db, "updateManualTempos", async (tx) => {
+    await transactionWithHistory(db, "updateManualTempos", async (tx) => {
         await updateBeatsInTransaction({
             tx,
             modifiedBeats: updatedBeats,
