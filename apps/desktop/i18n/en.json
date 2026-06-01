@@ -541,7 +541,6 @@
                     "prefix": "Drill prefix"
                 },
                 "currentSelectionCount": "Current Selection ({count})",
-                "dragToTimelineAria": "Drag to assign group to an effect bar on the timeline",
                 "dragToAddToGroup": "Drag to add to a group",
                 "moveConflictTitle": "Some marchers are already in another group",
                 "moveConflictDescription": "Choose how to assign the dragged marchers.",

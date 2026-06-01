@@ -28,8 +28,6 @@ import {
     dataTransferHasLightingGroupMarcherCollectionDrag,
     getLightingGroupMarcherCollectionDragPayload,
     partitionLightingGroupDropMarcherIds,
-    setLightingGroupDragData,
-    shouldCancelLightingGroupDragStart,
 } from "@/utilities/lightingGroupEffectDnD";
 import {
     AlertDialog,
@@ -48,7 +46,6 @@ import {
     useCallback,
     useEffect,
     useMemo,
-    useRef,
     useState,
     type DragEvent,
 } from "react";
@@ -515,37 +512,7 @@ function GroupDropRow({
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
 }) {
-    const rowRef = useRef<HTMLLIElement>(null);
-    const [isDragging, setIsDragging] = useState(false);
     const [isDragOver, setIsDragOver] = useState(false);
-
-    const handleRowDragStart = useCallback(
-        (e: DragEvent<HTMLLIElement>) => {
-            if (shouldCancelLightingGroupDragStart(e.target)) {
-                e.preventDefault();
-                return;
-            }
-            setLightingGroupDragData(e.dataTransfer, {
-                groupId: group.id,
-                sceneId: group.scene_id,
-            });
-            const el = rowRef.current;
-            if (el) {
-                const r = el.getBoundingClientRect();
-                e.dataTransfer.setDragImage(
-                    el,
-                    e.clientX - r.left,
-                    e.clientY - r.top,
-                );
-            }
-            setIsDragging(true);
-        },
-        [group.id, group.scene_id],
-    );
-
-    const handleRowDragEnd = useCallback(() => {
-        setIsDragging(false);
-    }, []);
 
     const handleDragOver = (e: DragEvent<HTMLLIElement>) => {
         if (!dataTransferHasLightingGroupMarcherCollectionDrag(e.dataTransfer))
@@ -571,26 +538,14 @@ function GroupDropRow({
 
     return (
         <li
-            ref={rowRef}
-            draggable
-            tabIndex={0}
             className={clsx(
-                "rounded-6 border-stroke bg-fg-1 relative flex cursor-grab flex-col overflow-clip border p-12 active:cursor-grabbing",
-                isDragging && "opacity-40",
+                "rounded-6 border-stroke bg-fg-1 relative flex flex-col overflow-clip border p-12",
                 isDragOver && "ring-accent/70 ring-2 ring-inset",
             )}
-            onDragStart={handleRowDragStart}
-            onDragEnd={handleRowDragEnd}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
         >
-            <span className="sr-only">
-                <T
-                    keyName="inspector.light.groups.dragToTimelineAria"
-                    defaultValue="Drag to assign group to an effect bar on the timeline"
-                />
-            </span>
             {isFocused ? (
                 <div className="bg-accent/10 ring-accent pointer-events-none absolute inset-0 z-0 ring-1 ring-inset" />
             ) : null}
