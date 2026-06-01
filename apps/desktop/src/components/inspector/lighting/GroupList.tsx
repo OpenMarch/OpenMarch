@@ -1,20 +1,29 @@
+import { findOverlappingEffectsWithGroup } from "@/components/timeline/SceneTimeline.utils";
 import GroupDropConflictDialog, {
     type GroupDropConflictState,
 } from "@/components/inspector/lighting/GroupDropConflictDialog";
 import GroupItem from "@/components/inspector/lighting/GroupItem";
 import GroupMarcherDragBadges from "@/components/inspector/lighting/GroupMarcherDragBadges";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import type { DatabaseLightingGroup } from "@/db-functions";
+import type {
+    DatabaseLightingGroup,
+    ModifiedLightingEffectArgs,
+} from "@/db-functions";
 import {
     addMarchersToLightingGroupMutationOptions,
     allMarchersQueryOptions,
     createLightingGroupsMutationOptions,
     deleteLightingGroupsMutationOptions,
+    lightingEffectByIdQueryOptions,
     lightingGroupMembershipsBySceneIdQueryOptions,
     lightingGroupsBySceneIdQueryOptions,
+    lightingSceneDataByIdQueryOptions,
+    updateLightingEffectsBatchMutationOptions,
+    updateLightingEffectsMutationOptions,
     updateLightingGroupsMutationOptions,
 } from "@/hooks/queries";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import {
     dataTransferHasLightingGroupMarcherCollectionDrag,
     getLightingGroupMarcherCollectionDragPayload,
@@ -22,24 +31,50 @@ import {
     setLightingGroupDragData,
     shouldCancelLightingGroupDragStart,
 } from "@/utilities/lightingGroupEffectDnD";
-import { Button } from "@openmarch/ui";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    Button,
+} from "@openmarch/ui";
 import { PlusIcon } from "@phosphor-icons/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { T } from "@tolgee/react";
+import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
+import { T, useTolgee } from "@tolgee/react";
 import clsx from "clsx";
 import {
     useCallback,
     useEffect,
+    useMemo,
     useRef,
     useState,
     type DragEvent,
 } from "react";
+
+type EffectGroupOverlapPrompt = {
+    groupId: number;
+    targetEffectId: number;
+    conflicts: { id: number; name: string }[];
+};
 
 type GroupListProps = {
     sceneId: number | undefined;
 };
 
 export default function GroupList({ sceneId }: GroupListProps) {
+    const { t } = useTolgee();
+    const selectedEffect =
+        useLightDesignerSelectedEffectStore.use.selectedEffect();
+    const selectedEffectId =
+        sceneId != null &&
+        selectedEffect != null &&
+        selectedEffect.sceneId === sceneId
+            ? selectedEffect.effectId
+            : null;
+    const showEffectAssignmentControls = selectedEffectId != null;
+
     const { data: groups = [], isLoading } = useQuery({
         ...lightingGroupsBySceneIdQueryOptions(sceneId ?? -1),
         enabled: sceneId != null,
@@ -63,6 +98,7 @@ export default function GroupList({ sceneId }: GroupListProps) {
 
     const toggleGroupFocus =
         useLightDesignerGroupFocusStore.use.toggleGroupFocus();
+    const setGroupFocus = useLightDesignerGroupFocusStore.use.setGroupFocus();
     const clearGroupFocus =
         useLightDesignerGroupFocusStore.use.clearGroupFocus();
     const groupFocus = useLightDesignerGroupFocusStore.use.groupFocus();
@@ -79,9 +115,49 @@ export default function GroupList({ sceneId }: GroupListProps) {
     const { mutate: updateGroupMutate } = useMutation(
         updateLightingGroupsMutationOptions(),
     );
+    const { mutate: updateEffect } = useMutation(
+        updateLightingEffectsMutationOptions(),
+    );
+    const { mutate: updateEffectsBatch } = useMutation(
+        updateLightingEffectsBatchMutationOptions(),
+    );
+
+    const { data: selectedEffectData } = useQuery({
+        ...lightingEffectByIdQueryOptions(selectedEffectId ?? -1),
+        enabled: selectedEffectId != null,
+    });
+
+    const selectedEffectGroupIds = useMemo(
+        () => new Set(selectedEffectData?.lighting_group_ids ?? []),
+        [selectedEffectData?.lighting_group_ids],
+    );
+
+    const { data: sceneData } = useQuery({
+        ...lightingSceneDataByIdQueryOptions(sceneId ?? -1),
+        enabled: sceneId != null && selectedEffectId != null,
+    });
+    const sceneEffectIds = useMemo(
+        () => sceneData?.lightingEffectIds ?? [],
+        [sceneData?.lightingEffectIds],
+    );
+    const sceneEffectQueries = useQueries({
+        queries: sceneEffectIds.map((id) => ({
+            ...lightingEffectByIdQueryOptions(id),
+            enabled: selectedEffectId != null,
+        })),
+    });
+    const sceneEffects = (() => {
+        const out = [];
+        for (const q of sceneEffectQueries) {
+            if (q.data) out.push(q.data);
+        }
+        return out;
+    })();
 
     const [dropConflictState, setDropConflictState] =
         useState<GroupDropConflictState | null>(null);
+    const [overlapPrompt, setOverlapPrompt] =
+        useState<EffectGroupOverlapPrompt | null>(null);
 
     const addMarchersToGroup = useCallback(
         (groupId: number, marcherIds: readonly number[]) => {
@@ -100,9 +176,16 @@ export default function GroupList({ sceneId }: GroupListProps) {
         if (sceneId == null) return;
         const gf = useLightDesignerGroupFocusStore.getState().groupFocus;
         if (gf == null || gf.sceneId !== sceneId) return;
-        if (groups.some((g) => g.id === gf.groupId)) return;
-        clearGroupFocus();
-    }, [groups, sceneId, clearGroupFocus]);
+        const surviving = gf.groupIds.filter((id) =>
+            groups.some((g) => g.id === id),
+        );
+        if (surviving.length === gf.groupIds.length) return;
+        if (surviving.length === 0) {
+            clearGroupFocus();
+            return;
+        }
+        setGroupFocus({ sceneId, groupIds: surviving });
+    }, [groups, sceneId, clearGroupFocus, setGroupFocus]);
 
     const handleDropCollectionOnGroup = useCallback(
         (targetGroupId: number, payloadMarcherIds: number[]) => {
@@ -140,6 +223,95 @@ export default function GroupList({ sceneId }: GroupListProps) {
             },
         ]);
     };
+
+    const effectNameFallback =
+        t("workspace.lightDesigner.effects.unnamedFallback") ??
+        "Lighting effect";
+
+    const addGroupToSelectedEffect = useCallback(
+        (groupId: number) => {
+            if (selectedEffectId == null || selectedEffectData == null) return;
+            if (selectedEffectData.lighting_group_ids.includes(groupId)) {
+                return;
+            }
+
+            const conflicts = findOverlappingEffectsWithGroup({
+                effects: sceneEffects,
+                targetEffectId: selectedEffectId,
+                groupId,
+                effectNameFallback,
+            });
+
+            if (conflicts.length === 0) {
+                updateEffect({
+                    id: selectedEffectId,
+                    lighting_group_ids: [
+                        ...new Set([
+                            ...selectedEffectData.lighting_group_ids,
+                            groupId,
+                        ]),
+                    ],
+                });
+                return;
+            }
+
+            setOverlapPrompt({
+                groupId,
+                targetEffectId: selectedEffectId,
+                conflicts,
+            });
+        },
+        [
+            effectNameFallback,
+            sceneEffects,
+            selectedEffectData,
+            selectedEffectId,
+            updateEffect,
+        ],
+    );
+
+    const removeGroupFromSelectedEffect = useCallback(
+        (groupId: number) => {
+            if (selectedEffectId == null || selectedEffectData == null) return;
+            updateEffect({
+                id: selectedEffectId,
+                lighting_group_ids:
+                    selectedEffectData.lighting_group_ids.filter(
+                        (id) => id !== groupId,
+                    ),
+            });
+        },
+        [selectedEffectData, selectedEffectId, updateEffect],
+    );
+
+    const confirmOverlapAndMoveGroup = useCallback(() => {
+        const prompt = overlapPrompt;
+        if (prompt == null) return;
+        const target = sceneEffects.find((e) => e.id === prompt.targetEffectId);
+        if (!target) {
+            setOverlapPrompt(null);
+            return;
+        }
+        const updates: ModifiedLightingEffectArgs[] = [];
+        for (const c of prompt.conflicts) {
+            const e = sceneEffects.find((x) => x.id === c.id);
+            if (!e) continue;
+            updates.push({
+                id: e.id,
+                lighting_group_ids: e.lighting_group_ids.filter(
+                    (g) => g !== prompt.groupId,
+                ),
+            });
+        }
+        updates.push({
+            id: target.id,
+            lighting_group_ids: [
+                ...new Set([...target.lighting_group_ids, prompt.groupId]),
+            ],
+        });
+        updateEffectsBatch(updates);
+        setOverlapPrompt(null);
+    }, [overlapPrompt, sceneEffects, updateEffectsBatch]);
 
     if (sceneId == null) {
         return (
@@ -185,12 +357,28 @@ export default function GroupList({ sceneId }: GroupListProps) {
                                 ...(memberships?.get(group.id) ?? []),
                             ]}
                             onSelectMarchersInGroup={selectMarchersInGroup}
-                            isFocused={groupFocus?.groupId === group.id}
+                            isFocused={
+                                groupFocus?.sceneId === sceneId &&
+                                groupFocus.groupIds.includes(group.id)
+                            }
+                            showFocusControls={!showEffectAssignmentControls}
+                            showEffectAssignmentControls={
+                                showEffectAssignmentControls
+                            }
+                            isInSelectedEffect={selectedEffectGroupIds.has(
+                                group.id,
+                            )}
                             onToggleFocus={() =>
                                 toggleGroupFocus({
                                     groupId: group.id,
                                     sceneId,
                                 })
+                            }
+                            onAddToSelectedEffect={() =>
+                                addGroupToSelectedEffect(group.id)
+                            }
+                            onRemoveFromSelectedEffect={() =>
+                                removeGroupFromSelectedEffect(group.id)
                             }
                             onDropCollection={handleDropCollectionOnGroup}
                             onNameChange={(name) =>
@@ -238,6 +426,60 @@ export default function GroupList({ sceneId }: GroupListProps) {
                     setDropConflictState(null);
                 }}
             />
+
+            <AlertDialog
+                open={overlapPrompt != null}
+                onOpenChange={(open) => {
+                    if (!open) setOverlapPrompt(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>
+                        <T
+                            keyName="workspace.lightDesigner.effects.groupOverlapConfirmTitle"
+                            defaultValue="Group already affects an overlapping effect"
+                        />
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                        <p>
+                            <T
+                                keyName="workspace.lightDesigner.effects.groupOverlapConfirmDescription"
+                                defaultValue="Overlapping timing windows cannot reuse the same group. Remove this group from the conflicting effect(s) below and assign it here instead?"
+                            />
+                        </p>
+                        {overlapPrompt != null &&
+                        overlapPrompt.conflicts.length > 0 ? (
+                            <ul className="border-stroke mt-16 list-inside list-disc border-t pt-16 text-[0.9375rem]">
+                                {overlapPrompt.conflicts.map((c) => (
+                                    <li key={c.id}>{c.name}</li>
+                                ))}
+                            </ul>
+                        ) : null}
+                    </AlertDialogDescription>
+                    <div className="flex justify-end gap-8 pt-16">
+                        <AlertDialogCancel>
+                            <Button variant="secondary" size="compact">
+                                <T
+                                    keyName="workspace.lightDesigner.effects.groupOverlapCancel"
+                                    defaultValue="Cancel"
+                                />
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="primary"
+                                size="compact"
+                                onClick={() => confirmOverlapAndMoveGroup()}
+                            >
+                                <T
+                                    keyName="workspace.lightDesigner.effects.groupOverlapConfirm"
+                                    defaultValue="Move group"
+                                />
+                            </Button>
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
@@ -248,7 +490,12 @@ function GroupDropRow({
     memberMarcherIds,
     onSelectMarchersInGroup,
     isFocused,
+    showFocusControls,
+    showEffectAssignmentControls,
+    isInSelectedEffect,
     onToggleFocus,
+    onAddToSelectedEffect,
+    onRemoveFromSelectedEffect,
     onDropCollection,
     onNameChange,
     onDelete,
@@ -258,7 +505,12 @@ function GroupDropRow({
     memberMarcherIds: readonly number[];
     onSelectMarchersInGroup: (marcherIds: readonly number[]) => void;
     isFocused: boolean;
+    showFocusControls: boolean;
+    showEffectAssignmentControls: boolean;
+    isInSelectedEffect: boolean;
     onToggleFocus: () => void;
+    onAddToSelectedEffect: () => void;
+    onRemoveFromSelectedEffect: () => void;
     onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
@@ -348,9 +600,14 @@ function GroupDropRow({
                     groupNickname={group.name}
                     numberOfMarchers={memberCount}
                     isFocused={isFocused}
+                    showFocusControls={showFocusControls}
+                    showEffectAssignmentControls={showEffectAssignmentControls}
+                    isInSelectedEffect={isInSelectedEffect}
                     onNameChange={onNameChange}
                     onDelete={onDelete}
                     onToggleFocus={onToggleFocus}
+                    onAddToSelectedEffect={onAddToSelectedEffect}
+                    onRemoveFromSelectedEffect={onRemoveFromSelectedEffect}
                     onSelectMarchersInGroup={() =>
                         onSelectMarchersInGroup(memberMarcherIds)
                     }

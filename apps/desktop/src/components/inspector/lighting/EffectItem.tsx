@@ -5,6 +5,14 @@ import {
     SolidEffectArgs,
 } from "@openmarch/core";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+    Button,
     Input,
     Select,
     SelectContent,
@@ -22,6 +30,7 @@ import {
     useRef,
     useState,
 } from "react";
+import { TrashIcon } from "@phosphor-icons/react";
 
 const FALLBACK_RGBA: RgbaColor = { r: 255, g: 0, b: 0, a: 1 };
 
@@ -55,15 +64,6 @@ function rgbaToHex6(color: RgbaColor): string {
     return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
-/** Heading label: stored ms shown as seconds (trimmed). */
-function formatDurationSecondsFromMs(ms: number): string {
-    const s = ms / 1000;
-    if (!Number.isFinite(s) || s <= 0) return "0";
-    const rounded = Math.round(s * 1000) / 1000;
-    if (Number.isInteger(rounded)) return String(rounded);
-    return String(rounded);
-}
-
 function secondsToMs(seconds: number): number {
     if (!Number.isFinite(seconds) || seconds < 0) return 0;
     return Math.max(0, Math.round(seconds * 1000));
@@ -94,6 +94,7 @@ type EffectItemProps = {
     nameChangeFn: (name: string | null) => void;
     typeChangeFn: (type: LightingEffectType) => void;
     argsChangeFn: (argsJson: string) => void;
+    deleteEffectFn: () => void;
 };
 
 type SolidEffectArgsInputProps = {
@@ -155,16 +156,14 @@ const EffectItem = ({
     nameChangeFn,
     typeChangeFn,
     argsChangeFn,
+    deleteEffectFn,
 }: EffectItemProps) => {
     const { t } = useTolgee();
     const nameId = useId();
-    const durationId = useId();
     const nameInputRef = useRef<HTMLInputElement>(null);
     const durationInputRef = useRef<HTMLInputElement>(null);
     const typeSelectTriggerRef = useRef<HTMLButtonElement>(null);
     const [typePickerOpen, setTypePickerOpen] = useState(false);
-
-    const hasDurationHeader = true;
 
     const [durationMs, setDurationMs] = useState(() => {
         const parsed = parseEffectArgs(type, args);
@@ -230,13 +229,6 @@ const EffectItem = ({
         setEditingName(true);
     };
 
-    const openDurationEdit = () => {
-        setEditingName(false);
-        setTypePickerOpen(false);
-        setDraftDurationSeconds(durationMs / 1000);
-        setEditingDuration(true);
-    };
-
     const handleNameChange = (e: ChangeEvent<HTMLInputElement>) => {
         setDraftName(e.currentTarget.value.slice(0, 255));
     };
@@ -250,18 +242,6 @@ const EffectItem = ({
             e.preventDefault();
             setDraftName(name);
             setEditingName(false);
-        }
-    };
-
-    const handleDurationKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === "Enter") {
-            e.preventDefault();
-            commitDurationFromDraft();
-        }
-        if (e.key === "Escape") {
-            e.preventDefault();
-            setDraftDurationSeconds(durationMs / 1000);
-            setEditingDuration(false);
         }
     };
 
@@ -392,47 +372,57 @@ const EffectItem = ({
                         </button>
                     )}
                 </div>
-
-                {hasDurationHeader && (
-                    <div className="shrink-0">
-                        {editingDuration ? (
-                            <Input
-                                id={durationId}
-                                ref={durationInputRef}
-                                compact
-                                min={0}
-                                step="any"
-                                type="number"
-                                className="max-w-[10rem] min-w-[7rem] tabular-nums"
-                                value={draftDurationSeconds}
-                                onChange={(e) => {
-                                    const v = e.currentTarget.valueAsNumber;
-                                    setDraftDurationSeconds(
-                                        Number.isNaN(v) ? 0 : v,
-                                    );
-                                }}
-                                onBlur={commitDurationFromDraft}
-                                onKeyDown={handleDurationKeyDown}
-                                aria-label={
-                                    t(
-                                        "workspace.lightDesigner.effects.effectItem.durationSeconds",
-                                    ) || "Duration (s)"
-                                }
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            className="shrink-0"
+                            variant="secondary"
+                            size="compact"
+                            aria-label={t(
+                                "workspace.lightDesigner.effects.effectItem.deleteAria",
+                                { defaultValue: "Delete effect" },
+                            )}
+                        >
+                            <TrashIcon size={18} aria-hidden />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogTitle>
+                            <T
+                                keyName="workspace.lightDesigner.effects.effectItem.deleteTitle"
+                                defaultValue="Delete this effect?"
                             />
-                        ) : (
-                            <button
-                                type="button"
-                                className="text-h5 text-text hover:text-accent cursor-pointer tabular-nums transition-colors"
-                                onClick={openDurationEdit}
-                            >
-                                {formatDurationSecondsFromMs(durationMs)}
-                                <span className="text-text/60 ml-1 font-normal">
-                                    s
-                                </span>
-                            </button>
-                        )}
-                    </div>
-                )}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <T
+                                keyName="workspace.lightDesigner.effects.effectItem.deleteDescription"
+                                defaultValue="This effect will be removed from the current lighting scene."
+                            />
+                        </AlertDialogDescription>
+                        <div className="flex justify-end gap-8 pt-16">
+                            <AlertDialogCancel asChild>
+                                <Button variant="secondary" size="compact">
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.cancel"
+                                        defaultValue="Cancel"
+                                    />
+                                </Button>
+                            </AlertDialogCancel>
+                            <AlertDialogAction>
+                                <Button
+                                    variant="red"
+                                    size="compact"
+                                    onClick={deleteEffectFn}
+                                >
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.deleteConfirm"
+                                        defaultValue="Delete"
+                                    />
+                                </Button>
+                            </AlertDialogAction>
+                        </div>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
 
             {renderArgsInput()}

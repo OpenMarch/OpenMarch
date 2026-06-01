@@ -23,6 +23,7 @@ import { lightingEffectBeatWindowToSceneLocalMs } from "@/utilities/lightingBeat
 import type { LightingEffectWithMarchers } from "@/db-functions";
 import type { AppearanceComponentOptional } from "@/entity-components/appearance";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { getCurrentShowTimeMs } from "@/utilities/showTime";
 import {
@@ -42,10 +43,15 @@ export function MarcherAppearance({
     const workspaceMode = useWorkspaceViewStore.use.mode();
     const clearGroupFocus =
         useLightDesignerGroupFocusStore.use.clearGroupFocus();
+    const clearSelectedEffect =
+        useLightDesignerSelectedEffectStore.use.clearSelectedEffect();
 
     useEffect(() => {
-        if (workspaceMode !== "lightDesigner") clearGroupFocus();
-    }, [workspaceMode, clearGroupFocus]);
+        if (workspaceMode !== "lightDesigner") {
+            clearGroupFocus();
+            clearSelectedEffect();
+        }
+    }, [workspaceMode, clearGroupFocus, clearSelectedEffect]);
 
     if (workspaceMode === "editor")
         return <EditorMarcherAppearances canvas={canvas} />;
@@ -284,13 +290,20 @@ const LightDesignerMarcherAppearances = ({
             let focusMemberMarcherIds: Set<number> | null = null;
             if (
                 groupFocus != null &&
+                groupFocus.groupIds.length > 0 &&
                 active != null &&
                 active.sceneId === groupFocus.sceneId &&
                 groupFocusMemberships != null
             ) {
-                focusMemberMarcherIds =
-                    groupFocusMemberships.get(groupFocus.groupId) ??
-                    new Set<number>();
+                focusMemberMarcherIds = new Set<number>();
+                for (const groupId of groupFocus.groupIds) {
+                    const members = groupFocusMemberships.get(groupId);
+                    if (members) {
+                        for (const marcherId of members) {
+                            focusMemberMarcherIds.add(marcherId);
+                        }
+                    }
+                }
             }
 
             marchers.forEach((marcher) => {

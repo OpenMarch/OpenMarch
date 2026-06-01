@@ -169,24 +169,17 @@ export default function SceneTimeline() {
                               pps,
                           );
                           const leftInSegment = boundaryAbsPx - barLeftPx;
-                          if (isSelected) {
-                              return (
-                                  <div
-                                      key={`split-${seg.sceneId}-${pageIndex}`}
-                                      className="pointer-events-none absolute top-0 z-10 flex h-full w-[10px] -translate-x-1/2 items-stretch justify-center"
-                                      style={{ left: `${leftInSegment}px` }}
-                                      aria-hidden
-                                  >
-                                      <span className="border-text/40 h-full shrink-0 border-l border-dashed" />
-                                  </div>
-                              );
-                          }
 
                           return (
                               <button
                                   key={`split-${seg.sceneId}-${pageIndex}`}
                                   type="button"
-                                  className="hover:bg-text-invert/10 absolute top-0 z-10 flex h-full w-[10px] -translate-x-1/2 cursor-pointer items-stretch justify-center border-0 bg-transparent p-0"
+                                  className={clsx(
+                                      "absolute top-0 z-10 flex h-full w-[10px] -translate-x-1/2 cursor-pointer items-stretch justify-center border-0 bg-transparent p-0",
+                                      isSelected
+                                          ? "hover:bg-text-subtitle/50"
+                                          : "hover:bg-text-invert/10",
+                                  )}
                                   style={{ left: `${leftInSegment}px` }}
                                   aria-label="Split scene at page boundary"
                                   onClick={(e) => {
@@ -197,7 +190,12 @@ export default function SceneTimeline() {
                                   onPointerDown={(e) => e.stopPropagation()}
                               >
                                   <span
-                                      className="border-text-invert/40 pointer-events-none h-full shrink-0 border-l border-dashed"
+                                      className={clsx(
+                                          "pointer-events-none h-full shrink-0 border-l border-dashed",
+                                          isSelected
+                                              ? "border-text-subtitle"
+                                              : "border-text-invert",
+                                      )}
                                       aria-hidden
                                   />
                               </button>

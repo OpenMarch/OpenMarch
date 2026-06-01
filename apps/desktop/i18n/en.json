@@ -531,6 +531,8 @@
                 "groupFallback": "Group",
                 "clearFocus": "Clear focus",
                 "focusCanvas": "Focus",
+                "addToSelectedEffect": "Add to selected effect",
+                "removeFromSelectedEffect": "Remove from selected effect",
                 "add": "Add",
                 "addBy": {
                     "section": "Section",
@@ -989,9 +991,10 @@
                 "noPage": "Select a page to edit lighting effects.",
                 "loading": "Loading…",
                 "noScene": "No lighting scene for this page.",
-                "sectionTitle": "Effects",
+                "sectionTitle": "Selected effect",
                 "addEffect": "Add effect",
                 "empty": "No effects in this scene yet.",
+                "selectOnTimeline": "Select an effect on the timeline to edit it.",
                 "rowLoading": "Loading effect…",
                 "effectItem": {
                     "defaultName": "Effect {id}",
@@ -1004,7 +1007,12 @@
                     "color": "Color",
                     "fadeDurationSeconds": "Fade duration (s)",
                     "fadeTargetColor": "Fade target color",
-                    "strobePlaceholder": "Strobe editor is not implemented yet."
+                    "strobePlaceholder": "Strobe editor is not implemented yet.",
+                    "deleteAria": "Delete effect",
+                    "deleteTitle": "Delete this effect?",
+                    "deleteDescription": "This effect will be removed from the current lighting scene.",
+                    "cancel": "Cancel",
+                    "deleteConfirm": "Delete"
                 }
             }
         }

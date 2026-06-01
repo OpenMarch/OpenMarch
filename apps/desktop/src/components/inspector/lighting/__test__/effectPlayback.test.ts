@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveEffectPlaybackStates } from "../EffectList";
+import { deriveEffectPlaybackStates } from "../effectPlayback";
 
 describe("deriveEffectPlaybackStates", () => {
     const effects = [

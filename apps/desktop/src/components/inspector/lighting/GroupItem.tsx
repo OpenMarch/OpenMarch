@@ -33,9 +33,14 @@ export interface GroupItemProps {
     groupNickname: string | null;
     numberOfMarchers: number;
     isFocused: boolean;
+    showFocusControls: boolean;
+    showEffectAssignmentControls: boolean;
+    isInSelectedEffect: boolean;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
     onToggleFocus: () => void;
+    onAddToSelectedEffect?: () => void;
+    onRemoveFromSelectedEffect?: () => void;
     onSelectMarchersInGroup: () => void;
 }
 
@@ -44,9 +49,14 @@ export default function GroupItem({
     groupId,
     numberOfMarchers,
     isFocused,
+    showFocusControls,
+    showEffectAssignmentControls,
+    isInSelectedEffect,
     onNameChange,
     onDelete,
     onToggleFocus,
+    onAddToSelectedEffect,
+    onRemoveFromSelectedEffect,
     onSelectMarchersInGroup,
 }: GroupItemProps) {
     const { t } = useTolgee();
@@ -170,25 +180,54 @@ export default function GroupItem({
                         </Tooltip>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-start gap-8">
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            size="compact"
-                            aria-pressed={isFocused}
-                            onClick={onToggleFocus}
-                        >
-                            {isFocused ? (
-                                <T
-                                    keyName="inspector.light.groups.clearFocus"
-                                    defaultValue="Clear focus"
-                                />
+                        {showEffectAssignmentControls ? (
+                            isInSelectedEffect ? (
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="compact"
+                                    onClick={onRemoveFromSelectedEffect}
+                                >
+                                    <T
+                                        keyName="inspector.light.groups.removeFromSelectedEffect"
+                                        defaultValue="Remove from selected effect"
+                                    />
+                                </Button>
                             ) : (
-                                <T
-                                    keyName="inspector.light.groups.focusCanvas"
-                                    defaultValue="Focus"
-                                />
-                            )}
-                        </Button>
+                                <Button
+                                    type="button"
+                                    variant="secondary"
+                                    size="compact"
+                                    onClick={onAddToSelectedEffect}
+                                >
+                                    <T
+                                        keyName="inspector.light.groups.addToSelectedEffect"
+                                        defaultValue="Add to selected effect"
+                                    />
+                                </Button>
+                            )
+                        ) : null}
+                        {showFocusControls ? (
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                size="compact"
+                                aria-pressed={isFocused}
+                                onClick={onToggleFocus}
+                            >
+                                {isFocused ? (
+                                    <T
+                                        keyName="inspector.light.groups.clearFocus"
+                                        defaultValue="Clear focus"
+                                    />
+                                ) : (
+                                    <T
+                                        keyName="inspector.light.groups.focusCanvas"
+                                        defaultValue="Focus"
+                                    />
+                                )}
+                            </Button>
+                        ) : null}
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
                                 <Button

@@ -1,6 +1,7 @@
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { lightingSceneDataByIdQueryOptions } from "@/hooks/queries/lighting/queries";
 import { createLightingEffectsMutationOptions } from "@/hooks/queries/lighting/mutations";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { createNewLightingEffect } from "@openmarch/core";
 import { useCallback, useMemo, useRef, useState } from "react";
@@ -55,6 +56,7 @@ export default function LightingEffectCreateStrip({
     );
     const effectCount = sceneData?.lightingEffectIds?.length ?? 0;
 
+    const selectEffect = useLightDesignerSelectedEffectStore.use.selectEffect();
     const { mutate: createEffect } = useMutation(
         createLightingEffectsMutationOptions(),
     );
@@ -127,23 +129,36 @@ export default function LightingEffectCreateStrip({
             const draft = createDraftRangeRef.current;
             if (draft && draft.durationBeats > 0) {
                 createNewLightingEffect((name, type, argsJson) => {
-                    createEffect([
+                    createEffect(
+                        [
+                            {
+                                scene_id: sceneData.id,
+                                name,
+                                type,
+                                args: argsJson,
+                                start_offset_beats: draft.startBeats,
+                                duration_beats: draft.durationBeats,
+                            },
+                        ],
                         {
-                            scene_id: sceneData.id,
-                            name,
-                            type,
-                            args: argsJson,
-                            start_offset_beats: draft.startBeats,
-                            duration_beats: draft.durationBeats,
+                            onSuccess: (created) => {
+                                const row = created[0];
+                                if (row) {
+                                    selectEffect({
+                                        effectId: row.id,
+                                        sceneId: sceneData.id,
+                                    });
+                                }
+                            },
                         },
-                    ]);
+                    );
                 });
             }
         }
         createDragState.current = null;
         createDraftRangeRef.current = null;
         setCreateDraftRange(null);
-    }, [createEffect, onPointerMove, sceneData]);
+    }, [createEffect, onPointerMove, sceneData, selectEffect]);
 
     const startCreateDrag = useCallback(
         (ev: React.PointerEvent<HTMLDivElement>) => {
