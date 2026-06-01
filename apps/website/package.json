@@ -55,6 +55,6 @@
         "tailwindcss-intersect": "^2.2.0",
         "tailwindcss-motion": "^1.1.1",
         "vite": "^6.4.1",
-        "vitest": "^3.2.3"
+        "vitest": "^4.1.0"
     }
 }
