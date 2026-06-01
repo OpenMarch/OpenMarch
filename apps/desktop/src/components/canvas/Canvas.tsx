@@ -31,6 +31,7 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import { MarcherAppearance } from "./hooks/marcherAppearance";
+import { useHighlightedMarchers } from "./hooks/useHighlightedMarchers";
 
 /**
  * The field/stage UI of OpenMarch
@@ -105,6 +106,11 @@ export default function Canvas({
     useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas, workspaceMode });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    useHighlightedMarchers({
+        canvas,
+        marcherVisuals,
+        selectedPageId: selectedPage?.id,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {

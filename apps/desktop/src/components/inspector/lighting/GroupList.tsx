@@ -22,6 +22,7 @@ import {
     updateLightingEffectsMutationOptions,
     updateLightingGroupsMutationOptions,
 } from "@/hooks/queries";
+import { useHighlightedMarchersStore } from "@/stores/HighlightedMarchersStore";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
 import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import {
@@ -98,6 +99,10 @@ export default function GroupList({ sceneId }: GroupListProps) {
     const setGroupFocus = useLightDesignerGroupFocusStore.use.setGroupFocus();
     const clearGroupFocus =
         useLightDesignerGroupFocusStore.use.clearGroupFocus();
+    const clearHighlightedMarchers =
+        useHighlightedMarchersStore.use.clearHighlightedMarchers();
+    const setHighlightedMarcherIds =
+        useHighlightedMarchersStore.use.setHighlightedMarcherIds();
     const groupFocus = useLightDesignerGroupFocusStore.use.groupFocus();
 
     const { mutate: createGroupsMutate } = useMutation(
@@ -167,7 +172,8 @@ export default function GroupList({ sceneId }: GroupListProps) {
 
     useEffect(() => {
         clearGroupFocus();
-    }, [sceneId, clearGroupFocus]);
+        clearHighlightedMarchers();
+    }, [sceneId, clearGroupFocus, clearHighlightedMarchers]);
 
     useEffect(() => {
         if (sceneId == null) return;
@@ -384,6 +390,7 @@ export default function GroupList({ sceneId }: GroupListProps) {
                             onDelete={() =>
                                 deleteGroupMutate(new Set([group.id]))
                             }
+                            setHighlightedMarcherIds={setHighlightedMarcherIds}
                         />
                     ))}
                 </ul>
@@ -496,6 +503,7 @@ function GroupDropRow({
     onDropCollection,
     onNameChange,
     onDelete,
+    setHighlightedMarcherIds,
 }: {
     group: DatabaseLightingGroup;
     memberCount: number;
@@ -511,6 +519,7 @@ function GroupDropRow({
     onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
+    setHighlightedMarcherIds: (ids: Iterable<number> | null) => void;
 }) {
     const [isDragOver, setIsDragOver] = useState(false);
 
@@ -545,6 +554,8 @@ function GroupDropRow({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onMouseEnter={() => setHighlightedMarcherIds(memberMarcherIds)}
+            onMouseLeave={() => setHighlightedMarcherIds(null)}
         >
             {isFocused ? (
                 <div className="bg-accent/10 ring-accent pointer-events-none absolute inset-0 z-0 ring-1 ring-inset" />
