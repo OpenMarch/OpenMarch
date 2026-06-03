@@ -9,15 +9,20 @@ import {
 } from "@/hooks/queries";
 import { useLightDesignerEffectGroupFocusSync } from "@/hooks/useLightDesignerEffectGroupFocusSync";
 import { useLightDesignerSelectedEffectSync } from "@/hooks/useLightDesignerSelectedEffectSync";
+import { useShallow } from "zustand/react/shallow";
 import { useQuery } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import { useMemo } from "react";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 
 /**
  * Light Designer right panel. Replace with lighting controls as the feature grows.
  */
 export default function LightDesignerInspector() {
     const { selectedPage } = useSelectedPage()!;
+    const hasSelectedEffect = useLightDesignerSelectedEffectStore(
+        useShallow((state) => state.selectedEffect != null),
+    );
     const playbackStartPageId =
         selectedPage == null
             ? undefined
@@ -76,7 +81,10 @@ export default function LightDesignerInspector() {
                 }
                 bottom={
                     <div className="rounded-6 border-stroke bg-fg-1 flex h-full min-h-[64px] flex-col gap-8 border p-6">
-                        <h3 className="text-text-subtitle mt-6 shrink-0 px-6 text-sm">
+                        <h3
+                            className="text-text-subtitle mt-6 shrink-0 px-6 text-sm"
+                            hidden={!hasSelectedEffect}
+                        >
                             <T
                                 keyName="workspace.lightDesigner.effects.sectionTitle"
                                 defaultValue="Effects"

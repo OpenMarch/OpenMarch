@@ -993,8 +993,7 @@
                 "sectionTitle": "Selected effect",
                 "addEffect": "Add effect",
                 "empty": "No effects in this scene yet.",
-                "selectOnTimeline": "Select an effect on the timeline to edit it.",
-                "rowLoading": "Loading effect…",
+                "selectOnTimeline": "Select an effect on the timeline to edit it",
                 "effectItem": {
                     "defaultName": "Effect {id}",
                     "name": "Name",

@@ -14,6 +14,7 @@ import {
 import { useSceneEffectPlayback } from "@/hooks/useSceneEffectPlayback";
 import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { updateLightingEffectType } from "@openmarch/core";
+import { Spinner } from "@openmarch/ui";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { T } from "@tolgee/react";
 import { useCallback, useMemo } from "react";
@@ -21,6 +22,12 @@ import { useCallback, useMemo } from "react";
 type SceneWithEffectIds = DatabaseLightingScene & {
     lightingEffectIds: number[];
 };
+
+const CenteredSpinner = () => (
+    <div className="flex h-full w-full items-center justify-center">
+        <Spinner className="text-text-subtitle" />
+    </div>
+);
 
 export type SelectedEffectInspectorProps = {
     sceneId: number | undefined;
@@ -89,16 +96,7 @@ export default function SelectedEffectInspector({
         );
     }
 
-    if (isLoadingScene) {
-        return (
-            <p className="text-body text-text/60">
-                <T
-                    keyName="workspace.lightDesigner.effects.loading"
-                    defaultValue="Loading…"
-                />
-            </p>
-        );
-    }
+    if (isLoadingScene) return <CenteredSpinner />;
 
     if (lightingSceneData == null || sceneId == null) {
         return (
@@ -124,10 +122,10 @@ export default function SelectedEffectInspector({
 
     if (selectedEffectId == null) {
         return (
-            <p className="text-body text-text/60">
+            <p className="text-body text-text-subtitle flex h-full items-center justify-center">
                 <T
                     keyName="workspace.lightDesigner.effects.selectOnTimeline"
-                    defaultValue="Select an effect on the timeline to edit it."
+                    defaultValue="Select an effect on the timeline to edit it"
                 />
             </p>
         );
@@ -163,17 +161,9 @@ function SelectedEffectEditor({
     deleteEffectFn: () => void;
 }) {
     const isPlayed = playbackInfo?.state === "played";
-    const isActive = playbackInfo?.state === "active";
 
     if (isLoading || effect == null) {
-        return (
-            <p className="text-body text-text/60">
-                <T
-                    keyName="workspace.lightDesigner.effects.rowLoading"
-                    defaultValue="Loading effect…"
-                />
-            </p>
-        );
+        return <CenteredSpinner />;
     }
 
     return (
@@ -182,15 +172,6 @@ function SelectedEffectEditor({
         >
             {isPlayed && (
                 <div className="bg-accent/20 absolute top-0 left-0 z-0 h-full w-full" />
-            )}
-            {isActive && (
-                <div
-                    className="bg-accent/25 absolute top-0 left-0 z-0 h-full"
-                    style={{
-                        height: `${playbackInfo?.progressPct ?? 0}%`,
-                        width: "100%",
-                    }}
-                />
             )}
             <div className="relative z-10 flex flex-col gap-8">
                 <EffectItem

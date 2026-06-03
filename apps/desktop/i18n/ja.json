@@ -908,7 +908,6 @@
                 "sectionTitle": "エフェクト",
                 "addEffect": "エフェクトを追加",
                 "empty": "このシーンにまだエフェクトがありません。",
-                "rowLoading": "エフェクトを読み込み中…",
                 "effectItem": {
                     "defaultName": "エフェクト {id}",
                     "name": "名前",

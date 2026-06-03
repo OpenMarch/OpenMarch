@@ -908,7 +908,6 @@
                 "sectionTitle": "Efeitos",
                 "addEffect": "Adicionar efeito",
                 "empty": "Ainda não há efeitos nesta cena.",
-                "rowLoading": "Carregando efeito…",
                 "effectItem": {
                     "defaultName": "Efeito {id}",
                     "name": "Nome",
