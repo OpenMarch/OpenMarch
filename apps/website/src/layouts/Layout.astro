@@ -22,11 +22,11 @@ const { title, noindex = false } = Astro.props;
     <body
         class="overflow-x-hidden bg-bg-1 text-text flex justify-center items-start px-8"
     >
-        <main
-            class="max-w-[75rem] w-full py-8 flex flex-col gap-96 items-center"
-        >
-            <Nav client:load pathname={Astro.url.pathname} />
-            <slot />
+        <main class="w-full py-8 flex flex-col gap-96 items-center">
+            <div class="max-w-1200 flex flex-col gap-96">
+                <Nav client:load pathname={Astro.url.pathname} />
+                <slot />
+            </div>
             <Footer hideDownloadCta={Astro.url.pathname === "/download"} />
         </main>
     </body>
