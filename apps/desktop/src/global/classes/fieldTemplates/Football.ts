@@ -211,7 +211,7 @@ function createHighSchoolFootballYCheckpoints(): Checkpoint[] {
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
         axis: "y",
-        stepsFromCenterFront: -85,
+        stepsFromCenterFront: -84,
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
@@ -281,7 +281,7 @@ function createCollegeFootballYCheckpoints(): Checkpoint[] {
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
         axis: "y",
-        stepsFromCenterFront: -85,
+        stepsFromCenterFront: -84,
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,
@@ -344,7 +344,7 @@ function createProFootballYCheckpoints(): Checkpoint[] {
     const gridBackSideline: Checkpoint = {
         name: "grid back sideline",
         axis: "y",
-        stepsFromCenterFront: -85,
+        stepsFromCenterFront: -84,
         useAsReference: true,
         terseName: "grid:BSL",
         visible: false,

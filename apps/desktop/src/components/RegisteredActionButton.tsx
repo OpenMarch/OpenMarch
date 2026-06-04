@@ -7,7 +7,8 @@ import { useRef, useEffect } from "react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 
-interface registeredActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+interface registeredActionButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement> {
     registeredAction: RegisteredAction;
     instructionalString?: string;
     children?: React.ReactNode;

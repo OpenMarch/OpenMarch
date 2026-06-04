@@ -202,7 +202,7 @@ describe("ReadableCoords", () => {
                         "grid back sideline",
                     );
                     expect(readableCoords.xSteps).toBe(0);
-                    expect(readableCoords.ySteps).toBe(10);
+                    expect(readableCoords.ySteps).toBe(9);
                     expect(readableCoords.xDescription).toEqual(
                         X_DESCRIPTION.ON,
                     );
@@ -215,11 +215,11 @@ describe("ReadableCoords", () => {
                         "S2: On 45 yard line",
                     );
                     expect(readableCoords.toVerboseStringY()).toBe(
-                        "10 in front of grid back sideline",
+                        "9 in front of grid back sideline",
                     );
                     expect(readableCoords.toTerseStringX()).toBe("S2: On 45");
                     expect(readableCoords.toTerseStringY()).toBe(
-                        "10 FR grid:BSL",
+                        "9 FR grid:BSL",
                     );
                 });
             });
@@ -274,12 +274,12 @@ describe("ReadableCoords", () => {
 
                 // Backfield
                 const readableCoords2 = createReadableCoords(0, -200);
-                expect(readableCoords2.ySteps).toBe(115);
+                expect(readableCoords2.ySteps).toBe(116);
                 expect(readableCoords2.yCheckpoint.name).toBe(
                     "grid back sideline",
                 );
                 expect(readableCoords2.yCheckpoint.stepsFromCenterFront).toBe(
-                    -85,
+                    -84,
                 );
                 expect(readableCoords2.yDescription).toBe(Y_DESCRIPTION.BEHIND);
             });

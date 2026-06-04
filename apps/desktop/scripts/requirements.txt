@@ -1,0 +1,5 @@
+# Python dependencies for OpenMarch coordinate sheet script (parse_coordinate_sheet.py)
+# Install with: pip install -r requirements.txt
+
+pymupdf>=1.23.0
+numpy>=1.24.0

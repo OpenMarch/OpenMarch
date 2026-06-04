@@ -146,6 +146,7 @@ const APP_API = {
 
     // Database / file management
     databaseIsReady: () => ipcRenderer.invoke("database:isReady"),
+
     databaseGetPath: () => ipcRenderer.invoke("database:getPath"),
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),

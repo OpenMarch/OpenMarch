@@ -81,9 +81,6 @@ export class DrizzleMigrationService {
         console.debug("migrationsFolder:", folder);
 
         try {
-            // console.log("Dropping history triggers...");
-            // await dropAllUndoTriggers(this.db);
-
             console.log("Applying pending Drizzle migrations...");
 
             await migrate(
@@ -191,7 +188,6 @@ export class DrizzleMigrationService {
             }),
         });
 
-        // await createAllUndoTriggers(db);
         await createAllTriggers(rawDb);
     }
 }

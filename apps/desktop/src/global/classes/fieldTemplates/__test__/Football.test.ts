@@ -328,7 +328,7 @@ describe("FieldProperties.templates", () => {
                 name: "grid back sideline",
                 terseName: "grid:BSL",
                 axis: "y",
-                stepsFromCenterFront: -85,
+                stepsFromCenterFront: -84,
                 useAsReference: true,
                 visible: false,
             });
@@ -547,7 +547,7 @@ describe("FieldProperties.templates", () => {
                 name: "grid back sideline",
                 terseName: "grid:BSL",
                 axis: "y",
-                stepsFromCenterFront: -85,
+                stepsFromCenterFront: -84,
                 useAsReference: true,
                 visible: false,
             });

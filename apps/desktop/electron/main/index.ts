@@ -25,7 +25,6 @@ import {
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
-
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
@@ -145,7 +144,7 @@ async function createWindow(title?: string) {
                 responseHeaders: {
                     ...details.responseHeaders,
                     "Content-Security-Policy": [
-                        "script-src 'self' 'unsafe-inline' https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
+                        "script-src 'self' 'unsafe-inline' blob: https://app.glitchtip.com https://us-assets.i.posthog.com; worker-src 'self' data: blob:;",
                     ],
                 },
             });

@@ -14,6 +14,7 @@ module.exports = {
         "**/src/styles/**/*.css",
         ".eslintrc.cjs",
         "**/astro.d.ts",
+        "**/e2e/**/*",
     ],
     parser: "@typescript-eslint/parser",
     parserOptions: {

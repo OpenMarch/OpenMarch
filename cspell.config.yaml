@@ -13,6 +13,7 @@ words:
   - barline
   - barlines
   - bbox
+  - bboxes
   - behance
   - Bézier
   - BFSL
@@ -32,10 +33,13 @@ words:
   - codegen
   - colours
   - Configuración
+  - Confs
   - cooldown
+  - criticals
   - couldn
   - customizer
   - dbstat
+  - DBSCAN
   - DELME
   - Dhruva
   - DMEA
@@ -54,19 +58,26 @@ words:
   - evented
   - fielddots
   - fieldots
+  - frontmost
   - forwardslash
+  - fitz
   - français
   - frontfield
   - frontmatter
   - Geral
   - GLHF
+  - hdrs
   - Hipp
   - idioma
   - importmap
+  - INFRONT
   - Invalidators
+  - keyframed
   - launchpage
+  - libsql
   - lightridge
   - localappdata
+  - mgmt
   - Loudoun
   - Macbook's
   - madripoor
@@ -77,10 +88,12 @@ words:
   - midset
   - midsets
   - monokai
+  - mvmt
   - Moulse
   - multiselection
   - musescore
   - musicxml
+  - numpy
   - Nativewind
   - notarytool
   - NSIS
@@ -88,24 +101,33 @@ words:
   - NURBS
   - oklch
   - openmarch
+  - poppler
+  - pymupdf
   - openmarchdev
   - overscan
   - pacman
   - pagewidth
   - paperplane
+  - pdfs
   - pfps
   - Português
   - posthog
   - Pressable
   - PWDEBUG
   - pwsh
+  - Pyware
+  - quantiles
+  - quasirandom
   - Rcoords
+  - Rects
+  - Refetched
   - rels
   - rgba
   - ritardandos
   - rootfile
   - rw-r
   - rwxr
+  - sandboxing
   - saario
   - samuelmeuli
   - Schachner
@@ -121,6 +143,7 @@ words:
   - sonner
   - spinbutton
   - spms
+  - stps
   - sqljs
   - Sunbright
   - supabase
@@ -147,6 +170,7 @@ words:
   - unpreview
   - unstub
   - uuidv
+  - venv
   - vertaal
   - viewbox
   - viewports
@@ -158,16 +182,20 @@ words:
   - Vree
   - waivable
   - WASD
+  - yardline
+  - YCHECKPOINT
   - wavesurfer
   - winget
   - Woodgrove
   - workerd
+  - XCHECKPOINT
   - xlink
   - XMLID
   - yeskunallumami
   - youtu
   - zier
   - Zingali
+  - Zustand
   - 日本語
 ignorePaths:
   - node_modules/**
