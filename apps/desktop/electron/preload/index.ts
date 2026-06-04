@@ -190,6 +190,32 @@ const APP_API = {
     showSaveDialog: (options: SaveDialogOptions) =>
         ipcRenderer.invoke("dialog:showSaveDialog", options),
 
+    getPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:getPending") as Promise<boolean>,
+    clearPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:clearPending") as Promise<void>,
+    onNewShowOpen: (callback: () => void) => {
+        const listener = () => callback();
+        ipcRenderer.on("new-show:open", listener);
+        return () => {
+            ipcRenderer.removeListener("new-show:open", listener);
+        };
+    },
+    createNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:createDraft") as Promise<
+            { path: string } | number
+        >,
+    finalizeNewShowDraft: (targetPath: string, projectName: string) =>
+        ipcRenderer.invoke(
+            "newShow:finalizeDraft",
+            targetPath,
+            projectName,
+        ) as Promise<number>,
+    discardNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
+    getNewShowDraftPath: () =>
+        ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
+
     export: {
         pdf: (params: {
             sheets: Array<{

@@ -573,6 +573,73 @@
             "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
+        "newShow": {
+            "title": "New show",
+            "showName": "Show name",
+            "location": "Save location",
+            "browse": "Browse",
+            "environment": "Environment",
+            "outdoor": "Outdoor",
+            "indoor": "Indoor",
+            "moreOptions": "More options",
+            "designer": "Designer",
+            "client": "Client",
+            "tempo": "Default tempo (BPM)",
+            "create": "Create show",
+            "cancel": "Cancel",
+            "next": "Next",
+            "back": "Back",
+            "skip": "Skip",
+            "fileExistsWarning": "A file with this name already exists at this location. It will be replaced when you finish creating the show.",
+            "success": "Show created successfully",
+            "exitConfirm": {
+                "title": "Discard new show?",
+                "description": "You have unsaved changes in this setup flow. If you leave now, your draft will be deleted and nothing will be saved.",
+                "cancel": "Keep editing",
+                "confirm": "Discard"
+            },
+            "steps": {
+                "project": {
+                    "title": "Project details",
+                    "description": "Name your show and choose where to save it."
+                },
+                "ensemble": {
+                    "title": "Ensemble",
+                    "description": "Choose your performance environment and ensemble type.",
+                    "typeLabel": "Ensemble type"
+                },
+                "field": {
+                    "title": "Field setup",
+                    "description": "Pick a field template for your show."
+                },
+                "performers": {
+                    "title": "Performers",
+                    "description": "Add marchers now or skip and add them later in the editor.",
+                    "addNew": "Add performers",
+                    "added": "Added performers",
+                    "noneAdded": "No performers added yet."
+                },
+                "music": {
+                    "title": "Music",
+                    "description": "Set tempo, import audio, or add a score.",
+                    "method": "Music source",
+                    "methodHelper": "Choose how you want to set up timing for this show.",
+                    "tempoOnly": "Tempo only",
+                    "musicXml": "MusicXML file",
+                    "audioFile": "Audio file",
+                    "skip": "Skip for now",
+                    "skipDescription": "You can add music later from the editor.",
+                    "waitingDb": "Preparing your show file…",
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again."
+                }
+            },
+            "errors": {
+                "nameRequired": "Show name is required",
+                "createFailed": "Failed to create show",
+                "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
+                "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
+            }
+        },
         "learn": {
             "guides": {
                 "title": "Guides"

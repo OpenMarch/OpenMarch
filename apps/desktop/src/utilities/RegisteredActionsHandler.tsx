@@ -32,6 +32,7 @@ import {
     canRedoQueryOptions,
 } from "@/hooks/queries/useHistory";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
+import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
@@ -711,7 +712,7 @@ function RegisteredActionsHandler() {
                     setAlertModalOpen(true);
                     break;
                 case RegisteredActionsEnum.launchNewFileDialogue:
-                    void window.electron.databaseCreate();
+                    void requestOpenNewShowDialog();
                     break;
                 case RegisteredActionsEnum.launchInsertAudioFileDialogue:
                     window.electron

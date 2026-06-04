@@ -11,7 +11,8 @@ import {
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
-import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { dirname, join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
@@ -45,6 +46,13 @@ import { repairDatabase } from "../database/repair";
 let isQuitting = false;
 const store = new Store();
 const DB_USER_VERSION = 7;
+
+/** Active new-show draft file in userData/new-show-drafts (not in recent files until finalized). */
+let currentNewShowDraftPath: string | null = null;
+
+function getNewShowDraftsDirectory(): string {
+    return join(app.getPath("userData"), "new-show-drafts");
+}
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
@@ -291,6 +299,20 @@ void app.whenReady().then(async () => {
             : `${filePath}.dots`;
         return fs.existsSync(pathToCheck);
     });
+    ipcMain.handle("newShow:getPending", () => {
+        return store.get("pendingNewShowDialog") === true;
+    });
+    ipcMain.handle("newShow:clearPending", () => {
+        store.set("pendingNewShowDialog", false);
+    });
+    ipcMain.handle("newShow:createDraft", async () => createNewShowDraft());
+    ipcMain.handle(
+        "newShow:finalizeDraft",
+        async (_, targetPath: string, projectName: string) =>
+            finalizeNewShowDraft(targetPath, projectName),
+    );
+    ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
+    ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             const newPath = await repairDatabase(dbPath);
@@ -602,10 +624,207 @@ async function createFileAtPath(filePath: string) {
 }
 
 /**
+ * Opens a new .dots file at path without reloading the window (for new-show wizard draft).
+ */
+async function openDatabaseAtPathWithoutReload(
+    filePath: string,
+    isNewFile: boolean,
+): Promise<number> {
+    if (!filePath || !win) return -1;
+
+    if (!filePath.endsWith(".dots")) {
+        filePath = `${filePath}.dots`;
+    }
+
+    if (isNewFile && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+
+    let db: ReturnType<typeof DatabaseServices.connect> | undefined;
+    try {
+        const resCode = DatabaseServices.setDbPath(filePath, isNewFile);
+        if (resCode !== 200) {
+            return resCode;
+        }
+
+        store.set("databasePath", filePath);
+        win.setTitle("OpenMarch - " + filePath);
+
+        db = DatabaseServices.connect();
+        if (!db) {
+            console.error("Error connecting to database");
+            return -1;
+        }
+
+        const drizzleDb = getOrm(db);
+        const migrator = new DrizzleMigrationService(drizzleDb, db);
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
+
+        if (isNewFile) {
+            db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
+            await migrator.applyPendingMigrations(migrationsFolder);
+            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
+        } else {
+            if (migrator.hasPendingMigrations(migrationsFolder)) {
+                await migrator.applyPendingMigrations(migrationsFolder);
+            }
+        }
+
+        return 200;
+    } catch (error) {
+        captureException(error);
+        store.delete("databasePath");
+        DatabaseServices.setDbPath("", false);
+        console.error("Error opening database without reload:", error);
+        return -1;
+    } finally {
+        db?.close();
+    }
+}
+
+/**
+ * Creates a draft .dots under userData/new-show-drafts for the new-show wizard.
+ */
+export async function createNewShowDraft(): Promise<{ path: string } | number> {
+    const draftsDir = getNewShowDraftsDirectory();
+    if (!fs.existsSync(draftsDir)) {
+        fs.mkdirSync(draftsDir, { recursive: true });
+    }
+
+    const draftPath = join(draftsDir, `${randomUUID()}.dots`);
+    const result = await openDatabaseAtPathWithoutReload(draftPath, true);
+    if (result !== 200) {
+        return -1;
+    }
+
+    currentNewShowDraftPath = draftPath;
+    return { path: draftPath };
+}
+
+const sanitizeNewShowFilename = (name: string): string =>
+    name.trim().replace(/[<>:"/\\|?*]/g, "_");
+
+function resolveFinalizeTargetPath(
+    projectName: string,
+    targetPath: string,
+): string {
+    const trimmed = targetPath.trim();
+    const normalizedPath = trimmed.replace(/\\/g, "/");
+    const pathParts = normalizedPath.split("/");
+    const sanitized = sanitizeNewShowFilename(projectName) || "Untitled";
+    const lastPart = pathParts[pathParts.length - 1] || "";
+
+    if (!lastPart.endsWith(".dots")) {
+        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
+        return pathParts.join("/");
+    }
+
+    if (!lastPart.startsWith(sanitizeNewShowFilename(projectName))) {
+        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
+        return pathParts.join("/");
+    }
+
+    return trimmed;
+}
+
+/**
+ * Moves the draft file to the user's chosen path and reloads into the editor.
+ */
+export async function finalizeNewShowDraft(
+    targetPath: string,
+    projectName?: string,
+): Promise<number> {
+    if (!currentNewShowDraftPath || !win) return -1;
+
+    const draftPath = currentNewShowDraftPath;
+    const finalPath = projectName
+        ? resolveFinalizeTargetPath(projectName, targetPath)
+        : targetPath.endsWith(".dots")
+          ? targetPath
+          : `${targetPath}.dots`;
+
+    const finalDir = dirname(finalPath);
+    if (!fs.existsSync(finalDir)) {
+        fs.mkdirSync(finalDir, { recursive: true });
+    }
+
+    try {
+        DatabaseServices.connect()?.close();
+    } catch {
+        // ignore close errors
+    }
+
+    if (fs.existsSync(finalPath)) {
+        fs.unlinkSync(finalPath);
+    }
+
+    fs.renameSync(draftPath, finalPath);
+    currentNewShowDraftPath = null;
+
+    await setActiveDb(finalPath, false);
+    addRecentFile(finalPath);
+
+    return 200;
+}
+
+/**
+ * Deletes the draft file and clears the DB connection without reloading.
+ */
+export async function discardNewShowDraft(): Promise<number> {
+    const draftPath = currentNewShowDraftPath;
+    currentNewShowDraftPath = null;
+
+    if (!draftPath) {
+        return 200;
+    }
+
+    try {
+        DatabaseServices.connect()?.close();
+    } catch {
+        // ignore
+    }
+
+    DatabaseServices.setDbPath("", false);
+
+    const storedPath = store.get("databasePath") as string | undefined;
+    if (storedPath === draftPath) {
+        store.delete("databasePath");
+    }
+
+    if (fs.existsSync(draftPath)) {
+        fs.unlinkSync(draftPath);
+    }
+
+    return 200;
+}
+
+/**
  * Creates a new database file path to connect to.
  *
  * @returns 200 for success, -1 for failure
  */
+/**
+ * Opens the new-show dialog in the renderer (LaunchPage modal).
+ * If a file is open, closes it and sets a flag so the dialog opens after reload.
+ */
+export async function requestNewShowFromMenu() {
+    if (!win) return -1;
+
+    const dbPath = DatabaseServices.getDbPath();
+    if (dbPath && dbPath.length > 0) {
+        store.set("pendingNewShowDialog", true);
+        return closeCurrentFile();
+    }
+
+    win.webContents.send("new-show:open");
+    return 200;
+}
+
 export async function newFile() {
     console.log("newFile");
 

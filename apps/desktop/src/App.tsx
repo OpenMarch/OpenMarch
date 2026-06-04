@@ -216,7 +216,12 @@ function App() {
                     <AlertModal />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
-                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                        <SelectedAudioFileProvider>
+                            <RegisteredActionsHandler />
+                            <LaunchPage
+                                setDatabaseIsReady={setDatabaseIsReady}
+                            />
+                        </SelectedAudioFileProvider>
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

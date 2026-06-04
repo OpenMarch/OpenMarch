@@ -110,8 +110,45 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
     },
 );
 
+interface WizardFormFieldProps {
+    label: string;
+    children: React.ReactNode;
+    helperText?: string | React.ReactNode;
+    className?: string;
+    id?: string;
+}
+
+const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
+    ({ label, children, helperText, className, id }, ref) => {
+        return (
+            <div
+                className={twMerge(
+                    clsx("flex w-full flex-col gap-10", className),
+                )}
+                ref={ref}
+            >
+                <div className="flex flex-col gap-6">
+                    <label
+                        htmlFor={id}
+                        className="text-body text-text font-medium"
+                    >
+                        {label}
+                    </label>
+                    {helperText && (
+                        <p className="text-sub text-text/60 leading-relaxed">
+                            {helperText}
+                        </p>
+                    )}
+                </div>
+                {children}
+            </div>
+        );
+    },
+);
+
 FormField.displayName = "FormField";
 StaticFormField.displayName = "StaticFormField";
+WizardFormField.displayName = "WizardFormField";
 
-export { StaticFormField };
+export { StaticFormField, WizardFormField };
 export default FormField;
