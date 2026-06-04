@@ -34,6 +34,7 @@ export default class DefaultListeners implements CanvasListeners {
         this.handleMouseMove = this.handleMouseMove.bind(this);
         this.handleMouseUp = this.handleMouseUp.bind(this);
         this.updateMomentum = this.updateMomentum.bind(this);
+        this.handleBeforeTransform = this.handleBeforeTransform.bind(this);
     }
 
     initiateListeners = () => {
@@ -41,6 +42,7 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("mouse:up", this.handleMouseUp);
+        this.canvas.on("before:transform", this.handleBeforeTransform);
 
         // NOTE: Removed momentum animation loop for professional immediate response
         // Professional navigation should be instant and precise, not momentum-based
@@ -51,7 +53,59 @@ export default class DefaultListeners implements CanvasListeners {
         this.canvas.off("mouse:down", this.handleMouseDown as any);
         this.canvas.off("mouse:move", this.handleMouseMove as any);
         this.canvas.off("mouse:up", this.handleMouseUp as any);
+        this.canvas.off("before:transform", this.handleBeforeTransform as any);
     };
+
+    /**
+     * Intercept transforms before they start.
+     * Block Shift+scaling on middle handles for multi-selection.
+     * Uses only public Fabric.js API: event.e, event.transform.corner, discardActiveObject, and setActiveObject
+     */
+    handleBeforeTransform(
+        e: fabric.IEvent<MouseEvent> & {
+            transform?: { corner?: string; target?: fabric.Object };
+        },
+    ) {
+        const transform = e.transform;
+        if (!transform) return;
+
+        const corner = transform.corner;
+        const target = transform.target;
+        const evt = e.e;
+
+        // Block Shift+click on middle scale handles (ml, mr, mt, mb) for ActiveSelection
+        // This prevents cross-axis scaling which causes unexpected behavior
+        if (
+            evt?.shiftKey &&
+            corner &&
+            ["ml", "mr", "mt", "mb"].includes(corner) &&
+            target?.type === "activeSelection"
+        ) {
+            // Prevent the DOM event from propagating
+            evt.preventDefault();
+            evt.stopPropagation();
+
+            // Cancel the transform by resetting the selection using public API
+            // Get the objects from the active selection before discarding
+            const activeSelection = target as fabric.ActiveSelection;
+            const selectedObjects = activeSelection.getObjects();
+
+            // Discard and immediately re-create the selection to reset transform state
+            this.canvas.discardActiveObject();
+
+            if (selectedObjects.length > 0) {
+                const newSelection = new fabric.ActiveSelection(
+                    selectedObjects,
+                    {
+                        canvas: this.canvas,
+                    },
+                );
+                this.canvas.setActiveObject(newSelection);
+            }
+
+            this.canvas.requestRenderAll();
+        }
+    }
 
     /**
      * Update the marcher's position when it is moved
@@ -130,10 +184,29 @@ export default class DefaultListeners implements CanvasListeners {
         }
 
         // Check for Shift+click lasso selection (only if enabled in settings)
+        // But NOT if we're clicking on a control handle of an active selection
+        const activeObject = this.canvas.getActiveObject();
+        let isClickingOnControl = false;
+
+        if (activeObject && activeObject.hasControls) {
+            // Fabric v5 doesn't expose findControl; use internal _findTargetCorner (v5.5.2)
+            // If upgrading to Fabric v6+, switch back to public findControl.
+            const pointer = this.canvas.getPointer(evt, true);
+            const controlInfo = (activeObject as any)._findTargetCorner?.(
+                pointer,
+                true,
+            );
+            isClickingOnControl = !!controlInfo;
+        }
+
+        // Note: Shift+click blocking on middle scale handles (ml, mr, mt, mb) for multi-selection
+        // is handled in handleBeforeTransform using the public before:transform event
+
         if (
             evt.shiftKey &&
             evt.button === 0 &&
-            this.isLassoSelectionEnabled()
+            this.isLassoSelectionEnabled() &&
+            !isClickingOnControl
         ) {
             this.startLassoSelection(fabricEvent);
             return;
@@ -161,8 +234,17 @@ export default class DefaultListeners implements CanvasListeners {
             return;
         }
 
-        // If not near any marcher, still keep selection enabled
-        // This allows for multi-select box creation anywhere on canvas
+        // If we clicked on empty space (not on an object and not near a marcher)
+        // AND we are not holding shift (adding to selection)
+        // AND we are not dragging to create a selection box (which is handled by fabric's default behavior)
+        if (!evt.shiftKey) {
+            // If we have an active selection and we click outside it, clear it
+            if (this.canvas.getActiveObject()) {
+                // If we are starting a drag selection, fabric will handle clearing the old selection
+                // But if we just click, we want to ensure it clears
+                // We let fabric handle the "discard on click" naturally, but ensure we don't interfere
+            }
+        }
     }
 
     /**

@@ -58,16 +58,18 @@ words:
   - forwardslash
   - français
   - frontfield
+  - frontmatter
   - Geral
   - GLHF
   - Hipp
   - icns
   - idioma
+  - importmap
   - Invalidators
   - launchpage
-  - libsql
   - lightridge
   - localappdata
+  - Loudoun
   - Macbook's
   - madripoor
   - measurenb
@@ -101,9 +103,12 @@ words:
   - PWDEBUG
   - pwsh
   - Rcoords
+  - rels
   - rgba
   - ritardandos
   - rootfile
+  - rw-r
+  - rwxr
   - saario
   - samuelmeuli
   - Schachner
@@ -143,6 +148,7 @@ words:
   - unistyles
   - unmaximize
   - unpreview
+  - unstub
   - uuidv
   - vertaal
   - viewbox
@@ -153,13 +159,16 @@ words:
   - VMEA
   - vmin
   - Vree
+  - waivable
   - WASD
   - wavesurfer
   - winget
   - Woodgrove
+  - workerd
   - xlink
   - XMLID
   - yeskunallumami
+  - youtu
   - zier
   - Zingali
   - 日本語
@@ -190,6 +199,9 @@ ignorePaths:
   - "*.musicxml"
   - pnpm-workspace.yaml
   - .vscode/extensions.json
+  - cloudflare-env.d.ts
+  - apps/cms/.cursor/rules/*
+  - apps/cms/AGENTS.md
 ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)

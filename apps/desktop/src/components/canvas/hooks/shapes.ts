@@ -10,20 +10,23 @@ import { useEffect } from "react";
 export const useRenderMarcherShapes = ({
     canvas,
     selectedPage,
+    isPlaying,
 }: {
     canvas: OpenMarchCanvas | null;
     selectedPage: Page | null;
+    isPlaying: boolean;
 }) => {
     const { data: shapePagesOnSelectedPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id!),
+        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
     );
     const { data: shapePageMarchersOnSelectedPage } = useQuery(
-        shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
+        shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
     );
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change
+    // and the animation is not playing.
     useEffect(() => {
-        if (canvas && shapePagesOnSelectedPage) {
+        if (canvas && shapePagesOnSelectedPage && !isPlaying) {
             void canvas.renderMarcherShapes({
                 shapePages: shapePagesOnSelectedPage,
             });
@@ -31,6 +34,7 @@ export const useRenderMarcherShapes = ({
     }, [
         canvas,
         selectedPage,
+        isPlaying,
         shapePagesOnSelectedPage,
         shapePageMarchersOnSelectedPage,
     ]);

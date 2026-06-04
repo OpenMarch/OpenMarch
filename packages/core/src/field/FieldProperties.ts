@@ -18,6 +18,7 @@ export interface FieldPropertyArgs {
     isCustom?: boolean;
     showFieldImage?: boolean;
     imageFillOrFit?: "fill" | "fit";
+    backgroundImageOpacity?: number;
     theme?: FieldTheme;
 }
 
@@ -113,6 +114,8 @@ export class FieldProperties {
     readonly showFieldImage: boolean;
     /** How the field image should be displayed. */
     readonly imageFillOrFit: "fill" | "fit";
+    /** Opacity of the background image (0-1). Default is 1.0 (fully opaque). */
+    readonly backgroundImageOpacity: number;
     readonly theme: FieldTheme;
 
     constructor({
@@ -133,6 +136,7 @@ export class FieldProperties {
         isCustom = true,
         showFieldImage = true,
         imageFillOrFit = "fit",
+        backgroundImageOpacity = 1.0,
         theme = DEFAULT_FIELD_THEME,
     }: FieldPropertyArgs) {
         // Verify x checkpoints have unique ids
@@ -174,6 +178,7 @@ export class FieldProperties {
         this.isCustom = isCustom;
         this.showFieldImage = showFieldImage;
         this.imageFillOrFit = imageFillOrFit;
+        this.backgroundImageOpacity = backgroundImageOpacity;
         this.theme = theme;
 
         const minX = this.xCheckpoints.reduce(

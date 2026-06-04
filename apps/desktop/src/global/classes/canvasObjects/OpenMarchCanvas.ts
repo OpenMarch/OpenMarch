@@ -16,7 +16,11 @@ import * as Selectable from "./interfaces/Selectable";
 import { MarcherShape } from "./MarcherShape";
 import { rgbaToString } from "@openmarch/core";
 import { UiSettings } from "@/stores/UiSettingsStore";
-import { resetMarcherRotation, setGroupAttributes } from "./GroupUtils";
+import {
+    cleanupGroupHandlers,
+    resetMarcherRotation,
+    setGroupAttributes,
+} from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
@@ -251,6 +255,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     /******************* GROUP SELECTION HANDLING *******************/
 
     handleSelection(event: fabric.IEvent<MouseEvent>) {
+        // Cleanup handlers from the previous group to prevent memory leaks
+        if (this._activeGroup) {
+            cleanupGroupHandlers(this._activeGroup);
+        }
+
         if (event.selected?.length && event.selected.length > 1) {
             const group = this.getActiveObject();
             if (group && group instanceof fabric.Group) {
@@ -720,9 +729,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 try {
                     const refresh = () => this.refreshCanvasSize();
                     refresh();
-                    // Observe the viewport element that actually defines available space
-                    // teal wrapper = parent of canvas-container
-                    // cssZoomWrapper -> canvas-container -> viewport wrapper
+                    // Observe the outer container (containerRef) for standard resize events
                     const viewportEl = this.cssZoomWrapper.parentElement
                         ? this.cssZoomWrapper.parentElement.parentElement
                         : null;
@@ -733,6 +740,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                             ro.observe(viewportEl);
                             this._viewportResizeObserver = ro;
                         } else {
+                            // Fallback to observing the wrapper if viewportEl is not available
                             const ro = new ResizeObserver(() => refresh());
                             ro.observe(this.cssZoomWrapper);
                             this._wrapperResizeObserver = ro;
@@ -929,24 +937,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
     /******************* INSTANCE METHODS ******************/
     refreshCanvasSize() {
-        // Prefer the outer viewport wrapper (teal wrapper) if available,
-        // fallback to canvas-zoom-wrapper, then window size
-        // @ts-ignore
-        const viewportEl: HTMLElement | null = this._viewportEl || null;
+        // Prefer the viewport element if available, fallback to wrapper, then window
+        const viewportEl = this._viewportEl;
         const targetRect = viewportEl
             ? viewportEl.getBoundingClientRect()
             : this.cssZoomWrapper
               ? this.cssZoomWrapper.getBoundingClientRect()
-              : ({
-                    width: window.innerWidth,
-                    height: window.innerHeight,
-                } as any);
+              : { width: window.innerWidth, height: window.innerHeight };
 
         const width = Math.max(0, Math.floor(targetRect.width));
         const height = Math.max(0, Math.floor(targetRect.height));
 
         this.setWidth(width);
         this.setHeight(height);
+        this.requestRenderAll();
+    }
+
+    /**
+     * Set the canvas size to specific dimensions.
+     * Use this when you have the exact dimensions to use.
+     */
+    setCanvasSize(width: number, height: number) {
+        this.setWidth(Math.max(0, Math.floor(width)));
+        this.setHeight(Math.max(0, Math.floor(height)));
         this.requestRenderAll();
     }
 
@@ -1362,17 +1375,20 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      *
      * @param x The x coordinate of the point
      * @param y The y coordinate of the point
-     * @param denominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
+     * @param denominatorX Nearest 1/n step on the X axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
+     * @param denominatorY Nearest 1/n step on the Y axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step. By default, 1 for nearest whole step
      * @returns The rounded x and y coordinates
      */
     getRoundedCoordinate = ({
         x,
         y,
-        denominator = 1,
+        denominatorX = 1,
+        denominatorY = 1,
     }: {
         x: number;
         y: number;
-        denominator?: number;
+        denominatorX?: number;
+        denominatorY?: number;
     }) => {
         const fakeMarcherPage: Partial<MarcherPage> = {
             marcher_id: -1,
@@ -1391,7 +1407,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
 
         const response = CoordinateActions.getRoundCoordinates({
             marcherPages: [fakeMarcherPage as MarcherPage],
-            denominator,
+            denominatorX,
+            denominatorY,
             fieldProperties: this.fieldProperties,
             xAxis: true,
             yAxis: true,
@@ -1510,6 +1527,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 this._backgroundImage.left = this._bgImageValues.left;
                 this._backgroundImage.top = this._bgImageValues.top;
             }
+            this._backgroundImage.opacity =
+                this.fieldProperties.backgroundImageOpacity;
             fieldArray.push(this._backgroundImage);
         }
 
@@ -2199,6 +2218,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                     selectable: false,
                     hoverCursor: "default",
                     evented: false,
+                    opacity: this.fieldProperties.backgroundImageOpacity,
                 });
 
                 const imgAspectRatio = img.width / img.height;

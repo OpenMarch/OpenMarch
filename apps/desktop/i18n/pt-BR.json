@@ -14,7 +14,7 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Habilitar movimento em Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToWhole": "Ajustar para o inteiro mais próximo"
+            "snapToCustomFraction": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
@@ -295,6 +295,7 @@
             "delete": "Excluir",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
             "deleteTooltip": "Excluir este ponto de verificação do campo",
+            "minimumRequired": "S\u00e3o necess\u00e1rios pelo menos 2 pontos de verifica\u00e7\u00e3o de {axis}",
             "fieldLabel": "Rótulo de Campo",
             "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
             "name": "Nome",
@@ -331,6 +332,7 @@
         "general": "Geral",
         "labels": {
             "background": "Fundo",
+            "backgroundImageOpacity": "Opacidade da Imagem de Fundo",
             "backgroundImageRatio": "Razão da Imagem de Fundo",
             "bottom": "Inferior",
             "conformingMethod": "Método de Conformidade",

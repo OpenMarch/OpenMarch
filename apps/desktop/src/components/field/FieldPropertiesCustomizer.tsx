@@ -102,6 +102,18 @@ export default function FieldPropertiesCustomizer({
 
     const deleteCheckpoint = useCallback(
         (checkpoint: Checkpoint) => {
+            const checkpoints =
+                checkpoint.axis === "x"
+                    ? currentFieldProperties.xCheckpoints
+                    : currentFieldProperties.yCheckpoints;
+            if (checkpoints.length <= 2) {
+                toast.error(
+                    t("fieldProperties.checkpoint.minimumRequired", {
+                        axis: checkpoint.axis.toUpperCase(),
+                    }),
+                );
+                return;
+            }
             if (checkpoint.axis === "x") {
                 const newCheckpoints =
                     currentFieldProperties.xCheckpoints.filter(

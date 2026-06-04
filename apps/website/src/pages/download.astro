@@ -14,16 +14,16 @@ import editorLight from "@/assets/home/editor-light.png";
         class="relative flex h-1040 w-full min-w-0 flex-col items-center gap-32 max-[1200px]:h-fit"
     >
         <div
-            class="absolute -top-1/2 motion-preset-fade-lg motion-delay-300 left-1/2 max-[640px]:right-0 -z-50 size-[1000px] max-[640px]:size-[600px]"
+            class="motion-preset-fade-lg motion-delay-300 absolute -top-1/2 left-1/2 -z-50 size-[1000px] max-[640px]:right-0 max-[640px]:size-[600px]"
             style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 50%); opacity: 0.4;"
         >
         </div>
 
         <div
-            class="flex h-full w-full gap-16 items-center justify-center max-[1024px]:flex-col max-[1024px]:gap-32"
+            class="flex h-full w-full items-center justify-center gap-16 max-[1024px]:flex-col max-[1024px]:gap-32"
         >
-            <div class="w-[512px] flex flex-col gap-16 max-[600px]:w-full">
-                <p class="font-mono text-accent text-lg motion-preset-fade-lg">
+            <div class="flex w-[512px] flex-col gap-16 max-[600px]:w-full">
+                <p class="text-accent motion-preset-fade-lg font-mono text-lg">
                     <span class="font-bold" id="download-count">17,000+</span>
                     downloads & counting!
                 </p>
@@ -42,7 +42,7 @@ import editorLight from "@/assets/home/editor-light.png";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="hidden motion-preset-fade-lg dark:block aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+                class="motion-preset-fade-lg border-stroke rounded-6 hidden aspect-video h-auto w-[650px] border max-[1024px]:w-full max-[1024px]:max-w-[650px] dark:block"
             />
             <Image
                 src={editorLight}
@@ -51,7 +51,7 @@ import editorLight from "@/assets/home/editor-light.png";
                 height={1080}
                 quality={80}
                 format="webp"
-                class="block motion-preset-fade-lg dark:hidden aspect-video w-[650px] h-auto border border-stroke rounded-6 max-[1024px]:w-full max-[1024px]:max-w-[650px]"
+                class="motion-preset-fade-lg border-stroke rounded-6 block aspect-video h-auto w-[650px] border max-[1024px]:w-full max-[1024px]:max-w-[650px] dark:hidden"
             />
         </div>
 
@@ -81,6 +81,7 @@ import editorLight from "@/assets/home/editor-light.png";
         }
     }
     getTotalDownloadCount().then((count) => {
-        document.getElementById("download-count").textContent = count;
+        const downloadCountEl = document.getElementById("download-count");
+        if (downloadCountEl) downloadCountEl.textContent = count;
     });
 </script>

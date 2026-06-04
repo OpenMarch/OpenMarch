@@ -1,4 +1,4 @@
-import { asc, gt, eq, lt, desc, and, sql } from "drizzle-orm";
+import { asc, gt, eq, lt, desc, and } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
@@ -208,6 +208,11 @@ export async function updateMarcherPages({
     db: DbConnection;
     modifiedMarcherPages: ModifiedMarcherPageArgs[];
 }): Promise<number[]> {
+    // Early return if no marcher pages to update
+    if (modifiedMarcherPages.length === 0) {
+        return [];
+    }
+
     const transactionResult = await transactionWithHistory(
         db,
         "updateMarcherPages",

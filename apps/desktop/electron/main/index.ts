@@ -21,6 +21,7 @@ import {
     removeRecentFile,
     clearRecentFiles,
     updateRecentFileSvgPreview,
+    clearMissingRecentFiles,
 } from "./services/recent-files-service";
 import AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
@@ -326,15 +327,17 @@ void app.whenReady().then(async () => {
         removeRecentFile(filePath),
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
+    ipcMain.handle("recent-files:clear-missing", clearMissingRecentFiles);
     ipcMain.handle("recent-files:open", async (_, filePath) => {
-        if (!filePath || !fs.existsSync(filePath)) return -1;
-
-        DatabaseServices.setDbPath(filePath);
         store.set("databasePath", filePath);
         addRecentFile(filePath);
 
-        await setActiveDb(filePath);
-        return 200;
+        const resCode = await setActiveDb(filePath);
+
+        // Handle alert dialogs in frontend
+        win?.webContents.send("load-file-response", resCode);
+
+        return resCode;
     });
 
     // Getters
@@ -735,26 +738,40 @@ async function saveFile() {
     const db = DatabaseServices.connect();
 
     // Save
-    dialog
+    const response = await dialog
         .showSaveDialog(win, {
             buttonLabel: "Save Copy",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         })
         .then(async (path) => {
-            if (path.canceled || !path.filePath) return -1;
+            if (path.canceled || !path.filePath) return 0;
 
-            const serializedDb = db.serialize();
-            const uint8Array = Uint8Array.from(serializedDb);
+            // Make a copy into a temp file
+            const tempPath = path.filePath + ".tmp";
+            if (fs.existsSync(tempPath)) {
+                fs.unlinkSync(tempPath);
+            }
 
-            fs.writeFileSync(path.filePath, uint8Array);
+            const stmt = await db.prepare("VACUUM INTO ?");
+            await stmt.run(tempPath);
 
-            await setActiveDb(path.filePath);
+            // If there is an existing file, only delete it after successful copy
+            if (fs.existsSync(path.filePath)) {
+                fs.unlinkSync(path.filePath);
+            }
+
+            fs.renameSync(tempPath, path.filePath);
+
+            addRecentFile(path.filePath);
+
             return 200;
         })
         .catch((err) => {
             console.log(err);
             return -1;
         });
+
+    return response;
 }
 
 /**
@@ -776,17 +793,18 @@ async function loadDatabaseFile() {
             ],
         })
         .then(async (path) => {
-            // If the user cancels the dialog, and there is no previous path, return -1
-            // if (path.canceled || !path.filePaths[0]) return -1;
+            if (path.canceled) return -1;
 
-            DatabaseServices.setDbPath(path.filePaths[0]);
             store.set("databasePath", path.filePaths[0]); // Save the path for next time
-
             // Add to recent files
             addRecentFile(path.filePaths[0]);
 
-            await setActiveDb(path.filePaths[0]);
-            return 200;
+            const resCode = await setActiveDb(path.filePaths[0]);
+
+            // Handle alert dialogs in frontend
+            win?.webContents.send("load-file-response", resCode);
+
+            return resCode;
         })
         .catch((err) => {
             console.log(err);
@@ -892,8 +910,8 @@ async function insertAudioFile(): Promise<
         const path = await dialog.showOpenDialog(win, {
             filters: [
                 {
-                    name: "Audio File (.mp3, .wav, .ogg)",
-                    extensions: ["mp3", "wav", "ogg"],
+                    name: "Audio File",
+                    extensions: ["mp3", "wav", "ogg", "m4a", "aac", "webm"],
                 },
                 { name: "All Files", extensions: ["*"] },
             ],
@@ -991,29 +1009,40 @@ async function setActiveDb(path: string, isNewFile = false) {
         // I.e. last opened file
         if (path === ".") path = store.get("databasePath") as string;
 
-        if (!fs.existsSync(path) && !isNewFile) {
+        const resCode = DatabaseServices.setDbPath(path, isNewFile);
+
+        if (resCode !== 200) {
             store.delete("databasePath");
-            console.error("Database file does not exist:", path);
-            return;
+            console.error(
+                `Error loading database file [code=${resCode}] [path=${path}]`,
+            );
+            return resCode;
         }
-        DatabaseServices.setDbPath(path, isNewFile);
+
         win?.setTitle("OpenMarch - " + path);
 
         const db = DatabaseServices.connect();
         if (!db) {
             console.error("Error connecting to database");
-            return;
+            return 500;
         }
 
         const drizzleDb = getOrm(db);
         const migrator = new DrizzleMigrationService(drizzleDb, db);
+
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
 
         // If this isn't a new file, create backups before applying migrations
         if (!isNewFile) {
             console.log(
                 "Checking database version to see if migration is needed",
             );
-            if (migrator.hasPendingMigrations()) {
+            if (migrator.hasPendingMigrations(migrationsFolder)) {
                 const backupDir = join(app.getPath("userData"), "backups");
                 if (!fs.existsSync(backupDir)) {
                     fs.mkdirSync(backupDir);
@@ -1046,9 +1075,7 @@ async function setActiveDb(path: string, isNewFile = false) {
         } else {
             db.pragma(`user_version = ${DB_USER_VERSION}`);
         }
-        await migrator.applyPendingMigrations(
-            join(app.getAppPath(), "electron", "database", "migrations"),
-        );
+        await migrator.applyPendingMigrations(migrationsFolder);
 
         if (isNewFile) {
             await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
@@ -1056,6 +1083,8 @@ async function setActiveDb(path: string, isNewFile = false) {
 
         store.set("databasePath", path); // Save current db path
         win?.webContents.reload();
+
+        return resCode;
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path

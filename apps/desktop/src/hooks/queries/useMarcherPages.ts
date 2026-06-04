@@ -60,8 +60,8 @@ export const allMarcherPagesQueryOptions = ({
 }: {
     pinkyPromiseThatYouKnowWhatYouAreDoing?: boolean;
 }) => {
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     return queryOptions({
-        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: marcherPageKeys.all(),
         queryFn: async () => {
             const mpResponse = await getAllMarcherPages({

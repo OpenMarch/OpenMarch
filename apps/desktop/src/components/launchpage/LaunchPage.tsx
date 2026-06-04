@@ -139,7 +139,7 @@ function Sidebar({
             const dataBaseIsReady = await window.electron.databaseLoad();
 
             // If database loading was successful, update the state
-            if (dataBaseIsReady > 0) {
+            if (dataBaseIsReady === 200) {
                 setDatabaseIsReady(true);
             }
         } catch (error) {

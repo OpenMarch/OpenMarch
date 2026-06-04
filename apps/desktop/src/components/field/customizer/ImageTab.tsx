@@ -1,6 +1,6 @@
 import { FieldProperties } from "@openmarch/core";
 import { updateFieldPropertiesImage } from "@/global/classes/FieldProperties";
-import { TabContent, Button, Switch } from "@openmarch/ui";
+import { TabContent, Button, Switch, Slider } from "@openmarch/ui";
 import {
     Select,
     SelectContent,
@@ -9,9 +9,10 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { T, useTolgee } from "@tolgee/react";
-import FormField from "../../ui/FormField";
+import FormField, { StaticFormField } from "../../ui/FormField";
 import { inputClassname } from "./utils";
 import clsx from "clsx";
+import { useState, useEffect, useMemo, useCallback } from "react";
 
 interface ImageTabProps {
     currentFieldProperties: FieldProperties;
@@ -23,6 +24,34 @@ export function ImageTab({
     updateFieldProperties,
 }: ImageTabProps) {
     const { t } = useTolgee();
+    const [opacityValue, setOpacityValue] = useState(
+        currentFieldProperties.backgroundImageOpacity,
+    );
+
+    useEffect(() => {
+        setOpacityValue(currentFieldProperties.backgroundImageOpacity);
+    }, [currentFieldProperties.backgroundImageOpacity]);
+
+    const handleOpacityChange = useCallback((values: number[]) => {
+        setOpacityValue(values[0]);
+    }, []);
+
+    const handleOpacityCommit = useCallback(
+        (values: number[]) => {
+            updateFieldProperties(
+                new FieldProperties({
+                    ...currentFieldProperties,
+                    backgroundImageOpacity: values[0],
+                }),
+            );
+        },
+        [currentFieldProperties, updateFieldProperties],
+    );
+
+    const opacityPercentage = useMemo(
+        () => Math.round(opacityValue * 100),
+        [opacityValue],
+    );
 
     return (
         <TabContent value="image" className="flex flex-col gap-32">
@@ -82,6 +111,29 @@ export function ImageTab({
                         </SelectContent>
                     </Select>
                 </FormField>
+                <StaticFormField
+                    label={t("fieldProperties.labels.backgroundImageOpacity")}
+                >
+                    <div className="flex w-full items-center gap-12">
+                        <div className="flex min-w-0 flex-1 items-center">
+                            <Slider
+                                min={0}
+                                max={1}
+                                step={0.01}
+                                value={[opacityValue]}
+                                onValueChange={handleOpacityChange}
+                                onValueCommit={handleOpacityCommit}
+                                aria-label={t(
+                                    "fieldProperties.labels.backgroundImageOpacity",
+                                )}
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+                        <div className="bg-fg-2 border-stroke rounded-6 min-w-64 shrink-0 border px-8 py-2 text-center font-mono">
+                            {opacityPercentage}%
+                        </div>
+                    </div>
+                </StaticFormField>
 
                 <div className="flex h-fit min-h-0 items-center gap-8">
                     <label htmlFor="field-properties-image-input">
@@ -124,6 +176,7 @@ export function ImageTab({
                                 new FieldProperties({
                                     ...currentFieldProperties,
                                     showFieldImage: true,
+                                    backgroundImageOpacity: 1.0,
                                 }),
                             );
                         }}

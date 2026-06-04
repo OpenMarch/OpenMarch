@@ -6,10 +6,18 @@
     productName: "OpenMarch",
     asar: true,
     asarUnpack: ["**/*.node"],
+    npmRebuild: false,
+    nodeGypRebuild: false,
     directories: {
         output: "release/${buildVersion}",
     },
-    files: ["dist-electron", "dist"],
+    files: [
+        "dist-electron",
+        "dist",
+        "node_modules",
+        "electron/database/migrations",
+        "!**/node_modules/canvas/**",
+    ],
     artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
 
     mac: {
@@ -84,7 +92,6 @@
             },
         ],
     },
-    files: ["!**/node_modules/canvas/**"],
     publish: [
         {
             provider: "github",

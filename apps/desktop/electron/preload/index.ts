@@ -1,10 +1,10 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
 import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
-import * as DbServices from "electron/database/database.services";
+import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
-import type { RecentFile } from "electron/main/services/recent-files-service";
+import type { RecentFile } from "@om-electron/main/services/recent-files-service";
 import { HistoryResponse } from "@/db-functions";
 
 function domReady(
@@ -161,6 +161,12 @@ const APP_API = {
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    onLoadFileResponse: (callback: (value: number) => void) => {
+        const listener = (_event: Electron.IpcRendererEvent, value: number) =>
+            callback(value);
+        ipcRenderer.on("load-file-response", listener);
+        return () => ipcRenderer.removeListener("load-file-response", listener);
+    },
 
     // Wizard
     wizardShouldShow: () =>
@@ -180,6 +186,8 @@ const APP_API = {
     removeRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:remove", filePath),
     clearRecentFiles: () => ipcRenderer.invoke("recent-files:clear"),
+    clearMissingRecentFiles: () =>
+        ipcRenderer.invoke("recent-files:clear-missing"),
     openRecentFile: (filePath: string) =>
         ipcRenderer.invoke("recent-files:open", filePath),
 
@@ -272,7 +280,8 @@ const APP_API = {
     /** Only needed for the triggers */
     unsafeSqlProxy: (sql: string) =>
         ipcRenderer.invoke("unsafeSql:proxy", sql) as Promise<{
-            rows: any[] | any;
+            success: boolean;
+            changes: number;
         }>,
 
     // Logging

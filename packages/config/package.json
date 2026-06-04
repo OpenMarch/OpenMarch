@@ -1,6 +1,17 @@
 {
     "name": "@openmarch/config",
     "version": "1.1.0",
+    "description": "Configuration for OpenMarch applications",
+    "license": "AGPL-3.0",
+    "homepage": "https://openmarch.com",
+    "author": "OpenMarch LLC <contact@openmarch.com>",
+    "publishConfig": {
+        "access": "public"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/OpenMarch/OpenMarch.git"
+    },
     "type": "module",
     "exports": {
         "./tsup": "./tsup.config.js"

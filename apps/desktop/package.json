@@ -2,7 +2,7 @@
     "name": "@openmarch/desktop",
     "productName": "OpenMarch",
     "description": "Free drill-writing software for the marching arts",
-    "version": "0.0.21",
+    "version": "0.0.22",
     "main": "dist-electron/main/index.js",
     "author": "OpenMarch LLC <contact@openmarch.com>",
     "url": "https://openmarch.com",
@@ -19,7 +19,6 @@
     },
     "scripts": {
         "dev": "pnpm run apply-styles && vite",
-        "postinstall": "electron-builder install-app-deps",
         "build": "pnpm run apply-styles && tsc && vite build",
         "build:electron": "pnpm run apply-styles && tsc && vite build && electron-builder --dir",
         "clean": "rimraf node_modules dist-electron release",
@@ -82,7 +81,6 @@
         "electron-updater": "^6.6.2",
         "fabric": "^5.5.2",
         "jszip": "^3.10.1",
-        "libsql": "^0.5.22",
         "nan": "^2.22.2",
         "pdfkit": "^0.17.1",
         "posthog-js": "^1.256.2",
@@ -111,7 +109,7 @@
         "@testing-library/react": "^16.0.0",
         "@testing-library/user-event": "^14.6.1",
         "@types/fabric": "^5.3.10",
-        "@types/node": "^20.19.4",
+        "@types/node": "^24.11.1",
         "@types/pdfkit": "^0.13.9",
         "@types/react": "^19.1.8",
         "@types/react-dom": "^19.1.6",
@@ -135,13 +133,13 @@
         "sql.js": "^1.13.0",
         "tailwindcss": "4.1.0",
         "tsx": "^4.19.2",
-        "typescript": "~5.3.3",
+        "typescript": "catalog:",
         "vite": "^7.3.1",
         "vite-plugin-electron": "^0.29.0",
         "vite-plugin-electron-renderer": "^0.14.6",
         "vitest": "^4.0.0"
     },
     "engines": {
-        "node": "22"
+        "node": ">=24"
     }
 }

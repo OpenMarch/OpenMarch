@@ -169,16 +169,19 @@ export default class MarcherLine extends fabric.Line {
      *
      * @param pointOne The first point in the line {x1, y1}. If not provided, it will not be modified/rounded
      * @param pointTwo The second point in the line {x2, y2}. If not provided, it will not be modified/rounded
-     * @param denominator nearest 1/x step. 1 for nearest whole, 2 for nearest half etc. By default, 1. 0 to not round at all
+     * @param denominatorX nearest 1/x step on the X axis. 1 for nearest whole, 2 for nearest half etc. By default, 1. 0 to not round at all
+     * @param denominatorY nearest 1/x step on the Y axis. 1 for nearest whole, 2 for nearest half etc. By default, 1. 0 to not round at all
      */
     setToNearestStep = ({
         pointOne,
         pointTwo,
-        denominator = 1,
+        denominatorX = 1,
+        denominatorY = 1,
     }: {
         pointOne?: { x: number; y: number };
         pointTwo?: { x: number; y: number };
-        denominator?: number;
+        denominatorX?: number;
+        denominatorY?: number;
     }) => {
         if (!this.canvas) {
             console.error(
@@ -194,16 +197,18 @@ export default class MarcherLine extends fabric.Line {
             x: number;
             y: number;
         }): { x: number; y: number } => {
-            if (denominator > 0 && this.canvas) {
-                const roundedPoint = this.canvas.getRoundedCoordinate({
-                    x: point.x,
-                    y: point.y,
-                    denominator,
-                });
-                return { x: roundedPoint.x, y: roundedPoint.y };
-            } else {
-                return { x: point.x, y: point.y };
-            }
+            if (!this.canvas) return { x: point.x, y: point.y };
+
+            const roundedPoint = this.canvas.getRoundedCoordinate({
+                x: point.x,
+                y: point.y,
+                denominatorX: denominatorX || 1,
+                denominatorY: denominatorY || 1,
+            });
+            return {
+                x: denominatorX > 0 ? roundedPoint.x : point.x,
+                y: denominatorY > 0 ? roundedPoint.y : point.y,
+            };
         };
 
         if (pointOne) {

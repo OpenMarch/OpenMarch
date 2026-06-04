@@ -49,7 +49,7 @@ export default function AlignmentTab() {
                 </RegisteredActionButton>
                 <RegisteredActionButton
                     registeredAction={
-                        RegisteredActionsObjects.snapToNearestWhole
+                        RegisteredActionsObjects.snapToNearestCustomFraction
                     }
                     className={`flex gap-6`}
                 >

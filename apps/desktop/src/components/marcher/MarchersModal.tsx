@@ -1,7 +1,7 @@
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { SidebarModalLauncher } from "@/components/sidebar/SidebarModal";
 import MarcherList from "./MarcherList";
-import NewMarcherForm from "./NewMarcherForm";
+import MarcherForm, { MarcherFormProps } from "./MarcherForm";
 import { XIcon, CaretLeftIcon } from "@phosphor-icons/react";
 import { Button } from "@openmarch/ui";
 import { UsersThreeIcon } from "@phosphor-icons/react/dist/ssr";
@@ -42,7 +42,7 @@ export function MarcherListContents() {
                     </Button>
                     <Button
                         onClick={() => {
-                            setContent(<MarcherNewFormContents />, "marchers");
+                            setContent(<MarcherFormContents />, "marchers");
                         }}
                         size="compact"
                     >
@@ -63,8 +63,9 @@ export function MarcherListContents() {
         </div>
     );
 }
+
 // Marcher add form
-export function MarcherNewFormContents() {
+export function MarcherFormContents(props: MarcherFormProps) {
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
@@ -80,7 +81,13 @@ export function MarcherNewFormContents() {
                         <CaretLeftIcon size={24} />
                     </button>
                     <h4 className="text-h4 leading-none">
-                        <T keyName="marchers.addMarchers" />
+                        <T
+                            keyName={
+                                props.marcherIdToEdit
+                                    ? "marchers.editMarcher"
+                                    : "marchers.addMarchers"
+                            }
+                        />
                     </h4>
                 </div>
                 <button
@@ -92,7 +99,7 @@ export function MarcherNewFormContents() {
             </header>
 
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
-                <NewMarcherForm />
+                <MarcherForm {...props} />
             </div>
         </div>
     );

@@ -31,26 +31,18 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
 
       ############ LINUX ############
-      - name: Install Snapcraft (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
+      - name: Install Snapcraft (Ubuntu x64)
+        if: matrix.os == 'ubuntu-latest'
         run: sudo snap install snapcraft --classic
 
-      - name: Install Snapcraft (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd
-
-      - name: Setup LXD (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        uses: canonical/setup-lxd@main
-
       - name: Validate Snapcraft credentials on Linux release
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         run: snapcraft whoami -q
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
@@ -92,6 +84,7 @@ jobs:
           release: true
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
+          args: ${{ matrix.os == 'ubuntu-24.04-arm' && '--linux AppImage' || '' }}
           max_attempts: 5
         env:
           APPLE_API_KEY: "~/private_keys/apple_api_key.p8"
@@ -108,7 +101,7 @@ jobs:
           SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
       - name: Promote snap to stable channel
-        if: startsWith(matrix.os, 'ubuntu')
+        if: matrix.os == 'ubuntu-latest'
         shell: bash
         run: |
           # Get the latest revision for this architecture
@@ -148,7 +141,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0

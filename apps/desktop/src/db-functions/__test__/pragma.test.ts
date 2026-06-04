@@ -1,10 +1,10 @@
-import Database from "libsql";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 describe("Pragma", () => {
-    let db: Database.Database;
+    let db: DatabaseSync;
     beforeEach(() => {
-        db = new Database(":memory:");
+        db = new DatabaseSync(":memory:");
     });
 
     afterEach(() => {

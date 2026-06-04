@@ -14,7 +14,7 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToWhole": "Snap to nearest whole"
+            "snapToCustomFraction": "Apply snap"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
@@ -87,6 +87,31 @@
             "showPreviousPaths": "Show previous page dots/paths",
             "toggleNextPaths": "Toggle viewing next page paths",
             "togglePreviousPaths": "Toggle viewing previous page paths"
+        }
+    },
+    "fileAccessDialogError": {
+        "closeButton": "Close",
+        "guideLinkText": "OpenMarch File Error Guide",
+        "referToGuide": "Refer to the <link></link> for more information.",
+        "default": {
+            "title": "Error",
+            "description": "Unable to open file."
+        },
+        "renderFail": {
+            "title": "Modal render failure",
+            "description": "The alert modal failed to render."
+        },
+        "forbidden": {
+            "title": "Invalid file permissions",
+            "description": "You do not have permission to open this file."
+        },
+        "notFound": {
+            "title": "File not found",
+            "description": "This file does not exist at this location. Was it moved or renamed?"
+        },
+        "server": {
+            "title": "Internal server error",
+            "description": "The server experienced an error while trying to open this file."
         }
     },
     "analyticsOptIn": {
@@ -295,6 +320,7 @@
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "deleteTooltip": "Delete this checkpoint from the field",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
             "name": "Name",
@@ -332,6 +358,7 @@
         "general": "General",
         "labels": {
             "background": "Background",
+            "backgroundImageOpacity": "Background Image Opacity",
             "backgroundImageRatio": "Background Image Ratio",
             "bottom": "Bottom",
             "conformingMethod": "Conforming Method",
@@ -442,12 +469,20 @@
         "openFile": "Open File",
         "redo": "Redo",
         "saveFile": "Save Copy",
+        "toasts": {
+            "success": "Copy saved",
+            "error": "Unable to save copy"
+        },
+        "saveFileCancel": "Cancel",
+        "saveSpinnerText": "Saving copy...",
+        "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "undo": "Undo"
     },
     "formButtons": {
         "cancel": "Cancel",
         "editButton": "Edit",
-        "saveChanges": "Save Changes"
+        "saveChanges": "Save Changes",
+        "discardChanges": "Discard Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
@@ -531,6 +566,12 @@
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
+            "clearAllRecentFiles": "Clear all",
+            "clearMissingRecentFiles": "Clear missing",
+            "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
+            "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
+            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
+            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
         "learn": {
@@ -577,14 +618,17 @@
         "drillPrefix": "Drill Prefix",
         "prefixChangedWarning": "Changing the prefix from the section default will create marchers with a different prefix. Marchers with different prefixes in the same section are treated separately.",
         "editButton": "Edit Marchers",
+        "editMarcher": "Edit Marcher",
         "list": {
             "addSectionStyle": "Add Section Style",
             "addTagAppearance": "Add Tag Appearance",
             "allSections": "All Sections",
             "createTagsFirst": "Create tags first in the marcher inspector to add tag appearances.",
+            "deleteButton": "Delete",
             "deleteSectionStyle": "Delete this section style",
             "discardChanges": "Discard Changes",
             "drillNumberTitle": "#",
+            "editButton": "Edit",
             "fillColor": "Fill Color",
             "nameTitle": "Name",
             "noMarchers": "No marchers created yet. Why not create one?",
@@ -601,6 +645,9 @@
         },
         "listTitle": "List",
         "marcherAppearance": "Marcher Appearance",
+        "name": "Name",
+        "notes": "Notes",
+        "notesPlaceholder": "Add notes for this marcher...",
         "quantity": "Quantity",
         "section": "Section",
         "sectionError": {
@@ -609,7 +656,9 @@
         "sectionStyles": "Section Styles",
         "sectionText": "Section",
         "tagText": "Tag",
-        "title": "Marchers"
+        "title": "Marchers",
+        "updateButton": "Update Marcher",
+        "year": "Year"
     },
     "measures": {
         "createFailed": "Failed to create measures - {error}",

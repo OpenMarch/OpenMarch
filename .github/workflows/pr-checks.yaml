@@ -12,16 +12,23 @@ jobs:
   check-changes:
     runs-on: ubuntu-latest
     outputs:
-      desktop: ${{ steps.filter.outputs.desktop }}
+      desktop: ${{ steps.filter.outputs.desktop_related }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
         id: filter
         with:
           filters: |
-            desktop:
-              - '**/*'
-              - '!apps/website/**'
+            desktop_related:
+              - 'apps/desktop/**'
+              - 'packages/**'
+              - 'package.json'
+              - 'pnpm-workspace.yaml'
+              - 'pnpm-lock.yaml'
+              - 'tsconfig.json'
+              - 'turbo.json'
+              - '.github/workflows/**'
+              - 'actions/**'
 
   basic-checks:
     strategy:
@@ -38,7 +45,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
@@ -59,13 +66,16 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
 
       - name: Install project dependencies
         run: pnpm install --no-frozen-lockfile
+
+      - name: Install Playwright Browsers
+        run: pnpm exec playwright install --with-deps
 
       - name: Build project
         run: pnpm run build
@@ -87,7 +97,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
@@ -135,23 +145,15 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0
 
       ############ LINUX ############
-      - name: Install Snapcraft (Ubuntu)
-        if: startsWith(matrix.os, 'ubuntu')
+      - name: Install Snapcraft (Ubuntu x64)
+        if: matrix.os == 'ubuntu-latest'
         run: sudo snap install snapcraft --classic
-
-      - name: Install Snapcraft (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        run: sudo snap install lxd
-
-      - name: Setup LXD (Ubuntu ARM)
-        if: matrix.os == 'ubuntu-24.04-arm'
-        uses: canonical/setup-lxd@main
 
       - name: Create Sentry env file
         working-directory: apps/desktop
@@ -181,10 +183,10 @@ jobs:
           release: false
           mac_certs: ${{ secrets.mac_certs }}
           mac_certs_password: ${{ secrets.mac_certs_password }}
+          args: ${{ matrix.os == 'ubuntu-24.04-arm' && '--linux AppImage' || '' }}
           max_attempts: 3
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false # No code signing on PRs
-          SNAPCRAFT_BUILD_ENVIRONMENT: lxd
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -206,7 +208,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4.1.0

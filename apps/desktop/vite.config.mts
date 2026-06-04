@@ -16,12 +16,14 @@ export default defineConfig(({ command }) => {
     const isServe = command === "serve";
     const isBuild = command === "build";
     const sourcemap = isServe || !!process.env.VSCODE_DEBUG;
+    const electronAlias = {
+        "@": path.join(__dirname, "src"),
+        "@om-electron": path.join(__dirname, "electron"),
+    };
 
     return {
         resolve: {
-            alias: {
-                "@": path.join(__dirname, "src"),
-            },
+            alias: electronAlias,
             extensions: [".js", ".ts", ".jsx", ".tsx", ".json"],
         },
         plugins: [
@@ -47,12 +49,19 @@ export default defineConfig(({ command }) => {
                         }
                     },
                     vite: {
+                        resolve: {
+                            alias: electronAlias,
+                        },
                         build: {
                             sourcemap,
                             minify: isBuild,
                             outDir: "dist-electron/main",
                             rollupOptions: {
-                                external: ["electron", "node"].concat(
+                                external: [
+                                    "electron",
+                                    "node",
+                                    "node:sqlite",
+                                ].concat(
                                     Object.keys(
                                         "dependencies" in pkg
                                             ? pkg.dependencies
@@ -71,6 +80,9 @@ export default defineConfig(({ command }) => {
                         options.reload();
                     },
                     vite: {
+                        resolve: {
+                            alias: electronAlias,
+                        },
                         build: {
                             sourcemap: sourcemap ? "inline" : undefined, // #332
                             minify: isBuild,

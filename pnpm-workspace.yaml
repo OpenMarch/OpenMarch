@@ -1,6 +1,8 @@
 packages:
   - apps/*
   - packages/*
+catalog:
+  typescript: 6.0.3
 onlyBuiltDependencies:
   - "@sentry/cli"
   - "@tailwindcss/oxide"
@@ -9,5 +11,6 @@ onlyBuiltDependencies:
   - electron
   - esbuild
   - sharp
+  - unrs-resolver
 patchedDependencies:
   canvas: patches/canvas.patch

@@ -105,3 +105,8 @@ temp/
 
 # Electron build outputs
 out/
+
+# Test reports
+**/playwright-report/
+
+.open-next/
