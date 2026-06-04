@@ -1087,7 +1087,6 @@ export async function insertAudioFile(): Promise<
 
         // Insert audio file into database
         const databaseResponse = await DatabaseServices.insertAudioFile({
-            id: -1,
             data: Buffer.from(
                 data.buffer.slice(
                     data.byteOffset,

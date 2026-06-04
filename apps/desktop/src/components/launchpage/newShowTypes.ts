@@ -8,14 +8,16 @@ export type NewShowStepId =
     | "ensemble"
     | "field"
     | "performers"
-    | "music";
+    | "audio"
+    | "tempo";
 
 export const NEW_SHOW_STEPS: NewShowStepId[] = [
     "project",
     "ensemble",
     "field",
     "performers",
-    "music",
+    "audio",
+    "tempo",
 ];
 
 export interface NewShowProjectData {
@@ -42,8 +44,12 @@ export interface NewShowPerformersData {
     marchers: NewShowMarcherDraft[];
 }
 
-export interface NewShowMusicData {
-    method: "xml" | "mp3" | "tempo_only" | "skip";
+export interface NewShowAudioData {
+    method: "audio" | "skip";
+}
+
+export interface NewShowTempoData {
+    method: "xml" | "tempo_only" | "skip";
     tempo?: number;
 }
 
@@ -52,7 +58,8 @@ export interface NewShowWizardState {
     ensemble: NewShowEnsembleData | null;
     field: NewShowFieldData | null;
     performers: NewShowPerformersData | null;
-    music: NewShowMusicData | null;
+    audio: NewShowAudioData | null;
+    tempo: NewShowTempoData | null;
     draftFilePath?: string;
 }
 
@@ -61,7 +68,8 @@ export const DEFAULT_NEW_SHOW_WIZARD_STATE: NewShowWizardState = {
     ensemble: null,
     field: null,
     performers: null,
-    music: null,
+    audio: null,
+    tempo: null,
 };
 
 /** @deprecated Use NewShowWizardState for completion */
@@ -75,7 +83,8 @@ export type NewShowFormState = {
     defaultTempo: number;
     ensemble?: NewShowEnsembleData | null;
     performers?: NewShowPerformersData | null;
-    music?: NewShowMusicData | null;
+    audio?: NewShowAudioData | null;
+    tempo?: NewShowTempoData | null;
     draftFilePath?: string;
 };
 
@@ -85,9 +94,9 @@ export function wizardStateToFormState(
     if (!state.project || !state.ensemble || !state.field) {
         throw new Error("Wizard state is incomplete");
     }
-    const tempo =
-        state.music?.method === "tempo_only" && state.music.tempo
-            ? state.music.tempo
+    const defaultTempo =
+        state.tempo?.method === "tempo_only" && state.tempo.tempo
+            ? state.tempo.tempo
             : 120;
 
     return {
@@ -97,10 +106,11 @@ export function wizardStateToFormState(
         fieldTemplate: state.field.template,
         designer: state.project.designer,
         client: state.project.client,
-        defaultTempo: tempo,
+        defaultTempo,
         ensemble: state.ensemble,
         performers: state.performers,
-        music: state.music,
+        audio: state.audio,
+        tempo: state.tempo,
         draftFilePath: state.draftFilePath,
     };
 }
@@ -111,7 +121,8 @@ export function hasNewShowProgress(state: NewShowWizardState): boolean {
         state.ensemble !== null ||
         state.field !== null ||
         state.performers !== null ||
-        state.music !== null ||
+        state.audio !== null ||
+        state.tempo !== null ||
         !!state.draftFilePath
     );
 }

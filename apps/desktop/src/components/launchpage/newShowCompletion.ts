@@ -95,8 +95,8 @@ async function ensureHistoryTriggers(): Promise<void> {
 async function applyProjectSettings(form: NewShowFormState): Promise<void> {
     const currentSettings = await getWorkspaceSettingsParsed({ db });
     const tempo =
-        form.music?.method === "tempo_only" && form.music.tempo
-            ? form.music.tempo
+        form.tempo?.method === "tempo_only" && form.tempo.tempo
+            ? form.tempo.tempo
             : form.defaultTempo;
 
     const updatedSettings = workspaceSettingsSchema.parse({
@@ -112,7 +112,8 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
 }
 
 async function applyMusicSettings(
-    music: NewShowFormState["music"],
+    audio: NewShowFormState["audio"],
+    tempo: NewShowFormState["tempo"],
 ): Promise<void> {
     const currentSettings = await getWorkspaceSettingsParsed({ db });
     const rawSettingsJson = await getWorkspaceSettingsJSON({ db });
@@ -124,12 +125,12 @@ async function applyMusicSettings(
     const needsTempoUpdate =
         !hasDefaultTempoKey || rawSettings.defaultTempo == null;
 
-    if (music?.method === "tempo_only" && music.tempo) {
+    if (tempo?.method === "tempo_only" && tempo.tempo) {
         await updateWorkspaceSettingsParsed({
             db,
             settings: workspaceSettingsSchema.parse({
                 ...currentSettings,
-                defaultTempo: music.tempo,
+                defaultTempo: tempo.tempo,
             }),
         });
     } else if (needsTempoUpdate) {
@@ -142,12 +143,14 @@ async function applyMusicSettings(
         });
     }
 
-    if (music?.method === "mp3") {
+    if (audio?.method === "audio") {
         const audioFiles = await AudioFile.getAudioFilesDetails();
         if (audioFiles.length === 0) {
             conToastError(tolgee.t("launchpage.newShow.errors.audioNotSaved"));
         }
-    } else if (music?.method === "xml") {
+    }
+
+    if (tempo?.method === "xml") {
         const measures = await getMeasures({ db });
         if (measures.length === 0) {
             conToastError(tolgee.t("launchpage.newShow.errors.xmlNotImported"));
@@ -272,7 +275,7 @@ export async function completeNewShow(
 
     await ensureHistoryTriggers();
     await applyProjectSettings(form);
-    await applyMusicSettings(form.music);
+    await applyMusicSettings(form.audio, form.tempo);
     await updateFieldProperties(form.fieldTemplate);
     await createBeatsAndPages(queryClient);
     await applyPerformersSettings(form.performers, queryClient);

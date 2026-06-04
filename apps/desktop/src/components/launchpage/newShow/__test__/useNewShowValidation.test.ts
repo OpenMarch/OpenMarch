@@ -34,6 +34,18 @@ describe("useNewShowValidation", () => {
         expect(result.current).toBe(true);
     });
 
+    it("allows skip on audio and tempo steps", () => {
+        const { result: audioResult } = renderHook(() =>
+            useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "audio"),
+        );
+        expect(audioResult.current).toBe(true);
+
+        const { result: tempoResult } = renderHook(() =>
+            useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "tempo"),
+        );
+        expect(tempoResult.current).toBe(true);
+    });
+
     it("requires field on field step", () => {
         const state: NewShowWizardState = {
             ...DEFAULT_NEW_SHOW_WIZARD_STATE,

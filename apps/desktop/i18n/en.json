@@ -619,16 +619,22 @@
                     "added": "Added performers",
                     "noneAdded": "No performers added yet."
                 },
-                "music": {
-                    "title": "Music",
-                    "description": "Set tempo, import audio, or add a score.",
-                    "method": "Music source",
+                "audio": {
+                    "title": "Audio",
+                    "description": "Import an audio file now, or skip and add one later.",
+                    "optionalDescription": "Audio is optional. You can skip this step and add audio later from the editor.",
+                    "waitingDb": "Preparing your show file…",
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again."
+                },
+                "tempo": {
+                    "title": "Tempo data",
+                    "description": "Set timing with a BPM or import MusicXML. You can skip this and edit tempo later.",
+                    "method": "Tempo source",
                     "methodHelper": "Choose how you want to set up timing for this show.",
                     "tempoOnly": "Tempo only",
                     "musicXml": "MusicXML file",
-                    "audioFile": "Audio file",
                     "skip": "Skip for now",
-                    "skipDescription": "You can add music later from the editor.",
+                    "skipDescription": "Tempo data is optional. You can edit tempo later from the editor.",
                     "waitingDb": "Preparing your show file…",
                     "dbNotReady": "The show file is not ready. Go back to the project step and try again."
                 }

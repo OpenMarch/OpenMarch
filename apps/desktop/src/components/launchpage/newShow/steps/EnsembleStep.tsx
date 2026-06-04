@@ -87,7 +87,7 @@ export default function EnsembleStep({
                         }
                         emitChange(env, nextType);
                     }}
-                    className="flex-row gap-16"
+                    className="flex flex-row gap-16"
                 >
                     <RadioGroupItem value="outdoor">
                         <T keyName="launchpage.newShow.outdoor" />

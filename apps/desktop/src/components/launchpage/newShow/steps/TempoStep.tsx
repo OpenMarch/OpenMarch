@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     Select,
     SelectContent,
@@ -9,21 +9,18 @@ import {
 } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
 import { T, useTolgee } from "@tolgee/react";
-import AudioSelector from "@/components/music/AudioSelector";
 import MusicXmlSelector from "@/components/music/MusicXmlSelector";
-import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { useQuery } from "@tanstack/react-query";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
-import type { NewShowMusicData } from "../../newShowTypes";
+import type { NewShowTempoData } from "../../newShowTypes";
 
-interface MusicStepProps {
-    music: NewShowMusicData | null;
-    onChange: (music: NewShowMusicData) => void;
+interface TempoStepProps {
+    tempo: NewShowTempoData | null;
+    onChange: (tempo: NewShowTempoData) => void;
 }
 
-export default function MusicStep({ music, onChange }: MusicStepProps) {
+export default function TempoStep({ tempo, onChange }: TempoStepProps) {
     const { t } = useTolgee();
-    const { selectedAudioFile } = useSelectedAudioFile() || {};
     const [databaseReady, setDatabaseReady] = useState(false);
     const [checkingDatabase, setCheckingDatabase] = useState(true);
     const { data: measures } = useQuery({
@@ -31,17 +28,17 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
         enabled: databaseReady,
     });
 
-    const [method, setMethod] = useState<NewShowMusicData["method"]>(
-        music?.method ?? "tempo_only",
+    const [method, setMethod] = useState<NewShowTempoData["method"]>(
+        tempo?.method ?? "tempo_only",
     );
-    const [tempo, setTempo] = useState(music?.tempo ?? 120);
+    const [tempoValue, setTempoValue] = useState(tempo?.tempo ?? 120);
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
-    const hasSyncedInitial = useRef(music !== null);
+    const hasSyncedInitial = useRef(tempo !== null);
 
-    const emitMusic = (
-        nextMethod: NewShowMusicData["method"],
-        nextTempo: number = tempo,
+    const emitTempo = (
+        nextMethod: NewShowTempoData["method"],
+        nextTempo: number = tempoValue,
     ) => {
         onChangeRef.current({
             method: nextMethod,
@@ -52,7 +49,7 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
     useEffect(() => {
         if (hasSyncedInitial.current) return;
         hasSyncedInitial.current = true;
-        emitMusic(method, tempo);
+        emitTempo(method, tempoValue);
     }, []);
 
     useEffect(() => {
@@ -78,12 +75,6 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
     }, []);
 
     useEffect(() => {
-        if (method === "mp3" && selectedAudioFile) {
-            onChangeRef.current({ method: "mp3" });
-        }
-    }, [method, selectedAudioFile]);
-
-    useEffect(() => {
         if (
             method === "xml" &&
             measures &&
@@ -97,43 +88,38 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
     const getMethodLabel = () => {
         switch (method) {
             case "tempo_only":
-                return t("launchpage.newShow.steps.music.tempoOnly");
+                return t("launchpage.newShow.steps.tempo.tempoOnly");
             case "xml":
-                return t("launchpage.newShow.steps.music.musicXml");
-            case "mp3":
-                return t("launchpage.newShow.steps.music.audioFile");
+                return t("launchpage.newShow.steps.tempo.musicXml");
             case "skip":
-                return t("launchpage.newShow.steps.music.skip");
+                return t("launchpage.newShow.steps.tempo.skip");
         }
     };
 
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
             <WizardFormField
-                label={t("launchpage.newShow.steps.music.method")}
-                helperText={t("launchpage.newShow.steps.music.methodHelper")}
+                label={t("launchpage.newShow.steps.tempo.method")}
+                helperText={t("launchpage.newShow.steps.tempo.methodHelper")}
             >
                 <Select
                     value={method}
                     onValueChange={(v) => {
-                        const nextMethod = v as NewShowMusicData["method"];
+                        const nextMethod = v as NewShowTempoData["method"];
                         setMethod(nextMethod);
-                        emitMusic(nextMethod);
+                        emitTempo(nextMethod);
                     }}
                 >
                     <SelectTriggerButton label={getMethodLabel()} />
                     <SelectContent>
                         <SelectItem value="tempo_only">
-                            <T keyName="launchpage.newShow.steps.music.tempoOnly" />
+                            <T keyName="launchpage.newShow.steps.tempo.tempoOnly" />
                         </SelectItem>
                         <SelectItem value="xml">
-                            <T keyName="launchpage.newShow.steps.music.musicXml" />
-                        </SelectItem>
-                        <SelectItem value="mp3">
-                            <T keyName="launchpage.newShow.steps.music.audioFile" />
+                            <T keyName="launchpage.newShow.steps.tempo.musicXml" />
                         </SelectItem>
                         <SelectItem value="skip">
-                            <T keyName="launchpage.newShow.steps.music.skip" />
+                            <T keyName="launchpage.newShow.steps.tempo.skip" />
                         </SelectItem>
                     </SelectContent>
                 </Select>
@@ -143,12 +129,12 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
                 <WizardFormField label={t("launchpage.newShow.tempo")}>
                     <Input
                         type="number"
-                        value={tempo}
+                        value={tempoValue}
                         onChange={(e) => {
                             const nextTempo =
                                 parseInt(e.target.value, 10) || 120;
-                            setTempo(nextTempo);
-                            emitMusic("tempo_only", nextTempo);
+                            setTempoValue(nextTempo);
+                            emitTempo("tempo_only", nextTempo);
                         }}
                         min={1}
                         max={300}
@@ -156,32 +142,16 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
                 </WizardFormField>
             )}
 
-            {method === "mp3" && (
-                <div className="flex flex-col gap-8">
-                    {checkingDatabase && (
-                        <WarningNote>
-                            <T keyName="launchpage.newShow.steps.music.waitingDb" />
-                        </WarningNote>
-                    )}
-                    {!checkingDatabase && !databaseReady && (
-                        <WarningNote>
-                            <T keyName="launchpage.newShow.steps.music.dbNotReady" />
-                        </WarningNote>
-                    )}
-                    {databaseReady && <AudioSelector />}
-                </div>
-            )}
-
             {method === "xml" && (
                 <div className="flex flex-col gap-8">
                     {checkingDatabase && (
                         <WarningNote>
-                            <T keyName="launchpage.newShow.steps.music.waitingDb" />
+                            <T keyName="launchpage.newShow.steps.tempo.waitingDb" />
                         </WarningNote>
                     )}
                     {!checkingDatabase && !databaseReady && (
                         <WarningNote>
-                            <T keyName="launchpage.newShow.steps.music.dbNotReady" />
+                            <T keyName="launchpage.newShow.steps.tempo.dbNotReady" />
                         </WarningNote>
                     )}
                     {databaseReady && <MusicXmlSelector />}
@@ -190,7 +160,7 @@ export default function MusicStep({ music, onChange }: MusicStepProps) {
 
             {method === "skip" && (
                 <p className="text-body text-text/70">
-                    <T keyName="launchpage.newShow.steps.music.skipDescription" />
+                    <T keyName="launchpage.newShow.steps.tempo.skipDescription" />
                 </p>
             )}
         </div>

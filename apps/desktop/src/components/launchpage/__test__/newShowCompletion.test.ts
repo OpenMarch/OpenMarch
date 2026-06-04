@@ -24,6 +24,34 @@ describe("newShowCompletion helpers", () => {
             resolveNewShowFilePath("My Show", "/Users/me/Documents/My Show"),
         ).toBe("/Users/me/Documents/My Show.dots");
     });
+
+    it("maps split audio and tempo wizard state to completion form state", () => {
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Test Show",
+                fileLocation: "/tmp/test-show.dots",
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "skip" },
+            tempo: { method: "tempo_only", tempo: 96 },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+
+        expect(form.audio).toEqual({ method: "skip" });
+        expect(form.tempo).toEqual({ method: "tempo_only", tempo: 96 });
+        expect(form.defaultTempo).toBe(96);
+    });
 });
 
 describeDbTests("completeNewShow", (it) => {
@@ -62,7 +90,8 @@ describeDbTests("completeNewShow", (it) => {
                 isCustom: false,
             },
             performers: { method: "skip", marchers: [] },
-            music: { method: "tempo_only", tempo: 100 },
+            audio: { method: "skip" },
+            tempo: { method: "tempo_only", tempo: 100 },
             draftFilePath: "/tmp/draft.dots",
         };
 

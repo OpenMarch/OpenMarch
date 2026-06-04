@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import type { NewShowStepId, NewShowWizardState } from "../../newShowTypes";
 
-const OPTIONAL_STEPS: Set<NewShowStepId> = new Set(["performers", "music"]);
+const OPTIONAL_STEPS: Set<NewShowStepId> = new Set([
+    "performers",
+    "audio",
+    "tempo",
+]);
 
 export function useNewShowValidation(
     state: NewShowWizardState,

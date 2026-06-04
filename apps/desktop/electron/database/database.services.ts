@@ -426,8 +426,15 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
+type AudioFileInsert = {
+    data?: ArrayBuffer | Uint8Array;
+    path: string;
+    nickname?: string;
+    selected?: boolean;
+};
+
 export async function insertAudioFile(
-    audioFile: AudioFile,
+    audioFile: AudioFileInsert,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
@@ -473,7 +480,13 @@ export async function insertAudioFile(
 
         output = {
             success: true,
-            result: [{ ...audioFile, id: id as number }],
+            result: [
+                {
+                    ...audioFile,
+                    id: id as number,
+                    selected: true,
+                } as AudioFile,
+            ],
         };
     } catch (error: any) {
         console.error("Insert audio file error:", error);

@@ -19,18 +19,20 @@ import ProjectStep from "./newShow/steps/ProjectStep";
 import EnsembleStep from "./newShow/steps/EnsembleStep";
 import FieldStep from "./newShow/steps/FieldStep";
 import PerformersStep from "./newShow/steps/PerformersStep";
-import MusicStep from "./newShow/steps/MusicStep";
+import AudioStep from "./newShow/steps/AudioStep";
+import TempoStep from "./newShow/steps/TempoStep";
 import { useNewShowValidation } from "./newShow/hooks/useNewShowValidation";
 import {
     DEFAULT_NEW_SHOW_WIZARD_STATE,
     hasNewShowProgress,
     NEW_SHOW_STEPS,
+    type NewShowAudioData,
     type NewShowEnsembleData,
     type NewShowFieldData,
-    type NewShowMusicData,
     type NewShowPerformersData,
     type NewShowProjectData,
     type NewShowStepId,
+    type NewShowTempoData,
     type NewShowWizardState,
     wizardStateToFormState,
 } from "./newShowTypes";
@@ -64,9 +66,13 @@ const STEP_COPY: Record<
         titleKey: "launchpage.newShow.steps.performers.title",
         descriptionKey: "launchpage.newShow.steps.performers.description",
     },
-    music: {
-        titleKey: "launchpage.newShow.steps.music.title",
-        descriptionKey: "launchpage.newShow.steps.music.description",
+    audio: {
+        titleKey: "launchpage.newShow.steps.audio.title",
+        descriptionKey: "launchpage.newShow.steps.audio.description",
+    },
+    tempo: {
+        titleKey: "launchpage.newShow.steps.tempo.title",
+        descriptionKey: "launchpage.newShow.steps.tempo.description",
     },
 };
 
@@ -92,7 +98,7 @@ export default function NewShowDialog({
     const canGoNext = useNewShowValidation(wizardState, currentStep);
     const isLastStep = currentStepIndex === NEW_SHOW_STEPS.length - 1;
     const isFirstStep = currentStepIndex === 0;
-    const canSkip = currentStep === "performers" || currentStep === "music";
+    const canSkip = currentStep === "performers" || currentStep === "audio";
 
     const resetWizard = useCallback(() => {
         setWizardState(DEFAULT_NEW_SHOW_WIZARD_STATE);
@@ -198,10 +204,10 @@ export default function NewShowDialog({
                 ...prev,
                 performers: { method: "skip", marchers: [] },
             }));
-        } else if (currentStep === "music") {
+        } else if (currentStep === "audio") {
             setWizardState((prev) => ({
                 ...prev,
-                music: { method: "skip" },
+                audio: { method: "skip" },
             }));
         }
         if (!isLastStep) {
@@ -228,7 +234,8 @@ export default function NewShowDialog({
                     method: "skip",
                     marchers: [],
                 },
-                music: wizardState.music ?? { method: "skip" },
+                audio: wizardState.audio ?? { method: "skip" },
+                tempo: wizardState.tempo ?? { method: "skip" },
             };
 
             if (!withDefaults.draftFilePath) {
@@ -285,8 +292,12 @@ export default function NewShowDialog({
         [],
     );
 
-    const handleMusicChange = useCallback((music: NewShowMusicData) => {
-        setWizardState((prev) => ({ ...prev, music }));
+    const handleAudioChange = useCallback((audio: NewShowAudioData) => {
+        setWizardState((prev) => ({ ...prev, audio }));
+    }, []);
+
+    const handleTempoChange = useCallback((tempo: NewShowTempoData) => {
+        setWizardState((prev) => ({ ...prev, tempo }));
     }, []);
 
     const stepContent = useMemo(() => {
@@ -320,11 +331,18 @@ export default function NewShowDialog({
                         onChange={handlePerformersChange}
                     />
                 );
-            case "music":
+            case "audio":
                 return (
-                    <MusicStep
-                        music={wizardState.music}
-                        onChange={handleMusicChange}
+                    <AudioStep
+                        audio={wizardState.audio}
+                        onChange={handleAudioChange}
+                    />
+                );
+            case "tempo":
+                return (
+                    <TempoStep
+                        tempo={wizardState.tempo}
+                        onChange={handleTempoChange}
                     />
                 );
             default:
@@ -336,12 +354,14 @@ export default function NewShowDialog({
         wizardState.ensemble,
         wizardState.field,
         wizardState.performers,
-        wizardState.music,
+        wizardState.audio,
+        wizardState.tempo,
         handleProjectChange,
         handleEnsembleChange,
         handleFieldChange,
         handlePerformersChange,
-        handleMusicChange,
+        handleAudioChange,
+        handleTempoChange,
     ]);
 
     const stepCopy = STEP_COPY[currentStep];
