@@ -16,6 +16,7 @@ import { DatabaseBeat, DatabaseMeasure, DatabasePage } from "@/db-functions";
 import { queryClient } from "@/App";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import { workspaceSettingsQueryOptions } from "./queries/useWorkspaceSettings";
+import { useDatabaseReady } from "./useDatabaseReady";
 
 export type TimingObjects = {
     beats: Beat[];
@@ -63,18 +64,39 @@ export const _combineTimingObjects = (
         isError: workspaceSettingsError,
     } = results[4];
 
+    const shouldSuppressQueryError = (error: Error | undefined): boolean => {
+        const suppressedMessages = [
+            "Database path is empty",
+            "database is locked",
+        ];
+        return suppressedMessages.some((msg) => error?.message?.includes(msg));
+    };
+
     // Log any errors that occurred during data fetching
+    // Suppress errors related to database not being ready (expected during wizard setup)
     if (pagesError) {
-        console.error("Pages query error:", results[0]);
+        const error = results[0].error as Error | undefined;
+        if (!shouldSuppressQueryError(error)) {
+            console.error("Pages query error:", results[0]);
+        }
     }
     if (measuresError) {
-        console.error("Measures query error:", results[1]);
+        const error = results[1].error as Error | undefined;
+        if (!shouldSuppressQueryError(error)) {
+            console.error("Measures query error:", results[1]);
+        }
     }
     if (beatsError) {
-        console.error("Beats query error:", results[2]);
+        const error = results[2].error as Error | undefined;
+        if (!shouldSuppressQueryError(error)) {
+            console.error("Beats query error:", results[2]);
+        }
     }
     if (utilityError) {
-        console.error("Utility query error:", results[3]);
+        const error = results[3].error as Error | undefined;
+        if (!shouldSuppressQueryError(error)) {
+            console.error("Utility query error:", results[3]);
+        }
     }
     const pageNumberOffset =
         workspaceSettingsLoading || workspaceSettingsError
@@ -187,13 +209,14 @@ export const _combineTimingObjects = (
 };
 
 export const useTimingObjects = () => {
+    const databaseReady = useDatabaseReady();
     return useQueries({
         queries: [
-            allDatabasePagesQueryOptions(),
-            allDatabaseMeasuresQueryOptions(),
-            allDatabaseBeatsQueryOptions(),
-            getUtilityQueryOptions(),
-            workspaceSettingsQueryOptions(),
+            allDatabasePagesQueryOptions(databaseReady),
+            allDatabaseMeasuresQueryOptions(databaseReady),
+            allDatabaseBeatsQueryOptions(databaseReady),
+            getUtilityQueryOptions(databaseReady),
+            workspaceSettingsQueryOptions(databaseReady),
         ],
         // This must not be a stable function, not an inline function, otherwise it will be called every time the component re-renders
         // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization

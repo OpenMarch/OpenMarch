@@ -7,6 +7,9 @@ export const workspaceSettingsSchema = z.object({
     audioOffsetSeconds: z.float64().default(0),
     pageNumberOffset: z.int().default(0),
     measurementOffset: z.int().default(1),
+    projectName: z.string().optional(),
+    designer: z.string().optional(),
+    client: z.string().optional(),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -21,6 +24,9 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     audioOffsetSeconds: 0,
     pageNumberOffset: 0,
     measurementOffset: 0,
+    projectName: undefined,
+    designer: undefined,
+    client: undefined,
 };
 
 /**

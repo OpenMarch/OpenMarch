@@ -66,7 +66,7 @@ const { Content } = isContent
 
 <Layout title={title}>
     <article
-        class="flex relative max-w-[50rem] w-full flex-col items-center gap-16"
+        class="relative flex w-full max-w-[50rem] flex-col items-center gap-16"
     >
         {
             isContent ? (
@@ -78,7 +78,7 @@ const { Content } = isContent
                     width={1280}
                     height={720}
                     alt=""
-                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                    class="rounded-6 border-stroke aspect-video h-auto w-full border object-cover"
                 />
             ) : payloadParsed ? (
                 <Image
@@ -86,17 +86,17 @@ const { Content } = isContent
                     width={payloadParsed.imageWidth ?? 1280}
                     height={payloadParsed.imageHeight ?? 720}
                     alt={payloadParsed.imageAlt}
-                    class="aspect-video h-auto w-full rounded-6 border border-stroke object-cover"
+                    class="rounded-6 border-stroke aspect-video h-auto w-full border object-cover"
                 />
             ) : null
         }
         <div
-            class="absolute top-[10vh] left-1/2 -z-50 w-full aspect-video h-auto -translate-x-1/2"
+            class="absolute top-[10vh] left-1/2 -z-50 aspect-video h-auto w-full -translate-x-1/2"
             style="background: radial-gradient(ellipse, oklch(from var(--color-accent) l c h / 0.3) 0%, transparent 70%);"
         >
         </div>
         <h1 class="text-h3 text-center">{title}</h1>
-        <div class="flex gap-16 items-center">
+        <div class="flex items-center gap-16">
             {
                 authorProfileImageUrl ? (
                     <Image
