@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useGuidedSetupStore } from "@/stores/GuidedSetupStore";
-import NewMarcherForm from "@/components/marcher/NewMarcherForm";
+import MarcherForm from "@/components/marcher/MarcherForm";
 import { T, useTolgee } from "@tolgee/react";
 import Marcher from "@/global/classes/Marcher";
 import * as RadixCollapsible from "@radix-ui/react-collapsible";
@@ -143,7 +143,7 @@ export default function PerformersStep() {
                     <h5 className="text-h5 font-medium">
                         <T keyName="wizard.performers.addNew" />
                     </h5>
-                    <NewMarcherForm
+                    <MarcherForm
                         disabledProp={false}
                         hideInfoNote={true}
                         skipSidebarContent={true}
