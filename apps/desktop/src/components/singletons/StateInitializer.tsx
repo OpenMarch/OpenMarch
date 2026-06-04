@@ -77,13 +77,10 @@ function StateInitializer() {
 
     /*******************************************************************/
 
-    // Select Page 1 (not Page 0) if none are selected. Intended to activate at the initial loading of a webpage
-    // Page 0 is the "start" page, Page 1 is the first actual drill page
+    // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh)
     useEffect(() => {
         if (selectedPage == null && pages.length > 0) {
-            const page1 = pages.find((p) => p.id === 1);
-            const firstNonZeroPage = pages.find((p) => p.id !== 0);
-            setSelectedPage(page1 || firstNonZeroPage || pages[0]);
+            setSelectedPage(pages[0]);
         }
     }, [pages, selectedPage, setSelectedPage]);
 
