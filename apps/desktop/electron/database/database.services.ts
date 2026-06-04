@@ -108,13 +108,21 @@ export function getDbPath() {
     return DB_PATH;
 }
 
+let lastLoggedReadyState: boolean | null = null;
+let lastLoggedPath: string | null = null;
+
 export function databaseIsReady() {
     const isReady = DB_PATH.length > 0 && fs.existsSync(DB_PATH);
-    console.log("databaseIsReady:", isReady);
-    if (DB_PATH.length > 0) {
-        console.log("Database path:", DB_PATH);
-    } else {
-        console.log("Database path is empty");
+    // Only log when state or path changes to avoid noisy polling output
+    if (isReady !== lastLoggedReadyState || DB_PATH !== lastLoggedPath) {
+        console.log("databaseIsReady:", isReady);
+        if (DB_PATH.length > 0) {
+            console.log("Database path:", DB_PATH);
+        } else {
+            console.log("Database path is empty");
+        }
+        lastLoggedReadyState = isReady;
+        lastLoggedPath = DB_PATH;
     }
     return isReady;
 }

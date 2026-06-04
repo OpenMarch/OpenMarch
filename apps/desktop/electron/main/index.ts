@@ -44,6 +44,7 @@ import { repairDatabase } from "../database/repair";
 
 let isQuitting = false;
 const store = new Store();
+const DB_USER_VERSION = 7;
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
@@ -270,6 +271,26 @@ void app.whenReady().then(async () => {
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("database:createAtPath", async (_, filePath: string) =>
+        createFileAtPath(filePath),
+    );
+    ipcMain.handle(
+        "dialog:showSaveDialog",
+        async (_, options: Electron.SaveDialogOptions) => {
+            if (!win) return { canceled: true, filePath: undefined };
+            return await dialog.showSaveDialog(win, options);
+        },
+    );
+    ipcMain.handle("getDefaultDocumentsPath", () => {
+        return app.getPath("documents");
+    });
+    ipcMain.handle("file:exists", (_, filePath: string) => {
+        if (!filePath) return false;
+        const pathToCheck = filePath.endsWith(".dots")
+            ? filePath
+            : `${filePath}.dots`;
+        return fs.existsSync(pathToCheck);
+    });
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             const newPath = await repairDatabase(dbPath);
@@ -556,6 +577,31 @@ ipcMain.handle("open-win", (_, arg) => {
 
 /************************************** FILE SYSTEM INTERACTIONS **************************************/
 /**
+ * Creates a new database file at the specified path.
+ *
+ * @param filePath The path where the file should be created
+ * @returns 200 for success, -1 for failure
+ */
+async function createFileAtPath(filePath: string) {
+    console.log("createFileAtPath:", filePath);
+
+    if (!filePath) return -1;
+
+    if (!filePath.endsWith(".dots")) {
+        filePath = `${filePath}.dots`;
+    }
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    await setActiveDb(filePath, true);
+
+    addRecentFile(filePath);
+
+    return 200;
+}
+
+/**
  * Creates a new database file path to connect to.
  *
  * @returns 200 for success, -1 for failure
@@ -578,7 +624,6 @@ export async function newFile() {
         );
         filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
     } else {
-        // Get path to new file via dialog
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
@@ -587,16 +632,7 @@ export async function newFile() {
         filePath = dialogResult.filePath;
     }
 
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
-    await setActiveDb(filePath, true);
-
-    // Add to recent files
-    addRecentFile(filePath);
-    win?.webContents.reload();
-
-    return 200;
+    return createFileAtPath(filePath);
 }
 
 // Database (main file)
@@ -770,6 +806,17 @@ export async function insertAudioFile(): Promise<
             error: { message: "insertAudioFile: window not loaded" },
         };
 
+    const dbReady = DatabaseServices.databaseIsReady();
+    if (!dbReady) {
+        console.error("insertAudioFile: Database is not ready");
+        return {
+            success: false,
+            error: {
+                message: "No file is open. Create or open a show first.",
+            },
+        };
+    }
+
     try {
         // Open file dialog
         const path = await dialog.showOpenDialog(win, {
@@ -805,6 +852,20 @@ export async function insertAudioFile(): Promise<
             });
         });
 
+        const dbStillReady = DatabaseServices.databaseIsReady();
+        if (!dbStillReady) {
+            console.error(
+                "insertAudioFile: Database became unavailable during upload",
+            );
+            return {
+                success: false,
+                error: {
+                    message:
+                        "Database became unavailable. Please try again after ensuring the database file is ready.",
+                },
+            };
+        }
+
         // Insert audio file into database
         const databaseResponse = await DatabaseServices.insertAudioFile({
             id: -1,
@@ -819,9 +880,16 @@ export async function insertAudioFile(): Promise<
             selected: true,
         });
 
-        // Only reload after successful insertion
-        if (databaseResponse.success) {
-            win?.webContents.reload();
+        if (!databaseResponse.success) {
+            console.error(
+                "insertAudioFile: Failed to insert audio file:",
+                databaseResponse.error,
+            );
+        } else {
+            console.log(
+                "insertAudioFile: Successfully inserted audio file with ID:",
+                databaseResponse.result?.[0]?.id,
+            );
         }
 
         return databaseResponse;
@@ -912,7 +980,7 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.prepare("PRAGMA user_version = 7").run();
+            db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
         }
         await migrator.applyPendingMigrations(migrationsFolder);
 
