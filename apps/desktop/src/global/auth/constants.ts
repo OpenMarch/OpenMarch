@@ -74,8 +74,9 @@ export function getClerkTokenEndpoint(): string {
  * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
  */
 export function getClerkSignUpUrl(): string {
-    if (!CLERK_CONFIG) return "";
-    return `https://${CLERK_CONFIG.DOMAIN}/sign-up`;
+    const signUpUrl = import.meta.env.VITE_SIGN_UP_URL;
+    if (typeof signUpUrl === "string" && signUpUrl.length > 0) return signUpUrl;
+    throw new Error("VITE_SIGN_UP_URL is not set");
 }
 
 /**

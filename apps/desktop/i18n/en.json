@@ -228,6 +228,7 @@
         "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
         "coordinateSheets": "Coordinate Sheets",
         "drillCharts": "Drill Charts",
+        "mobile": "Mobile",
         "errorRendering": "Error rendering {drillNumber}",
         "errorTitle": "Error exporting coordinate sheet",
         "exampleMarcherName": "Example Marcher",

@@ -149,7 +149,7 @@ export default function MobileExportModal({
 /**
  * Modal contents that conditionally shows EnsembleList or MobileExportView
  */
-function MobileExportModalContents() {
+export function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
     const { data: currentProduction } = useCurrentProduction();
@@ -276,20 +276,29 @@ function SignedOutMobileExportContent() {
         }
     }, []);
 
+    const imageClassname = clsx(
+        " block h-200 w-auto shrink-0  drop-shadow-text-subtitle",
+    );
     return (
         <div className="text-body text-text-subtitle flex h-full min-h-0 flex-col gap-24 overflow-hidden text-center">
-            <div className="flex shrink-0 grow flex-col items-center gap-16 self-center">
+            <div className="flex shrink-0 grow flex-col items-center gap-16">
                 <div className="translate-x-[-32px]">
                     <img
                         src="https://assets.openmarch.com/otm-logo-purple-light.webp"
                         alt="OTM Logo"
-                        className="block h-200 w-auto shrink-0 dark:hidden"
+                        className={clsx(
+                            imageClassname,
+                            "drop-shadow-sm dark:hidden",
+                        )}
                     />
                     <img
                         src="https://assets.openmarch.com/otm-logo-purple-dark.webp"
                         alt=""
                         aria-hidden="true"
-                        className="hidden h-200 w-auto shrink-0 dark:block"
+                        className={clsx(
+                            imageClassname,
+                            "hidden drop-shadow-xs dark:block",
+                        )}
                     />
                 </div>
                 <div className="flex w-[85%] flex-col items-center gap-12">
