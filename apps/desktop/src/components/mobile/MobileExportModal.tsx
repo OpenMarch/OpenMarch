@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback } from "react";
+import React, { useMemo, useCallback, useEffect } from "react";
 import {
     ArrowSquareOutIcon,
     DeviceMobileIcon,
@@ -11,6 +11,7 @@ import EnsembleList from "./EnsembleList";
 import MobileExportView from "./MobileExportView";
 import DetachButton from "./DetachButton";
 import {
+    currentProductionQueryOptions,
     useCurrentProduction,
     useOtmProductionId,
 } from "./queries/useProductions";
@@ -20,6 +21,7 @@ import { Button } from "@openmarch/ui";
 import { AuthButton, SignInButton } from "../../auth/AuthButton";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
+import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { getClerkSignUpUrl } from "@/global/auth/constants";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
@@ -81,12 +83,32 @@ export default function MobileExportModal({
     const { toggleOpen, setContent, isOpen, contentId } =
         useSidebarModalStore();
     const queryClient = useQueryClient();
+    const productionId = useOtmProductionId();
 
-    const prefetchEnsembles = useCallback(() => {
+    useEffect(() => {
+        if (productionId == null) return;
+
+        void queryClient.prefetchQuery(
+            currentProductionQueryOptions(productionId),
+        );
+    }, [productionId, queryClient]);
+
+    const prefetchMobileExportData = useCallback(() => {
         void queryClient.prefetchQuery(
             getGetApiEditorV1EnsemblesAnyQueryOptions(),
         );
-    }, [queryClient]);
+
+        if (productionId == null) return;
+
+        void queryClient.prefetchQuery(
+            currentProductionQueryOptions(productionId),
+        );
+        void queryClient.prefetchQuery(
+            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions(
+                productionId,
+            ),
+        );
+    }, [productionId, queryClient]);
 
     const handleClick = useCallback(() => {
         // If sidebar is already open with this content, close it
@@ -105,7 +127,7 @@ export default function MobileExportModal({
         <>
             <button
                 onClick={handleClick}
-                onMouseEnter={prefetchEnsembles}
+                onMouseEnter={prefetchMobileExportData}
                 className={twMerge(
                     clsx(
                         "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
@@ -129,10 +151,11 @@ export default function MobileExportModal({
  */
 function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
-    const { isAuthenticated } = useAuth();
+    const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
     const { data: currentProduction } = useCurrentProduction();
     const validationState = useMobileExportValidation();
     const productionId = useOtmProductionId();
+    const isSignedInView = isAuthenticated || isAuthLoading;
 
     const heading = currentProduction ? (
         <div className="">
@@ -158,7 +181,7 @@ function MobileExportModalContents() {
             <header className="flex items-start justify-between gap-24">
                 {heading}
                 <div className="flex shrink-0 items-center gap-8">
-                    {isAuthenticated && <AuthButton />}
+                    {isSignedInView && <AuthButton />}
                     <button
                         onClick={toggleOpen}
                         className="hover:text-red duration-150 ease-out"
@@ -171,7 +194,7 @@ function MobileExportModalContents() {
             <div
                 className={clsx(
                     "flex grow flex-col gap-16 pr-3",
-                    isAuthenticated
+                    isSignedInView
                         ? "overflow-y-auto"
                         : "min-h-0 flex-1 overflow-hidden",
                 )}
@@ -179,11 +202,13 @@ function MobileExportModalContents() {
                 <div
                     className={clsx(
                         "flex flex-col gap-12",
-                        !isAuthenticated && "min-h-0 flex-1",
+                        !isSignedInView && "min-h-0 flex-1",
                     )}
                 >
                     {validationState.type === "no-access" ? (
                         <MobileExportAccessError />
+                    ) : isAuthLoading ? (
+                        <MobileExportLoading message="Checking sign-in..." />
                     ) : !isAuthenticated ? (
                         <SignedOutMobileExportContent />
                     ) : currentProduction ? (
@@ -191,7 +216,7 @@ function MobileExportModalContents() {
                             currentProduction={currentProduction}
                         />
                     ) : productionId ? (
-                        <MobileExportValidationLoading />
+                        <MobileExportLoading message="Validating On the Move access..." />
                     ) : (
                         <EnsembleList />
                     )}
@@ -201,11 +226,11 @@ function MobileExportModalContents() {
     );
 }
 
-function MobileExportValidationLoading() {
+function MobileExportLoading({ message }: { message: string }) {
     return (
         <div className="text-text-subtitle flex h-full flex-col items-center justify-center gap-12 text-center">
             <DeviceMobileIcon size={32} />
-            <p className="text-body">Validating On the Move access...</p>
+            <p className="text-body">{message}</p>
         </div>
     );
 }

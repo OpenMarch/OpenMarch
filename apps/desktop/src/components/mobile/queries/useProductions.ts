@@ -16,6 +16,18 @@ import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSetti
 import { uploadDatabaseToServer } from "../utilities/upload-service";
 import { db } from "@/global/database/db";
 
+export const currentProductionQueryOptions = (
+    productionId: number,
+    enabled = true,
+) =>
+    getGetApiEditorV1ProductionsIdQueryOptions<Production>(productionId, {
+        query: {
+            queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
+            enabled,
+            select: (data) => data.production as unknown as Production,
+        },
+    });
+
 /**
  * Stricter production data structure. The generated type has all fields
  * optional and is missing audio_files; this interface captures the actual
@@ -108,13 +120,5 @@ export function useCurrentProduction() {
     const productionId = useOtmProductionId();
 
     const id = productionId ?? 0;
-    return useQuery(
-        getGetApiEditorV1ProductionsIdQueryOptions<Production>(id, {
-            query: {
-                queryKey: getGetApiEditorV1ProductionsIdQueryKey(id),
-                enabled: productionId != null,
-                select: (data) => data.production as unknown as Production,
-            },
-        }),
-    );
+    return useQuery(currentProductionQueryOptions(id, productionId != null));
 }
