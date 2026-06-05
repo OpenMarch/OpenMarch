@@ -154,6 +154,7 @@ export const SubmitRevisionForm = ({
     const [audioSyncResult, setAudioSyncResult] =
         useState<AudioSyncResult | null>(null);
     const [audioSyncLoading, setAudioSyncLoading] = useState(false);
+    const [audioUploadLoading, setAudioUploadLoading] = useState(false);
     const [backgroundSyncResult, setBackgroundSyncResult] =
         useState<BackgroundImageSyncResult | null>(null);
     const [backgroundSyncLoading, setBackgroundSyncLoading] = useState(false);
@@ -265,6 +266,7 @@ export const SubmitRevisionForm = ({
                     default_audio_file_id: serverAudioFileId,
                 } as { name?: string; position?: number });
             } else {
+                setAudioUploadLoading(true);
                 const formData = await buildAudioUploadFormDataWithDuration(
                     selectedAudioFileWithData,
                 );
@@ -280,6 +282,8 @@ export const SubmitRevisionForm = ({
             const msg = err instanceof Error ? err.message : String(err);
             console.error("Failed to set active audio on server:", err);
             toast.error(`Revision uploaded, but audio sync failed: ${msg}`);
+        } finally {
+            setAudioUploadLoading(false);
         }
     }, [productionId, audioSyncResult, queryClient]);
 
@@ -358,6 +362,7 @@ export const SubmitRevisionForm = ({
     const disableUpload =
         isUploading ||
         (hasSelectedNonSilentAudio && audioSyncLoading) ||
+        audioUploadLoading ||
         backgroundSyncLoading;
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -409,13 +414,18 @@ export const SubmitRevisionForm = ({
                                 Pushing to Mobile App...
                             </span>
                         ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
+                          audioUploadLoading ||
                           backgroundSyncLoading ? (
                             <span className="flex items-center gap-8">
                                 <CircleNotchIcon
                                     size={16}
                                     className="animate-spin"
                                 />
-                                Preparing...
+                                {hasSelectedNonSilentAudio && audioSyncLoading
+                                    ? "Validating audio..."
+                                    : audioUploadLoading
+                                      ? "Uploading audio..."
+                                      : "Preparing..."}
                             </span>
                         ) : (
                             "Push to Mobile App"
