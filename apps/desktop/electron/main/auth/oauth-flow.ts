@@ -93,7 +93,10 @@ export function initiateOAuthFlow(): PendingAuthFlow {
     authUrl.searchParams.set("code_challenge", codeChallenge);
     authUrl.searchParams.set("code_challenge_method", "S256");
 
-    console.log("[Auth] Opening browser for OAuth authorization");
+    console.log(
+        "[Auth] Opening browser for OAuth authorization -",
+        authUrl.toString(),
+    );
 
     // Open system browser
     void shell.openExternal(authUrl.toString());

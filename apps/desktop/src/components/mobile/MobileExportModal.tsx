@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useCallback, useEffect } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { DeviceMobileIcon, XIcon } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
@@ -19,7 +19,7 @@ import {
     AlertDialogCancel,
     AlertDialogAction,
 } from "@openmarch/ui";
-import { SignInButton } from "../../auth/AuthButton";
+import { AuthButton, SignInButton } from "../../auth/AuthButton";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
 import {
@@ -28,13 +28,12 @@ import {
 } from "@/hooks/queries/useWorkspaceSettings";
 import { conToastError } from "@/utilities/utils";
 
+const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
+    (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
+);
+
 type AlertState = {
-    type:
-        | "no-access"
-        | "not-signed-in"
-        | "signed-in-no-ensembles"
-        | "error"
-        | null;
+    type: "no-access" | null;
 };
 
 /**
@@ -44,33 +43,25 @@ type AlertState = {
 function useMobileExportValidation(): AlertState {
     const { isAuthenticated } = useAuth();
     const productionId = useOtmProductionId();
-    const { data: hasAnyEnsembles } = useQuery(
-        getGetApiEditorV1EnsemblesAnyQueryOptions(),
-    );
-    const { data: currentProduction, error: currentProductionError } =
-        useCurrentProduction();
+    const {
+        data: currentProduction,
+        error: currentProductionError,
+        isFetched: hasFetchedCurrentProduction,
+    } = useCurrentProduction();
 
     return useMemo(() => {
-        const isSignedIn = isAuthenticated;
         const hasProductionId = !!productionId;
-        const hasEnsembles = hasAnyEnsembles;
         const hasError = !!currentProductionError;
         const hasAccess = !!currentProduction && !currentProductionError;
 
         let output: AlertState = { type: null };
 
-        // Validation order matters - check in priority order
-        if (!isSignedIn) {
-            output = { type: "not-signed-in" };
-        } else if (!hasProductionId && !hasEnsembles) {
-            output = { type: "signed-in-no-ensembles" };
-        } else if (hasError) {
-            output = { type: "error" };
-        } else if (!hasAccess && hasProductionId) {
+        if (
+            isAuthenticated &&
+            hasProductionId &&
+            (hasError || (hasFetchedCurrentProduction && !hasAccess))
+        ) {
             output = { type: "no-access" };
-        } else {
-            // All validations passed
-            output = { type: null };
         }
 
         return output;
@@ -79,7 +70,7 @@ function useMobileExportValidation(): AlertState {
         productionId,
         currentProductionError,
         currentProduction,
-        hasAnyEnsembles,
+        hasFetchedCurrentProduction,
     ]);
 }
 
@@ -97,7 +88,6 @@ export default function MobileExportModal({
         useSidebarModalStore();
     const queryClient = useQueryClient();
 
-    const { isAuthenticated } = useAuth();
     const validationState = useMobileExportValidation();
     const [alertDialogState, setAlertDialogState] =
         useState<AlertState["type"]>(null);
@@ -115,12 +105,9 @@ export default function MobileExportModal({
             return;
         }
 
-        // Run validation checks
         if (validationState.type !== null) {
-            // Validation failed - show AlertDialog
             setAlertDialogState(validationState.type);
         } else {
-            // Validation passed - open sidebar
             setContent(<MobileExportModalContents />, "mobile-export");
             if (!isOpen) {
                 toggleOpen();
@@ -159,8 +146,6 @@ export default function MobileExportModal({
                 <OtmAlertDialog
                     alertState={{ type: alertDialogState }}
                     handleAlertClose={handleAlertClose}
-                    isSignedIn={isAuthenticated}
-                    hasInternetConnection={navigator.onLine}
                 />
             )}
         </>
@@ -172,6 +157,7 @@ export default function MobileExportModal({
  */
 function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
+    const { isAuthenticated } = useAuth();
     const { data: currentProduction } = useCurrentProduction();
 
     const heading = currentProduction ? (
@@ -197,17 +183,34 @@ function MobileExportModalContents() {
         <section className="animate-scale-in text-text flex h-full w-[30rem] flex-col gap-16">
             <header className="flex items-start justify-between gap-24">
                 {heading}
-                <button
-                    onClick={toggleOpen}
-                    className="hover:text-red duration-150 ease-out"
-                >
-                    <XIcon size={24} />
-                </button>
+                <div className="flex shrink-0 items-center gap-8">
+                    {isAuthenticated && <AuthButton />}
+                    <button
+                        onClick={toggleOpen}
+                        className="hover:text-red duration-150 ease-out"
+                    >
+                        <XIcon size={24} />
+                    </button>
+                </div>
             </header>
 
-            <div className="flex grow flex-col gap-16 overflow-y-auto pr-3">
-                <div className="flex flex-col gap-12">
-                    {currentProduction ? (
+            <div
+                className={clsx(
+                    "flex grow flex-col gap-16 pr-3",
+                    isAuthenticated
+                        ? "overflow-y-auto"
+                        : "min-h-0 flex-1 overflow-hidden",
+                )}
+            >
+                <div
+                    className={clsx(
+                        "flex flex-col gap-12",
+                        !isAuthenticated && "min-h-0 flex-1",
+                    )}
+                >
+                    {!isAuthenticated ? (
+                        <SignedOutMobileExportContent />
+                    ) : currentProduction ? (
                         <MobileExportView
                             currentProduction={currentProduction}
                         />
@@ -220,48 +223,66 @@ function MobileExportModalContents() {
     );
 }
 
+function SignedOutMobileExportContent() {
+    return (
+        <div className="text-body text-text-subtitle flex h-full min-h-0 flex-col gap-24 overflow-hidden text-center">
+            <div className="flex shrink-0 grow flex-col items-center gap-16 self-center">
+                <div className="translate-x-[-32px]">
+                    <img
+                        src="https://assets.openmarch.com/otm-logo-purple-light.webp"
+                        alt="OTM Logo"
+                        className="block h-200 w-auto shrink-0 dark:hidden"
+                    />
+                    <img
+                        src="https://assets.openmarch.com/otm-logo-purple-dark.webp"
+                        alt=""
+                        aria-hidden="true"
+                        className="hidden h-200 w-auto shrink-0 dark:block"
+                    />
+                </div>
+                <SignInButton variant="primary" />
+                <p className="text-body text-text-subtitle w-[60%]">
+                    Sign in or create an account to connect this show to On the
+                    Move and export it to mobile devices.
+                </p>
+            </div>
+            <div
+                className="relative -mx-3 flex min-h-0 overflow-hidden py-4"
+                aria-hidden="true"
+            >
+                <div className="from-bg-1 pointer-events-none absolute inset-y-0 left-0 z-10 w-16 bg-linear-to-r to-transparent" />
+                <div className="from-bg-1 pointer-events-none absolute inset-y-0 right-0 z-10 w-16 bg-linear-to-l to-transparent" />
+                <div className="mobile-export-screenshot-marquee flex w-max items-start gap-10">
+                    {[
+                        ...mobileExportScreenshotUrls,
+                        ...mobileExportScreenshotUrls,
+                    ].map((url, index) => (
+                        <img
+                            key={`${url}-${index}`}
+                            src={url}
+                            alt=""
+                            className="border-stroke shadow-fg-1 aspect-[9/19.5] h-300 w-auto shrink-0 rounded-[1.25rem] border object-cover"
+                            draggable={false}
+                        />
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function OtmAlertDialog({
     alertState,
     handleAlertClose,
-    isSignedIn,
-    hasInternetConnection,
 }: {
     alertState: AlertState;
     handleAlertClose: (open: boolean) => void;
-    isSignedIn: boolean;
-    hasInternetConnection: boolean;
 }): React.ReactNode | null {
     // Render only one Alert Dialog based on validation state
     let output: React.ReactNode | null = null;
 
     switch (alertState.type) {
         case "no-access":
-            output = (
-                <ProductionNotFound
-                    open={true}
-                    onOpenChange={handleAlertClose}
-                />
-            );
-            break;
-        case "not-signed-in":
-            output = (
-                <ProductionDefinedButNotSignedIn
-                    open={true}
-                    onOpenChange={handleAlertClose}
-                />
-            );
-            break;
-        case "signed-in-no-ensembles":
-            output = (
-                <OtmPromotionalAlert
-                    isSignedIn={isSignedIn}
-                    hasInternetConnection={hasInternetConnection}
-                    open={true}
-                    onOpenChange={handleAlertClose}
-                />
-            );
-            break;
-        case "error":
             output = (
                 <ProductionNotFound
                     open={true}
@@ -345,93 +366,6 @@ function ProductionNotFound({
                         >
                             Detach from production
                         </Button>
-                    </AlertDialogAction>
-                </div>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
-}
-
-function ProductionDefinedButNotSignedIn({
-    open,
-    onOpenChange,
-}: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
-    const { isAuthenticated } = useAuth();
-    const { setContent, isOpen, toggleOpen } = useSidebarModalStore();
-
-    useEffect(() => {
-        if (isAuthenticated) {
-            onOpenChange(false);
-            // Set sidebar content and open it
-            setContent(<MobileExportModalContents />, "mobile-export");
-            if (!isOpen) {
-                toggleOpen();
-            }
-        }
-    }, [isAuthenticated, onOpenChange, setContent, isOpen, toggleOpen]);
-
-    return (
-        <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent>
-                <AlertDialogTitle>Not signed in</AlertDialogTitle>
-                <AlertDialogDescription>
-                    To connect to On the Move, you must be signed in.
-                </AlertDialogDescription>
-                <div className="flex items-center justify-end gap-8 align-middle">
-                    <AlertDialogCancel asChild>
-                        <Button variant="secondary">Dismiss</Button>
-                    </AlertDialogCancel>
-                    <SignInButton />
-                </div>
-            </AlertDialogContent>
-        </AlertDialog>
-    );
-}
-
-/**
- * Promotional alert for On the Move
- *
- * This should show only if the user is not signed in, or they are signed in and have no ensembles
- */
-function OtmPromotionalAlert({
-    isSignedIn,
-    hasInternetConnection,
-    open,
-    onOpenChange,
-}: {
-    isSignedIn: boolean;
-    hasInternetConnection: boolean;
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
-    return (
-        <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent>
-                <AlertDialogTitle>Take your show On the Move!</AlertDialogTitle>
-                <AlertDialogDescription>
-                    OpenMarch On the Move lets you instantly share your shows to
-                    performer&apos;s mobile devices.
-                </AlertDialogDescription>
-                <div className="flex items-center justify-end gap-8 align-middle">
-                    <AlertDialogCancel asChild>
-                        <Button variant="secondary">Dismiss</Button>
-                    </AlertDialogCancel>
-                    <AlertDialogAction>
-                        {isSignedIn ? (
-                            <Button>Unlock Instant Sync</Button>
-                        ) : (
-                            <div
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                }}
-                            >
-                                <SignInButton />
-                            </div>
-                        )}
                     </AlertDialogAction>
                 </div>
             </AlertDialogContent>

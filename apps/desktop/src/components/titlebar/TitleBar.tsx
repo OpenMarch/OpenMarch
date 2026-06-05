@@ -15,7 +15,6 @@ import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
 import { T } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { AuthButton } from "@/auth/AuthButton";
 
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
@@ -104,7 +103,6 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                 <div
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
                 >
-                    <AuthButton />
                     <BugReport />
                     {!isMacOS && (
                         <div className="titlebar-button flex">

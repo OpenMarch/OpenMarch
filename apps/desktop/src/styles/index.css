@@ -20,6 +20,19 @@
     }
 }
 
+@keyframes mobile-export-screenshot-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-152%);
+    }
+}
+
+.mobile-export-screenshot-marquee {
+    animation: mobile-export-screenshot-marquee 40s linear infinite;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .example::-webkit-scrollbar {
     display: none;
