@@ -23,8 +23,13 @@ import { useAuth } from "@/auth/useAuth";
 
 export const SignInButton = ({
     className,
+    label = "Sign In",
+    showIcon = true,
     ...buttonProps
-}: Omit<ButtonProps, "children" | "disabled" | "onClick">) => {
+}: Omit<ButtonProps, "children" | "disabled" | "onClick"> & {
+    label?: string;
+    showIcon?: boolean;
+}) => {
     const { login, isLoggingIn } = useAuth();
 
     if (!isSignInEnabled) return null;
@@ -40,9 +45,9 @@ export const SignInButton = ({
             {isLoggingIn ? (
                 <SpinnerIcon className="animate-spin" size={16} />
             ) : (
-                <SignInIcon size={16} />
+                showIcon && <SignInIcon size={16} />
             )}
-            <span>Sign In</span>
+            <span>{label}</span>
         </Button>
     );
 };

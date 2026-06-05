@@ -1,5 +1,9 @@
 import React, { useMemo, useState, useCallback } from "react";
-import { DeviceMobileIcon, XIcon } from "@phosphor-icons/react";
+import {
+    ArrowSquareOutIcon,
+    DeviceMobileIcon,
+    XIcon,
+} from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import EnsembleList from "./EnsembleList";
@@ -27,6 +31,7 @@ import {
     workspaceSettingsQueryOptions,
 } from "@/hooks/queries/useWorkspaceSettings";
 import { conToastError } from "@/utilities/utils";
+import { getClerkSignUpUrl } from "@/global/auth/constants";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -224,6 +229,15 @@ function MobileExportModalContents() {
 }
 
 function SignedOutMobileExportContent() {
+    const handleSetupAccount = useCallback(() => {
+        const signupUrl = getClerkSignUpUrl();
+        if (window.electron?.openExternal) {
+            void window.electron.openExternal(signupUrl);
+        } else {
+            window.open(signupUrl, "_blank");
+        }
+    }, []);
+
     return (
         <div className="text-body text-text-subtitle flex h-full min-h-0 flex-col gap-24 overflow-hidden text-center">
             <div className="flex shrink-0 grow flex-col items-center gap-16 self-center">
@@ -240,11 +254,21 @@ function SignedOutMobileExportContent() {
                         className="hidden h-200 w-auto shrink-0 dark:block"
                     />
                 </div>
-                <SignInButton variant="primary" />
-                <p className="text-body text-text-subtitle w-[60%]">
-                    Sign in or create an account to connect this show to On the
-                    Move and export it to mobile devices.
-                </p>
+                <div className="flex w-[85%] flex-col items-center gap-12">
+                    <p className="text-body text-text-subtitle">
+                        Don&apos;t have an account yet? Create one now!
+                    </p>
+                    <Button variant="primary" onClick={handleSetupAccount}>
+                        <ArrowSquareOutIcon size={16} /> Set up your account
+                    </Button>
+                </div>
+                <div className="flex w-[85%] flex-col items-center gap-12">
+                    <p className="text-body text-text-subtitle">
+                        Already have an account? Connect it to the desktop app
+                        to start taking it On The Move!
+                    </p>
+                    <SignInButton variant="secondary" />
+                </div>
             </div>
             <div
                 className="relative -mx-3 flex min-h-0 overflow-hidden py-4"

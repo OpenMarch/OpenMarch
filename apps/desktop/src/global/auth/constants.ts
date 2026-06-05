@@ -70,6 +70,15 @@ export function getClerkTokenEndpoint(): string {
 }
 
 /**
+ * Gets the Clerk accounts sign-up URL.
+ * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
+ */
+export function getClerkSignUpUrl(): string {
+    if (!CLERK_CONFIG) return "";
+    return `https://${CLERK_CONFIG.DOMAIN}/sign-up`;
+}
+
+/**
  * Gets the OAuth redirect URI.
  */
 export function getRedirectUri(): string {

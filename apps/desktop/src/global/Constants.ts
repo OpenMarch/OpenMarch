@@ -15,9 +15,10 @@ export const Constants = {
 const ensureEndingSlash = (url: string) =>
     url.endsWith("/") ? url : url + "/";
 
-export const OPENMARCH_API_ENDPOINT =
-    ensureEndingSlash(
-        import.meta.env.VITE_API_URL ?? "https://dev-app.openmarch.com/",
-    ) + "api/editor/";
+export const OPENMARCH_APP_BASE_URL = ensureEndingSlash(
+    import.meta.env.VITE_API_URL ?? "https://dev-app.openmarch.com/",
+);
+
+export const OPENMARCH_API_ENDPOINT = OPENMARCH_APP_BASE_URL + "api/editor/";
 
 export default Constants;
