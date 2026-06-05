@@ -1,36 +1,25 @@
-import React, { useMemo, useState, useCallback } from "react";
+import React, { useMemo, useCallback } from "react";
 import {
     ArrowSquareOutIcon,
     DeviceMobileIcon,
+    WarningCircleIcon,
     XIcon,
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
 import EnsembleList from "./EnsembleList";
 import MobileExportView from "./MobileExportView";
+import DetachButton from "./DetachButton";
 import {
     useCurrentProduction,
     useOtmProductionId,
 } from "./queries/useProductions";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { useAuth } from "@/auth/useAuth";
-import {
-    AlertDialog,
-    AlertDialogTitle,
-    AlertDialogContent,
-    Button,
-    AlertDialogDescription,
-    AlertDialogCancel,
-    AlertDialogAction,
-} from "@openmarch/ui";
+import { Button } from "@openmarch/ui";
 import { AuthButton, SignInButton } from "../../auth/AuthButton";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
-import {
-    updateWorkspaceSettingsMutationOptions,
-    workspaceSettingsQueryOptions,
-} from "@/hooks/queries/useWorkspaceSettings";
-import { conToastError } from "@/utilities/utils";
 import { getClerkSignUpUrl } from "@/global/auth/constants";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
@@ -55,7 +44,7 @@ function useMobileExportValidation(): AlertState {
     } = useCurrentProduction();
 
     return useMemo(() => {
-        const hasProductionId = !!productionId;
+        const hasProductionId = productionId != null;
         const hasError = !!currentProductionError;
         const hasAccess = !!currentProduction && !currentProductionError;
 
@@ -93,10 +82,6 @@ export default function MobileExportModal({
         useSidebarModalStore();
     const queryClient = useQueryClient();
 
-    const validationState = useMobileExportValidation();
-    const [alertDialogState, setAlertDialogState] =
-        useState<AlertState["type"]>(null);
-
     const prefetchEnsembles = useCallback(() => {
         void queryClient.prefetchQuery(
             getGetApiEditorV1EnsemblesAnyQueryOptions(),
@@ -110,21 +95,11 @@ export default function MobileExportModal({
             return;
         }
 
-        if (validationState.type !== null) {
-            setAlertDialogState(validationState.type);
-        } else {
-            setContent(<MobileExportModalContents />, "mobile-export");
-            if (!isOpen) {
-                toggleOpen();
-            }
+        setContent(<MobileExportModalContents />, "mobile-export");
+        if (!isOpen) {
+            toggleOpen();
         }
-    }, [isOpen, contentId, toggleOpen, setContent, validationState.type]);
-
-    const handleAlertClose = useCallback((open: boolean) => {
-        if (!open) {
-            setAlertDialogState(null);
-        }
-    }, []);
+    }, [isOpen, contentId, toggleOpen, setContent]);
 
     return (
         <>
@@ -145,14 +120,6 @@ export default function MobileExportModal({
             >
                 {label}
             </button>
-
-            {/* Render AlertDialogs at root level */}
-            {alertDialogState && (
-                <OtmAlertDialog
-                    alertState={{ type: alertDialogState }}
-                    handleAlertClose={handleAlertClose}
-                />
-            )}
         </>
     );
 }
@@ -164,6 +131,8 @@ function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { isAuthenticated } = useAuth();
     const { data: currentProduction } = useCurrentProduction();
+    const validationState = useMobileExportValidation();
+    const productionId = useOtmProductionId();
 
     const heading = currentProduction ? (
         <div className="">
@@ -213,18 +182,62 @@ function MobileExportModalContents() {
                         !isAuthenticated && "min-h-0 flex-1",
                     )}
                 >
-                    {!isAuthenticated ? (
+                    {validationState.type === "no-access" ? (
+                        <MobileExportAccessError />
+                    ) : !isAuthenticated ? (
                         <SignedOutMobileExportContent />
                     ) : currentProduction ? (
                         <MobileExportView
                             currentProduction={currentProduction}
                         />
+                    ) : productionId ? (
+                        <MobileExportValidationLoading />
                     ) : (
                         <EnsembleList />
                     )}
                 </div>
             </div>
         </section>
+    );
+}
+
+function MobileExportValidationLoading() {
+    return (
+        <div className="text-text-subtitle flex h-full flex-col items-center justify-center gap-12 text-center">
+            <DeviceMobileIcon size={32} />
+            <p className="text-body">Validating On the Move access...</p>
+        </div>
+    );
+}
+
+function MobileExportAccessError() {
+    const { toggleOpen } = useSidebarModalStore();
+
+    return (
+        <div className="flex h-full flex-col justify-center gap-16 text-center">
+            <div className="text-red flex flex-col items-center gap-8">
+                <WarningCircleIcon size={40} />
+                <h4 className="text-h4 leading-none">
+                    Could not validate On the Move access
+                </h4>
+            </div>
+            <p className="text-body text-text-subtitle">
+                We could not validate that you have access to the OTM Production
+                this show is attached to. The signed-in account may not have
+                access, or the production may no longer exist.
+            </p>
+            <p className="text-sub text-text-subtitle">
+                Detach this file from the production to choose a different one,
+                or close the sidebar and sign in with an account that has
+                access.
+            </p>
+            <div className="flex gap-8 align-middle">
+                <DetachButton variant="red" />
+                <Button variant="secondary" onClick={toggleOpen}>
+                    Close
+                </Button>
+            </div>
+        </div>
     );
 }
 
@@ -292,107 +305,5 @@ function SignedOutMobileExportContent() {
                 </div>
             </div>
         </div>
-    );
-}
-
-function OtmAlertDialog({
-    alertState,
-    handleAlertClose,
-}: {
-    alertState: AlertState;
-    handleAlertClose: (open: boolean) => void;
-}): React.ReactNode | null {
-    // Render only one Alert Dialog based on validation state
-    let output: React.ReactNode | null = null;
-
-    switch (alertState.type) {
-        case "no-access":
-            output = (
-                <ProductionNotFound
-                    open={true}
-                    onOpenChange={handleAlertClose}
-                />
-            );
-            break;
-        default:
-            output = null;
-    }
-
-    return output;
-}
-
-/**
- * AlertDialog that is displayed when the production is not found or the user does not have access
- */
-function ProductionNotFound({
-    open,
-    onOpenChange,
-}: {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}) {
-    const queryClient = useQueryClient();
-    const { mutate: updateWorkspaceSettings, isPending } = useMutation(
-        updateWorkspaceSettingsMutationOptions(queryClient),
-    );
-    const { data: workspaceSettings } = useQuery(
-        workspaceSettingsQueryOptions(),
-    );
-
-    const handleDetach = () => {
-        if (!workspaceSettings) {
-            conToastError(
-                "Failed to detach file from production",
-                new Error("Workspace settings not found"),
-            );
-            return;
-        }
-        updateWorkspaceSettings(
-            { ...workspaceSettings, otmProductionId: undefined },
-            { onSuccess: () => onOpenChange(false) },
-        );
-    };
-
-    return (
-        <AlertDialog open={open} onOpenChange={onOpenChange}>
-            <AlertDialogContent>
-                <AlertDialogTitle>
-                    Could not validate On the Move access
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                    We could not validate that you have access to the OTM
-                    Production this show is attached to. Either the account you
-                    are signed in with does not have access, or the production
-                    no longer exists.
-                    <br />
-                    First, verify that you are signed in with the correct
-                    account. If you are, try detaching this file from the OTM
-                    production and re-attaching it.
-                    <br />
-                    If you still encounter issues, please reach out to
-                    otmhelp@openmarch.com for assistance.
-                </AlertDialogDescription>
-                <div className="flex items-center justify-end gap-8 align-middle">
-                    <AlertDialogCancel asChild>
-                        <Button
-                            variant="secondary"
-                            // disabled={isDeleting}
-                            className="w-full"
-                        >
-                            Dismiss
-                        </Button>
-                    </AlertDialogCancel>
-                    <AlertDialogAction>
-                        <Button
-                            variant="red"
-                            onClick={handleDetach}
-                            disabled={isPending}
-                        >
-                            Detach from production
-                        </Button>
-                    </AlertDialogAction>
-                </div>
-            </AlertDialogContent>
-        </AlertDialog>
     );
 }
