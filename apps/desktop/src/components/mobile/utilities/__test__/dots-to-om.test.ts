@@ -14,6 +14,8 @@ import {
     createTags,
 } from "@/db-functions";
 import { updateMarcherPages } from "@/db-functions/marcherPage";
+import { updateWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 
 describeDbTests("dots-to-om", (it) => {
     it("converts db to valid OpenMarch schema", async ({
@@ -131,6 +133,19 @@ describeDbTests("dots-to-om", (it) => {
         expect(result.metadata.performanceArea.yOrigin).toBe("front");
         expect(result.metadata.performanceArea.xCheckpoints).toBeDefined();
         expect(result.metadata.performanceArea.yCheckpoints).toBeDefined();
+    });
+
+    it("includes audioOffsetSeconds from workspace settings", async ({
+        db,
+    }) => {
+        const settings = workspaceSettingsSchema.parse({
+            audioOffsetSeconds: 1.25,
+        });
+        await updateWorkspaceSettingsParsed({ db, settings });
+
+        const result = await toOpenMarchSchema(db as unknown as DB);
+
+        expect(result.metadata.audioOffsetSeconds).toBe(1.25);
     });
 
     it("includes performerAppearance with default from field properties", async ({

@@ -16,6 +16,7 @@ import { DB, schema } from "@/global/database/db";
 import { FieldPropertiesSchema } from "@/components/field/fieldPropertiesSchema";
 import { generatePageNames } from "@/global/classes/Page";
 import { getPagesInOrder } from "@/db-functions";
+import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import {
     buildPerformerAppearanceShowData,
     databaseMarcherPagesToMarcherPages,
@@ -237,6 +238,7 @@ async function fetchDotsData(db: DB) {
         pagesRows,
         measuresRows,
         marcherPagesRows,
+        workspaceSettingsRow,
         performerAppearanceExportData,
     ] = await Promise.all([
         db.query.field_properties.findFirst({ columns: { json_data: true } }),
@@ -259,6 +261,9 @@ async function fetchDotsData(db: DB) {
         db.query.pages.findMany(),
         db.query.measures.findMany(),
         db.query.marcher_pages.findMany(),
+        db.query.workspace_settings.findFirst({
+            columns: { json_data: true },
+        }),
         fetchPerformerAppearanceExportData(
             db,
             pagesInOrder.map((p) => ({ id: p.id })),
@@ -272,6 +277,7 @@ async function fetchDotsData(db: DB) {
         pagesRows,
         measuresRows,
         marcherPagesRows,
+        workspaceSettingsRow,
         pagesInOrder,
         performerAppearanceExportData,
     };
@@ -287,6 +293,7 @@ function buildOpenMarchFromRows(
         pagesRows,
         measuresRows,
         marcherPagesRows,
+        workspaceSettingsRow,
     } = data;
 
     if (!fieldPropsRow) {
@@ -308,6 +315,11 @@ function buildOpenMarchFromRows(
             timingRows.length > 0
                 ? new Date(timingRows[0].timestamp * 1000).toISOString()
                 : new Date().toISOString(),
+        ...(workspaceSettingsRow && {
+            audioOffsetSeconds: workspaceSettingsSchema.parse(
+                JSON.parse(workspaceSettingsRow.json_data),
+            ).audioOffsetSeconds,
+        }),
     };
 
     const performers = marchersRows.map((m) => ({
