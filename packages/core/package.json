@@ -39,7 +39,7 @@
         "fast-check": "^4.3.0",
         "tsup": "^8.5.0",
         "typescript": "catalog:",
-        "vitest": "^3.2.3"
+        "vitest": "^3.2.6"
     },
     "dependencies": {
         "svg-path-commander": "^2.1.11",

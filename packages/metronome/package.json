@@ -44,7 +44,7 @@
         "@types/node": "^20.19.9",
         "@types/node-wav": "^0.0.4",
         "typescript": "catalog:",
-        "vitest": "^3.2.3",
+        "vitest": "^3.2.6",
         "tsup": "^8.5.0"
     }
 }
