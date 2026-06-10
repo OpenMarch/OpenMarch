@@ -1168,7 +1168,7 @@ const VIDEO_FRAME_RATES = [30, 60] as const;
 
 // eslint-disable-next-line max-lines-per-function
 function VideoExport() {
-    const { pages } = useTimingObjects()!;
+    const { pages, measures } = useTimingObjects()!;
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
@@ -1191,6 +1191,10 @@ function VideoExport() {
 
     const [resolution, setResolution] = useState("1080p");
     const [frameRate, setFrameRate] = useState(60);
+    const [showSetCounts, setShowSetCounts] = useState(true);
+    const [showMeasures, setShowMeasures] = useState(true);
+    const [showTempo, setShowTempo] = useState(false);
+    const [showClock, setShowClock] = useState(true);
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
@@ -1237,6 +1241,8 @@ function VideoExport() {
                 ]);
             assert(audioFile.data, "Audio file has no data");
 
+            const overlayEnabled =
+                showSetCounts || showMeasures || showTempo || showClock;
             const result = await exportVideo({
                 fieldProperties,
                 marchers,
@@ -1251,6 +1257,24 @@ function VideoExport() {
                 width,
                 height,
                 fps: frameRate,
+                overlay: overlayEnabled
+                    ? {
+                          measures,
+                          options: {
+                              showSet: showSetCounts,
+                              showCounts: showSetCounts,
+                              showMeasures,
+                              showTempo,
+                              showClock,
+                              setLabel: t(
+                                  "exportCoordinates.videoOverlaySetLabel",
+                              ),
+                              countLabel: t(
+                                  "exportCoordinates.videoOverlayCountLabel",
+                              ),
+                          },
+                      }
+                    : undefined,
                 onProgress: (fraction) => setProgress(fraction * 100),
                 isCancelled: () => isCancelled.current,
             });
@@ -1316,6 +1340,11 @@ function VideoExport() {
         uiSettings.halfLines,
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
+        measures,
+        showSetCounts,
+        showMeasures,
+        showTempo,
+        showClock,
     ]);
 
     return (
@@ -1373,6 +1402,83 @@ function VideoExport() {
                     </Select>
                 </Form.Field>
             </Form.Root>
+
+            {/* Overlay options */}
+            <div className="flex flex-col gap-8">
+                <h5 className="text-h5">
+                    <T keyName="exportCoordinates.videoOverlay" />
+                </h5>
+                <Form.Root className="grid grid-cols-2 gap-y-16">
+                    <Form.Field
+                        name="overlaySetCounts"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={showSetCounts}
+                                onCheckedChange={(checked: boolean) =>
+                                    setShowSetCounts(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.videoOverlaySetCounts" />
+                        </Form.Label>
+                    </Form.Field>
+
+                    <Form.Field
+                        name="overlayMeasures"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={showMeasures && measures.length > 0}
+                                disabled={measures.length === 0}
+                                onCheckedChange={(checked: boolean) =>
+                                    setShowMeasures(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.videoOverlayMeasures" />
+                        </Form.Label>
+                    </Form.Field>
+
+                    <Form.Field
+                        name="overlayTempo"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={showTempo}
+                                onCheckedChange={(checked: boolean) =>
+                                    setShowTempo(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.videoOverlayTempo" />
+                        </Form.Label>
+                    </Form.Field>
+
+                    <Form.Field
+                        name="overlayClock"
+                        className="flex w-full items-center gap-12"
+                    >
+                        <Form.Control asChild>
+                            <Checkbox
+                                checked={showClock}
+                                onCheckedChange={(checked: boolean) =>
+                                    setShowClock(checked)
+                                }
+                            />
+                        </Form.Control>
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.videoOverlayClock" />
+                        </Form.Label>
+                    </Form.Field>
+                </Form.Root>
+            </div>
 
             <p className="text-body text-text/75">
                 {selectedAudioFile

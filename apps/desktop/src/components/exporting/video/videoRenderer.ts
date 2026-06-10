@@ -23,6 +23,8 @@ import {
 } from "@/utilities/Keyframes";
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
+import Measure from "@/global/classes/Measure";
+import { drawOverlay, OverlayOptions, OverlayTimeline } from "./videoOverlay";
 
 const FIELD_MARGIN_PX = 40;
 const KEYFRAME_INTERVAL_SECONDS = 2;
@@ -46,6 +48,8 @@ export interface VideoExportArgs {
     width: number;
     height: number;
     fps: number;
+    /** When set, an info HUD (set, counts, measure, etc.) is drawn on each frame */
+    overlay?: { options: OverlayOptions; measures: Measure[] };
     onProgress?: (fraction: number) => void;
     isCancelled?: () => boolean;
 }
@@ -277,6 +281,10 @@ export async function exportVideo(
             }
         };
 
+        const overlayTimeline = args.overlay
+            ? new OverlayTimeline(sortedPages, args.overlay.measures)
+            : null;
+
         let nextAudioSlice = 0;
         const flushAudioUntil = async (seconds: number) => {
             while (
@@ -310,6 +318,14 @@ export async function exportVideo(
             );
             canvas.renderAll();
             frameContext.drawImage(canvas.getElement(), 0, 0, width, height);
+            if (overlayTimeline && args.overlay) {
+                drawOverlay(
+                    frameContext,
+                    overlayTimeline.getState(timestampSeconds),
+                    args.overlay.options,
+                    height,
+                );
+            }
 
             await videoSource.add(timestampSeconds, 1 / fps, {
                 keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,
