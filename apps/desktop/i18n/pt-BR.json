@@ -818,6 +818,10 @@
         "controls": {
             "label": "Controles de Reprodução"
         },
+        "createSceneCancel": "Cancelar",
+        "createSceneConfirm": "Criar",
+        "createSceneDescription": "Isso dividirá a cena atual no ponto em que você clicou e criará uma nova cena. Os efeitos após este ponto não serão mais visíveis",
+        "createSceneTitle": "Criar uma nova cena",
         "deleteScene": "Excluir cena",
         "label": "Linha do Tempo",
         "lightDesigner": {

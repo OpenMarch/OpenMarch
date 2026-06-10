@@ -818,6 +818,10 @@
         "controls": {
             "label": "再生 コントロール"
         },
+        "createSceneCancel": "キャンセル",
+        "createSceneConfirm": "作成",
+        "createSceneDescription": "クリックした位置で現在のシーンを分割し、新しいシーンを作成します。この位置より後のエフェクトは表示されなくなります",
+        "createSceneTitle": "新しいシーンを作成",
         "deleteScene": "シーンを削除",
         "label": "タイムライン",
         "lightDesigner": {

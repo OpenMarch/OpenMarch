@@ -904,6 +904,10 @@
         "controls": {
             "label": "Playback Controls"
         },
+        "createSceneCancel": "Cancel",
+        "createSceneConfirm": "Create",
+        "createSceneDescription": "This will split the current scene at the point you clicked and create a new scene. Effects after this point will no longer be visible",
+        "createSceneTitle": "Create a new scene",
         "deleteScene": "Delete scene",
         "label": "Timeline",
         "lightDesigner": {

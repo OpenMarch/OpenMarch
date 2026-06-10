@@ -818,6 +818,10 @@
         "controls": {
             "label": "Contrôles de lecture"
         },
+        "createSceneCancel": "Annuler",
+        "createSceneConfirm": "Créer",
+        "createSceneDescription": "Cela divisera la scène actuelle au point où vous avez cliqué et créera une nouvelle scène. Les effets après ce point ne seront plus visibles",
+        "createSceneTitle": "Créer une nouvelle scène",
         "deleteScene": "Supprimer la scène",
         "label": "Chronologie",
         "lightDesigner": {
