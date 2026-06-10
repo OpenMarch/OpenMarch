@@ -15,6 +15,7 @@ import { join } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
+import { VideoExportService } from "./services/video-export-service";
 import {
     addRecentFile,
     getRecentFiles,
@@ -329,6 +330,20 @@ function initGetters() {
     // Export SVG pages to PDF
     ipcMain.handle("export:generateDocForMarcher", async (_, args) => {
         return await PDFExportService.generateDocForMarcher(args);
+    });
+
+    // Video export (streamed file writing)
+    ipcMain.handle("export:videoStart", async (_, fileExtension: string) => {
+        return await VideoExportService.start(fileExtension);
+    });
+    ipcMain.handle(
+        "export:videoChunk",
+        async (_, data: Uint8Array, position: number) => {
+            return await VideoExportService.writeChunk(data, position);
+        },
+    );
+    ipcMain.handle("export:videoEnd", async (_, success: boolean) => {
+        return await VideoExportService.end(success);
     });
 
     // Get current filename

@@ -208,6 +208,13 @@ const APP_API = {
             individualCharts: boolean;
             notesAppendixPages?: { pageName: string; notes: string }[];
         }) => ipcRenderer.invoke("export:generateDocForMarcher", args),
+
+        videoStart: (fileExtension: string): Promise<string | null> =>
+            ipcRenderer.invoke("export:videoStart", fileExtension),
+        videoChunk: (data: Uint8Array, position: number): Promise<void> =>
+            ipcRenderer.invoke("export:videoChunk", data, position),
+        videoEnd: (success: boolean): Promise<string | null> =>
+            ipcRenderer.invoke("export:videoEnd", success),
     },
 
     getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),

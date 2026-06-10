@@ -50,6 +50,14 @@ import {
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    combineMarcherTimelines,
+    coordinateDataQueryOptions,
+} from "@/hooks/queries/useCoordinateData";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
+import AudioFile from "@/global/classes/AudioFile";
+import { exportVideo } from "./video/videoRenderer";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -1151,6 +1159,295 @@ function DrillChartExport() {
     );
 }
 
+const VIDEO_RESOLUTIONS = [
+    { label: "720p", width: 1280, height: 720 },
+    { label: "1080p", width: 1920, height: 1080 },
+    { label: "4K", width: 3840, height: 2160 },
+] as const;
+const VIDEO_FRAME_RATES = [30, 60] as const;
+
+// eslint-disable-next-line max-lines-per-function
+function VideoExport() {
+    const { pages } = useTimingObjects()!;
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: marchers, isSuccess: marchersLoaded } = useQuery(
+        allMarchersQueryOptions(),
+    );
+    const { data: sectionAppearances } = useQuery(
+        allSectionAppearancesQueryOptions(),
+    );
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
+    );
+    const { data: selectedAudioFile } = useQuery({
+        queryKey: ["selectedAudioFileDetails"],
+        queryFn: async () =>
+            (await AudioFile.getAudioFilesDetails()).find(
+                (file) => file.selected,
+            ) ?? null,
+    });
+    const { uiSettings } = useUiSettingsStore();
+    const queryClient = useQueryClient();
+
+    const [resolution, setResolution] = useState("1080p");
+    const [frameRate, setFrameRate] = useState(60);
+    const [isLoading, setIsLoading] = useState(false);
+    const [progress, setProgress] = useState(0);
+    const [currentStep, setCurrentStep] = useState("");
+    const isCancelled = useRef(false);
+    const t = tolgee.t;
+
+    const canExport = !!(
+        fieldProperties &&
+        pages.length > 1 &&
+        marchers &&
+        marchers.length > 0
+    );
+
+    // eslint-disable-next-line max-lines-per-function
+    const handleExport = useCallback(async () => {
+        isCancelled.current = false;
+        setIsLoading(true);
+        setProgress(0);
+        setCurrentStep(t("exportCoordinates.videoRendering"));
+
+        try {
+            assert(marchersLoaded, t("exportCoordinates.marchersNotLoaded"));
+            assert(
+                fieldProperties,
+                t("exportCoordinates.fieldPropertiesNotLoaded"),
+            );
+
+            const { width, height } = VIDEO_RESOLUTIONS.find(
+                (r) => r.label === resolution,
+            )!;
+
+            // Full-show timelines (not the playback window) and audio
+            const [timelineMaps, audioFile, backgroundImage] =
+                await Promise.all([
+                    Promise.all(
+                        pages.map((page) =>
+                            queryClient.fetchQuery(
+                                coordinateDataQueryOptions(page, queryClient),
+                            ),
+                        ),
+                    ),
+                    AudioFile.getSelectedAudioFile(),
+                    getFieldPropertiesImageElement(),
+                ]);
+            assert(audioFile.data, "Audio file has no data");
+
+            const result = await exportVideo({
+                fieldProperties,
+                marchers,
+                sortedPages: pages,
+                marcherTimelines: combineMarcherTimelines(timelineMaps),
+                sectionAppearances,
+                backgroundImage,
+                gridLines: uiSettings.gridLines,
+                halfLines: uiSettings.halfLines,
+                audioData: audioFile.data,
+                audioOffsetSeconds: workspaceSettings?.audioOffsetSeconds ?? 0,
+                width,
+                height,
+                fps: frameRate,
+                onProgress: (fraction) => setProgress(fraction * 100),
+                isCancelled: () => isCancelled.current,
+            });
+
+            if (result.state === "cancelled") {
+                setCurrentStep(t("exportCoordinates.cancelledByUser"));
+                return;
+            }
+
+            setProgress(100);
+            setCurrentStep(t("exportCoordinates.exportComplete"));
+            toast.success(
+                <span>
+                    {t("exportCoordinates.videoExportSuccess")}{" "}
+                    <button
+                        type="button"
+                        onClick={() =>
+                            window.electron.openExportDirectory(result.path)
+                        }
+                        style={{
+                            color: "#3b82f6",
+                            textDecoration: "underline",
+                            background: "none",
+                            border: "none",
+                            padding: 0,
+                            font: "inherit",
+                            cursor: "pointer",
+                        }}
+                    >
+                        <T keyName="exportCoordinates.videoOpenFile" />
+                    </button>
+                </span>,
+            );
+        } catch (error) {
+            console.error("Video export failed:", error);
+            setCurrentStep(t("exportCoordinates.exportFailed"));
+            toast.error(
+                t("exportCoordinates.videoExportFailed", {
+                    error:
+                        error instanceof Error
+                            ? error.message
+                            : "Unknown error",
+                }),
+            );
+        } finally {
+            setTimeout(() => {
+                isCancelled.current = false;
+                setIsLoading(false);
+                setProgress(0);
+                setCurrentStep("");
+            }, 1500);
+        }
+    }, [
+        t,
+        marchersLoaded,
+        fieldProperties,
+        resolution,
+        pages,
+        queryClient,
+        marchers,
+        sectionAppearances,
+        uiSettings.gridLines,
+        uiSettings.halfLines,
+        workspaceSettings?.audioOffsetSeconds,
+        frameRate,
+    ]);
+
+    return (
+        <div className="flex flex-col gap-16">
+            <Form.Root className="grid grid-cols-2 gap-24">
+                <Form.Field
+                    name="resolution"
+                    className="flex w-full items-center justify-between gap-12"
+                >
+                    <Form.Label className="text-body">
+                        <T keyName="exportCoordinates.videoResolution" />
+                    </Form.Label>
+                    <Select value={resolution} onValueChange={setResolution}>
+                        <SelectTriggerButton
+                            label={resolution}
+                            className="w-[10rem] whitespace-nowrap"
+                        />
+                        <SelectContent>
+                            {VIDEO_RESOLUTIONS.map((option) => (
+                                <SelectItem
+                                    key={option.label}
+                                    value={option.label}
+                                >
+                                    {option.label}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Form.Field>
+
+                <Form.Field
+                    name="frameRate"
+                    className="flex w-full items-center justify-between gap-12"
+                >
+                    <Form.Label className="text-body">
+                        <T keyName="exportCoordinates.videoFrameRate" />
+                    </Form.Label>
+                    <Select
+                        value={frameRate.toString()}
+                        onValueChange={(value: string) =>
+                            setFrameRate(parseInt(value))
+                        }
+                    >
+                        <SelectTriggerButton
+                            label={`${frameRate} fps`}
+                            className="w-[10rem] whitespace-nowrap"
+                        />
+                        <SelectContent>
+                            {VIDEO_FRAME_RATES.map((fps) => (
+                                <SelectItem key={fps} value={fps.toString()}>
+                                    {fps} fps
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </Form.Field>
+            </Form.Root>
+
+            <p className="text-body text-text/75">
+                {selectedAudioFile
+                    ? t("exportCoordinates.videoAudioTrack", {
+                          name: selectedAudioFile.nickname ?? "",
+                      })
+                    : t("exportCoordinates.videoNoAudio")}
+            </p>
+
+            {!canExport && (
+                <div className="flex flex-col items-center justify-center gap-12 py-20">
+                    <h4 className="text-h4">
+                        <T keyName="exportCoordinates.exportNotAvailable" />
+                    </h4>
+                    <p className="text-body max-w-md text-center text-gray-600">
+                        <T keyName="exportCoordinates.exportNotAvailableDescription" />
+                    </p>
+                </div>
+            )}
+
+            {/* Export Button */}
+            <div className="flex w-full justify-end gap-8">
+                <Button
+                    size="compact"
+                    onClick={handleExport}
+                    disabled={isLoading || !canExport}
+                >
+                    {isLoading
+                        ? t("exportCoordinates.exporting")
+                        : t("exportCoordinates.export")}
+                </Button>
+                <DialogClose>
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        onClick={() => (isCancelled.current = true)}
+                    >
+                        <T keyName="exportCoordinates.cancel" />
+                    </Button>
+                </DialogClose>
+            </div>
+
+            {/* Progress Bar */}
+            {isLoading && (
+                <div className="flex flex-col gap-8">
+                    <div className="flex items-center justify-between">
+                        <span className="text-body text-text/75">
+                            {currentStep}
+                        </span>
+                        <span className="text-sub text-text/60">
+                            {Math.round(progress)}%
+                        </span>
+                    </div>
+                    <div className="relative h-8 w-full overflow-hidden rounded-full bg-gray-200 dark:bg-gray-700">
+                        <div
+                            className="bg-accent absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
+                            style={{ width: `${progress}%` }}
+                        />
+                        <div
+                            className="absolute top-0 left-0 h-full w-full rounded-full bg-gradient-to-r from-transparent via-white/20 to-transparent"
+                            style={{
+                                animation:
+                                    progress > 0 && progress < 100
+                                        ? "shimmer 2s infinite"
+                                        : "none",
+                                transform: "translateX(-100%)",
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+}
+
 function ExportModalContents() {
     return (
         <Tabs defaultValue="coordinate-sheets" className="gap-12">
@@ -1161,6 +1458,9 @@ function ExportModalContents() {
                 <TabItem value="drill-charts">
                     <T keyName="exportCoordinates.drillCharts" />
                 </TabItem>
+                <TabItem value="video">
+                    <T keyName="exportCoordinates.video" />
+                </TabItem>
             </TabsList>
 
             <TabContent value="coordinate-sheets">
@@ -1169,6 +1469,10 @@ function ExportModalContents() {
 
             <TabContent value="drill-charts">
                 <DrillChartExport />
+            </TabContent>
+
+            <TabContent value="video">
+                <VideoExport />
             </TabContent>
         </Tabs>
     );
