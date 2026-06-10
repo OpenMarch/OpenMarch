@@ -51,7 +51,7 @@ export default function LightDesignerInspector() {
     useLightDesignerSelectedEffectSync(activeLightingSceneId, effectIdsInOrder);
 
     return (
-        <div className="flex h-full min-h-0 w-xs min-w-0 flex-col gap-8">
+        <div className="flex h-full min-h-0 w-xs min-w-0 shrink-0 flex-col gap-8">
             <h2 className="shrink-0 text-xl">
                 <T
                     keyName="inspector.light.title"

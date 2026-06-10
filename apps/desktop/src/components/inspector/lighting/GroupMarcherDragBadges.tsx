@@ -155,8 +155,10 @@ function CollectionDropdownBadge({
             </Dropdown.Trigger>
             <Dropdown.Portal>
                 <Dropdown.Content
+                    side="bottom"
+                    align="start"
                     collisionPadding={8}
-                    className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[52] inline-block max-h-[min(40vh,var(--radix-dropdown-menu-content-available-height))] min-w-max overflow-y-auto border p-8 shadow-xl"
+                    className="bg-modal text-text rounded-8 border-stroke backdrop-blur-32 z-[52] flex max-h-[min(40vh,var(--radix-dropdown-menu-content-available-height))] w-max flex-col items-start gap-4 overflow-y-auto border p-8 shadow-xl"
                 >
                     {items
                         .filter((item) => item.marcherIds.length > 0)
@@ -175,7 +177,7 @@ function CollectionDropdownBadge({
                                     }
                                     marcherIds={item.marcherIds}
                                     variant="secondary"
-                                    className="text-text hover:bg-overlay rounded-8 w-full px-8 py-4 text-left outline-hidden"
+                                    className="text-text hover:bg-overlay rounded-8 px-8 py-4 text-left outline-hidden"
                                     onMouseDown={(e) => e.stopPropagation()}
                                     onMarcherCollectionDragStart={
                                         onMarcherCollectionDragStart
