@@ -190,4 +190,38 @@ describe("sampleMarcherLightingFill", () => {
             sampleMarcherLightingFill(plan, 100, 1, baseFill),
         ).toBeUndefined();
     });
+
+    it("returns each marcher group's color when steps overlap in time", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "solid",
+                argsJson: JSON.stringify({
+                    durationMs: 1000,
+                    color: "#ff0000",
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1, 2],
+            },
+            {
+                type: "solid",
+                argsJson: JSON.stringify({
+                    durationMs: 1000,
+                    color: "#00ff00",
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [3, 4],
+            },
+        ]);
+        expect(sampleMarcherLightingFill(plan, 500, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#ff0000"),
+        );
+        expect(sampleMarcherLightingFill(plan, 500, 3, baseFill)).toEqual(
+            hex6ToLightingRgba("#00ff00"),
+        );
+        expect(
+            sampleMarcherLightingFill(plan, 500, 99, baseFill),
+        ).toBeUndefined();
+    });
 });

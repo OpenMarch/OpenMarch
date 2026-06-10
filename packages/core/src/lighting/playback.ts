@@ -104,9 +104,12 @@ export function sampleMarcherLightingFill(
     if (plan.steps.length === 0) return undefined;
 
     const step = plan.steps.find(
-        (s) => tSceneMs >= s.startMs && tSceneMs < s.endMs,
+        (s) =>
+            tSceneMs >= s.startMs &&
+            tSceneMs < s.endMs &&
+            s.marcherIds.has(marcherId),
     );
-    if (!step || !step.marcherIds.has(marcherId)) return undefined;
+    if (!step) return undefined;
 
     return hex6ToLightingRgba(step.solidArgs.color);
 }
