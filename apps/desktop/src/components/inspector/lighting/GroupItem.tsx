@@ -35,14 +35,15 @@ export interface GroupItemProps {
     isFocused: boolean;
     showFocusControls: boolean;
     showEffectAssignmentControls: boolean;
-    isInSelectedEffect: boolean;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
     onToggleFocus: () => void;
-    onAddToSelectedEffect?: () => void;
-    onRemoveFromSelectedEffect?: () => void;
     onSelectMarchersInGroup: () => void;
 }
+
+const stopRowClickPropagation = (e: { stopPropagation: () => void }) => {
+    e.stopPropagation();
+};
 
 export default function GroupItem({
     groupNickname,
@@ -51,12 +52,9 @@ export default function GroupItem({
     isFocused,
     showFocusControls,
     showEffectAssignmentControls,
-    isInSelectedEffect,
     onNameChange,
     onDelete,
     onToggleFocus,
-    onAddToSelectedEffect,
-    onRemoveFromSelectedEffect,
     onSelectMarchersInGroup,
 }: GroupItemProps) {
     const { t } = useTolgee();
@@ -74,6 +72,12 @@ export default function GroupItem({
     useEffect(() => {
         if (editingName) nameInputRef.current?.focus();
     }, [editingName]);
+
+    useEffect(() => {
+        if (!showEffectAssignmentControls) return;
+        setDraftName(name);
+        setEditingName(false);
+    }, [showEffectAssignmentControls, name]);
 
     const commitNameFromDraft = () => {
         const nextName = draftName.slice(0, 255);
@@ -116,7 +120,7 @@ export default function GroupItem({
             <div className="flex w-full min-w-0 flex-col gap-8">
                 <div className="flex w-full min-w-0 items-start justify-between gap-6">
                     <div className="flex min-w-0 flex-1 flex-col gap-4">
-                        {editingName ? (
+                        {editingName && !showEffectAssignmentControls ? (
                             <Input
                                 id={nameId}
                                 ref={nameInputRef}
@@ -125,6 +129,7 @@ export default function GroupItem({
                                 className="w-full min-w-0"
                                 value={draftName}
                                 onChange={handleNameChange}
+                                onClick={stopRowClickPropagation}
                                 onBlur={commitNameFromDraft}
                                 onKeyDown={handleNameKeyDown}
                                 aria-label={t(
@@ -132,6 +137,16 @@ export default function GroupItem({
                                     { defaultValue: "Name" },
                                 )}
                             />
+                        ) : showEffectAssignmentControls ? (
+                            <p
+                                className={
+                                    name.trim() === ""
+                                        ? "text-h5 text-text/50 w-full min-w-0 truncate text-left italic"
+                                        : "text-h5 text-text w-full min-w-0 truncate text-left"
+                                }
+                            >
+                                {displayName}
+                            </p>
                         ) : (
                             <button
                                 type="button"
@@ -140,7 +155,10 @@ export default function GroupItem({
                                         ? "text-h5 text-text/50 hover:text-text/80 w-full min-w-0 cursor-pointer truncate text-left italic transition-colors"
                                         : "text-h5 text-text hover:text-accent w-full min-w-0 cursor-pointer truncate text-left transition-colors"
                                 }
-                                onClick={openNameEdit}
+                                onClick={(e) => {
+                                    stopRowClickPropagation(e);
+                                    openNameEdit();
+                                }}
                             >
                                 {displayName}
                             </button>
@@ -150,7 +168,10 @@ export default function GroupItem({
                                 <button
                                     type="button"
                                     className="hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors"
-                                    onClick={onSelectMarchersInGroup}
+                                    onClick={(e) => {
+                                        stopRowClickPropagation(e);
+                                        onSelectMarchersInGroup();
+                                    }}
                                     aria-label={t(
                                         "inspector.light.groups.groupItem.selectAllMarchersInGroup",
                                         {
@@ -180,40 +201,16 @@ export default function GroupItem({
                         </Tooltip>
                     </div>
                     <div className="flex shrink-0 flex-wrap items-start gap-8">
-                        {showEffectAssignmentControls ? (
-                            isInSelectedEffect ? (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="compact"
-                                    onClick={onRemoveFromSelectedEffect}
-                                >
-                                    <T
-                                        keyName="inspector.light.groups.removeFromSelectedEffect"
-                                        defaultValue="Remove from selected effect"
-                                    />
-                                </Button>
-                            ) : (
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="compact"
-                                    onClick={onAddToSelectedEffect}
-                                >
-                                    <T
-                                        keyName="inspector.light.groups.addToSelectedEffect"
-                                        defaultValue="Add to selected effect"
-                                    />
-                                </Button>
-                            )
-                        ) : null}
                         {showFocusControls ? (
                             <Button
                                 type="button"
                                 variant="secondary"
                                 size="compact"
                                 aria-pressed={isFocused}
-                                onClick={onToggleFocus}
+                                onClick={(e) => {
+                                    stopRowClickPropagation(e);
+                                    onToggleFocus();
+                                }}
                             >
                                 {isFocused ? (
                                     <T
@@ -236,6 +233,8 @@ export default function GroupItem({
                                     content="icon"
                                     size="compact"
                                     className="rounded-6"
+                                    disabled={showEffectAssignmentControls}
+                                    onClick={stopRowClickPropagation}
                                     aria-label={t(
                                         "inspector.light.groups.deleteAria",
                                         { defaultValue: "Delete group" },

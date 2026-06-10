@@ -38,7 +38,14 @@ import {
     AlertDialogDescription,
     AlertDialogTitle,
     Button,
+    TooltipClassName,
 } from "@openmarch/ui";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipPortal,
+    TooltipTrigger,
+} from "@radix-ui/react-tooltip";
 import { PlusIcon } from "@phosphor-icons/react";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { T, useTolgee } from "@tolgee/react";
@@ -342,6 +349,15 @@ export default function GroupList({ sceneId }: GroupListProps) {
         <div className="flex flex-col gap-12">
             <GroupMarcherDragBadges />
 
+            {showEffectAssignmentControls && sceneEffectIds.length > 0 ? (
+                <p className="text-text-subtitle text-xs">
+                    <T
+                        keyName="inspector.light.groups.clickGroupToToggleEffect"
+                        defaultValue="Click on a group to add or remove it from the selected effect"
+                    />
+                </p>
+            ) : null}
+
             {groups.length === 0 ? (
                 <p className="text-body text-text/60">
                     <T
@@ -545,20 +561,32 @@ function GroupDropRow({
         onDropCollection(group.id, payload.marcherIds);
     };
 
-    return (
+    const handleRowClick = () => {
+        if (!showEffectAssignmentControls) return;
+        if (isInSelectedEffect) onRemoveFromSelectedEffect();
+        else onAddToSelectedEffect();
+    };
+
+    const row = (
         <li
             className={clsx(
                 "rounded-6 border-stroke bg-fg-1 relative flex flex-col overflow-clip border p-12",
                 isDragOver && "ring-accent/70 ring-2 ring-inset",
+                showEffectAssignmentControls && "cursor-pointer",
+                isInSelectedEffect && "ring-accent ring-1 ring-inset",
             )}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
+            onClick={handleRowClick}
             onMouseEnter={() => setHighlightedMarcherIds(memberMarcherIds)}
             onMouseLeave={() => setHighlightedMarcherIds(null)}
         >
             {isFocused ? (
                 <div className="bg-accent/10 ring-accent pointer-events-none absolute inset-0 z-0 ring-1 ring-inset" />
+            ) : null}
+            {isInSelectedEffect ? (
+                <div className="bg-accent/10 pointer-events-none absolute inset-0 z-0" />
             ) : null}
             <div className="relative z-10">
                 <GroupItem
@@ -568,17 +596,41 @@ function GroupDropRow({
                     isFocused={isFocused}
                     showFocusControls={showFocusControls}
                     showEffectAssignmentControls={showEffectAssignmentControls}
-                    isInSelectedEffect={isInSelectedEffect}
                     onNameChange={onNameChange}
                     onDelete={onDelete}
                     onToggleFocus={onToggleFocus}
-                    onAddToSelectedEffect={onAddToSelectedEffect}
-                    onRemoveFromSelectedEffect={onRemoveFromSelectedEffect}
                     onSelectMarchersInGroup={() =>
                         onSelectMarchersInGroup(memberMarcherIds)
                     }
                 />
             </div>
         </li>
+    );
+
+    if (!showEffectAssignmentControls) return row;
+
+    return (
+        <Tooltip>
+            <TooltipTrigger asChild>{row}</TooltipTrigger>
+            <TooltipPortal>
+                <TooltipContent
+                    side="bottom"
+                    align="start"
+                    className={clsx(TooltipClassName, "p-16")}
+                >
+                    {isInSelectedEffect ? (
+                        <T
+                            keyName="inspector.light.groups.removeFromSelectedEffect"
+                            defaultValue="Remove from selected effect"
+                        />
+                    ) : (
+                        <T
+                            keyName="inspector.light.groups.addToSelectedEffect"
+                            defaultValue="Add to selected effect"
+                        />
+                    )}
+                </TooltipContent>
+            </TooltipPortal>
+        </Tooltip>
     );
 }
