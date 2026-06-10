@@ -13,6 +13,7 @@ import type { RequestHandlerOptions } from "msw";
 import type {
     GetApiEditorV1EnsemblesEnsembleIdProductions200,
     GetApiEditorV1ProductionsId200,
+    PostApiEditorV1Productions201,
 } from ".././model";
 
 export const getGetApiEditorV1EnsemblesEnsembleIdProductionsResponseMock = (
@@ -46,6 +47,115 @@ export const getGetApiEditorV1EnsemblesEnsembleIdProductionsResponseMock = (
             undefined,
         ]),
     })),
+    ...overrideResponse,
+});
+
+export const getPostApiEditorV1ProductionsResponseMock = (
+    overrideResponse: Partial<PostApiEditorV1Productions201> = {},
+): PostApiEditorV1Productions201 => ({
+    production: {
+        id: faker.helpers.arrayElement([
+            faker.number.int({ min: undefined, max: undefined }),
+            undefined,
+        ]),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined,
+        ]),
+        background_image_url: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        background_image_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        active_revision_id: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.number.int({ min: undefined, max: undefined }),
+                null,
+            ]),
+            undefined,
+        ]),
+        revisions: faker.helpers.arrayElement([
+            Array.from(
+                { length: faker.number.int({ min: 1, max: 10 }) },
+                (_, i) => i + 1,
+            ).map(() => ({
+                id: faker.helpers.arrayElement([
+                    faker.number.int({ min: undefined, max: undefined }),
+                    undefined,
+                ]),
+                pushed_at: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                        faker.date.past().toISOString().slice(0, 19) + "Z",
+                        null,
+                    ]),
+                    undefined,
+                ]),
+                title: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        null,
+                    ]),
+                    undefined,
+                ]),
+                show_data_url: faker.helpers.arrayElement([
+                    faker.helpers.arrayElement([
+                        faker.string.alpha({ length: { min: 10, max: 20 } }),
+                        null,
+                    ]),
+                    undefined,
+                ]),
+                active: faker.helpers.arrayElement([
+                    faker.datatype.boolean(),
+                    undefined,
+                ]),
+            })),
+            undefined,
+        ]),
+        ensemble: faker.helpers.arrayElement([
+            {
+                id: faker.helpers.arrayElement([
+                    faker.number.int({ min: undefined, max: undefined }),
+                    undefined,
+                ]),
+                name: faker.helpers.arrayElement([
+                    faker.string.alpha({ length: { min: 10, max: 20 } }),
+                    undefined,
+                ]),
+            },
+            undefined,
+        ]),
+        default_audio_file_id: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.number.int({ min: undefined, max: undefined }),
+                null,
+            ]),
+            undefined,
+        ]),
+        default_audio_source_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        created_at: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+        updated_at: faker.helpers.arrayElement([
+            faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+    },
     ...overrideResponse,
 });
 
@@ -191,19 +301,30 @@ export const getGetApiEditorV1EnsemblesEnsembleIdProductionsMockHandler = (
 
 export const getPostApiEditorV1ProductionsMockHandler = (
     overrideResponse?:
-        | void
+        | PostApiEditorV1Productions201
         | ((
               info: Parameters<Parameters<typeof http.post>[1]>[0],
-          ) => Promise<void> | void),
+          ) =>
+              | Promise<PostApiEditorV1Productions201>
+              | PostApiEditorV1Productions201),
     options?: RequestHandlerOptions,
 ) => {
     return http.post(
         "*/api/editor/v1/productions",
         async (info) => {
-            if (typeof overrideResponse === "function") {
-                await overrideResponse(info);
-            }
-            return new HttpResponse(null, { status: 201 });
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getPostApiEditorV1ProductionsResponseMock(),
+                ),
+                {
+                    status: 201,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
         },
         options,
     );

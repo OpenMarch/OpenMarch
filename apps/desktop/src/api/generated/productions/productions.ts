@@ -20,6 +20,7 @@ import type {
     GetApiEditorV1EnsemblesEnsembleIdProductions200,
     GetApiEditorV1ProductionsId200,
     PatchApiEditorV1ProductionsIdBody,
+    PostApiEditorV1Productions201,
     PostApiEditorV1ProductionsBody,
 } from ".././model";
 
@@ -149,7 +150,7 @@ export const postApiEditorV1Productions = (
     options?: SecondParameter<typeof customInstance>,
     signal?: AbortSignal,
 ) => {
-    return customInstance<void>(
+    return customInstance<PostApiEditorV1Productions201>(
         {
             url: `/api/editor/v1/productions`,
             method: "POST",
