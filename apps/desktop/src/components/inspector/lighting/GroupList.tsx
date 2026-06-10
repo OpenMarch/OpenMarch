@@ -381,14 +381,7 @@ export default function GroupList({ sceneId }: GroupListProps) {
                 onMarcherCollectionDragEnd={endCollectionDrag}
             />
 
-            {showEffectAssignmentControls && sceneEffectIds.length > 0 ? (
-                <p className="text-text-subtitle text-xs">
-                    <T
-                        keyName="inspector.light.groups.clickGroupToToggleEffect"
-                        defaultValue="Click on a group to add or remove it from the selected effect"
-                    />
-                </p>
-            ) : groups.length > 0 ? (
+            {groups.length > 0 ? (
                 <p className="text-text-subtitle text-xs">
                     <T
                         keyName="inspector.light.groups.clickGroupToFocus"
@@ -603,7 +596,7 @@ function GroupDropRow({
     isOnlyFocusedGroup: boolean;
     showEffectAssignmentControls: boolean;
     isInSelectedEffect: boolean;
-    onFocusRowClick: (e: MouseEvent<HTMLLIElement>) => void;
+    onFocusRowClick: (e: MouseEvent<HTMLElement>) => void;
     onAddToSelectedEffect: () => void;
     onRemoveFromSelectedEffect: () => void;
     onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
@@ -640,12 +633,7 @@ function GroupDropRow({
         onDragComplete?.();
     };
 
-    const handleRowClick = (e: MouseEvent<HTMLLIElement>) => {
-        if (showEffectAssignmentControls) {
-            if (isInSelectedEffect) onRemoveFromSelectedEffect();
-            else onAddToSelectedEffect();
-            return;
-        }
+    const handleFocusOverlayClick = (e: MouseEvent<HTMLButtonElement>) => {
         onFocusRowClick(e);
     };
 
@@ -659,22 +647,31 @@ function GroupDropRow({
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
-            onClick={handleRowClick}
             onMouseEnter={() => setHighlightedMarcherIds(memberMarcherIds)}
             onMouseLeave={() => setHighlightedMarcherIds(null)}
         >
             {isFocused ? (
-                <div className="bg-accent/10 ring-accent rounded-6 pointer-events-none absolute inset-0 z-0 ring-1 ring-inset" />
+                <div className="bg-accent/10 pointer-events-none absolute inset-0 z-0" />
             ) : null}
             {isInSelectedEffect ? (
                 <div className="bg-accent/10 pointer-events-none absolute inset-0 z-0" />
             ) : null}
-            <div className="relative z-10">
+            <button
+                type="button"
+                tabIndex={-1}
+                aria-hidden
+                className="absolute inset-0 z-[1] cursor-pointer border-0 bg-transparent p-0"
+                onClick={handleFocusOverlayClick}
+            />
+            <div className="pointer-events-none relative z-[2]">
                 <GroupItem
                     groupId={group.id}
                     groupNickname={group.name}
                     numberOfMarchers={memberCount}
                     showEffectAssignmentControls={showEffectAssignmentControls}
+                    isInSelectedEffect={isInSelectedEffect}
+                    onAddToSelectedEffect={onAddToSelectedEffect}
+                    onRemoveFromSelectedEffect={onRemoveFromSelectedEffect}
                     onNameChange={onNameChange}
                     onDelete={onDelete}
                     onSelectMarchersInGroup={() =>
@@ -694,19 +691,7 @@ function GroupDropRow({
                     align="center"
                     className={clsx(TooltipClassName, "p-16")}
                 >
-                    {showEffectAssignmentControls ? (
-                        isInSelectedEffect ? (
-                            <T
-                                keyName="inspector.light.groups.removeFromSelectedEffect"
-                                defaultValue="Remove from selected effect"
-                            />
-                        ) : (
-                            <T
-                                keyName="inspector.light.groups.addToSelectedEffect"
-                                defaultValue="Add to selected effect"
-                            />
-                        )
-                    ) : isOnlyFocusedGroup ? (
+                    {isOnlyFocusedGroup ? (
                         <T
                             keyName="inspector.light.groups.clearFocus"
                             defaultValue="Clear focus"

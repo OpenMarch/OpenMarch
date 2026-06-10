@@ -27,21 +27,33 @@ export function useLightDesignerEffectGroupFocusSync(
     });
 
     const prevSelectedEffectRef = useRef(selectedEffect);
+    const syncedEffectSelectionKeyRef = useRef<string | null>(null);
+
     useEffect(() => {
         const prev = prevSelectedEffectRef.current;
         prevSelectedEffectRef.current = selectedEffect;
         if (prev != null && selectedEffect == null) {
+            syncedEffectSelectionKeyRef.current = null;
             clearGroupFocus();
         }
     }, [selectedEffect, clearGroupFocus]);
 
     useEffect(() => {
-        if (selectedEffect == null) return;
+        if (selectedEffect == null) {
+            syncedEffectSelectionKeyRef.current = null;
+            return;
+        }
         if (!selectionMatchesScene || activeSceneId == null) {
+            syncedEffectSelectionKeyRef.current = null;
             clearGroupFocus();
             return;
         }
         if (effect == null || effect.id !== selectedEffect.effectId) return;
+
+        const selectionKey = `${selectedEffect.sceneId}:${selectedEffect.effectId}`;
+        if (syncedEffectSelectionKeyRef.current === selectionKey) return;
+
+        syncedEffectSelectionKeyRef.current = selectionKey;
         setGroupFocus({
             sceneId: activeSceneId,
             groupIds: effect.lighting_group_ids,

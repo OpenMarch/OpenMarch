@@ -531,9 +531,8 @@
                 "groupFallback": "Group",
                 "clearFocus": "Clear focus",
                 "focusCanvas": "Focus",
-                "addToSelectedEffect": "Add to selected effect",
-                "removeFromSelectedEffect": "Remove from selected effect",
-                "clickGroupToToggleEffect": "Click on a group to add or remove it from the selected effect",
+                "addToSelectedEffect": "+ Add to Effect",
+                "removeFromSelectedEffect": "Remove from Effect",
                 "clickGroupToFocus": "Click on a group to focus it on the canvas. Shift-click to add multiple groups.",
                 "add": "Add",
                 "addBy": {

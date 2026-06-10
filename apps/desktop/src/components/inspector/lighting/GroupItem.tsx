@@ -33,6 +33,9 @@ export interface GroupItemProps {
     groupNickname: string | null;
     numberOfMarchers: number;
     showEffectAssignmentControls: boolean;
+    isInSelectedEffect?: boolean;
+    onAddToSelectedEffect?: () => void;
+    onRemoveFromSelectedEffect?: () => void;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
     onSelectMarchersInGroup: () => void;
@@ -42,11 +45,16 @@ const stopRowClickPropagation = (e: { stopPropagation: () => void }) => {
     e.stopPropagation();
 };
 
+const interactiveClassName = "pointer-events-auto";
+
 export default function GroupItem({
     groupNickname,
     groupId,
     numberOfMarchers,
     showEffectAssignmentControls,
+    isInSelectedEffect = false,
+    onAddToSelectedEffect,
+    onRemoveFromSelectedEffect,
     onNameChange,
     onDelete,
     onSelectMarchersInGroup,
@@ -110,55 +118,131 @@ export default function GroupItem({
               });
 
     return (
-        <div className="flex w-full min-w-0 items-start justify-between gap-6">
-            <div className="flex min-w-0 flex-1 flex-col gap-4">
-                {editingName && !showEffectAssignmentControls ? (
-                    <Input
-                        id={nameId}
-                        ref={nameInputRef}
-                        compact
-                        type="text"
-                        className="w-full min-w-0"
-                        value={draftName}
-                        onChange={handleNameChange}
-                        onClick={stopRowClickPropagation}
-                        onBlur={commitNameFromDraft}
-                        onKeyDown={handleNameKeyDown}
-                        aria-label={t("inspector.light.groups.groupItem.name", {
-                            defaultValue: "Name",
-                        })}
-                    />
-                ) : showEffectAssignmentControls ? (
-                    <p
-                        className={
-                            name.trim() === ""
-                                ? "text-h5 text-text/50 w-full min-w-0 truncate text-left italic"
-                                : "text-h5 text-text w-full min-w-0 truncate text-left"
-                        }
-                    >
-                        {displayName}
-                    </p>
-                ) : (
-                    <button
-                        type="button"
-                        className={
-                            name.trim() === ""
-                                ? "text-h5 text-text/50 hover:text-text/80 w-fit min-w-0 cursor-pointer truncate text-left italic transition-colors"
-                                : "text-h5 text-text hover:text-accent w-fit min-w-0 cursor-pointer truncate text-left transition-colors"
-                        }
-                        onClick={(e) => {
-                            stopRowClickPropagation(e);
-                            openNameEdit();
-                        }}
-                    >
-                        {displayName}
-                    </button>
-                )}
+        <div className="flex w-full min-w-0 flex-col gap-4">
+            <div className="flex w-full min-w-0 items-start justify-between gap-6">
+                <div className="min-w-0 flex-1">
+                    {editingName && !showEffectAssignmentControls ? (
+                        <Input
+                            id={nameId}
+                            ref={nameInputRef}
+                            compact
+                            type="text"
+                            className={clsx(
+                                "w-full min-w-0",
+                                interactiveClassName,
+                            )}
+                            value={draftName}
+                            onChange={handleNameChange}
+                            onClick={stopRowClickPropagation}
+                            onBlur={commitNameFromDraft}
+                            onKeyDown={handleNameKeyDown}
+                            aria-label={t(
+                                "inspector.light.groups.groupItem.name",
+                                {
+                                    defaultValue: "Name",
+                                },
+                            )}
+                        />
+                    ) : showEffectAssignmentControls ? (
+                        <p
+                            className={
+                                name.trim() === ""
+                                    ? "text-h5 text-text/50 w-full min-w-0 truncate text-left italic"
+                                    : "text-h5 text-text w-full min-w-0 truncate text-left"
+                            }
+                        >
+                            {displayName}
+                        </p>
+                    ) : (
+                        <button
+                            type="button"
+                            className={clsx(
+                                interactiveClassName,
+                                name.trim() === ""
+                                    ? "text-h5 text-text/50 hover:text-text/80 w-fit min-w-0 cursor-pointer truncate text-left italic transition-colors"
+                                    : "text-h5 text-text hover:text-accent w-fit min-w-0 cursor-pointer truncate text-left transition-colors",
+                            )}
+                            onClick={(e) => {
+                                stopRowClickPropagation(e);
+                                openNameEdit();
+                            }}
+                        >
+                            {displayName}
+                        </button>
+                    )}
+                </div>
+                <div className="flex shrink-0 flex-wrap items-start gap-8">
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                content="icon"
+                                size="compact"
+                                className={clsx(
+                                    "rounded-6",
+                                    interactiveClassName,
+                                )}
+                                disabled={showEffectAssignmentControls}
+                                onClick={stopRowClickPropagation}
+                                aria-label={t(
+                                    "inspector.light.groups.deleteAria",
+                                    {
+                                        defaultValue: "Delete group",
+                                    },
+                                )}
+                            >
+                                <TrashIcon aria-hidden />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogTitle>
+                                <T
+                                    keyName="inspector.light.groups.deleteTitle"
+                                    defaultValue="Delete this group?"
+                                />
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                                <T
+                                    keyName="inspector.light.groups.deleteDescription"
+                                    defaultValue="This group may be referenced by lighting effects. Those links will be removed."
+                                />
+                            </AlertDialogDescription>
+                            <div className="flex justify-end gap-8 pt-16">
+                                <AlertDialogCancel asChild>
+                                    <Button variant="secondary" size="compact">
+                                        <T
+                                            keyName="inspector.light.groups.cancel"
+                                            defaultValue="Cancel"
+                                        />
+                                    </Button>
+                                </AlertDialogCancel>
+                                <AlertDialogAction>
+                                    <Button
+                                        variant="red"
+                                        size="compact"
+                                        onClick={onDelete}
+                                    >
+                                        <T
+                                            keyName="inspector.light.groups.deleteConfirm"
+                                            defaultValue="Delete"
+                                        />
+                                    </Button>
+                                </AlertDialogAction>
+                            </div>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </div>
+            <div className="flex w-full min-w-0 items-center justify-between gap-8">
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <button
                             type="button"
-                            className="hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors"
+                            className={clsx(
+                                interactiveClassName,
+                                "hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors",
+                            )}
                             onClick={(e) => {
                                 stopRowClickPropagation(e);
                                 onSelectMarchersInGroup();
@@ -190,62 +274,34 @@ export default function GroupItem({
                         </TooltipContent>
                     </TooltipPortal>
                 </Tooltip>
-            </div>
-            <div className="flex shrink-0 flex-wrap items-start gap-8">
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button
-                            type="button"
-                            variant="secondary"
-                            content="icon"
-                            size="compact"
-                            className="rounded-6"
-                            disabled={showEffectAssignmentControls}
-                            onClick={stopRowClickPropagation}
-                            aria-label={t("inspector.light.groups.deleteAria", {
-                                defaultValue: "Delete group",
-                            })}
-                        >
-                            <TrashIcon aria-hidden />
-                        </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogTitle>
+                {showEffectAssignmentControls ? (
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="compact"
+                        className={clsx("shrink-0", interactiveClassName)}
+                        onClick={(e) => {
+                            stopRowClickPropagation(e);
+                            if (isInSelectedEffect) {
+                                onRemoveFromSelectedEffect?.();
+                            } else {
+                                onAddToSelectedEffect?.();
+                            }
+                        }}
+                    >
+                        {isInSelectedEffect ? (
                             <T
-                                keyName="inspector.light.groups.deleteTitle"
-                                defaultValue="Delete this group?"
+                                keyName="inspector.light.groups.removeFromSelectedEffect"
+                                defaultValue="Remove from Effect"
                             />
-                        </AlertDialogTitle>
-                        <AlertDialogDescription>
+                        ) : (
                             <T
-                                keyName="inspector.light.groups.deleteDescription"
-                                defaultValue="This group may be referenced by lighting effects. Those links will be removed."
+                                keyName="inspector.light.groups.addToSelectedEffect"
+                                defaultValue="+ Add to Effect"
                             />
-                        </AlertDialogDescription>
-                        <div className="flex justify-end gap-8 pt-16">
-                            <AlertDialogCancel asChild>
-                                <Button variant="secondary" size="compact">
-                                    <T
-                                        keyName="inspector.light.groups.cancel"
-                                        defaultValue="Cancel"
-                                    />
-                                </Button>
-                            </AlertDialogCancel>
-                            <AlertDialogAction>
-                                <Button
-                                    variant="red"
-                                    size="compact"
-                                    onClick={onDelete}
-                                >
-                                    <T
-                                        keyName="inspector.light.groups.deleteConfirm"
-                                        defaultValue="Delete"
-                                    />
-                                </Button>
-                            </AlertDialogAction>
-                        </div>
-                    </AlertDialogContent>
-                </AlertDialog>
+                        )}
+                    </Button>
+                ) : null}
             </div>
         </div>
     );
