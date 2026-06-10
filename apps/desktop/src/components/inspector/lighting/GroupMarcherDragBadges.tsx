@@ -38,6 +38,8 @@ function MarcherCollectionDragBadge({
     fullWidth = false,
     onMouseDown,
     onDragStart,
+    onMarcherCollectionDragStart,
+    onMarcherCollectionDragEnd,
 }: {
     sourceType: LightingGroupMarcherCollectionSourceType;
     label: string;
@@ -48,6 +50,8 @@ function MarcherCollectionDragBadge({
     className?: string;
     onMouseDown?: (e: MouseEvent<HTMLButtonElement>) => void;
     onDragStart?: (e: DragEvent<HTMLButtonElement>) => void;
+    onMarcherCollectionDragStart?: () => void;
+    onMarcherCollectionDragEnd?: () => void;
 }) {
     const isDraggable = marcherIds.length > 0;
 
@@ -57,7 +61,12 @@ function MarcherCollectionDragBadge({
             label,
             marcherIds,
         });
+        onMarcherCollectionDragStart?.();
         onDragStart?.(e);
+    };
+
+    const handleDragEndInternal = () => {
+        onMarcherCollectionDragEnd?.();
     };
 
     const badgeVariant = variant === "disabled" ? "secondary" : variant;
@@ -68,6 +77,7 @@ function MarcherCollectionDragBadge({
             className={clsx("cursor-grab active:cursor-grabbing", className)}
             draggable={isDraggable}
             onDragStart={handleDragStartInternal}
+            onDragEnd={handleDragEndInternal}
             onMouseDown={onMouseDown}
             aria-label={label}
         >
@@ -101,6 +111,8 @@ function CollectionDropdownBadge({
     label,
     items,
     disabled = false,
+    onMarcherCollectionDragStart,
+    onMarcherCollectionDragEnd,
 }: {
     label: ReactNode;
     items: Array<{
@@ -110,6 +122,8 @@ function CollectionDropdownBadge({
         sourceType: LightingGroupMarcherCollectionSourceType;
     }>;
     disabled?: boolean;
+    onMarcherCollectionDragStart?: () => void;
+    onMarcherCollectionDragEnd?: () => void;
 }) {
     const [open, setOpen] = useState(false);
 
@@ -163,6 +177,12 @@ function CollectionDropdownBadge({
                                     variant="secondary"
                                     className="text-text hover:bg-overlay rounded-8 w-full px-8 py-4 text-left outline-hidden"
                                     onMouseDown={(e) => e.stopPropagation()}
+                                    onMarcherCollectionDragStart={
+                                        onMarcherCollectionDragStart
+                                    }
+                                    onMarcherCollectionDragEnd={
+                                        onMarcherCollectionDragEnd
+                                    }
                                     onDragStart={() => {
                                         window.setTimeout(
                                             () => setOpen(false),
@@ -180,7 +200,13 @@ function CollectionDropdownBadge({
     );
 }
 
-export default function GroupMarcherDragBadges() {
+export default function GroupMarcherDragBadges({
+    onMarcherCollectionDragStart,
+    onMarcherCollectionDragEnd,
+}: {
+    onMarcherCollectionDragStart?: () => void;
+    onMarcherCollectionDragEnd?: () => void;
+} = {}) {
     const { t } = useTolgee();
     const { selectedMarchers } = useSelectedMarchers()!;
     const { data: marchers = [] } = useQuery(allMarchersQueryOptions());
@@ -214,6 +240,8 @@ export default function GroupMarcherDragBadges() {
                             defaultValue="Section"
                         />
                     }
+                    onMarcherCollectionDragStart={onMarcherCollectionDragStart}
+                    onMarcherCollectionDragEnd={onMarcherCollectionDragEnd}
                     items={sections.map((sec) => ({
                         key: sec.name,
                         label: <T keyName={sec.tName} />,
@@ -233,6 +261,8 @@ export default function GroupMarcherDragBadges() {
                         />
                     }
                     disabled={tagBadgeItems.length === 0}
+                    onMarcherCollectionDragStart={onMarcherCollectionDragStart}
+                    onMarcherCollectionDragEnd={onMarcherCollectionDragEnd}
                     items={tagBadgeItems.map((tag) => ({
                         key: String(tag.id),
                         label: tag.label,
@@ -248,6 +278,8 @@ export default function GroupMarcherDragBadges() {
                             defaultValue="Family"
                         />
                     }
+                    onMarcherCollectionDragStart={onMarcherCollectionDragStart}
+                    onMarcherCollectionDragEnd={onMarcherCollectionDragEnd}
                     items={families.map((fam) => ({
                         key: fam.name,
                         label: <T keyName={fam.tName} />,
@@ -267,6 +299,8 @@ export default function GroupMarcherDragBadges() {
                     marcherIds={selectedIds}
                     variant={selectedIds.length > 0 ? "secondary" : "disabled"}
                     fullWidth
+                    onMarcherCollectionDragStart={onMarcherCollectionDragStart}
+                    onMarcherCollectionDragEnd={onMarcherCollectionDragEnd}
                 >
                     {selectedIds.length > 0 ? (
                         <T

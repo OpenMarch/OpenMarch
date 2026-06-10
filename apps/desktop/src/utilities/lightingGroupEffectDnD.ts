@@ -14,6 +14,10 @@ export type LightingGroupMarcherCollectionDragPayload = {
     marcherIds: number[];
 };
 
+/** Fallback when DataTransfer.getData is empty on drop (common in Chromium/Electron). */
+let activeLightingGroupMarcherCollectionDragPayload: LightingGroupMarcherCollectionDragPayload | null =
+    null;
+
 function isLightingGroupMarcherCollectionDragPayload(
     value: unknown,
 ): value is LightingGroupMarcherCollectionDragPayload {
@@ -44,14 +48,20 @@ export function setLightingGroupMarcherCollectionDragData(
     dataTransfer: DataTransfer,
     payload: LightingGroupMarcherCollectionDragPayload,
 ): void {
+    const normalized: LightingGroupMarcherCollectionDragPayload = {
+        ...payload,
+        marcherIds: [...new Set(payload.marcherIds)],
+    };
+    activeLightingGroupMarcherCollectionDragPayload = normalized;
     dataTransfer.effectAllowed = "copy";
     dataTransfer.setData(
         LIGHTING_GROUP_MARCHER_COLLECTION_DRAG_MIME,
-        JSON.stringify({
-            ...payload,
-            marcherIds: [...new Set(payload.marcherIds)],
-        }),
+        JSON.stringify(normalized),
     );
+}
+
+export function clearLightingGroupMarcherCollectionDragData(): void {
+    activeLightingGroupMarcherCollectionDragPayload = null;
 }
 
 export function getLightingGroupMarcherCollectionDragPayload(
@@ -60,15 +70,18 @@ export function getLightingGroupMarcherCollectionDragPayload(
     const raw = dataTransfer.getData(
         LIGHTING_GROUP_MARCHER_COLLECTION_DRAG_MIME,
     );
-    if (!raw) return undefined;
-    try {
-        const parsed: unknown = JSON.parse(raw);
-        return isLightingGroupMarcherCollectionDragPayload(parsed)
-            ? parsed
-            : undefined;
-    } catch {
-        return undefined;
+    if (raw) {
+        try {
+            const parsed: unknown = JSON.parse(raw);
+            if (isLightingGroupMarcherCollectionDragPayload(parsed)) {
+                return parsed;
+            }
+        } catch {
+            // fall through to active payload
+        }
     }
+
+    return activeLightingGroupMarcherCollectionDragPayload ?? undefined;
 }
 
 export function partitionLightingGroupDropMarcherIds({
@@ -109,4 +122,24 @@ export function partitionLightingGroupDropMarcherIds({
     }
 
     return { alreadyInTarget, inOtherGroups, unassigned };
+}
+
+export function groupMarcherIdsForRemovalByGroup({
+    marcherIds,
+    membershipsByGroupId,
+}: {
+    marcherIds: readonly number[];
+    membershipsByGroupId: Map<number, Set<number>> | undefined;
+}): Map<number, number[]> {
+    const draggedSet = new Set(marcherIds);
+    const result = new Map<number, number[]>();
+
+    for (const [groupId, members] of membershipsByGroupId ?? []) {
+        const toRemove = [...members].filter((id) => draggedSet.has(id));
+        if (toRemove.length > 0) {
+            result.set(groupId, toRemove);
+        }
+    }
+
+    return result;
 }

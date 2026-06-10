@@ -180,7 +180,7 @@ export default function GroupItem({
                     <TooltipPortal>
                         <TooltipContent
                             side="bottom"
-                            align="start"
+                            align="center"
                             className={clsx(TooltipClassName, "p-16")}
                         >
                             <T

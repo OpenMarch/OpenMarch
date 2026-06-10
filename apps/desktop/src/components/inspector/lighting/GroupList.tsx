@@ -4,6 +4,7 @@ import GroupDropConflictDialog, {
 } from "@/components/inspector/lighting/GroupDropConflictDialog";
 import GroupItem from "@/components/inspector/lighting/GroupItem";
 import GroupMarcherDragBadges from "@/components/inspector/lighting/GroupMarcherDragBadges";
+import GroupMarcherRemoveDropZone from "@/components/inspector/lighting/GroupMarcherRemoveDropZone";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import type {
     DatabaseLightingGroup,
@@ -18,6 +19,7 @@ import {
     lightingGroupMembershipsBySceneIdQueryOptions,
     lightingGroupsBySceneIdQueryOptions,
     lightingSceneDataByIdQueryOptions,
+    removeMarchersFromLightingGroupMutationOptions,
     updateLightingEffectsBatchMutationOptions,
     updateLightingEffectsMutationOptions,
     updateLightingGroupsMutationOptions,
@@ -26,6 +28,7 @@ import { useHighlightedMarchersStore } from "@/stores/HighlightedMarchersStore";
 import { useLightDesignerGroupFocusStore } from "@/stores/LightDesignerGroupFocusStore";
 import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import {
+    clearLightingGroupMarcherCollectionDragData,
     dataTransferHasLightingGroupMarcherCollectionDrag,
     getLightingGroupMarcherCollectionDragPayload,
     partitionLightingGroupDropMarcherIds,
@@ -119,6 +122,9 @@ export default function GroupList({ sceneId }: GroupListProps) {
     const { mutate: addMarchersMutate } = useMutation(
         addMarchersToLightingGroupMutationOptions(),
     );
+    const { mutate: removeMarchersMutate } = useMutation(
+        removeMarchersFromLightingGroupMutationOptions(),
+    );
     const { mutate: deleteGroupMutate } = useMutation(
         deleteLightingGroupsMutationOptions(),
     );
@@ -168,6 +174,7 @@ export default function GroupList({ sceneId }: GroupListProps) {
         useState<GroupDropConflictState | null>(null);
     const [overlapPrompt, setOverlapPrompt] =
         useState<EffectGroupOverlapPrompt | null>(null);
+    const [isCollectionDragActive, setIsCollectionDragActive] = useState(false);
 
     const addMarchersToGroup = useCallback(
         (groupId: number, marcherIds: readonly number[]) => {
@@ -178,10 +185,20 @@ export default function GroupList({ sceneId }: GroupListProps) {
         [addMarchersMutate],
     );
 
+    const endCollectionDrag = useCallback(() => {
+        setIsCollectionDragActive(false);
+        clearLightingGroupMarcherCollectionDragData();
+    }, []);
+
     useEffect(() => {
         clearGroupFocus();
         clearHighlightedMarchers();
     }, [sceneId, clearGroupFocus, clearHighlightedMarchers]);
+
+    useEffect(() => {
+        document.addEventListener("dragend", endCollectionDrag);
+        return () => document.removeEventListener("dragend", endCollectionDrag);
+    }, [endCollectionDrag]);
 
     useEffect(() => {
         if (sceneId == null) return;
@@ -222,6 +239,15 @@ export default function GroupList({ sceneId }: GroupListProps) {
             });
         },
         [addMarchersToGroup, memberships],
+    );
+
+    const handleRemoveMarchersFromGroups = useCallback(
+        (removals: Map<number, number[]>) => {
+            for (const [groupId, marcherIds] of removals) {
+                removeMarchersMutate({ groupId, marcherIds });
+            }
+        },
+        [removeMarchersMutate],
     );
 
     const handleCreateGroup = () => {
@@ -348,7 +374,12 @@ export default function GroupList({ sceneId }: GroupListProps) {
 
     return (
         <div className="flex flex-col gap-12">
-            <GroupMarcherDragBadges />
+            <GroupMarcherDragBadges
+                onMarcherCollectionDragStart={() =>
+                    setIsCollectionDragActive(true)
+                }
+                onMarcherCollectionDragEnd={endCollectionDrag}
+            />
 
             {showEffectAssignmentControls && sceneEffectIds.length > 0 ? (
                 <p className="text-text-subtitle text-xs">
@@ -374,71 +405,84 @@ export default function GroupList({ sceneId }: GroupListProps) {
                     />
                 </p>
             ) : (
-                <ul className="flex flex-col gap-8">
-                    {groups.map((group) => (
-                        <GroupDropRow
-                            key={group.id}
-                            group={group}
-                            memberCount={memberships?.get(group.id)?.size ?? 0}
-                            memberMarcherIds={[
-                                ...(memberships?.get(group.id) ?? []),
-                            ]}
-                            onSelectMarchersInGroup={selectMarchersInGroup}
-                            isFocused={
-                                groupFocus?.sceneId === sceneId &&
-                                groupFocus.groupIds.includes(group.id)
-                            }
-                            isOnlyFocusedGroup={
-                                groupFocus?.sceneId === sceneId &&
-                                groupFocus.groupIds.length === 1 &&
-                                groupFocus.groupIds[0] === group.id
-                            }
-                            showEffectAssignmentControls={
-                                showEffectAssignmentControls
-                            }
-                            isInSelectedEffect={selectedEffectGroupIds.has(
-                                group.id,
-                            )}
-                            onFocusRowClick={(e) => {
-                                const additive =
-                                    e.shiftKey || e.metaKey || e.ctrlKey;
-                                if (additive) {
-                                    addGroupToFocus({
-                                        groupId: group.id,
-                                        sceneId,
-                                    });
-                                    return;
+                <>
+                    <ul className="flex flex-col gap-8">
+                        {groups.map((group) => (
+                            <GroupDropRow
+                                key={group.id}
+                                group={group}
+                                memberCount={
+                                    memberships?.get(group.id)?.size ?? 0
                                 }
-                                if (
+                                memberMarcherIds={[
+                                    ...(memberships?.get(group.id) ?? []),
+                                ]}
+                                onSelectMarchersInGroup={selectMarchersInGroup}
+                                isFocused={
+                                    groupFocus?.sceneId === sceneId &&
+                                    groupFocus.groupIds.includes(group.id)
+                                }
+                                isOnlyFocusedGroup={
                                     groupFocus?.sceneId === sceneId &&
                                     groupFocus.groupIds.length === 1 &&
                                     groupFocus.groupIds[0] === group.id
-                                ) {
-                                    clearGroupFocus();
-                                    return;
                                 }
-                                setGroupFocus({
-                                    sceneId,
-                                    groupIds: [group.id],
-                                });
-                            }}
-                            onAddToSelectedEffect={() =>
-                                addGroupToSelectedEffect(group.id)
-                            }
-                            onRemoveFromSelectedEffect={() =>
-                                removeGroupFromSelectedEffect(group.id)
-                            }
-                            onDropCollection={handleDropCollectionOnGroup}
-                            onNameChange={(name) =>
-                                updateGroupMutate([{ id: group.id, name }])
-                            }
-                            onDelete={() =>
-                                deleteGroupMutate(new Set([group.id]))
-                            }
-                            setHighlightedMarcherIds={setHighlightedMarcherIds}
-                        />
-                    ))}
-                </ul>
+                                showEffectAssignmentControls={
+                                    showEffectAssignmentControls
+                                }
+                                isInSelectedEffect={selectedEffectGroupIds.has(
+                                    group.id,
+                                )}
+                                onFocusRowClick={(e) => {
+                                    const additive =
+                                        e.shiftKey || e.metaKey || e.ctrlKey;
+                                    if (additive) {
+                                        addGroupToFocus({
+                                            groupId: group.id,
+                                            sceneId,
+                                        });
+                                        return;
+                                    }
+                                    if (
+                                        groupFocus?.sceneId === sceneId &&
+                                        groupFocus.groupIds.length === 1 &&
+                                        groupFocus.groupIds[0] === group.id
+                                    ) {
+                                        clearGroupFocus();
+                                        return;
+                                    }
+                                    setGroupFocus({
+                                        sceneId,
+                                        groupIds: [group.id],
+                                    });
+                                }}
+                                onAddToSelectedEffect={() =>
+                                    addGroupToSelectedEffect(group.id)
+                                }
+                                onRemoveFromSelectedEffect={() =>
+                                    removeGroupFromSelectedEffect(group.id)
+                                }
+                                onDropCollection={handleDropCollectionOnGroup}
+                                onDragComplete={endCollectionDrag}
+                                onNameChange={(name) =>
+                                    updateGroupMutate([{ id: group.id, name }])
+                                }
+                                onDelete={() =>
+                                    deleteGroupMutate(new Set([group.id]))
+                                }
+                                setHighlightedMarcherIds={
+                                    setHighlightedMarcherIds
+                                }
+                            />
+                        ))}
+                    </ul>
+                    <GroupMarcherRemoveDropZone
+                        visible={isCollectionDragActive}
+                        memberships={memberships}
+                        onRemoveMarchers={handleRemoveMarchersFromGroups}
+                        onDragComplete={endCollectionDrag}
+                    />
+                </>
             )}
 
             <Button
@@ -546,6 +590,7 @@ function GroupDropRow({
     onAddToSelectedEffect,
     onRemoveFromSelectedEffect,
     onDropCollection,
+    onDragComplete,
     onNameChange,
     onDelete,
     setHighlightedMarcherIds,
@@ -562,6 +607,7 @@ function GroupDropRow({
     onAddToSelectedEffect: () => void;
     onRemoveFromSelectedEffect: () => void;
     onDropCollection: (targetGroupId: number, marcherIds: number[]) => void;
+    onDragComplete?: () => void;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
     setHighlightedMarcherIds: (ids: Iterable<number> | null) => void;
@@ -582,12 +628,16 @@ function GroupDropRow({
 
     const handleDrop = (e: DragEvent<HTMLLIElement>) => {
         setIsDragOver(false);
+        if (!dataTransferHasLightingGroupMarcherCollectionDrag(e.dataTransfer))
+            return;
+        e.preventDefault();
         const payload = getLightingGroupMarcherCollectionDragPayload(
             e.dataTransfer,
         );
-        if (!payload) return;
-        e.preventDefault();
-        onDropCollection(group.id, payload.marcherIds);
+        if (payload) {
+            onDropCollection(group.id, payload.marcherIds);
+        }
+        onDragComplete?.();
     };
 
     const handleRowClick = (e: MouseEvent<HTMLLIElement>) => {
@@ -641,7 +691,7 @@ function GroupDropRow({
             <TooltipPortal>
                 <TooltipContent
                     side="bottom"
-                    align="start"
+                    align="center"
                     className={clsx(TooltipClassName, "p-16")}
                 >
                     {showEffectAssignmentControls ? (
