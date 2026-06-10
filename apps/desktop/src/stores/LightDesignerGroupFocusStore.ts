@@ -7,7 +7,7 @@ export type LightingGroupFocus = {
     groupIds: readonly number[];
 };
 
-type ToggleGroupFocusPayload = {
+type GroupFocusPayload = {
     groupId: number;
     sceneId: number;
 };
@@ -16,15 +16,35 @@ const lightDesignerGroupFocusStore = create(
     combine({ groupFocus: null as LightingGroupFocus | null }, (set) => ({
         setGroupFocus: (payload: LightingGroupFocus) =>
             set({ groupFocus: payload }),
-        toggleGroupFocus: (payload: ToggleGroupFocusPayload) =>
+        addGroupToFocus: (payload: GroupFocusPayload) =>
             set((state) => {
                 const gf = state.groupFocus;
-                const isOnlyThis =
+                if (
                     gf != null &&
                     gf.sceneId === payload.sceneId &&
-                    gf.groupIds.length === 1 &&
-                    gf.groupIds[0] === payload.groupId;
-                if (isOnlyThis) return { groupFocus: null };
+                    gf.groupIds.includes(payload.groupId)
+                ) {
+                    const nextGroupIds = gf.groupIds.filter(
+                        (id) => id !== payload.groupId,
+                    );
+                    if (nextGroupIds.length === 0) {
+                        return { groupFocus: null };
+                    }
+                    return {
+                        groupFocus: {
+                            sceneId: payload.sceneId,
+                            groupIds: nextGroupIds,
+                        },
+                    };
+                }
+                if (gf != null && gf.sceneId === payload.sceneId) {
+                    return {
+                        groupFocus: {
+                            sceneId: payload.sceneId,
+                            groupIds: [...gf.groupIds, payload.groupId],
+                        },
+                    };
+                }
                 return {
                     groupFocus: {
                         sceneId: payload.sceneId,

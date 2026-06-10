@@ -32,12 +32,9 @@ export interface GroupItemProps {
     groupId: number;
     groupNickname: string | null;
     numberOfMarchers: number;
-    isFocused: boolean;
-    showFocusControls: boolean;
     showEffectAssignmentControls: boolean;
     onNameChange: (name: string | null) => void;
     onDelete: () => void;
-    onToggleFocus: () => void;
     onSelectMarchersInGroup: () => void;
 }
 
@@ -49,12 +46,9 @@ export default function GroupItem({
     groupNickname,
     groupId,
     numberOfMarchers,
-    isFocused,
-    showFocusControls,
     showEffectAssignmentControls,
     onNameChange,
     onDelete,
-    onToggleFocus,
     onSelectMarchersInGroup,
 }: GroupItemProps) {
     const { t } = useTolgee();
@@ -116,175 +110,142 @@ export default function GroupItem({
               });
 
     return (
-        <div className="flex w-full min-w-0 flex-col gap-8">
-            <div className="flex w-full min-w-0 flex-col gap-8">
-                <div className="flex w-full min-w-0 items-start justify-between gap-6">
-                    <div className="flex min-w-0 flex-1 flex-col gap-4">
-                        {editingName && !showEffectAssignmentControls ? (
-                            <Input
-                                id={nameId}
-                                ref={nameInputRef}
-                                compact
-                                type="text"
-                                className="w-full min-w-0"
-                                value={draftName}
-                                onChange={handleNameChange}
-                                onClick={stopRowClickPropagation}
-                                onBlur={commitNameFromDraft}
-                                onKeyDown={handleNameKeyDown}
-                                aria-label={t(
-                                    "inspector.light.groups.groupItem.name",
-                                    { defaultValue: "Name" },
-                                )}
+        <div className="flex w-full min-w-0 items-start justify-between gap-6">
+            <div className="flex min-w-0 flex-1 flex-col gap-4">
+                {editingName && !showEffectAssignmentControls ? (
+                    <Input
+                        id={nameId}
+                        ref={nameInputRef}
+                        compact
+                        type="text"
+                        className="w-full min-w-0"
+                        value={draftName}
+                        onChange={handleNameChange}
+                        onClick={stopRowClickPropagation}
+                        onBlur={commitNameFromDraft}
+                        onKeyDown={handleNameKeyDown}
+                        aria-label={t("inspector.light.groups.groupItem.name", {
+                            defaultValue: "Name",
+                        })}
+                    />
+                ) : showEffectAssignmentControls ? (
+                    <p
+                        className={
+                            name.trim() === ""
+                                ? "text-h5 text-text/50 w-full min-w-0 truncate text-left italic"
+                                : "text-h5 text-text w-full min-w-0 truncate text-left"
+                        }
+                    >
+                        {displayName}
+                    </p>
+                ) : (
+                    <button
+                        type="button"
+                        className={
+                            name.trim() === ""
+                                ? "text-h5 text-text/50 hover:text-text/80 w-fit min-w-0 cursor-pointer truncate text-left italic transition-colors"
+                                : "text-h5 text-text hover:text-accent w-fit min-w-0 cursor-pointer truncate text-left transition-colors"
+                        }
+                        onClick={(e) => {
+                            stopRowClickPropagation(e);
+                            openNameEdit();
+                        }}
+                    >
+                        {displayName}
+                    </button>
+                )}
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            className="hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors"
+                            onClick={(e) => {
+                                stopRowClickPropagation(e);
+                                onSelectMarchersInGroup();
+                            }}
+                            aria-label={t(
+                                "inspector.light.groups.groupItem.selectAllMarchersInGroup",
+                                {
+                                    defaultValue:
+                                        "Select all marchers in group",
+                                },
+                            )}
+                        >
+                            <UsersIcon size={16} aria-hidden />
+                            <span className="text-lg font-bold">
+                                {numberOfMarchers}
+                            </span>
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipPortal>
+                        <TooltipContent
+                            side="bottom"
+                            align="start"
+                            className={clsx(TooltipClassName, "p-16")}
+                        >
+                            <T
+                                keyName="inspector.light.groups.groupItem.selectAllMarchersInGroup"
+                                defaultValue="Select all marchers in group"
                             />
-                        ) : showEffectAssignmentControls ? (
-                            <p
-                                className={
-                                    name.trim() === ""
-                                        ? "text-h5 text-text/50 w-full min-w-0 truncate text-left italic"
-                                        : "text-h5 text-text w-full min-w-0 truncate text-left"
-                                }
-                            >
-                                {displayName}
-                            </p>
-                        ) : (
-                            <button
-                                type="button"
-                                className={
-                                    name.trim() === ""
-                                        ? "text-h5 text-text/50 hover:text-text/80 w-full min-w-0 cursor-pointer truncate text-left italic transition-colors"
-                                        : "text-h5 text-text hover:text-accent w-full min-w-0 cursor-pointer truncate text-left transition-colors"
-                                }
-                                onClick={(e) => {
-                                    stopRowClickPropagation(e);
-                                    openNameEdit();
-                                }}
-                            >
-                                {displayName}
-                            </button>
-                        )}
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <button
-                                    type="button"
-                                    className="hover:text-accent flex w-fit cursor-pointer items-baseline gap-4 transition-colors"
-                                    onClick={(e) => {
-                                        stopRowClickPropagation(e);
-                                        onSelectMarchersInGroup();
-                                    }}
-                                    aria-label={t(
-                                        "inspector.light.groups.groupItem.selectAllMarchersInGroup",
-                                        {
-                                            defaultValue:
-                                                "Select all marchers in group",
-                                        },
-                                    )}
-                                >
-                                    <UsersIcon size={16} aria-hidden />
-                                    <span className="text-lg font-bold">
-                                        {numberOfMarchers}
-                                    </span>
-                                </button>
-                            </TooltipTrigger>
-                            <TooltipPortal>
-                                <TooltipContent
-                                    side="bottom"
-                                    align="start"
-                                    className={clsx(TooltipClassName, "p-16")}
-                                >
+                        </TooltipContent>
+                    </TooltipPortal>
+                </Tooltip>
+            </div>
+            <div className="flex shrink-0 flex-wrap items-start gap-8">
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            content="icon"
+                            size="compact"
+                            className="rounded-6"
+                            disabled={showEffectAssignmentControls}
+                            onClick={stopRowClickPropagation}
+                            aria-label={t("inspector.light.groups.deleteAria", {
+                                defaultValue: "Delete group",
+                            })}
+                        >
+                            <TrashIcon aria-hidden />
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogTitle>
+                            <T
+                                keyName="inspector.light.groups.deleteTitle"
+                                defaultValue="Delete this group?"
+                            />
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            <T
+                                keyName="inspector.light.groups.deleteDescription"
+                                defaultValue="This group may be referenced by lighting effects. Those links will be removed."
+                            />
+                        </AlertDialogDescription>
+                        <div className="flex justify-end gap-8 pt-16">
+                            <AlertDialogCancel asChild>
+                                <Button variant="secondary" size="compact">
                                     <T
-                                        keyName="inspector.light.groups.groupItem.selectAllMarchersInGroup"
-                                        defaultValue="Select all marchers in group"
+                                        keyName="inspector.light.groups.cancel"
+                                        defaultValue="Cancel"
                                     />
-                                </TooltipContent>
-                            </TooltipPortal>
-                        </Tooltip>
-                    </div>
-                    <div className="flex shrink-0 flex-wrap items-start gap-8">
-                        {showFocusControls ? (
-                            <Button
-                                type="button"
-                                variant="secondary"
-                                size="compact"
-                                aria-pressed={isFocused}
-                                onClick={(e) => {
-                                    stopRowClickPropagation(e);
-                                    onToggleFocus();
-                                }}
-                            >
-                                {isFocused ? (
-                                    <T
-                                        keyName="inspector.light.groups.clearFocus"
-                                        defaultValue="Clear focus"
-                                    />
-                                ) : (
-                                    <T
-                                        keyName="inspector.light.groups.focusCanvas"
-                                        defaultValue="Focus"
-                                    />
-                                )}
-                            </Button>
-                        ) : null}
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    content="icon"
-                                    size="compact"
-                                    className="rounded-6"
-                                    disabled={showEffectAssignmentControls}
-                                    onClick={stopRowClickPropagation}
-                                    aria-label={t(
-                                        "inspector.light.groups.deleteAria",
-                                        { defaultValue: "Delete group" },
-                                    )}
-                                >
-                                    <TrashIcon aria-hidden />
                                 </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogTitle>
+                            </AlertDialogCancel>
+                            <AlertDialogAction>
+                                <Button
+                                    variant="red"
+                                    size="compact"
+                                    onClick={onDelete}
+                                >
                                     <T
-                                        keyName="inspector.light.groups.deleteTitle"
-                                        defaultValue="Delete this group?"
+                                        keyName="inspector.light.groups.deleteConfirm"
+                                        defaultValue="Delete"
                                     />
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    <T
-                                        keyName="inspector.light.groups.deleteDescription"
-                                        defaultValue="This group may be referenced by lighting effects. Those links will be removed."
-                                    />
-                                </AlertDialogDescription>
-                                <div className="flex justify-end gap-8 pt-16">
-                                    <AlertDialogCancel asChild>
-                                        <Button
-                                            variant="secondary"
-                                            size="compact"
-                                        >
-                                            <T
-                                                keyName="inspector.light.groups.cancel"
-                                                defaultValue="Cancel"
-                                            />
-                                        </Button>
-                                    </AlertDialogCancel>
-                                    <AlertDialogAction>
-                                        <Button
-                                            variant="red"
-                                            size="compact"
-                                            onClick={onDelete}
-                                        >
-                                            <T
-                                                keyName="inspector.light.groups.deleteConfirm"
-                                                defaultValue="Delete"
-                                            />
-                                        </Button>
-                                    </AlertDialogAction>
-                                </div>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </div>
-                </div>
+                                </Button>
+                            </AlertDialogAction>
+                        </div>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
         </div>
     );
