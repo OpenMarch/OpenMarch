@@ -2,36 +2,12 @@
 import { ArrowRightIcon } from "@phosphor-icons/react";
 import { Image } from "astro:assets";
 import carolineHs from "@/assets/testimonials/caroline.jpg";
+import citrusHs from "@/assets/testimonials/citrus.png";
 ---
 
 <section id="testimonials" class="flex flex-col gap-8 items-center">
     <h1 class="text-h3">Changing how ensembles design and perform</h1>
     <div class="grid grid-cols-3 max-[920px]:grid-cols-1 gap-16">
-        <div
-            class="bg-fg-1 border border-stroke justify-center rounded-6 p-24 flex flex-col gap-6 h-full"
-        >
-            <h2 class="text-h4">Sunbright HS</h2>
-            <p class="text-body font-medium">Brandon Wright, Marching Band</p>
-            <p class="text-body leading-[165%] text-text-subtitle">
-                We’re a small K-12 school of about 470 students, with 25 in the
-                high school band. I’ve tried every program we could afford, and
-                OpenMarch has been the most accessible and easy to use. It’s
-                been a lifesaver.
-            </p>
-        </div>
-        <div
-            class="bg-fg-1 border border-stroke justify-center rounded-6 p-24 flex flex-col gap-6 h-full"
-        >
-            <h2 class="text-h4">Cinnaminson HS</h2>
-            <p class="text-body font-medium">Douglas Ferraro, Indoor</p>
-            <p class="text-body leading-[165%] text-text-subtitle">
-                We finished writing & teaching the show earlier than ever
-                before, and the students were loving the dot sheets and watching
-                the drill on the big screen! I would absolutely recommend it,
-                especially for smaller ensembles and new drill writers.
-            </p>
-        </div>
-
         <a
             href="/blog/2025-11-10-caroline-hss-visit"
             class="bg-fg-1 border border-accent justify-center rounded-20 p-16 flex flex-col gap-6 not-last:max-[510px]items-start hover:brightness-110 duration-150 active:scale-95 ease-out h-full"
@@ -51,9 +27,46 @@ import carolineHs from "@/assets/testimonials/caroline.jpg";
             <h2 class="text-h4">Caroline HS</h2>
             <p class="text-body font-medium">Carter King, Outdoor</p>
             <p class="text-body leading-[165%] text-text-subtitle">
-                “OpenMarch suited every need I had. It was easy to use, free to
-                use, and powerful enough for my program.”
+                OpenMarch suited every need I had. It was easy to use, free to
+                use, and powerful enough for my program.
             </p>
         </a>
+        <a
+            href="/blog/2026-2-1_citrus-hs"
+            class="bg-fg-1 border border-accent justify-center rounded-20 p-16 flex flex-col gap-6 not-last:max-[510px]items-start hover:brightness-110 duration-150 active:scale-95 ease-out h-full"
+        >
+            <div class="flex justify-between w-full items-start">
+                <Image
+                    src={citrusHs}
+                    alt="Citrus HS"
+                    class="object-cover rounded-6"
+                    width={144}
+                    height={72}
+                />
+                <div class="flex items-center gap-6">
+                    Read more <ArrowRightIcon size={24} />
+                </div>
+            </div>
+            <h2 class="text-h4">Citrus Hill HS</h2>
+            <p class="text-body font-medium">Randy Nguyen, Outdoor</p>
+            <p class="text-body leading-[165%] text-text-subtitle">
+                I am deeply thankful for the platform, the community, and the
+                impact OpenMarch has had on our program. I cannot recommend it
+                enough to any educator looking to empower themselves and their
+                students.
+            </p>
+        </a>
+        <div
+            class="bg-fg-1 border border-stroke justify-center rounded-6 p-24 flex flex-col gap-6 h-full"
+        >
+            <h2 class="text-h4">Sunbright HS</h2>
+            <p class="text-body font-medium">Brandon Wright, Marching Band</p>
+            <p class="text-body leading-[165%] text-text-subtitle">
+                We’re a small K-12 school of about 470 students, with 25 in the
+                high school band. I’ve tried every program we could afford, and
+                OpenMarch has been the most accessible and easy to use. It’s
+                been a lifesaver.
+            </p>
+        </div>
     </div>
 </section>

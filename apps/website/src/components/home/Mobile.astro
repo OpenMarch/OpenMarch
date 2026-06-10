@@ -1,13 +1,211 @@
 ---
-import { Badge } from "@openmarch/ui";
+import { Badge, Button } from "@openmarch/ui";
+import { Image } from "astro:assets";
+
+import viewDark from "@/assets/otm/viewdark.png";
+import viewLight from "@/assets/otm/viewlight.png";
+import homeDark from "@/assets/otm/homedark.png";
+import homeLight from "@/assets/otm/homelight.png";
+import viewVertDark from "@/assets/otm/viewvertdark.png";
+import viewVertLight from "@/assets/otm/viewvertlight.png";
+import account from "@/assets/otm/account.png";
+import landerDark from "@/assets/desktop/landerdark.png";
+import landerLight from "@/assets/desktop/landerlight.png";
+import fieldDark from "@/assets/desktop/fielddark.png";
+import fieldLight from "@/assets/desktop/fieldlight.png";
 ---
 
 <div class="flex flex-col gap-8">
     <Badge>Mobile</Badge>
     <h1 class="text-text text-[3.5rem]">Bring your ensemble On The Move</h1>
-    <div class="grid grid-cols-2 grid-rows-2">
-        <div class="bg-fg-1 border border-stroke rounded-6 p-12 flex gap-12">
-            Lorem ipsum
+    <section class="grid grid-cols-2 grid-rows-2 gap-16">
+        <div
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435"
+        >
+            <h3 class="text-h3 leading-none">
+                A modern drill viewer for performers
+            </h3>
+            <p class="text-body leading-relaxed text-text-subtitle">
+                Watch drill animations, scrub through the show timeline, and
+                view performers’ exact position on the field.
+            </p>
+
+            <Image
+                src={viewDark}
+                alt="App Screenshot"
+                width={1094}
+                height={535}
+                format="webp"
+                quality={80}
+                class="hidden dark:block aspect-1094/535 h-auto w-full rounded-6 object-center object-cover"
+            />
+            <Image
+                src={viewLight}
+                alt="App Screenshot"
+                width={1094}
+                height={535}
+                format="webp"
+                quality={80}
+                class="block dark:hidden aspect-1094/535 h-auto w-full rounded-6 object-center object-cover"
+            />
         </div>
+        <div
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip relative"
+        >
+            <h3 class="text-h3 leading-none">Full drill visualization</h3>
+            <p class="text-body leading-relaxed text-text-subtitle">
+                Watch the complete drill animation and see how forms develop
+                across the field. Understand the bigger picture, not just your
+                individual coordinates.
+            </p>
+
+            <span class="flex gap-12 items-end w-full justify-center -mt-32">
+                <span>
+                    <Image
+                        src={homeDark}
+                        alt="App Screenshot"
+                        width={535}
+                        height={1094}
+                        format="webp"
+                        quality={80}
+                        class="hidden dark:block aspect-535/1094 h-434 w-auto rounded-6 object-center object-cover"
+                    />
+                    <Image
+                        src={homeLight}
+                        alt="App Screenshot"
+                        width={535}
+                        height={1094}
+                        format="webp"
+                        quality={80}
+                        class="block dark:hidden aspect-535/1094 h-434 w-auto rounded-6 object-center object-cover"
+                    />
+                </span>
+
+                <span class="-ml-64">
+                    <Image
+                        src={viewVertDark}
+                        alt="App Screenshot"
+                        width={535}
+                        height={1094}
+                        format="webp"
+                        quality={80}
+                        class="hidden dark:block aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                    />
+                    <Image
+                        src={viewVertLight}
+                        alt="App Screenshot"
+                        width={535}
+                        height={1094}
+                        format="webp"
+                        quality={80}
+                        class="block dark:hidden aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                    />
+                </span>
+            </span>
+        </div>
+
+        <div
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip relative"
+        >
+            <h3 class="text-h3 leading-none">Intuitive flow for staff</h3>
+            <p class="text-body leading-relaxed text-text-subtitle">
+                Take it from the desktop app to OpenMarch Online, and distribute
+                to your On The Move ensembles, allowing students to download and
+                learn, even offline.
+            </p>
+
+            <span class="flex gap-12 items-start w-full justify-center">
+                <Image
+                    src={account}
+                    alt="App Screenshot"
+                    width={535}
+                    height={1094}
+                    format="webp"
+                    quality={80}
+                    class="aspect-535/1094 z-3 h-455 w-auto rounded-6 object-center object-cover"
+                />
+
+                <span class="mt-72 -ml-32 z-2">
+                    <Image
+                        src={landerDark}
+                        alt="Desktop App Screenshot"
+                        width={1050}
+                        height={632}
+                        format="webp"
+                        quality={80}
+                        class="hidden dark:block aspect-1050/632 h-auto w-525 rounded-6 object-center object-cover"
+                    />
+                    <Image
+                        src={landerLight}
+                        alt="Desktop App Screenshot"
+                        width={1050}
+                        height={632}
+                        format="webp"
+                        quality={80}
+                        class="block dark:hidden aspect-1050/632 h-auto w-525 rounded-6 object-center object-cover"
+                    />
+                </span>
+            </span>
+        </div>
+
+        <div
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip relative"
+        >
+            <h3 class="text-h3 leading-none">Unlike anything else</h3>
+            <p class="text-body leading-relaxed text-text-subtitle">
+                On The Move is a modern app, at a competitive price. We also
+                collect zero data on students & performers.
+            </p>
+
+            <span class="flex gap-12 items-start w-full justify-center">
+                <span>
+                    <Image
+                        src={viewDark}
+                        alt="App Screenshot"
+                        width={1094}
+                        height={535}
+                        format="webp"
+                        quality={80}
+                        class="hidden dark:block aspect-1094/535 z-3 w-455 h-auto rounded-6 object-center object-cover"
+                    />
+                    <Image
+                        src={viewLight}
+                        alt="App Screenshot"
+                        width={1094}
+                        height={535}
+                        format="webp"
+                        quality={80}
+                        class="block dark:hidden aspect-1094/5 z-3 w-455 h-auto rounded-6 object-center object-cover"
+                    />
+                </span>
+
+                <span class="mt-72 -ml-32 z-2">
+                    <Image
+                        src={fieldDark}
+                        alt="Desktop App Screenshot"
+                        width={1050}
+                        height={632}
+                        format="webp"
+                        quality={80}
+                        class="hidden dark:block aspect-1050/632 h-auto w-525 rounded-6 object-center object-cover"
+                    />
+                    <Image
+                        src={fieldLight}
+                        alt="Desktop App Screenshot"
+                        width={1050}
+                        height={632}
+                        format="webp"
+                        quality={80}
+                        class="block dark:hidden aspect-1050/632 h-auto w-525 rounded-6 object-center object-cover"
+                    />
+                </span>
+            </span>
+        </div>
+    </section>
+    <div
+        class="p-32 flex justify-between items-center border border-accent rounded-full"
+    >
+        <h1 class="text-h1">Learn more & pricing</h1>
+        <a href="/mobile"><Button>Go On The Move</Button></a>
     </div>
 </div>
