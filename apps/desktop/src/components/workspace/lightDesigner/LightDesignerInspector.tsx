@@ -1,11 +1,17 @@
 import SelectedEffectInspector from "@/components/inspector/lighting/SelectedEffectInspector";
 import GroupList from "@/components/inspector/lighting/GroupList";
 import VerticalSplitPane from "@/components/inspector/VerticalSplitPane";
+import {
+    buildOrderedSceneStarts,
+    findSceneIdForPageId,
+} from "@/components/timeline/SceneTimeline.utils";
 import { useLightSceneManager } from "@/components/workspace/lightDesigner/useLightSceneManager";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useTimingObjects } from "@/hooks";
 import {
+    allLightingScenesQueryOptions,
+    lightingSceneDataByIdQueryOptions,
     lightingScenePositionByLightingSceneIdMapQueryOptions,
-    useUpcomingLightingEffectsInSelectedPageQuery,
 } from "@/hooks/queries";
 import { useLightDesignerEffectGroupFocusSync } from "@/hooks/useLightDesignerEffectGroupFocusSync";
 import { useLightDesignerSelectedEffectSync } from "@/hooks/useLightDesignerSelectedEffectSync";
@@ -20,31 +26,63 @@ import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelec
  */
 export default function LightDesignerInspector() {
     const { selectedPage } = useSelectedPage()!;
+    const { pages } = useTimingObjects()!;
     const hasSelectedEffect = useLightDesignerSelectedEffectStore(
         useShallow((state) => state.selectedEffect != null),
     );
-    const playbackStartPageId =
+    const nextPageId =
         selectedPage == null
             ? undefined
             : selectedPage.id === 0
               ? selectedPage.id
               : (selectedPage.nextPageId ?? undefined);
-    const sceneQuery =
-        useUpcomingLightingEffectsInSelectedPageQuery(playbackStartPageId);
+    const { data: allScenes = [] } = useQuery(allLightingScenesQueryOptions());
+    const orderedStarts = useMemo(
+        () => buildOrderedSceneStarts(pages, allScenes),
+        [pages, allScenes],
+    );
+    const isNextPageSceneStart = useMemo(
+        () =>
+            nextPageId != null &&
+            allScenes.some((scene) => scene.start_page_id === nextPageId),
+        [allScenes, nextPageId],
+    );
+    const activeLightingSceneId = useMemo(() => {
+        if (selectedPage == null) return undefined;
+        if (isNextPageSceneStart && nextPageId != null) {
+            return allScenes.find((scene) => scene.start_page_id === nextPageId)
+                ?.id;
+        }
+        return (
+            findSceneIdForPageId(pages, orderedStarts, selectedPage.id) ??
+            undefined
+        );
+    }, [
+        allScenes,
+        isNextPageSceneStart,
+        nextPageId,
+        orderedStarts,
+        pages,
+        selectedPage,
+    ]);
+    const { data: lightingSceneData, isPending: isLoadingLightingScene } =
+        useQuery({
+            ...lightingSceneDataByIdQueryOptions(activeLightingSceneId ?? -1),
+            enabled: activeLightingSceneId != null,
+        });
     useLightSceneManager();
 
     const scenePositionByIdQuery = useQuery(
         lightingScenePositionByLightingSceneIdMapQueryOptions(),
     );
     const sceneOrder =
-        sceneQuery.lightingSceneData?.id != null
-            ? scenePositionByIdQuery.data?.[sceneQuery.lightingSceneData.id]
+        lightingSceneData?.id != null
+            ? scenePositionByIdQuery.data?.[lightingSceneData.id]
             : undefined;
 
-    const activeLightingSceneId = sceneQuery.lightingSceneData?.id;
     const effectIdsInOrder = useMemo(
-        () => sceneQuery.lightingSceneData?.lightingEffectIds ?? [],
-        [sceneQuery.lightingSceneData?.lightingEffectIds],
+        () => lightingSceneData?.lightingEffectIds ?? [],
+        [lightingSceneData?.lightingEffectIds],
     );
 
     useLightDesignerEffectGroupFocusSync(activeLightingSceneId);
@@ -57,7 +95,7 @@ export default function LightDesignerInspector() {
                     keyName="inspector.light.title"
                     params={{
                         sceneName:
-                            sceneQuery?.lightingSceneData?.name ??
+                            lightingSceneData?.name ??
                             sceneOrder?.toString() ??
                             "",
                     }}
@@ -94,10 +132,8 @@ export default function LightDesignerInspector() {
                             <SelectedEffectInspector
                                 sceneId={activeLightingSceneId}
                                 effectIdsInOrder={effectIdsInOrder}
-                                isLoadingScene={
-                                    sceneQuery.isLoadingLightingScene
-                                }
-                                lightingSceneData={sceneQuery.lightingSceneData}
+                                isLoadingScene={isLoadingLightingScene}
+                                lightingSceneData={lightingSceneData}
                             />
                         </div>
                     </div>
