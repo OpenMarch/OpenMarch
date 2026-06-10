@@ -1312,15 +1312,15 @@ describe("newBeatsFromTempoGroup", () => {
         });
     });
 
-    it("should handle edge case with very slow tempo", () => {
+    it("should handle edge case with minimum tempo", () => {
         const result = newBeatsFromTempoGroup({
-            tempo: 30,
+            tempo: 40,
             numRepeats: 1,
             bigBeatsPerMeasure: 2,
         });
         expect(result).toHaveLength(2);
         result.forEach((beat: NewBeatArgs) => {
-            expect(beat.duration).toBe(2); // 60/30 = 2
+            expect(beat.duration).toBe(1.5); // 60/40 = 1.5
             expect(beat.include_in_measure).toBe(true);
         });
     });
