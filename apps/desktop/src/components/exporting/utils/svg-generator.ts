@@ -150,7 +150,7 @@ const addIndividualMarcherLines = ({
     return { objectsToRemove, readableCoords };
 };
 
-const initializeCanvasForRendering = async (args: {
+export const initializeCanvasForRendering = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
