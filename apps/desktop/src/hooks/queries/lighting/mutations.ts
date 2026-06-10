@@ -21,8 +21,12 @@ import {
     updateLightingScenes,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
-import { mutationOptions } from "@tanstack/react-query";
+import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
+import {
+    getLightingEffectBatchUpdateErrorMessage,
+    getLightingEffectUpdateErrorMessage,
+} from "./lightingMutationErrors";
 import { lightingKeys } from "./queries";
 
 const invalidateAllLightingQueries = (qc: {
@@ -31,6 +35,18 @@ const invalidateAllLightingQueries = (qc: {
     void qc.invalidateQueries({
         queryKey: lightingKeys.allLightingScenes(),
     });
+};
+
+const invalidateLightingEffectQueries = (
+    qc: QueryClient,
+    effectIds: Iterable<number>,
+) => {
+    invalidateAllLightingQueries(qc);
+    for (const id of effectIds) {
+        void qc.invalidateQueries({
+            queryKey: lightingKeys.lightingEffectById(id),
+        });
+    }
 };
 
 // ============================================================================
@@ -319,15 +335,11 @@ export const updateLightingEffectsMutationOptions = () => {
             });
             return rows[0];
         },
-        onSuccess: async (_data, variables, _result, context) => {
-            const qc = context.client;
-            invalidateAllLightingQueries(qc);
-            void qc.invalidateQueries({
-                queryKey: lightingKeys.lightingEffectById(variables.id),
-            });
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(context.client, [variables.id]);
         },
         onError: (e, variables) => {
-            conToastError("Error updating lighting effect", e, variables);
+            conToastError(getLightingEffectUpdateErrorMessage(e), e, variables);
         },
     });
 };
@@ -342,17 +354,18 @@ export const updateLightingEffectsBatchMutationOptions = () => {
                 modifiedEffects,
             });
         },
-        onSuccess: async (_data, variables, _result, context) => {
-            const qc = context.client;
-            invalidateAllLightingQueries(qc);
-            for (const v of variables) {
-                void qc.invalidateQueries({
-                    queryKey: lightingKeys.lightingEffectById(v.id),
-                });
-            }
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(
+                context.client,
+                variables.map((v) => v.id),
+            );
         },
         onError: (e, variables) => {
-            conToastError("Error updating lighting effects", e, variables);
+            conToastError(
+                getLightingEffectBatchUpdateErrorMessage(e),
+                e,
+                variables,
+            );
         },
     });
 };

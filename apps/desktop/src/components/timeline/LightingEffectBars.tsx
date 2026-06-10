@@ -46,6 +46,22 @@ type DragState = {
     beatBoundaryPx: number[];
 };
 
+/** Syncs drag preview position on the bar element (inline styles bypass React). */
+function applyEffectBarBoundaryStyles(
+    bar: HTMLElement,
+    beatBoundaryPx: number[],
+    startBeats: number,
+    durationBeats: number,
+) {
+    const { leftPx, widthPx: barWidth } = barPxFromBoundary(
+        beatBoundaryPx,
+        startBeats,
+        durationBeats,
+    );
+    bar.style.left = `${leftPx}px`;
+    bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
+}
+
 type LightingEffectBarsProps = {
     sceneId: number;
     /** scene-local px width of the expanded container (excluding any outer padding). */
@@ -198,13 +214,12 @@ export default function LightingEffectBars({
                 `[data-effect-bar-id="${effectDrag.effectId}"]`,
             );
             if (bar) {
-                const { leftPx, widthPx: barWidth } = barPxFromBoundary(
+                applyEffectBarBoundaryStyles(
+                    bar,
                     effectDrag.beatBoundaryPx,
                     newStart,
                     newDuration,
                 );
-                bar.style.left = `${leftPx}px`;
-                bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
                 bar.dataset.newStart = String(newStart);
                 bar.dataset.newDuration = String(newDuration);
             }
@@ -234,15 +249,28 @@ export default function LightingEffectBars({
                         Number.isFinite(newDuration) &&
                         newDuration !== effectDrag.originalDuration;
                     if (startChanged || durationChanged) {
-                        updateEffect({
-                            id: effectDrag.effectId,
-                            ...(startChanged
-                                ? { start_offset_beats: newStart }
-                                : {}),
-                            ...(durationChanged
-                                ? { duration_beats: newDuration }
-                                : {}),
-                        });
+                        const dragSnapshot = effectDrag;
+                        updateEffect(
+                            {
+                                id: effectDrag.effectId,
+                                ...(startChanged
+                                    ? { start_offset_beats: newStart }
+                                    : {}),
+                                ...(durationChanged
+                                    ? { duration_beats: newDuration }
+                                    : {}),
+                            },
+                            {
+                                onError: () => {
+                                    applyEffectBarBoundaryStyles(
+                                        bar,
+                                        dragSnapshot.beatBoundaryPx,
+                                        dragSnapshot.originalStart,
+                                        dragSnapshot.originalDuration,
+                                    );
+                                },
+                            },
+                        );
                     } else if (
                         !isPlaying &&
                         Math.abs(ev.clientX - effectDrag.pointerDownX) <
