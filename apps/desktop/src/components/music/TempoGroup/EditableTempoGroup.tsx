@@ -12,6 +12,8 @@ import clsx from "clsx";
 import React, { useMemo, useState } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
 import { T, useTolgee } from "@tolgee/react";
+import { isValidTempoBpm, MIN_TEMPO_BPM } from "@/global/classes/Beat";
+import { toast } from "sonner";
 
 interface EditableTempoGroupProps {
     tempoGroup: TempoGroup;
@@ -65,15 +67,28 @@ export default function EditableTempoGroup({
 
         try {
             if (!isManualTempo) {
+                const newTempo = Number(tempo);
+                if (!isValidTempoBpm(newTempo)) {
+                    toast.error(
+                        t("music.tempoBelowMinimum", { min: MIN_TEMPO_BPM }),
+                    );
+                    return;
+                }
                 await updateTempoGroupMutation.mutateAsync({
                     tempoGroup,
-                    newTempo: Number(tempo),
+                    newTempo,
                     newName: name,
                     newStrongBeatIndexes: isMixedMeter
                         ? patternStringToLongBeatIndexes(selectedPattern)
                         : undefined,
                 });
             } else {
+                if (manualTempos.some((bpm) => !isValidTempoBpm(bpm))) {
+                    toast.error(
+                        t("music.tempoBelowMinimum", { min: MIN_TEMPO_BPM }),
+                    );
+                    return;
+                }
                 await updateManualTemposMutation.mutateAsync({
                     tempoGroup,
                     newManualTempos: manualTempos,
@@ -137,7 +152,7 @@ export default function EditableTempoGroup({
                                 id="start-tempo-input"
                                 name="tempo"
                                 type="number"
-                                min={1}
+                                min={MIN_TEMPO_BPM}
                                 value={tempo}
                                 onChange={(e) => setTempo(e.target.value)}
                                 required
@@ -246,6 +261,7 @@ export default function EditableTempoGroup({
                                         unit="BPM"
                                         className="col-span-5"
                                         type="number"
+                                        min={MIN_TEMPO_BPM}
                                         value={tempo === 0 ? "" : tempo}
                                         onChange={(e) => {
                                             const newTempos = [...manualTempos];
