@@ -292,6 +292,7 @@
         "videoOverlayClock": "Elapsed time",
         "videoOverlayCountLabel": "Count",
         "videoOverlayMeasures": "Measure numbers & rehearsal marks",
+        "videoOverlayPreviewHint": "Drag the overlay to move it. Use the side handle to stretch it and the corner handle to resize it.",
         "videoOverlaySetCounts": "Sets & counts",
         "videoOverlaySetLabel": "Set",
         "videoOverlayTempo": "Tempo",

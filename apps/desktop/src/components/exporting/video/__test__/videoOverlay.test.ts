@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, OverlayTimeline } from "../videoOverlay";
+import {
+    buildOverlaySegments,
+    formatClock,
+    OverlayOptions,
+    OverlayTimeline,
+} from "../videoOverlay";
 import Page from "@/global/classes/Page";
 import Measure from "@/global/classes/Measure";
 import Beat from "@/global/classes/Beat";
@@ -87,6 +92,50 @@ describe("OverlayTimeline", () => {
 
         expect(state.measureNumber).toBeNull();
         expect(state.rehearsalMark).toBeNull();
+    });
+});
+
+describe("buildOverlaySegments", () => {
+    const allOptions: OverlayOptions = {
+        showSet: true,
+        showCounts: true,
+        showMeasures: true,
+        showTempo: true,
+        showClock: true,
+        setLabel: "Set",
+        countLabel: "Count",
+    };
+
+    it("builds every segment in display order", () => {
+        const state = new OverlayTimeline(pages, measures).getState(2.5);
+        const segments = buildOverlaySegments(state, allOptions);
+
+        expect(segments.map((s) => s.text)).toEqual([
+            "Set 1 → 2",
+            "Count 3 / 4",
+            "[A]  m. 2",
+            "60 bpm",
+            "0:02 / 0:06",
+        ]);
+        expect(segments.map((s) => s.bold)).toEqual([
+            true,
+            true,
+            false,
+            false,
+            false,
+        ]);
+    });
+
+    it("omits disabled and unavailable items", () => {
+        const state = new OverlayTimeline(pages, []).getState(0);
+        const segments = buildOverlaySegments(state, {
+            ...allOptions,
+            showCounts: false,
+            showClock: false,
+        });
+
+        // Counts and clock are off; measure info is unavailable
+        expect(segments.map((s) => s.text)).toEqual(["Set 1 → 2", "60 bpm"]);
     });
 });
 

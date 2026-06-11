@@ -24,7 +24,14 @@ import {
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
-import { drawOverlay, OverlayOptions, OverlayTimeline } from "./videoOverlay";
+import {
+    drawBranding,
+    drawOverlay,
+    loadBrandingLogo,
+    OverlayOptions,
+    OverlayPlacement,
+    OverlayTimeline,
+} from "./videoOverlay";
 
 const FIELD_MARGIN_PX = 40;
 const KEYFRAME_INTERVAL_SECONDS = 2;
@@ -49,7 +56,11 @@ export interface VideoExportArgs {
     height: number;
     fps: number;
     /** When set, an info HUD (set, counts, measure, etc.) is drawn on each frame */
-    overlay?: { options: OverlayOptions; measures: Measure[] };
+    overlay?: {
+        options: OverlayOptions;
+        measures: Measure[];
+        placement: OverlayPlacement;
+    };
     onProgress?: (fraction: number) => void;
     isCancelled?: () => boolean;
 }
@@ -284,6 +295,7 @@ export async function exportVideo(
         const overlayTimeline = args.overlay
             ? new OverlayTimeline(sortedPages, args.overlay.measures)
             : null;
+        const brandingLogo = await loadBrandingLogo();
 
         let nextAudioSlice = 0;
         const flushAudioUntil = async (seconds: number) => {
@@ -323,9 +335,12 @@ export async function exportVideo(
                     frameContext,
                     overlayTimeline.getState(timestampSeconds),
                     args.overlay.options,
+                    args.overlay.placement,
+                    width,
                     height,
                 );
             }
+            drawBranding(frameContext, brandingLogo, width, height);
 
             await videoSource.add(timestampSeconds, 1 / fps, {
                 keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,

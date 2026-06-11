@@ -1,5 +1,5 @@
 /* eslint-disable no-control-regex */
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
@@ -58,6 +58,13 @@ import {
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioFile from "@/global/classes/AudioFile";
 import { exportVideo } from "./video/videoRenderer";
+import {
+    DEFAULT_OVERLAY_PLACEMENT,
+    OverlayOptions,
+    OverlayState,
+    OverlayTimeline,
+} from "./video/videoOverlay";
+import OverlayPreview from "./video/OverlayPreview";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -1195,11 +1202,50 @@ function VideoExport() {
     const [showMeasures, setShowMeasures] = useState(true);
     const [showTempo, setShowTempo] = useState(false);
     const [showClock, setShowClock] = useState(true);
+    const [placement, setPlacement] = useState(DEFAULT_OVERLAY_PLACEMENT);
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
     const isCancelled = useRef(false);
     const t = tolgee.t;
+
+    const overlayOptions: OverlayOptions = useMemo(
+        () => ({
+            showSet: showSetCounts,
+            showCounts: showSetCounts,
+            showMeasures: showMeasures && measures.length > 0,
+            showTempo,
+            showClock,
+            setLabel: t("exportCoordinates.videoOverlaySetLabel"),
+            countLabel: t("exportCoordinates.videoOverlayCountLabel"),
+        }),
+        [showSetCounts, showMeasures, measures.length, showTempo, showClock, t],
+    );
+    const overlayEnabled =
+        overlayOptions.showSet ||
+        overlayOptions.showMeasures ||
+        overlayOptions.showTempo ||
+        overlayOptions.showClock;
+
+    // Sample a moment one third into the show so the preview shows real data
+    const previewState: OverlayState = useMemo(() => {
+        if (pages.length > 0) {
+            const lastPage = pages[pages.length - 1];
+            const total = lastPage.timestamp + lastPage.duration;
+            return new OverlayTimeline(pages, measures).getState(total / 3);
+        }
+        return {
+            previousSetName: "4",
+            setName: "5",
+            count: 7,
+            totalCounts: 16,
+            measureNumber: 23,
+            rehearsalMark: "A",
+            tempoBpm: 144,
+            timeSeconds: 83,
+            totalSeconds: 405,
+        };
+    }, [pages, measures]);
 
     const canExport = !!(
         fieldProperties &&
@@ -1241,8 +1287,6 @@ function VideoExport() {
                 ]);
             assert(audioFile.data, "Audio file has no data");
 
-            const overlayEnabled =
-                showSetCounts || showMeasures || showTempo || showClock;
             const result = await exportVideo({
                 fieldProperties,
                 marchers,
@@ -1258,22 +1302,7 @@ function VideoExport() {
                 height,
                 fps: frameRate,
                 overlay: overlayEnabled
-                    ? {
-                          measures,
-                          options: {
-                              showSet: showSetCounts,
-                              showCounts: showSetCounts,
-                              showMeasures,
-                              showTempo,
-                              showClock,
-                              setLabel: t(
-                                  "exportCoordinates.videoOverlaySetLabel",
-                              ),
-                              countLabel: t(
-                                  "exportCoordinates.videoOverlayCountLabel",
-                              ),
-                          },
-                      }
+                    ? { measures, options: overlayOptions, placement }
                     : undefined,
                 onProgress: (fraction) => setProgress(fraction * 100),
                 isCancelled: () => isCancelled.current,
@@ -1341,10 +1370,9 @@ function VideoExport() {
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
         measures,
-        showSetCounts,
-        showMeasures,
-        showTempo,
-        showClock,
+        overlayEnabled,
+        overlayOptions,
+        placement,
     ]);
 
     return (
@@ -1408,6 +1436,19 @@ function VideoExport() {
                 <h5 className="text-h5">
                     <T keyName="exportCoordinates.videoOverlay" />
                 </h5>
+                {overlayEnabled && (
+                    <>
+                        <OverlayPreview
+                            state={previewState}
+                            options={overlayOptions}
+                            placement={placement}
+                            onPlacementChange={setPlacement}
+                        />
+                        <p className="text-sub text-text/60">
+                            <T keyName="exportCoordinates.videoOverlayPreviewHint" />
+                        </p>
+                    </>
+                )}
                 <Form.Root className="grid grid-cols-2 gap-y-16">
                     <Form.Field
                         name="overlaySetCounts"
