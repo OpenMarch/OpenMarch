@@ -194,7 +194,7 @@ export default function FAQAccordion() {
                     className="border-stroke bg-fg-1 rounded-6 border"
                 >
                     <Accordion.Header>
-                        <Accordion.Trigger className="text-text group text-body flex w-full items-center justify-between gap-16 px-24 py-18 text-left">
+                        <Accordion.Trigger className="text-text group text-body flex w-full items-center justify-between gap-16 px-24 py-18 text-left max-[520px]:px-16">
                             <span>{faq.question}</span>
                             <CaretDownIcon
                                 size={20}
@@ -204,7 +204,7 @@ export default function FAQAccordion() {
                         </Accordion.Trigger>
                     </Accordion.Header>
                     <Accordion.Content className="overflow-hidden">
-                        <div className="text-text-subtitle text-body flex flex-col gap-12 px-24 pb-20 leading-relaxed">
+                        <div className="text-text-subtitle text-body flex flex-col gap-12 px-24 pb-20 leading-relaxed max-[520px]:px-16">
                             {faq.answer}
                         </div>
                     </Accordion.Content>

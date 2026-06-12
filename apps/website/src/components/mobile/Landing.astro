@@ -13,9 +13,7 @@ import viewVertLight from "@/assets/otm/viewvertlight.png";
 
 <section
     id="landing"
-    class="relative flex h-fit flex-col w-full max-w-[1200px]
-min-[1200px]:w-[1200px] items-center justify-center gap-16 border border-stroke
-pt-32 pb-8 px-8 rounded-6"
+    class="relative flex h-fit w-full min-w-0 flex-col items-center justify-center gap-16 overflow-hidden rounded-6 border border-stroke px-8 pt-32 pb-8"
 >
     <LogoOnTheMove className="text-accent" width="30" height="72" />
     <h1
@@ -23,7 +21,9 @@ pt-32 pb-8 px-8 rounded-6"
     >
         Bring your ensemble <br />On The Move
     </h1>
-    <p class="text-body text-center motion-delay-250 w-512 leading-loose">
+    <p
+        class="text-body w-full max-w-[32rem] text-center leading-loose motion-delay-250"
+    >
         OpenMarch: On The Move is a modern mobile drill viewing app for marching
         arts performers. Quickly deploy, and learn drill now.
     </p>
@@ -36,7 +36,9 @@ pt-32 pb-8 px-8 rounded-6"
         </a>
     </div>
 
-    <div class="flex items-end">
+    <div
+        class="flex w-full max-w-[900px] items-end justify-center overflow-hidden max-[640px]:mt-16"
+    >
         <span>
             <Image
                 src={homeDark}
@@ -45,7 +47,7 @@ pt-32 pb-8 px-8 rounded-6"
                 height={1094}
                 format="webp"
                 quality={80}
-                class="hidden dark:block aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                class="hidden aspect-535/1094 h-auto w-[min(43vw,16rem)] rounded-6 object-cover object-center dark:block"
             />
             <Image
                 src={homeLight}
@@ -54,11 +56,11 @@ pt-32 pb-8 px-8 rounded-6"
                 height={1094}
                 format="webp"
                 quality={80}
-                class="block dark:hidden aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                class="block aspect-535/1094 h-auto w-[min(43vw,16rem)] rounded-6 object-cover object-center dark:hidden"
             />
         </span>
 
-        <span class="-ml-64">
+        <span class="-ml-[8vw]">
             <Image
                 src={viewVertDark}
                 alt="App Screenshot"
@@ -66,7 +68,7 @@ pt-32 pb-8 px-8 rounded-6"
                 height={1094}
                 format="webp"
                 quality={80}
-                class="hidden dark:block aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                class="hidden aspect-535/1094 h-auto w-[min(43vw,16rem)] rounded-6 object-cover object-center dark:block"
             />
             <Image
                 src={viewVertLight}
@@ -75,10 +77,10 @@ pt-32 pb-8 px-8 rounded-6"
                 height={1094}
                 format="webp"
                 quality={80}
-                class="block dark:hidden aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                class="block aspect-535/1094 h-auto w-[min(43vw,16rem)] rounded-6 object-cover object-center dark:hidden"
             />
         </span>
-        <span class="-ml-250">
+        <span class="-ml-[20vw] max-[640px]:hidden">
             <Image
                 src={viewDark}
                 alt="App Screenshot"
@@ -86,7 +88,7 @@ pt-32 pb-8 px-8 rounded-6"
                 height={535}
                 format="webp"
                 quality={80}
-                class="hidden dark:block aspect-1094/535 h-auto w-517 rounded-6 object-center object-cover"
+                class="hidden aspect-1094/535 h-auto w-[min(43vw,32rem)] rounded-6 object-cover object-center dark:block"
             />
             <Image
                 src={viewLight}
@@ -95,7 +97,7 @@ pt-32 pb-8 px-8 rounded-6"
                 height={535}
                 format="webp"
                 quality={80}
-                class="block dark:hidden aspect-1094/535 h-auto w-517 rounded-6 object-center object-cover"
+                class="block aspect-1094/535 h-auto w-[min(43vw,32rem)] rounded-6 object-cover object-center dark:hidden"
             />
         </span>
     </div>
