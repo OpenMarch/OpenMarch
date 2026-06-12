@@ -1,3 +1,14 @@
 ---
-
+import FAQAccordion from "@/components/mobile/FAQAccordion";
 ---
+
+<section
+    id="faq"
+    class="grid w-full grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] gap-32 max-[850px]:grid-cols-1"
+>
+    <div class="flex flex-col gap-8">
+        <h2 class="text-h1 max-[580px]:text-h2">Frequently asked questions</h2>
+    </div>
+
+    <FAQAccordion client:visible />
+</section>
