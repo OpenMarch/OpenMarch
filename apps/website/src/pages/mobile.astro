@@ -1,5 +1,108 @@
 ---
 import Layout from "@/layouts/Layout.astro";
+import { Button } from "@openmarch/ui";
+import { Image } from "astro:assets";
+import { LogoOnTheMove } from "@/components/Logos.tsx";
+
+import viewDark from "@/assets/otm/viewdark.png";
+import viewLight from "@/assets/otm/viewlight.png";
+import homeDark from "@/assets/otm/homedark.png";
+import homeLight from "@/assets/otm/homelight.png";
+import viewVertDark from "@/assets/otm/viewvertdark.png";
+import viewVertLight from "@/assets/otm/viewvertlight.png";
 ---
 
-<Layout title="Mobile"> asd </Layout>
+<Layout title="Mobile">
+    <section
+        id="landing"
+        class="relative flex h-fit flex-col w-full max-w-[1200px] min-[1200px]:w-[1200px] items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-6"
+    >
+        <LogoOnTheMove className="text-accent" width="30" height="72" />
+        <h1
+            class="text-h1 leading-[130%] max-[580px]:text-h2 max-[580px]:w-full tracking-tighter text-center motion-preset-slide-up motion-delay-150"
+        >
+            Bring your ensemble <br />On The Move
+        </h1>
+        <p class="text-body text-center motion-delay-250 w-512 leading-loose">
+            OpenMarch: On The Move is a modern mobile drill viewing app for
+            marching arts performers. Quickly deploy, and learn drill now.
+        </p>
+        <div class="flex flex-wrap gap-8 motion-delay-250">
+            <a href="#pricing">
+                <Button>Pricing</Button>
+            </a>
+            <a href="#features">
+                <Button variant="secondary">Learn More</Button>
+            </a>
+        </div>
+
+        <div class="flex items-end">
+            <span>
+                <Image
+                    src={homeDark}
+                    alt="App Screenshot"
+                    width={535}
+                    height={1094}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                />
+                <Image
+                    src={homeLight}
+                    alt="App Screenshot"
+                    width={535}
+                    height={1094}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                />
+            </span>
+
+            <span class="-ml-64">
+                <Image
+                    src={viewVertDark}
+                    alt="App Screenshot"
+                    width={535}
+                    height={1094}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                />
+                <Image
+                    src={viewVertLight}
+                    alt="App Screenshot"
+                    width={535}
+                    height={1094}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden aspect-535/1094 h-517 w-auto rounded-6 object-center object-cover"
+                />
+            </span>
+            <span class="-ml-250">
+                <Image
+                    src={viewDark}
+                    alt="App Screenshot"
+                    width={1094}
+                    height={535}
+                    format="webp"
+                    quality={80}
+                    class="hidden dark:block aspect-1094/535 h-auto w-517 rounded-6 object-center object-cover"
+                />
+                <Image
+                    src={viewLight}
+                    alt="App Screenshot"
+                    width={1094}
+                    height={535}
+                    format="webp"
+                    quality={80}
+                    class="block dark:hidden aspect-1094/535 h-auto w-517 rounded-6 object-center object-cover"
+                />
+            </span>
+        </div>
+        <div
+            class="absolute top-0 motion-preset-fade-lg motion-delay-300 left-1/2 -translate-x-1/2 -z-50 size-[900px] max-[640px]:size-[300px]"
+            style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
+        >
+        </div>
+    </section>
+</Layout>
