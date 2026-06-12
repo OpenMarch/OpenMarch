@@ -71,30 +71,31 @@ const footerItems = [
 <footer class="flex flex-col gap-8 z-50 w-full">
     {
         !hideDownloadCta && (
-            <div
-                class="flex gap-24
-            items-center justify-center rounded-6 px-16 py-32 download-cta-gradient"
-            >
+            <div class="flex gap-24 items-center justify-center rounded-6 px-16 py-32 download-cta-gradient max-[768px]:gap-16 max-[640px]:flex-col max-[640px]:items-stretch max-[640px]:py-24">
                 <LogoOpenMarchMarcher
                     width="24"
                     height="64"
-                    className="text-accent"
+                    className="text-accent max-[640px]:hidden"
                 />
-                <h2 class="text-h2 text-center max-[768px]:text-h3">
+                <h2 class="text-h2 text-center max-[900px]:text-h3 max-[520px]:text-h4">
                     Download the modern drill writing app
                 </h2>
                 <a
                     href="/download"
-                    class="text-body duration-150 ease-out hover:text-accent w-fit"
+                    class="text-body duration-150 ease-out hover:text-accent w-fit max-[640px]:w-full"
                 >
-                    <Button variant="primary">Download</Button>
+                    <Button variant="primary" className="max-[640px]:w-full">
+                        Download
+                    </Button>
                 </a>
             </div>
         )
     }
-    <footer class="grid grid-cols-6 gap-0 px-8 py-12 divide-x divide-stroke">
+    <div
+        class="grid grid-cols-6 gap-0 px-8 py-12 divide-x divide-stroke max-[1400px]:grid-cols-3 max-[900px]:grid-cols-2 max-[900px]:gap-y-32 max-[900px]:divide-x-0 max-[520px]:grid-cols-1 max-[520px]:px-0"
+    >
         <div
-            class="flex flex-col justify-between px-16 py-12 max-[1024px]:col-span-2 max-[768px]:col-span-1"
+            class="flex flex-col justify-between px-16 py-12 max-[1024px]:col-span-2 max-[900px]:col-span-2 max-[520px]:col-span-1"
         >
             <div class="flex flex-col gap-16">
                 <a href="/">
@@ -111,7 +112,7 @@ const footerItems = [
         </div>
         {
             footerItems.map(({ header, items }) => (
-                <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
+                <div class="flex flex-col gap-16 px-16 py-12 max-[520px]:border-t max-[520px]:border-stroke">
                     <h4 class="text-h4">{header}</h4>
                     {items.map((item) => (
                         <a
@@ -132,5 +133,5 @@ const footerItems = [
                 </div>
             ))
         }
-    </footer>
+    </div>
 </footer>

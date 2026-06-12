@@ -13,14 +13,22 @@ import viewVertLight from "@/assets/otm/viewvertlight.png";
 import drillchart from "@/assets/desktop/drillchart.png";
 ---
 
-<section class="flex flex-col gap-8" id="desktop">
+<section class="flex w-full min-w-0 flex-col gap-8" id="desktop">
     <Badge>Desktop</Badge>
-    <h1 class="text-text text-[3.5rem]">The free, modern drill writing app</h1>
-    <section class="grid grid-cols-2 grid-rows-2 gap-16">
+    <h1
+        class="text-text text-[3.5rem] leading-[115%] max-[768px]:text-h1 max-[520px]:text-h2"
+    >
+        The free, modern drill writing app
+    </h1>
+    <section
+        class="grid grid-cols-2 grid-rows-2 gap-16 max-[850px]:grid-cols-1 max-[850px]:grid-rows-none"
+    >
         <div
-            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16"
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip max-[850px]:h-auto max-[520px]:p-16"
         >
-            <h3 class="text-h3 leading-none">Intuitive design</h3>
+            <h3 class="text-h3 leading-none max-[520px]:text-h4">
+                Intuitive design
+            </h3>
             <p class="text-body leading-relaxed text-text-subtitle">
                 Add in your field/floor, create music measures, and fluidly
                 write drill in one beautiful workspace.
@@ -33,7 +41,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="hidden dark:block border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
             <Image
                 src={shapesLight}
@@ -42,13 +50,15 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="block dark:hidden border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
         </div>
         <div
-            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16"
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip max-[850px]:h-auto max-[520px]:p-16"
         >
-            <h3 class="text-h3 leading-none">Open source core</h3>
+            <h3 class="text-h3 leading-none max-[520px]:text-h4">
+                Open source core
+            </h3>
             <p class="text-body leading-relaxed text-text-subtitle">
                 Built by the community, anyone can submit and fix issues, and
                 contribute their ideas and features.
@@ -61,7 +71,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="hidden dark:block border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
             <Image
                 src={tagsLight}
@@ -70,13 +80,15 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="block dark:hidden border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
         </div>
         <div
-            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16"
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 h-435 overflow-clip max-[850px]:h-auto max-[520px]:p-16"
         >
-            <h3 class="text-h3 leading-none">Free & easy to use</h3>
+            <h3 class="text-h3 leading-none max-[520px]:text-h4">
+                Free & easy to use
+            </h3>
             <p class="text-body leading-relaxed text-text-subtitle">
                 OpenMarch Desktop App will always stay free and easy to use,
                 making drill writing accessible to all.
@@ -89,7 +101,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="hidden dark:block border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="hidden dark:block border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
             <Image
                 src={fieldLight}
@@ -98,13 +110,15 @@ import drillchart from "@/assets/desktop/drillchart.png";
                 height={800}
                 format="webp"
                 quality={80}
-                class="block dark:hidden border border-stroke h-full w-full rounded-6 object-center object-cover"
+                class="block dark:hidden border border-stroke aspect-1328/800 h-auto w-full rounded-6 object-center object-cover"
             />
         </div>
         <div
-            class="bg-fg-1 border border-stroke rounded-6 p-24 flex flex-col gap-16 relative overflow-clip"
+            class="bg-fg-1 border border-stroke rounded-6 p-24 flex h-435 flex-col gap-16 relative overflow-clip max-[850px]:h-auto max-[850px]:min-h-380 max-[520px]:min-h-320 max-[520px]:p-16"
         >
-            <h3 class="text-h3 leading-none">To your rehearsal</h3>
+            <h3 class="text-h3 leading-none max-[520px]:text-h4">
+                To your rehearsal
+            </h3>
             <p class="text-body leading-relaxed text-text-subtitle">
                 Export your drill to PDF as drill charts and coordinate sheets
                 for performers. Upload your drill to OpenMarch: On The Move for
@@ -112,7 +126,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
             </p>
 
             <span
-                class="absolute flex items-center -bottom-72 w-full justify-center"
+                class="inset-x-0 -bottom-72 flex items-center w-full justify-center max-[520px]:-bottom-48"
             >
                 <span class="z-3">
                     <Image
@@ -122,7 +136,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
                         height={786}
                         format="webp"
                         quality={80}
-                        class="hidden dark:block aspect-384/786 h-393 w-auto object-center object-cover"
+                        class="hidden dark:block aspect-384/786 h-393 w-auto object-center object-contain max-[950px]:h-340 max-[520px]:h-280"
                     />
                     <Image
                         src={viewVertLight}
@@ -131,7 +145,7 @@ import drillchart from "@/assets/desktop/drillchart.png";
                         height={786}
                         format="webp"
                         quality={80}
-                        class="block dark:hidden aspect-384/786 h-393 w-auto object-center object-cover"
+                        class="block dark:hidden aspect-384/786 h-393 w-auto object-center object-contain max-[950px]:h-340 max-[520px]:h-280"
                     />
                 </span>
 
@@ -142,15 +156,17 @@ import drillchart from "@/assets/desktop/drillchart.png";
                     height={444}
                     format="webp"
                     quality={80}
-                    class="aspect-288/222 h-222 -ml-48 z-2 w-auto object-center object-cover"
+                    class="aspect-288/222 h-222 -ml-48 z-2 w-auto object-center object-contain max-[950px]:h-190 max-[520px]:h-150 max-[520px]:-ml-32"
                 />
             </span>
         </div>
     </section>
     <div
-        class="p-32 flex justify-between items-center border border-accent rounded-full"
+        class="p-32 flex justify-between items-center gap-16 border border-accent rounded-full max-[640px]:rounded-6 max-[640px]:p-16 max-[640px]:flex-col max-[640px]:items-stretch"
     >
-        <h1 class="text-h1">Download for free</h1>
-        <a href="/download"><Button>Download</Button></a>
+        <h1 class="text-h1 max-[640px]:text-h2">Download for free</h1>
+        <a href="/download" class="max-[640px]:w-full"
+            ><Button className="max-[640px]:w-full">Download</Button></a
+        >
     </div>
 </section>
