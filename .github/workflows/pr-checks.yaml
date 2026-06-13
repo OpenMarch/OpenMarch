@@ -112,9 +112,7 @@ jobs:
         run: pnpm run build
 
       - name: Ensure Electron binary is installed
-        run: |
-          node "$(node -e "console.log(require.resolve('electron/install.js'))")"
-          node -e "const electron = require('electron'); console.log('Electron binary:', electron)"
+        run: node node_modules/electron/install.js
 
       - name: Run E2E tests
         working-directory: apps/desktop
