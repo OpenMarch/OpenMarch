@@ -258,26 +258,69 @@ describe("_calculateMapAllTagAppearanceIdsByPageId", () => {
                                     pagesInOrder: pages,
                                 });
 
-                            // For each tag appearance, it should not appear on pages before its start page
-                            tagAppearances.forEach((appearance) => {
-                                const startOrder =
+                            // Use the earliest start page order per appearance ID, matching
+                            // the implementation when duplicate IDs have different start pages
+                            const earliestStartOrderByAppearanceId: Record<
+                                number,
+                                number
+                            > = {};
+                            for (const appearance of tagAppearances) {
+                                const startPageOrder =
                                     pageIdToOrder[appearance.start_page_id];
-                                if (startOrder === undefined) return;
+                                if (startPageOrder === undefined) continue;
 
+                                const currentEarliest =
+                                    earliestStartOrderByAppearanceId[
+                                        appearance.id
+                                    ];
+                                if (
+                                    currentEarliest === undefined ||
+                                    startPageOrder < currentEarliest
+                                ) {
+                                    earliestStartOrderByAppearanceId[
+                                        appearance.id
+                                    ] = startPageOrder;
+                                }
+                            }
+
+                            for (const [
+                                appearanceId,
+                                earliestStartOrder,
+                            ] of Object.entries(
+                                earliestStartOrderByAppearanceId,
+                            )) {
                                 pages.forEach((page, pageOrder) => {
                                     const appearanceIds = actual.get(page.id);
                                     if (!appearanceIds) return;
 
-                                    if (pageOrder < startOrder) {
+                                    if (pageOrder < earliestStartOrder) {
                                         expect(
-                                            appearanceIds.has(appearance.id),
+                                            appearanceIds.has(
+                                                Number(appearanceId),
+                                            ),
                                         ).toBe(false);
                                     }
                                 });
-                            });
+                            }
                         },
                     ),
                 );
+            });
+
+            it("uses the earliest start page when the same appearance ID appears multiple times", () => {
+                const pages = [{ id: 99 }, { id: 0 }];
+                const tagAppearances = [
+                    { tag_id: 1, id: 6, start_page_id: 0 },
+                    { tag_id: 1, id: 6, start_page_id: 99 },
+                ];
+
+                const actual = _calculateMapAllTagAppearanceIdsByPageId({
+                    tagAppearances,
+                    pagesInOrder: pages,
+                });
+
+                expect(actual.get(99)?.has(6)).toBe(true);
+                expect(actual.get(0)?.has(6)).toBe(true);
             });
         });
 
