@@ -21,9 +21,9 @@ import clsx from "clsx";
 
 const primaryLinks = [
     { href: "/", label: "Home" },
-    { href: "/desktop", label: "Desktop" },
+    { href: "/#desktop", label: "Desktop" },
     { href: "/mobile", label: "Mobile" },
-    { href: "/guides", label: "Docs" },
+    { href: "/guides", label: "Guides" },
 ];
 
 const companyLinks = [

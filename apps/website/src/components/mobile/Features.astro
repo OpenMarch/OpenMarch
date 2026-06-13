@@ -1,0 +1,280 @@
+---
+import { Image } from "astro:assets";
+import {
+    EyeIcon,
+    ShareNetworkIcon,
+    UploadSimpleIcon,
+} from "@phosphor-icons/react";
+
+import landerDark from "@/assets/desktop/landerdark.png";
+import landerLight from "@/assets/desktop/landerlight.png";
+
+import ensemblesDark from "@/assets/omo/ensemblesdark.png";
+import ensemblesLight from "@/assets/omo/ensembleslight.png";
+import ensembleDark from "@/assets/omo/ensembledark.png";
+import ensembleLight from "@/assets/omo/ensemblelight.png";
+
+import account from "@/assets/otm/account.png";
+import homeDark from "@/assets/otm/homedark.png";
+import homeLight from "@/assets/otm/homelight.png";
+import viewDark from "@/assets/otm/viewdark.png";
+import viewLight from "@/assets/otm/viewlight.png";
+import viewVertDark from "@/assets/otm/viewvertdark.png";
+import viewVertLight from "@/assets/otm/viewvertlight.png";
+
+const steps = [
+    {
+        title: "Upload",
+        description:
+            "Export your drill from OpenMarch Desktop and upload it instantly to OpenMarch: On The Move.",
+        icon: UploadSimpleIcon,
+        darkImage: landerDark,
+        lightImage: landerLight,
+        width: 1745,
+        height: 1050,
+    },
+    {
+        title: "Share",
+        description:
+            "Send your performers a single ensemble code. No rosters, no account setup, no email collection.",
+        icon: ShareNetworkIcon,
+        darkImage: ensembleDark,
+        lightImage: ensembleLight,
+        width: 1745,
+        height: 1050,
+    },
+    {
+        title: "View",
+        description:
+            "Performers enter the ensemble code, choose their dot, and view their pathways and the full drill animation.",
+        icon: EyeIcon,
+        darkImage: viewDark,
+        lightImage: viewLight,
+        width: 1094,
+        height: 535,
+    },
+];
+---
+
+<section id="features" class="flex w-full min-w-0 flex-col gap-96">
+    <div class="flex flex-col gap-16">
+        <h2 class="text-h1 tracking-tighter max-[580px]:text-h2">
+            A modern drill viewing app for performers
+        </h2>
+
+        <div
+            class="grid min-h-340 grid-cols-[minmax(0,2fr)_minmax(0,1fr)] gap-8 max-[850px]:grid-cols-1"
+        >
+            <article
+                class="grid h-384 min-w-0 grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] overflow-hidden rounded-6 border border-stroke bg-fg-1 max-[850px]:h-auto max-[640px]:grid-cols-1"
+            >
+                <div class="flex flex-col gap-12 p-24 max-[520px]:p-16">
+                    <h3 class="text-h3 max-[580px]:text-h4">
+                        Full drill visualization
+                    </h3>
+                    <p class="text-body leading-relaxed text-text-subtitle">
+                        Watch the complete drill animation and see how forms
+                        develop across the field. Understand the bigger picture,
+                        not just your individual coordinates.
+                    </p>
+                </div>
+                <div
+                    class="relative flex min-h-340 items-start justify-center overflow-hidden px-16 pt-16"
+                >
+                    <span class="shrink-0 translate-x-24 translate-y-48">
+                        <Image
+                            src={homeDark}
+                            alt="On The Move drill library"
+                            width={535}
+                            height={1094}
+                            format="webp"
+                            quality={80}
+                            class="hidden aspect-535/1094 h-400 w-auto dark:block max-[640px]:h-360"
+                        />
+                        <Image
+                            src={homeLight}
+                            alt="On The Move drill library"
+                            width={535}
+                            height={1094}
+                            format="webp"
+                            quality={80}
+                            class="block aspect-535/1094 h-400 w-auto dark:hidden max-[640px]:h-360"
+                        />
+                    </span>
+                    <span class="z-2 shrink-0 -translate-x-16">
+                        <Image
+                            src={viewVertDark}
+                            alt="On The Move vertical drill viewer"
+                            width={535}
+                            height={1094}
+                            format="webp"
+                            quality={80}
+                            class="hidden aspect-535/1094 h-420 w-auto dark:block max-[640px]:h-400"
+                        />
+                        <Image
+                            src={viewVertLight}
+                            alt="On The Move vertical drill viewer"
+                            width={535}
+                            height={1094}
+                            format="webp"
+                            quality={80}
+                            class="block aspect-535/1094 h-420 w-auto dark:hidden max-[640px]:h-400"
+                        />
+                    </span>
+                </div>
+            </article>
+
+            <article
+                class="flex h-384 flex-col gap-12 overflow-hidden rounded-6 border border-stroke bg-fg-1 p-24 pb-0 max-[850px]:h-auto max-[850px]:min-h-340 max-[520px]:p-16 max-[520px]:pb-0"
+            >
+                <h3 class="text-h3 max-[580px]:text-h4">
+                    Follow every transition
+                </h3>
+                <p class="text-body leading-relaxed text-text-subtitle">
+                    See exactly how you move between sets and identify pathways
+                    that can be difficult to visualize from traditional
+                    coordinate sheets.
+                </p>
+                <div class="overflow-hidden rounded-t-6">
+                    <Image
+                        src={viewDark}
+                        alt="On The Move horizontal drill viewer"
+                        width={1094}
+                        height={535}
+                        format="webp"
+                        quality={80}
+                        class="hidden h-auto w-full object-cover object-top dark:block"
+                    />
+                    <Image
+                        src={viewLight}
+                        alt="On The Move horizontal drill viewer"
+                        width={1094}
+                        height={535}
+                        format="webp"
+                        quality={80}
+                        class="block h-auto w-full object-cover object-top dark:hidden"
+                    />
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-16">
+        <h2 class="text-h1 tracking-tighter max-[580px]:text-h2">
+            Easy flow for staff & admin
+        </h2>
+
+        <div
+            class="grid min-h-340 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] gap-8 max-[850px]:grid-cols-1"
+        >
+            <article
+                class="flex h-384 flex-col gap-12 overflow-hidden rounded-6 border border-stroke bg-fg-1 p-24 pb-0 max-[850px]:h-auto max-[850px]:min-h-340 max-[520px]:p-16 max-[520px]:pb-0"
+            >
+                <h3 class="text-h3 max-[580px]:text-h4">
+                    Simple drill distribution
+                </h3>
+                <p class="text-body leading-relaxed text-text-subtitle">
+                    Upload drill files through OpenMarch Cloud and make them
+                    available to your ensemble in just a few steps.
+                </p>
+                <div class="mt-auto overflow-hidden rounded-t-6">
+                    <Image
+                        src={ensemblesDark}
+                        alt="OpenMarch Cloud drill distribution"
+                        width={1745}
+                        height={1050}
+                        format="webp"
+                        quality={80}
+                        class="hidden aspect-1745/1050 w-full object-cover object-top dark:block"
+                    />
+                    <Image
+                        src={ensemblesLight}
+                        alt="OpenMarch Cloud drill distribution"
+                        width={1745}
+                        height={1050}
+                        format="webp"
+                        quality={80}
+                        class="block aspect-1745/1050 w-full object-cover object-top dark:hidden"
+                    />
+                </div>
+            </article>
+
+            <article
+                class="grid h-384 min-w-0 grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] overflow-hidden rounded-6 border border-stroke bg-fg-1 max-[850px]:h-auto max-[640px]:grid-cols-1"
+            >
+                <div class="flex flex-col gap-12 p-24 max-[520px]:p-16">
+                    <h3 class="text-h3 max-[580px]:text-h4">
+                        No student accounts required
+                    </h3>
+                    <p class="text-body leading-relaxed text-text-subtitle">
+                        Students simply enter their ensemble ID and open their
+                        drill. No account creation, passwords, or personal
+                        information required.
+                    </p>
+                </div>
+                <div
+                    class="flex min-h-340 items-start justify-center overflow-hidden px-16 pt-16 max-[640px]:min-h-400"
+                >
+                    <Image
+                        src={account}
+                        alt="On The Move ensemble account screen"
+                        width={535}
+                        height={1094}
+                        format="webp"
+                        quality={80}
+                        class="h-450 w-auto max-[640px]:h-400"
+                    />
+                </div>
+            </article>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-16">
+        <h2
+            class="text-h1 text-center tracking-tighter max-[580px]:text-h2 max-[580px]:text-left"
+        >
+            How it works
+        </h2>
+
+        <div class="grid grid-cols-3 gap-8 max-[850px]:grid-cols-1">
+            {
+                steps.map(({ icon: Icon, ...step }) => (
+                    <article class="flex min-w-0 flex-col gap-12 overflow-hidden rounded-6 border border-stroke bg-fg-1 p-16">
+                        <Icon
+                            size={32}
+                            weight="regular"
+                            aria-hidden="true"
+                            className="mx-auto shrink-0 text-accent max-[850px]:mx-0"
+                        />
+                        <h3 class="text-h3 text-center max-[850px]:text-left">
+                            {step.title}
+                        </h3>
+                        <p class="text-body text-center leading-relaxed text-text-subtitle max-[850px]:text-left">
+                            {step.description}
+                        </p>
+                        <div class="mt-auto overflow-hidden rounded-6">
+                            <Image
+                                src={step.darkImage}
+                                alt={`${step.title} workflow in OpenMarch Desktop`}
+                                width={step.width}
+                                height={step.height}
+                                format="webp"
+                                quality={80}
+                                class="hidden h-auto w-full object-cover object-top dark:block"
+                            />
+                            <Image
+                                src={step.lightImage}
+                                alt={`${step.title} workflow in OpenMarch Desktop`}
+                                width={step.width}
+                                height={step.height}
+                                format="webp"
+                                quality={80}
+                                class="block h-auto w-full object-cover object-top dark:hidden"
+                            />
+                        </div>
+                    </article>
+                ))
+            }
+        </div>
+    </div>
+</section>
