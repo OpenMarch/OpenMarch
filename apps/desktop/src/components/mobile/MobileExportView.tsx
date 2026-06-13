@@ -1,5 +1,14 @@
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Button, Input } from "@openmarch/ui";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogTitle,
+    Button,
+    Input,
+} from "@openmarch/ui";
 import {
     CircleNotchIcon,
     WarningCircleIcon,
@@ -48,7 +57,7 @@ export default function MobileExportView({
         <section className="animate-scale-in flex h-full w-full flex-col">
             <div className="flex grow flex-col gap-16 overflow-y-auto">
                 <SubmitRevisionForm
-                    isFirstRevision={false}
+                    isFirstRevision={currentProduction.revisions.length === 0}
                     productionId={currentProduction.id}
                     currentProduction={currentProduction}
                 />
@@ -151,6 +160,7 @@ export const SubmitRevisionForm = ({
         isFirstRevision ? "Initial revision" : "",
     );
     const [titleError, setTitleError] = useState<string>("");
+    const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
     const [audioSyncResult, setAudioSyncResult] =
         useState<AudioSyncResult | null>(null);
     const [audioSyncLoading, setAudioSyncLoading] = useState(false);
@@ -367,6 +377,15 @@ export const SubmitRevisionForm = ({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        if (isFirstRevision) {
+            setConfirmPublishOpen(true);
+            return;
+        }
+        void handleUpload();
+    };
+
+    const handleConfirmPublish = () => {
+        setConfirmPublishOpen(false);
         void handleUpload();
     };
 
@@ -411,7 +430,9 @@ export const SubmitRevisionForm = ({
                                     size={16}
                                     className="animate-spin"
                                 />
-                                Pushing to Mobile App...
+                                {isFirstRevision
+                                    ? "Publishing to mobile app..."
+                                    : "Pushing to Mobile App..."}
                             </span>
                         ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
                           audioUploadLoading ||
@@ -427,6 +448,8 @@ export const SubmitRevisionForm = ({
                                       ? "Uploading audio..."
                                       : "Preparing..."}
                             </span>
+                        ) : isFirstRevision ? (
+                            "Publish to mobile app"
                         ) : (
                             "Push to Mobile App"
                         )}
@@ -442,6 +465,35 @@ export const SubmitRevisionForm = ({
                     <span>{uploadError}</span>
                 </div>
             )}
+
+            <AlertDialog
+                open={confirmPublishOpen}
+                onOpenChange={setConfirmPublishOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogTitle>Publish to mobile app</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will immediately make this show visible to all
+                        users registered to this ensemble.
+                    </AlertDialogDescription>
+                    <div className="flex items-center justify-end gap-8 align-middle">
+                        <AlertDialogCancel asChild>
+                            <Button variant="secondary" className="w-full">
+                                Cancel
+                            </Button>
+                        </AlertDialogCancel>
+                        <AlertDialogAction>
+                            <Button
+                                variant="primary"
+                                onClick={handleConfirmPublish}
+                                className="w-full"
+                            >
+                                Publish
+                            </Button>
+                        </AlertDialogAction>
+                    </div>
+                </AlertDialogContent>
+            </AlertDialog>
         </>
     );
 };
@@ -496,9 +548,8 @@ export const RevisionsList = ({
                 className="text-text-subtitle text-body text-center"
                 aria-label="No revisions message"
             >
-                Revisions help you keep track of what is currently being shown
-                on the performers&apos; devices. Upload your first revision to
-                get started.
+                After you publish to the mobile app, you may push additional
+                revisions to keep your show up-to-date.
             </h4>
         );
     }
