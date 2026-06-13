@@ -111,13 +111,14 @@ jobs:
       - name: Build monorepo
         run: pnpm run build
 
+      - name: Ensure Electron binary is installed
+        run: |
+          node "$(node -e "console.log(require.resolve('electron/install.js'))")"
+          node -e "const electron = require('electron'); console.log('Electron binary:', electron)"
+
       - name: Run E2E tests
         working-directory: apps/desktop
-        env:
-          DISPLAY: :0
-        run: |
-          Xvfb :0 -screen 0 1920x1080x24 &
-          pnpm run e2e
+        run: pnpm run e2e
 
       - uses: actions/upload-artifact@v4
         if: ${{ !cancelled() }}
