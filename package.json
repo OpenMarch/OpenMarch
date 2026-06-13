@@ -53,9 +53,9 @@
         "overrides": {
             "react": "^19.0.0",
             "react-dom": "^19.0.0",
-            "@playwright/test": "1.56.1",
-            "playwright": "1.56.1",
-            "playwright-core": "1.56.1",
+            "@playwright/test": "1.60.0",
+            "playwright": "1.60.0",
+            "playwright-core": "1.60.0",
             "esbuild@<=0.24.2": ">=0.25.0",
             "tar@<7.5.7": ">=7.5.7",
             "payload@<3.74.0": ">=3.74.0",
