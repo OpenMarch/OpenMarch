@@ -37,6 +37,7 @@ import {
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { getAudioDuration, getAudioSizeMegabytes } from "../audio-files/utils";
 import clsx from "clsx";
+import { useTolgee } from "@tolgee/react";
 
 function formatDuration(seconds: number): string {
     const roundedSeconds = Math.round(seconds);
@@ -80,14 +81,17 @@ function AddAudioDialog({
     isPending: boolean;
     errorMessage: string | null;
 }) {
+    const { t } = useTolgee();
     return (
         <Dialog
             open={open}
             onOpenChange={onOpenChange}
-            aria-describedby="Add Alternate Audio File"
+            aria-describedby={t("mobileExport.audio.addAlternate")}
         >
             <DialogContent className="flex h-fit max-w-sm flex-col gap-16">
-                <DialogTitle>Add Alternate Audio File</DialogTitle>
+                <DialogTitle>
+                    {t("mobileExport.audio.addAlternate")}
+                </DialogTitle>
                 {file && (
                     <form
                         onSubmit={(e) => {
@@ -105,7 +109,7 @@ function AddAudioDialog({
                                 htmlFor="add-audio-nickname"
                                 className="text-text-subtitle text-sub"
                             >
-                                Nickname (optional)
+                                {t("mobileExport.audio.nicknameLabel")}
                             </label>
                             <Input
                                 id="add-audio-nickname"
@@ -113,8 +117,12 @@ function AddAudioDialog({
                                 onChange={(e) =>
                                     onNicknameChange(e.target.value)
                                 }
-                                placeholder="Nickname (optional)"
-                                aria-label="Nickname"
+                                placeholder={t(
+                                    "mobileExport.audio.nicknamePlaceholder",
+                                )}
+                                aria-label={t(
+                                    "mobileExport.audio.nicknamePlaceholderShort",
+                                )}
                             />
                         </div>
                         <div className="flex items-center gap-8">
@@ -124,14 +132,13 @@ function AddAudioDialog({
                                     onSetAsDefaultChange(!setAsDefault)
                                 }
                             />
-                            <label>Set as active</label>
+                            <label>{t("mobileExport.audio.setActive")}</label>
                         </div>
                         {errorMessage && (
                             <DangerNote>{errorMessage}</DangerNote>
                         )}
                         <p className="text-body text-text-subtitle">
-                            Performers and instructors will be able to select
-                            this audio file in the mobile app.
+                            {t("mobileExport.audio.addHelp")}
                         </p>
                         <div className="flex justify-end gap-8">
                             <Button
@@ -140,7 +147,7 @@ function AddAudioDialog({
                                 type="button"
                                 onClick={onClose}
                             >
-                                Cancel
+                                {t("mobileExport.audio.cancel")}
                             </Button>
                             <Button
                                 variant="primary"
@@ -148,7 +155,9 @@ function AddAudioDialog({
                                 type="submit"
                                 disabled={isPending}
                             >
-                                {isPending ? "Uploading…" : "Add"}
+                                {isPending
+                                    ? t("mobileExport.audio.uploading")
+                                    : t("mobileExport.audio.add")}
                             </Button>
                         </div>
                     </form>
@@ -175,14 +184,17 @@ function EditNicknameDialog({
     onClose: () => void;
     onSave: () => void;
 }) {
+    const { t } = useTolgee();
     return (
         <Dialog
             open={open}
             onOpenChange={onOpenChange}
-            aria-describedby="Edit Nickname"
+            aria-describedby={t("mobileExport.audio.editNickname")}
         >
             <DialogContent className="flex h-fit max-w-sm flex-col gap-16">
-                <DialogTitle>Edit Nickname</DialogTitle>
+                <DialogTitle>
+                    {t("mobileExport.audio.editNickname")}
+                </DialogTitle>
                 {file && (
                     <form
                         onSubmit={(e) => {
@@ -195,8 +207,12 @@ function EditNicknameDialog({
                         <Input
                             value={value}
                             onChange={(e) => onValueChange(e.target.value)}
-                            placeholder="Nickname"
-                            aria-label="Nickname"
+                            placeholder={t(
+                                "mobileExport.audio.nicknamePlaceholderShort",
+                            )}
+                            aria-label={t(
+                                "mobileExport.audio.nicknamePlaceholderShort",
+                            )}
                         />
                         <div className="flex justify-end gap-8">
                             <Button
@@ -205,14 +221,14 @@ function EditNicknameDialog({
                                 type="button"
                                 onClick={onClose}
                             >
-                                Cancel
+                                {t("mobileExport.audio.cancel")}
                             </Button>
                             <Button
                                 variant="primary"
                                 size="compact"
                                 type="submit"
                             >
-                                Save
+                                {t("mobileExport.audio.save")}
                             </Button>
                         </div>
                     </form>
@@ -229,6 +245,7 @@ export function AudioFileSettings({
     production: { id: number; default_audio_file_id: number | null };
     setDefaultAudioFileId: (audioFileId: number) => void;
 }) {
+    const { t } = useTolgee();
     const productionId = production.id;
     const queryClient = useQueryClient();
     const setActiveMutation = useSetActiveAudioFileMutation(queryClient);
@@ -360,7 +377,7 @@ export function AudioFileSettings({
     return (
         <div className="flex flex-col gap-6">
             <h3 className="text-body text-text-subtitle font-medium">
-                Audio Files
+                {t("mobileExport.audio.title")}
             </h3>
 
             <div className="flex flex-col gap-8">
@@ -409,7 +426,7 @@ export function AudioFileSettings({
                                 <div className="flex shrink-0 items-center gap-8">
                                     {isActive && (
                                         <span className="text-accent text-sm font-medium">
-                                            Active
+                                            {t("mobileExport.audio.active")}
                                         </span>
                                     )}
                                     <DropdownMenu>
@@ -417,7 +434,9 @@ export function AudioFileSettings({
                                             <button
                                                 type="button"
                                                 className="hover:text-accent focus-visible:ring-accent rounded-4 text-text-subtitle p-4 outline-hidden transition-colors duration-150 ease-out focus-visible:-translate-y-4 focus-visible:ring-2"
-                                                aria-label="Audio file options"
+                                                aria-label={t(
+                                                    "mobileExport.audio.optionsAriaLabel",
+                                                )}
                                             >
                                                 <DotsThreeIcon size={20} />
                                             </button>
@@ -434,7 +453,11 @@ export function AudioFileSettings({
                                                 className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
                                             >
                                                 <CheckCircleIcon size={16} />
-                                                <span>Set as active</span>
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.setActive",
+                                                    )}
+                                                </span>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() =>
@@ -443,7 +466,11 @@ export function AudioFileSettings({
                                                 className="rounded-4 text-text hover:text-accent flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
                                             >
                                                 <PencilIcon size={16} />
-                                                <span>Edit Nickname</span>
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.editNickname",
+                                                    )}
+                                                </span>
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() =>
@@ -452,7 +479,11 @@ export function AudioFileSettings({
                                                 className="rounded-4 text-text hover:text-red flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
                                             >
                                                 <TrashIcon size={16} />
-                                                <span>Delete</span>
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.delete",
+                                                    )}
+                                                </span>
                                             </DropdownMenuItem>
                                         </DropdownMenuContent>
                                     </DropdownMenu>
@@ -478,7 +509,8 @@ export function AudioFileSettings({
                     onClick={handleAddAlternateClick}
                     disabled={!canMutate}
                 >
-                    <PlusIcon size={16} /> Add Alternate Audio File
+                    <PlusIcon size={16} />{" "}
+                    {t("mobileExport.audio.addAlternate")}
                 </Button>
             </div>
 

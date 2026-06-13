@@ -1167,7 +1167,7 @@ function MobileExportOption({ onClick }: { onClick: () => void }) {
             <div className="relative flex flex-1 items-center justify-center overflow-hidden">
                 <img
                     src="https://assets.openmarch.com/desktop/otm-popup.webp"
-                    alt="OpenMarch mobile export preview"
+                    alt={tolgee.t("exportCoordinates.mobilePreviewAlt")}
                     className="rounded-6 h-full w-full object-fill duration-150 ease-out group-hover:scale-[1.01]"
                     draggable={false}
                 />

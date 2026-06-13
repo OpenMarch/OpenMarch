@@ -1,8 +1,26 @@
-import { describe, expect, it, afterEach } from "vitest";
+import { describe, expect, it, afterEach, beforeAll } from "vitest";
 import { render, screen, cleanup } from "@testing-library/react";
+import { TolgeeProvider } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 import { RevisionsList } from "../MobileExportView";
 import type { RevisionPreview } from "../queries/useProductions";
 import * as fc from "fast-check";
+
+function renderRevisionsList(
+    ui: React.ReactElement,
+    options?: Parameters<typeof render>[1],
+) {
+    return render(
+        <TolgeeProvider tolgee={tolgee} fallback="">
+            {ui}
+        </TolgeeProvider>,
+        options,
+    );
+}
+
+beforeAll(async () => {
+    await tolgee.run();
+});
 
 function revision(
     overrides: Partial<RevisionPreview> & {
@@ -28,7 +46,9 @@ describe("RevisionsList", () => {
 
     describe("empty state", () => {
         it("displays empty state message when revisions array is empty", () => {
-            render(<RevisionsList revisions={[]} activeRevisionId={1} />);
+            renderRevisionsList(
+                <RevisionsList revisions={[]} activeRevisionId={1} />,
+            );
 
             expect(
                 screen.getByLabelText("No revisions message"),
@@ -36,7 +56,9 @@ describe("RevisionsList", () => {
         });
 
         it("does not display 'All revisions' heading when empty", () => {
-            render(<RevisionsList revisions={[]} activeRevisionId={1} />);
+            renderRevisionsList(
+                <RevisionsList revisions={[]} activeRevisionId={1} />,
+            );
 
             expect(screen.queryByText("All revisions")).not.toBeInTheDocument();
         });
@@ -52,7 +74,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -78,7 +100,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -106,7 +128,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            const { container } = render(
+            const { container } = renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -132,7 +154,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -144,7 +166,7 @@ describe("RevisionsList", () => {
     });
 
     describe("active revision highlighting", () => {
-        it("displays 'Currently active' text for the active revision", () => {
+        it("displays 'Active' text for the active revision", () => {
             const revisions: RevisionPreview[] = [
                 revision({
                     id: 1,
@@ -158,14 +180,14 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
-            expect(screen.getByText("Currently active")).toBeInTheDocument();
+            expect(screen.getByText("Active")).toBeInTheDocument();
         });
 
-        it("does not display 'Currently active' for inactive revisions", () => {
+        it("does not display 'Active' for inactive revisions", () => {
             const revisions: RevisionPreview[] = [
                 revision({
                     id: 1,
@@ -179,13 +201,11 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={999} />,
             );
 
-            expect(
-                screen.queryByText("Currently active"),
-            ).not.toBeInTheDocument();
+            expect(screen.queryByText("Active")).not.toBeInTheDocument();
         });
 
         it("applies correct border class for active revision", () => {
@@ -202,7 +222,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            const { container } = render(
+            const { container } = renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -242,26 +262,24 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            const { container } = render(
+            const { container } = renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={2} />,
             );
 
-            // Only one "Currently active" should be displayed
-            const activeTexts = screen.getAllByText("Currently active");
+            // Only one "Active" should be displayed
+            const activeTexts = screen.getAllByText("Active");
             expect(activeTexts).toHaveLength(1);
 
             // It should be associated with Revision 2
             expect(screen.getByText("Revision 2 (Active)")).toBeInTheDocument();
 
-            // Find the revision container that contains both the title and "Currently active"
+            // Find the revision container that contains both the title and "Active"
             const revision2Container = Array.from(
                 container.querySelectorAll('[class*="rounded-6"]'),
             ).find((el) => el.textContent?.includes("Revision 2 (Active)"));
 
             expect(revision2Container).toBeDefined();
-            expect(revision2Container?.textContent).toContain(
-                "Currently active",
-            );
+            expect(revision2Container?.textContent).toContain("Active");
         });
     });
 
@@ -275,13 +293,13 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
             expect(screen.getByText("All revisions")).toBeInTheDocument();
             expect(screen.getByText("Only Revision")).toBeInTheDocument();
-            expect(screen.getByText("Currently active")).toBeInTheDocument();
+            expect(screen.getByText("Active")).toBeInTheDocument();
         });
 
         it("handles revisions with same timestamp correctly", () => {
@@ -291,7 +309,7 @@ describe("RevisionsList", () => {
                 revision({ id: 2, title: "Revision B", pushed_at: sameDate }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -314,7 +332,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={999} />,
             );
 
@@ -322,10 +340,8 @@ describe("RevisionsList", () => {
             expect(screen.getByText("Revision 1")).toBeInTheDocument();
             expect(screen.getByText("Revision 2")).toBeInTheDocument();
 
-            // No "Currently active" should be shown
-            expect(
-                screen.queryByText("Currently active"),
-            ).not.toBeInTheDocument();
+            // No "Active" should be shown
+            expect(screen.queryByText("Active")).not.toBeInTheDocument();
         });
 
         it("handles very long revision titles", () => {
@@ -338,7 +354,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -354,7 +370,7 @@ describe("RevisionsList", () => {
                 }),
             ];
 
-            render(
+            renderRevisionsList(
                 <RevisionsList revisions={revisions} activeRevisionId={1} />,
             );
 
@@ -383,7 +399,7 @@ describe("RevisionsList", () => {
                                     }),
                             );
 
-                            const { unmount } = render(
+                            const { unmount } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
@@ -419,7 +435,7 @@ describe("RevisionsList", () => {
                                     }),
                             );
 
-                            const { unmount } = render(
+                            const { unmount } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
@@ -458,7 +474,7 @@ describe("RevisionsList", () => {
                                     }),
                             );
 
-                            const { container, unmount } = render(
+                            const { container, unmount } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}
@@ -495,7 +511,7 @@ describe("RevisionsList", () => {
                 );
             });
 
-            it("displays 'Currently active' only when activeRevisionId matches a revision id", () => {
+            it("displays 'Active' only when activeRevisionId matches a revision id", () => {
                 fc.assert(
                     fc.property(
                         fc.uniqueArray(fc.integer({ min: 1, max: 100 }), {
@@ -514,16 +530,15 @@ describe("RevisionsList", () => {
 
                             // Test with a valid activeRevisionId
                             const validActiveId = revisions[0]?.id || 1;
-                            const { unmount: unmount1 } = render(
+                            const { unmount: unmount1 } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={validActiveId}
                                 />,
                             );
 
-                            // Should show "Currently active" for the matching revision
-                            const activeTexts =
-                                screen.getAllByText("Currently active");
+                            // Should show "Active" for the matching revision
+                            const activeTexts = screen.getAllByText("Active");
                             expect(activeTexts.length).toBeGreaterThan(0);
                             // Should be exactly one if there's only one matching revision
                             const matchingRevisions = revisions.filter(
@@ -538,16 +553,16 @@ describe("RevisionsList", () => {
 
                             // Test with an invalid activeRevisionId
                             const invalidActiveId = 99999;
-                            const { unmount: unmount2 } = render(
+                            const { unmount: unmount2 } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={invalidActiveId}
                                 />,
                             );
 
-                            // Should not show "Currently active"
+                            // Should not show "Active"
                             expect(
-                                screen.queryByText("Currently active"),
+                                screen.queryByText("Active"),
                             ).not.toBeInTheDocument();
 
                             unmount2();
@@ -560,7 +575,7 @@ describe("RevisionsList", () => {
             it("always displays empty state message when revisions array is empty", () => {
                 fc.assert(
                     fc.property(fc.integer({ min: 1 }), (activeRevisionId) => {
-                        const { unmount } = render(
+                        const { unmount } = renderRevisionsList(
                             <RevisionsList
                                 revisions={[]}
                                 activeRevisionId={activeRevisionId}
@@ -595,7 +610,7 @@ describe("RevisionsList", () => {
                                     }),
                             );
 
-                            const { container, unmount } = render(
+                            const { container, unmount } = renderRevisionsList(
                                 <RevisionsList
                                     revisions={revisions}
                                     activeRevisionId={activeRevisionId}

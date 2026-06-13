@@ -42,6 +42,8 @@ import {
     type BackgroundImageSyncResult,
 } from "./utilities/backgroundImageSyncOnUpload";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
+import { T, useTolgee } from "@tolgee/react";
+import tolgee from "@/global/singletons/Tolgee";
 
 type UploadStatus = "idle" | "loading" | "error";
 
@@ -83,10 +85,16 @@ function toDisplayError(fullError: string): string {
         fullError.toLowerCase().includes("<!doctype") ||
         fullError.toLowerCase().includes("<html");
     if (looksLikeHtml) {
-        return "Upload failed. Check console for details.";
+        return tolgee.t("mobileExport.revision.uploadFailedGeneric");
     }
     return `${fullError.slice(0, MAX_ERROR_DISPLAY_LENGTH)}…`;
 }
+
+const getOrdinal = (n: number): string => {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+};
 
 const formatRevisionDate = (dateString: string): string => {
     const date = new Date(dateString);
@@ -96,53 +104,36 @@ const formatRevisionDate = (dateString: string): string => {
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
-    // Show relative time if less than 7 days ago
     if (diffDays < 7) {
         if (diffMinutes < 1) {
-            return "Just now";
-        } else if (diffMinutes < 60) {
-            return `${diffMinutes} minute${diffMinutes === 1 ? "" : "s"} ago`;
-        } else if (diffHours < 24) {
-            return `${diffHours} hour${diffHours === 1 ? "" : "s"} ago`;
-        } else {
-            return `${diffDays} day${diffDays === 1 ? "" : "s"} ago`;
+            return tolgee.t("mobileExport.date.justNow");
         }
+        if (diffMinutes < 60) {
+            return tolgee.t("mobileExport.date.minutesAgo", {
+                count: diffMinutes,
+            });
+        }
+        if (diffHours < 24) {
+            return tolgee.t("mobileExport.date.hoursAgo", {
+                count: diffHours,
+            });
+        }
+        return tolgee.t("mobileExport.date.daysAgo", { count: diffDays });
     }
 
-    // Show full formatted date if 7 days or older
-    const months = [
-        "January",
-        "February",
-        "March",
-        "April",
-        "May",
-        "June",
-        "July",
-        "August",
-        "September",
-        "October",
-        "November",
-        "December",
-    ];
-
-    const day = date.getDate();
-    const month = months[date.getMonth()];
+    const month = new Intl.DateTimeFormat(tolgee.getLanguage(), {
+        month: "long",
+    }).format(date);
+    const day = getOrdinal(date.getDate());
     const year = date.getFullYear();
     const hours = date.getHours();
     const minutes = date.getMinutes();
     const amOrPm = hours >= 12 ? "PM" : "AM";
     const displayHours = hours % 12 || 12;
     const displayMinutes = minutes.toString().padStart(2, "0");
+    const time = `${displayHours}:${displayMinutes}${amOrPm}`;
 
-    // Get ordinal suffix for day
-    const getOrdinal = (n: number): string => {
-        const s = ["th", "st", "nd", "rd"];
-        const v = n % 100;
-        return n + (s[(v - 20) % 10] || s[v] || s[0]);
-    };
-
-    // Add weekday at the start
-    return `${month} ${getOrdinal(day)}, ${year} - ${displayHours}:${displayMinutes}${amOrPm}`;
+    return tolgee.t("mobileExport.date.full", { month, day, year, time });
 };
 
 export const SubmitRevisionForm = ({
@@ -154,10 +145,11 @@ export const SubmitRevisionForm = ({
     productionId: number;
     currentProduction?: Production;
 }) => {
+    const { t } = useTolgee();
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const [uploadError, setUploadError] = useState<string>("");
     const [revisionTitle, setRevisionTitle] = useState<string>(
-        isFirstRevision ? "Initial revision" : "",
+        isFirstRevision ? t("mobileExport.revision.initialTitle") : "",
     );
     const [titleError, setTitleError] = useState<string>("");
     const [confirmPublishOpen, setConfirmPublishOpen] = useState(false);
@@ -291,11 +283,11 @@ export const SubmitRevisionForm = ({
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             console.error("Failed to set active audio on server:", err);
-            toast.error(`Revision uploaded, but audio sync failed: ${msg}`);
+            toast.error(t("mobileExport.revision.audioSyncFailed", { msg }));
         } finally {
             setAudioUploadLoading(false);
         }
-    }, [productionId, audioSyncResult, queryClient]);
+    }, [productionId, audioSyncResult, queryClient, t]);
 
     const syncBackgroundImageAfterUpload = useCallback(async () => {
         if (
@@ -321,10 +313,10 @@ export const SubmitRevisionForm = ({
             const msg = err instanceof Error ? err.message : String(err);
             console.error("Failed to sync background image on server:", err);
             toast.error(
-                `Revision uploaded, but background image sync failed: ${msg}`,
+                t("mobileExport.revision.backgroundSyncFailed", { msg }),
             );
         }
-    }, [productionId, backgroundSyncResult, queryClient]);
+    }, [productionId, backgroundSyncResult, queryClient, t]);
 
     const { mutate: uploadRevision } = useMutation(
         uploadRevisionMutationOptions({
@@ -332,7 +324,7 @@ export const SubmitRevisionForm = ({
             onSuccess: async () => {
                 setUploadStatus("idle");
                 setRevisionTitle("");
-                toast.success("Upload successful");
+                toast.success(t("mobileExport.revision.uploadSuccess"));
                 await Promise.all([
                     syncActiveAudioAfterUpload(),
                     syncBackgroundImageAfterUpload(),
@@ -353,7 +345,7 @@ export const SubmitRevisionForm = ({
     const handleUpload = useCallback(async () => {
         // Validate revision title if not first revision
         if (!isFirstRevision && !revisionTitle.trim()) {
-            setTitleError("Please provide a revision title");
+            setTitleError(t("mobileExport.revision.titleRequired"));
             return;
         }
 
@@ -362,10 +354,10 @@ export const SubmitRevisionForm = ({
         setUploadError("");
 
         const title = isFirstRevision
-            ? "Initial revision"
+            ? t("mobileExport.revision.initialTitle")
             : revisionTitle.trim();
         uploadRevision({ title });
-    }, [isFirstRevision, revisionTitle, uploadRevision]);
+    }, [isFirstRevision, revisionTitle, uploadRevision, t]);
 
     const isUploading = uploadStatus === "loading";
     const hasError = uploadStatus === "error";
@@ -402,10 +394,12 @@ export const SubmitRevisionForm = ({
             <form onSubmit={handleSubmit} className="flex flex-col gap-12">
                 <div className="flex flex-col gap-6" hidden={isFirstRevision}>
                     <label className="text-body text-text-subtitle">
-                        New revision title
+                        <T keyName="mobileExport.revision.newTitleLabel" />
                     </label>
                     <Input
-                        placeholder="Describe what changed..."
+                        placeholder={t(
+                            "mobileExport.revision.titlePlaceholder",
+                        )}
                         value={revisionTitle}
                         disabled={isUploading}
                         onChange={handleTitleChange}
@@ -431,8 +425,8 @@ export const SubmitRevisionForm = ({
                                     className="animate-spin"
                                 />
                                 {isFirstRevision
-                                    ? "Publishing to mobile app..."
-                                    : "Pushing to Mobile App..."}
+                                    ? t("mobileExport.revision.publishing")
+                                    : t("mobileExport.revision.pushing")}
                             </span>
                         ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
                           audioUploadLoading ||
@@ -443,15 +437,17 @@ export const SubmitRevisionForm = ({
                                     className="animate-spin"
                                 />
                                 {hasSelectedNonSilentAudio && audioSyncLoading
-                                    ? "Validating audio..."
+                                    ? t("mobileExport.revision.validatingAudio")
                                     : audioUploadLoading
-                                      ? "Uploading audio..."
-                                      : "Preparing..."}
+                                      ? t(
+                                            "mobileExport.revision.uploadingAudio",
+                                        )
+                                      : t("mobileExport.revision.preparing")}
                             </span>
                         ) : isFirstRevision ? (
-                            "Publish to mobile app"
+                            t("mobileExport.revision.publishButton")
                         ) : (
-                            "Push to Mobile App"
+                            t("mobileExport.revision.pushButton")
                         )}
                     </Button>
                     <MobileExportSettingsDialog />
@@ -471,15 +467,16 @@ export const SubmitRevisionForm = ({
                 onOpenChange={setConfirmPublishOpen}
             >
                 <AlertDialogContent>
-                    <AlertDialogTitle>Publish to mobile app</AlertDialogTitle>
+                    <AlertDialogTitle>
+                        <T keyName="mobileExport.confirmPublish.title" />
+                    </AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will immediately make this show visible to all
-                        users registered to this ensemble.
+                        <T keyName="mobileExport.confirmPublish.description" />
                     </AlertDialogDescription>
                     <div className="flex items-center justify-end gap-8 align-middle">
                         <AlertDialogCancel asChild>
                             <Button variant="secondary" className="w-full">
-                                Cancel
+                                <T keyName="mobileExport.confirmPublish.cancel" />
                             </Button>
                         </AlertDialogCancel>
                         <AlertDialogAction>
@@ -488,7 +485,7 @@ export const SubmitRevisionForm = ({
                                 onClick={handleConfirmPublish}
                                 className="w-full"
                             >
-                                Publish
+                                <T keyName="mobileExport.confirmPublish.publish" />
                             </Button>
                         </AlertDialogAction>
                     </div>
@@ -548,15 +545,16 @@ export const RevisionsList = ({
                 className="text-text-subtitle text-body text-center"
                 aria-label="No revisions message"
             >
-                After you publish to the mobile app, you may push additional
-                revisions to keep your show up-to-date.
+                <T keyName="mobileExport.revisions.emptyMessage" />
             </h4>
         );
     }
 
     return (
         <section className="flex flex-col gap-6" aria-label="Revisions list">
-            <h2 className="text-body text-text-subtitle">All revisions</h2>
+            <h2 className="text-body text-text-subtitle">
+                <T keyName="mobileExport.revisions.listHeading" />
+            </h2>
             <div
                 className="relative"
                 style={{
@@ -593,7 +591,8 @@ export const RevisionsList = ({
 
                                 {activeRevisionId === revision.id && (
                                     <span className="text-body text-accent inline-flex items-center gap-4">
-                                        Active <DeviceMobileIcon />
+                                        <T keyName="mobileExport.revisions.active" />{" "}
+                                        <DeviceMobileIcon />
                                     </span>
                                 )}
                             </div>

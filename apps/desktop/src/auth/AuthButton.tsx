@@ -20,10 +20,11 @@ import {
 import { twMerge } from "tailwind-merge";
 import { isSignInEnabled } from "@/global/auth/constants";
 import { useAuth } from "@/auth/useAuth";
+import { useTolgee } from "@tolgee/react";
 
 export const SignInButton = ({
     className,
-    label = "Sign In",
+    label,
     showIcon = true,
     ...buttonProps
 }: Omit<ButtonProps, "children" | "disabled" | "onClick"> & {
@@ -31,12 +32,15 @@ export const SignInButton = ({
     showIcon?: boolean;
 }) => {
     const { login, isLoggingIn } = useAuth();
+    const { t } = useTolgee();
 
     if (!isSignInEnabled) return null;
 
+    const signInLabel = label ?? t("auth.signIn");
+
     return (
         <Button
-            aria-label="Sign in"
+            aria-label={t("auth.signInAriaLabel")}
             className={twMerge("gap-8", className)}
             onClick={login}
             disabled={isLoggingIn}
@@ -47,7 +51,7 @@ export const SignInButton = ({
             ) : (
                 showIcon && <SignInIcon size={16} />
             )}
-            <span>{label}</span>
+            <span>{signInLabel}</span>
         </Button>
     );
 };
@@ -66,6 +70,7 @@ export const SignInButton = ({
  */
 export function AuthButton() {
     const { isAuthenticated, isLoading, user, logout } = useAuth();
+    const { t } = useTolgee();
 
     // Loading state
     if (isLoading) {
@@ -89,7 +94,7 @@ export function AuthButton() {
     const displayName =
         user?.firstName && user?.lastName
             ? `${user.firstName} ${user.lastName}`
-            : user?.email || "User";
+            : user?.email || t("auth.userFallback");
 
     const initials = user?.firstName
         ? user.firstName.charAt(0).toUpperCase()
@@ -161,7 +166,7 @@ export function AuthButton() {
                     className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
                 >
                     <SignOutIcon size={16} />
-                    <span>Sign Out</span>
+                    <span>{t("auth.signOut")}</span>
                 </DropdownMenuItem>
             </DropdownMenuContent>
         </DropdownMenu>

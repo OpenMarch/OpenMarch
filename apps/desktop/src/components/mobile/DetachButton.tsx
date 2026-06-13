@@ -8,8 +8,10 @@ import {
     workspaceSettingsQueryOptions,
 } from "@/hooks/queries/useWorkspaceSettings";
 import { conToastError } from "@/utilities/utils";
+import { T, useTolgee } from "@tolgee/react";
 
 export default function DetachButton(props: ButtonProps) {
+    const { t } = useTolgee();
     const [open, setOpen] = useState(false);
     const { onClick, ...restProps } = props;
     const queryClient = useQueryClient();
@@ -23,7 +25,7 @@ export default function DetachButton(props: ButtonProps) {
     const handleDetach = () => {
         if (!workspaceSettings) {
             conToastError(
-                "Failed to detach file from production",
+                t("mobileExport.detach.failed"),
                 new Error("Workspace settings not found"),
             );
             return;
@@ -39,7 +41,7 @@ export default function DetachButton(props: ButtonProps) {
         <Popover.Root open={open} onOpenChange={setOpen}>
             <Popover.Trigger asChild>
                 <Button {...restProps} className="w-full">
-                    <LinkBreakIcon /> Detach File from Production
+                    <LinkBreakIcon /> <T keyName="mobileExport.detach.button" />
                 </Button>
             </Popover.Trigger>
             <Popover.Portal>
@@ -53,10 +55,7 @@ export default function DetachButton(props: ButtonProps) {
                     }}
                 >
                     <div className="text-text text-sm">
-                        Are you sure you want to detach this file from the OTM
-                        Production? This means you will not be able to upload
-                        revisions to the mobile app. You can always re-attach it
-                        later
+                        <T keyName="mobileExport.detach.confirm" />
                     </div>
                     <div className="flex gap-8">
                         <Button
@@ -66,7 +65,7 @@ export default function DetachButton(props: ButtonProps) {
                             className="w-full"
                             disabled={isPending}
                         >
-                            Cancel
+                            <T keyName="mobileExport.detach.cancel" />
                         </Button>
                         <Button
                             variant="red"
@@ -75,7 +74,7 @@ export default function DetachButton(props: ButtonProps) {
                             className="w-full"
                             disabled={isPending}
                         >
-                            Yes, Detach
+                            <T keyName="mobileExport.detach.confirmButton" />
                         </Button>
                     </div>
                 </Popover.Content>

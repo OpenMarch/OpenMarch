@@ -69,7 +69,7 @@ export default function EnsembleList() {
                 setCreateProductionError(
                     error instanceof Error
                         ? error.message
-                        : "Failed to create production",
+                        : t("ensembles.createDialog.failed"),
                 );
             },
         },
@@ -125,7 +125,7 @@ export default function EnsembleList() {
         const name = createProductionName.trim();
         if (!createProductionTarget) return;
         if (!name) {
-            setCreateProductionError("Enter a production name.");
+            setCreateProductionError(t("ensembles.createDialog.nameRequired"));
             return;
         }
 
@@ -229,7 +229,9 @@ export default function EnsembleList() {
                                                             {production.name}
                                                         </div>
                                                         <div className="text-text-subtitle text-sub transition-colors duration-150 ease-out group-hover:text-inherit">
-                                                            Attach to production
+                                                            {t(
+                                                                "ensembles.attachToProduction",
+                                                            )}
                                                         </div>
                                                     </div>
                                                 ),
@@ -253,7 +255,9 @@ export default function EnsembleList() {
                                                     className="gap-8"
                                                 >
                                                     <PlusIcon size={16} />
-                                                    Create production
+                                                    {t(
+                                                        "ensembles.createProduction",
+                                                    )}
                                                 </Button>
                                             </div>
                                         </div>
@@ -306,20 +310,25 @@ export default function EnsembleList() {
                 onOpenChange={handleCreateDialogOpenChange}
             >
                 <DialogContent className="flex h-fit max-w-sm flex-col gap-16">
-                    <DialogTitle>Create Production</DialogTitle>
+                    <DialogTitle>
+                        {t("ensembles.createDialog.title")}
+                    </DialogTitle>
                     <form
                         onSubmit={handleCreateProductionSubmit}
                         className="flex flex-col gap-16"
                     >
                         <p className="text-body text-text-subtitle">
-                            Add a production to {createProductionTarget?.name}.
+                            {t("ensembles.createDialog.description", {
+                                ensembleName:
+                                    createProductionTarget?.name ?? "",
+                            })}
                         </p>
                         <div className="flex flex-col gap-4">
                             <label
                                 htmlFor="create-production-name"
                                 className="text-text-subtitle text-sub"
                             >
-                                Production name
+                                {t("ensembles.createDialog.nameLabel")}
                             </label>
                             <Input
                                 id="create-production-name"
@@ -331,7 +340,9 @@ export default function EnsembleList() {
                                     }
                                 }}
                                 disabled={createProduction.isPending}
-                                placeholder="Production name"
+                                placeholder={t(
+                                    "ensembles.createDialog.namePlaceholder",
+                                )}
                                 autoFocus
                             />
                         </div>
@@ -348,7 +359,7 @@ export default function EnsembleList() {
                                 onClick={resetCreateDialog}
                                 disabled={createProduction.isPending}
                             >
-                                Cancel
+                                {t("ensembles.createDialog.cancel")}
                             </Button>
                             <Button
                                 type="submit"
@@ -362,10 +373,10 @@ export default function EnsembleList() {
                                             size={16}
                                             className="animate-spin"
                                         />
-                                        Creating...
+                                        {t("ensembles.createDialog.creating")}
                                     </span>
                                 ) : (
-                                    "Create"
+                                    t("ensembles.createDialog.create")
                                 )}
                             </Button>
                         </div>

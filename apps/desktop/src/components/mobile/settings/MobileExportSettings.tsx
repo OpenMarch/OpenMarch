@@ -12,18 +12,21 @@ import DetachButton from "../DetachButton";
 import { AudioFileSettings } from "./AudioFileSettings";
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
+import { useTolgee } from "@tolgee/react";
 
 export const MobileExportSettingsDialog = () => {
+    const { t } = useTolgee();
     const prefetchSettingsData = usePrefetchSettingsDataFunction();
     return (
         <Dialog>
             <DialogTrigger asChild>
                 <Button variant="secondary" onMouseOver={prefetchSettingsData}>
-                    <GearSixIcon size={16} /> Settings
+                    <GearSixIcon size={16} />{" "}
+                    {t("mobileExport.settings.button")}
                 </Button>
             </DialogTrigger>
             <DialogContent className="flex w-full max-w-[512px] flex-col gap-16 overflow-y-auto">
-                <DialogTitle>Mobile app settings</DialogTitle>
+                <DialogTitle>{t("mobileExport.settings.title")}</DialogTitle>
                 <MobileExportSettingsContent />
             </DialogContent>
         </Dialog>
@@ -49,10 +52,12 @@ const usePrefetchSettingsDataFunction = () => {
 };
 
 const MobileExportSettingsContent = () => {
+    const { t } = useTolgee();
     const queryClient = useQueryClient();
     const { data: production } = useCurrentProduction();
 
-    if (!production) return <div>No production found</div>;
+    if (!production)
+        return <div>{t("mobileExport.settings.noProduction")}</div>;
 
     return (
         <div className="flex flex-col gap-16">
@@ -71,23 +76,21 @@ const MobileExportSettingsContent = () => {
                 aria-describedby="Background image"
             >
                 <h3 className="text-body text-text-subtitle font-medium">
-                    Background image
+                    {t("mobileExport.settings.backgroundImage.title")}
                 </h3>
                 {production.background_image_url ? (
                     <img
                         src={production.background_image_url}
-                        alt="Production background"
+                        alt={t("mobileExport.settings.backgroundImage.alt")}
                         className="rounded-6 border-stroke bg-bg-1 h-auto w-full border object-contain"
                     />
                 ) : (
                     <p className="text-body text-text-disabled">
-                        No background image
+                        {t("mobileExport.settings.backgroundImage.empty")}
                     </p>
                 )}
                 <p className="text-sub text-text-subtitle">
-                    The background image is automatically synced when you upload
-                    a new revision. To change it, change the background image in
-                    field editor and upload a new revision.
+                    {t("mobileExport.settings.backgroundImage.help")}
                 </p>
             </section>
             <section
@@ -95,7 +98,7 @@ const MobileExportSettingsContent = () => {
                 aria-describedby="Detach production"
             >
                 <h3 className="text-body text-text-subtitle font-medium">
-                    Detach production
+                    {t("mobileExport.settings.detach.title")}
                 </h3>
                 <DetachButton variant="secondary" />
             </section>

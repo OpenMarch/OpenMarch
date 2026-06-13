@@ -24,6 +24,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
 import { getClerkSignUpUrl } from "@/global/auth/constants";
+import { T, useTolgee } from "@tolgee/react";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -153,6 +154,7 @@ export default function MobileExportModal({
 export function MobileExportModalContents() {
     const { toggleOpen } = useSidebarModalStore();
     const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+    const { t } = useTolgee();
     const { data: currentProduction } = useCurrentProduction();
     const validationState = useMobileExportValidation();
     const productionId = useOtmProductionId();
@@ -180,7 +182,9 @@ export function MobileExportModalContents() {
             </div>
         </div>
     ) : (
-        <h4 className="text-h4 leading-none">Export to Mobile</h4>
+        <h4 className="text-h4 leading-none">
+            <T keyName="mobileExport.title" />
+        </h4>
     );
 
     return (
@@ -215,7 +219,9 @@ export function MobileExportModalContents() {
                     {validationState.type === "no-access" ? (
                         <MobileExportAccessError />
                     ) : isAuthLoading ? (
-                        <MobileExportLoading message="Checking sign-in..." />
+                        <MobileExportLoading
+                            message={t("mobileExport.loading.checkingSignIn")}
+                        />
                     ) : !isAuthenticated ? (
                         <SignedOutMobileExportContent />
                     ) : currentProduction ? (
@@ -223,7 +229,9 @@ export function MobileExportModalContents() {
                             currentProduction={currentProduction}
                         />
                     ) : productionId ? (
-                        <MobileExportLoading message="Validating On the Move access..." />
+                        <MobileExportLoading
+                            message={t("mobileExport.loading.validatingAccess")}
+                        />
                     ) : (
                         <EnsembleList />
                     )}
@@ -250,23 +258,19 @@ function MobileExportAccessError() {
             <div className="text-red flex flex-col items-center gap-8">
                 <WarningCircleIcon size={40} />
                 <h4 className="text-h4 leading-none">
-                    Could not validate On the Move access
+                    <T keyName="mobileExport.accessError.title" />
                 </h4>
             </div>
             <p className="text-body text-text-subtitle">
-                We could not validate that you have access to the OTM Production
-                this show is attached to. The signed-in account may not have
-                access, or the production may no longer exist.
+                <T keyName="mobileExport.accessError.description" />
             </p>
             <p className="text-sub text-text-subtitle">
-                Detach this file from the production to choose a different one,
-                or close the sidebar and sign in with an account that has
-                access.
+                <T keyName="mobileExport.accessError.hint" />
             </p>
             <div className="flex gap-8 align-middle">
                 <DetachButton variant="red" />
                 <Button variant="secondary" onClick={toggleOpen}>
-                    Close
+                    <T keyName="mobileExport.close" />
                 </Button>
             </div>
         </div>
@@ -274,6 +278,7 @@ function MobileExportAccessError() {
 }
 
 function SignedOutMobileExportContent() {
+    const { t } = useTolgee();
     const handleSetupAccount = useCallback(() => {
         const signupUrl = getClerkSignUpUrl();
         if (window.electron?.openExternal) {
@@ -292,7 +297,7 @@ function SignedOutMobileExportContent() {
                 <div className="translate-x-[-32px]">
                     <img
                         src="https://assets.openmarch.com/otm-logo-purple-light.webp"
-                        alt="OTM Logo"
+                        alt={t("mobileExport.logoAlt")}
                         className={clsx(
                             imageClassname,
                             "drop-shadow-sm dark:hidden",
@@ -310,16 +315,16 @@ function SignedOutMobileExportContent() {
                 </div>
                 <div className="flex w-[85%] flex-col items-center gap-12">
                     <p className="text-body text-text-subtitle">
-                        Don&apos;t have an account yet? Create one now!
+                        <T keyName="mobileExport.signedOut.createAccountPrompt" />
                     </p>
                     <Button variant="primary" onClick={handleSetupAccount}>
-                        <ArrowSquareOutIcon size={16} /> Set up your account
+                        <ArrowSquareOutIcon size={16} />{" "}
+                        <T keyName="mobileExport.signedOut.setupAccount" />
                     </Button>
                 </div>
                 <div className="flex w-[85%] flex-col items-center gap-12">
                     <p className="text-body text-text-subtitle">
-                        Already have an account? Connect it to the desktop app
-                        to start taking it On The Move!
+                        <T keyName="mobileExport.signedOut.signInPrompt" />
                     </p>
                     <SignInButton variant="secondary" />
                 </div>
