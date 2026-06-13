@@ -10,6 +10,7 @@ import { twMerge } from "tailwind-merge";
 import EnsembleList from "./EnsembleList";
 import MobileExportView from "./MobileExportView";
 import DetachButton from "./DetachButton";
+import ViewEnsembleDetailsLink from "./ViewEnsembleDetailsLink";
 import {
     currentProductionQueryOptions,
     useCurrentProduction,
@@ -165,12 +166,18 @@ export function MobileExportModalContents() {
             >
                 {currentProduction.name}
             </h4>
-            <h5
-                className="text-body text-text-subtitle"
-                aria-label={"current ensemble name"}
-            >
-                {currentProduction.ensemble.name}
-            </h5>
+            <div className="text-body text-text-subtitle flex flex-wrap items-center gap-8">
+                <h5
+                    className="leading-none"
+                    aria-label={"current ensemble name"}
+                >
+                    {currentProduction.ensemble.name}
+                </h5>
+                <span aria-hidden="true">|</span>
+                <ViewEnsembleDetailsLink
+                    ensembleId={currentProduction.ensemble.id}
+                />
+            </div>
         </div>
     ) : (
         <h4 className="text-h4 leading-none">Export to Mobile</h4>
