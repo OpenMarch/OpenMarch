@@ -44,3 +44,29 @@
 
 - `apps/desktop/src/styles/apply-tailwind-vars.cjs` is run by desktop `dev` and `build`; run `pnpm run apply-styles` manually if you need regenerated desktop style variables without starting Vite.
 - In `apps/cms`, run `pnpm run generate:types` after Payload schema changes and `pnpm run generate:importmap` after creating or modifying Payload admin components.
+
+## Cursor Cloud specific instructions
+
+The startup update script (`nvm use 24` + `corepack enable` + `pnpm install --no-frozen-lockfile`) refreshes deps. Standard build/lint/test/run commands are above; notes below are only the non-obvious caveats discovered when running each service in the cloud VM.
+
+### Toolchain
+
+- Node 24 is required. `~/.bashrc` prepends nvm's Node 24 ahead of the sandbox `/exec-daemon/node` (which is Node 22). If `node -v` ever shows v22, run `nvm use 24` (pnpm comes from corepack in the Node 24 bin).
+
+### Desktop (`pnpm desktop dev`, or `cd apps/desktop && pnpm run dev`)
+
+- Electron runs headless on `DISPLAY :1` with `--no-sandbox`. Harmless log noise: D-Bus "Failed to call method"/"Could not parse server address" lines, and an `electron-updater` "Cannot destructure property 'autoUpdater'" unhandled rejection (auto-updater is disabled in dev). None of these stop the app.
+- Single-instance lock: the app uses `app.requestSingleInstanceLock()`, so only ONE instance runs. If Electron exits immediately right after logging `Sentry error reporting enabled: false`, a stale instance/lock is blocking it — kill leftover `electron/dist/electron` PIDs and `rm -f ~/.config/OpenMarch/SingletonLock`.
+- To launch straight into the editor (skip the New File dialog), set `databasePath` in `~/.config/OpenMarch/config.json` to a `.dots` file copied from `apps/desktop/electron/database/migrations/_blank.dots`. The New File / Open File UI also works.
+- Editor `ERR_INSUFFICIENT_RESOURCES`: happens when Vite skips dependency pre-bundling because the shared-package `tsup --watch` builds (started by `pnpm desktop dev`) race Vite's dep scan. Avoid by pre-building packages (`pnpm build`, or rely on persisted `dist`) so the Vite optimizer cache at `apps/desktop/node_modules/.vite/deps` warms; running `cd apps/desktop && pnpm run dev` (no watchers) is the most reliable.
+- Electron binary gotcha: the `electron` postinstall occasionally extracts incompletely (only `dist/locales`), giving "Electron failed to install correctly". Fix once (persists in the snapshot): unzip `~/.cache/electron/<hash>/electron-*.zip` into `node_modules/.pnpm/electron@*/node_modules/electron/dist`, then `printf 'electron' > .../electron/path.txt` (NO trailing newline — `echo` breaks it).
+
+### Website (`pnpm site dev`)
+
+- Astro/Starlight on `http://localhost:4321`. Docs search (Pagefind) only works in production builds, not in dev.
+
+### CMS (`pnpm --filter @openmarch/cms dev`)
+
+- Next.js on `http://localhost:3000`; admin at `/admin`. Needs `apps/cms/.env` with a real `PAYLOAD_SECRET` (`echo PAYLOAD_SECRET="$(openssl rand -base64 64)" > apps/cms/.env`). Uses local Cloudflare bindings (D1/R2 persisted under `.wrangler/state`) — no Cloudflare login required for dev.
+- The admin renders blank ("internal-module-error … not found in importMap") until you run `pnpm --filter @openmarch/cms run generate:importmap`; the committed `importMap.js` is stale versus the Payload version pulled in by the root `pnpm.overrides` (it's a generated file, so regenerate rather than commit).
+- KNOWN PRE-EXISTING ISSUE: the Lexical rich-text Post editor errors with "Cannot destructure property 'config' … useConfig". Root `pnpm.overrides` bump `payload`/`@payloadcms/next`/`graphql`/`storage-r2` to 3.84.x while `@payloadcms/ui`/`richtext-lexical`/`db-d1-sqlite` stay at 3.73.0 (two `@payloadcms/ui` versions resolve). Admin auth, dashboard, and collection lists work, but creating/editing rich-text posts won't until the `@payloadcms/*` versions are aligned.
