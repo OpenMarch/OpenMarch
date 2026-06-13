@@ -22,12 +22,7 @@ import {
     DialogTitle,
     Input,
 } from "@openmarch/ui";
-import {
-    ArrowSquareOutIcon,
-    CircleNotchIcon,
-    PlusIcon,
-} from "@phosphor-icons/react";
-import { OPENMARCH_APP_BASE_URL } from "@/global/Constants";
+import { CircleNotchIcon, PlusIcon } from "@phosphor-icons/react";
 import ViewEnsembleDetailsLink from "./ViewEnsembleDetailsLink";
 
 type CreateProductionTarget = {
@@ -228,9 +223,14 @@ export default function EnsembleList() {
                                                                 production,
                                                             )
                                                         }
-                                                        className={`hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex cursor-pointer items-center gap-4 rounded border px-16 py-12 transition-colors`}
+                                                        className={`group hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex cursor-pointer items-center justify-between gap-4 rounded border px-16 py-12 transition-colors`}
                                                     >
-                                                        {production.name}
+                                                        <div>
+                                                            {production.name}
+                                                        </div>
+                                                        <div className="text-text-subtitle text-sub transition-colors duration-150 ease-out group-hover:text-inherit">
+                                                            Attach to production
+                                                        </div>
                                                     </div>
                                                 ),
                                             )}
