@@ -32,16 +32,13 @@ describe("buildLightingScenePlan", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 500, color: "#00ff00" }),
+                argsJson: JSON.stringify({ color: "#00ff00" }),
                 durationMs: 500,
                 marcherIds: [1],
             },
@@ -58,17 +55,14 @@ describe("buildLightingScenePlan", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 100,
                 startMs: 500,
                 marcherIds: [1],
             },
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 500, color: "#00ff00" }),
+                argsJson: JSON.stringify({ color: "#00ff00" }),
                 durationMs: 200,
                 marcherIds: [2],
             },
@@ -86,10 +80,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
@@ -108,10 +99,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#112233",
-                }),
+                argsJson: JSON.stringify({ color: "#112233" }),
                 durationMs: 1000,
                 marcherIds: [5],
             },
@@ -124,10 +112,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "strobe",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#abcdef",
-                }),
+                argsJson: JSON.stringify({ color: "#abcdef" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
@@ -156,10 +141,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#0000ff",
-                }),
+                argsJson: JSON.stringify({ color: "#0000ff" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
@@ -181,7 +163,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 100, color: "#ff0000" }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 100,
                 marcherIds: [1],
             },
@@ -195,10 +177,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 1000,
                 startMs: 0,
                 marcherIds: [1, 2],

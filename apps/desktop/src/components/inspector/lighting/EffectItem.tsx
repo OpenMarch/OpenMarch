@@ -64,11 +64,6 @@ function rgbaToHex6(color: RgbaColor): string {
     return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
 }
 
-function secondsToMs(seconds: number): number {
-    if (!Number.isFinite(seconds) || seconds < 0) return 0;
-    return Math.max(0, Math.round(seconds * 1000));
-}
-
 function effectTypeLabel(
     effectType: LightingEffectType,
     t: (key: string) => string | undefined,
@@ -101,14 +96,12 @@ type SolidEffectArgsInputProps = {
     currentArgs: SolidEffectArgs;
     currentArgsJson: string;
     argsChangeFn: (argsJson: string) => void;
-    durationMs: number;
 };
 
 const SolidEffectArgsInput = ({
     currentArgs,
     currentArgsJson,
     argsChangeFn,
-    durationMs,
 }: SolidEffectArgsInputProps) => {
     const { t } = useTolgee();
     const [colorHex, setColorHex] = useState(currentArgs.color);
@@ -118,10 +111,7 @@ const SolidEffectArgsInput = ({
     }, [currentArgs.color]);
 
     const commitArgs = (draftColor: string) => {
-        const nextArgs: SolidEffectArgs = {
-            durationMs: Math.max(0, Math.round(durationMs)),
-            color: draftColor,
-        };
+        const nextArgs: SolidEffectArgs = { color: draftColor };
         const nextArgsJson = JSON.stringify(nextArgs);
         if (nextArgsJson !== currentArgsJson) argsChangeFn(nextArgsJson);
     };
@@ -161,40 +151,19 @@ const EffectItem = ({
     const { t } = useTolgee();
     const nameId = useId();
     const nameInputRef = useRef<HTMLInputElement>(null);
-    const durationInputRef = useRef<HTMLInputElement>(null);
     const typeSelectTriggerRef = useRef<HTMLButtonElement>(null);
     const [typePickerOpen, setTypePickerOpen] = useState(false);
 
-    const [durationMs, setDurationMs] = useState(() => {
-        const parsed = parseEffectArgs(type, args);
-        return parsed.durationMs;
-    });
-
     const [editingName, setEditingName] = useState(false);
-    const [editingDuration, setEditingDuration] = useState(false);
     const [draftName, setDraftName] = useState(name);
-    const [draftDurationSeconds, setDraftDurationSeconds] = useState(() => {
-        const parsed = parseEffectArgs(type, args);
-        return parsed.durationMs / 1000;
-    });
 
     useEffect(() => {
         setDraftName(name);
     }, [name]);
 
     useEffect(() => {
-        const parsed = parseEffectArgs(type, args);
-        setDurationMs(parsed.durationMs);
-        setDraftDurationSeconds(parsed.durationMs / 1000);
-    }, [args, type]);
-
-    useEffect(() => {
         if (editingName) nameInputRef.current?.focus();
     }, [editingName]);
-
-    useEffect(() => {
-        if (editingDuration) durationInputRef.current?.focus();
-    }, [editingDuration]);
 
     useEffect(() => {
         if (!typePickerOpen) return;
@@ -211,19 +180,7 @@ const EffectItem = ({
         setEditingName(false);
     };
 
-    const commitDurationFromDraft = () => {
-        const ms = secondsToMs(draftDurationSeconds);
-        setDraftDurationSeconds(ms / 1000);
-        setDurationMs(ms);
-        const base = parseEffectArgs(type, args);
-        const nextArgs = { ...base, durationMs: ms };
-        const nextJson = JSON.stringify(nextArgs);
-        if (nextJson !== args) argsChangeFn(nextJson);
-        setEditingDuration(false);
-    };
-
     const openNameEdit = () => {
-        setEditingDuration(false);
         setTypePickerOpen(false);
         setDraftName(name);
         setEditingName(true);
@@ -257,14 +214,12 @@ const EffectItem = ({
         if (next !== "solid") return;
         if (next === type) return;
         setEditingName(false);
-        setEditingDuration(false);
         setTypePickerOpen(false);
         typeChangeFn(next);
     };
 
     const openTypePicker = () => {
         if (editingName) commitNameFromDraft();
-        if (editingDuration) commitDurationFromDraft();
         setTypePickerOpen(true);
     };
 
@@ -275,7 +230,6 @@ const EffectItem = ({
                 currentArgs={parsedArgs}
                 currentArgsJson={args}
                 argsChangeFn={argsChangeFn}
-                durationMs={durationMs}
             />
         );
     };

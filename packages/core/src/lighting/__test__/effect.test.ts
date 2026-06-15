@@ -18,7 +18,6 @@ describe("createNewLightingEffect", () => {
         expect(name).toBeNull();
         expect(type).toBe("solid");
         expect(JSON.parse(argsJson)).toMatchObject({
-            durationMs: 2000,
             color: "#000000",
         });
     });
@@ -27,8 +26,17 @@ describe("createNewLightingEffect", () => {
 describe("default lighting effect args", () => {
     it("falls back to black defaults for invalid solid args", () => {
         expect(parseSolidEffectArgs("not-json")).toEqual({
-            durationMs: 2000,
             color: "#000000",
+        });
+    });
+
+    it("strips legacy durationMs from solid args", () => {
+        expect(
+            parseSolidEffectArgs(
+                JSON.stringify({ durationMs: 2000, color: "#ff0000" }),
+            ),
+        ).toEqual({
+            color: "#ff0000",
         });
     });
 

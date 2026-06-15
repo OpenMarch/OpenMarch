@@ -7,6 +7,7 @@ export type EffectPlaybackInfo = {
 
 export type OrderedEffectRuntime = {
     id: number;
+    startMs: number;
     durationMs: number;
 };
 
@@ -22,9 +23,8 @@ export function deriveEffectPlaybackStates(
         return out;
     }
 
-    let cursorMs = 0;
     effects.forEach((effect) => {
-        const startMs = cursorMs;
+        const startMs = Math.max(0, effect.startMs);
         const safeDurationMs = Math.max(0, effect.durationMs);
         const endMs = startMs + safeDurationMs;
         let state: EffectPlaybackState = "upcoming";
@@ -41,7 +41,6 @@ export function deriveEffectPlaybackStates(
         }
 
         out.set(effect.id, { state, progressPct });
-        cursorMs = endMs;
     });
 
     return out;

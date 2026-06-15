@@ -329,7 +329,7 @@ describeDbTests("lighting", (it) => {
                         {
                             scene_id: scene.id,
                             type: "fade",
-                            args: '{"durationMs":100,"color":"#000000"}',
+                            args: '{"color":"#000000"}',
                             name: "F",
                             start_offset_beats: 0,
                             duration_beats: 1,
@@ -585,9 +585,7 @@ describeDbTests("lighting", (it) => {
             await expect(
                 updateLightingEffects({
                     db,
-                    modifiedEffects: [
-                        { id: second.id, start_offset_beats: 3 },
-                    ],
+                    modifiedEffects: [{ id: second.id, start_offset_beats: 3 }],
                 }),
             ).rejects.toThrow(/already controlled/);
         });

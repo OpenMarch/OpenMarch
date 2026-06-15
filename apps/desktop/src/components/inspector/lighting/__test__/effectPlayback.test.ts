@@ -3,9 +3,9 @@ import { deriveEffectPlaybackStates } from "../effectPlayback";
 
 describe("deriveEffectPlaybackStates", () => {
     const effects = [
-        { id: 101, durationMs: 1000 },
-        { id: 102, durationMs: 500 },
-        { id: 103, durationMs: 250 },
+        { id: 101, startMs: 0, durationMs: 1000 },
+        { id: 102, startMs: 1000, durationMs: 500 },
+        { id: 103, startMs: 1500, durationMs: 250 },
     ] as const;
 
     it("returns upcoming for all effects when scene time is unavailable", () => {
@@ -35,5 +35,17 @@ describe("deriveEffectPlaybackStates", () => {
         expect(byId.get(101)).toEqual({ state: "played", progressPct: 100 });
         expect(byId.get(102)).toEqual({ state: "played", progressPct: 100 });
         expect(byId.get(103)).toEqual({ state: "played", progressPct: 100 });
+    });
+
+    it("supports overlapping effects with independent windows", () => {
+        const overlapping = [
+            { id: 1, startMs: 0, durationMs: 1000 },
+            { id: 2, startMs: 500, durationMs: 1000 },
+        ] as const;
+        const byId = deriveEffectPlaybackStates(overlapping, 750);
+        expect(byId.get(1)?.state).toBe("active");
+        expect(byId.get(1)?.progressPct).toBe(75);
+        expect(byId.get(2)?.state).toBe("active");
+        expect(byId.get(2)?.progressPct).toBe(25);
     });
 });
