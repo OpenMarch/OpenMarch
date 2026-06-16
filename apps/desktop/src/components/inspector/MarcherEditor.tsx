@@ -561,6 +561,24 @@ function MarcherEditor() {
         marcherPages,
     ]);
 
+    const selectMaxStepMarcher = useCallback(() => {
+        if (!minMaxStepSize?.max) return;
+        setSelectedMarchers(
+            selectedMarchers.filter(
+                (marcher) => marcher.id === minMaxStepSize.max!.marcher_id,
+            ),
+        );
+    }, [minMaxStepSize, selectedMarchers, setSelectedMarchers]);
+
+    const selectMinStepMarcher = useCallback(() => {
+        if (!minMaxStepSize?.min) return;
+        setSelectedMarchers(
+            selectedMarchers.filter(
+                (marcher) => marcher.id === minMaxStepSize.min!.marcher_id,
+            ),
+        );
+    }, [minMaxStepSize, selectedMarchers, setSelectedMarchers]);
+
     const resetForm = useCallback(() => {
         coordsFormRef.current?.reset();
 
@@ -647,17 +665,7 @@ function MarcherEditor() {
                                         <div className="mt-6 flex justify-between">
                                             <button
                                                 className="text-body leading-none opacity-80 hover:underline"
-                                                onClick={() =>
-                                                    setSelectedMarchers(
-                                                        selectedMarchers.filter(
-                                                            (marcher) =>
-                                                                marcher.id ===
-                                                                minMaxStepSize!
-                                                                    .min!
-                                                                    .marcher_id,
-                                                        ),
-                                                    )
-                                                }
+                                                onClick={selectMinStepMarcher}
                                             >
                                                 {
                                                     selectedMarchers.find(
@@ -680,17 +688,7 @@ function MarcherEditor() {
                                         <div className="flex justify-between pt-6">
                                             <button
                                                 className="text-body leading-none opacity-80 hover:underline"
-                                                onClick={() =>
-                                                    setSelectedMarchers(
-                                                        selectedMarchers.filter(
-                                                            (marcher) =>
-                                                                marcher.id ===
-                                                                minMaxStepSize!
-                                                                    .max!
-                                                                    .marcher_id,
-                                                        ),
-                                                    )
-                                                }
+                                                onClick={selectMaxStepMarcher}
                                             >
                                                 {
                                                     selectedMarchers.find(
