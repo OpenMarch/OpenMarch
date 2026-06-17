@@ -51,6 +51,7 @@ const useSplitPageMutation = <TArgs>(
 ) => {
     const queryClient = useQueryClient();
     return useMutation({
+        scope: { id: "splitPage" },
         mutationFn,
         onSuccess: async () => {
             // Invalidate all timing object queries
