@@ -482,7 +482,9 @@ function getEffectColor(effect: LightingEffectWithMarchers): string {
     try {
         const parsed = parseEffectArgs(effect.type, effect.args) as {
             color?: string;
+            colors?: string[];
         };
+        if (parsed.colors?.length) return parsed.colors[0]!;
         if (parsed && typeof parsed.color === "string") return parsed.color;
     } catch {
         // fall through

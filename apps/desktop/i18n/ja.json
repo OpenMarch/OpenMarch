@@ -923,6 +923,10 @@
                     "color": "色",
                     "fadeDurationSeconds": "フェード時間（秒）",
                     "fadeTargetColor": "フェードの終了色",
+                    "fadeColors": "色",
+                    "colorNumber": "色 {number}",
+                    "addColor": "色を追加",
+                    "removeColorAria": "色を削除",
                     "strobePlaceholder": "ストロボエディターはまだ実装されていません。"
                 }
             }

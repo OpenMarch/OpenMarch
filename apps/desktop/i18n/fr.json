@@ -923,6 +923,10 @@
                     "color": "Couleur",
                     "fadeDurationSeconds": "Durée du fondu (s)",
                     "fadeTargetColor": "Couleur cible du fondu",
+                    "fadeColors": "Couleurs",
+                    "colorNumber": "Couleur {number}",
+                    "addColor": "Ajouter une couleur",
+                    "removeColorAria": "Supprimer la couleur",
                     "strobePlaceholder": "L'éditeur stroboscope n'est pas encore disponible."
                 }
             }

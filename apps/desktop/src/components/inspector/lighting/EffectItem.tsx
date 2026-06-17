@@ -1,5 +1,4 @@
 import {
-    defaultSolidEffectArgs,
     LightingEffectType,
     parseEffectArgs,
     SolidEffectArgs,
@@ -19,8 +18,6 @@ import {
     SelectItem,
     SelectTriggerCompact,
 } from "@openmarch/ui";
-import { RgbaColor } from "@uiw/react-color";
-import ColorPicker from "@/components/ui/ColorPicker";
 import { T, useTolgee } from "@tolgee/react";
 import {
     type ChangeEvent,
@@ -31,38 +28,8 @@ import {
     useState,
 } from "react";
 import { TrashIcon } from "@phosphor-icons/react";
-
-const FALLBACK_RGBA: RgbaColor = { r: 255, g: 0, b: 0, a: 1 };
-
-function isRgbaColor(value: unknown): value is RgbaColor {
-    if (typeof value !== "object" || value === null) return false;
-    const candidate = value as Partial<RgbaColor>;
-    return (
-        typeof candidate.r === "number" &&
-        typeof candidate.g === "number" &&
-        typeof candidate.b === "number" &&
-        typeof candidate.a === "number"
-    );
-}
-
-function hex6ToRgba(hex: string): RgbaColor {
-    const m = /^#?([0-9a-fA-F]{6})$/.exec(hex.trim());
-    if (!m) return FALLBACK_RGBA;
-    const n = parseInt(m[1], 16);
-    return {
-        r: (n >> 16) & 255,
-        g: (n >> 8) & 255,
-        b: n & 255,
-        a: 1,
-    };
-}
-
-function rgbaToHex6(color: RgbaColor): string {
-    const r = Math.round(color.r);
-    const g = Math.round(color.g);
-    const b = Math.round(color.b);
-    return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
+import { FadeEffectArgsInput } from "./EffectItem.fade";
+import { SolidEffectArgsInput } from "./EffectItem.solid";
 
 function effectTypeLabel(
     effectType: LightingEffectType,
@@ -90,52 +57,6 @@ type EffectItemProps = {
     typeChangeFn: (type: LightingEffectType) => void;
     argsChangeFn: (argsJson: string) => void;
     deleteEffectFn: () => void;
-};
-
-type SolidEffectArgsInputProps = {
-    currentArgs: SolidEffectArgs;
-    currentArgsJson: string;
-    argsChangeFn: (argsJson: string) => void;
-};
-
-const SolidEffectArgsInput = ({
-    currentArgs,
-    currentArgsJson,
-    argsChangeFn,
-}: SolidEffectArgsInputProps) => {
-    const { t } = useTolgee();
-    const [colorHex, setColorHex] = useState(currentArgs.color);
-
-    useEffect(() => {
-        setColorHex(currentArgs.color);
-    }, [currentArgs.color]);
-
-    const commitArgs = (draftColor: string) => {
-        const nextArgs: SolidEffectArgs = { color: draftColor };
-        const nextArgsJson = JSON.stringify(nextArgs);
-        if (nextArgsJson !== currentArgsJson) argsChangeFn(nextArgsJson);
-    };
-
-    const applyColor = (color: unknown) => {
-        if (!isRgbaColor(color)) return;
-        const nextHex = rgbaToHex6(color);
-        setColorHex(nextHex);
-        commitArgs(nextHex);
-    };
-
-    return (
-        <ColorPicker
-            doNotUseForm
-            disableAlpha
-            className="px-0"
-            label={
-                t("workspace.lightDesigner.effects.effectItem.color") || "Color"
-            }
-            initialColor={hex6ToRgba(colorHex)}
-            defaultColor={hex6ToRgba(defaultSolidEffectArgs.color)}
-            onBlur={applyColor}
-        />
-    );
 };
 
 const EffectItem = ({
@@ -211,7 +132,7 @@ const EffectItem = ({
 
     const handleTypeChange = (newType: string) => {
         const next = newType as LightingEffectType;
-        if (next !== "solid") return;
+        if (next === "strobe") return;
         if (next === type) return;
         setEditingName(false);
         setTypePickerOpen(false);
@@ -224,6 +145,17 @@ const EffectItem = ({
     };
 
     const renderArgsInput = () => {
+        if (type === "fade") {
+            const parsedArgs = parseEffectArgs("fade", args);
+            return (
+                <FadeEffectArgsInput
+                    currentArgs={parsedArgs}
+                    currentArgsJson={args}
+                    argsChangeFn={argsChangeFn}
+                />
+            );
+        }
+
         const parsedArgs = parseEffectArgs(type, args) as SolidEffectArgs;
         return (
             <SolidEffectArgsInput
@@ -303,7 +235,7 @@ const EffectItem = ({
                                         defaultValue="Strobe"
                                     />
                                 </SelectItem>
-                                <SelectItem value="fade" disabled>
+                                <SelectItem value="fade">
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeFade"
                                         defaultValue="Fade"

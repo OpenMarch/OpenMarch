@@ -923,6 +923,10 @@
                     "color": "Cor",
                     "fadeDurationSeconds": "Duração do fade (s)",
                     "fadeTargetColor": "Cor de destino do fade",
+                    "fadeColors": "Cores",
+                    "colorNumber": "Cor {number}",
+                    "addColor": "Adicionar cor",
+                    "removeColorAria": "Remover cor",
                     "strobePlaceholder": "O editor de estrobo ainda não foi implementado."
                 }
             }

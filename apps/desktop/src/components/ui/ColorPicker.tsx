@@ -151,7 +151,7 @@ export default function ColorPicker({
             onSaveClick={handleSaveClick}
             onDiscardClick={handleDiscardClick}
             handleKeyDown={handleKeyDown}
-            resetToDefault={resetToDefault}
+            resetToDefault={defaultColor ? resetToDefault : undefined}
             handleChange={handleChange}
         />
     );
@@ -175,17 +175,7 @@ export default function ColorPicker({
                 ref={pickerRef}
                 className={className}
             >
-                <DefaultColorPicker
-                    open={open}
-                    onOpenChange={handleOpenChange}
-                    currentColor={currentColor}
-                    disableAlpha={disableAlpha}
-                    onSaveClick={handleSaveClick}
-                    onDiscardClick={handleDiscardClick}
-                    handleKeyDown={handleKeyDown}
-                    resetToDefault={resetToDefault}
-                    handleChange={handleChange}
-                />
+                {internalComponent}
             </FormField>
         );
 }
@@ -198,7 +188,7 @@ type InternalPickerProps = {
     onSaveClick: () => void;
     onDiscardClick: () => void;
     handleKeyDown: (event: React.KeyboardEvent) => void;
-    resetToDefault: () => void;
+    resetToDefault?: () => void;
     handleChange: (color: ColorResult) => void;
 };
 
@@ -276,6 +266,7 @@ function DefaultColorPicker({
             <Button
                 tooltipSide="right"
                 size="compact"
+                hidden={resetToDefault == null}
                 tooltipText={"Reset to default"}
                 variant="secondary"
                 onClick={resetToDefault}

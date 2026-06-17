@@ -1,3 +1,4 @@
+import type { FadeEffectArgs } from "./effect.fade";
 import { parseEffectArgs } from "./effect.registry";
 import type { SolidEffectArgs } from "./effect.solid";
 import type { LightingEffectType } from "./types";
@@ -60,7 +61,13 @@ function buildStep(
     marcherIds: readonly number[],
 ): ParsedLightingStep {
     const safeDuration = Math.max(0, durationMs);
-    const solidArgs = parseEffectArgs(type, argsJson) as SolidEffectArgs;
+    const parsedArgs = parseEffectArgs(type, argsJson);
+    const solidArgs: SolidEffectArgs =
+        type === "fade"
+            ? {
+                  color: (parsedArgs as FadeEffectArgs).colors.at(-1)!,
+              }
+            : (parsedArgs as SolidEffectArgs);
     return {
         startMs,
         endMs: startMs + safeDuration,

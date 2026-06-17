@@ -126,7 +126,7 @@ describe("sampleMarcherLightingFill", () => {
             {
                 type: "fade",
                 argsJson: JSON.stringify({
-                    durationMs: 1000,
+                    changeDurationMs: 1000,
                     color: "#ffffff",
                 }),
                 durationMs: 1000,
@@ -148,7 +148,7 @@ describe("sampleMarcherLightingFill", () => {
             {
                 type: "fade",
                 argsJson: JSON.stringify({
-                    durationMs: 1000,
+                    changeDurationMs: 1000,
                     color: "#ff0000",
                 }),
                 durationMs: 1000,

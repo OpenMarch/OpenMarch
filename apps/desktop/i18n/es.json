@@ -923,6 +923,10 @@
                     "color": "Color",
                     "fadeDurationSeconds": "Duración del fundido (s)",
                     "fadeTargetColor": "Color de destino del fundido",
+                    "fadeColors": "Colores",
+                    "colorNumber": "Color {number}",
+                    "addColor": "Añadir color",
+                    "removeColorAria": "Eliminar color",
                     "strobePlaceholder": "El editor de estroboscópico aún no está implementado."
                 }
             }
