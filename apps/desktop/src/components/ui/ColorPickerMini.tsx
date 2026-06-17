@@ -54,6 +54,7 @@ export default function ColorPickerMini({
         initialColor,
     );
     const pickerRef = useRef<HTMLDivElement>(null);
+    const skipCloseRef = useRef(false);
     const { t } = useTolgee();
     const handleClose = useCallback(
         (color?: RgbaColor | null) => {
@@ -122,6 +123,13 @@ export default function ColorPickerMini({
                         sideOffset={8}
                         collisionPadding={20}
                         avoidCollisions={true}
+                        onInteractOutside={() => {
+                            if (skipCloseRef.current) {
+                                skipCloseRef.current = false;
+                                return;
+                            }
+                            handleClose();
+                        }}
                         className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
                     >
                         <div className="z-50 my-8 flex items-center justify-between px-12">
@@ -160,6 +168,9 @@ export default function ColorPickerMini({
                 size="compact"
                 tooltipText={t("colorPicker.removeSetting")}
                 variant="secondary"
+                onPointerDown={() => {
+                    skipCloseRef.current = true;
+                }}
                 onClick={() => {
                     setCurrentColor(null);
                     handleClose(null);
