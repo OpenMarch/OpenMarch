@@ -160,6 +160,8 @@ export const SubmitRevisionForm = ({
     const [backgroundSyncResult, setBackgroundSyncResult] =
         useState<BackgroundImageSyncResult | null>(null);
     const [backgroundSyncLoading, setBackgroundSyncLoading] = useState(false);
+    const [backgroundImageUploadLoading, setBackgroundImageUploadLoading] =
+        useState(false);
     const queryClient = useQueryClient();
     const selectedAudioFile = useSelectedAudioFile()?.selectedAudioFile;
     const { data: serverAudioFiles, isSuccess: serverAudioFilesLoaded } =
@@ -231,7 +233,7 @@ export const SubmitRevisionForm = ({
                 if (cancelled) return;
                 const result = await prepareBackgroundImageSyncResult(
                     localImage,
-                    currentProduction.background_image_checksum ?? null,
+                    currentProduction.background_image_source_checksum ?? null,
                     AudioFile.computeChecksum,
                 );
                 if (cancelled) return;
@@ -299,6 +301,7 @@ export const SubmitRevisionForm = ({
             return;
         }
         try {
+            setBackgroundImageUploadLoading(true);
             const formData = buildBackgroundImageFormData(
                 backgroundSyncResult.imageData,
             );
@@ -315,6 +318,8 @@ export const SubmitRevisionForm = ({
             toast.error(
                 t("mobileExport.revision.backgroundSyncFailed", { msg }),
             );
+        } finally {
+            setBackgroundImageUploadLoading(false);
         }
     }, [productionId, backgroundSyncResult, queryClient, t]);
 
@@ -365,6 +370,7 @@ export const SubmitRevisionForm = ({
         isUploading ||
         (hasSelectedNonSilentAudio && audioSyncLoading) ||
         audioUploadLoading ||
+        backgroundImageUploadLoading ||
         backgroundSyncLoading;
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -430,6 +436,7 @@ export const SubmitRevisionForm = ({
                             </span>
                         ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
                           audioUploadLoading ||
+                          backgroundImageUploadLoading ||
                           backgroundSyncLoading ? (
                             <span className="flex items-center gap-8">
                                 <CircleNotchIcon
@@ -442,7 +449,11 @@ export const SubmitRevisionForm = ({
                                       ? t(
                                             "mobileExport.revision.uploadingAudio",
                                         )
-                                      : t("mobileExport.revision.preparing")}
+                                      : backgroundImageUploadLoading
+                                        ? t(
+                                              "mobileExport.revision.uploadingImage",
+                                          )
+                                        : t("mobileExport.revision.preparing")}
                             </span>
                         ) : isFirstRevision ? (
                             t("mobileExport.revision.publishButton")

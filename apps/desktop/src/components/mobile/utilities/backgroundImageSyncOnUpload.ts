@@ -1,6 +1,6 @@
 /**
  * Utilities for syncing the local background image when uploading a revision
- * to the server (checksum matching, upload if different or missing).
+ * to the server (source checksum matching, upload if different or missing).
  */
 
 export type BackgroundImageSyncResult = {
@@ -10,22 +10,22 @@ export type BackgroundImageSyncResult = {
 };
 
 /**
- * Prepares the background image sync result: compute local checksum and determine if upload is needed.
+ * Prepares the background image sync result: compute local source checksum and determine if upload is needed.
  * Returns null when there is no local image.
  *
  * @param localImage - Local background image bytes (from getFieldPropertiesImage) or null
- * @param serverChecksum - Production's background_image_checksum (string or null)
+ * @param serverSourceChecksum - Production's background_image_source_checksum (string or null)
  * @param computeChecksum - Async checksum function (e.g. AudioFile.computeChecksum) - SHA256 hex
  */
 export async function prepareBackgroundImageSyncResult(
     localImage: Uint8Array | null,
-    serverChecksum: string | null,
+    serverSourceChecksum: string | null,
     computeChecksum: (data: ArrayBuffer | Uint8Array) => Promise<string>,
 ): Promise<BackgroundImageSyncResult | null> {
     if (localImage == null || localImage.length === 0) return null;
     const localChecksum = await computeChecksum(localImage);
     const needsUpload =
-        serverChecksum == null || serverChecksum !== localChecksum;
+        serverSourceChecksum == null || serverSourceChecksum !== localChecksum;
     return {
         localChecksum,
         imageData: localImage,

@@ -765,6 +765,7 @@
             "uploadFailedGeneric": "Upload failed. Check console for details.",
             "uploadSuccess": "Upload successful",
             "uploadingAudio": "Uploading audio...",
+            "uploadingImage": "Uploading image...",
             "validatingAudio": "Validating audio..."
         },
         "revisions": {
