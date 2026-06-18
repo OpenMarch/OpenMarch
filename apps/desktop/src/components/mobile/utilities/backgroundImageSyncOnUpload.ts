@@ -3,10 +3,13 @@
  * to the server (source checksum matching, upload if different or missing).
  */
 
+export type BackgroundImageDrawType = "fill" | "fit";
+
 export type BackgroundImageSyncResult = {
     localChecksum: string;
     imageData: Uint8Array;
     needsUpload: boolean;
+    needsDrawTypePatch: boolean;
 };
 
 /**
@@ -15,21 +18,30 @@ export type BackgroundImageSyncResult = {
  *
  * @param localImage - Local background image bytes (from getFieldPropertiesImage) or null
  * @param serverSourceChecksum - Production's background_image_source_checksum (string or null)
+ * @param localDrawType - Local imageFillOrFit from field properties
+ * @param serverDrawType - Production's background_image_draw_type (string or null)
  * @param computeChecksum - Async checksum function (e.g. AudioFile.computeChecksum) - SHA256 hex
  */
 export async function prepareBackgroundImageSyncResult(
     localImage: Uint8Array | null,
     serverSourceChecksum: string | null,
+    localDrawType: BackgroundImageDrawType,
+    serverDrawType: BackgroundImageDrawType | null,
     computeChecksum: (data: ArrayBuffer | Uint8Array) => Promise<string>,
 ): Promise<BackgroundImageSyncResult | null> {
     if (localImage == null || localImage.length === 0) return null;
     const localChecksum = await computeChecksum(localImage);
     const needsUpload =
         serverSourceChecksum == null || serverSourceChecksum !== localChecksum;
+    const needsDrawTypePatch =
+        !needsUpload &&
+        serverSourceChecksum != null &&
+        serverDrawType !== localDrawType;
     return {
         localChecksum,
         imageData: localImage,
         needsUpload,
+        needsDrawTypePatch,
     };
 }
 
@@ -41,6 +53,7 @@ const DEFAULT_BACKGROUND_IMAGE_FILENAME = "background.png";
  */
 export function buildBackgroundImageFormData(
     imageData: Uint8Array,
+    drawType: BackgroundImageDrawType,
     filename: string = DEFAULT_BACKGROUND_IMAGE_FILENAME,
 ): FormData {
     const buffer = new ArrayBuffer(imageData.length);
@@ -48,5 +61,6 @@ export function buildBackgroundImageFormData(
     const blob = new Blob([buffer], { type: "image/png" });
     const formData = new FormData();
     formData.append("file", blob, filename);
+    formData.append("background_image_draw_type", drawType);
     return formData;
 }

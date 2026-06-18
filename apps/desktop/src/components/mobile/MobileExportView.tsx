@@ -41,7 +41,10 @@ import {
     buildBackgroundImageFormData,
     type BackgroundImageSyncResult,
 } from "./utilities/backgroundImageSyncOnUpload";
-import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
+import {
+    getFieldProperties,
+    getFieldPropertiesImage,
+} from "@/global/classes/FieldProperties";
 import { T, useTolgee } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 
@@ -229,11 +232,16 @@ export const SubmitRevisionForm = ({
         setBackgroundSyncLoading(true);
         void (async () => {
             try {
-                const localImage = await getFieldPropertiesImage();
+                const [localImage, fieldProperties] = await Promise.all([
+                    getFieldPropertiesImage(),
+                    getFieldProperties(),
+                ]);
                 if (cancelled) return;
                 const result = await prepareBackgroundImageSyncResult(
                     localImage,
                     currentProduction.background_image_source_checksum ?? null,
+                    fieldProperties.imageFillOrFit,
+                    currentProduction.background_image_draw_type ?? null,
                     AudioFile.computeChecksum,
                 );
                 if (cancelled) return;
@@ -292,23 +300,31 @@ export const SubmitRevisionForm = ({
     }, [productionId, audioSyncResult, queryClient, t]);
 
     const syncBackgroundImageAfterUpload = useCallback(async () => {
-        if (
-            productionId == null ||
-            backgroundSyncResult == null ||
-            !backgroundSyncResult.needsUpload ||
-            backgroundSyncResult.imageData == null
-        ) {
+        if (productionId == null || backgroundSyncResult == null) {
+            return;
+        }
+        const { needsUpload, needsDrawTypePatch, imageData } =
+            backgroundSyncResult;
+        if (!needsUpload && !needsDrawTypePatch) {
             return;
         }
         try {
             setBackgroundImageUploadLoading(true);
-            const formData = buildBackgroundImageFormData(
-                backgroundSyncResult.imageData,
-            );
-            await apiPostFormData(
-                `v1/productions/${productionId}/background_image`,
-                formData,
-            );
+            const { imageFillOrFit } = await getFieldProperties();
+            if (needsUpload && imageData != null) {
+                const formData = buildBackgroundImageFormData(
+                    imageData,
+                    imageFillOrFit,
+                );
+                await apiPostFormData(
+                    `v1/productions/${productionId}/background_image`,
+                    formData,
+                );
+            } else if (needsDrawTypePatch) {
+                await patchApiEditorV1ProductionsId(productionId, {
+                    background_image_draw_type: imageFillOrFit,
+                });
+            }
             void queryClient.invalidateQueries({
                 queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
             });

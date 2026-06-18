@@ -39,6 +39,7 @@ export interface Production {
     background_image_url: string | null;
     background_image_checksum: string | null;
     background_image_source_checksum: string | null;
+    background_image_draw_type: "fill" | "fit" | null;
     revisions: RevisionPreview[];
     active_revision_id: number | null;
     audio_files: ProductionAudioFile[];
