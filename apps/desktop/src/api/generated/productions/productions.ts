@@ -22,6 +22,8 @@ import type {
     PatchApiEditorV1ProductionsIdBody,
     PostApiEditorV1Productions201,
     PostApiEditorV1ProductionsBody,
+    PostApiEditorV1ProductionsIdBackgroundImage200,
+    PostApiEditorV1ProductionsIdBackgroundImageBody,
 } from ".././model";
 
 import { customInstance } from "../../editor-client";
@@ -405,5 +407,121 @@ export const usePatchApiEditorV1ProductionsId = <
 > => {
     return useMutation(
         getPatchApiEditorV1ProductionsIdMutationOptions(options),
+    );
+};
+/**
+ * @summary Upload background image
+ */
+export const postApiEditorV1ProductionsIdBackgroundImage = (
+    id: number,
+    postApiEditorV1ProductionsIdBackgroundImageBody: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>,
+    options?: SecondParameter<typeof customInstance>,
+    signal?: AbortSignal,
+) => {
+    const formData = new FormData();
+    formData.append(
+        `file`,
+        postApiEditorV1ProductionsIdBackgroundImageBody.file,
+    );
+
+    return customInstance<PostApiEditorV1ProductionsIdBackgroundImage200>(
+        {
+            url: `/api/editor/v1/productions/${id}/background_image`,
+            method: "POST",
+            data: formData,
+            signal,
+        },
+        options,
+    );
+};
+
+export const getPostApiEditorV1ProductionsIdBackgroundImageMutationOptions = <
+    TError = ErrorType<void>,
+    TContext = unknown,
+>(options?: {
+    mutation?: UseMutationOptions<
+        Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>,
+        TError,
+        {
+            id: number;
+            data: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+        },
+        TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+}): UseMutationOptions<
+    Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>,
+    TError,
+    {
+        id: number;
+        data: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+    },
+    TContext
+> => {
+    const mutationKey = ["postApiEditorV1ProductionsIdBackgroundImage"];
+    const { mutation: mutationOptions, request: requestOptions } = options
+        ? options.mutation &&
+          "mutationKey" in options.mutation &&
+          options.mutation.mutationKey
+            ? options
+            : { ...options, mutation: { ...options.mutation, mutationKey } }
+        : { mutation: { mutationKey }, request: undefined };
+
+    const mutationFn: MutationFunction<
+        Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>,
+        {
+            id: number;
+            data: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+        }
+    > = (props) => {
+        const { id, data } = props ?? {};
+
+        return postApiEditorV1ProductionsIdBackgroundImage(
+            id,
+            data,
+            requestOptions,
+        );
+    };
+
+    return { mutationFn, ...mutationOptions };
+};
+
+export type PostApiEditorV1ProductionsIdBackgroundImageMutationResult =
+    NonNullable<
+        Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>
+    >;
+export type PostApiEditorV1ProductionsIdBackgroundImageMutationBody =
+    BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+export type PostApiEditorV1ProductionsIdBackgroundImageMutationError =
+    ErrorType<void>;
+
+/**
+ * @summary Upload background image
+ */
+export const usePostApiEditorV1ProductionsIdBackgroundImage = <
+    TError = ErrorType<void>,
+    TContext = unknown,
+>(options?: {
+    mutation?: UseMutationOptions<
+        Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>,
+        TError,
+        {
+            id: number;
+            data: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+        },
+        TContext
+    >;
+    request?: SecondParameter<typeof customInstance>;
+}): UseMutationResult<
+    Awaited<ReturnType<typeof postApiEditorV1ProductionsIdBackgroundImage>>,
+    TError,
+    {
+        id: number;
+        data: BodyType<PostApiEditorV1ProductionsIdBackgroundImageBody>;
+    },
+    TContext
+> => {
+    return useMutation(
+        getPostApiEditorV1ProductionsIdBackgroundImageMutationOptions(options),
     );
 };

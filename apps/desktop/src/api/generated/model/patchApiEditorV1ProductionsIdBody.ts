@@ -5,9 +5,11 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
+import type { PatchApiEditorV1ProductionsIdBodyBackgroundImageDrawType } from "./patchApiEditorV1ProductionsIdBodyBackgroundImageDrawType";
 
 export type PatchApiEditorV1ProductionsIdBody = {
     name?: string;
     position?: number;
     performer_labels?: string[];
+    background_image_draw_type?: PatchApiEditorV1ProductionsIdBodyBackgroundImageDrawType;
 };

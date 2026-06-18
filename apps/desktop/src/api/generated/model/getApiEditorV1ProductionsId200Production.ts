@@ -5,6 +5,7 @@
  * API for the OpenMarch desktop editor (Clerk-authenticated)
  * OpenAPI spec version: v1
  */
+import type { GetApiEditorV1ProductionsId200ProductionBackgroundImageDrawType } from "./getApiEditorV1ProductionsId200ProductionBackgroundImageDrawType";
 import type { GetApiEditorV1ProductionsId200ProductionEnsemble } from "./getApiEditorV1ProductionsId200ProductionEnsemble";
 import type { GetApiEditorV1ProductionsId200ProductionRevisionsItem } from "./getApiEditorV1ProductionsId200ProductionRevisionsItem";
 
@@ -15,6 +16,10 @@ export type GetApiEditorV1ProductionsId200Production = {
     background_image_url?: string | null;
     /** @nullable */
     background_image_checksum?: string | null;
+    /** @nullable */
+    background_image_source_checksum?: string | null;
+    /** @nullable */
+    background_image_draw_type?: GetApiEditorV1ProductionsId200ProductionBackgroundImageDrawType;
     /** @nullable */
     active_revision_id?: number | null;
     revisions?: GetApiEditorV1ProductionsId200ProductionRevisionsItem[];

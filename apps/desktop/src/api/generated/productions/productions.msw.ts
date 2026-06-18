@@ -14,6 +14,7 @@ import type {
     GetApiEditorV1EnsemblesEnsembleIdProductions200,
     GetApiEditorV1ProductionsId200,
     PostApiEditorV1Productions201,
+    PostApiEditorV1ProductionsIdBackgroundImage200,
 } from ".././model";
 
 export const getGetApiEditorV1EnsemblesEnsembleIdProductionsResponseMock = (
@@ -185,6 +186,20 @@ export const getGetApiEditorV1ProductionsIdResponseMock = (
             ]),
             undefined,
         ]),
+        background_image_source_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        background_image_draw_type: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.helpers.arrayElement(["fill", "fit"] as const),
+                null,
+            ]),
+            undefined,
+        ]),
         active_revision_id: faker.helpers.arrayElement([
             faker.helpers.arrayElement([
                 faker.number.int({ min: undefined, max: undefined }),
@@ -262,6 +277,47 @@ export const getGetApiEditorV1ProductionsIdResponseMock = (
         ]),
         updated_at: faker.helpers.arrayElement([
             faker.date.past().toISOString().slice(0, 19) + "Z",
+            undefined,
+        ]),
+    },
+    ...overrideResponse,
+});
+
+export const getPostApiEditorV1ProductionsIdBackgroundImageResponseMock = (
+    overrideResponse: Partial<PostApiEditorV1ProductionsIdBackgroundImage200> = {},
+): PostApiEditorV1ProductionsIdBackgroundImage200 => ({
+    production: {
+        id: faker.helpers.arrayElement([
+            faker.number.int({ min: undefined, max: undefined }),
+            undefined,
+        ]),
+        name: faker.helpers.arrayElement([
+            faker.string.alpha({ length: { min: 10, max: 20 } }),
+            undefined,
+        ]),
+        background_image_url: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        background_image_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        background_image_source_checksum: faker.helpers.arrayElement([
+            faker.helpers.arrayElement([
+                faker.string.alpha({ length: { min: 10, max: 20 } }),
+                null,
+            ]),
+            undefined,
+        ]),
+        background_image_draw_type: faker.helpers.arrayElement([
+            faker.helpers.arrayElement(["fill", "fit"] as const),
             undefined,
         ]),
     },
@@ -380,9 +436,41 @@ export const getPatchApiEditorV1ProductionsIdMockHandler = (
         options,
     );
 };
+
+export const getPostApiEditorV1ProductionsIdBackgroundImageMockHandler = (
+    overrideResponse?:
+        | PostApiEditorV1ProductionsIdBackgroundImage200
+        | ((
+              info: Parameters<Parameters<typeof http.post>[1]>[0],
+          ) =>
+              | Promise<PostApiEditorV1ProductionsIdBackgroundImage200>
+              | PostApiEditorV1ProductionsIdBackgroundImage200),
+    options?: RequestHandlerOptions,
+) => {
+    return http.post(
+        "*/api/editor/v1/productions/:id/background_image",
+        async (info) => {
+            return new HttpResponse(
+                JSON.stringify(
+                    overrideResponse !== undefined
+                        ? typeof overrideResponse === "function"
+                            ? await overrideResponse(info)
+                            : overrideResponse
+                        : getPostApiEditorV1ProductionsIdBackgroundImageResponseMock(),
+                ),
+                {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                },
+            );
+        },
+        options,
+    );
+};
 export const getProductionsMock = () => [
     getGetApiEditorV1EnsemblesEnsembleIdProductionsMockHandler(),
     getPostApiEditorV1ProductionsMockHandler(),
     getGetApiEditorV1ProductionsIdMockHandler(),
     getPatchApiEditorV1ProductionsIdMockHandler(),
+    getPostApiEditorV1ProductionsIdBackgroundImageMockHandler(),
 ];
