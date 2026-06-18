@@ -303,18 +303,17 @@ export const SubmitRevisionForm = ({
         if (productionId == null || backgroundSyncResult == null) {
             return;
         }
-        const { needsUpload, needsDrawTypePatch, imageData } =
+        const { needsUpload, needsDrawTypePatch, imageData, localDrawType } =
             backgroundSyncResult;
         if (!needsUpload && !needsDrawTypePatch) {
             return;
         }
         try {
             setBackgroundImageUploadLoading(true);
-            const { imageFillOrFit } = await getFieldProperties();
             if (needsUpload && imageData != null) {
                 const formData = buildBackgroundImageFormData(
                     imageData,
-                    imageFillOrFit,
+                    localDrawType,
                 );
                 await apiPostFormData(
                     `v1/productions/${productionId}/background_image`,
@@ -322,7 +321,7 @@ export const SubmitRevisionForm = ({
                 );
             } else if (needsDrawTypePatch) {
                 await patchApiEditorV1ProductionsId(productionId, {
-                    background_image_draw_type: imageFillOrFit,
+                    background_image_draw_type: localDrawType,
                 });
             }
             void queryClient.invalidateQueries({

@@ -60,8 +60,6 @@ const getRevisionCanvasColors = async (
     );
     const { theme } = fieldProperties;
 
-    console.log("theme", theme);
-
     return {
         canvas_background_color: rgbaToString(theme.background),
         canvas_primary_stroke: rgbaToString(theme.primaryStroke),

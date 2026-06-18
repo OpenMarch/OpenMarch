@@ -8,6 +8,7 @@ export type BackgroundImageDrawType = "fill" | "fit";
 export type BackgroundImageSyncResult = {
     localChecksum: string;
     imageData: Uint8Array;
+    localDrawType: BackgroundImageDrawType;
     needsUpload: boolean;
     needsDrawTypePatch: boolean;
 };
@@ -40,6 +41,7 @@ export async function prepareBackgroundImageSyncResult(
     return {
         localChecksum,
         imageData: localImage,
+        localDrawType,
         needsUpload,
         needsDrawTypePatch,
     };

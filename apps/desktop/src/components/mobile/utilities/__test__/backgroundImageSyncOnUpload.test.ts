@@ -49,6 +49,7 @@ describe("backgroundImageSyncOnUpload", () => {
             expect(result).not.toBe(null);
             expect(result?.localChecksum).toBe("abc123");
             expect(result?.imageData).toBe(imageData);
+            expect(result?.localDrawType).toBe("fit");
             expect(result?.needsUpload).toBe(true);
             expect(result?.needsDrawTypePatch).toBe(false);
             expect(mockComputeChecksum).toHaveBeenCalledWith(imageData);
@@ -98,6 +99,7 @@ describe("backgroundImageSyncOnUpload", () => {
                 mockComputeChecksum,
             );
             expect(result).not.toBe(null);
+            expect(result?.localDrawType).toBe("fill");
             expect(result?.needsUpload).toBe(false);
             expect(result?.needsDrawTypePatch).toBe(true);
         });
