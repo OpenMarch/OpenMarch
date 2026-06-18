@@ -53,6 +53,77 @@ export const postApiEditorV1ProductionsProductionIdRevisions = (
             postApiEditorV1ProductionsProductionIdRevisionsBody.title,
         );
     }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_background_color !==
+            undefined &&
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_background_color !==
+            null
+    ) {
+        formData.append(
+            `canvas_background_color`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_background_color,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_primary_stroke !==
+            undefined &&
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_primary_stroke !==
+            null
+    ) {
+        formData.append(
+            `canvas_primary_stroke`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_primary_stroke,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_secondary_stroke !==
+            undefined &&
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_secondary_stroke !==
+            null
+    ) {
+        formData.append(
+            `canvas_secondary_stroke`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_secondary_stroke,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_grid_stroke !==
+            undefined &&
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_grid_stroke !==
+            null
+    ) {
+        formData.append(
+            `canvas_grid_stroke`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_grid_stroke,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_performer_text_color !==
+            undefined &&
+        postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_performer_text_color !==
+            null
+    ) {
+        formData.append(
+            `canvas_performer_text_color`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.canvas_performer_text_color,
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.labels !== undefined
+    ) {
+        postApiEditorV1ProductionsProductionIdRevisionsBody.labels.forEach(
+            (value) => formData.append(`labels`, value),
+        );
+    }
+    if (
+        postApiEditorV1ProductionsProductionIdRevisionsBody.prefix_map !==
+        undefined
+    ) {
+        formData.append(
+            `prefix_map`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.prefix_map,
+        );
+    }
 
     return customInstance<PostApiEditorV1ProductionsProductionIdRevisions201>(
         {

@@ -17,4 +17,14 @@ export type PostApiEditorV1ProductionsIdBackgroundImage200Production = {
     /** @nullable */
     background_image_source_checksum?: string | null;
     background_image_draw_type?: PostApiEditorV1ProductionsIdBackgroundImage200ProductionBackgroundImageDrawType;
+    /** @nullable */
+    canvas_background_color?: string | null;
+    /** @nullable */
+    canvas_primary_stroke?: string | null;
+    /** @nullable */
+    canvas_secondary_stroke?: string | null;
+    /** @nullable */
+    canvas_grid_stroke?: string | null;
+    /** @nullable */
+    canvas_performer_text_color?: string | null;
 };

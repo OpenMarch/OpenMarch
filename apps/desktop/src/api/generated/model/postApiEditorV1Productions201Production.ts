@@ -16,6 +16,16 @@ export type PostApiEditorV1Productions201Production = {
     /** @nullable */
     background_image_checksum?: string | null;
     /** @nullable */
+    canvas_background_color?: string | null;
+    /** @nullable */
+    canvas_primary_stroke?: string | null;
+    /** @nullable */
+    canvas_secondary_stroke?: string | null;
+    /** @nullable */
+    canvas_grid_stroke?: string | null;
+    /** @nullable */
+    canvas_performer_text_color?: string | null;
+    /** @nullable */
     active_revision_id?: number | null;
     revisions?: PostApiEditorV1Productions201ProductionRevisionsItem[];
     ensemble?: PostApiEditorV1Productions201ProductionEnsemble;

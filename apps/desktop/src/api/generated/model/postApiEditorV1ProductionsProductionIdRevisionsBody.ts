@@ -13,4 +13,17 @@ export type PostApiEditorV1ProductionsProductionIdRevisionsBody = {
     set_active?: boolean;
     /** Optional revision title */
     title?: string;
+    /** @nullable */
+    canvas_background_color?: string | null;
+    /** @nullable */
+    canvas_primary_stroke?: string | null;
+    /** @nullable */
+    canvas_secondary_stroke?: string | null;
+    /** @nullable */
+    canvas_grid_stroke?: string | null;
+    /** @nullable */
+    canvas_performer_text_color?: string | null;
+    labels?: string[];
+    /** JSON-encoded map of drill prefix to section name */
+    prefix_map?: string;
 };

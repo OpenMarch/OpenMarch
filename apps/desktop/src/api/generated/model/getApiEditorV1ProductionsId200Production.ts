@@ -21,6 +21,16 @@ export type GetApiEditorV1ProductionsId200Production = {
     /** @nullable */
     background_image_draw_type?: GetApiEditorV1ProductionsId200ProductionBackgroundImageDrawType;
     /** @nullable */
+    canvas_background_color?: string | null;
+    /** @nullable */
+    canvas_primary_stroke?: string | null;
+    /** @nullable */
+    canvas_secondary_stroke?: string | null;
+    /** @nullable */
+    canvas_grid_stroke?: string | null;
+    /** @nullable */
+    canvas_performer_text_color?: string | null;
+    /** @nullable */
     active_revision_id?: number | null;
     revisions?: GetApiEditorV1ProductionsId200ProductionRevisionsItem[];
     ensemble?: GetApiEditorV1ProductionsId200ProductionEnsemble;

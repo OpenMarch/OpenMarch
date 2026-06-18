@@ -2,6 +2,37 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { uploadDatabaseToServer } from "../upload-service";
 import type { DB } from "../../../../global/database/db";
 
+const fieldPropertiesJson = () =>
+    JSON.stringify({
+        name: "Test Field",
+        xCheckpoints: [
+            { id: "left", name: "Left", stepsFromCenterFront: -8 },
+            { id: "right", name: "Right", stepsFromCenterFront: 8 },
+        ],
+        yCheckpoints: [
+            { id: "front", name: "Front", stepsFromCenterFront: 0 },
+            { id: "back", name: "Back", stepsFromCenterFront: 8 },
+        ],
+        theme: {
+            primaryStroke: { r: 1, g: 2, b: 3, a: 0.4 },
+            secondaryStroke: { r: 5, g: 6, b: 7, a: 0.8 },
+            tertiaryStroke: { r: 9, g: 10, b: 11, a: 0.12 },
+            background: { r: 13, g: 14, b: 15, a: 0.16 },
+            fieldLabel: { r: 17, g: 18, b: 19, a: 0.2 },
+            externalLabel: { r: 21, g: 22, b: 23, a: 0.24 },
+            previousPath: { r: 25, g: 26, b: 27, a: 0.28 },
+            nextPath: { r: 29, g: 30, b: 31, a: 0.32 },
+            shape: { r: 33, g: 34, b: 35, a: 0.36 },
+            shapeType: "circle",
+            tempPath: { r: 37, g: 38, b: 39, a: 0.4 },
+            defaultMarcher: {
+                fill: { r: 41, g: 42, b: 43, a: 0.44 },
+                outline: { r: 45, g: 46, b: 47, a: 0.48 },
+                label: { r: 49, g: 50, b: 51, a: 0.52 },
+            },
+        },
+    });
+
 const FAKE_GZIPPED_BLOB = new Uint8Array([0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00]);
 
 const workspaceJson = (otmProductionId?: number) =>
@@ -17,8 +48,6 @@ const workspaceJson = (otmProductionId?: number) =>
 
 const mockToCompressedOpenMarchBytes = vi.fn();
 const mockCreateRevision = vi.fn();
-const mockPatchPerformerLabels = vi.fn();
-const mockPatchSectionPrefixMap = vi.fn();
 
 vi.mock("../dots-to-om", () => ({
     toCompressedOpenMarchBytes: (db: unknown) =>
@@ -32,28 +61,18 @@ vi.mock("@/api/generated/production-revisions/production-revisions", () => ({
     ) => mockCreateRevision(productionId, body),
 }));
 
-vi.mock("@/api/generated/performer-labels/performer-labels", () => ({
-    patchApiEditorV1EnsemblesEnsembleIdPerformerLabels: (
-        ensembleId: number,
-        body: unknown,
-    ) => mockPatchPerformerLabels(ensembleId, body),
-}));
-
-vi.mock("@/api/generated/section-prefix-map/section-prefix-map", () => ({
-    patchApiEditorV1EnsemblesEnsembleIdSectionPrefixMap: (
-        ensembleId: number,
-        body: unknown,
-    ) => mockPatchSectionPrefixMap(ensembleId, body),
-}));
-
 function fakeDb({
     workspaceFindFirst,
     marchersFindMany,
+    fieldPropertiesFindFirst = async () => ({
+        json_data: fieldPropertiesJson(),
+    }),
 }: {
     workspaceFindFirst: () => Promise<{ json_data: string } | null>;
     marchersFindMany: () => Promise<
         { section: string | null; drill_prefix: string; drill_order: number }[]
     >;
+    fieldPropertiesFindFirst?: () => Promise<{ json_data: string } | null>;
 }) {
     return {
         query: {
@@ -62,6 +81,9 @@ function fakeDb({
             },
             marchers: {
                 findMany: vi.fn().mockImplementation(marchersFindMany),
+            },
+            field_properties: {
+                findFirst: vi.fn().mockImplementation(fieldPropertiesFindFirst),
             },
         },
     } as unknown as DB;
@@ -74,8 +96,6 @@ describe("upload-service", () => {
         mockCreateRevision.mockResolvedValue({
             revision: { ensemble_id: 456 },
         });
-        mockPatchPerformerLabels.mockResolvedValue({});
-        mockPatchSectionPrefixMap.mockResolvedValue({});
     });
 
     describe("uploadDatabaseToServer", () => {
@@ -92,7 +112,7 @@ describe("upload-service", () => {
             expect(mockCreateRevision).not.toHaveBeenCalled();
         });
 
-        it("uploads revision and patches performer labels", async () => {
+        it("uploads revision with labels, prefix map, and canvas colors", async () => {
             const db = fakeDb({
                 workspaceFindFirst: async () => ({
                     json_data: workspaceJson(123),
@@ -117,14 +137,21 @@ describe("upload-service", () => {
                     show_data: expect.any(Blob),
                     set_active: true,
                     title: "My Title",
+                    labels: ["T1", "B1"],
+                    prefix_map: JSON.stringify({
+                        T: "Trumpet",
+                        B: "Trombone",
+                    }),
+                    canvas_background_color: "rgba(13, 14, 15, 0.16)",
+                    canvas_primary_stroke: "rgba(1, 2, 3, 0.4)",
+                    canvas_secondary_stroke: "rgba(5, 6, 7, 0.8)",
+                    canvas_grid_stroke: "rgba(9, 10, 11, 0.12)",
+                    canvas_performer_text_color: "rgba(49, 50, 51, 0.52)",
                 }),
             );
-            expect(mockPatchPerformerLabels).toHaveBeenCalledWith(456, {
-                labels: ["T1", "B1"],
-            });
         });
 
-        it("patches section prefix map with most common sections per prefix", async () => {
+        it("includes most common section per prefix in prefix_map", async () => {
             const db = fakeDb({
                 workspaceFindFirst: async () => ({
                     json_data: workspaceJson(123),
@@ -141,12 +168,15 @@ describe("upload-service", () => {
 
             await uploadDatabaseToServer(db);
 
-            expect(mockPatchSectionPrefixMap).toHaveBeenCalledWith(456, {
-                prefix_map: {
-                    T: "Trumpet",
-                    C: "Clarinet",
-                },
-            });
+            expect(mockCreateRevision).toHaveBeenCalledWith(
+                123,
+                expect.objectContaining({
+                    prefix_map: JSON.stringify({
+                        T: "Trumpet",
+                        C: "Clarinet",
+                    }),
+                }),
+            );
         });
     });
 });
