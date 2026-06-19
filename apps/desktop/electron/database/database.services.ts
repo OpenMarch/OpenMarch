@@ -454,8 +454,9 @@ export async function insertAudioFile(
                   ? audioFile.data
                   : new Uint8Array(audioFile.data);
         const insertResult = insertStmt.run({
-            ...audioFile,
             data: dataForInsert,
+            path: audioFile.path,
+            nickname: audioFile.nickname ?? null,
             selected: 1,
             created_at,
             updated_at: created_at,
