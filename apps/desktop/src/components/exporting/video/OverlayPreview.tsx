@@ -8,6 +8,7 @@ import {
     OverlayRect,
     OverlayState,
 } from "./videoOverlay";
+import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
 
 const MIN_SCALE = 0.5;
 const MAX_SCALE = 3;
@@ -42,11 +43,13 @@ export default function OverlayPreview({
     options,
     placement,
     onPlacementChange,
+    videoTheme,
 }: {
     state: OverlayState;
     options: OverlayOptions;
     placement: OverlayPlacement;
     onPlacementChange: (placement: OverlayPlacement) => void;
+    videoTheme: VideoTheme;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rectRef = useRef<OverlayRect | null>(null);
@@ -54,8 +57,8 @@ export default function OverlayPreview({
     const [logo, setLogo] = useState<HTMLImageElement | null>(null);
 
     useEffect(() => {
-        void loadBrandingLogo().then(setLogo);
-    }, []);
+        void loadBrandingLogo(videoTheme).then(setLogo);
+    }, [videoTheme]);
 
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
@@ -70,16 +73,34 @@ export default function OverlayPreview({
         canvas.height = height * dpr;
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-        // Mock field background with yard lines
-        ctx.fillStyle = "#1d2a1d";
+        const colors = getVideoThemeColors(videoTheme);
+        ctx.fillStyle = colors.bg1;
         ctx.fillRect(0, 0, width, height);
+
+        // Mock field centered with letterbox margins matching export framing
+        const fieldAspect = 16 / 9;
+        const canvasAspect = width / height;
+        let fieldWidth: number;
+        let fieldHeight: number;
+        if (canvasAspect > fieldAspect) {
+            fieldHeight = height * 0.82;
+            fieldWidth = fieldHeight * fieldAspect;
+        } else {
+            fieldWidth = width * 0.82;
+            fieldHeight = fieldWidth / fieldAspect;
+        }
+        const fieldX = (width - fieldWidth) / 2;
+        const fieldY = (height - fieldHeight) / 2;
+
+        ctx.fillStyle = "#1d2a1d";
+        ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
         ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
         ctx.lineWidth = 1;
         for (let i = 1; i < 10; i++) {
-            const x = (width / 10) * i;
+            const x = fieldX + (fieldWidth / 10) * i;
             ctx.beginPath();
-            ctx.moveTo(x, 0);
-            ctx.lineTo(x, height);
+            ctx.moveTo(x, fieldY);
+            ctx.lineTo(x, fieldY + fieldHeight);
             ctx.stroke();
         }
 
@@ -90,8 +111,9 @@ export default function OverlayPreview({
             placement,
             width,
             height,
+            videoTheme,
         );
-        drawBranding(ctx, logo, width, height);
+        drawBranding(ctx, logo, width, height, videoTheme);
 
         // Resize handles
         const rect = rectRef.current;
@@ -110,7 +132,7 @@ export default function OverlayPreview({
                 ctx.stroke();
             }
         }
-    }, [state, options, placement, logo]);
+    }, [state, options, placement, logo, videoTheme]);
 
     useEffect(() => {
         draw();

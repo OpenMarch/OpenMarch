@@ -259,6 +259,7 @@
         "pageNotFound": "Erro: Página não encontrada para a página do caminhante {id}",
         "pdfExportFailed": "Falha na exportação de PDF: {error}",
         "preview": "Pré-visualização",
+        "videoBackground": "Fundo do vídeo",
         "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Layout de quarto de página",
         "roundingDenominator": "Arredondamento de coordenadas:",

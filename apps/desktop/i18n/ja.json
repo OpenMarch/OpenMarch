@@ -259,6 +259,7 @@
         "pageNotFound": "エラー : ページが見つかりません マーチャーページ {id}",
         "pdfExportFailed": "PDFエクスポートに失敗しました: {error}",
         "preview": "プレビュー",
+        "videoBackground": "動画の背景",
         "processingPage": "{pageNumber} ページ中 {totalPages} ページを 処理しています: {pageName}",
         "quarterPageLayout": "四分の一 ページ レイアウト",
         "roundingDenominator": "座標 丸め:",

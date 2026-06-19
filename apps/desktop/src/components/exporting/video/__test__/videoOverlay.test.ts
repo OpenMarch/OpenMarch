@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     buildOverlaySegments,
     computeFormatBounds,
+    drawOverlay,
     formatClock,
     formatClockRange,
     OverlayOptions,
@@ -9,6 +10,7 @@ import {
     padInteger,
     padIntegerSpaced,
 } from "../videoOverlay";
+import { getVideoThemeColors } from "../videoTheme";
 import Page from "@/global/classes/Page";
 import Measure from "@/global/classes/Measure";
 import Beat from "@/global/classes/Beat";
@@ -369,5 +371,81 @@ describe("padInteger helpers", () => {
 
     it("space-pads integers", () => {
         expect(padIntegerSpaced(60, 3)).toBe(" 60");
+    });
+});
+
+describe("getVideoThemeColors", () => {
+    it("returns light theme bg-1 and dark text tokens", () => {
+        const light = getVideoThemeColors("light");
+
+        expect(light.bg1).toBe("rgb(236, 235, 240)");
+        expect(light.overlayText).toContain("32, 32, 32");
+        expect(light.brandingLogoHex).toBe("#202020");
+    });
+
+    it("returns dark theme bg-1 and light text tokens", () => {
+        const dark = getVideoThemeColors("dark");
+
+        expect(dark.bg1).toBe("rgb(15, 14, 19)");
+        expect(dark.overlayText).toContain("255, 255, 255");
+        expect(dark.brandingLogoHex).toBe("#ffffff");
+    });
+
+    it("uses different overlay backgrounds per theme", () => {
+        const light = getVideoThemeColors("light");
+        const dark = getVideoThemeColors("dark");
+
+        expect(light.overlayBg).not.toBe(dark.overlayBg);
+        expect(light.brandingBg).not.toBe(dark.brandingBg);
+    });
+});
+
+describe("drawOverlay theme", () => {
+    const overlayOptions: OverlayOptions = {
+        showSet: true,
+        showCounts: true,
+        showMeasures: false,
+        showTempo: false,
+        showClock: false,
+        setLabel: "Set",
+        countLabel: "Count",
+    };
+
+    it("uses theme-specific overlay background colors", () => {
+        const state = new OverlayTimeline(pages, measures).getState(0);
+        const canvas = document.createElement("canvas");
+        canvas.width = 640;
+        canvas.height = 360;
+        const ctx = canvas.getContext("2d")!;
+
+        const fillStyles: string[] = [];
+        const originalFill = ctx.fill.bind(ctx);
+        ctx.fill = (...args) => {
+            fillStyles.push(ctx.fillStyle);
+            return originalFill(...args);
+        };
+
+        drawOverlay(
+            ctx,
+            state,
+            overlayOptions,
+            { x: 0.02, y: 0.93, scale: 1, widthFraction: 0.75 },
+            640,
+            360,
+            "light",
+        );
+        drawOverlay(
+            ctx,
+            state,
+            overlayOptions,
+            { x: 0.02, y: 0.93, scale: 1, widthFraction: 0.75 },
+            640,
+            360,
+            "dark",
+        );
+
+        expect(fillStyles[0]).toContain("236, 235, 240");
+        expect(fillStyles[1]).toContain("15, 14, 19");
+        expect(fillStyles[0]).not.toBe(fillStyles[1]);
     });
 });

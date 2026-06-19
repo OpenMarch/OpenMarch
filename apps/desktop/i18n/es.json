@@ -259,6 +259,7 @@
         "pageNotFound": "Error: Página no encontrada para la página {id}",
         "pdfExportFailed": "Exportación de PDF fallida: {error}",
         "preview": "Vista previa",
+        "videoBackground": "Fondo del video",
         "processingPage": "Procesando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Distribución de un cuarto de página",
         "roundingDenominator": "Redondeo de coordenadas:",

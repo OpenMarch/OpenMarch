@@ -283,6 +283,7 @@
         "page": "Page: {status}",
         "video": "Video",
         "videoAudioTrack": "Audio track: {name}",
+        "videoBackground": "Video background",
         "videoExportFailed": "Video export failed: {error}",
         "videoExportSuccess": "Successfully exported video!",
         "videoFrameRate": "Frame rate",

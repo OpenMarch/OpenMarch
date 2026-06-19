@@ -12,7 +12,7 @@ import {
     type AudioCodec,
     type VideoCodec,
 } from "mediabunny";
-import { FieldProperties, rgbaToString } from "@openmarch/core";
+import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
@@ -32,6 +32,7 @@ import {
     OverlayPlacement,
     OverlayTimeline,
 } from "./videoOverlay";
+import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
 
 const FIELD_MARGIN_PX = 40;
 const KEYFRAME_INTERVAL_SECONDS = 2;
@@ -55,6 +56,8 @@ export interface VideoExportArgs {
     width: number;
     height: number;
     fps: number;
+    /** App light/dark theme for letterbox background and overlays */
+    videoTheme: VideoTheme;
     /** When set, an info HUD (set, counts, measure, etc.) is drawn on each frame */
     overlay?: {
         options: OverlayOptions;
@@ -234,7 +237,8 @@ export async function exportVideo(
             (width - fieldProperties.width * scale) / 2,
             (height - fieldProperties.height * scale) / 2,
         ];
-        canvas.backgroundColor = rgbaToString(fieldProperties.theme.background);
+        const themeColors = getVideoThemeColors(args.videoTheme);
+        canvas.backgroundColor = themeColors.bg1;
 
         // Composition canvas guarantees the exact output resolution
         // regardless of Fabric's backing-store scaling
@@ -295,7 +299,7 @@ export async function exportVideo(
         const overlayTimeline = args.overlay
             ? new OverlayTimeline(sortedPages, args.overlay.measures)
             : null;
-        const brandingLogo = await loadBrandingLogo();
+        const brandingLogo = await loadBrandingLogo(args.videoTheme);
 
         let nextAudioSlice = 0;
         const flushAudioUntil = async (seconds: number) => {
@@ -328,6 +332,8 @@ export async function exportVideo(
             setMarcherPositionsAtTime(
                 Math.min(timestampSeconds * 1000, durationSeconds * 1000 - 1),
             );
+            frameContext.fillStyle = themeColors.bg1;
+            frameContext.fillRect(0, 0, width, height);
             canvas.renderAll();
             frameContext.drawImage(canvas.getElement(), 0, 0, width, height);
             if (overlayTimeline && args.overlay) {
@@ -338,9 +344,16 @@ export async function exportVideo(
                     args.overlay.placement,
                     width,
                     height,
+                    args.videoTheme,
                 );
             }
-            drawBranding(frameContext, brandingLogo, width, height);
+            drawBranding(
+                frameContext,
+                brandingLogo,
+                width,
+                height,
+                args.videoTheme,
+            );
 
             await videoSource.add(timestampSeconds, 1 / fps, {
                 keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,
