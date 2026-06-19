@@ -1,5 +1,5 @@
 /* eslint-disable no-control-regex */
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactDOMServer from "react-dom/server";
 import MarcherCoordinateSheetPreview, {
     StaticMarcherCoordinateSheet,
@@ -34,6 +34,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTriggerButton,
+    Slider,
 } from "@openmarch/ui";
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
@@ -60,6 +61,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
     combineMarcherTimelines,
     coordinateDataQueryOptions,
+    useManyCoordinateData,
 } from "@/hooks/queries/useCoordinateData";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioFile from "@/global/classes/AudioFile";
@@ -72,6 +74,17 @@ import {
 } from "./video/videoOverlay";
 import OverlayPreview from "./video/OverlayPreview";
 import type { VideoTheme } from "./video/videoTheme";
+import {
+    clampFieldFraming,
+    createVideoRenderContext,
+    DEFAULT_FIELD_FRAMING,
+    MAX_FIELD_OFFSET,
+    MAX_FIELD_SCALE,
+    MIN_FIELD_OFFSET,
+    MIN_FIELD_SCALE,
+    type FieldFraming,
+    type VideoRenderContext,
+} from "./video/videoFrameRenderer";
 import { useTheme } from "@/context/ThemeContext";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
@@ -1215,11 +1228,104 @@ function VideoExport() {
     const [showTempo, setShowTempo] = useState(false);
     const [showClock, setShowClock] = useState(true);
     const [placement, setPlacement] = useState(DEFAULT_OVERLAY_PLACEMENT);
+    const [fieldFraming, setFieldFraming] = useState<FieldFraming>(
+        DEFAULT_FIELD_FRAMING,
+    );
+    const [fieldRenderContext, setFieldRenderContext] =
+        useState<VideoRenderContext | null>(null);
+    const [backgroundImage, setBackgroundImage] = useState<
+        HTMLImageElement | undefined
+    >();
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
     const isCancelled = useRef(false);
     const t = tolgee.t;
+
+    const { data: marcherTimelines, isPending: timelinesPending } =
+        useManyCoordinateData(pages);
+
+    const durationSeconds = useMemo(() => {
+        if (pages.length === 0) return 0;
+        const lastPage = pages[pages.length - 1];
+        return lastPage.timestamp + lastPage.duration;
+    }, [pages]);
+
+    useEffect(() => {
+        let cancelled = false;
+        void getFieldPropertiesImageElement().then((image) => {
+            if (!cancelled) setBackgroundImage(image);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
+    useEffect(() => {
+        let cancelled = false;
+
+        async function setupPreviewContext() {
+            setFieldRenderContext((prev) => {
+                prev?.dispose();
+                return null;
+            });
+
+            if (
+                !fieldProperties ||
+                !marchers?.length ||
+                pages.length < 1 ||
+                timelinesPending
+            ) {
+                return;
+            }
+
+            try {
+                const ctx = await createVideoRenderContext({
+                    fieldProperties,
+                    sortedPages: pages,
+                    marchers,
+                    marcherTimelines,
+                    sectionAppearances,
+                    backgroundImage,
+                    gridLines: uiSettings.gridLines,
+                    halfLines: uiSettings.halfLines,
+                });
+                if (cancelled) {
+                    ctx.dispose();
+                    return;
+                }
+                setFieldRenderContext(ctx);
+            } catch (error) {
+                console.error("Failed to initialize video preview:", error);
+            }
+        }
+
+        void setupPreviewContext();
+
+        return () => {
+            cancelled = true;
+            setFieldRenderContext((prev) => {
+                prev?.dispose();
+                return null;
+            });
+        };
+    }, [
+        fieldProperties,
+        marchers,
+        pages,
+        marcherTimelines,
+        timelinesPending,
+        sectionAppearances,
+        backgroundImage,
+        uiSettings.gridLines,
+        uiSettings.halfLines,
+    ]);
+
+    const previewLoading =
+        timelinesPending ||
+        !fieldRenderContext ||
+        !fieldProperties ||
+        !marchers?.length;
 
     const overlayOptions: OverlayOptions = useMemo(
         () => ({
@@ -1239,12 +1345,10 @@ function VideoExport() {
         overlayOptions.showTempo ||
         overlayOptions.showClock;
 
-    // Sample a moment one third into the show so the preview shows real data
+    // First frame of the show for an accurate field + overlay preview
     const previewState: OverlayState = useMemo(() => {
         if (pages.length > 0) {
-            const lastPage = pages[pages.length - 1];
-            const total = lastPage.timestamp + lastPage.duration;
-            return new OverlayTimeline(pages, measures).getState(total / 3);
+            return new OverlayTimeline(pages, measures).getState(0);
         }
         return {
             previousSetName: "4",
@@ -1254,7 +1358,7 @@ function VideoExport() {
             measureNumber: 23,
             rehearsalMark: "A",
             tempoBpm: 144,
-            timeSeconds: 83,
+            timeSeconds: 0,
             totalSeconds: 405,
             formatBounds: {
                 countDigits: 2,
@@ -1322,6 +1426,7 @@ function VideoExport() {
                 height,
                 fps: frameRate,
                 videoTheme,
+                fieldFraming,
                 overlay: overlayEnabled
                     ? { measures, options: overlayOptions, placement }
                     : undefined,
@@ -1387,6 +1492,7 @@ function VideoExport() {
         overlayEnabled,
         overlayOptions,
         placement,
+        fieldFraming,
     ]);
 
     return (
@@ -1488,8 +1594,95 @@ function VideoExport() {
                     placement={placement}
                     onPlacementChange={setPlacement}
                     videoTheme={videoTheme}
+                    fieldRenderContext={fieldRenderContext}
+                    fieldFraming={fieldFraming}
+                    onFieldFramingChange={setFieldFraming}
+                    previewTimeSeconds={0}
+                    durationSeconds={Math.max(durationSeconds, 0.001)}
+                    isLoading={previewLoading}
+                    loadingLabel={t("exportCoordinates.videoPreviewLoading")}
                 />
-                {overlayEnabled && (
+                <div className="flex flex-col gap-12">
+                    <h6 className="text-sub text-text/80">
+                        <T keyName="exportCoordinates.videoFieldFraming" />
+                    </h6>
+                    <div className="grid grid-cols-[auto_1fr_auto] items-center gap-x-16 gap-y-12">
+                        <span className="text-body whitespace-nowrap">
+                            <T keyName="exportCoordinates.videoFieldScale" />
+                        </span>
+                        <Slider
+                            value={[fieldFraming.scale]}
+                            min={MIN_FIELD_SCALE}
+                            max={MAX_FIELD_SCALE}
+                            step={0.05}
+                            onValueChange={([scale]) =>
+                                setFieldFraming(
+                                    clampFieldFraming({
+                                        ...fieldFraming,
+                                        scale,
+                                    }),
+                                )
+                            }
+                            className="relative flex h-5 w-full touch-none items-center select-none"
+                        />
+                        <span className="text-sub text-text/60 w-[3rem] text-right tabular-nums">
+                            {fieldFraming.scale.toFixed(2)}×
+                        </span>
+
+                        <span className="text-body whitespace-nowrap">
+                            <T keyName="exportCoordinates.videoFieldOffsetX" />
+                        </span>
+                        <Slider
+                            value={[fieldFraming.offsetX]}
+                            min={MIN_FIELD_OFFSET}
+                            max={MAX_FIELD_OFFSET}
+                            step={0.01}
+                            onValueChange={([offsetX]) =>
+                                setFieldFraming(
+                                    clampFieldFraming({
+                                        ...fieldFraming,
+                                        offsetX,
+                                    }),
+                                )
+                            }
+                            className="relative flex h-5 w-full touch-none items-center select-none"
+                        />
+                        <span className="text-sub text-text/60 w-[3rem] text-right tabular-nums">
+                            {fieldFraming.offsetX.toFixed(2)}
+                        </span>
+
+                        <span className="text-body whitespace-nowrap">
+                            <T keyName="exportCoordinates.videoFieldOffsetY" />
+                        </span>
+                        <Slider
+                            value={[fieldFraming.offsetY]}
+                            min={MIN_FIELD_OFFSET}
+                            max={MAX_FIELD_OFFSET}
+                            step={0.01}
+                            onValueChange={([offsetY]) =>
+                                setFieldFraming(
+                                    clampFieldFraming({
+                                        ...fieldFraming,
+                                        offsetY,
+                                    }),
+                                )
+                            }
+                            className="relative flex h-5 w-full touch-none items-center select-none"
+                        />
+                        <span className="text-sub text-text/60 w-[3rem] text-right tabular-nums">
+                            {fieldFraming.offsetY.toFixed(2)}
+                        </span>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        className="w-fit"
+                        onClick={() => setFieldFraming(DEFAULT_FIELD_FRAMING)}
+                    >
+                        <T keyName="exportCoordinates.videoFieldResetFraming" />
+                    </Button>
+                </div>
+                {(overlayEnabled || !previewLoading) && (
                     <p className="text-sub text-text/60">
                         <T keyName="exportCoordinates.videoOverlayPreviewHint" />
                     </p>

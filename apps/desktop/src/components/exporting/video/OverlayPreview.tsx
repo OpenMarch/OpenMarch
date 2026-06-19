@@ -1,41 +1,46 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
-    drawBranding,
-    drawOverlay,
     loadBrandingLogo,
     OverlayOptions,
     OverlayPlacement,
     OverlayRect,
     OverlayState,
 } from "./videoOverlay";
+import {
+    clampFieldFraming,
+    renderVideoFrame,
+    type FieldFraming,
+    type VideoRenderContext,
+} from "./videoFrameRenderer";
 import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
 
-const MIN_SCALE = 0.5;
-const MAX_SCALE = 3;
+const MIN_OVERLAY_SCALE = 0.5;
+const MAX_OVERLAY_SCALE = 3;
 const MIN_WIDTH_FRACTION = 0.12;
 const HANDLE_RADIUS = 5;
 const HANDLE_HIT_RADIUS = 12;
+const WHEEL_ZOOM_FACTOR = 1.05;
 
-type DragMode = "move" | "width" | "scale";
+type DragMode = "move" | "width" | "scale" | "fieldPan";
 
 interface DragContext {
     mode: DragMode;
-    /** Pointer offset from the box origin when the drag started */
+    /** Pointer offset from the box origin when the overlay drag started */
     offsetX: number;
     offsetY: number;
     startRect: OverlayRect;
     startScale: number;
+    /** Last pointer position for field pan */
+    lastX: number;
+    lastY: number;
 }
 
 /**
- * WYSIWYG preview of the video overlay. Renders with the same draw functions
- * as the export itself on a mock field, so what the user sees is exactly
- * what ends up in the video.
+ * WYSIWYG preview of the video export frame. Renders the real field and
+ * overlay with the same draw functions as export.
  *
- * - Drag the box to move it
- * - Drag the right-edge handle to change the width (controls row wrapping,
- *   wide enough collapses everything onto a single row)
- * - Drag the corner handle to make it bigger or smaller
+ * - Drag the overlay box to move it; side/corner handles resize it
+ * - Drag empty canvas to pan the field; scroll wheel to zoom the field
  */
 // eslint-disable-next-line max-lines-per-function
 export default function OverlayPreview({
@@ -44,16 +49,32 @@ export default function OverlayPreview({
     placement,
     onPlacementChange,
     videoTheme,
+    fieldRenderContext,
+    fieldFraming,
+    onFieldFramingChange,
+    previewTimeSeconds,
+    durationSeconds,
+    isLoading = false,
+    loadingLabel,
 }: {
     state: OverlayState;
     options: OverlayOptions;
     placement: OverlayPlacement;
     onPlacementChange: (placement: OverlayPlacement) => void;
     videoTheme: VideoTheme;
+    fieldRenderContext: VideoRenderContext | null;
+    fieldFraming: FieldFraming;
+    onFieldFramingChange: (framing: FieldFraming) => void;
+    previewTimeSeconds: number;
+    durationSeconds: number;
+    isLoading?: boolean;
+    loadingLabel?: string;
 }) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rectRef = useRef<OverlayRect | null>(null);
     const dragRef = useRef<DragContext | null>(null);
+    const fieldFramingRef = useRef(fieldFraming);
+    fieldFramingRef.current = fieldFraming;
     const [logo, setLogo] = useState<HTMLImageElement | null>(null);
 
     useEffect(() => {
@@ -77,45 +98,32 @@ export default function OverlayPreview({
         ctx.fillStyle = colors.bg1;
         ctx.fillRect(0, 0, width, height);
 
-        // Mock field centered with letterbox margins matching export framing
-        const fieldAspect = 16 / 9;
-        const canvasAspect = width / height;
-        let fieldWidth: number;
-        let fieldHeight: number;
-        if (canvasAspect > fieldAspect) {
-            fieldHeight = height * 0.82;
-            fieldWidth = fieldHeight * fieldAspect;
+        if (fieldRenderContext && !isLoading) {
+            rectRef.current = renderVideoFrame({
+                ctx,
+                context: fieldRenderContext,
+                timeSeconds: previewTimeSeconds,
+                durationSeconds,
+                width,
+                height,
+                videoTheme,
+                fieldFraming,
+                overlayState: state,
+                overlayOptions: options,
+                overlayPlacement: placement,
+                brandingLogo: logo,
+            });
         } else {
-            fieldWidth = width * 0.82;
-            fieldHeight = fieldWidth / fieldAspect;
-        }
-        const fieldX = (width - fieldWidth) / 2;
-        const fieldY = (height - fieldHeight) / 2;
-
-        ctx.fillStyle = "#1d2a1d";
-        ctx.fillRect(fieldX, fieldY, fieldWidth, fieldHeight);
-        ctx.strokeStyle = "rgba(255, 255, 255, 0.15)";
-        ctx.lineWidth = 1;
-        for (let i = 1; i < 10; i++) {
-            const x = fieldX + (fieldWidth / 10) * i;
-            ctx.beginPath();
-            ctx.moveTo(x, fieldY);
-            ctx.lineTo(x, fieldY + fieldHeight);
-            ctx.stroke();
+            rectRef.current = null;
+            if (loadingLabel) {
+                ctx.fillStyle = colors.overlayText;
+                ctx.font = "14px system-ui, sans-serif";
+                ctx.textAlign = "center";
+                ctx.textBaseline = "middle";
+                ctx.fillText(loadingLabel, width / 2, height / 2);
+            }
         }
 
-        rectRef.current = drawOverlay(
-            ctx,
-            state,
-            options,
-            placement,
-            width,
-            height,
-            videoTheme,
-        );
-        drawBranding(ctx, logo, width, height, videoTheme);
-
-        // Resize handles
         const rect = rectRef.current;
         if (rect) {
             ctx.fillStyle = "#ffffff";
@@ -132,7 +140,19 @@ export default function OverlayPreview({
                 ctx.stroke();
             }
         }
-    }, [state, options, placement, logo, videoTheme]);
+    }, [
+        state,
+        options,
+        placement,
+        logo,
+        videoTheme,
+        fieldRenderContext,
+        fieldFraming,
+        previewTimeSeconds,
+        durationSeconds,
+        isLoading,
+        loadingLabel,
+    ]);
 
     useEffect(() => {
         draw();
@@ -172,14 +192,30 @@ export default function OverlayPreview({
         const { x, y } = pointerPosition(event);
         const mode = hitTest(x, y);
         const rect = rectRef.current;
-        if (!mode || !rect) return;
-        dragRef.current = {
-            mode,
-            offsetX: x - rect.x,
-            offsetY: y - rect.y,
-            startRect: rect,
-            startScale: placement.scale,
-        };
+
+        if (mode && rect) {
+            dragRef.current = {
+                mode,
+                offsetX: x - rect.x,
+                offsetY: y - rect.y,
+                startRect: rect,
+                startScale: placement.scale,
+                lastX: x,
+                lastY: y,
+            };
+        } else if (fieldRenderContext && !isLoading) {
+            dragRef.current = {
+                mode: "fieldPan",
+                offsetX: 0,
+                offsetY: 0,
+                startRect: rect ?? { x: 0, y: 0, width: 0, height: 0 },
+                startScale: placement.scale,
+                lastX: x,
+                lastY: y,
+            };
+        } else {
+            return;
+        }
         event.currentTarget.setPointerCapture(event.pointerId);
     };
 
@@ -198,13 +234,28 @@ export default function OverlayPreview({
                       ? "ew-resize"
                       : mode === "scale"
                         ? "nwse-resize"
-                        : "default";
+                        : fieldRenderContext && !isLoading
+                          ? "grab"
+                          : "default";
             return;
         }
 
         const width = canvas.clientWidth;
         const height = canvas.clientHeight;
-        if (drag.mode === "move") {
+        if (drag.mode === "fieldPan") {
+            const dx = x - drag.lastX;
+            const dy = y - drag.lastY;
+            drag.lastX = x;
+            drag.lastY = y;
+            canvas.style.cursor = "grabbing";
+            onFieldFramingChange(
+                clampFieldFraming({
+                    ...fieldFraming,
+                    offsetX: fieldFraming.offsetX + dx / width,
+                    offsetY: fieldFraming.offsetY + dy / height,
+                }),
+            );
+        } else if (drag.mode === "move") {
             canvas.style.cursor = "grabbing";
             onPlacementChange({
                 ...placement,
@@ -227,8 +278,8 @@ export default function OverlayPreview({
             onPlacementChange({
                 ...placement,
                 scale: Math.min(
-                    Math.max(drag.startScale * ratio, MIN_SCALE),
-                    MAX_SCALE,
+                    Math.max(drag.startScale * ratio, MIN_OVERLAY_SCALE),
+                    MAX_OVERLAY_SCALE,
                 ),
             });
         }
@@ -238,6 +289,29 @@ export default function OverlayPreview({
         dragRef.current = null;
         event.currentTarget.releasePointerCapture(event.pointerId);
     };
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const handleWheel = (event: WheelEvent) => {
+            if (!fieldRenderContext || isLoading) return;
+            event.preventDefault();
+            event.stopPropagation();
+            const factor =
+                event.deltaY > 0 ? 1 / WHEEL_ZOOM_FACTOR : WHEEL_ZOOM_FACTOR;
+            const current = fieldFramingRef.current;
+            onFieldFramingChange(
+                clampFieldFraming({
+                    ...current,
+                    scale: current.scale * factor,
+                }),
+            );
+        };
+
+        canvas.addEventListener("wheel", handleWheel, { passive: false });
+        return () => canvas.removeEventListener("wheel", handleWheel);
+    }, [fieldRenderContext, isLoading, onFieldFramingChange]);
 
     return (
         <canvas

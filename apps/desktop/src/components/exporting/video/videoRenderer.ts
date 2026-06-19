@@ -16,25 +16,23 @@ import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
-import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
-import {
-    getCoordinatesAtTime,
-    type MarcherTimeline,
-} from "@/utilities/Keyframes";
-import { initializeCanvasForRendering } from "../utils/svg-generator";
+import { type MarcherTimeline } from "@/utilities/Keyframes";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
 import {
-    drawBranding,
-    drawOverlay,
     loadBrandingLogo,
     OverlayOptions,
     OverlayPlacement,
     OverlayTimeline,
 } from "./videoOverlay";
-import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
+import { type VideoTheme } from "./videoTheme";
+import {
+    createVideoRenderContext,
+    DEFAULT_FIELD_FRAMING,
+    type FieldFraming,
+    renderVideoFrame,
+} from "./videoFrameRenderer";
 
-const FIELD_MARGIN_PX = 40;
 const KEYFRAME_INTERVAL_SECONDS = 2;
 const AUDIO_SLICE_SECONDS = 1;
 
@@ -58,6 +56,8 @@ export interface VideoExportArgs {
     fps: number;
     /** App light/dark theme for letterbox background and overlays */
     videoTheme: VideoTheme;
+    /** Pan/zoom for the field within the frame */
+    fieldFraming?: FieldFraming;
     /** When set, an info HUD (set, counts, measure, etc.) is drawn on each frame */
     overlay?: {
         options: OverlayOptions;
@@ -182,6 +182,7 @@ export async function exportVideo(
         width,
         height,
         fps,
+        fieldFraming = DEFAULT_FIELD_FRAMING,
         onProgress,
         isCancelled = () => false,
     } = args;
@@ -200,7 +201,9 @@ export async function exportVideo(
     if (!filePath) return { state: "cancelled" };
 
     const totalFrames = Math.ceil(durationSeconds * fps);
-    let canvas: OpenMarchCanvas | undefined;
+    let renderContext: Awaited<
+        ReturnType<typeof createVideoRenderContext>
+    > | null = null;
 
     try {
         const { channels: audioSlices, sampleRate } = await prepareAudio(
@@ -209,39 +212,17 @@ export async function exportVideo(
             durationSeconds,
         );
 
-        // Off-screen canvas, scaled so the field (plus margin) fits the video
-        const initialized = await initializeCanvasForRendering({
+        renderContext = await createVideoRenderContext({
             fieldProperties,
             sortedPages,
             marchers: args.marchers,
+            marcherTimelines,
             sectionAppearances: args.sectionAppearances,
             backgroundImage: args.backgroundImage,
             gridLines: args.gridLines,
             halfLines: args.halfLines,
-            svgMargin: FIELD_MARGIN_PX,
         });
-        canvas = initialized.canvas;
-        const canvasMarchersById = initialized.canvasMarchersById;
 
-        canvas.enableRetinaScaling = false;
-        canvas.setDimensions({ width, height });
-        const scale = Math.min(
-            width / (fieldProperties.width + FIELD_MARGIN_PX * 2),
-            height / (fieldProperties.height + FIELD_MARGIN_PX * 2),
-        );
-        canvas.viewportTransform = [
-            scale,
-            0,
-            0,
-            scale,
-            (width - fieldProperties.width * scale) / 2,
-            (height - fieldProperties.height * scale) / 2,
-        ];
-        const themeColors = getVideoThemeColors(args.videoTheme);
-        canvas.backgroundColor = themeColors.bg1;
-
-        // Composition canvas guarantees the exact output resolution
-        // regardless of Fabric's backing-store scaling
         const frameCanvas = document.createElement("canvas");
         frameCanvas.width = width;
         frameCanvas.height = height;
@@ -284,18 +265,6 @@ export async function exportVideo(
         });
         await output.start();
 
-        const setMarcherPositionsAtTime = (timeMilliseconds: number) => {
-            for (const [marcherId, canvasMarcher] of Object.entries(
-                canvasMarchersById,
-            )) {
-                const timeline = marcherTimelines.get(Number(marcherId));
-                if (!timeline) continue;
-                const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
-                // Past the last keyframe, marchers hold their final position
-                if (coords) canvasMarcher.setLiveCoordinates(coords);
-            }
-        };
-
         const overlayTimeline = args.overlay
             ? new OverlayTimeline(sortedPages, args.overlay.measures)
             : null;
@@ -327,33 +296,23 @@ export async function exportVideo(
             const timestampSeconds = frame / fps;
             await flushAudioUntil(timestampSeconds);
 
-            // Clamp inside the keyframe range so the final frames hold the
-            // last formation instead of failing interpolation
-            setMarcherPositionsAtTime(
-                Math.min(timestampSeconds * 1000, durationSeconds * 1000 - 1),
-            );
-            frameContext.fillStyle = themeColors.bg1;
-            frameContext.fillRect(0, 0, width, height);
-            canvas.renderAll();
-            frameContext.drawImage(canvas.getElement(), 0, 0, width, height);
-            if (overlayTimeline && args.overlay) {
-                drawOverlay(
-                    frameContext,
-                    overlayTimeline.getState(timestampSeconds),
-                    args.overlay.options,
-                    args.overlay.placement,
-                    width,
-                    height,
-                    args.videoTheme,
-                );
-            }
-            drawBranding(
-                frameContext,
-                brandingLogo,
+            renderVideoFrame({
+                ctx: frameContext,
+                context: renderContext,
+                timeSeconds: timestampSeconds,
+                durationSeconds,
                 width,
                 height,
-                args.videoTheme,
-            );
+                videoTheme: args.videoTheme,
+                fieldFraming,
+                overlayState:
+                    overlayTimeline && args.overlay
+                        ? overlayTimeline.getState(timestampSeconds)
+                        : undefined,
+                overlayOptions: args.overlay?.options,
+                overlayPlacement: args.overlay?.placement,
+                brandingLogo,
+            });
 
             await videoSource.add(timestampSeconds, 1 / fps, {
                 keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,
@@ -370,6 +329,6 @@ export async function exportVideo(
         await window.electron.export.videoEnd(false).catch(() => undefined);
         throw error;
     } finally {
-        canvas?.dispose();
+        renderContext?.dispose();
     }
 }
