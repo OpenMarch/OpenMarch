@@ -19,8 +19,14 @@ import {
     DialogTrigger,
     TooltipClassName,
 } from "@openmarch/ui";
-import { ArrowSquareOutIcon, InfoIcon } from "@phosphor-icons/react";
+import {
+    ArrowSquareOutIcon,
+    InfoIcon,
+    MoonIcon,
+    SunIcon,
+} from "@phosphor-icons/react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import * as ToggleGroup from "@radix-ui/react-toggle-group";
 import {
     Button,
     Checkbox,
@@ -65,6 +71,8 @@ import {
     OverlayTimeline,
 } from "./video/videoOverlay";
 import OverlayPreview from "./video/OverlayPreview";
+import type { VideoTheme } from "./video/videoTheme";
+import { useTheme } from "@/context/ThemeContext";
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -1194,10 +1202,14 @@ function VideoExport() {
             ) ?? null,
     });
     const { uiSettings } = useUiSettingsStore();
+    const { theme } = useTheme();
     const queryClient = useQueryClient();
 
     const [resolution, setResolution] = useState("1080p");
     const [frameRate, setFrameRate] = useState(60);
+    const [videoTheme, setVideoTheme] = useState<VideoTheme>(() =>
+        theme === "light" ? "light" : "dark",
+    );
     const [showSetCounts, setShowSetCounts] = useState(true);
     const [showMeasures, setShowMeasures] = useState(true);
     const [showTempo, setShowTempo] = useState(false);
@@ -1244,6 +1256,14 @@ function VideoExport() {
             tempoBpm: 144,
             timeSeconds: 83,
             totalSeconds: 405,
+            formatBounds: {
+                countDigits: 2,
+                measureDigits: 2,
+                clockMinuteDigits: 1,
+                tempoDigits: 3,
+                setNumberDigits: 1,
+                setSuffixChars: 0,
+            },
         };
     }, [pages, measures]);
 
@@ -1301,6 +1321,7 @@ function VideoExport() {
                 width,
                 height,
                 fps: frameRate,
+                videoTheme,
                 overlay: overlayEnabled
                     ? { measures, options: overlayOptions, placement }
                     : undefined,
@@ -1323,15 +1344,7 @@ function VideoExport() {
                         onClick={() =>
                             window.electron.openExportDirectory(result.path)
                         }
-                        style={{
-                            color: "#3b82f6",
-                            textDecoration: "underline",
-                            background: "none",
-                            border: "none",
-                            padding: 0,
-                            font: "inherit",
-                            cursor: "pointer",
-                        }}
+                        className="text-accent cursor-pointer p-0 underline"
                     >
                         <T keyName="exportCoordinates.videoOpenFile" />
                     </button>
@@ -1369,6 +1382,7 @@ function VideoExport() {
         uiSettings.halfLines,
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
+        videoTheme,
         measures,
         overlayEnabled,
         overlayOptions,
@@ -1429,6 +1443,38 @@ function VideoExport() {
                         </SelectContent>
                     </Select>
                 </Form.Field>
+
+                <Form.Field
+                    name="videoTheme"
+                    className="col-span-2 flex w-full items-center justify-between gap-12"
+                >
+                    <Form.Label className="text-body">
+                        <T keyName="exportCoordinates.videoBackground" />
+                    </Form.Label>
+                    <ToggleGroup.Root
+                        type="single"
+                        value={videoTheme}
+                        onValueChange={(value) => {
+                            if (value) setVideoTheme(value as VideoTheme);
+                        }}
+                        className="flex h-fit w-fit gap-8"
+                    >
+                        <ToggleGroup.Item
+                            value="light"
+                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                        >
+                            <SunIcon size={20} />
+                            <T keyName="settings.general.appearance.light" />
+                        </ToggleGroup.Item>
+                        <ToggleGroup.Item
+                            value="dark"
+                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                        >
+                            <MoonIcon size={20} />
+                            <T keyName="settings.general.appearance.dark" />
+                        </ToggleGroup.Item>
+                    </ToggleGroup.Root>
+                </Form.Field>
             </Form.Root>
 
             {/* Overlay options */}
@@ -1436,18 +1482,17 @@ function VideoExport() {
                 <h5 className="text-h5">
                     <T keyName="exportCoordinates.videoOverlay" />
                 </h5>
+                <OverlayPreview
+                    state={previewState}
+                    options={overlayOptions}
+                    placement={placement}
+                    onPlacementChange={setPlacement}
+                    videoTheme={videoTheme}
+                />
                 {overlayEnabled && (
-                    <>
-                        <OverlayPreview
-                            state={previewState}
-                            options={overlayOptions}
-                            placement={placement}
-                            onPlacementChange={setPlacement}
-                        />
-                        <p className="text-sub text-text/60">
-                            <T keyName="exportCoordinates.videoOverlayPreviewHint" />
-                        </p>
-                    </>
+                    <p className="text-sub text-text/60">
+                        <T keyName="exportCoordinates.videoOverlayPreviewHint" />
+                    </p>
                 )}
                 <Form.Root className="grid grid-cols-2 gap-y-16">
                     <Form.Field

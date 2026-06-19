@@ -1,6 +1,7 @@
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
 import { recolorMarcherIconSvg } from "@/assets/open-march-marcher";
+import { getVideoThemeColors, type VideoTheme } from "./videoTheme";
 
 /**
  * Optional info overlay drawn on each exported video frame so viewers can
@@ -58,6 +59,18 @@ export interface OverlayRect {
     height: number;
 }
 
+/** Show-wide digit widths so numeric overlay fields keep a stable layout. */
+export interface OverlayFormatBounds {
+    countDigits: number;
+    measureDigits: number;
+    clockMinuteDigits: number;
+    tempoDigits: number;
+    /** Max digit length of page number portions (e.g. "12" in "12A") */
+    setNumberDigits: number;
+    /** Max letter suffix length on page names (0–2; subsets use one letter almost always) */
+    setSuffixChars: number;
+}
+
 export interface OverlayState {
     /** Name of the set the marchers are leaving (null on the first page) */
     previousSetName: string | null;
@@ -73,6 +86,7 @@ export interface OverlayState {
     tempoBpm: number | null;
     timeSeconds: number;
     totalSeconds: number;
+    formatBounds: OverlayFormatBounds;
 }
 
 /**
@@ -84,6 +98,7 @@ export class OverlayTimeline {
     private readonly pages: Page[];
     private readonly measures: Measure[];
     private readonly totalSeconds: number;
+    private readonly formatBounds: OverlayFormatBounds;
     private pageCursor = 0;
     private measureCursor = 0;
 
@@ -94,6 +109,11 @@ export class OverlayTimeline {
         this.totalSeconds = lastPage
             ? lastPage.timestamp + lastPage.duration
             : 0;
+        this.formatBounds = computeFormatBounds(
+            sortedPages,
+            measures,
+            this.totalSeconds,
+        );
     }
 
     /**
@@ -164,13 +184,124 @@ export class OverlayTimeline {
             tempoBpm,
             timeSeconds,
             totalSeconds: this.totalSeconds,
+            formatBounds: this.formatBounds,
         };
     }
 }
 
-export function formatClock(seconds: number): string {
+export function computeFormatBounds(
+    pages: Page[],
+    measures: Measure[],
+    totalSeconds: number,
+): OverlayFormatBounds {
+    const countDigits = Math.max(
+        1,
+        ...pages.map(
+            (page) => String(Math.max(page.counts, page.beats.length)).length,
+        ),
+    );
+    const measureDigits =
+        measures.length > 0
+            ? Math.max(
+                  1,
+                  ...measures.map((measure) => String(measure.number).length),
+              )
+            : 1;
+    const clockMinuteDigits = Math.max(
+        1,
+        String(Math.floor(totalSeconds / 60)).length,
+    );
+    let setNumberDigits = 1;
+    let setSuffixChars = 0;
+    for (const page of pages) {
+        const parsed = parsePageName(page.name);
+        setNumberDigits = Math.max(setNumberDigits, parsed.numberDigits);
+        setSuffixChars = Math.max(setSuffixChars, parsed.suffixChars);
+    }
+    return {
+        countDigits,
+        measureDigits,
+        clockMinuteDigits,
+        tempoDigits: 3,
+        setNumberDigits,
+        setSuffixChars: Math.min(setSuffixChars, 2),
+    };
+}
+
+const PAGE_NAME_PATTERN = /^(\d+)([A-Za-z]*)$/;
+
+function parsePageName(name: string): {
+    numberDigits: number;
+    suffixChars: number;
+} {
+    const match = name.match(PAGE_NAME_PATTERN);
+    if (!match) {
+        return { numberDigits: name.length, suffixChars: 0 };
+    }
+    return {
+        numberDigits: match[1].length,
+        suffixChars: match[2].length,
+    };
+}
+
+function setNameLayoutTemplate(
+    setNumberDigits: number,
+    setSuffixChars: number,
+): string {
+    return digitTemplate(setNumberDigits) + "M".repeat(setSuffixChars);
+}
+
+export function padInteger(value: number, width: number): string {
+    return String(value).padStart(width, "0");
+}
+
+export function padIntegerSpaced(value: number, width: number): string {
+    return String(value).padStart(width, " ");
+}
+
+export function digitTemplate(width: number): string {
+    return "8".repeat(width);
+}
+
+export function formatClock(seconds: number, minuteWidth?: number): string {
     const total = Math.max(0, Math.floor(seconds));
-    return `${Math.floor(total / 60)}:${(total % 60).toString().padStart(2, "0")}`;
+    const minutes = Math.floor(total / 60);
+    const mins =
+        minuteWidth !== undefined
+            ? padIntegerSpaced(minutes, minuteWidth)
+            : String(minutes);
+    return `${mins}:${(total % 60).toString().padStart(2, "0")}`;
+}
+
+function formatClockLayout(minuteWidth: number): string {
+    const mins = padIntegerSpaced(
+        Number(digitTemplate(minuteWidth)),
+        minuteWidth,
+    );
+    return `${mins}:88`;
+}
+
+/** Fixed-width elapsed/total pair with the slash anchored between both fields. */
+export function formatClockRange(
+    timeSeconds: number,
+    totalSeconds: number,
+    minuteWidth: number,
+): { text: string; layoutText: string } {
+    const fieldWidth = formatClockLayout(minuteWidth).length;
+    const elapsed = formatClock(timeSeconds, minuteWidth).padStart(
+        fieldWidth,
+        " ",
+    );
+    const total = formatClock(totalSeconds, minuteWidth);
+    const layoutElapsed = formatClockLayout(minuteWidth).padStart(
+        fieldWidth,
+        " ",
+    );
+    const layoutTotal = formatClockLayout(minuteWidth);
+    return {
+        text: `${elapsed} / ${total}`,
+        layoutText: `${layoutElapsed} / ${layoutTotal}`,
+    };
 }
 
 const FONT_FAMILY =
@@ -180,6 +311,8 @@ const SEPARATOR = "  ·  ";
 export interface OverlaySegment {
     text: string;
     bold: boolean;
+    /** When set, used only for layout width in drawOverlay */
+    layoutText?: string;
 }
 
 /**
@@ -191,35 +324,63 @@ export function buildOverlaySegments(
     state: OverlayState,
     options: OverlayOptions,
 ): OverlaySegment[] {
+    const {
+        countDigits,
+        measureDigits,
+        clockMinuteDigits,
+        tempoDigits,
+        setNumberDigits,
+        setSuffixChars,
+    } = state.formatBounds;
+    const countTemplate = digitTemplate(countDigits);
+    const setTemplate = setNameLayoutTemplate(setNumberDigits, setSuffixChars);
+    const setTransitionLayout = `${options.setLabel} ${setTemplate} → ${setTemplate}`;
     const segments: OverlaySegment[] = [];
     if (options.showSet) {
         segments.push({
             text: state.previousSetName
                 ? `${options.setLabel} ${state.previousSetName} → ${state.setName}`
                 : `${options.setLabel} ${state.setName}`,
+            layoutText: setTransitionLayout,
             bold: true,
         });
     }
     if (options.showCounts) {
         segments.push({
-            text: `${options.countLabel} ${state.count} / ${state.totalCounts}`,
+            text: `${options.countLabel} ${padInteger(state.count, countDigits)} / ${padInteger(state.totalCounts, countDigits)}`,
+            layoutText: `${options.countLabel} ${countTemplate} / ${countTemplate}`,
             bold: true,
         });
     }
     if (options.showMeasures && state.measureNumber !== null) {
+        const measureNumber = padInteger(state.measureNumber, measureDigits);
+        const measureTemplate = digitTemplate(measureDigits);
         segments.push({
             text: state.rehearsalMark
-                ? `[${state.rehearsalMark}]  m. ${state.measureNumber}`
-                : `m. ${state.measureNumber}`,
+                ? `[${state.rehearsalMark}]  m. ${measureNumber}`
+                : `m. ${measureNumber}`,
+            layoutText: state.rehearsalMark
+                ? `[${state.rehearsalMark}]  m. ${measureTemplate}`
+                : `m. ${measureTemplate}`,
             bold: false,
         });
     }
     if (options.showTempo && state.tempoBpm !== null) {
-        segments.push({ text: `${state.tempoBpm} bpm`, bold: false });
+        segments.push({
+            text: `${padIntegerSpaced(state.tempoBpm, tempoDigits)} bpm`,
+            layoutText: `${digitTemplate(tempoDigits)} bpm`,
+            bold: false,
+        });
     }
     if (options.showClock) {
+        const clock = formatClockRange(
+            state.timeSeconds,
+            state.totalSeconds,
+            clockMinuteDigits,
+        );
         segments.push({
-            text: `${formatClock(state.timeSeconds)} / ${formatClock(state.totalSeconds)}`,
+            text: clock.text,
+            layoutText: clock.layoutText,
             bold: false,
         });
     }
@@ -245,9 +406,11 @@ export function drawOverlay(
     placement: OverlayPlacement,
     frameWidth: number,
     frameHeight: number,
+    theme: VideoTheme,
 ): OverlayRect | null {
     const segments = buildOverlaySegments(state, options);
     if (segments.length === 0) return null;
+    const colors = getVideoThemeColors(theme);
 
     const fontSize = Math.max(
         9,
@@ -261,7 +424,7 @@ export function drawOverlay(
     ctx.save();
     const widths = segments.map((segment) => {
         ctx.font = font(segment.bold);
-        return ctx.measureText(segment.text).width;
+        return ctx.measureText(segment.layoutText ?? segment.text).width;
     });
     ctx.font = font(false);
     const separatorWidth = ctx.measureText(SEPARATOR).width;
@@ -306,7 +469,7 @@ export function drawOverlay(
         Math.max(0, frameHeight - boxHeight),
     );
 
-    ctx.fillStyle = "rgba(15, 14, 19, 0.7)";
+    ctx.fillStyle = colors.overlayBg;
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxWidth, boxHeight, Math.round(padding * 0.66));
     ctx.fill();
@@ -318,12 +481,12 @@ export function drawOverlay(
         row.forEach((i, j) => {
             if (j > 0) {
                 ctx.font = font(false);
-                ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
+                ctx.fillStyle = colors.overlayTextMuted;
                 ctx.fillText(SEPARATOR, textX, textY);
                 textX += separatorWidth;
             }
             ctx.font = font(segments[i].bold);
-            ctx.fillStyle = "rgba(255, 255, 255, 0.95)";
+            ctx.fillStyle = colors.overlayText;
             ctx.fillText(segments[i].text, textX, textY);
             textX += widths[i];
         });
@@ -337,23 +500,29 @@ export function drawOverlay(
 
 export const BRANDING_TEXT = "Made with OpenMarch";
 
-let logoPromise: Promise<HTMLImageElement | null> | null = null;
+const logoPromises = new Map<VideoTheme, Promise<HTMLImageElement | null>>();
 
-/** Load the OpenMarch marcher icon (recolored white) for canvas drawing. Cached. */
-export function loadBrandingLogo(): Promise<HTMLImageElement | null> {
-    if (!logoPromise) {
-        logoPromise = new Promise((resolve) => {
-            const svg = recolorMarcherIconSvg("#ffffff");
-            const url = URL.createObjectURL(
-                new Blob([svg], { type: "image/svg+xml" }),
-            );
-            const image = new Image();
-            image.onload = () => resolve(image);
-            image.onerror = () => resolve(null);
-            image.src = url;
-        });
-    }
-    return logoPromise;
+/** Load the OpenMarch marcher icon for canvas drawing. Cached per theme. */
+export function loadBrandingLogo(
+    theme: VideoTheme,
+): Promise<HTMLImageElement | null> {
+    const cached = logoPromises.get(theme);
+    if (cached) return cached;
+
+    const promise = new Promise<HTMLImageElement | null>((resolve) => {
+        const svg = recolorMarcherIconSvg(
+            getVideoThemeColors(theme).brandingLogoHex,
+        );
+        const url = URL.createObjectURL(
+            new Blob([svg], { type: "image/svg+xml" }),
+        );
+        const image = new Image();
+        image.onload = () => resolve(image);
+        image.onerror = () => resolve(null);
+        image.src = url;
+    });
+    logoPromises.set(theme, promise);
+    return promise;
 }
 
 /**
@@ -365,7 +534,9 @@ export function drawBranding(
     logo: HTMLImageElement | null,
     frameWidth: number,
     frameHeight: number,
+    theme: VideoTheme,
 ): void {
+    const colors = getVideoThemeColors(theme);
     const fontSize = Math.max(8, Math.round(frameHeight * 0.019));
     const margin = Math.round(frameHeight * 0.02);
     const padding = Math.round(fontSize * 1);
@@ -386,7 +557,7 @@ export function drawBranding(
     const boxX = frameWidth - margin - boxWidth;
     const boxY = frameHeight - margin - boxHeight;
 
-    ctx.fillStyle = "rgba(15, 14, 19, 0.55)";
+    ctx.fillStyle = colors.brandingBg;
     ctx.beginPath();
     ctx.roundRect(boxX, boxY, boxWidth, boxHeight, Math.round(boxHeight / 2));
     ctx.fill();
@@ -403,7 +574,7 @@ export function drawBranding(
         );
         ctx.globalAlpha = 1;
     }
-    ctx.fillStyle = "rgba(255, 255, 255, 0.92)";
+    ctx.fillStyle = colors.brandingText;
     ctx.fillText(BRANDING_TEXT, boxX + padding + logoWidth + gap, centerY);
     ctx.restore();
 }
