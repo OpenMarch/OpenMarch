@@ -1,6 +1,6 @@
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
-import logoSvgRaw from "@/assets/open-march-logo.svg?raw";
+import { recolorMarcherIconSvg } from "@/assets/open-march-marcher";
 
 /**
  * Optional info overlay drawn on each exported video frame so viewers can
@@ -339,11 +339,11 @@ export const BRANDING_TEXT = "Made with OpenMarch";
 
 let logoPromise: Promise<HTMLImageElement | null> | null = null;
 
-/** Load the OpenMarch logo (recolored white) for canvas drawing. Cached. */
+/** Load the OpenMarch marcher icon (recolored white) for canvas drawing. Cached. */
 export function loadBrandingLogo(): Promise<HTMLImageElement | null> {
     if (!logoPromise) {
         logoPromise = new Promise((resolve) => {
-            const svg = logoSvgRaw.replace(/currentColor/g, "#ffffff");
+            const svg = recolorMarcherIconSvg("#ffffff");
             const url = URL.createObjectURL(
                 new Blob([svg], { type: "image/svg+xml" }),
             );
@@ -368,7 +368,8 @@ export function drawBranding(
 ): void {
     const fontSize = Math.max(8, Math.round(frameHeight * 0.019));
     const margin = Math.round(frameHeight * 0.02);
-    const padding = Math.round(fontSize * 0.5);
+    const padding = Math.round(fontSize * 1);
+    const verticalPadding = Math.round(padding / 2);
 
     ctx.save();
     ctx.font = `500 ${fontSize}px ${FONT_FAMILY}`;
@@ -381,7 +382,7 @@ export function drawBranding(
     const gap = logo ? Math.round(fontSize * 0.5) : 0;
 
     const boxWidth = padding * 2 + logoWidth + gap + textWidth;
-    const boxHeight = Math.max(logoHeight, fontSize) + padding * 2;
+    const boxHeight = Math.max(logoHeight, fontSize) + verticalPadding * 2;
     const boxX = frameWidth - margin - boxWidth;
     const boxY = frameHeight - margin - boxHeight;
 
