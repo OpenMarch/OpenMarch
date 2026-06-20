@@ -1239,6 +1239,7 @@ function VideoExport() {
     const [isLoading, setIsLoading] = useState(false);
     const [progress, setProgress] = useState(0);
     const [currentStep, setCurrentStep] = useState("");
+    const progressRef = useRef<HTMLDivElement>(null);
     const isCancelled = useRef(false);
     const t = tolgee.t;
 
@@ -1260,6 +1261,16 @@ function VideoExport() {
             cancelled = true;
         };
     }, []);
+
+    useEffect(() => {
+        if (!isLoading) return;
+
+        const animationFrame = requestAnimationFrame(() => {
+            progressRef.current?.focus({ preventScroll: false });
+        });
+
+        return () => cancelAnimationFrame(animationFrame);
+    }, [isLoading]);
 
     useEffect(() => {
         let cancelled = false;
@@ -1802,7 +1813,11 @@ function VideoExport() {
 
             {/* Progress Bar */}
             {isLoading && (
-                <div className="flex flex-col gap-8">
+                <div
+                    ref={progressRef}
+                    tabIndex={-1}
+                    className="flex flex-col gap-8"
+                >
                     <div className="flex items-center justify-between">
                         <span className="text-body text-text/75">
                             {currentStep}
