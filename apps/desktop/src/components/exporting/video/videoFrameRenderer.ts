@@ -84,6 +84,10 @@ export interface VideoRenderContext {
     canvasMarchersById: Record<number, CanvasMarcher>;
     fieldProperties: FieldProperties;
     marcherTimelines: Map<number, MarcherTimeline>;
+    staticFieldCache: {
+        key: string;
+        canvas: HTMLCanvasElement;
+    } | null;
     dispose: () => void;
 }
 
@@ -116,8 +120,115 @@ export async function createVideoRenderContext(
         canvasMarchersById: initialized.canvasMarchersById,
         fieldProperties: args.fieldProperties,
         marcherTimelines: args.marcherTimelines,
+        staticFieldCache: null,
         dispose: () => initialized.canvas.dispose(),
     };
+}
+
+function fieldCacheKey({
+    width,
+    height,
+    fieldFraming,
+    videoTheme,
+}: {
+    width: number;
+    height: number;
+    fieldFraming: FieldFraming;
+    videoTheme: VideoTheme;
+}) {
+    return JSON.stringify({ width, height, fieldFraming, videoTheme });
+}
+
+function configureCanvasForFrame({
+    canvas,
+    fieldProperties,
+    width,
+    height,
+    fieldFraming,
+}: {
+    canvas: OpenMarchCanvas;
+    fieldProperties: FieldProperties;
+    width: number;
+    height: number;
+    fieldFraming: FieldFraming;
+}) {
+    canvas.enableRetinaScaling = false;
+    if (canvas.getWidth() !== width || canvas.getHeight() !== height)
+        canvas.setDimensions({ width, height });
+    canvas.viewportTransform = computeFieldViewport(
+        fieldProperties,
+        width,
+        height,
+        fieldFraming,
+    );
+}
+
+function hideMarchers(context: VideoRenderContext) {
+    const visibility = Object.values(context.canvasMarchersById).map(
+        (canvasMarcher) => ({
+            canvasMarcher,
+            marcherVisible: canvasMarcher.visible,
+            labelVisible: canvasMarcher.textLabel.visible,
+        }),
+    );
+    for (const { canvasMarcher } of visibility) {
+        canvasMarcher.visible = false;
+        canvasMarcher.textLabel.visible = false;
+    }
+    return visibility;
+}
+
+function restoreMarcherVisibility(visibility: ReturnType<typeof hideMarchers>) {
+    for (const { canvasMarcher, marcherVisible, labelVisible } of visibility) {
+        canvasMarcher.visible = marcherVisible;
+        canvasMarcher.textLabel.visible = labelVisible;
+    }
+}
+
+function getStaticFieldCanvas({
+    context,
+    width,
+    height,
+    fieldFraming,
+    videoTheme,
+}: {
+    context: VideoRenderContext;
+    width: number;
+    height: number;
+    fieldFraming: FieldFraming;
+    videoTheme: VideoTheme;
+}) {
+    const key = fieldCacheKey({ width, height, fieldFraming, videoTheme });
+    if (context.staticFieldCache?.key === key)
+        return context.staticFieldCache.canvas;
+
+    const { canvas, fieldProperties } = context;
+    const themeColors = getVideoThemeColors(videoTheme);
+
+    configureCanvasForFrame({
+        canvas,
+        fieldProperties,
+        width,
+        height,
+        fieldFraming,
+    });
+
+    canvas.backgroundColor = themeColors.bg1;
+    canvas.staticGridRef.visible = true;
+    const marcherVisibility = hideMarchers(context);
+    canvas.renderAll();
+
+    const staticCanvas = document.createElement("canvas");
+    staticCanvas.width = width;
+    staticCanvas.height = height;
+    const staticContext = staticCanvas.getContext("2d");
+    if (!staticContext) throw new Error("Could not create static field canvas");
+    staticContext.drawImage(canvas.getElement(), 0, 0, width, height);
+
+    restoreMarcherVisibility(marcherVisibility);
+    canvas.staticGridRef.visible = false;
+    context.staticFieldCache = { key, canvas: staticCanvas };
+    return staticCanvas;
 }
 
 function setMarcherPositionsAtTime(
@@ -171,21 +282,30 @@ export function renderVideoFrame(
     const { canvas, fieldProperties } = context;
     const themeColors = getVideoThemeColors(videoTheme);
 
-    canvas.enableRetinaScaling = false;
-    canvas.setDimensions({ width, height });
-    canvas.viewportTransform = computeFieldViewport(
+    configureCanvasForFrame({
+        canvas,
         fieldProperties,
         width,
         height,
         fieldFraming,
-    );
-    canvas.backgroundColor = themeColors.bg1;
+    });
 
     const timeMs = Math.min(timeSeconds * 1000, durationSeconds * 1000 - 1);
     setMarcherPositionsAtTime(context, timeMs);
 
+    const staticFieldCanvas = getStaticFieldCanvas({
+        context,
+        width,
+        height,
+        fieldFraming,
+        videoTheme,
+    });
+
     ctx.fillStyle = themeColors.bg1;
     ctx.fillRect(0, 0, width, height);
+    ctx.drawImage(staticFieldCanvas, 0, 0, width, height);
+
+    canvas.backgroundColor = "rgba(0,0,0,0)";
     canvas.renderAll();
     ctx.drawImage(canvas.getElement(), 0, 0, width, height);
 
