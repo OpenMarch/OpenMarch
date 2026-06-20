@@ -253,11 +253,8 @@ void app.whenReady().then(async () => {
     Menu.setApplicationMenu(applicationMenu);
 
     let pathToOpen = store.get("databasePath") as string;
-    if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
-        pathToOpen = process.argv[1];
-    } else if (process.argv.length >= 3 && process.argv[2].endsWith(".dots")) {
-        pathToOpen = process.argv[2];
-    }
+    const pathFromArgs = process.argv.find((arg) => arg.endsWith(".dots"));
+    if (pathFromArgs) pathToOpen = pathFromArgs;
     console.log("Path to Open:", pathToOpen);
     if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();

@@ -1,4 +1,8 @@
-import Beat, { durationToTempo } from "@/global/classes/Beat";
+import Beat, {
+    durationToTempo,
+    isValidTempoBpm,
+    MIN_TEMPO_BPM,
+} from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import {
     updateMeasuresMutationOptions,
@@ -17,6 +21,7 @@ import * as Popover from "@radix-ui/react-popover";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useTolgee, T } from "@tolgee/react";
+import { toast } from "sonner";
 
 // Module-level state to track the currently open menu
 let currentOpenMenu: (() => void) | null = null;
@@ -226,10 +231,15 @@ const TempoInput = ({
     const saveTempo = (shouldClose = true) => {
         const newTempo = parseFloat(tempo);
 
-        if (isNaN(newTempo) || newTempo <= 0) {
+        if (isNaN(newTempo) || !isValidTempoBpm(newTempo)) {
             // Reset to original value if invalid
             const currentTempo = durationToTempo(beat.duration);
             setTempo(currentTempo.toString());
+            if (!isNaN(newTempo) && newTempo > 0 && newTempo < MIN_TEMPO_BPM) {
+                toast.error(
+                    tolgee.t("music.tempoBelowMinimum", { min: MIN_TEMPO_BPM }),
+                );
+            }
             return;
         }
 
@@ -296,7 +306,7 @@ const TempoInput = ({
             <UnitInput
                 type="number"
                 step={1}
-                min={1}
+                min={MIN_TEMPO_BPM}
                 value={tempo}
                 onChange={(e) => setTempo(e.target.value)}
                 onKeyDown={handleKeyDown}
