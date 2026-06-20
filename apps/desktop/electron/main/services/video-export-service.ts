@@ -26,6 +26,18 @@ export class VideoExportService {
         // Close any orphaned handle from a previous failed export
         await this.cleanup(false);
 
+        if (
+            process.env.PLAYWRIGHT_SESSION === "true" &&
+            process.env.PLAYWRIGHT_VIDEO_EXPORT_PATH
+        ) {
+            this.fileHandle = await fs.promises.open(
+                process.env.PLAYWRIGHT_VIDEO_EXPORT_PATH,
+                "w",
+            );
+            this.filePath = process.env.PLAYWRIGHT_VIDEO_EXPORT_PATH;
+            return this.filePath;
+        }
+
         const date = new Date().toISOString().split("T")[0];
         const win = BrowserWindow.getFocusedWindow();
         const currentFileName = win
