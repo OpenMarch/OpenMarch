@@ -1,3 +1,6 @@
+/** Max length for generated silent-audio placeholders (avoids OOM from bad beat durations). */
+export const MAX_PLACEHOLDER_AUDIO_SECONDS = 1800;
+
 /**
  * An audio file object that represents an audio file in the database.
  *
@@ -89,7 +92,7 @@ export default class AudioFile {
         if (!response) {
             // Create silent audio with at least the requested duration
             // Default to 10 seconds for initial load, but allow extension
-            const duration = Math.max(10, minDuration ?? 10);
+            const duration = capPlaceholderAudioDuration(minDuration ?? 10);
             const silentAudio = createSilentAudio(duration);
             const silentAudioFile = new AudioFile({
                 id: -1,
@@ -136,12 +139,24 @@ export interface ModifiedAudioFileArgs {
  *                 This is just a placeholder until the user adds real audio.
  * @returns A buffer containing the silent audio file
  */
+export function capPlaceholderAudioDuration(durationSeconds: number): number {
+    const requested = Math.max(10, durationSeconds);
+    if (requested <= MAX_PLACEHOLDER_AUDIO_SECONDS) {
+        return requested;
+    }
+    console.warn(
+        `Requested placeholder audio duration ${requested}s exceeds cap of ${MAX_PLACEHOLDER_AUDIO_SECONDS}s; using cap.`,
+    );
+    return MAX_PLACEHOLDER_AUDIO_SECONDS;
+}
+
 function createSilentAudio(duration: number = 10): ArrayBuffer {
+    const safeDuration = capPlaceholderAudioDuration(duration);
     // Audio context setup
     const sampleRate = 44100;
     const numberOfChannels = 2;
     const bitsPerSample = 16;
-    const totalSamples = Math.ceil(sampleRate * duration);
+    const totalSamples = Math.ceil(sampleRate * safeDuration);
 
     // Create the audio buffer
     const buffer = new ArrayBuffer(
