@@ -1,4 +1,7 @@
-import Beat, { fromDatabaseBeat } from "@/global/classes/Beat";
+import Beat, {
+    assertValidTempoBpm,
+    fromDatabaseBeat,
+} from "@/global/classes/Beat";
 import Measure from "@/global/classes/Measure";
 import Page from "@/global/classes/Page";
 import { conToastError } from "@/utilities/utils";
@@ -497,6 +500,8 @@ export const createNewBeatsForTempoChange = ({
     tempo: number;
     audioDuration: number;
 }): { newBeats: Beat[]; beatsToDelete: Beat[] } => {
+    assertValidTempoBpm(tempo);
+
     const beatsToDelete = beats.filter((beat) => beat.timestamp > timestamp);
 
     const newBeats: Beat[] = [];

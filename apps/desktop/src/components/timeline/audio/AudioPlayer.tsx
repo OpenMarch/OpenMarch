@@ -3,7 +3,9 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
-import AudioFile from "@/global/classes/AudioFile";
+import AudioFile, {
+    capPlaceholderAudioDuration,
+} from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
 import { useTheme } from "@/context/ThemeContext";
@@ -177,8 +179,11 @@ export default function AudioPlayer() {
                   pages[pages.length - 1].duration +
                   10
                 : 10;
-        if (calculatedMinimumDuration > largestMinimumDuration.current)
-            largestMinimumDuration.current = calculatedMinimumDuration;
+        const cappedDuration = capPlaceholderAudioDuration(
+            calculatedMinimumDuration,
+        );
+        if (cappedDuration > largestMinimumDuration.current)
+            largestMinimumDuration.current = cappedDuration;
         return largestMinimumDuration.current;
     }, [pages]);
 

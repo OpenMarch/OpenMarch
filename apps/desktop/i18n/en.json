@@ -846,6 +846,7 @@
         "standard": "Standard",
         "startTempo": "Start Tempo *",
         "tempo": "Tempo *",
+        "tempoBelowMinimum": "Tempo must be at least {min} BPM",
         "tempoDescription": "Beats per minute",
         "tempoGroupCreated": "Tempo group created",
         "tempoGroupNamePlaceholder": "Optional",
