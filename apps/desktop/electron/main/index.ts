@@ -338,13 +338,20 @@ function initGetters() {
     });
     ipcMain.handle(
         "export:videoChunk",
-        async (_, data: Uint8Array, position: number) => {
-            return await VideoExportService.writeChunk(data, position);
+        async (_, sessionId: string, data: Uint8Array, position: number) => {
+            return await VideoExportService.writeChunk(
+                sessionId,
+                data,
+                position,
+            );
         },
     );
-    ipcMain.handle("export:videoEnd", async (_, success: boolean) => {
-        return await VideoExportService.end(success);
-    });
+    ipcMain.handle(
+        "export:videoEnd",
+        async (_, sessionId: string, success: boolean) => {
+            return await VideoExportService.end(sessionId, success);
+        },
+    );
 
     // Get current filename
     ipcMain.handle("get-current-filename", async () => {

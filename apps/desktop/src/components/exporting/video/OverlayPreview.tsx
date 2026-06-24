@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+    type Dispatch,
+    type SetStateAction,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from "react";
 import {
     loadBrandingLogo,
     OverlayOptions,
@@ -64,7 +71,7 @@ export default function OverlayPreview({
     videoTheme: VideoTheme;
     fieldRenderContext: VideoRenderContext | null;
     fieldFraming: FieldFraming;
-    onFieldFramingChange: (framing: FieldFraming) => void;
+    onFieldFramingChange: Dispatch<SetStateAction<FieldFraming>>;
     previewTimeSeconds: number;
     durationSeconds: number;
     isLoading?: boolean;
@@ -73,8 +80,6 @@ export default function OverlayPreview({
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const rectRef = useRef<OverlayRect | null>(null);
     const dragRef = useRef<DragContext | null>(null);
-    const fieldFramingRef = useRef(fieldFraming);
-    fieldFramingRef.current = fieldFraming;
     const [logo, setLogo] = useState<HTMLImageElement | null>(null);
 
     useEffect(() => {
@@ -248,11 +253,11 @@ export default function OverlayPreview({
             drag.lastX = x;
             drag.lastY = y;
             canvas.style.cursor = "grabbing";
-            onFieldFramingChange(
+            onFieldFramingChange((current) =>
                 clampFieldFraming({
-                    ...fieldFraming,
-                    offsetX: fieldFraming.offsetX + dx / width,
-                    offsetY: fieldFraming.offsetY + dy / height,
+                    ...current,
+                    offsetX: current.offsetX + dx / width,
+                    offsetY: current.offsetY + dy / height,
                 }),
             );
         } else if (drag.mode === "move") {
@@ -300,8 +305,7 @@ export default function OverlayPreview({
             event.stopPropagation();
             const factor =
                 event.deltaY > 0 ? 1 / WHEEL_ZOOM_FACTOR : WHEEL_ZOOM_FACTOR;
-            const current = fieldFramingRef.current;
-            onFieldFramingChange(
+            onFieldFramingChange((current) =>
                 clampFieldFraming({
                     ...current,
                     scale: current.scale * factor,

@@ -82,10 +82,12 @@ const printStyles = (quarterPages: boolean) => `
   @media print {
     .marcher-sheet {
       page-break-before: auto;
-      page-break-after: always;
       min-height: 10in;
       width: 100%;
       box-sizing: border-box;
+    }
+    .marcher-sheet:not(:last-child) {
+      page-break-after: always;
     }
     ${
         quarterPages
@@ -96,6 +98,8 @@ const printStyles = (quarterPages: boolean) => `
         grid-template-rows: 50% 50%;
         height: 10in;
         width: 7.5in;
+      }
+      .grid-container:not(:last-child) {
         page-break-after: always;
       }
       .grid-item {
@@ -171,6 +175,7 @@ function buildSheetDocumentHtml(
 
     return `<html>
       <head>
+        <meta charset="UTF-8" />
         <title>PDF Export</title>
         <style>${printStyles(quarterPages)}</style>
       </head>
@@ -187,11 +192,11 @@ async function printHtmlToPdf(
     margins: Electron.PrintToPDFOptions["margins"],
     timeoutMs = 30000,
 ): Promise<Buffer> {
-    const tempFile = path.join(
-        os.tmpdir(),
-        `export-${Date.now()}-${Math.random().toString(36).slice(2)}.html`,
+    const tempDir = await fs.promises.mkdtemp(
+        path.join(os.tmpdir(), "openmarch-export-"),
     );
-    await fs.promises.writeFile(tempFile, htmlContent);
+    const tempFile = path.join(tempDir, "export.html");
+    await fs.promises.writeFile(tempFile, htmlContent, { mode: 0o600 });
 
     const win = new BrowserWindow({ width: 1200, height: 800, show: false });
     let timeout: NodeJS.Timeout | undefined;
@@ -225,7 +230,9 @@ async function printHtmlToPdf(
     } finally {
         clearTimeout(timeout);
         win.destroy();
-        fs.promises.unlink(tempFile).catch(() => {});
+        await fs.promises
+            .rm(tempDir, { recursive: true, force: true })
+            .catch(() => {});
     }
 }
 

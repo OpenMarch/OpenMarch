@@ -187,6 +187,9 @@ export async function exportVideo(
         isCancelled = () => false,
     } = args;
 
+    if (sortedPages.length === 0)
+        throw new Error("The show has no pages to export");
+
     const lastPage = sortedPages[sortedPages.length - 1];
     const durationSeconds = lastPage.timestamp + lastPage.duration;
     if (durationSeconds <= 0)
@@ -195,10 +198,11 @@ export async function exportVideo(
     const encodingTarget = await chooseEncodingTarget(width, height);
 
     // Prompt for the save location before doing any expensive work
-    const filePath = await window.electron.export.videoStart(
+    const started = await window.electron.export.videoStart(
         encodingTarget.fileExtension,
     );
-    if (!filePath) return { state: "cancelled" };
+    if (!started) return { state: "cancelled" };
+    const { sessionId, filePath } = started;
 
     const totalFrames = Math.ceil(durationSeconds * fps);
     let renderContext: Awaited<
@@ -244,6 +248,7 @@ export async function exportVideo(
                 new WritableStream({
                     async write(chunk) {
                         await window.electron.export.videoChunk(
+                            sessionId,
                             chunk.data,
                             chunk.position,
                         );
@@ -289,7 +294,7 @@ export async function exportVideo(
         for (let frame = 0; frame < totalFrames; frame++) {
             if (isCancelled()) {
                 await output.cancel();
-                await window.electron.export.videoEnd(false);
+                await window.electron.export.videoEnd(sessionId, false);
                 return { state: "cancelled" };
             }
 
@@ -323,10 +328,15 @@ export async function exportVideo(
         await flushAudioUntil(Infinity);
         await output.finalize();
 
-        const finalPath = await window.electron.export.videoEnd(true);
+        const finalPath = await window.electron.export.videoEnd(
+            sessionId,
+            true,
+        );
         return { state: "completed", path: finalPath ?? filePath };
     } catch (error) {
-        await window.electron.export.videoEnd(false).catch(() => undefined);
+        await window.electron.export
+            .videoEnd(sessionId, false)
+            .catch(() => undefined);
         throw error;
     } finally {
         renderContext?.dispose();

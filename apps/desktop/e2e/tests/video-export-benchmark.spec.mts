@@ -33,6 +33,11 @@ const BENCHMARK_SETTINGS = {
     overlay: true,
 } as const;
 
+const resolutionLabel = (height: number) =>
+    height === 2160 ? "4K" : `${height}p`;
+const BENCHMARK_RESOLUTION_LABEL = resolutionLabel(BENCHMARK_SETTINGS.height);
+const BENCHMARK_FRAME_RATE_LABEL = `${BENCHMARK_SETTINGS.fps} fps`;
+
 const getEnv = (name: string) => {
     const value = process.env[name];
     if (!value) throw new Error(`${name} is required`);
@@ -122,9 +127,9 @@ const seedBenchmarkDatabase = async (databasePath: string) => {
         "Color Guard",
     ];
     for (let i = 0; i < BENCHMARK_SETTINGS.marchers; i++) {
-        const section = sections[i % sections.length];
+        const section = sections[i % sections.length]!;
         statements.push(
-            `INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (${i + 1}, ${quote(`${section} ${i + 1}`)}, ${quote(section)}, ${quote(section[0])}, ${i + 1})`,
+            `INSERT INTO marchers (id, name, section, drill_prefix, drill_order) VALUES (${i + 1}, ${quote(`${section} ${i + 1}`)}, ${quote(section)}, ${quote(section.charAt(0))}, ${i + 1})`,
         );
     }
 
@@ -214,7 +219,7 @@ base("video export benchmark", async ({}, testInfo) => {
         ],
         env: {
             ...process.env,
-            NODE_ENV: "development",
+            NODE_ENV: "production",
             PLAYWRIGHT_SESSION: "true",
             PLAYWRIGHT_VIDEO_EXPORT_PATH: exportPath,
             ELECTRON_ENABLE_LOGGING: "1",
@@ -235,11 +240,21 @@ base("video export benchmark", async ({}, testInfo) => {
         await page.getByRole("tab", { name: "File" }).click();
         await page.getByRole("button", { name: "Export" }).click();
         await page.getByRole("tab", { name: "Video" }).click();
+
+        await page.getByRole("combobox", { name: /^(720p|1080p|4K)$/ }).click();
+        await page
+            .getByRole("option", { name: BENCHMARK_RESOLUTION_LABEL })
+            .click();
         await expect(
-            page.getByRole("combobox", { name: "1080p" }),
+            page.getByRole("combobox", { name: BENCHMARK_RESOLUTION_LABEL }),
         ).toBeVisible();
+
+        await page.getByRole("combobox", { name: /^\d+ fps$/ }).click();
+        await page
+            .getByRole("option", { name: BENCHMARK_FRAME_RATE_LABEL })
+            .click();
         await expect(
-            page.getByRole("combobox", { name: "60 fps" }),
+            page.getByRole("combobox", { name: BENCHMARK_FRAME_RATE_LABEL }),
         ).toBeVisible();
 
         const startedAt = performance.now();
