@@ -1,5 +1,6 @@
 import Measure from "../../../global/classes/Measure";
 import Beat, {
+    assertValidTempoBpm,
     durationToTempo,
     fromDatabaseBeat,
 } from "../../../global/classes/Beat";
@@ -328,6 +329,11 @@ export const newBeatsFromTempoGroup = ({
     strongBeatIndexes?: number[];
     endTempo?: number;
 }): NewBeatArgs[] => {
+    assertValidTempoBpm(tempo);
+    if (endTempo != null) {
+        assertValidTempoBpm(endTempo);
+    }
+
     const beats: NewBeatArgs[] = [];
     if (!endTempo || endTempo === tempo) {
         const duration = 60 / tempo;
@@ -453,6 +459,11 @@ export const _createFromTempoGroup = async ({
     endTempo?: number;
     startingPosition?: number;
 }) => {
+    assertValidTempoBpm(tempoGroup.tempo);
+    if (endTempo != null) {
+        assertValidTempoBpm(endTempo);
+    }
+
     await transactionWithHistory(db, "createFromTempoGroup", async (tx) => {
         await _createFromTempoGroupInTransaction({
             tx,
@@ -530,6 +541,8 @@ export const _updateTempoGroup = async ({
         throw new Error("Tempo group has no measures");
     }
 
+    assertValidTempoBpm(newTempo);
+
     const oldBeats = tempoGroup.measures?.flatMap((measure) => measure.beats);
 
     const newBeats = newBeatsFromTempoGroup({
@@ -596,6 +609,10 @@ export const _updateManualTempos = async ({
         throw new Error(
             "Tempo group has different number of beats. This should not happen.",
         );
+    }
+
+    for (const manualTempo of newManualTempos) {
+        assertValidTempoBpm(manualTempo);
     }
 
     const updatedBeats: ModifiedBeatArgs[] = [];

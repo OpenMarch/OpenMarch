@@ -668,6 +668,7 @@
         "standard": "Padrão",
         "startTempo": "Tempo Inicial *",
         "tempo": "Tempo *",
+        "tempoBelowMinimum": "O tempo deve ser de pelo menos {min} BPM",
         "tempoDescription": "Batidas por minuto",
         "tempoGroupCreated": "Grupo de Tempos criado",
         "tempoGroupNamePlaceholder": "Opcional",

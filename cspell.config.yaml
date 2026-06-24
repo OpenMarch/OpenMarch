@@ -89,6 +89,8 @@ words:
   - oklch
   - openmarch
   - openmarchdev
+  - OTMDEMO
+  - ONTHEMOVE
   - overscan
   - pacman
   - pagewidth
@@ -99,6 +101,7 @@ words:
   - Pressable
   - PWDEBUG
   - pwsh
+  - Pyware
   - Rcoords
   - rels
   - rgba
