@@ -185,6 +185,11 @@ const waitForFile = async (filePath: string, timeoutMs: number) => {
 
 base.setTimeout(900_000);
 
+base.skip(
+    !process.env.VIDEO_EXPORT_BENCHMARK_LABEL,
+    "Run via `pnpm bench:video-export` to execute the video export benchmark",
+);
+
 // eslint-disable-next-line no-empty-pattern
 base("video export benchmark", async ({}, testInfo) => {
     const label = getEnv("VIDEO_EXPORT_BENCHMARK_LABEL");
