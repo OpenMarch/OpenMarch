@@ -8,6 +8,7 @@ import { VideoExportService } from "../video-export-service";
 describe("VideoExportService", () => {
     let exportPath: string;
     let tempDir: string;
+    let sessionId: string | null = null;
 
     beforeEach(() => {
         tempDir = mkdtempSync(join(tmpdir(), "video-export-test-"));
@@ -18,7 +19,12 @@ describe("VideoExportService", () => {
 
     afterEach(async () => {
         vi.restoreAllMocks();
-        await VideoExportService.end(true).catch(() => undefined);
+        if (sessionId) {
+            await VideoExportService.end(sessionId, true).catch(
+                () => undefined,
+            );
+            sessionId = null;
+        }
         delete process.env.PLAYWRIGHT_SESSION;
         delete process.env.PLAYWRIGHT_VIDEO_EXPORT_PATH;
         rmSync(tempDir, { recursive: true, force: true });
@@ -60,12 +66,14 @@ describe("VideoExportService", () => {
             },
         );
 
-        await VideoExportService.start("mp4");
+        const startResult = await VideoExportService.start("mp4");
+        expect(startResult).not.toBeNull();
+        sessionId = startResult!.sessionId;
 
         const data = new Uint8Array([1, 2, 3, 4, 5]);
         const position = 10;
 
-        await VideoExportService.writeChunk(data, position);
+        await VideoExportService.writeChunk(sessionId, data, position);
 
         expect(writeCalls).toBe(2);
 
