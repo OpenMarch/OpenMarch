@@ -51,7 +51,9 @@ test("Default pages created", async ({ electronAppNewFile }) => {
     await expect(page.locator("#pages")).toContainText("7");
 });
 
-test("Back navigation returns to project step", async ({ electronAppEmpty }) => {
+test("Back navigation returns to project step", async ({
+    electronAppEmpty,
+}) => {
     const { page } = electronAppEmpty;
     const dialog = page.getByRole("dialog", { name: "New show" });
 
@@ -75,9 +77,9 @@ test("Back navigation returns to project step", async ({ electronAppEmpty }) => 
             level: 2,
         }),
     ).toBeVisible();
-    await expect(dialog.getByRole("textbox", { name: "Show name" })).toHaveValue(
-        "Back Nav Test",
-    );
+    await expect(
+        dialog.getByRole("textbox", { name: "Show name" }),
+    ).toHaveValue("Back Nav Test");
 });
 
 test("Exit confirm on discard", async ({ electronAppEmpty }) => {

@@ -39,9 +39,9 @@ export default defineConfig(({ command }) => {
                     onstart(options) {
                         if (process.env.VSCODE_DEBUG) {
                             console.log(
-                            /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App");
-                        }
-                        else {
+                                /* For `.vscode/.debug.script.mjs` */ "[startup] Electron App",
+                            );
+                        } else {
                             options.startup();
                         }
                     },
@@ -58,9 +58,13 @@ export default defineConfig(({ command }) => {
                                     "electron",
                                     "node",
                                     "node:sqlite",
-                                ].concat(Object.keys("dependencies" in pkg
-                                    ? pkg.dependencies
-                                    : {})),
+                                ].concat(
+                                    Object.keys(
+                                        "dependencies" in pkg
+                                            ? pkg.dependencies
+                                            : {},
+                                    ),
+                                ),
                             },
                         },
                     },
@@ -81,9 +85,11 @@ export default defineConfig(({ command }) => {
                             minify: isBuild,
                             outDir: "dist-electron/preload",
                             rollupOptions: {
-                                external: Object.keys("dependencies" in pkg
-                                    ? pkg.dependencies
-                                    : {}),
+                                external: Object.keys(
+                                    "dependencies" in pkg
+                                        ? pkg.dependencies
+                                        : {},
+                                ),
                             },
                         },
                     },
@@ -92,7 +98,8 @@ export default defineConfig(({ command }) => {
             // Use Node.js API in the Renderer-process
             renderer(),
         ],
-        server: process.env.VSCODE_DEBUG &&
+        server:
+            process.env.VSCODE_DEBUG &&
             (() => {
                 const url = new URL(pkg.debug.env.VITE_DEV_SERVER_URL);
                 return {
