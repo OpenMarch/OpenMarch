@@ -665,15 +665,9 @@ async function openDatabaseAtPathWithoutReload(
             "migrations",
         );
 
-        if (isNewFile) {
-            db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
-            await migrator.applyPendingMigrations(migrationsFolder);
-            await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
-        } else {
-            if (migrator.hasPendingMigrations(migrationsFolder)) {
-                await migrator.applyPendingMigrations(migrationsFolder);
-            }
-        }
+        db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
+        await migrator.applyPendingMigrations(migrationsFolder);
+        await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
 
         return 200;
     } catch (error) {
