@@ -8,8 +8,12 @@ import MarcherCoordinateSheetPreview, {
 import {
     allMarcherPagesQueryOptions,
     allSectionAppearancesQueryOptions,
+    allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
+    marcherIdsForAllTagIdsQueryOptions,
+    tagAppearanceByPageIdMapQueryOptions,
 } from "@/hooks/queries";
+import { buildMarcherAppearancesByPageId } from "./utils/exportAppearances";
 import { getByMarcherId } from "@/global/classes/MarcherPage";
 import {
     Dialog,
@@ -704,7 +708,50 @@ function DrillChartExport() {
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );
+    const { data: marcherIdsByTagId } = useQuery(
+        marcherIdsForAllTagIdsQueryOptions(),
+    );
+    const { data: allTagAppearances } = useQuery(
+        allTagAppearancesQueryOptions(),
+    );
+    const { data: tagAppearanceIdsByPageId } = useQuery(
+        tagAppearanceByPageIdMapQueryOptions(),
+    );
     const { uiSettings } = useUiSettingsStore();
+
+    const marcherAppearancesByPageId = useMemo(() => {
+        if (
+            !fieldProperties ||
+            !marchers?.length ||
+            !sectionAppearances ||
+            !marcherPages ||
+            !marcherIdsByTagId ||
+            !allTagAppearances ||
+            !tagAppearanceIdsByPageId
+        ) {
+            return undefined;
+        }
+
+        return buildMarcherAppearancesByPageId({
+            sortedPages: pages,
+            marchers,
+            marcherPagesMap: marcherPages,
+            sectionAppearances,
+            marcherIdsByTagId,
+            allTagAppearances,
+            tagAppearanceIdsByPageId,
+            fieldProperties,
+        });
+    }, [
+        fieldProperties,
+        marchers,
+        sectionAppearances,
+        marcherPages,
+        marcherIdsByTagId,
+        allTagAppearances,
+        tagAppearanceIdsByPageId,
+        pages,
+    ]);
 
     // Loading bar
     const [isLoading, setIsLoading] = useState(false);
@@ -863,6 +910,7 @@ function DrillChartExport() {
                 sortedPages: pages,
                 marcherPagesMap: marcherPages,
                 sectionAppearances: sectionAppearances,
+                marcherAppearancesByPageId,
                 backgroundImage,
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
@@ -964,6 +1012,7 @@ function DrillChartExport() {
         marchersLoaded,
         fieldProperties,
         sectionAppearances,
+        marcherAppearancesByPageId,
         pages,
         marchers,
         marcherPages,
@@ -1204,6 +1253,20 @@ function VideoExport() {
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );
+    const { data: marcherPages } = useQuery(
+        allMarcherPagesQueryOptions({
+            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
+        }),
+    );
+    const { data: marcherIdsByTagId } = useQuery(
+        marcherIdsForAllTagIdsQueryOptions(),
+    );
+    const { data: allTagAppearances } = useQuery(
+        allTagAppearancesQueryOptions(),
+    );
+    const { data: tagAppearanceIdsByPageId } = useQuery(
+        tagAppearanceByPageIdMapQueryOptions(),
+    );
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
@@ -1217,6 +1280,40 @@ function VideoExport() {
     const { uiSettings } = useUiSettingsStore();
     const { theme } = useTheme();
     const queryClient = useQueryClient();
+
+    const marcherAppearancesByPageId = useMemo(() => {
+        if (
+            !fieldProperties ||
+            !marchers?.length ||
+            !sectionAppearances ||
+            !marcherPages ||
+            !marcherIdsByTagId ||
+            !allTagAppearances ||
+            !tagAppearanceIdsByPageId
+        ) {
+            return undefined;
+        }
+
+        return buildMarcherAppearancesByPageId({
+            sortedPages: pages,
+            marchers,
+            marcherPagesMap: marcherPages,
+            sectionAppearances,
+            marcherIdsByTagId,
+            allTagAppearances,
+            tagAppearanceIdsByPageId,
+            fieldProperties,
+        });
+    }, [
+        fieldProperties,
+        marchers,
+        sectionAppearances,
+        marcherPages,
+        marcherIdsByTagId,
+        allTagAppearances,
+        tagAppearanceIdsByPageId,
+        pages,
+    ]);
 
     const [resolution, setResolution] = useState("1080p");
     const [frameRate, setFrameRate] = useState(60);
@@ -1297,6 +1394,7 @@ function VideoExport() {
                     marchers,
                     marcherTimelines,
                     sectionAppearances,
+                    marcherAppearancesByPageId,
                     backgroundImage,
                     gridLines: uiSettings.gridLines,
                     halfLines: uiSettings.halfLines,
@@ -1327,6 +1425,7 @@ function VideoExport() {
         marcherTimelines,
         timelinesPending,
         sectionAppearances,
+        marcherAppearancesByPageId,
         backgroundImage,
         uiSettings.gridLines,
         uiSettings.halfLines,
@@ -1428,6 +1527,7 @@ function VideoExport() {
                 sortedPages: pages,
                 marcherTimelines: combineMarcherTimelines(timelineMaps),
                 sectionAppearances,
+                marcherAppearancesByPageId,
                 backgroundImage,
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
@@ -1494,6 +1594,7 @@ function VideoExport() {
         queryClient,
         marchers,
         sectionAppearances,
+        marcherAppearancesByPageId,
         uiSettings.gridLines,
         uiSettings.halfLines,
         workspaceSettings?.audioOffsetSeconds,

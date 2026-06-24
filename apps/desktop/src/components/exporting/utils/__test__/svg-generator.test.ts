@@ -14,6 +14,7 @@ import {
 import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
 import { seedObj } from "@/test/base";
 import MarcherPage from "@/global/classes/MarcherPage";
+import type { MarcherAppearancesByPageId } from "../exportAppearances";
 
 describe("svgGenerator", () => {
     describe("generateDrillChartExportSVGs - should generate SVGs for each page", () => {
@@ -104,6 +105,73 @@ describe("svgGenerator", () => {
                 "Should have one array for each marcher",
             ).toHaveLength(marchers.length);
             expect(output.SVGs.flat()).toHaveLength(expectedLength);
+        });
+    });
+
+    describe("generateDrillChartExportSVGs - applies tag appearances", () => {
+        it("renders tag fill color in exported SVG", async () => {
+            const marchers = generateMarchers({ numberOfMarchers: 1, seed: 3 });
+            const timingObjects = generateTimingObjects({
+                numberOfBeats: 8,
+                seed: 3,
+            });
+            const page = timingObjects.pages[0];
+            const fieldProperties =
+                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+            const marcherPages = generateMarcherPages({
+                marchers,
+                pages: timingObjects.pages.map(pageToDatabasePage),
+                fieldProperties,
+                seed: 3,
+            });
+            const marcherPagesMap = marcherPageMapFromArray(
+                marcherPages as unknown as MarcherPage[],
+            );
+            const tagFill = { r: 200, g: 50, b: 75, a: 1 };
+            const marcherAppearancesByPageId: MarcherAppearancesByPageId =
+                new Map([
+                    [
+                        page.id,
+                        {
+                            [marchers[0].id]: [
+                                {
+                                    fill_color: tagFill,
+                                    outline_color: null,
+                                    visible: true,
+                                    label_visible: true,
+                                    shape_type: "square",
+                                },
+                                {
+                                    fill_color:
+                                        fieldProperties.theme.defaultMarcher
+                                            .fill,
+                                    outline_color:
+                                        fieldProperties.theme.defaultMarcher
+                                            .outline,
+                                    visible: true,
+                                    label_visible: true,
+                                    shape_type: fieldProperties.theme.shapeType,
+                                },
+                            ],
+                        },
+                    ],
+                ]);
+
+            const output = await generateDrillChartExportSVGs({
+                marchers,
+                marcherPagesMap,
+                sortedPages: [page],
+                fieldProperties,
+                sectionAppearances: [],
+                marcherAppearancesByPageId,
+                backgroundImage: undefined,
+                gridLines: false,
+                halfLines: false,
+                individualCharts: false,
+            });
+
+            const svg = output.SVGs[0][0];
+            expect(svg).toContain("rgb(200,50,75)");
         });
     });
 });

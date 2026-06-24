@@ -10,6 +10,11 @@ import {
 } from "@/utilities/Keyframes";
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import {
+    applyMarcherAppearancesForPage,
+    getPlaybackPageForTimeMs,
+    type MarcherAppearancesByPageId,
+} from "../utils/exportAppearances";
+import {
     drawBranding,
     drawOverlay,
     OverlayOptions,
@@ -83,7 +88,10 @@ export interface VideoRenderContext {
     canvas: OpenMarchCanvas;
     canvasMarchersById: Record<number, CanvasMarcher>;
     fieldProperties: FieldProperties;
+    sortedPages: Page[];
     marcherTimelines: Map<number, MarcherTimeline>;
+    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
+    lastAppliedPageId: number | null;
     staticFieldCache: {
         key: string;
         canvas: HTMLCanvasElement;
@@ -97,6 +105,7 @@ export interface CreateVideoRenderContextArgs {
     marchers: Marcher[];
     marcherTimelines: Map<number, MarcherTimeline>;
     sectionAppearances?: SectionAppearance[];
+    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
     gridLines: boolean;
     halfLines: boolean;
@@ -119,7 +128,10 @@ export async function createVideoRenderContext(
         canvas: initialized.canvas,
         canvasMarchersById: initialized.canvasMarchersById,
         fieldProperties: args.fieldProperties,
+        sortedPages: args.sortedPages,
         marcherTimelines: args.marcherTimelines,
+        marcherAppearancesByPageId: args.marcherAppearancesByPageId,
+        lastAppliedPageId: null,
         staticFieldCache: null,
         dispose: () => initialized.canvas.dispose(),
     };
@@ -231,6 +243,21 @@ function getStaticFieldCanvas({
     return staticCanvas;
 }
 
+function applyAppearancesAtTime(context: VideoRenderContext, timeMs: number) {
+    if (!context.marcherAppearancesByPageId) return;
+
+    const activePage = getPlaybackPageForTimeMs(context.sortedPages, timeMs);
+    if (activePage.id === context.lastAppliedPageId) return;
+
+    applyMarcherAppearancesForPage({
+        pageId: activePage.id,
+        marcherAppearancesByPageId: context.marcherAppearancesByPageId,
+        canvasMarchersById: context.canvasMarchersById,
+        fieldProperties: context.fieldProperties,
+    });
+    context.lastAppliedPageId = activePage.id;
+}
+
 function setMarcherPositionsAtTime(
     context: VideoRenderContext,
     timeMilliseconds: number,
@@ -291,6 +318,7 @@ export function renderVideoFrame(
     });
 
     const timeMs = Math.min(timeSeconds * 1000, durationSeconds * 1000 - 1);
+    applyAppearancesAtTime(context, timeMs);
     setMarcherPositionsAtTime(context, timeMs);
 
     const staticFieldCanvas = getStaticFieldCanvas({

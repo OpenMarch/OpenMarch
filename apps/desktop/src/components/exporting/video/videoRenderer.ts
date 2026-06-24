@@ -32,6 +32,7 @@ import {
     type FieldFraming,
     renderVideoFrame,
 } from "./videoFrameRenderer";
+import type { MarcherAppearancesByPageId } from "../utils/exportAppearances";
 
 const KEYFRAME_INTERVAL_SECONDS = 2;
 const AUDIO_SLICE_SECONDS = 1;
@@ -44,6 +45,7 @@ export interface VideoExportArgs {
     /** Full-show timelines for every marcher (keyframes for every page) */
     marcherTimelines: Map<number, MarcherTimeline>;
     sectionAppearances?: SectionAppearance[];
+    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
     gridLines: boolean;
     halfLines: boolean;
@@ -222,6 +224,7 @@ export async function exportVideo(
             marchers: args.marchers,
             marcherTimelines,
             sectionAppearances: args.sectionAppearances,
+            marcherAppearancesByPageId: args.marcherAppearancesByPageId,
             backgroundImage: args.backgroundImage,
             gridLines: args.gridLines,
             halfLines: args.halfLines,
