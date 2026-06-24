@@ -286,10 +286,25 @@ void app.whenReady().then(async () => {
         "dialog:showSaveDialog",
         async (_, options: Electron.SaveDialogOptions) => {
             if (!win) return { canceled: true, filePath: undefined };
+            if (
+                process.env.PLAYWRIGHT_SESSION &&
+                process.env.PLAYWRIGHT_NEW_FILE_PATH
+            ) {
+                return {
+                    canceled: false,
+                    filePath: process.env.PLAYWRIGHT_NEW_FILE_PATH,
+                };
+            }
             return await dialog.showSaveDialog(win, options);
         },
     );
     ipcMain.handle("getDefaultDocumentsPath", () => {
+        if (
+            process.env.PLAYWRIGHT_SESSION &&
+            process.env.PLAYWRIGHT_NEW_FILE_PATH
+        ) {
+            return dirname(process.env.PLAYWRIGHT_NEW_FILE_PATH);
+        }
         return app.getPath("documents");
     });
     ipcMain.handle("file:exists", (_, filePath: string) => {
