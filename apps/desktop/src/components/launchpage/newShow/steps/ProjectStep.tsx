@@ -154,7 +154,7 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
 
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
-            <WizardFormField label={t("launchpage.newShow.showName")}>
+            <WizardFormField label={t("launchpage.newShow.showName")} required>
                 <Input
                     value={projectName}
                     onChange={(e) => {
@@ -165,13 +165,14 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                     placeholder={t("launchpage.newShow.showName")}
                     autoFocus
                 />
-            </WizardFormField>
-            <WizardFormField label={t("launchpage.newShow.location")}>
-                <div className="flex flex-col gap-8">
-                    <Input value={fileLocation} readOnly />
+                <div className="flex items-center gap-8">
+                    <div className="text-text-subtitle bg-fg-2 rounded-6 border-stroke min-h-30 grow border px-8 py-4 text-sm">
+                        {fileLocation ?? ""}
+                    </div>
                     <Button
                         type="button"
                         variant="secondary"
+                        size="compact"
                         onClick={() => void handleBrowse()}
                     >
                         <FolderOpenIcon size={20} />

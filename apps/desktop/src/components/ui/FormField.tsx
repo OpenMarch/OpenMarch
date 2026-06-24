@@ -113,17 +113,18 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
 interface WizardFormFieldProps {
     label: string;
     children: React.ReactNode;
+    required?: boolean;
     helperText?: string | React.ReactNode;
     className?: string;
     id?: string;
 }
 
 const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
-    ({ label, children, helperText, className, id }, ref) => {
+    ({ label, children, required, helperText, className, id }, ref) => {
         return (
             <div
                 className={twMerge(
-                    clsx("flex w-full flex-col gap-10", className),
+                    clsx("flex w-full flex-col gap-4", className),
                 )}
                 ref={ref}
             >
@@ -133,6 +134,11 @@ const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
                         className="text-body text-text font-medium"
                     >
                         {label}
+                        {required && (
+                            <span className="text-accent ml-4 leading-none">
+                                *
+                            </span>
+                        )}
                     </label>
                     {helperText && (
                         <p className="text-sub text-text/60 leading-relaxed">
