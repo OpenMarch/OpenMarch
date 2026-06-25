@@ -1,5 +1,5 @@
 ---
-import { Badge, Button } from "@openmarch/ui";
+import { Badge, getButtonClassName } from "@openmarch/ui";
 import { Image } from "astro:assets";
 
 import shapesDark from "@/assets/desktop/shapesdark.png";
@@ -165,8 +165,14 @@ import drillchart from "@/assets/desktop/drillchart.png";
         class="p-32 flex justify-between items-center gap-16 border border-accent rounded-full max-[640px]:rounded-6 max-[640px]:p-16 max-[640px]:flex-col max-[640px]:items-stretch"
     >
         <h1 class="text-h1 max-[640px]:text-h2">Download for free</h1>
-        <a href="/download" class="max-[640px]:w-full"
-            ><Button className="max-[640px]:w-full">Download</Button></a
+        <a
+            href="/download"
+            class={getButtonClassName({
+                variant: "primary",
+                className: "max-[640px]:w-full",
+            })}
         >
+            Download
+        </a>
     </div>
 </section>

@@ -1,7 +1,7 @@
 ---
 import { ThemeSwitcher } from "@openmarch/ui/astro";
 import { LogoOpenMarchText, LogoOpenMarchMarcher } from "./Logos";
-import { Button } from "@openmarch/ui";
+import { getButtonClassName } from "@openmarch/ui";
 
 interface Props {
     hideDownloadCta?: boolean;
@@ -80,11 +80,12 @@ const footerItems = [
                 </h2>
                 <a
                     href="/download"
-                    class="text-body duration-150 ease-out hover:text-accent w-fit max-[640px]:w-full"
+                    class={getButtonClassName({
+                        variant: "primary",
+                        className: "max-[640px]:w-full",
+                    })}
                 >
-                    <Button variant="primary" className="max-[640px]:w-full">
-                        Download
-                    </Button>
+                    Download
                 </a>
             </div>
         )

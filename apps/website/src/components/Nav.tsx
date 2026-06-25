@@ -1,4 +1,4 @@
-import { Button } from "@openmarch/ui";
+import { getButtonClassName } from "@openmarch/ui";
 import { useState } from "react";
 import {
     ArrowLineDownIcon,
@@ -118,31 +118,36 @@ export default function Nav({ pathname }: { pathname: string }) {
                                     href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-full"
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        size: "compact",
+                                        className: "w-full",
+                                    })}
                                 >
-                                    <Button
-                                        variant="primary"
-                                        size="compact"
-                                        className="w-full"
-                                    >
-                                        Leave a Donation
-                                    </Button>
+                                    Leave a Donation
                                 </a>
                             </Dropdown.Content>
                         </Dropdown.Portal>
                     </Dropdown.Root>
-                    <a href="/download">
-                        <Button variant="primary" size="compact">
-                            Download
-                        </Button>
+                    <a
+                        href="/download"
+                        className={getButtonClassName({
+                            variant: "primary",
+                            size: "compact",
+                        })}
+                    >
+                        Download
                     </a>
                 </div>
                 <Dialog open={isOpen} onOpenChange={setIsOpen}>
                     <DialogTrigger asChild>
-                        <ListIcon
-                            className="text-text active:text-accent mr-6 hidden duration-150 max-[850px]:flex"
-                            size={20}
-                        />
+                        <button
+                            type="button"
+                            aria-label="Open menu"
+                            className="text-text active:text-accent mr-6 hidden items-center justify-center duration-150 max-[850px]:flex"
+                        >
+                            <ListIcon size={20} />
+                        </button>
                     </DialogTrigger>
                     <DialogContent
                         className="h-[calc(100dvh-1rem)]! max-h-[calc(100dvh-1rem)]! w-[calc(100vw-1rem)]! max-w-none gap-20 overflow-y-auto p-20"
@@ -213,29 +218,25 @@ export default function Nav({ pathname }: { pathname: string }) {
                                     href="https://pay.openmarch.com/b/eVq28jcq13RXgAlbOPfbq00"
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="w-full"
+                                    onClick={() => setIsOpen(false)}
+                                    className={getButtonClassName({
+                                        variant: "secondary",
+                                        className: "w-full",
+                                    })}
                                 >
-                                    <Button
-                                        variant="secondary"
-                                        className="w-full"
-                                        onClick={() => setIsOpen(false)}
-                                    >
-                                        <HeartIcon size={18} />
-                                        Donate
-                                    </Button>
+                                    <HeartIcon size={18} />
+                                    Donate
                                 </a>
                                 <a
                                     href="/download"
                                     onClick={() => setIsOpen(false)}
-                                    className="w-full"
+                                    className={getButtonClassName({
+                                        variant: "primary",
+                                        className: "w-full",
+                                    })}
                                 >
-                                    <Button
-                                        variant="primary"
-                                        className="w-full"
-                                    >
-                                        <ArrowLineDownIcon size={18} />
-                                        Download
-                                    </Button>
+                                    <ArrowLineDownIcon size={18} />
+                                    Download
                                 </a>
                             </div>
                         </div>
