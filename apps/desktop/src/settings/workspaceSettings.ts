@@ -13,6 +13,12 @@ export const workspaceSettingsSchema = z.object({
     client: z.string().optional(),
     ensembleEnvironment: z.enum(["indoor", "outdoor"]).optional(),
     ensembleType: z.string().optional(),
+
+    // Mobile export settings
+    otmProductionId: z.preprocess(
+        (v) => (v === "" || v === undefined ? undefined : v),
+        z.optional(z.coerce.number().int().positive()),
+    ),
 });
 
 export type WorkspaceSettings = z.infer<typeof workspaceSettingsSchema>;
@@ -32,6 +38,7 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     client: undefined,
     ensembleEnvironment: undefined,
     ensembleType: undefined,
+    otmProductionId: undefined,
 };
 
 /**

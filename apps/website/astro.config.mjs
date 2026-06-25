@@ -76,6 +76,10 @@ export default defineConfig({
                     items: [{ autogenerate: { directory: "otm" } }],
                 },
                 {
+                    label: "Mobile",
+                    items: [{ autogenerate: { directory: "mobile" } }],
+                },
+                {
                     label: "Developers",
                     items: [{ autogenerate: { directory: "developers" } }],
                 },

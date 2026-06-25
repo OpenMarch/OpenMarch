@@ -71,11 +71,12 @@ test("Toolbars are visible", async ({ electronApp }) => {
 test("Export modal is visible", async ({ electronApp }) => {
     const { page } = electronApp;
     await page.getByRole("tab", { name: "File" }).click();
-    await page.getByRole("button", { name: "Export" }).click();
+    await page.getByRole("button", { name: "Export", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Export" })).toBeVisible();
     await expect(
         page.getByRole("heading", { name: "Export", exact: true }),
     ).toBeVisible();
+    await page.getByRole("tab", { name: "Coordinate Sheets" }).click();
     await expect(page.getByText("PreviewB1Example")).toBeVisible();
     await page.getByRole("tab", { name: "Drill Charts" }).click();
     await expect(

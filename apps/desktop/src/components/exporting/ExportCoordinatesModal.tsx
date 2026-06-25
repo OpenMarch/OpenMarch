@@ -50,6 +50,12 @@ import {
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
+import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+
+const mobileExportScreenshotUrls = [2, 3, 4, 5].map(
+    (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
+);
 
 function chunkArray<T>(arr: T[], size: number): T[][] {
     const result: T[][] = [];
@@ -1151,10 +1157,58 @@ function DrillChartExport() {
     );
 }
 
-function ExportModalContents() {
+function MobileExportOption({ onClick }: { onClick: () => void }) {
     return (
-        <Tabs defaultValue="coordinate-sheets" className="gap-12">
+        <button
+            type="button"
+            onClick={onClick}
+            className="border-stroke bg-fg-1 hover:border-accent hover:shadow-modal focus-visible:ring-accent rounded-6 group flex min-h-[28rem] w-full overflow-hidden border text-left outline-hidden duration-150 ease-out focus-visible:ring-2"
+        >
+            <div className="relative flex flex-1 items-center justify-center overflow-hidden">
+                <img
+                    src="https://assets.openmarch.com/desktop/otm-popup.webp"
+                    alt={tolgee.t("exportCoordinates.mobilePreviewAlt")}
+                    className="rounded-6 h-full w-full object-fill duration-150 ease-out group-hover:scale-[1.01]"
+                    draggable={false}
+                />
+            </div>
+
+            <div
+                className="border-stroke relative hidden h-[28rem] w-[12rem] shrink-0 overflow-hidden border-l px-16 md:block"
+                aria-hidden="true"
+            >
+                <div className="from-bg-1 pointer-events-none absolute top-0 right-0 left-0 z-10 h-48 bg-linear-to-b to-transparent" />
+                <div className="from-bg-1 pointer-events-none absolute right-0 bottom-0 left-0 z-10 h-48 bg-linear-to-t to-transparent" />
+                <div className="mobile-export-screenshot-carousel flex flex-col items-center gap-12 py-12">
+                    {[
+                        ...mobileExportScreenshotUrls,
+                        ...mobileExportScreenshotUrls,
+                    ].map((url, index) => (
+                        <img
+                            key={`${url}-${index}`}
+                            src={url}
+                            alt=""
+                            className="border-stroke shadow-fg-1 aspect-[9/19.5] w-[10rem] shrink-0 rounded-[1.25rem] border object-cover"
+                            draggable={false}
+                        />
+                    ))}
+                </div>
+            </div>
+        </button>
+    );
+}
+
+function ExportModalContents({
+    onMobileExportClick,
+}: {
+    onMobileExportClick: () => void;
+}) {
+    return (
+        <Tabs defaultValue="mobile" className="gap-12">
             <TabsList>
+                <TabItem value="mobile">
+                    <T keyName="exportCoordinates.mobile" />
+                </TabItem>
                 <TabItem value="coordinate-sheets">
                     <T keyName="exportCoordinates.coordinateSheets" />
                 </TabItem>
@@ -1162,6 +1216,10 @@ function ExportModalContents() {
                     <T keyName="exportCoordinates.drillCharts" />
                 </TabItem>
             </TabsList>
+
+            <TabContent value="mobile">
+                <MobileExportOption onClick={onMobileExportClick} />
+            </TabContent>
 
             <TabContent value="coordinate-sheets">
                 <CoordinateSheetExport />
@@ -1175,11 +1233,20 @@ function ExportModalContents() {
 }
 
 export default function ExportCoordinatesModal() {
+    const [open, setOpen] = useState(false);
+    const { setContent, setOpen: setSidebarOpen } = useSidebarModalStore();
+
+    const handleMobileExportClick = useCallback(() => {
+        setOpen(false);
+        setContent(<MobileExportModalContents />, "mobile-export");
+        setSidebarOpen(true);
+    }, [setContent, setSidebarOpen]);
+
     return (
         <>
             <style>{`.export-coordinates-dialog + [data-radix-popper-content-wrapper],
                 .export-coordinates-dialog ~ [data-radix-popper-content-wrapper]{z-index:10000 !important;}`}</style>
-            <Dialog>
+            <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger
                     asChild
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
@@ -1195,7 +1262,9 @@ export default function ExportCoordinatesModal() {
                     <DialogTitle>
                         <T keyName="exportCoordinates.title" />
                     </DialogTitle>
-                    <ExportModalContents />
+                    <ExportModalContents
+                        onMobileExportClick={handleMobileExportClick}
+                    />
                 </DialogContent>
             </Dialog>
         </>

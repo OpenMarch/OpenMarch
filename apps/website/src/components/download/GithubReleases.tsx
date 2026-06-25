@@ -83,9 +83,11 @@ export default function GithubReleases() {
     return (
         <section
             id="all-releases"
-            className="flex h-[64rem] w-full flex-col gap-12 max-[768px]:h-auto"
+            className="flex h-[64rem] w-full min-w-0 flex-col gap-12 max-[768px]:h-auto"
         >
-            <h1 className="text-h2">All Releases & Changelogs</h1>
+            <h1 className="text-h2 max-[520px]:text-h3">
+                All Releases & Changelogs
+            </h1>
             {loading ? (
                 <div className="text w-full text-left">
                     <CircleNotchIcon
@@ -113,7 +115,7 @@ export default function GithubReleases() {
                 <Tabs.Root
                     value={selectedRelease ?? undefined}
                     onValueChange={setSelectedRelease}
-                    className="flex h-full w-full gap-8 max-[768px]:flex-col"
+                    className="flex h-full w-full min-w-0 gap-8 max-[768px]:flex-col"
                 >
                     <div
                         id="sidebar"
@@ -156,14 +158,14 @@ export default function GithubReleases() {
                         <Tabs.Content
                             value={release.tag_name}
                             key={release.id}
-                            className="flex h-full w-full flex-col gap-8 max-[768px]:min-h-[400px]"
+                            className="flex h-full w-full min-w-0 flex-col gap-8 max-[768px]:min-h-[400px]"
                         >
                             <header className="border-stroke rounded-6 flex h-fit w-full flex-col gap-12 border p-12 max-[768px]:p-8">
-                                <div className="flex items-end gap-12">
+                                <div className="flex flex-wrap items-end gap-12">
                                     <h1 className="text-h3 text-accent font-mono leading-none">
                                         {release.tag_name}
                                     </h1>
-                                    <h3 className="text-h5 text-text-subtitle">
+                                    <h3 className="text-h5 text-text-subtitle max-[520px]:text-body">
                                         {new Date(
                                             release.published_at,
                                         ).toLocaleDateString("en-US", {

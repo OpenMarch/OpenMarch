@@ -1004,11 +1004,11 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).finally(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersDown: {
@@ -1023,11 +1023,11 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).finally(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersLeft: {
@@ -1042,11 +1042,11 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).finally(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
                 case RegisteredActionsEnum.moveSelectedMarchersRight: {
@@ -1061,11 +1061,11 @@ function RegisteredActionsHandler() {
                         snapDenominatorX: 1.0 / distance.current,
                         snapDenominatorY: 1.0 / distance.current,
                     });
-                    updateSelectedMarchersAsync(() => updatedPagesArray).then(
-                        () => {
-                            isUpdatingDirection.current = false;
-                        },
-                    );
+                    updateSelectedMarchersAsync(
+                        () => updatedPagesArray,
+                    ).finally(() => {
+                        isUpdatingDirection.current = false;
+                    });
                     break;
                 }
 
