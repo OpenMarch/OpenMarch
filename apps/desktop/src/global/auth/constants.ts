@@ -72,11 +72,12 @@ export function getClerkTokenEndpoint(): string {
 /**
  * Gets the Clerk accounts sign-up URL.
  * Only call when isSignInEnabled is true (CLERK_CONFIG is non-null).
+ * Returns null when VITE_SIGN_UP_URL is unset.
  */
-export function getClerkSignUpUrl(): string {
+export function getClerkSignUpUrl(): string | null {
     const signUpUrl = import.meta.env.VITE_SIGN_UP_URL;
     if (typeof signUpUrl === "string" && signUpUrl.length > 0) return signUpUrl;
-    throw new Error("VITE_SIGN_UP_URL is not set");
+    return null;
 }
 
 /**

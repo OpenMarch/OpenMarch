@@ -215,7 +215,8 @@ export default function EnsembleList() {
                                         <div className="flex flex-col gap-8">
                                             {ensemble.productions?.map(
                                                 (production) => (
-                                                    <div
+                                                    <button
+                                                        type="button"
                                                         key={production.id}
                                                         onClick={(e) =>
                                                             handleProductionClick(
@@ -223,7 +224,7 @@ export default function EnsembleList() {
                                                                 production,
                                                             )
                                                         }
-                                                        className={`group hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex cursor-pointer items-center justify-between gap-4 rounded border px-16 py-12 transition-colors`}
+                                                        className="group hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex w-full cursor-pointer items-center justify-between gap-4 rounded border px-16 py-12 text-left transition-colors"
                                                     >
                                                         <div>
                                                             {production.name}
@@ -233,7 +234,7 @@ export default function EnsembleList() {
                                                                 "ensembles.attachToProduction",
                                                             )}
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 ),
                                             )}
                                             <div className="flex w-full justify-between">

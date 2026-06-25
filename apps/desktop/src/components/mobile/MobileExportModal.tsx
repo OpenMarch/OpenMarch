@@ -23,7 +23,7 @@ import { AuthButton, SignInButton } from "../../auth/AuthButton";
 import { useQueryClient } from "@tanstack/react-query";
 import { getGetApiEditorV1EnsemblesAnyQueryOptions } from "@/api/generated/ensembles/ensembles";
 import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
-import { getClerkSignUpUrl } from "@/global/auth/constants";
+import { getClerkSignUpUrl, isSignInEnabled } from "@/global/auth/constants";
 import { T, useTolgee } from "@tolgee/react";
 
 const mobileExportScreenshotUrls = [1, 2, 3, 4, 5].map(
@@ -86,6 +86,7 @@ export default function MobileExportModal({
         useSidebarModalStore();
     const queryClient = useQueryClient();
     const productionId = useOtmProductionId();
+    const { t } = useTolgee();
 
     useEffect(() => {
         if (productionId == null) return;
@@ -130,6 +131,7 @@ export default function MobileExportModal({
             <button
                 onClick={handleClick}
                 onMouseEnter={prefetchMobileExportData}
+                aria-label={t("mobileExport.title")}
                 className={twMerge(
                     clsx(
                         "hover:text-accent outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:opacity-50",
@@ -142,7 +144,7 @@ export default function MobileExportModal({
                 )}
                 id="sidebar-launcher-mobile-export"
             >
-                {label}
+                <span aria-hidden>{label}</span>
             </button>
         </>
     );
@@ -195,9 +197,10 @@ export function MobileExportModalContents() {
                     {isSignedInView && <AuthButton />}
                     <button
                         onClick={toggleOpen}
+                        aria-label={t("mobileExport.close")}
                         className="hover:text-red duration-150 ease-out"
                     >
-                        <XIcon size={24} />
+                        <XIcon size={24} aria-hidden />
                     </button>
                 </div>
             </header>
@@ -279,14 +282,15 @@ function MobileExportAccessError() {
 
 function SignedOutMobileExportContent() {
     const { t } = useTolgee();
+    const signUpUrl = isSignInEnabled ? getClerkSignUpUrl() : null;
     const handleSetupAccount = useCallback(() => {
-        const signupUrl = getClerkSignUpUrl();
+        if (!signUpUrl) return;
         if (window.electron?.openExternal) {
-            void window.electron.openExternal(signupUrl);
+            void window.electron.openExternal(signUpUrl);
         } else {
-            window.open(signupUrl, "_blank");
+            window.open(signUpUrl, "_blank");
         }
-    }, []);
+    }, [signUpUrl]);
 
     const imageClassname = clsx(
         " block h-200 w-auto shrink-0  drop-shadow-text-subtitle",
@@ -313,21 +317,25 @@ function SignedOutMobileExportContent() {
                         )}
                     />
                 </div>
-                <div className="flex w-[85%] flex-col items-center gap-12">
-                    <p className="text-body text-text-subtitle">
-                        <T keyName="mobileExport.signedOut.createAccountPrompt" />
-                    </p>
-                    <Button variant="primary" onClick={handleSetupAccount}>
-                        <ArrowSquareOutIcon size={16} />{" "}
-                        <T keyName="mobileExport.signedOut.setupAccount" />
-                    </Button>
-                </div>
-                <div className="flex w-[85%] flex-col items-center gap-12">
-                    <p className="text-body text-text-subtitle">
-                        <T keyName="mobileExport.signedOut.signInPrompt" />
-                    </p>
-                    <SignInButton variant="secondary" />
-                </div>
+                {signUpUrl && (
+                    <div className="flex w-[85%] flex-col items-center gap-12">
+                        <p className="text-body text-text-subtitle">
+                            <T keyName="mobileExport.signedOut.createAccountPrompt" />
+                        </p>
+                        <Button variant="primary" onClick={handleSetupAccount}>
+                            <ArrowSquareOutIcon size={16} />{" "}
+                            <T keyName="mobileExport.signedOut.setupAccount" />
+                        </Button>
+                    </div>
+                )}
+                {isSignInEnabled && (
+                    <div className="flex w-[85%] flex-col items-center gap-12">
+                        <p className="text-body text-text-subtitle">
+                            <T keyName="mobileExport.signedOut.signInPrompt" />
+                        </p>
+                        <SignInButton variant="secondary" />
+                    </div>
+                )}
             </div>
             <div
                 className="relative -mx-3 flex min-h-0 overflow-hidden py-4"
