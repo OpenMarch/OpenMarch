@@ -72,8 +72,8 @@ export default defineConfig({
                     items: [{ autogenerate: { directory: "troubleshooting" } }],
                 },
                 {
-                    label: "About",
-                    items: [{ autogenerate: { directory: "about" } }],
+                    label: "On The Move",
+                    items: [{ autogenerate: { directory: "otm" } }],
                 },
                 {
                     label: "Developers",
