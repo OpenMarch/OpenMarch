@@ -68,11 +68,11 @@ export const DialogContent = ({
         <RadixDialog.Portal>
             <RadixDialog.Overlay
                 className={twMerge(
-                    "bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[500]",
+                    "bg-modal-overlay data-[state=open]:animate-fade-in fixed inset-0 z-[1000]",
                     overlayClassName,
                 )}
             />
-            <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[501] flex items-center justify-center">
+            <div className="data-[state=open]:animate-fade-in fixed inset-0 z-[1001] flex items-center justify-center">
                 <RadixDialog.Content
                     {...props}
                     className={clsx(

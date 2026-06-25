@@ -5,7 +5,6 @@ import {
     Select,
     SelectItem,
     SelectContent,
-    SelectSeparator,
     SelectTriggerButton,
     Button,
     AlertDialog,
@@ -24,7 +23,11 @@ import { T, useTolgee } from "@tolgee/react";
 
 export default function AudioSelector() {
     const [audioFiles, setAudioFiles] = useState<AudioFile[]>([]);
-    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
     const { t } = useTolgee();
 
     const refreshAudioFiles = useCallback(() => {
@@ -70,6 +73,20 @@ export default function AudioSelector() {
     useEffect(() => {
         refreshAudioFiles();
     }, [refreshAudioFiles, selectedAudioFile]);
+
+    // Listen for audio file updates (e.g., after insertion)
+    useEffect(() => {
+        const handleAudioFilesUpdated = () => {
+            refreshAudioFiles();
+        };
+        window.addEventListener("audioFilesUpdated", handleAudioFilesUpdated);
+        return () => {
+            window.removeEventListener(
+                "audioFilesUpdated",
+                handleAudioFilesUpdated,
+            );
+        };
+    }, [refreshAudioFiles]);
 
     return (
         <div className="flex flex-col gap-12">

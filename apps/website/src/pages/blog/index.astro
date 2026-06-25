@@ -48,20 +48,20 @@ const blogs: BlogListItem[] = [
     <div class="flex flex-col gap-64">
         <section
             id="landing"
-            class="relative items-center flex h-[40vh] min-h-0 flex-col justify-center gap-12"
+            class="relative flex h-[40vh] min-h-0 flex-col items-center justify-center gap-12"
         >
             <h1
-                class="text-h1 text-center max-[600px]:text-h2 motion-preset-slide-up-md"
+                class="text-h1 max-[600px]:text-h2 motion-preset-slide-up-md text-center"
             >
                 The latest updates from us
             </h1>
             <p
-                class="text-body leading-[160%] text-center motion-preset-fade-lg"
+                class="text-body motion-preset-fade-lg text-center leading-[160%]"
             >
                 Keep up on our development, journeys, events, and more.
             </p>
             <div
-                class="absolute -top-1/2 motion-preset-fade-lg motion-delay-300 left-1/2 -translate-x-1/2 -z-50 size-[800px] max-[640px]:size-[550px]"
+                class="motion-preset-fade-lg motion-delay-300 absolute -top-1/2 left-1/2 -z-50 size-[800px] -translate-x-1/2 max-[640px]:size-[550px]"
                 style="background: radial-gradient(circle, var(--color-accent) 0%, transparent 65%); opacity: 0.4;"
             >
             </div>
@@ -71,7 +71,7 @@ const blogs: BlogListItem[] = [
                 blogs.map((blog: BlogListItem) => (
                     <a
                         href={`/blog/${blog.id}`}
-                        class="rounded-6 border border-stroke h-fit bg-fg-1 duration-150 ease-out hover:border-accent flex max-[700px]:flex-col"
+                        class="rounded-6 border-stroke bg-fg-1 hover:border-accent flex h-fit border duration-150 ease-out max-[700px]:flex-col"
                     >
                         {blog.source === "content" ? (
                             <Image
@@ -79,7 +79,7 @@ const blogs: BlogListItem[] = [
                                 width={670}
                                 height={420}
                                 alt=""
-                                class="aspect-video h-auto w-[30%] min-w-[30%] max-[700px]:w-full rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
+                                class="rounded-t-6 md:rounded-l-6 aspect-video h-auto w-[30%] min-w-[30%] object-cover max-[700px]:w-full md:rounded-t-none"
                             />
                         ) : (
                             <Image
@@ -87,14 +87,14 @@ const blogs: BlogListItem[] = [
                                 width={blog.imageWidth ?? 670}
                                 height={blog.imageHeight ?? 420}
                                 alt={blog.imageAlt}
-                                class="aspect-video h-auto w-[30%] min-w-[30%] max-[700px]:w-full rounded-t-6 object-cover md:rounded-l-6 md:rounded-t-none"
+                                class="rounded-t-6 md:rounded-l-6 aspect-video h-auto w-[30%] min-w-[30%] object-cover max-[700px]:w-full md:rounded-t-none"
                             />
                         )}
-                        <div class="flex flex-col gap-6 p-16 justify-center max-[500px]:p-16">
-                            <h2 class="w-full text-h3 max-[1000px]:text-h4">
+                        <div class="flex flex-col justify-center gap-6 p-16 max-[500px]:p-16">
+                            <h2 class="text-h3 max-[1000px]:text-h4 w-full">
                                 {blog.title}
                             </h2>
-                            <div class="flex gap-16 flex-wrap items-center text-text-subtitle">
+                            <div class="text-text-subtitle flex flex-wrap items-center gap-16">
                                 {blog.source === "payload" &&
                                 blog.authorProfileImageUrl ? (
                                     <Image

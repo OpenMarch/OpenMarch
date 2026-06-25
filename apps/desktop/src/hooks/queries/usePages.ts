@@ -138,16 +138,17 @@ const updatePagesAndLastPageCounts = async ({
 /**
  * Query options for the pages query
  *
- * @param args - the filters to use for the query, or the page id to fetch
+ * @param enabled - whether the query should run
  * @returns
  */
-export const allDatabasePagesQueryOptions = () => {
+export const allDatabasePagesQueryOptions = (enabled = true) => {
     return queryOptions<DatabasePage[]>({
         queryKey: pageKeys.all(),
         queryFn: async () => {
             return await pageQueries.getAll(db);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled,
     });
 };
 

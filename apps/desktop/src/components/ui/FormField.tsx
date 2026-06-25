@@ -8,17 +8,21 @@ import { forwardRef } from "react";
 import { T } from "@tolgee/react";
 
 interface FormFieldProps {
-    label: string;
+    label: string | React.ReactNode;
     children: React.ReactNode;
     tooltip?: string;
     className?: string;
+    name?: string;
 }
 
 const FormField = forwardRef<HTMLDivElement, FormFieldProps>(
-    ({ label, children, tooltip, className }, ref) => {
+    ({ label, children, tooltip, className, name }, ref) => {
+        // Use name prop if provided, otherwise convert label to string for Form.Field name
+        const fieldName = name || (typeof label === "string" ? label : "field");
+
         return (
             <Form.Field
-                name={label}
+                name={fieldName}
                 className={twMerge(
                     clsx(
                         "flex items-center justify-between gap-6 px-12",
@@ -110,8 +114,52 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
     },
 );
 
+/**
+ * Wizard-specific form field with vertical layout and Apple-inspired design
+ * - Label stacked above input
+ * - Optional helper text below label
+ * - Full width layout
+ * - Generous spacing
+ */
+interface WizardFormFieldProps {
+    label: string | React.ReactNode;
+    children: React.ReactNode;
+    helperText?: string | React.ReactNode;
+    className?: string;
+    id?: string;
+}
+
+const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
+    ({ label, children, helperText, className, id }, ref) => {
+        return (
+            <div
+                className={twMerge(
+                    clsx("flex w-full flex-col gap-10", className),
+                )}
+                ref={ref}
+            >
+                <div className="flex flex-col gap-6">
+                    <label
+                        htmlFor={id}
+                        className="text-body text-text font-medium"
+                    >
+                        {label}
+                    </label>
+                    {helperText && (
+                        <p className="text-sub text-text/60 leading-relaxed">
+                            {helperText}
+                        </p>
+                    )}
+                </div>
+                {children}
+            </div>
+        );
+    },
+);
+
 FormField.displayName = "FormField";
 StaticFormField.displayName = "StaticFormField";
+WizardFormField.displayName = "WizardFormField";
 
-export { StaticFormField };
+export { StaticFormField, WizardFormField };
 export default FormField;
