@@ -39,12 +39,16 @@ export type AudioFileListItem = {
     checksum?: string;
 };
 
-function normalizeAudioFile(
-    api: GetApiEditorV1ProductionsProductionIdAudioFiles200AudioFilesItem,
-): AudioFileListItem {
+type AudioFileApiItem =
+    GetApiEditorV1ProductionsProductionIdAudioFiles200AudioFilesItem & {
+        nickname?: string | null;
+    };
+
+function normalizeAudioFile(api: AudioFileApiItem): AudioFileListItem {
     return {
         id: api.id ?? 0,
         name: api.name ?? "",
+        nickname: api.nickname?.trim() || undefined,
         sizeMb: Number(api.size_megabytes ?? 0),
         durationSeconds: Number(api.duration_seconds ?? 0),
         createdAt: new Date(api.created_at ?? 0),

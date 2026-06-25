@@ -12,12 +12,7 @@ export const workspaceSettingsSchema = z.object({
     // Mobile export settings
     otmProductionId: z.preprocess(
         (v) => (v === "" || v === undefined ? undefined : v),
-        z.coerce
-            .number()
-            .optional()
-            .transform((n) =>
-                n !== undefined && Number.isNaN(n) ? undefined : n,
-            ),
+        z.optional(z.coerce.number().int().positive()),
     ),
 });
 

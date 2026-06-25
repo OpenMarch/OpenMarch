@@ -137,13 +137,15 @@ export function buildPerformerAppearanceShowData({
         fieldTheme,
     );
 
-    const sections = sectionAppearances.map((sectionAppearance) => ({
-        section: sectionAppearance.section,
-        ...resolveAppearanceFromStack(
-            [sectionAppearance, defaultMarcherAppearance],
-            fieldTheme,
-        ),
-    }));
+    const sections = [...sectionAppearances]
+        .sort((a, b) => a.section.localeCompare(b.section))
+        .map((sectionAppearance) => ({
+            section: sectionAppearance.section,
+            ...resolveAppearanceFromStack(
+                [sectionAppearance, defaultMarcherAppearance],
+                fieldTheme,
+            ),
+        }));
 
     const performers: NonNullable<PerformerAppearanceShowData["performers"]> =
         [];

@@ -8,6 +8,7 @@
 
 import { useMemo } from "react";
 import { mutationOptions, QueryClient, useQuery } from "@tanstack/react-query";
+import { getGetApiEditorV1EnsemblesQueryKey } from "@/api/generated/ensembles/ensembles";
 import {
     getGetApiEditorV1ProductionsIdQueryOptions,
     getGetApiEditorV1ProductionsIdQueryKey,
@@ -84,16 +85,18 @@ export const uploadRevisionMutationOptions = ({
     return mutationOptions({
         mutationFn: async ({ title }: { title: string }) =>
             uploadDatabaseToServer(db, title),
-        onSuccess: () => {
+        onSuccess: async () => {
             // Prefix-invalidate the full ensembles tree (includes
             // productions-by-ensemble) and the productions tree (includes
             // production-by-id and audio-files-by-production).
-            void queryClient.invalidateQueries({
-                queryKey: [`/api/editor/v1/ensembles`],
-            });
-            void queryClient.invalidateQueries({
-                queryKey: [`/api/editor/v1/productions`],
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey: getGetApiEditorV1EnsemblesQueryKey(),
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: [getGetApiEditorV1ProductionsIdQueryKey(0)[0]],
+                }),
+            ]);
             onSuccess?.();
         },
         onError: (error) => {

@@ -175,6 +175,8 @@ function EditNicknameDialog({
     onValueChange,
     onClose,
     onSave,
+    isPending,
+    errorMessage,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
@@ -183,6 +185,8 @@ function EditNicknameDialog({
     onValueChange: (value: string) => void;
     onClose: () => void;
     onSave: () => void;
+    isPending: boolean;
+    errorMessage: string | null;
 }) {
     const { t } = useTolgee();
     return (
@@ -214,6 +218,9 @@ function EditNicknameDialog({
                                 "mobileExport.audio.nicknamePlaceholderShort",
                             )}
                         />
+                        {errorMessage && (
+                            <DangerNote>{errorMessage}</DangerNote>
+                        )}
                         <div className="flex justify-end gap-8">
                             <Button
                                 variant="secondary"
@@ -227,8 +234,11 @@ function EditNicknameDialog({
                                 variant="primary"
                                 size="compact"
                                 type="submit"
+                                disabled={isPending}
                             >
-                                {t("mobileExport.audio.save")}
+                                {isPending
+                                    ? t("mobileExport.audio.saving")
+                                    : t("mobileExport.audio.save")}
                             </Button>
                         </div>
                     </form>
@@ -249,8 +259,13 @@ export function AudioFileSettings({
     const productionId = production.id;
     const queryClient = useQueryClient();
     const setActiveMutation = useSetActiveAudioFileMutation(queryClient);
-    const { data: audioFiles, isSuccess: audioFilesLoaded } =
-        useAudioFiles(productionId);
+    const {
+        data: audioFiles = [],
+        isPending: audioFilesPending,
+        isError: audioFilesError,
+        error: audioFilesQueryError,
+        refetch: refetchAudioFiles,
+    } = useAudioFiles(productionId);
     const updateNicknameMutation =
         usePatchApiEditorV1ProductionsProductionIdAudioFilesId({
             mutation: {
@@ -313,12 +328,16 @@ export function AudioFileSettings({
 
     const confirmEditNickname = () => {
         if (!productionId || !editNicknameFile) return;
-        updateNicknameMutation.mutate({
-            productionId,
-            id: editNicknameFile.id,
-            data: { nickname: editNicknameValue },
-        });
-        closeEditNickname();
+        updateNicknameMutation.mutate(
+            {
+                productionId,
+                id: editNicknameFile.id,
+                data: { nickname: editNicknameValue },
+            },
+            {
+                onSuccess: () => closeEditNickname(),
+            },
+        );
     };
 
     const handleDelete = (audioFileId: number) => {
@@ -381,9 +400,26 @@ export function AudioFileSettings({
             </h3>
 
             <div className="flex flex-col gap-8">
-                {!audioFilesLoaded ? (
+                {audioFilesPending ? (
                     <div className="flex animate-spin items-center justify-center">
                         <SpinnerIcon size={16} />
+                    </div>
+                ) : audioFilesError ? (
+                    <div className="flex flex-col gap-8">
+                        <DangerNote>
+                            {audioFilesQueryError instanceof Error
+                                ? audioFilesQueryError.message
+                                : t("mobileExport.audio.loadFailed")}
+                        </DangerNote>
+                        <div className="flex justify-end">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={() => void refetchAudioFiles()}
+                            >
+                                {t("mobileExport.audio.retry")}
+                            </Button>
+                        </div>
                     </div>
                 ) : (
                     audioFiles.map((file) => {
@@ -544,6 +580,13 @@ export function AudioFileSettings({
                 onValueChange={setEditNicknameValue}
                 onClose={closeEditNickname}
                 onSave={confirmEditNickname}
+                isPending={updateNicknameMutation.isPending}
+                errorMessage={
+                    updateNicknameMutation.isError &&
+                    updateNicknameMutation.error?.message
+                        ? updateNicknameMutation.error.message
+                        : null
+                }
             />
         </div>
     );

@@ -28,7 +28,10 @@ import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { apiPostFormData } from "@/auth/api-client";
-import { getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions } from "@/api/generated/audio-files/audio-files";
+import {
+    getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey,
+    getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions,
+} from "@/api/generated/audio-files/audio-files";
 import { patchApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import {
     isSilentPlaceholder,
@@ -287,9 +290,18 @@ export const SubmitRevisionForm = ({
                     formData,
                 );
             }
-            void queryClient.invalidateQueries({
-                queryKey: getGetApiEditorV1ProductionsIdQueryKey(productionId),
-            });
+            await Promise.all([
+                queryClient.invalidateQueries({
+                    queryKey:
+                        getGetApiEditorV1ProductionsIdQueryKey(productionId),
+                }),
+                queryClient.invalidateQueries({
+                    queryKey:
+                        getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey(
+                            productionId,
+                        ),
+                }),
+            ]);
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             console.error("Failed to set active audio on server:", err);

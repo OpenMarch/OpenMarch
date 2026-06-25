@@ -105,6 +105,51 @@ describe("buildPerformerAppearanceShowData", () => {
         );
     });
 
+    it("sorts section appearances alphabetically regardless of input order", () => {
+        const result = buildPerformerAppearanceShowData({
+            fieldProperties,
+            sectionAppearances: [
+                {
+                    id: 2,
+                    section: "Trombone",
+                    fill_color: { r: 1, g: 2, b: 3, a: 1 },
+                    outline_color: null,
+                    shape_type: "square",
+                    visible: true,
+                    label_visible: true,
+                    equipment_name: null,
+                    equipment_state: null,
+                    created_at: "",
+                    updated_at: "",
+                },
+                {
+                    id: 1,
+                    section: "Trumpet",
+                    fill_color: { r: 4, g: 5, b: 6, a: 1 },
+                    outline_color: null,
+                    shape_type: "circle",
+                    visible: true,
+                    label_visible: true,
+                    equipment_name: null,
+                    equipment_state: null,
+                    created_at: "",
+                    updated_at: "",
+                },
+            ],
+            tagAppearances: [],
+            tagAppearanceIdsByPageId: emptyTagMap,
+            marcherIdsByTagId: new Map(),
+            marchers,
+            marcherPages: [],
+            pagesInOrder: [{ id: 1 }],
+        });
+
+        expect(result.sections.map((s) => s.section)).toEqual([
+            "Trombone",
+            "Trumpet",
+        ]);
+    });
+
     it("emits performer override when tag appearance changes resolved style", () => {
         const tagAppearances: TagAppearance[] = [
             {
