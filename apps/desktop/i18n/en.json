@@ -123,6 +123,12 @@
         "whenYouOptIn": "When you opt-in",
         "whenYouOptOut": "When you opt-out"
     },
+    "auth": {
+        "signIn": "Sign In",
+        "signInAriaLabel": "Sign in",
+        "signOut": "Sign Out",
+        "userFallback": "User"
+    },
     "audio": {
         "beats": {
             "create": {
@@ -228,6 +234,8 @@
         "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
         "coordinateSheets": "Coordinate Sheets",
         "drillCharts": "Drill Charts",
+        "mobile": "Mobile",
+        "mobilePreviewAlt": "OpenMarch mobile export preview",
         "errorRendering": "Error rendering {drillNumber}",
         "errorTitle": "Error exporting coordinate sheet",
         "exampleMarcherName": "Example Marcher",
@@ -320,6 +328,36 @@
         "unknownError": "Unknown error",
         "unsortedSection": "Unsorted",
         "useXYHeaders": "Use X/Y headers"
+    },
+    "ensembles": {
+        "attached": "(Attached)",
+        "attachDialog": {
+            "attach": "Attach",
+            "cancel": "Cancel",
+            "description": "Attach this .dots file to this production? This will allow you to upload from this file into the OpenMarch - On the Move mobile app.",
+            "title": "Attach to Production"
+        },
+        "attachToProduction": "Attach to production",
+        "createProduction": "Create production",
+        "createDialog": {
+            "cancel": "Cancel",
+            "create": "Create",
+            "creating": "Creating...",
+            "description": "Add a production to {ensembleName}.",
+            "failed": "Failed to create production",
+            "nameLabel": "Production name",
+            "namePlaceholder": "Production name",
+            "nameRequired": "Enter a production name.",
+            "title": "Create Production"
+        },
+        "createdAtHeader": "Created At",
+        "empty": "No ensembles found. Create one above!",
+        "error": "Error loading ensembles",
+        "loading": "Loading ensembles...",
+        "nameHeader": "Name",
+        "performersHeader": "Performers",
+        "productionsHeader": "Productions",
+        "viewDetails": "View ensemble details"
     },
     "field": {
         "general": {
@@ -686,6 +724,102 @@
         "createFailed": "Failed to create measures - {error}",
         "deleteFailed": "Failed to delete measures - {error}",
         "updateFailed": "Failed to update measures - {error}"
+    },
+    "mobileExport": {
+        "accessError": {
+            "description": "We could not validate that you have access to the OTM Production this show is attached to. The signed-in account may not have access, or the production may no longer exist.",
+            "hint": "Detach this file from the production to choose a different one, or close the sidebar and sign in with an account that has access.",
+            "title": "Could not validate On the Move access"
+        },
+        "audio": {
+            "active": "Active",
+            "add": "Add",
+            "addAlternate": "Add Alternate Audio File",
+            "addHelp": "Performers and instructors will be able to select this audio file in the mobile app.",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "editNickname": "Edit Nickname",
+            "loadFailed": "Failed to load audio files",
+            "nicknameLabel": "Nickname (optional)",
+            "nicknamePlaceholder": "Nickname (optional)",
+            "nicknamePlaceholderShort": "Nickname",
+            "optionsAriaLabel": "Audio file options",
+            "retry": "Retry",
+            "save": "Save",
+            "saving": "Saving…",
+            "setActive": "Set as active",
+            "title": "Audio Files",
+            "uploading": "Uploading…"
+        },
+        "close": "Close",
+        "confirmPublish": {
+            "cancel": "Cancel",
+            "description": "This will immediately make this show visible to all users registered to this ensemble.",
+            "publish": "Publish",
+            "title": "Publish to mobile app"
+        },
+        "date": {
+            "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+            "full": "{month} {day}, {year} - {time}",
+            "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+            "justNow": "Just now",
+            "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}"
+        },
+        "detach": {
+            "button": "Detach File from Production",
+            "cancel": "Cancel",
+            "confirm": "Are you sure you want to detach this file from the OTM Production? This means you will not be able to upload revisions to the mobile app. You can always re-attach it later",
+            "confirmButton": "Yes, Detach",
+            "failed": "Failed to detach file from production"
+        },
+        "loading": {
+            "checkingSignIn": "Checking sign-in...",
+            "validatingAccess": "Validating On the Move access..."
+        },
+        "logoAlt": "OTM Logo",
+        "revision": {
+            "audioSyncFailed": "Revision uploaded, but audio sync failed: {msg}",
+            "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
+            "initialTitle": "Initial revision",
+            "newTitleLabel": "New revision title",
+            "preparing": "Preparing...",
+            "publishButton": "Publish to mobile app",
+            "publishing": "Publishing to mobile app...",
+            "pushButton": "Push to Mobile App",
+            "pushing": "Pushing to Mobile App...",
+            "titlePlaceholder": "Describe what changed...",
+            "titleRequired": "Please provide a revision title",
+            "uploadFailedGeneric": "Upload failed. Check console for details.",
+            "uploadSuccess": "Upload successful",
+            "uploadingAudio": "Uploading audio...",
+            "uploadingImage": "Uploading image...",
+            "validatingAudio": "Validating audio..."
+        },
+        "revisions": {
+            "active": "Active",
+            "emptyMessage": "After you publish to the mobile app, you may push additional revisions to keep your show up-to-date.",
+            "listHeading": "All revisions"
+        },
+        "settings": {
+            "backgroundImage": {
+                "alt": "Production background",
+                "empty": "No background image",
+                "help": "The background image is automatically synced when you upload a new revision. To change it, change the background image in field editor and upload a new revision.",
+                "title": "Background image"
+            },
+            "button": "Settings",
+            "detach": {
+                "title": "Detach production"
+            },
+            "noProduction": "No production found",
+            "title": "Mobile app settings"
+        },
+        "signedOut": {
+            "createAccountPrompt": "Don't have an account yet? Create one now!",
+            "setupAccount": "Set up your account",
+            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
+        },
+        "title": "Export to Mobile"
     },
     "music": {
         "accent": "Accent first beat",

@@ -1,0 +1,593 @@
+import { useRef, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@radix-ui/react-dropdown-menu";
+import {
+    PencilIcon,
+    TrashIcon,
+    CheckCircleIcon,
+    PlusIcon,
+    DotsThreeIcon,
+    SpinnerIcon,
+} from "@phosphor-icons/react";
+import {
+    Button,
+    Checkbox,
+    DangerNote,
+    Dialog,
+    DialogContent,
+    DialogTitle,
+    Input,
+} from "@openmarch/ui";
+import {
+    useAudioFiles,
+    useSetActiveAudioFileMutation,
+    useAddAudioFileMutation,
+    type AudioFileListItem,
+} from "../queries/useAudioFiles";
+import {
+    usePatchApiEditorV1ProductionsProductionIdAudioFilesId,
+    useDeleteApiEditorV1ProductionsProductionIdAudioFilesId,
+    getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey,
+} from "@/api/generated/audio-files/audio-files";
+import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
+import { getAudioDuration, getAudioSizeMegabytes } from "../audio-files/utils";
+import clsx from "clsx";
+import { useTolgee } from "@tolgee/react";
+
+function formatDuration(seconds: number): string {
+    const roundedSeconds = Math.round(seconds);
+    const m = Math.floor(roundedSeconds / 60);
+    const s = roundedSeconds % 60;
+    return `${m}m ${s}s`;
+}
+
+function formatDate(date: Date): string {
+    return date.toLocaleString(undefined, {
+        month: "numeric",
+        day: "numeric",
+        year: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+    });
+}
+
+function AddAudioDialog({
+    open,
+    onOpenChange,
+    file,
+    nickname,
+    onNicknameChange,
+    setAsDefault,
+    onSetAsDefaultChange,
+    onClose,
+    onSubmit,
+    isPending,
+    errorMessage,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    file: File | null;
+    nickname: string;
+    onNicknameChange: (value: string) => void;
+    setAsDefault: boolean;
+    onSetAsDefaultChange: (value: boolean) => void;
+    onClose: () => void;
+    onSubmit: () => void;
+    isPending: boolean;
+    errorMessage: string | null;
+}) {
+    const { t } = useTolgee();
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={onOpenChange}
+            aria-describedby={t("mobileExport.audio.addAlternate")}
+        >
+            <DialogContent className="flex h-fit max-w-sm flex-col gap-16">
+                <DialogTitle>
+                    {t("mobileExport.audio.addAlternate")}
+                </DialogTitle>
+                {file && (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSubmit();
+                        }}
+                        className="flex flex-col gap-16"
+                    >
+                        <p className="text-body text-text-subtitle">
+                            {file.name}
+                        </p>
+                        <div className="flex flex-col gap-4">
+                            <label
+                                htmlFor="add-audio-nickname"
+                                className="text-text-subtitle text-sub"
+                            >
+                                {t("mobileExport.audio.nicknameLabel")}
+                            </label>
+                            <Input
+                                id="add-audio-nickname"
+                                value={nickname}
+                                onChange={(e) =>
+                                    onNicknameChange(e.target.value)
+                                }
+                                placeholder={t(
+                                    "mobileExport.audio.nicknamePlaceholder",
+                                )}
+                                aria-label={t(
+                                    "mobileExport.audio.nicknamePlaceholderShort",
+                                )}
+                            />
+                        </div>
+                        <div className="flex items-center gap-8">
+                            <Checkbox
+                                checked={setAsDefault}
+                                onClick={() =>
+                                    onSetAsDefaultChange(!setAsDefault)
+                                }
+                            />
+                            <label>{t("mobileExport.audio.setActive")}</label>
+                        </div>
+                        {errorMessage && (
+                            <DangerNote>{errorMessage}</DangerNote>
+                        )}
+                        <p className="text-body text-text-subtitle">
+                            {t("mobileExport.audio.addHelp")}
+                        </p>
+                        <div className="flex justify-end gap-8">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                type="button"
+                                onClick={onClose}
+                            >
+                                {t("mobileExport.audio.cancel")}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="compact"
+                                type="submit"
+                                disabled={isPending}
+                            >
+                                {isPending
+                                    ? t("mobileExport.audio.uploading")
+                                    : t("mobileExport.audio.add")}
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function EditNicknameDialog({
+    open,
+    onOpenChange,
+    file,
+    value,
+    onValueChange,
+    onClose,
+    onSave,
+    isPending,
+    errorMessage,
+}: {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+    file: AudioFileListItem | null;
+    value: string;
+    onValueChange: (value: string) => void;
+    onClose: () => void;
+    onSave: () => void;
+    isPending: boolean;
+    errorMessage: string | null;
+}) {
+    const { t } = useTolgee();
+    return (
+        <Dialog
+            open={open}
+            onOpenChange={onOpenChange}
+            aria-describedby={t("mobileExport.audio.editNickname")}
+        >
+            <DialogContent className="flex h-fit max-w-sm flex-col gap-16">
+                <DialogTitle>
+                    {t("mobileExport.audio.editNickname")}
+                </DialogTitle>
+                {file && (
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            onSave();
+                        }}
+                        className="flex flex-col gap-16"
+                    >
+                        <Input
+                            value={value}
+                            onChange={(e) => onValueChange(e.target.value)}
+                            placeholder={t(
+                                "mobileExport.audio.nicknamePlaceholderShort",
+                            )}
+                            aria-label={t(
+                                "mobileExport.audio.nicknamePlaceholderShort",
+                            )}
+                        />
+                        {errorMessage && (
+                            <DangerNote>{errorMessage}</DangerNote>
+                        )}
+                        <div className="flex justify-end gap-8">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                type="button"
+                                onClick={onClose}
+                            >
+                                {t("mobileExport.audio.cancel")}
+                            </Button>
+                            <Button
+                                variant="primary"
+                                size="compact"
+                                type="submit"
+                                disabled={isPending}
+                            >
+                                {isPending
+                                    ? t("mobileExport.audio.saving")
+                                    : t("mobileExport.audio.save")}
+                            </Button>
+                        </div>
+                    </form>
+                )}
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+export function AudioFileSettings({
+    production,
+    setDefaultAudioFileId,
+}: {
+    production: { id: number; default_audio_file_id: number | null };
+    setDefaultAudioFileId: (audioFileId: number) => void;
+}) {
+    const { t } = useTolgee();
+    const productionId = production.id;
+    const queryClient = useQueryClient();
+    const setActiveMutation = useSetActiveAudioFileMutation(queryClient);
+    const {
+        data: audioFiles = [],
+        isPending: audioFilesPending,
+        isError: audioFilesError,
+        error: audioFilesQueryError,
+        refetch: refetchAudioFiles,
+    } = useAudioFiles(productionId);
+    const updateNicknameMutation =
+        usePatchApiEditorV1ProductionsProductionIdAudioFilesId({
+            mutation: {
+                onSuccess: (_, { productionId: pid }) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1ProductionsIdQueryKey(pid),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey:
+                            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey(
+                                pid,
+                            ),
+                    });
+                },
+            },
+        });
+    const deleteMutation =
+        useDeleteApiEditorV1ProductionsProductionIdAudioFilesId({
+            mutation: {
+                onSuccess: (_, { productionId: pid }) => {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1ProductionsIdQueryKey(pid),
+                    });
+                    void queryClient.invalidateQueries({
+                        queryKey:
+                            getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey(
+                                pid,
+                            ),
+                    });
+                },
+            },
+        });
+    const addAudioMutation = useAddAudioFileMutation(queryClient);
+
+    const [editNicknameFile, setEditNicknameFile] =
+        useState<AudioFileListItem | null>(null);
+    const [editNicknameValue, setEditNicknameValue] = useState("");
+
+    const [addAudioOpen, setAddAudioOpen] = useState(false);
+    const [addAudioFile, setAddAudioFile] = useState<File | null>(null);
+    const [addAudioNickname, setAddAudioNickname] = useState("");
+    const [addAudioSetAsDefault, setAddAudioSetAsDefault] = useState(false);
+    const addAudioFileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleSetActive = (audioFileId: number) => {
+        if (!productionId) return;
+        setActiveMutation.mutate({ productionId, audioFileId });
+        setDefaultAudioFileId(audioFileId);
+    };
+
+    const openEditNickname = (file: AudioFileListItem) => {
+        setEditNicknameFile(file);
+        setEditNicknameValue(file.nickname ?? file.name);
+    };
+
+    const closeEditNickname = () => {
+        setEditNicknameFile(null);
+        setEditNicknameValue("");
+    };
+
+    const confirmEditNickname = () => {
+        if (!productionId || !editNicknameFile) return;
+        updateNicknameMutation.mutate(
+            {
+                productionId,
+                id: editNicknameFile.id,
+                data: { nickname: editNicknameValue },
+            },
+            {
+                onSuccess: () => closeEditNickname(),
+            },
+        );
+    };
+
+    const handleDelete = (audioFileId: number) => {
+        if (!productionId) return;
+        deleteMutation.mutate({ productionId, id: audioFileId });
+    };
+
+    const handleAddAlternateClick = () => {
+        addAudioFileInputRef.current?.click();
+    };
+
+    const handleAddAudioFileSelected = (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setAddAudioFile(file);
+            setAddAudioNickname(file.name.replace(/\.[^.]+$/, "") ?? "");
+            setAddAudioSetAsDefault(production.default_audio_file_id === null);
+            setAddAudioOpen(true);
+        }
+        e.target.value = "";
+    };
+
+    const closeAddAudio = () => {
+        setAddAudioOpen(false);
+        setAddAudioFile(null);
+        setAddAudioNickname("");
+        setAddAudioSetAsDefault(false);
+        addAudioMutation.reset();
+    };
+
+    const confirmAddAudio = async () => {
+        if (!productionId || !addAudioFile) return;
+        const [durationSeconds, sizeMegabytes] = await Promise.all([
+            getAudioDuration(addAudioFile),
+            Promise.resolve(getAudioSizeMegabytes(addAudioFile)),
+        ]);
+        addAudioMutation.mutate(
+            {
+                productionId,
+                file: addAudioFile,
+                nickname: addAudioNickname || undefined,
+                setAsDefault: addAudioSetAsDefault,
+                durationSeconds: durationSeconds ?? 0,
+                sizeMegabytes,
+            },
+            {
+                onSuccess: () => closeAddAudio(),
+            },
+        );
+    };
+
+    const canMutate = !!productionId;
+
+    return (
+        <div className="flex flex-col gap-6">
+            <h3 className="text-body text-text-subtitle font-medium">
+                {t("mobileExport.audio.title")}
+            </h3>
+
+            <div className="flex flex-col gap-8">
+                {audioFilesPending ? (
+                    <div className="flex animate-spin items-center justify-center">
+                        <SpinnerIcon size={16} />
+                    </div>
+                ) : audioFilesError ? (
+                    <div className="flex flex-col gap-8">
+                        <DangerNote>
+                            {audioFilesQueryError instanceof Error
+                                ? audioFilesQueryError.message
+                                : t("mobileExport.audio.loadFailed")}
+                        </DangerNote>
+                        <div className="flex justify-end">
+                            <Button
+                                variant="secondary"
+                                size="compact"
+                                onClick={() => void refetchAudioFiles()}
+                            >
+                                {t("mobileExport.audio.retry")}
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    audioFiles.map((file) => {
+                        const isActive =
+                            file.id === production.default_audio_file_id;
+                        return (
+                            <div
+                                key={file.id}
+                                className={clsx(
+                                    "rounded-6 bg-fg-1 flex items-center justify-between gap-12 border p-12",
+                                    isActive
+                                        ? "border-accent"
+                                        : "border-stroke",
+                                )}
+                            >
+                                <div className="text-body text-text flex min-w-0 flex-1 flex-col gap-4">
+                                    <span className="truncate font-medium">
+                                        {file.nickname ?? file.name}
+                                    </span>
+                                    <div className="text-text-subtitle flex flex-wrap gap-12 text-sm">
+                                        <span>
+                                            {formatDuration(
+                                                Number(
+                                                    file.durationSeconds ?? 0,
+                                                ),
+                                            )}
+                                        </span>
+                                        <span>
+                                            {Number(file.sizeMb ?? 0).toFixed(
+                                                2,
+                                            )}{" "}
+                                            MB
+                                        </span>
+                                        <span>
+                                            {formatDate(file.createdAt)}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex shrink-0 items-center gap-8">
+                                    {isActive && (
+                                        <span className="text-accent text-sm font-medium">
+                                            {t("mobileExport.audio.active")}
+                                        </span>
+                                    )}
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="hover:text-accent focus-visible:ring-accent rounded-4 text-text-subtitle p-4 outline-hidden transition-colors duration-150 ease-out focus-visible:-translate-y-4 focus-visible:ring-2"
+                                                aria-label={t(
+                                                    "mobileExport.audio.optionsAriaLabel",
+                                                )}
+                                            >
+                                                <DotsThreeIcon size={20} />
+                                            </button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent
+                                            align="end"
+                                            className="rounded-6 border-stroke bg-bg-1 z-50 border p-4 shadow-lg"
+                                        >
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    handleSetActive(file.id)
+                                                }
+                                                hidden={isActive}
+                                                className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                            >
+                                                <CheckCircleIcon size={16} />
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.setActive",
+                                                    )}
+                                                </span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    openEditNickname(file)
+                                                }
+                                                className="rounded-4 text-text hover:text-accent flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                            >
+                                                <PencilIcon size={16} />
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.editNickname",
+                                                    )}
+                                                </span>
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() =>
+                                                    handleDelete(file.id)
+                                                }
+                                                className="rounded-4 text-text hover:text-red flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                            >
+                                                <TrashIcon size={16} />
+                                                <span>
+                                                    {t(
+                                                        "mobileExport.audio.delete",
+                                                    )}
+                                                </span>
+                                            </DropdownMenuItem>
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
+                                </div>
+                            </div>
+                        );
+                    })
+                )}
+            </div>
+
+            <div className="flex justify-end">
+                <input
+                    ref={addAudioFileInputRef}
+                    type="file"
+                    accept="audio/*"
+                    className="hidden"
+                    aria-hidden
+                    onChange={handleAddAudioFileSelected}
+                />
+                <Button
+                    variant="secondary"
+                    size="compact"
+                    onClick={handleAddAlternateClick}
+                    disabled={!canMutate}
+                >
+                    <PlusIcon size={16} />{" "}
+                    {t("mobileExport.audio.addAlternate")}
+                </Button>
+            </div>
+
+            <AddAudioDialog
+                open={addAudioOpen}
+                onOpenChange={(open) => {
+                    if (!open) closeAddAudio();
+                }}
+                file={addAudioFile}
+                nickname={addAudioNickname}
+                onNicknameChange={setAddAudioNickname}
+                setAsDefault={addAudioSetAsDefault}
+                onSetAsDefaultChange={setAddAudioSetAsDefault}
+                onClose={closeAddAudio}
+                onSubmit={confirmAddAudio}
+                isPending={addAudioMutation.isPending}
+                errorMessage={
+                    addAudioMutation.isError && addAudioMutation.error?.message
+                        ? addAudioMutation.error.message
+                        : null
+                }
+            />
+
+            <EditNicknameDialog
+                open={editNicknameFile !== null}
+                onOpenChange={(o) => {
+                    if (!o) closeEditNickname();
+                }}
+                file={editNicknameFile}
+                value={editNicknameValue}
+                onValueChange={setEditNicknameValue}
+                onClose={closeEditNickname}
+                onSave={confirmEditNickname}
+                isPending={updateNicknameMutation.isPending}
+                errorMessage={
+                    updateNicknameMutation.isError &&
+                    updateNicknameMutation.error?.message
+                        ? updateNicknameMutation.error.message
+                        : null
+                }
+            />
+        </div>
+    );
+}

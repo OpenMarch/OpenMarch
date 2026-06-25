@@ -1,19 +1,26 @@
 ---
 import { Image } from "astro:assets";
-import { Button } from "@openmarch/ui";
+import { Badge, Button } from "@openmarch/ui";
 import { CURRENT_VERSION } from "@/constants";
-import fullscreenDark from "@/assets/home/fullscreen-dark.png";
-import fullscreenLight from "@/assets/home/fullscreen-light.png";
-import editorDark from "@/assets/home/editor-dark.png";
-import editorLight from "@/assets/home/editor-light.png";
+import fullscreenDark from "@/assets/desktop/perdark.png";
+import fullscreenLight from "@/assets/desktop/perlight.png";
+import editorDark from "@/assets/desktop/landerdark.png";
+import editorLight from "@/assets/desktop/landerlight.png";
 ---
 
 <section
     id="landing"
     class="relative flex h-fit flex-col min-w-0 w-full items-center justify-center gap-16 border border-stroke pt-32 pb-8 px-8 rounded-[14px]"
 >
-    <code class="font-mono text-[1.25rem] text-accent motion-delay-100"
+    {
+        /*<code class="font-mono text-h4 text-accent motion-delay-100"
         >{CURRENT_VERSION}</code
+    > */
+    }
+    <a href="/mobile"
+        ><Badge variant="secondary"
+            ><span class="text-accent">New:</span> On The Move Mobile App</Badge
+        ></a
     >
     <h1
         class="text-h1 leading-[130%] max-[580px]:text-h2 max-[580px]:w-full w-[512px] tracking-tighter text-center motion-preset-slide-up motion-delay-150"
@@ -28,7 +35,7 @@ import editorLight from "@/assets/home/editor-light.png";
         <a href="/download">
             <Button>Download</Button>
         </a>
-        <a href="/#features">
+        <a href="/#desktop">
             <Button variant="secondary">Learn More</Button>
         </a>
     </div>
@@ -37,39 +44,39 @@ import editorLight from "@/assets/home/editor-light.png";
         <Image
             src={fullscreenDark}
             alt="Fullscreen Screenshot"
-            width={1920}
-            height={1080}
+            width={1578}
+            height={950}
             format="webp"
             quality={80}
-            class="hidden dark:block border border-stroke rounded-6 aspect-video h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
+            class="hidden dark:block border border-stroke rounded-6 aspect-1578/950 h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
         />
         <Image
             src={fullscreenLight}
             alt="Fullscreen Screenshot"
-            width={1920}
-            height={1080}
+            width={1578}
+            height={950}
             format="webp"
             quality={80}
-            class="block dark:hidden border border-stroke rounded-6 aspect-video h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
+            class="block dark:hidden border border-stroke rounded-6 aspect-1578/950 h-auto w-[80%] z-20 motion-preset-slide-up-sm motion-delay-300"
         />
 
         <Image
             src={editorDark}
             alt="Editor Screenshot"
-            width={1920}
-            height={1080}
+            width={1578}
+            height={950}
             format="webp"
             quality={80}
-            class="hidden dark:block border border-stroke rounded-6 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
+            class="hidden dark:block border border-stroke rounded-6 aspect-1578/950 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
         />
         <Image
             src={editorLight}
             alt="Editor Screenshot"
-            width={1920}
-            height={1080}
+            width={1578}
+            height={950}
             format="webp"
             quality={80}
-            class="block dark:hidden border border-stroke rounded-6 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
+            class="block dark:hidden border border-stroke rounded-6 aspect-1578/950 mt-[-210px] max-[950px]:mt-[-110px] max-[560px]:mt-[-50px] z-30 motion-preset-slide-up-sm motion-delay-[400ms]"
         />
     </div>
     <div

@@ -27,7 +27,7 @@ export default function DownloadCards() {
                 {/* Windows Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoWindows />
-                    <h1 className="text-h1">Windows</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">Windows</h1>
                     <div className="flex flex-wrap gap-12">
                         <a
                             href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`}
@@ -42,7 +42,7 @@ export default function DownloadCards() {
                 {/* macOS Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoMacOS />
-                    <h1 className="text-h1">macOS</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">macOS</h1>
                     <div className="flex flex-col items-center justify-center gap-12">
                         <a
                             href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`}
@@ -68,7 +68,7 @@ export default function DownloadCards() {
                 {/* Linux Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoLinux />
-                    <h1 className="text-h1">Linux</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">Linux</h1>
                     <div className="flex flex-col items-center justify-center gap-12">
                         <a
                             href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`}

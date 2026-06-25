@@ -1,180 +1,136 @@
 ---
 import { ThemeSwitcher } from "@openmarch/ui/astro";
-import NewsletterForm from "./ui/NewsletterForm";
 import { LogoOpenMarchText, LogoOpenMarchMarcher } from "./Logos";
-import { Button } from "@openmarch/ui";
+import { getButtonClassName } from "@openmarch/ui";
 
 interface Props {
     hideDownloadCta?: boolean;
 }
 
 const { hideDownloadCta } = Astro.props;
+
+const isExternalLink = (href: string) => href.startsWith("http");
+
+const footerItems = [
+    {
+        header: "Desktop",
+        items: [
+            { name: "Features", href: "/#desktop" },
+            { name: "Download", href: "/download" },
+            { name: "Releases", href: "/download#releases" },
+            { name: "Guides & support", href: "/guides" },
+            { name: "GitHub", href: "https://github.com/OpenMarch" },
+        ],
+    },
+    {
+        header: "Mobile",
+        items: [
+            { name: "On The Move", href: "/mobile" },
+            { name: "Pricing", href: "/mobile#pricing" },
+            { name: "FAQ", href: "/mobile#faq" },
+            { name: "Guides & support", href: "/guides" },
+        ],
+    },
+    {
+        header: "Support & follow us",
+        items: [
+            { name: "Merch", href: "https://store.openmarch.com" },
+            { name: "Patreon", href: "https://www.patreon.com/openmarch" },
+            { name: "Discord", href: "https://discord.gg/eTsQ98uZzq" },
+            {
+                name: "Instagram",
+                href: "https://www.instagram.com/openmarchapp/",
+            },
+            {
+                name: "Facebook Group",
+                href: "https://facebook-group.openmarch.com",
+            },
+            { name: "YouTube", href: "https://www.youtube.com/@OpenMarchApp" },
+        ],
+    },
+    {
+        header: "Organization",
+        items: [
+            { name: "About", href: "/about" },
+            { name: "Blog", href: "/blog" },
+        ],
+    },
+    {
+        header: "Legal",
+        items: [
+            { name: "Terms of Service", href: "/legal/terms" },
+            { name: "Privacy Policy", href: "/legal/privacy" },
+            { name: "Refund Policy", href: "/legal/refunds" },
+        ],
+    },
+];
 ---
 
 <footer class="flex flex-col gap-8 z-50 w-full">
     {
         !hideDownloadCta && (
-            <div class="flex flex-col gap-12 items-center rounded-6 px-16 py-32 download-cta-gradient">
+            <div class="flex gap-24 items-center justify-center rounded-6 px-16 py-32 download-cta-gradient max-[768px]:gap-16 max-[640px]:flex-col max-[640px]:items-stretch max-[640px]:py-24">
                 <LogoOpenMarchMarcher
                     width="24"
                     height="64"
-                    className="text-accent"
+                    className="text-accent max-[640px]:hidden"
                 />
-                <h2 class="text-h2 text-center max-[768px]:text-h3">
+                <h2 class="text-h2 text-center max-[900px]:text-h3 max-[520px]:text-h4">
                     Download the modern drill writing app
                 </h2>
                 <a
                     href="/download"
-                    class="text-body duration-150 ease-out hover:text-accent w-fit"
+                    class={getButtonClassName({
+                        variant: "primary",
+                        className: "max-[640px]:w-full",
+                    })}
                 >
-                    <Button variant="primary">Download</Button>
+                    Download
                 </a>
             </div>
         )
     }
-    <footer
-        class="grid grid-cols-4 gap-0 rounded-6 bg-fg-1 border border-stroke px-16 py-32 divide-x divide-stroke max-[1024px]:grid-cols-2 max-[768px]:grid-cols-1 max-[1024px]:divide-x-0 max-[1024px]:gap-32"
+    <div
+        class="grid grid-cols-6 gap-0 px-8 py-12 divide-x divide-stroke max-[1400px]:grid-cols-3 max-[900px]:grid-cols-2 max-[900px]:gap-y-32 max-[900px]:divide-x-0 max-[520px]:grid-cols-1 max-[520px]:px-0"
     >
         <div
-            class="flex flex-col justify-between px-16 max-[1024px]:col-span-2 max-[768px]:col-span-1"
+            class="flex flex-col justify-between px-16 py-12 max-[1024px]:col-span-2 max-[900px]:col-span-2 max-[520px]:col-span-1"
         >
-            <div class="flex flex-col gap-24">
-                <div class="flex justify-between w-full pr-4 gap-16">
-                    <a href="/">
-                        <LogoOpenMarchText height="64" width="115" />
-                    </a>
-                    <ThemeSwitcher />
-                </div>
+            <div class="flex flex-col gap-16">
+                <a href="/">
+                    <LogoOpenMarchText height="36" width="66" />
+                </a>
                 <a
-                    class="text-body leading-[150%] hover:text-accent duration-150 ease-out"
+                    class="text-body text-text-subtitle leading-[150%] hover:text-accent duration-150 ease-out"
                     href="mailto:contact@openmarch.com"
                 >
                     contact@openmarch.com
                 </a>
-            </div><div class="flex flex-col gap-8">
-                <p class="text-body leading-[150%]">
-                    Stay up to date with our newsletter!
-                </p>
-                <NewsletterForm client:visible />
+                <ThemeSwitcher />
             </div>
         </div>
-        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
-            <h4 class="text-h4">Support & follow us</h4>
-            <a
-                href="https://store.openmarch.com"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Merch
-            </a>
-            <a
-                href="https://www.patreon.com/openmarch"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Patreon
-            </a>
-            <a
-                href="https://discord.gg/eTsQ98uZzq"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Discord
-            </a>
-            <a
-                href="https://www.instagram.com/openmarchapp/"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Instagram
-            </a>
-            <a
-                href="https://facebook-group.openmarch.com"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Facebook Group
-            </a>
-            <a
-                href="https://www.youtube.com/@OpenMarchApp"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                YouTube
-            </a>
-        </div>
-        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
-            <h4 class="text-h4">App</h4>
-            <a
-                href="/download"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Download
-            </a>
-            <a
-                href="/#features"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Features
-            </a>
-            <a
-                href="/download#releases"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Releases
-            </a>
-            <a
-                href="/guides"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Guides
-            </a>
-            <a
-                href="/guides/submitting-feedback/"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Feedback
-            </a>
-            <a
-                href="https://github.com/OpenMarch"
-                target="_blank"
-                class="text-body duration-150 ease-out hover:text-accent"
-            >
-                GitHub
-            </a>
-        </div>
-        <div class="flex flex-col gap-16 px-16 max-[768px]:pt-32">
-            <h4 class="text-h4">Organization</h4>
-            <a
-                href="/about"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                About
-            </a>
-            <a
-                href="/blog"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Blog
-            </a>
-            <a
-                href="/legal/terms"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Terms of Service
-            </a>
-            <a
-                href="/legal/privacy"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Privacy Policy
-            </a>
-            <a
-                href="/legal/refunds"
-                class="text-body duration-150 ease-out hover:text-accent w-fit"
-            >
-                Refund Policy
-            </a>
-        </div>
-    </footer>
+        {
+            footerItems.map(({ header, items }) => (
+                <div class="flex flex-col gap-16 px-16 py-12 max-[520px]:border-t max-[520px]:border-stroke">
+                    <h4 class="text-h4">{header}</h4>
+                    {items.map((item) => (
+                        <a
+                            href={item.href}
+                            target={
+                                isExternalLink(item.href) ? "_blank" : undefined
+                            }
+                            rel={
+                                isExternalLink(item.href)
+                                    ? "noopener noreferrer"
+                                    : undefined
+                            }
+                            class="text-body text-text-subtitle duration-150 ease-out hover:text-accent w-fit"
+                        >
+                            {item.name}
+                        </a>
+                    ))}
+                </div>
+            ))
+        }
+    </div>
 </footer>

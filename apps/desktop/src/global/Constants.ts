@@ -12,4 +12,22 @@ export const Constants = {
     PageNotesExportMaxLines: 4,
 } as const;
 
+const ensureEndingSlash = (url: string) =>
+    url.endsWith("/") ? url : url + "/";
+
+function requireEnv(name: string, value: string | undefined): string {
+    if (typeof value !== "string" || value.length === 0) {
+        throw new Error(`${name} is not set`);
+    }
+    return value;
+}
+
+export const OPENMARCH_APP_BASE_URL = ensureEndingSlash(
+    requireEnv("VITE_API_URL", import.meta.env.VITE_API_URL),
+);
+
+export const OPENMARCH_API_ENDPOINT = ensureEndingSlash(
+    requireEnv("VITE_EDITOR_API_URL", import.meta.env.VITE_EDITOR_API_URL),
+);
+
 export default Constants;
