@@ -34,12 +34,19 @@ export const createNewPage = async (page: Page) => {
         lastPageNameBefore.match(/^\d+/)?.[0] ?? "",
     );
 
-    // create new page
-    await page.locator("#pages").getByRole("button").click();
-
     const expectedNewPageName = lastPageNumber + 1;
-    await expect(page.locator("#pages")).toContainText(
-        expectedNewPageName.toString(),
+    const pagesLocator = page.locator("#pages");
+    const addPageButton = pagesLocator.getByRole("button");
+
+    await expect(addPageButton).toBeVisible();
+    await addPageButton.click();
+
+    await expect(pagesLocator).toContainText(expectedNewPageName.toString(), {
+        timeout: 15_000,
+    });
+    await expect(page.locator("#app")).toContainText(
+        `Page ${expectedNewPageName}`,
+        { timeout: 10_000 },
     );
 };
 

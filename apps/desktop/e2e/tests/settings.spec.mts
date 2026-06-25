@@ -104,26 +104,29 @@ settingsMenus.forEach(({ name, navigate }) => {
     }) => {
         const { page } = electronApp;
         await navigate(page);
-        await page.getByLabel("Zoom sensitivity").click();
-        // Enable trackpad mode first so the trackpad pan sensitivity slider is visible
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
-        await page.getByLabel("Trackpad pan sensitivity").getByRole("slider");
-        await page.getByLabel("Zoom sensitivity").click();
-        await page
-            .getByLabel("Trackpad pan sensitivity", { exact: true })
-            .click();
-        await page.getByLabel("Trackpad pan sensitivity").click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
+
+        const trackpadSwitch = page.getByRole("switch", {
+            name: "Trackpad mode (recommended",
+        });
+        const trackpadPanSensitivity = page.getByLabel(
+            "Trackpad pan sensitivity",
+        );
+        const zoomSensitivity = page.getByLabel("Zoom sensitivity");
+
+        if (!(await trackpadSwitch.isChecked())) {
+            await trackpadSwitch.click();
+        }
+        await expect(trackpadPanSensitivity).toBeVisible();
+
+        await zoomSensitivity.click();
+        await trackpadPanSensitivity.getByRole("slider");
+        await zoomSensitivity.click();
+        await trackpadPanSensitivity.click();
+        await trackpadPanSensitivity.click();
+
+        await trackpadSwitch.click();
+        await trackpadSwitch.click();
+        await trackpadSwitch.click();
     });
 });
 
