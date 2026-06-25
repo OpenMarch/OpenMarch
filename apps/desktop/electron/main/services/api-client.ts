@@ -5,6 +5,8 @@
 import { OPENMARCH_API_ENDPOINT } from "../../../src/global/Constants";
 import { getValidAccessToken } from "../auth/token-manager";
 
+const API_REQUEST_TIMEOUT_MS = 30_000;
+
 /**
  * Gets the API endpoint from environment variable and ensures proper slash handling.
  * @throws {Error} If OPENMARCH_API_ENDPOINT is not defined
@@ -51,9 +53,15 @@ export async function authenticatedFetch(
 
     headers.set("Authorization", `Bearer ${accessToken}`);
 
+    const timeoutSignal = AbortSignal.timeout(API_REQUEST_TIMEOUT_MS);
+    const signal = options.signal
+        ? AbortSignal.any([options.signal, timeoutSignal])
+        : timeoutSignal;
+
     const response = await fetch(url, {
         ...options,
         headers,
+        signal,
     });
 
     return response;

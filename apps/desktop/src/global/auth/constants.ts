@@ -21,6 +21,9 @@ export const AUTH_IPC_CHANNELS = {
 /** Auth flow timeout in milliseconds (5 minutes) */
 export const AUTH_FLOW_TIMEOUT_MS = 5 * 60 * 1000;
 
+/** OAuth token endpoint request timeout in milliseconds */
+export const OAUTH_TOKEN_REQUEST_TIMEOUT_MS = 30 * 1000;
+
 /** Token refresh buffer - refresh 5 minutes before expiry */
 export const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
 

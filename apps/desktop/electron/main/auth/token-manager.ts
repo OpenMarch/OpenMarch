@@ -47,25 +47,19 @@ export function setTokenRefreshCallback(
  * Encrypts and stores tokens securely.
  */
 export function storeTokens(tokens: AuthTokens): void {
-    const tokenString = JSON.stringify(tokens);
-
-    // Use Electron's safeStorage for encryption if available
-    if (safeStorage.isEncryptionAvailable()) {
-        const encrypted = safeStorage.encryptString(tokenString);
-        authStore.set("encryptedTokens", encrypted.toString("base64"));
-    } else {
-        // Fallback: store as-is (less secure, but better than nothing)
-        console.warn(
-            "[Auth] Encryption not available, storing tokens unencrypted",
-        );
-        authStore.set(
-            "encryptedTokens",
-            Buffer.from(tokenString).toString("base64"),
-        );
-    }
-
     cachedTokens = tokens;
     scheduleTokenRefresh(tokens);
+
+    if (!safeStorage.isEncryptionAvailable()) {
+        console.warn(
+            "[Auth] Encryption not available; tokens kept in memory for this session only",
+        );
+        return;
+    }
+
+    const tokenString = JSON.stringify(tokens);
+    const encrypted = safeStorage.encryptString(tokenString);
+    authStore.set("encryptedTokens", encrypted.toString("base64"));
 }
 
 /**
@@ -76,6 +70,10 @@ export function getStoredTokens(): AuthTokens | null {
         return cachedTokens;
     }
 
+    if (!safeStorage.isEncryptionAvailable()) {
+        return null;
+    }
+
     const encrypted = authStore.get("encryptedTokens");
     if (!encrypted) {
         return null;
@@ -83,13 +81,7 @@ export function getStoredTokens(): AuthTokens | null {
 
     try {
         const buffer = Buffer.from(encrypted, "base64");
-
-        let tokenString: string;
-        if (safeStorage.isEncryptionAvailable()) {
-            tokenString = safeStorage.decryptString(buffer);
-        } else {
-            tokenString = buffer.toString("utf-8");
-        }
+        const tokenString = safeStorage.decryptString(buffer);
 
         cachedTokens = JSON.parse(tokenString);
 
@@ -181,9 +173,6 @@ export function validateState(receivedState: string): PendingAuthFlow | null {
  * - Clerk's Ruby SDK verify_token() method expects a JWT with 'sub' claim
  * - The ID token is a JWT with user claims including 'sub' (subject/user ID)
  * - OAuth access tokens may be opaque and not directly verifiable by verify_token()
- *
- * Note: The token expiration check uses the access token's expiration time,
- * but we return the ID token which typically has a similar or shorter lifespan.
  */
 export async function getValidAccessToken(): Promise<string | null> {
     const tokens = getStoredTokens();
@@ -192,10 +181,12 @@ export async function getValidAccessToken(): Promise<string | null> {
         return null;
     }
 
+    const effectiveExpiry = getEffectiveTokenExpiry(tokens);
+
     // Check if token is expired or about to expire
     const now = Date.now();
-    const isExpired = now >= tokens.expiresAt;
-    const needsRefresh = now >= tokens.expiresAt - TOKEN_REFRESH_BUFFER_MS;
+    const isExpired = now >= effectiveExpiry;
+    const needsRefresh = now >= effectiveExpiry - TOKEN_REFRESH_BUFFER_MS;
 
     if (isExpired || needsRefresh) {
         if (!onTokenRefresh) {
@@ -240,7 +231,7 @@ function scheduleTokenRefresh(tokens: AuthTokens): void {
         clearTimeout(refreshTimer);
     }
 
-    const refreshAt = tokens.expiresAt - TOKEN_REFRESH_BUFFER_MS;
+    const refreshAt = getEffectiveTokenExpiry(tokens) - TOKEN_REFRESH_BUFFER_MS;
     const delay = Math.max(0, refreshAt - Date.now());
 
     if (delay > 0 && onTokenRefresh) {
@@ -278,6 +269,13 @@ export function decodeIdToken(idToken: string): Record<string, unknown> | null {
         console.error("[Auth] Failed to decode ID token:", error);
         return null;
     }
+}
+
+function getEffectiveTokenExpiry(tokens: AuthTokens): number {
+    const claims = decodeIdToken(tokens.idToken);
+    const idTokenExpMs =
+        typeof claims?.exp === "number" ? claims.exp * 1000 : tokens.expiresAt;
+    return Math.min(tokens.expiresAt, idTokenExpMs);
 }
 
 /**
@@ -321,7 +319,7 @@ export function getAuthState(): AuthState {
     }
 
     // Check if token is expired
-    if (Date.now() >= tokens.expiresAt) {
+    if (Date.now() >= getEffectiveTokenExpiry(tokens)) {
         return {
             isAuthenticated: false,
             isLoading: false,

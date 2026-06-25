@@ -15,5 +15,7 @@ declare namespace NodeJS {
         VITE_SIGN_UP_URL?: string;
         /** API URL */
         VITE_API_URL?: string;
+        /** Editor API base URL */
+        VITE_EDITOR_API_URL?: string;
     }
 }

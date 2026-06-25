@@ -16,6 +16,7 @@ import type {
 } from "./types";
 import {
     AUTH_FLOW_TIMEOUT_MS,
+    OAUTH_TOKEN_REQUEST_TIMEOUT_MS,
     OAUTH_SCOPES,
     CLERK_CONFIG,
     getClerkAuthorizationEndpoint,
@@ -60,12 +61,32 @@ function generateCodeChallenge(codeVerifier: string): string {
     return hash.toString("base64url");
 }
 
+async function fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    timeoutMs: number,
+): Promise<Response> {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+        return await fetch(url, { ...init, signal: controller.signal });
+    } catch (error) {
+        if (error instanceof Error && error.name === "AbortError") {
+            throw new Error("Token request timed out");
+        }
+        throw error;
+    } finally {
+        clearTimeout(timeoutId);
+    }
+}
+
 /**
  * Initiates the OAuth PKCE flow.
  * Generates PKCE values and opens the system browser to Clerk.
  * @returns The pending auth flow data to be stored
  */
-export function initiateOAuthFlow(): PendingAuthFlow {
+export async function initiateOAuthFlow(): Promise<PendingAuthFlow> {
     const config = getClerkConfig();
 
     // Generate PKCE values
@@ -98,8 +119,7 @@ export function initiateOAuthFlow(): PendingAuthFlow {
         authUrl.toString(),
     );
 
-    // Open system browser
-    void shell.openExternal(authUrl.toString());
+    await shell.openExternal(authUrl.toString());
 
     return pendingFlow;
 }
@@ -126,15 +146,19 @@ export async function exchangeCodeForTokens(
 
     console.log("[Auth] Exchanging authorization code for tokens...");
 
-    const response = await fetch(config.tokenEndpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+    const response = await fetchWithTimeout(
+        config.tokenEndpoint,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams(
+                requestBody as unknown as Record<string, string>,
+            ),
         },
-        body: new URLSearchParams(
-            requestBody as unknown as Record<string, string>,
-        ),
-    });
+        OAUTH_TOKEN_REQUEST_TIMEOUT_MS,
+    );
 
     if (!response.ok) {
         const errorText = await response.text();
@@ -175,15 +199,19 @@ export async function refreshAccessToken(
 
     console.log("[Auth] Refreshing access token...");
 
-    const response = await fetch(config.tokenEndpoint, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/x-www-form-urlencoded",
+    const response = await fetchWithTimeout(
+        config.tokenEndpoint,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams(
+                requestBody as unknown as Record<string, string>,
+            ),
         },
-        body: new URLSearchParams(
-            requestBody as unknown as Record<string, string>,
-        ),
-    });
+        OAUTH_TOKEN_REQUEST_TIMEOUT_MS,
+    );
 
     if (!response.ok) {
         const errorText = await response.text();

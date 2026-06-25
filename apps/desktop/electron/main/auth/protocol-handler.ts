@@ -85,8 +85,6 @@ function handleProtocolUrl(
     url: string,
     getWindow: () => BrowserWindow | null,
 ): void {
-    console.log("[Auth] Received protocol URL:", url);
-
     try {
         const parsedUrl = new URL(url);
 
@@ -96,6 +94,9 @@ function handleProtocolUrl(
         const callbackPath = parsedUrl.host
             ? `/${parsedUrl.host}${parsedUrl.pathname}`
             : parsedUrl.pathname;
+
+        console.log("[Auth] Received protocol URL:", callbackPath);
+
         const isAuthCallback = callbackPath === AUTH_CALLBACK_PATH;
 
         if (isAuthCallback) {

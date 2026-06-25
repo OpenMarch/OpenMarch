@@ -70,14 +70,32 @@ export function useAuth() {
     }));
 
     // Initial fetch of auth state
-    const { data, isLoading: queryLoading } = useQuery(authStateQueryOptions());
+    const {
+        data,
+        isLoading: queryLoading,
+        isError,
+        error: queryError,
+    } = useQuery(authStateQueryOptions());
 
     // Sync query data to Zustand store
     useEffect(() => {
         if (data) {
             setAuthState(data);
+        } else if (isError) {
+            setAuthState({
+                isAuthenticated: false,
+                isLoading: false,
+                user: null,
+                error: {
+                    code: "AUTH_STATE_FETCH_FAILED",
+                    message:
+                        queryError instanceof Error
+                            ? queryError.message
+                            : "Failed to load authentication state.",
+                },
+            });
         }
-    }, [data, setAuthState]);
+    }, [data, isError, queryError, setAuthState]);
 
     // Listen for auth state changes from main process
     useEffect(() => {

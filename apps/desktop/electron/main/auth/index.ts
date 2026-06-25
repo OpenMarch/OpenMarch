@@ -180,7 +180,7 @@ export function initAuthAfterReady(
         }
 
         try {
-            const pendingFlow = initiateOAuthFlow();
+            const pendingFlow = await initiateOAuthFlow();
             storePendingFlow(pendingFlow);
 
             return { success: true };
