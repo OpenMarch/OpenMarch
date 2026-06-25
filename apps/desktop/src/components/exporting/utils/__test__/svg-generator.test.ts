@@ -108,6 +108,46 @@ describe("svgGenerator", () => {
         });
     });
 
+    describe("generateDrillChartExportSVGs - missing marcher page mapping", () => {
+        it("renders field-only SVG when a page has no marcher pages", async () => {
+            const marchers = generateMarchers({ numberOfMarchers: 2, seed: 1 });
+            const timingObjects = generateTimingObjects({
+                numberOfBeats: 8,
+                seed: 1,
+            });
+            const [pageWithCoords, pageWithoutCoords] = timingObjects.pages;
+            const fieldProperties =
+                FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+            const marcherPages = generateMarcherPages({
+                marchers,
+                pages: [pageToDatabasePage(pageWithCoords)],
+                fieldProperties,
+                seed: 1,
+            });
+            const marcherPagesMap = marcherPageMapFromArray(
+                marcherPages as unknown as MarcherPage[],
+            );
+
+            const output = await generateDrillChartExportSVGs({
+                marchers,
+                marcherPagesMap,
+                sortedPages: [pageWithCoords, pageWithoutCoords],
+                fieldProperties,
+                sectionAppearances: [],
+                backgroundImage: undefined,
+                gridLines: false,
+                halfLines: false,
+                individualCharts: false,
+            });
+
+            expect(output.SVGs).toHaveLength(1);
+            expect(output.SVGs[0]).toHaveLength(2);
+            for (const svg of output.SVGs[0]) {
+                expect(svg).toContain("<svg");
+            }
+        });
+    });
+
     describe("generateDrillChartExportSVGs - applies tag appearances", () => {
         it("renders tag fill color in exported SVG", async () => {
             const marchers = generateMarchers({ numberOfMarchers: 1, seed: 3 });

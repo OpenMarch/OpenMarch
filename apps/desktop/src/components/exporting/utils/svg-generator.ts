@@ -414,7 +414,7 @@ export const generateDrillChartExportSVGs = async (args: {
     // Loop through each page and generate an SVG for it
     for (const [pageIndex, page] of sortedPages.entries()) {
         const marcherPagesByMarcherForCurrentPage =
-            marcherPagesMap.marcherPagesByPage[page.id];
+            marcherPagesMap.marcherPagesByPage[page.id] ?? {};
 
         const pageResult = processDrillChartExportPage({
             page,
