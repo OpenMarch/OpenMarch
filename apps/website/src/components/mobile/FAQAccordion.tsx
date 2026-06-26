@@ -107,9 +107,9 @@ const faqs = [
                 <p>
                     <em>OpenMarch: On The Move</em> uses a per-seat licensing
                     model for ensembles, but performers do not pay individually
-                    to use the app. For the Fall 2026 season, each ensemble
-                    receives 5 free seats. Subsequent seats are purchased by the
-                    ensemble or program for $5 per seat.
+                    to use the app. Each ensemble receives 5 free seats in 2026.
+                    Subsequent seats are purchased by the ensemble or program
+                    for $5 per seat.
                 </p>
                 <p>
                     Students simply download the app on iOS or Android, open the
