@@ -206,7 +206,12 @@ async function createWindow(title?: string) {
         "did-start-navigation",
         (_event, _url, _isInPlace, isMainFrame) => {
             if (!isMainFrame || !currentNewShowDraftPath) return;
-            void discardNewShowDraft();
+            void discardNewShowDraft().catch((error) => {
+                console.error(
+                    "Error discarding new show draft on navigation:",
+                    error,
+                );
+            });
         },
     );
 
@@ -1123,9 +1128,10 @@ async function readAudioFileBuffer(filePath: string): Promise<Buffer> {
 }
 
 function bufferToArrayBuffer(data: Buffer): ArrayBuffer {
-    return Buffer.from(
-        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
-    ) as any as ArrayBuffer;
+    return data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength,
+    ) as ArrayBuffer;
 }
 
 /**
