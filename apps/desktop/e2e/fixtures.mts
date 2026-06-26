@@ -219,9 +219,11 @@ export const test = base.extend<MyFixtures>({
         }
     },
     /**
-     * Fixture for testing new file creation.
-     * Launches the app with PLAYWRIGHT_NEW_FILE_PATH env variable set,
-     * which causes the main process to use this path instead of showing the save dialog.
+     * Fixture for testing new file creation via the new-show wizard.
+     * Launches the app with PLAYWRIGHT_NEW_FILE_PATH set so the main process
+     * uses that path's directory as the default save location (and as the
+     * save-dialog result if Browse is clicked). Pair with a matching project
+     * name derived from the filename (e.g. basename without .dots).
      */
     electronAppNewFile: async ({}, use, testInfo) => {
         // Create a path for the new test file in the test output directory

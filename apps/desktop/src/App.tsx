@@ -80,6 +80,8 @@ function App() {
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
+        // Only load plugins after database is ready and canvas is available
+        if (!databaseIsReady) return;
         pluginsLoadedRef.current = true;
         console.debug("Loading plugins...");
         void window.plugins
@@ -123,7 +125,7 @@ function App() {
             .then(() => {
                 console.debug("All plugins loaded.");
             });
-    }, []);
+    }, [databaseIsReady]);
 
     useEffect(() => {
         // Check if database is ready
@@ -226,7 +228,12 @@ function App() {
                     <AlertModal />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
-                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                        <SelectedAudioFileProvider>
+                            <RegisteredActionsHandler />
+                            <LaunchPage
+                                setDatabaseIsReady={setDatabaseIsReady}
+                            />
+                        </SelectedAudioFileProvider>
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

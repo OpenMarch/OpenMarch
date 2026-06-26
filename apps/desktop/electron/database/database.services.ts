@@ -108,13 +108,21 @@ export function getDbPath() {
     return DB_PATH;
 }
 
+let lastLoggedReadyState: boolean | null = null;
+let lastLoggedPath: string | null = null;
+
 export function databaseIsReady() {
     const isReady = DB_PATH.length > 0 && fs.existsSync(DB_PATH);
-    console.log("databaseIsReady:", isReady);
-    if (DB_PATH.length > 0) {
-        console.log("Database path:", DB_PATH);
-    } else {
-        console.log("Database path is empty");
+    // Only log when state or path changes to avoid noisy polling output
+    if (isReady !== lastLoggedReadyState || DB_PATH !== lastLoggedPath) {
+        console.log("databaseIsReady:", isReady);
+        if (DB_PATH.length > 0) {
+            console.log("Database path:", DB_PATH);
+        } else {
+            console.log("Database path is empty");
+        }
+        lastLoggedReadyState = isReady;
+        lastLoggedPath = DB_PATH;
     }
     return isReady;
 }
@@ -418,8 +426,15 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
+type AudioFileInsert = {
+    data?: ArrayBuffer | Uint8Array;
+    path: string;
+    nickname?: string;
+    selected?: boolean;
+};
+
 export async function insertAudioFile(
-    audioFile: AudioFile,
+    audioFile: AudioFileInsert,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
@@ -465,7 +480,13 @@ export async function insertAudioFile(
 
         output = {
             success: true,
-            result: [{ ...audioFile, id: id as number }],
+            result: [
+                {
+                    ...audioFile,
+                    id: id as number,
+                    selected: true,
+                } as AudioFile,
+            ],
         };
     } catch (error: any) {
         console.error("Insert audio file error:", error);

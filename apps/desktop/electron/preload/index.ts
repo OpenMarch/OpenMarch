@@ -163,6 +163,12 @@ const APP_API = {
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    databaseCreateAtPath: (filePath: string) =>
+        ipcRenderer.invoke("database:createAtPath", filePath),
+    getDefaultDocumentsPath: () =>
+        ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
+    fileExists: (filePath: string) =>
+        ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
@@ -195,7 +201,33 @@ const APP_API = {
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
 
     showSaveDialog: (options: SaveDialogOptions) =>
-        ipcRenderer.invoke("show-save-dialog", options),
+        ipcRenderer.invoke("dialog:showSaveDialog", options),
+
+    getPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:getPending") as Promise<boolean>,
+    clearPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:clearPending") as Promise<void>,
+    onNewShowOpen: (callback: () => void) => {
+        const listener = () => callback();
+        ipcRenderer.on("new-show:open", listener);
+        return () => {
+            ipcRenderer.removeListener("new-show:open", listener);
+        };
+    },
+    createNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:createDraft") as Promise<
+            { path: string } | number
+        >,
+    finalizeNewShowDraft: (targetPath: string, projectName: string) =>
+        ipcRenderer.invoke(
+            "newShow:finalizeDraft",
+            targetPath,
+            projectName,
+        ) as Promise<number>,
+    discardNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
+    getNewShowDraftPath: () =>
+        ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
 
     export: {
         pdf: (params: {
