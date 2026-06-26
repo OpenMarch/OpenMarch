@@ -48,7 +48,9 @@ test("Default pages created", async ({ electronAppNewFile }) => {
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(page.locator("#pages")).toContainText("5");
+    await expect(
+        page.locator("#pages").getByText("5", { exact: true }),
+    ).toBeVisible();
 });
 
 test("Back navigation returns to project step", async ({
