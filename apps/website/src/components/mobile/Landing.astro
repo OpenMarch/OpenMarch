@@ -2,6 +2,7 @@
 import { Button } from "@openmarch/ui";
 import { Image } from "astro:assets";
 import { LogoOnTheMove } from "@/components/Logos.tsx";
+import StoreLinks from "@/components/mobile/StoreLinks.astro";
 
 import viewDark from "@/assets/otm/viewdark.png";
 import viewLight from "@/assets/otm/viewlight.png";
@@ -28,13 +29,17 @@ import viewVertLight from "@/assets/otm/viewvertlight.png";
         drill viewing app for marching arts performers. Quickly deploy, and learn
         drill now.
     </p>
-    <div class="flex flex-wrap gap-8 motion-delay-250">
-        <a href="#pricing">
-            <Button>Pricing</Button>
-        </a>
-        <a href="https://app.openmarch.com">
-            <Button variant="secondary">Go To Dashboard</Button>
-        </a>
+    <div class="flex flex-col items-center gap-16 motion-delay-250">
+        <div class="flex flex-wrap justify-center gap-8">
+            <a href="#pricing">
+                <Button>Pricing</Button>
+            </a>
+            <a href="https://app.openmarch.com">
+                <Button variant="secondary">Go To Dashboard</Button>
+            </a>
+        </div>
+        <div class="w-full h-px bg-stroke rounded-full"></div>
+        <StoreLinks />
     </div>
 
     <div
