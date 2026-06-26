@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
-import { mkdtempSync, rmSync } from "fs";
+import { existsSync, mkdtempSync, renameSync, rmSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import {
+    closePersistentConnection,
+    handleSqlProxy,
     handleSqlProxyWithDb,
     insertAudioFile,
     setDbPath,
@@ -82,6 +84,41 @@ describe("Database Services", () => {
                 "all",
             );
             expect(result).toEqual({ rows: [] });
+        });
+    });
+
+    describe("persistent connection", () => {
+        let tempDir: string;
+        let dbPath: string;
+
+        beforeEach(() => {
+            tempDir = mkdtempSync(
+                join(tmpdir(), "openmarch-persistent-connection-test-"),
+            );
+            dbPath = join(tempDir, "test.dots");
+
+            const db = new DatabaseSync(dbPath);
+            db.exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)");
+            db.close();
+
+            setDbPath(dbPath);
+        });
+
+        afterEach(() => {
+            closePersistentConnection();
+            setDbPath("", false);
+            rmSync(tempDir, { recursive: true, force: true });
+        });
+
+        it("releases the database file so it can be renamed", async () => {
+            await handleSqlProxy(null, "SELECT 1", [], "get");
+
+            const renamedPath = join(tempDir, "renamed.dots");
+            closePersistentConnection();
+            renameSync(dbPath, renamedPath);
+
+            expect(existsSync(renamedPath)).toBe(true);
+            expect(existsSync(dbPath)).toBe(false);
         });
     });
 

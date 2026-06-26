@@ -810,6 +810,65 @@ function resolveFinalizeTargetPath(
     return trimmed;
 }
 
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function moveFileWithRetry(source: string, dest: string): Promise<void> {
+    const resolvedSource = resolve(source);
+    const resolvedDest = resolve(dest);
+    const maxAttempts = 5;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            fs.renameSync(resolvedSource, resolvedDest);
+            return;
+        } catch (err: unknown) {
+            const code =
+                err && typeof err === "object" && "code" in err
+                    ? (err as NodeJS.ErrnoException).code
+                    : undefined;
+
+            if (code === "EXDEV") {
+                fs.copyFileSync(resolvedSource, resolvedDest);
+                fs.unlinkSync(resolvedSource);
+                return;
+            }
+
+            if (code === "EBUSY" && attempt < maxAttempts - 1) {
+                await sleep(25 * (attempt + 1));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+}
+
+async function unlinkFileWithRetry(filePath: string): Promise<void> {
+    const resolvedPath = resolve(filePath);
+    const maxAttempts = 5;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            fs.unlinkSync(resolvedPath);
+            return;
+        } catch (err: unknown) {
+            const code =
+                err && typeof err === "object" && "code" in err
+                    ? (err as NodeJS.ErrnoException).code
+                    : undefined;
+
+            if (code === "EBUSY" && attempt < maxAttempts - 1) {
+                await sleep(25 * (attempt + 1));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+}
+
 /**
  * Moves the draft file to the user's chosen path and reloads into the editor.
  */
@@ -819,29 +878,27 @@ export async function finalizeNewShowDraft(
 ): Promise<number> {
     if (!currentNewShowDraftPath || !win) return -1;
 
-    const draftPath = currentNewShowDraftPath;
-    const finalPath = projectName
-        ? resolveFinalizeTargetPath(projectName, targetPath)
-        : targetPath.endsWith(".dots")
-          ? targetPath
-          : `${targetPath}.dots`;
+    const draftPath = resolve(currentNewShowDraftPath);
+    const finalPath = resolve(
+        projectName
+            ? resolveFinalizeTargetPath(projectName, targetPath)
+            : targetPath.endsWith(".dots")
+              ? targetPath
+              : `${targetPath}.dots`,
+    );
 
     const finalDir = dirname(finalPath);
     if (!fs.existsSync(finalDir)) {
         fs.mkdirSync(finalDir, { recursive: true });
     }
 
-    try {
-        DatabaseServices.connect()?.close();
-    } catch {
-        // ignore close errors
-    }
+    DatabaseServices.closePersistentConnection();
 
     if (fs.existsSync(finalPath)) {
-        fs.unlinkSync(finalPath);
+        await unlinkFileWithRetry(finalPath);
     }
 
-    fs.renameSync(draftPath, finalPath);
+    await moveFileWithRetry(draftPath, finalPath);
     currentNewShowDraftPath = null;
 
     await setActiveDb(finalPath, false);
@@ -854,19 +911,16 @@ export async function finalizeNewShowDraft(
  * Deletes the draft file and clears the DB connection without reloading.
  */
 export async function discardNewShowDraft(): Promise<number> {
-    const draftPath = currentNewShowDraftPath;
+    const draftPath = currentNewShowDraftPath
+        ? resolve(currentNewShowDraftPath)
+        : null;
     currentNewShowDraftPath = null;
 
     if (!draftPath) {
         return 200;
     }
 
-    try {
-        DatabaseServices.connect()?.close();
-    } catch {
-        // ignore
-    }
-
+    DatabaseServices.closePersistentConnection();
     DatabaseServices.setDbPath("", false);
 
     const storedPath = store.get("databasePath") as string | undefined;
@@ -875,7 +929,7 @@ export async function discardNewShowDraft(): Promise<number> {
     }
 
     if (fs.existsSync(draftPath)) {
-        fs.unlinkSync(draftPath);
+        await unlinkFileWithRetry(draftPath);
     }
 
     return 200;
