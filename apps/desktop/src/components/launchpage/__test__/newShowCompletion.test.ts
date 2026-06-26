@@ -15,6 +15,7 @@ import { allDatabaseBeatsQueryOptions } from "@/hooks/queries/useBeats";
 import { allDatabasePagesQueryOptions } from "@/hooks/queries/usePages";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
 import { getUtility } from "@/db-functions/utility";
+import { getMarchers } from "@/db-functions/marcher";
 
 describe("newShowCompletion helpers", () => {
     it("sanitizeFilename removes invalid characters", () => {
@@ -65,11 +66,12 @@ describe("newShowCompletion helpers", () => {
 });
 
 describeDbTests("completeNewShow", (it) => {
-    const queryClient = new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-    });
+    let queryClient: QueryClient;
 
     beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false } },
+        });
         window.electron ??= {} as typeof window.electron;
         window.electron.log = vi.fn();
         window.electron.databaseIsReady = vi.fn().mockResolvedValue(true);
@@ -257,5 +259,119 @@ describeDbTests("completeNewShow", (it) => {
             /musicxml|imported/i,
         );
         expect(window.electron.finalizeNewShowDraft).not.toHaveBeenCalled();
+    });
+
+    it("does not duplicate tempo-only timing data when completion is retried", async ({
+        task,
+        db: _db,
+    }) => {
+        window.electron.finalizeNewShowDraft = vi
+            .fn()
+            .mockResolvedValueOnce(-1)
+            .mockResolvedValueOnce(200);
+
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Retry Show",
+                fileLocation: `/tmp/retry-show-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "skip" },
+            tempo: {
+                method: "tempo_only",
+                tempo: 100,
+                timeSignature: "4/4",
+            },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+
+        await expect(completeNewShow(form, queryClient)).rejects.toThrow(
+            /failed to save show/i,
+        );
+        await completeNewShow(form, queryClient);
+
+        const beats = await queryClient.fetchQuery(
+            allDatabaseBeatsQueryOptions(),
+        );
+        expect(beats.length).toBe(1 + 20 * 4);
+
+        const measures = await queryClient.fetchQuery(
+            allDatabaseMeasuresQueryOptions(),
+        );
+        expect(measures.length).toBe(20);
+
+        const pages = await queryClient.fetchQuery(
+            allDatabasePagesQueryOptions(),
+        );
+        expect(pages.length).toBe(6);
+    });
+
+    it("does not duplicate marchers when completion is retried", async ({
+        task,
+        db,
+    }) => {
+        window.electron.finalizeNewShowDraft = vi
+            .fn()
+            .mockResolvedValueOnce(-1)
+            .mockResolvedValueOnce(200);
+
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Performer Retry Show",
+                fileLocation: `/tmp/performer-retry-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: {
+                method: "add",
+                marchers: [
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 1,
+                    },
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 2,
+                    },
+                ],
+            },
+            audio: { method: "skip" },
+            tempo: {
+                method: "tempo_only",
+                tempo: 100,
+                timeSignature: "4/4",
+            },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+
+        await expect(completeNewShow(form, queryClient)).rejects.toThrow(
+            /failed to save show/i,
+        );
+        await completeNewShow(form, queryClient);
+
+        const marchers = await getMarchers({ db });
+        expect(marchers).toHaveLength(2);
     });
 });

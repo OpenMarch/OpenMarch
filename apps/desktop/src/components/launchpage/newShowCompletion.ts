@@ -3,9 +3,16 @@ import { schema } from "@/global/database/db";
 import { asc } from "drizzle-orm";
 import {
     createBeatsInTransaction,
+    deleteBeatsInTransaction,
+    FIRST_BEAT_ID,
     realDatabaseBeatToDatabaseBeat,
 } from "@/db-functions/beat";
-import { createPagesInTransaction } from "@/db-functions/page";
+import {
+    createPagesInTransaction,
+    deletePagesInTransaction,
+    ensureSecondBeatHasPage,
+    FIRST_PAGE_ID,
+} from "@/db-functions/page";
 import { transactionWithHistory } from "@/db-functions/history";
 import { updateFieldProperties } from "@/global/classes/FieldProperties";
 import {
@@ -19,7 +26,7 @@ import {
     allDatabasePagesQueryOptions,
     allMarchersQueryOptions,
 } from "@/hooks/queries";
-import type { NewShowFormState } from "./newShowTypes";
+import type { NewShowFormState, NewShowTempoData } from "./newShowTypes";
 import {
     isTempoOnlyTimeSignature,
     TEMPO_ONLY_LAST_PAGE_MEASURES,
@@ -31,9 +38,14 @@ import { createAllUndoTriggers } from "@/db-functions/history";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
-import { createMarchers } from "@/db-functions/marcher";
+import {
+    createMarchers,
+    deleteMarchers,
+    getMarchers,
+} from "@/db-functions/marcher";
 import AudioFile from "@/global/classes/AudioFile";
 import {
+    deleteMeasuresInTransaction,
     getMeasures,
     realDatabaseMeasureToDatabaseMeasure,
 } from "@/db-functions/measures";
@@ -47,6 +59,9 @@ import type { DatabaseMeasure } from "@/db-functions/measures";
 
 const DEFAULT_NEW_PAGE_COUNTS = 16;
 const TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES = 4;
+const DEFAULT_LAST_PAGE_COUNTS = 8;
+const TEMPO_ONLY_EXPECTED_PAGE_COUNT =
+    1 + TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS.length;
 
 function getDefaultNewPageCounts(form: NewShowFormState): number {
     if (
@@ -161,15 +176,14 @@ async function applyMusicSettings(
     const needsTempoUpdate =
         !hasDefaultTempoKey || rawSettings.defaultTempo == null;
 
-    if (tempo?.method === "tempo_only" && tempo.tempo) {
-        const beatsPerMeasure = isTempoOnlyTimeSignature(tempo.timeSignature)
-            ? TimeSignature.fromString(tempo.timeSignature).numerator
-            : currentSettings.defaultBeatsPerMeasure;
+    if (tempo?.method === "tempo_only") {
+        const { tempo: tempoBpm, beatsPerMeasure } =
+            requireTempoOnlyData(tempo);
         await updateWorkspaceSettingsParsed({
             db,
             settings: workspaceSettingsSchema.parse({
                 ...currentSettings,
-                defaultTempo: tempo.tempo,
+                defaultTempo: tempoBpm,
                 defaultBeatsPerMeasure: beatsPerMeasure,
                 defaultNewPageCounts:
                     TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES * beatsPerMeasure,
@@ -214,6 +228,14 @@ async function applyPerformersSettings(
         !performers.marchers?.length
     ) {
         return;
+    }
+
+    const existingMarchers = await getMarchers({ db });
+    if (existingMarchers.length > 0) {
+        await deleteMarchers({
+            db,
+            marcherIds: new Set(existingMarchers.map((m) => m.id)),
+        });
     }
 
     await createMarchers({
@@ -303,11 +325,10 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
     });
 }
 
-function requireTempoOnlyData(form: NewShowFormState): {
+function requireTempoOnlyData(tempoData: NewShowTempoData | null | undefined): {
     tempo: number;
     beatsPerMeasure: number;
 } {
-    const tempoData = form.tempo;
     if (
         tempoData?.method !== "tempo_only" ||
         !tempoData.tempo ||
@@ -371,6 +392,74 @@ function buildTempoOnlyPageArgs(
     return newPagesArgs;
 }
 
+async function isTempoOnlyTimingComplete(
+    tx: DbTransaction,
+    beatsPerMeasure: number,
+): Promise<boolean> {
+    const measures = await tx.query.measures.findMany();
+    const beats = await tx.query.beats.findMany();
+    const pages = await tx.query.pages.findMany();
+    const utility = await tx.query.utility.findFirst();
+
+    const nonFirstBeats = beats.filter((beat) => beat.id !== FIRST_BEAT_ID);
+    const expectedBeatCount = TEMPO_ONLY_MEASURE_COUNT * beatsPerMeasure;
+    const expectedLastPageCounts =
+        TEMPO_ONLY_LAST_PAGE_MEASURES * beatsPerMeasure;
+
+    return (
+        measures.length === TEMPO_ONLY_MEASURE_COUNT &&
+        nonFirstBeats.length === expectedBeatCount &&
+        pages.length === TEMPO_ONLY_EXPECTED_PAGE_COUNT &&
+        utility?.last_page_counts === expectedLastPageCounts
+    );
+}
+
+async function resetTempoOnlyTimingStateInTransaction(
+    tx: DbTransaction,
+): Promise<void> {
+    const measures = await tx.query.measures.findMany();
+    const beats = await tx.query.beats.findMany();
+    const pages = await tx.query.pages.findMany();
+
+    const nonFirstBeats = beats.filter((beat) => beat.id !== FIRST_BEAT_ID);
+    const nonFirstPages = pages.filter((page) => page.id !== FIRST_PAGE_ID);
+
+    if (
+        measures.length === 0 &&
+        nonFirstBeats.length === 0 &&
+        nonFirstPages.length === 0
+    ) {
+        return;
+    }
+
+    if (nonFirstPages.length > 0) {
+        await deletePagesInTransaction({
+            tx,
+            pageIds: new Set(nonFirstPages.map((page) => page.id)),
+        });
+    }
+
+    if (measures.length > 0) {
+        await deleteMeasuresInTransaction({
+            tx,
+            itemIds: new Set(measures.map((measure) => measure.id)),
+        });
+    }
+
+    if (nonFirstBeats.length > 0) {
+        await deleteBeatsInTransaction({
+            tx,
+            beatIds: new Set(nonFirstBeats.map((beat) => beat.id)),
+        });
+    }
+
+    await ensureSecondBeatHasPage({ tx });
+    await updateUtilityInTransaction({
+        tx,
+        args: { last_page_counts: DEFAULT_LAST_PAGE_COUNTS },
+    });
+}
+
 async function createTempoOnlyPagesInTransaction(
     tx: DbTransaction,
     params: {
@@ -381,16 +470,19 @@ async function createTempoOnlyPagesInTransaction(
 ): Promise<void> {
     const { tempo, beatsPerMeasure, pageByStartBeat } = params;
 
-    await _createFromTempoGroupInTransaction({
-        tx,
-        tempoGroup: {
-            name: "",
-            tempo,
-            bigBeatsPerMeasure: beatsPerMeasure,
-            numOfRepeats: TEMPO_ONLY_MEASURE_COUNT,
-        },
-        startingPosition: 0,
-    });
+    if (!(await isTempoOnlyTimingComplete(tx, beatsPerMeasure))) {
+        await resetTempoOnlyTimingStateInTransaction(tx);
+        await _createFromTempoGroupInTransaction({
+            tx,
+            tempoGroup: {
+                name: "",
+                tempo,
+                bigBeatsPerMeasure: beatsPerMeasure,
+                numOfRepeats: TEMPO_ONLY_MEASURE_COUNT,
+            },
+            startingPosition: 0,
+        });
+    }
 
     const sortedMeasures = await sortMeasuresByBeatPosition(tx);
     const newPagesArgs = buildTempoOnlyPageArgs(
@@ -428,7 +520,7 @@ async function createTempoOnlyBeatsMeasuresAndPages(
     form: NewShowFormState,
     queryClient: QueryClient,
 ): Promise<void> {
-    const { tempo, beatsPerMeasure } = requireTempoOnlyData(form);
+    const { tempo, beatsPerMeasure } = requireTempoOnlyData(form.tempo);
 
     const existingPages = await queryClient.fetchQuery(
         allDatabasePagesQueryOptions(),
@@ -466,6 +558,10 @@ export async function completeNewShow(
         throw new Error(
             "Database is not ready. Complete the project step first.",
         );
+    }
+
+    if (form.tempo?.method === "tempo_only") {
+        requireTempoOnlyData(form.tempo);
     }
 
     await ensureHistoryTriggers();
