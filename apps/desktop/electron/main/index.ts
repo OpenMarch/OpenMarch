@@ -12,7 +12,7 @@ import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
 import { randomUUID } from "node:crypto";
-import { dirname, join, resolve, sep } from "node:path";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
@@ -1170,7 +1170,7 @@ export async function insertAudioFile(): Promise<
         const databaseResponse = await DatabaseServices.insertAudioFile({
             data: bufferToArrayBuffer(data),
             path: filePath,
-            nickname: filePath,
+            nickname: basename(filePath),
             selected: true,
         });
 
