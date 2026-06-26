@@ -150,8 +150,8 @@ export default function NewShowDialog({
         setCompletedSteps((prev) => new Set(prev).add(currentStepIndex));
     }, [currentStepIndex]);
 
-    const ensureDraftCreated = useCallback(async (): Promise<boolean> => {
-        if (wizardState.draftFilePath) return true;
+    const ensureDraftCreated = useCallback(async (): Promise<string | null> => {
+        if (wizardState.draftFilePath) return wizardState.draftFilePath;
         setIsCreatingDraft(true);
         try {
             const result = await window.electron.createNewShowDraft();
@@ -162,10 +162,10 @@ export default function NewShowDialog({
                 ...prev,
                 draftFilePath: result.path,
             }));
-            return true;
+            return result.path;
         } catch (error) {
             conToastError(t("launchpage.newShow.errors.createFailed"), error);
-            return false;
+            return null;
         } finally {
             setIsCreatingDraft(false);
         }
@@ -175,8 +175,8 @@ export default function NewShowDialog({
         if (!canGoNext || isCompleting || isCreatingDraft) return;
 
         if (currentStep === "project") {
-            const ok = await ensureDraftCreated();
-            if (!ok) return;
+            const draftFilePath = await ensureDraftCreated();
+            if (!draftFilePath) return;
         }
 
         markStepComplete();
@@ -240,15 +240,13 @@ export default function NewShowDialog({
                 tempo: wizardState.tempo ?? { method: "skip" },
             };
 
-            if (!withDefaults.draftFilePath) {
-                const ok = await ensureDraftCreated();
-                if (!ok) return;
-            }
+            const draftFilePath =
+                withDefaults.draftFilePath ?? (await ensureDraftCreated());
+            if (!draftFilePath) return;
 
             const form = wizardStateToFormState({
                 ...withDefaults,
-                draftFilePath:
-                    withDefaults.draftFilePath ?? wizardState.draftFilePath,
+                draftFilePath,
             });
 
             await completeNewShow(form, queryClient);
