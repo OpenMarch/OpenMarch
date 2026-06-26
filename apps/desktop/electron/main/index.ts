@@ -12,7 +12,7 @@ import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
 import { randomUUID } from "node:crypto";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
@@ -58,6 +58,12 @@ let currentNewShowDraftPath: string | null = null;
 
 function getNewShowDraftsDirectory(): string {
     return join(app.getPath("userData"), "new-show-drafts");
+}
+
+function isNewShowDraftPath(filePath: string): boolean {
+    if (!filePath) return false;
+    const draftsDir = getNewShowDraftsDirectory();
+    return resolve(filePath).startsWith(resolve(draftsDir) + sep);
 }
 
 // Check if running in Playwright codegen mode
@@ -196,6 +202,14 @@ async function createWindow(title?: string) {
         );
     });
 
+    win.webContents.on(
+        "did-start-navigation",
+        (_event, _url, _isInPlace, isMainFrame) => {
+            if (!isMainFrame || !currentNewShowDraftPath) return;
+            void discardNewShowDraft();
+        },
+    );
+
     win.on("close", async (event: Electron.Event) => {
         if (isQuitting) return;
 
@@ -262,63 +276,66 @@ async function createWindow(title?: string) {
     await autoUpdater.checkForUpdatesAndNotify();
 }
 
-void app.whenReady().then(async () => {
-    app.setName("OpenMarch");
-    console.log("NODE:", process.versions.node);
-
-    if (isCodegen) {
-        console.log("🎭 Running in Playwright Codegen mode");
-    } else {
-        console.log("Not running in codegen mode");
-    }
-
-    Menu.setApplicationMenu(applicationMenu);
-
+function resolveStartupDatabasePath(): string {
     let pathToOpen = store.get("databasePath") as string;
     const pathFromArgs = process.argv.find((arg) => arg.endsWith(".dots"));
     if (pathFromArgs) pathToOpen = pathFromArgs;
     console.log("Path to Open:", pathToOpen);
-    if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
-    DatabaseServices.initHandlers();
+    if (pathToOpen && isNewShowDraftPath(pathToOpen)) {
+        if (fs.existsSync(pathToOpen)) fs.unlinkSync(pathToOpen);
+        store.delete("databasePath");
+        return "";
+    }
+    return pathToOpen || "";
+}
 
-    // Database handlers
-    console.log("db_path: " + DatabaseServices.getDbPath());
+function getPlaywrightDefaultDocumentsPath(): string | undefined {
+    if (
+        process.env.PLAYWRIGHT_SESSION &&
+        process.env.PLAYWRIGHT_NEW_FILE_PATH
+    ) {
+        return dirname(process.env.PLAYWRIGHT_NEW_FILE_PATH);
+    }
+    return undefined;
+}
 
-    // File IO handlers
+async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
+    if (!win) return { canceled: true, filePath: "" };
+    const playwrightPath = getPlaywrightDefaultDocumentsPath();
+    if (playwrightPath && process.env.PLAYWRIGHT_NEW_FILE_PATH) {
+        return {
+            canceled: false,
+            filePath: process.env.PLAYWRIGHT_NEW_FILE_PATH,
+        };
+    }
+    return await dialog.showSaveDialog(win, options);
+}
+
+async function openRecentFile(filePath: string) {
+    store.set("databasePath", filePath);
+    addRecentFile(filePath);
+
+    const resCode = await setActiveDb(filePath);
+
+    win?.webContents.send("load-file-response", resCode);
+
+    return resCode;
+}
+
+function initDatabaseIpcHandlers() {
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-    ipcMain.handle("database:getPath", () => {
-        return DatabaseServices.getDbPath();
-    });
+    ipcMain.handle("database:getPath", () => DatabaseServices.getDbPath());
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
     ipcMain.handle("database:createAtPath", async (_, filePath: string) =>
         createFileAtPath(filePath),
     );
-    ipcMain.handle(
-        "dialog:showSaveDialog",
-        async (_, options: Electron.SaveDialogOptions) => {
-            if (!win) return { canceled: true, filePath: undefined };
-            if (
-                process.env.PLAYWRIGHT_SESSION &&
-                process.env.PLAYWRIGHT_NEW_FILE_PATH
-            ) {
-                return {
-                    canceled: false,
-                    filePath: process.env.PLAYWRIGHT_NEW_FILE_PATH,
-                };
-            }
-            return await dialog.showSaveDialog(win, options);
-        },
+    ipcMain.handle("dialog:showSaveDialog", async (_, options) =>
+        showSaveDialogHandler(options),
     );
     ipcMain.handle("getDefaultDocumentsPath", () => {
-        if (
-            process.env.PLAYWRIGHT_SESSION &&
-            process.env.PLAYWRIGHT_NEW_FILE_PATH
-        ) {
-            return dirname(process.env.PLAYWRIGHT_NEW_FILE_PATH);
-        }
-        return app.getPath("documents");
+        return getPlaywrightDefaultDocumentsPath() ?? app.getPath("documents");
     });
     ipcMain.handle("file:exists", (_, filePath: string) => {
         if (!filePath) return false;
@@ -344,7 +361,6 @@ void app.whenReady().then(async () => {
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             const newPath = await repairDatabase(dbPath);
-            // Set the new database path and reload the window
             await setActiveDb(newPath);
             return newPath;
         } catch (error) {
@@ -353,27 +369,44 @@ void app.whenReady().then(async () => {
         }
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
+}
 
-    // Recent files handlers
+function initRecentFilesIpcHandlers() {
     ipcMain.handle("recent-files:get", getRecentFiles);
     ipcMain.handle("recent-files:remove", (_, filePath) =>
         removeRecentFile(filePath),
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:clear-missing", clearMissingRecentFiles);
-    ipcMain.handle("recent-files:open", async (_, filePath) => {
-        store.set("databasePath", filePath);
-        addRecentFile(filePath);
+    ipcMain.handle("recent-files:open", async (_, filePath) =>
+        openRecentFile(filePath),
+    );
+}
 
-        const resCode = await setActiveDb(filePath);
+function initIpcHandlers() {
+    initDatabaseIpcHandlers();
+    initRecentFilesIpcHandlers();
+}
 
-        // Handle alert dialogs in frontend
-        win?.webContents.send("load-file-response", resCode);
+void app.whenReady().then(async () => {
+    app.setName("OpenMarch");
+    console.log("NODE:", process.versions.node);
 
-        return resCode;
-    });
+    if (isCodegen) {
+        console.log("🎭 Running in Playwright Codegen mode");
+    } else {
+        console.log("Not running in codegen mode");
+    }
 
-    // Getters
+    Menu.setApplicationMenu(applicationMenu);
+
+    const pathToOpen = resolveStartupDatabasePath();
+    if (pathToOpen.length > 0) await setActiveDb(pathToOpen);
+    DatabaseServices.initHandlers();
+
+    console.log("db_path: " + DatabaseServices.getDbPath());
+
+    initIpcHandlers();
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
@@ -1028,6 +1061,14 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
     if (!win) return -1;
 
+    if (currentNewShowDraftPath) {
+        await discardNewShowDraft();
+        if (!isAppQuitting) {
+            win.webContents.reload();
+        }
+        return 200;
+    }
+
     try {
         const svgResult = await requestSvgBeforeClose(win);
         updateRecentFileSvgPreview(DatabaseServices.getDbPath(), svgResult);
@@ -1049,6 +1090,44 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
 // Audio files
 
+const AUDIO_FILE_DIALOG_FILTERS: Electron.FileFilter[] = [
+    {
+        name: "Audio File",
+        extensions: ["mp3", "wav", "ogg", "m4a", "aac", "webm"],
+    },
+    { name: "All Files", extensions: ["*"] },
+];
+
+function audioInsertError(
+    message: string,
+): DatabaseServices.LegacyDatabaseResponse<AudioFile[]> {
+    return { success: false, error: { message } };
+}
+
+async function pickAudioFilePath(): Promise<string | null> {
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+        filters: AUDIO_FILE_DIALOG_FILTERS,
+    });
+    if (result.canceled || !result.filePaths[0]) return null;
+    return result.filePaths[0];
+}
+
+async function readAudioFileBuffer(filePath: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+        });
+    });
+}
+
+function bufferToArrayBuffer(data: Buffer): ArrayBuffer {
+    return Buffer.from(
+        data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+    ) as any as ArrayBuffer;
+}
+
 /**
  * Opens a dialog to import an audio file to the database.
  *
@@ -1059,82 +1138,39 @@ export async function insertAudioFile(): Promise<
 > {
     console.log("insertAudioFile");
 
-    if (!win)
-        return {
-            success: false,
-            error: { message: "insertAudioFile: window not loaded" },
-        };
+    if (!win) return audioInsertError("insertAudioFile: window not loaded");
 
-    const dbReady = DatabaseServices.databaseIsReady();
-    if (!dbReady) {
+    if (!DatabaseServices.databaseIsReady()) {
         console.error("insertAudioFile: Database is not ready");
-        return {
-            success: false,
-            error: {
-                message: "No file is open. Create or open a show first.",
-            },
-        };
+        return audioInsertError(
+            "No file is open. Create or open a show first.",
+        );
     }
 
     try {
-        // Open file dialog
-        const path = await dialog.showOpenDialog(win, {
-            filters: [
-                {
-                    name: "Audio File",
-                    extensions: ["mp3", "wav", "ogg", "m4a", "aac", "webm"],
-                },
-                { name: "All Files", extensions: ["*"] },
-            ],
-        });
-
-        if (path.canceled || !path.filePaths[0]) {
-            return {
-                success: false,
-                error: {
-                    message:
-                        "insertAudioFile: Operation was cancelled or no audio file was provided",
-                },
-            };
+        const filePath = await pickAudioFilePath();
+        if (!filePath) {
+            return audioInsertError(
+                "insertAudioFile: Operation was cancelled or no audio file was provided",
+            );
         }
 
-        console.log("loading audio file into buffer:", path.filePaths[0]);
+        console.log("loading audio file into buffer:", filePath);
+        const data = await readAudioFileBuffer(filePath);
 
-        // Read file asynchronously and wait for completion
-        const data = await new Promise<Buffer>((resolve, reject) => {
-            fs.readFile(path.filePaths[0], (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
-
-        const dbStillReady = DatabaseServices.databaseIsReady();
-        if (!dbStillReady) {
+        if (!DatabaseServices.databaseIsReady()) {
             console.error(
                 "insertAudioFile: Database became unavailable during upload",
             );
-            return {
-                success: false,
-                error: {
-                    message:
-                        "Database became unavailable. Please try again after ensuring the database file is ready.",
-                },
-            };
+            return audioInsertError(
+                "Database became unavailable. Please try again after ensuring the database file is ready.",
+            );
         }
 
-        // Insert audio file into database
         const databaseResponse = await DatabaseServices.insertAudioFile({
-            data: Buffer.from(
-                data.buffer.slice(
-                    data.byteOffset,
-                    data.byteOffset + data.byteLength,
-                ),
-            ) as any as ArrayBuffer,
-            path: path.filePaths[0],
-            nickname: path.filePaths[0],
+            data: bufferToArrayBuffer(data),
+            path: filePath,
+            nickname: filePath,
             selected: true,
         });
 
@@ -1153,12 +1189,9 @@ export async function insertAudioFile(): Promise<
         return databaseResponse;
     } catch (err) {
         console.error("Error inserting audio file:", err);
-        return {
-            success: false,
-            error: {
-                message: err instanceof Error ? err.message : String(err),
-            },
-        };
+        return audioInsertError(
+            err instanceof Error ? err.message : String(err),
+        );
     }
 }
 

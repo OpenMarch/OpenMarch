@@ -20,6 +20,12 @@ import {
     allMarchersQueryOptions,
 } from "@/hooks/queries";
 import type { NewShowFormState } from "./newShowTypes";
+import {
+    isTempoOnlyTimeSignature,
+    TEMPO_ONLY_LAST_PAGE_MEASURES,
+    TEMPO_ONLY_MEASURE_COUNT,
+    TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS,
+} from "./newShowTypes";
 import type { QueryClient } from "@tanstack/react-query";
 import { createAllUndoTriggers } from "@/db-functions/history";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
@@ -27,12 +33,34 @@ import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
 import { createMarchers } from "@/db-functions/marcher";
 import AudioFile from "@/global/classes/AudioFile";
-import { getMeasures } from "@/db-functions/measures";
+import {
+    getMeasures,
+    realDatabaseMeasureToDatabaseMeasure,
+} from "@/db-functions/measures";
 import tolgee from "@/global/singletons/Tolgee";
 import { conToastError } from "@/utilities/utils";
+import TimeSignature from "@/global/classes/TimeSignature";
+import { _createFromTempoGroupInTransaction } from "@/components/music/TempoGroup/TempoGroup";
+import { updateUtilityInTransaction } from "@/db-functions/utility";
+import { measureKeys } from "@/hooks/queries/useMeasures";
 
+const DEFAULT_NEW_PAGE_COUNTS = 16;
+const TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES = 4;
+
+function getDefaultNewPageCounts(form: NewShowFormState): number {
+    if (
+        form.tempo?.method === "tempo_only" &&
+        isTempoOnlyTimeSignature(form.tempo.timeSignature)
+    ) {
+        const beatsPerMeasure = TimeSignature.fromString(
+            form.tempo.timeSignature,
+        ).numerator;
+        return TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES * beatsPerMeasure;
+    }
+    return DEFAULT_NEW_PAGE_COUNTS;
+}
 const PAGES_COUNT = 8;
-const COUNTS_PER_PAGE = 16;
+const COUNTS_PER_PAGE = DEFAULT_NEW_PAGE_COUNTS;
 const TOTAL_COUNTS = PAGES_COUNT * COUNTS_PER_PAGE;
 const DEFAULT_TEMPO = 120;
 
@@ -98,6 +126,11 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
         form.tempo?.method === "tempo_only" && form.tempo.tempo
             ? form.tempo.tempo
             : form.defaultTempo;
+    const defaultBeatsPerMeasure =
+        form.tempo?.method === "tempo_only" &&
+        isTempoOnlyTimeSignature(form.tempo.timeSignature)
+            ? TimeSignature.fromString(form.tempo.timeSignature).numerator
+            : currentSettings.defaultBeatsPerMeasure;
 
     const updatedSettings = workspaceSettingsSchema.parse({
         ...currentSettings,
@@ -105,6 +138,8 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
         designer: form.designer,
         client: form.client,
         defaultTempo: tempo,
+        defaultBeatsPerMeasure,
+        defaultNewPageCounts: getDefaultNewPageCounts(form),
         ensembleEnvironment: form.ensemble?.environment,
         ensembleType: form.ensemble?.ensemble_type,
     });
@@ -126,11 +161,17 @@ async function applyMusicSettings(
         !hasDefaultTempoKey || rawSettings.defaultTempo == null;
 
     if (tempo?.method === "tempo_only" && tempo.tempo) {
+        const beatsPerMeasure = isTempoOnlyTimeSignature(tempo.timeSignature)
+            ? TimeSignature.fromString(tempo.timeSignature).numerator
+            : currentSettings.defaultBeatsPerMeasure;
         await updateWorkspaceSettingsParsed({
             db,
             settings: workspaceSettingsSchema.parse({
                 ...currentSettings,
                 defaultTempo: tempo.tempo,
+                defaultBeatsPerMeasure: beatsPerMeasure,
+                defaultNewPageCounts:
+                    TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES * beatsPerMeasure,
             }),
         });
     } else if (needsTempoUpdate) {
@@ -257,6 +298,109 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
     });
 }
 
+async function createTempoOnlyBeatsMeasuresAndPages(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const tempoData = form.tempo;
+    if (
+        tempoData?.method !== "tempo_only" ||
+        !tempoData.tempo ||
+        !isTempoOnlyTimeSignature(tempoData.timeSignature)
+    ) {
+        throw new Error("Tempo-only show requires tempo and time signature");
+    }
+
+    const beatsPerMeasure = TimeSignature.fromString(
+        tempoData.timeSignature,
+    ).numerator;
+
+    const existingPages = await queryClient.fetchQuery(
+        allDatabasePagesQueryOptions(),
+    );
+    const pageByStartBeat = new Map(
+        existingPages.map((p) => [p.start_beat, p.id]),
+    );
+
+    await transactionWithHistory(
+        db,
+        "createTempoOnlyBeatsMeasuresAndPages",
+        async (tx) => {
+            await _createFromTempoGroupInTransaction({
+                tx,
+                tempoGroup: {
+                    name: "",
+                    tempo: tempoData.tempo!,
+                    bigBeatsPerMeasure: beatsPerMeasure,
+                    numOfRepeats: TEMPO_ONLY_MEASURE_COUNT,
+                },
+                startingPosition: 0,
+            });
+
+            const measuresRaw = await tx.query.measures.findMany();
+            const beatsRaw = await tx.query.beats.findMany({
+                orderBy: asc(schema.beats.position),
+            });
+            const beatPositionById = new Map(
+                beatsRaw.map((beat) => [beat.id, beat.position]),
+            );
+            const sortedMeasures = measuresRaw
+                .map(realDatabaseMeasureToDatabaseMeasure)
+                .sort(
+                    (a, b) =>
+                        (beatPositionById.get(a.start_beat) ?? 0) -
+                        (beatPositionById.get(b.start_beat) ?? 0),
+                );
+
+            if (sortedMeasures.length < TEMPO_ONLY_MEASURE_COUNT) {
+                throw new Error(
+                    `Expected ${TEMPO_ONLY_MEASURE_COUNT} measures, got ${sortedMeasures.length}`,
+                );
+            }
+
+            const newPagesArgs: { start_beat: number; is_subset: boolean }[] =
+                [];
+            for (const measureNumber of TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS) {
+                const measure = sortedMeasures[measureNumber - 1];
+                if (!measure) {
+                    throw new Error(
+                        `Missing measure ${measureNumber} for page creation`,
+                    );
+                }
+                if (pageByStartBeat.has(measure.start_beat)) {
+                    continue;
+                }
+                newPagesArgs.push({
+                    start_beat: measure.start_beat,
+                    is_subset: false,
+                });
+            }
+
+            if (newPagesArgs.length > 0) {
+                await createPagesInTransaction({ tx, newPages: newPagesArgs });
+            }
+
+            await updateUtilityInTransaction({
+                tx,
+                args: {
+                    last_page_counts:
+                        TEMPO_ONLY_LAST_PAGE_MEASURES * beatsPerMeasure,
+                },
+            });
+        },
+    );
+
+    await queryClient.invalidateQueries({
+        queryKey: allDatabaseBeatsQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: measureKeys.all(),
+    });
+    await queryClient.invalidateQueries({
+        queryKey: allDatabasePagesQueryOptions().queryKey,
+    });
+}
+
 /**
  * Applies wizard data to the open draft DB, then moves the file to the user's path.
  */
@@ -277,7 +421,11 @@ export async function completeNewShow(
     await applyProjectSettings(form);
     await applyMusicSettings(form.audio, form.tempo);
     await updateFieldProperties(form.fieldTemplate);
-    await createBeatsAndPages(queryClient);
+    if (form.tempo?.method === "tempo_only") {
+        await createTempoOnlyBeatsMeasuresAndPages(form, queryClient);
+    } else {
+        await createBeatsAndPages(queryClient);
+    }
     await applyPerformersSettings(form.performers, queryClient);
 
     const finalizeResult = await window.electron.finalizeNewShowDraft(

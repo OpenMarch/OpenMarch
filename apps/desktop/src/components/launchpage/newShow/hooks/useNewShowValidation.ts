@@ -1,11 +1,15 @@
 import { useMemo } from "react";
-import type { NewShowStepId, NewShowWizardState } from "../../newShowTypes";
+import {
+    isTempoOnlyTimeSignature,
+    type NewShowStepId,
+    type NewShowWizardState,
+} from "../../newShowTypes";
 
-const OPTIONAL_STEPS: Set<NewShowStepId> = new Set([
-    "performers",
-    "audio",
-    "tempo",
-]);
+const OPTIONAL_STEPS: Set<NewShowStepId> = new Set(["performers", "audio"]);
+
+function isValidTempoOnlyTempo(tempo: number | undefined): boolean {
+    return tempo !== undefined && tempo >= 1 && tempo <= 300;
+}
 
 export function useNewShowValidation(
     state: NewShowWizardState,
@@ -29,6 +33,16 @@ export function useNewShowValidation(
                 return state.ensemble !== null;
             case "field":
                 return state.field !== null;
+            case "tempo": {
+                const tempo = state.tempo;
+                if (!tempo || tempo.method !== "tempo_only") {
+                    return true;
+                }
+                return (
+                    isValidTempoOnlyTempo(tempo.tempo) &&
+                    isTempoOnlyTimeSignature(tempo.timeSignature)
+                );
+            }
             default:
                 return false;
         }

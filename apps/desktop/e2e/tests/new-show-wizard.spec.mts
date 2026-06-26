@@ -48,7 +48,7 @@ test("Default pages created", async ({ electronAppNewFile }) => {
 
     await completeNewShowWizard(page, { projectName });
 
-    await expect(page.locator("#pages")).toContainText("7");
+    await expect(page.locator("#pages")).toContainText("5");
 });
 
 test("Back navigation returns to project step", async ({
@@ -92,4 +92,31 @@ test("Exit confirm on discard", async ({ electronAppEmpty }) => {
     await expect(
         page.getByRole("alertdialog", { name: "Discard new show?" }),
     ).toBeVisible();
+});
+
+test("Refresh during wizard discards draft and returns to launch page", async ({
+    electronAppEmpty,
+}) => {
+    const { page } = electronAppEmpty;
+    const dialog = page.getByRole("dialog", { name: "New show" });
+
+    await openNewShowWizard(page);
+    await fillProjectStep(page, "Refresh Test");
+    await dialog.getByRole("button", { name: "Next" }).click();
+
+    await expect(
+        dialog.getByRole("heading", {
+            name: "Ensemble",
+            exact: true,
+            level: 2,
+        }),
+    ).toBeVisible();
+
+    await page.reload();
+
+    await expect(
+        page.getByRole("heading", { name: "Recent Files", level: 2 }),
+    ).toBeVisible();
+    await expect(page.getByText("Timeline")).not.toBeVisible();
+    await expect(dialog).not.toBeVisible();
 });

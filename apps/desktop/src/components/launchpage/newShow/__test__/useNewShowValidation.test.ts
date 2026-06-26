@@ -34,16 +34,55 @@ describe("useNewShowValidation", () => {
         expect(result.current).toBe(true);
     });
 
-    it("allows skip on audio and tempo steps", () => {
+    it("allows skip on audio step", () => {
         const { result: audioResult } = renderHook(() =>
             useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "audio"),
         );
         expect(audioResult.current).toBe(true);
+    });
 
-        const { result: tempoResult } = renderHook(() =>
-            useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "tempo"),
+    it("allows skip and xml on tempo step", () => {
+        const skipState: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            tempo: { method: "skip" },
+        };
+        const { result: skipResult } = renderHook(() =>
+            useNewShowValidation(skipState, "tempo"),
         );
-        expect(tempoResult.current).toBe(true);
+        expect(skipResult.current).toBe(true);
+
+        const xmlState: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            tempo: { method: "xml" },
+        };
+        const { result: xmlResult } = renderHook(() =>
+            useNewShowValidation(xmlState, "tempo"),
+        );
+        expect(xmlResult.current).toBe(true);
+    });
+
+    it("requires tempo and time signature for tempo_only on tempo step", () => {
+        const missingTimeSignature: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            tempo: { method: "tempo_only", tempo: 120 },
+        };
+        const { result: missingSigResult } = renderHook(() =>
+            useNewShowValidation(missingTimeSignature, "tempo"),
+        );
+        expect(missingSigResult.current).toBe(false);
+
+        const validState: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            tempo: {
+                method: "tempo_only",
+                tempo: 120,
+                timeSignature: "4/4",
+            },
+        };
+        const { result: validResult } = renderHook(() =>
+            useNewShowValidation(validState, "tempo"),
+        );
+        expect(validResult.current).toBe(true);
     });
 
     it("requires field on field step", () => {

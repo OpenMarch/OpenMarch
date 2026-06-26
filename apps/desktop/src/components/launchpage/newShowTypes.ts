@@ -48,9 +48,37 @@ export interface NewShowAudioData {
     method: "audio" | "skip";
 }
 
+export const TEMPO_ONLY_TIME_SIGNATURES = [
+    "2/4",
+    "3/4",
+    "4/4",
+    "5/4",
+    "6/4",
+    "7/4",
+] as const;
+
+export type TempoOnlyTimeSignature =
+    (typeof TEMPO_ONLY_TIME_SIGNATURES)[number];
+
+export const TEMPO_ONLY_MEASURE_COUNT = 20;
+export const TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS = [1, 5, 9, 13, 17] as const;
+export const TEMPO_ONLY_LAST_PAGE_MEASURES = 2;
+
+export const DEFAULT_TEMPO_ONLY_TIME_SIGNATURE: TempoOnlyTimeSignature = "4/4";
+
+export function isTempoOnlyTimeSignature(
+    value: string | undefined,
+): value is TempoOnlyTimeSignature {
+    return (
+        value !== undefined &&
+        (TEMPO_ONLY_TIME_SIGNATURES as readonly string[]).includes(value)
+    );
+}
+
 export interface NewShowTempoData {
     method: "xml" | "tempo_only" | "skip";
     tempo?: number;
+    timeSignature?: TempoOnlyTimeSignature;
 }
 
 export interface NewShowWizardState {

@@ -697,6 +697,8 @@
                     "musicXml": "MusicXML file",
                     "skip": "Skip for now",
                     "skipDescription": "Tempo data is optional. You can edit tempo later from the editor.",
+                    "timeSignature": "Time signature",
+                    "timeSignatureHelper": "Choose the meter for the starter measures in this show. You can change this later.",
                     "waitingDb": "Preparing your show file…",
                     "dbNotReady": "The show file is not ready. Go back to the project step and try again."
                 }

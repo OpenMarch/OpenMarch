@@ -13,6 +13,8 @@ import { getWorkspaceSettingsParsed } from "@/db-functions/workspaceSettings";
 import { getFieldProperties } from "@/global/classes/FieldProperties";
 import { allDatabaseBeatsQueryOptions } from "@/hooks/queries/useBeats";
 import { allDatabasePagesQueryOptions } from "@/hooks/queries/usePages";
+import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
+import { getUtility } from "@/db-functions/utility";
 
 describe("newShowCompletion helpers", () => {
     it("sanitizeFilename removes invalid characters", () => {
@@ -42,14 +44,22 @@ describe("newShowCompletion helpers", () => {
             },
             performers: { method: "skip", marchers: [] },
             audio: { method: "skip" },
-            tempo: { method: "tempo_only", tempo: 96 },
+            tempo: {
+                method: "tempo_only",
+                tempo: 96,
+                timeSignature: "4/4",
+            },
             draftFilePath: "/tmp/draft.dots",
         };
 
         const form = wizardStateToFormState(wizardState);
 
         expect(form.audio).toEqual({ method: "skip" });
-        expect(form.tempo).toEqual({ method: "tempo_only", tempo: 96 });
+        expect(form.tempo).toEqual({
+            method: "tempo_only",
+            tempo: 96,
+            timeSignature: "4/4",
+        });
         expect(form.defaultTempo).toBe(96);
     });
 });
@@ -91,7 +101,11 @@ describeDbTests("completeNewShow", (it) => {
             },
             performers: { method: "skip", marchers: [] },
             audio: { method: "skip" },
-            tempo: { method: "tempo_only", tempo: 100 },
+            tempo: {
+                method: "tempo_only",
+                tempo: 100,
+                timeSignature: "4/4",
+            },
             draftFilePath: "/tmp/draft.dots",
         };
 
@@ -103,6 +117,8 @@ describeDbTests("completeNewShow", (it) => {
         expect(settings.designer).toBe("Designer Name");
         expect(settings.client).toBe("Client Name");
         expect(settings.defaultTempo).toBe(100);
+        expect(settings.defaultBeatsPerMeasure).toBe(4);
+        expect(settings.defaultNewPageCounts).toBe(16);
         expect(settings.ensembleEnvironment).toBe("outdoor");
         expect(settings.ensembleType).toBe("Marching Band");
 
@@ -114,16 +130,68 @@ describeDbTests("completeNewShow", (it) => {
         const beats = await queryClient.fetchQuery(
             allDatabaseBeatsQueryOptions(),
         );
-        expect(beats.length).toBeGreaterThanOrEqual(129);
+        expect(beats.length).toBe(1 + 20 * 4);
+
+        const measures = await queryClient.fetchQuery(
+            allDatabaseMeasuresQueryOptions(),
+        );
+        expect(measures.length).toBe(20);
 
         const pages = await queryClient.fetchQuery(
             allDatabasePagesQueryOptions(),
         );
-        expect(pages.length).toBeGreaterThanOrEqual(8);
+        expect(pages.length).toBe(6);
+
+        const utility = await getUtility({ db });
+        expect(utility?.last_page_counts).toBe(8);
 
         expect(window.electron.finalizeNewShowDraft).toHaveBeenCalledWith(
             "/tmp/Test Show.dots",
             "Test Show",
         );
+    });
+
+    it("creates tempo-only show with 3/4 time signature", async ({
+        task,
+        db,
+    }) => {
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Triple Meter Show",
+                fileLocation: `/tmp/triple-meter-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "skip" },
+            tempo: {
+                method: "tempo_only",
+                tempo: 120,
+                timeSignature: "3/4",
+            },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+        await completeNewShow(form, queryClient);
+
+        const settings = await getWorkspaceSettingsParsed({ db });
+        expect(settings.defaultBeatsPerMeasure).toBe(3);
+        expect(settings.defaultNewPageCounts).toBe(12);
+
+        const beats = await queryClient.fetchQuery(
+            allDatabaseBeatsQueryOptions(),
+        );
+        expect(beats.length).toBe(1 + 20 * 3);
+
+        const utility = await getUtility({ db });
+        expect(utility?.last_page_counts).toBe(6);
     });
 });

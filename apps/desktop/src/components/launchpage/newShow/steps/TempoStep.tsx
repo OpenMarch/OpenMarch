@@ -12,7 +12,14 @@ import { T, useTolgee } from "@tolgee/react";
 import MusicXmlSelector from "@/components/music/MusicXmlSelector";
 import { useQuery } from "@tanstack/react-query";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
-import type { NewShowTempoData } from "../../newShowTypes";
+import type {
+    NewShowTempoData,
+    TempoOnlyTimeSignature,
+} from "../../newShowTypes";
+import {
+    DEFAULT_TEMPO_ONLY_TIME_SIGNATURE,
+    TEMPO_ONLY_TIME_SIGNATURES,
+} from "../../newShowTypes";
 
 interface TempoStepProps {
     tempo: NewShowTempoData | null;
@@ -32,6 +39,9 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
         tempo?.method ?? "tempo_only",
     );
     const [tempoValue, setTempoValue] = useState(tempo?.tempo ?? 120);
+    const [timeSignature, setTimeSignature] = useState<TempoOnlyTimeSignature>(
+        tempo?.timeSignature ?? DEFAULT_TEMPO_ONLY_TIME_SIGNATURE,
+    );
     const onChangeRef = useRef(onChange);
     onChangeRef.current = onChange;
     const hasSyncedInitial = useRef(tempo !== null);
@@ -39,17 +49,20 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
     const emitTempo = (
         nextMethod: NewShowTempoData["method"],
         nextTempo: number = tempoValue,
+        nextTimeSignature: TempoOnlyTimeSignature = timeSignature,
     ) => {
         onChangeRef.current({
             method: nextMethod,
             tempo: nextMethod === "tempo_only" ? nextTempo : undefined,
+            timeSignature:
+                nextMethod === "tempo_only" ? nextTimeSignature : undefined,
         });
     };
 
     useEffect(() => {
         if (hasSyncedInitial.current) return;
         hasSyncedInitial.current = true;
-        emitTempo(method, tempoValue);
+        emitTempo(method, tempoValue, timeSignature);
     }, []);
 
     useEffect(() => {
@@ -126,20 +139,57 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
             </WizardFormField>
 
             {method === "tempo_only" && (
-                <WizardFormField label={t("launchpage.newShow.tempo")}>
-                    <Input
-                        type="number"
-                        value={tempoValue}
-                        onChange={(e) => {
-                            const nextTempo =
-                                parseInt(e.target.value, 10) || 120;
-                            setTempoValue(nextTempo);
-                            emitTempo("tempo_only", nextTempo);
-                        }}
-                        min={1}
-                        max={300}
-                    />
-                </WizardFormField>
+                <>
+                    <WizardFormField
+                        label={t(
+                            "launchpage.newShow.steps.tempo.timeSignature",
+                        )}
+                        helperText={t(
+                            "launchpage.newShow.steps.tempo.timeSignatureHelper",
+                        )}
+                    >
+                        <Select
+                            value={timeSignature}
+                            onValueChange={(v) => {
+                                const nextTimeSignature =
+                                    v as TempoOnlyTimeSignature;
+                                setTimeSignature(nextTimeSignature);
+                                emitTempo(
+                                    "tempo_only",
+                                    tempoValue,
+                                    nextTimeSignature,
+                                );
+                            }}
+                        >
+                            <SelectTriggerButton label={timeSignature} />
+                            <SelectContent>
+                                {TEMPO_ONLY_TIME_SIGNATURES.map((sig) => (
+                                    <SelectItem key={sig} value={sig}>
+                                        {sig}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </WizardFormField>
+                    <WizardFormField label={t("launchpage.newShow.tempo")}>
+                        <Input
+                            type="number"
+                            value={tempoValue}
+                            onChange={(e) => {
+                                const nextTempo =
+                                    parseInt(e.target.value, 10) || 120;
+                                setTempoValue(nextTempo);
+                                emitTempo(
+                                    "tempo_only",
+                                    nextTempo,
+                                    timeSignature,
+                                );
+                            }}
+                            min={1}
+                            max={300}
+                        />
+                    </WizardFormField>
+                </>
             )}
 
             {method === "xml" && (

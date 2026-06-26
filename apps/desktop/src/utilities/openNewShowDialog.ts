@@ -5,9 +5,9 @@ export const NEW_SHOW_DIALOG_SESSION_KEY = "openmarch:openNewShowDialog";
 export const OPEN_NEW_SHOW_DIALOG_EVENT = "open-new-show-dialog";
 
 export async function requestOpenNewShowDialog(): Promise<void> {
-    sessionStorage.setItem(NEW_SHOW_DIALOG_SESSION_KEY, "1");
     const dbReady = await window.electron.databaseIsReady();
     if (dbReady) {
+        sessionStorage.setItem(NEW_SHOW_DIALOG_SESSION_KEY, "1");
         await invalidateDatabaseReadyQueries(queryClient);
         await window.electron.closeCurrentFile();
     } else {
