@@ -1,4 +1,8 @@
-import { queryOptions, useQuery } from "@tanstack/react-query";
+import {
+    type QueryClient,
+    queryOptions,
+    useQuery,
+} from "@tanstack/react-query";
 
 const DATABASE_READY_KEY = ["database", "isReady"] as const;
 
@@ -25,6 +29,14 @@ export const databaseReadyQueryOptions = () =>
         staleTime: 1000,
         refetchInterval: (query) => (query.state.data === true ? false : 1000),
     });
+
+export async function invalidateDatabaseReadyQueries(
+    queryClient: QueryClient,
+): Promise<void> {
+    await queryClient.invalidateQueries({
+        queryKey: databaseReadyQueryOptions().queryKey,
+    });
+}
 
 /**
  * Hook to check if the database is ready.

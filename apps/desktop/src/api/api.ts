@@ -2,6 +2,8 @@
  * Launches a file dialogue to load an OpenMarch .dots file.
  * @returns Response data from the server.
  */
+import { queryClient } from "@/App";
+import { invalidateDatabaseReadyQueries } from "@/hooks/useDatabaseReady";
 import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 
 export async function launchLoadFileDialogue() {
@@ -30,6 +32,7 @@ export async function launchNewFileDialogue() {
  * @returns Response data from the server.
  */
 export async function closeCurrentFile() {
+    await invalidateDatabaseReadyQueries(queryClient);
     const response = await window.electron.closeCurrentFile();
     return response;
 }

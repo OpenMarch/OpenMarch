@@ -36,6 +36,7 @@ import {
     type NewShowWizardState,
     wizardStateToFormState,
 } from "./newShowTypes";
+import { invalidateDatabaseReadyQueries } from "@/hooks/useDatabaseReady";
 import { completeNewShow } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
@@ -115,10 +116,11 @@ export default function NewShowDialog({
     const closeAndReset = useCallback(async () => {
         if (wizardState.draftFilePath) {
             await window.electron.discardNewShowDraft();
+            await invalidateDatabaseReadyQueries(queryClient);
         }
         resetWizard();
         onOpenChange(false);
-    }, [wizardState.draftFilePath, resetWizard, onOpenChange]);
+    }, [wizardState.draftFilePath, queryClient, resetWizard, onOpenChange]);
 
     const requestClose = useCallback(() => {
         if (hasNewShowProgress(wizardState)) {
