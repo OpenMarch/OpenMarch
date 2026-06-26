@@ -1,0 +1,60 @@
+---
+title: "Uploading Shows to OTM"
+description: "How to upload shows to OpenMarch: On the Move"
+sidebar:
+  order: 3
+---
+
+import { Steps } from "@astrojs/starlight/components";
+import { DeviceMobileIcon } from "@phosphor-icons/react";
+
+All shows are uploaded to OTM from the desktop app and require an OpenMarch account to create and publish.
+
+## Uploading to OTM for the first time
+
+<Steps>
+
+1. Create an Ensemble and Production in the [Ensemble Management Dashboard](https://app.openmarch.com/).
+
+   See [Getting Started](/docs/otm/getting-started) for more information on what an Ensemble and Production are.
+
+1. Open the OpenMarch Desktop app with the show you want to upload.
+
+1. Click the <span style={{ display: "inline-flex", gap: "0.25rem" }}><DeviceMobileIcon /> </span> Phone icon in the bottom left corner.
+
+1. Press `Sign in` to connect your account to the desktop app.
+
+1. Click the Production you want to upload to and click `Attach File to Production`.
+
+1. Then, click "Publish to mobile app".
+
+1. The show will be instantly available to all performers registered to the ensemble.
+
+</Steps>
+
+![Uploading to OTM for the first time](/docs/otm/initial-publish-desktop.gif)
+
+## Uploading revisions to an existing production
+
+OpenMarch allows you to upload **Revisions** to an existing production.
+This is useful for making changes to you show after you publish it initially.
+
+<Steps>
+
+1. Open the OpenMarch Desktop app with the show you want to upload.
+
+1. Click the <span style={{ display: "inline-flex", gap: "0.25rem" }}><DeviceMobileIcon /> </span> Phone icon in the bottom left corner.
+
+   You should see your Production you attached the file to previously.
+
+1. Type a small message describing what changed in the production.
+
+   This is not visible to users on the mobile app. It's just for your reference.
+
+1. Press `Publish to mobile app`.
+
+1. The updates will be instantly available to all performers registered to the ensemble.
+
+</Steps>
+
+![Uploading revisions to an existing production](/docs/otm/upload-revision.gif)
