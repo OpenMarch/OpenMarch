@@ -255,7 +255,11 @@ export default function NewShowDialog({
             onCreated();
             onOpenChange(false);
         } catch (error) {
-            conToastError(t("launchpage.newShow.errors.createFailed"), error);
+            const message =
+                error instanceof Error && error.message
+                    ? error.message
+                    : t("launchpage.newShow.errors.createFailed");
+            conToastError(message, error);
         } finally {
             setIsCompleting(false);
         }

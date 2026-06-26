@@ -194,4 +194,68 @@ describeDbTests("completeNewShow", (it) => {
         const utility = await getUtility({ db });
         expect(utility?.last_page_counts).toBe(6);
     });
+
+    it("aborts when audio method is audio but no audio files exist", async ({
+        task,
+        db: _db,
+    }) => {
+        window.electron.getAudioFilesDetails = vi.fn().mockResolvedValue([]);
+
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Audio Show",
+                fileLocation: `/tmp/audio-show-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "audio" },
+            tempo: { method: "skip" },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+        await expect(completeNewShow(form, queryClient)).rejects.toThrow(
+            /audio/i,
+        );
+        expect(window.electron.finalizeNewShowDraft).not.toHaveBeenCalled();
+    });
+
+    it("aborts when tempo method is xml but no measures exist", async ({
+        task,
+        db: _db,
+    }) => {
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "XML Show",
+                fileLocation: `/tmp/xml-show-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "skip" },
+            tempo: { method: "xml" },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+        await expect(completeNewShow(form, queryClient)).rejects.toThrow(
+            /musicxml|imported/i,
+        );
+        expect(window.electron.finalizeNewShowDraft).not.toHaveBeenCalled();
+    });
 });

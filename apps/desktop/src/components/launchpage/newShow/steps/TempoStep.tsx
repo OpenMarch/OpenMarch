@@ -21,6 +21,20 @@ import {
     TEMPO_ONLY_TIME_SIGNATURES,
 } from "../../newShowTypes";
 
+const TEMPO_MIN = 1;
+const TEMPO_MAX = 300;
+const DEFAULT_TEMPO = 120;
+
+function clampTempo(value: number): number {
+    return Math.min(TEMPO_MAX, Math.max(TEMPO_MIN, value));
+}
+
+function parseTempoInput(raw: string): number | null {
+    const parsed = parseInt(raw, 10);
+    if (Number.isNaN(parsed)) return null;
+    return clampTempo(parsed);
+}
+
 interface TempoStepProps {
     tempo: NewShowTempoData | null;
     onChange: (tempo: NewShowTempoData) => void;
@@ -38,7 +52,9 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
     const [method, setMethod] = useState<NewShowTempoData["method"]>(
         tempo?.method ?? "tempo_only",
     );
-    const [tempoValue, setTempoValue] = useState(tempo?.tempo ?? 120);
+    const [tempoInput, setTempoInput] = useState(
+        String(tempo?.tempo ?? DEFAULT_TEMPO),
+    );
     const [timeSignature, setTimeSignature] = useState<TempoOnlyTimeSignature>(
         tempo?.timeSignature ?? DEFAULT_TEMPO_ONLY_TIME_SIGNATURE,
     );
@@ -46,23 +62,31 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
     onChangeRef.current = onChange;
     const hasSyncedInitial = useRef(tempo !== null);
 
+    const getCommittedTempo = () =>
+        parseTempoInput(tempoInput) ?? DEFAULT_TEMPO;
+
     const emitTempo = (
         nextMethod: NewShowTempoData["method"],
-        nextTempo: number = tempoValue,
-        nextTimeSignature: TempoOnlyTimeSignature = timeSignature,
+        nextTempo?: number,
+        nextTimeSignature?: TempoOnlyTimeSignature,
     ) => {
         onChangeRef.current({
             method: nextMethod,
-            tempo: nextMethod === "tempo_only" ? nextTempo : undefined,
+            tempo:
+                nextMethod === "tempo_only"
+                    ? (nextTempo ?? getCommittedTempo())
+                    : undefined,
             timeSignature:
-                nextMethod === "tempo_only" ? nextTimeSignature : undefined,
+                nextMethod === "tempo_only"
+                    ? (nextTimeSignature ?? timeSignature)
+                    : undefined,
         });
     };
 
     useEffect(() => {
         if (hasSyncedInitial.current) return;
         hasSyncedInitial.current = true;
-        emitTempo(method, tempoValue, timeSignature);
+        emitTempo(method, getCommittedTempo(), timeSignature);
     }, []);
 
     useEffect(() => {
@@ -156,7 +180,7 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
                                 setTimeSignature(nextTimeSignature);
                                 emitTempo(
                                     "tempo_only",
-                                    tempoValue,
+                                    getCommittedTempo(),
                                     nextTimeSignature,
                                 );
                             }}
@@ -174,19 +198,32 @@ export default function TempoStep({ tempo, onChange }: TempoStepProps) {
                     <WizardFormField label={t("launchpage.newShow.tempo")}>
                         <Input
                             type="number"
-                            value={tempoValue}
+                            value={tempoInput}
                             onChange={(e) => {
-                                const nextTempo =
-                                    parseInt(e.target.value, 10) || 120;
-                                setTempoValue(nextTempo);
-                                emitTempo(
-                                    "tempo_only",
-                                    nextTempo,
-                                    timeSignature,
-                                );
+                                const raw = e.target.value;
+                                setTempoInput(raw);
+                                const parsed = parseTempoInput(raw);
+                                if (parsed !== null) {
+                                    emitTempo(
+                                        "tempo_only",
+                                        parsed,
+                                        timeSignature,
+                                    );
+                                }
                             }}
-                            min={1}
-                            max={300}
+                            onBlur={() => {
+                                const parsed = parseTempoInput(tempoInput);
+                                if (parsed === null) {
+                                    setTempoInput(String(DEFAULT_TEMPO));
+                                    emitTempo(
+                                        "tempo_only",
+                                        DEFAULT_TEMPO,
+                                        timeSignature,
+                                    );
+                                }
+                            }}
+                            min={TEMPO_MIN}
+                            max={TEMPO_MAX}
                         />
                     </WizardFormField>
                 </>

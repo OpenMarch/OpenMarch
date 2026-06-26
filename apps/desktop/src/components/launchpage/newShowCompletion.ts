@@ -38,11 +38,12 @@ import {
     realDatabaseMeasureToDatabaseMeasure,
 } from "@/db-functions/measures";
 import tolgee from "@/global/singletons/Tolgee";
-import { conToastError } from "@/utilities/utils";
 import TimeSignature from "@/global/classes/TimeSignature";
 import { _createFromTempoGroupInTransaction } from "@/components/music/TempoGroup/TempoGroup";
 import { updateUtilityInTransaction } from "@/db-functions/utility";
 import { measureKeys } from "@/hooks/queries/useMeasures";
+import type { DbTransaction } from "@/db-functions/types";
+import type { DatabaseMeasure } from "@/db-functions/measures";
 
 const DEFAULT_NEW_PAGE_COUNTS = 16;
 const TEMPO_ONLY_DEFAULT_NEW_PAGE_MEASURES = 4;
@@ -187,14 +188,18 @@ async function applyMusicSettings(
     if (audio?.method === "audio") {
         const audioFiles = await AudioFile.getAudioFilesDetails();
         if (audioFiles.length === 0) {
-            conToastError(tolgee.t("launchpage.newShow.errors.audioNotSaved"));
+            throw new Error(
+                tolgee.t("launchpage.newShow.errors.audioNotSaved"),
+            );
         }
     }
 
     if (tempo?.method === "xml") {
         const measures = await getMeasures({ db });
         if (measures.length === 0) {
-            conToastError(tolgee.t("launchpage.newShow.errors.xmlNotImported"));
+            throw new Error(
+                tolgee.t("launchpage.newShow.errors.xmlNotImported"),
+            );
         }
     }
 }
@@ -298,10 +303,10 @@ async function createBeatsAndPages(queryClient: QueryClient): Promise<void> {
     });
 }
 
-async function createTempoOnlyBeatsMeasuresAndPages(
-    form: NewShowFormState,
-    queryClient: QueryClient,
-): Promise<void> {
+function requireTempoOnlyData(form: NewShowFormState): {
+    tempo: number;
+    beatsPerMeasure: number;
+} {
     const tempoData = form.tempo;
     if (
         tempoData?.method !== "tempo_only" ||
@@ -311,9 +316,119 @@ async function createTempoOnlyBeatsMeasuresAndPages(
         throw new Error("Tempo-only show requires tempo and time signature");
     }
 
-    const beatsPerMeasure = TimeSignature.fromString(
-        tempoData.timeSignature,
-    ).numerator;
+    return {
+        tempo: tempoData.tempo,
+        beatsPerMeasure: TimeSignature.fromString(tempoData.timeSignature)
+            .numerator,
+    };
+}
+
+async function sortMeasuresByBeatPosition(
+    tx: DbTransaction,
+): Promise<DatabaseMeasure[]> {
+    const measuresRaw = await tx.query.measures.findMany();
+    const beatsRaw = await tx.query.beats.findMany({
+        orderBy: asc(schema.beats.position),
+    });
+    const beatPositionById = new Map(
+        beatsRaw.map((beat) => [beat.id, beat.position]),
+    );
+    return measuresRaw
+        .map(realDatabaseMeasureToDatabaseMeasure)
+        .sort(
+            (a, b) =>
+                (beatPositionById.get(a.start_beat) ?? 0) -
+                (beatPositionById.get(b.start_beat) ?? 0),
+        );
+}
+
+function buildTempoOnlyPageArgs(
+    sortedMeasures: DatabaseMeasure[],
+    pageByStartBeat: Map<number, number>,
+): { start_beat: number; is_subset: boolean }[] {
+    if (sortedMeasures.length < TEMPO_ONLY_MEASURE_COUNT) {
+        throw new Error(
+            `Expected ${TEMPO_ONLY_MEASURE_COUNT} measures, got ${sortedMeasures.length}`,
+        );
+    }
+
+    const newPagesArgs: { start_beat: number; is_subset: boolean }[] = [];
+    for (const measureNumber of TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS) {
+        const measure = sortedMeasures[measureNumber - 1];
+        if (!measure) {
+            throw new Error(
+                `Missing measure ${measureNumber} for page creation`,
+            );
+        }
+        if (pageByStartBeat.has(measure.start_beat)) {
+            continue;
+        }
+        newPagesArgs.push({
+            start_beat: measure.start_beat,
+            is_subset: false,
+        });
+    }
+    return newPagesArgs;
+}
+
+async function createTempoOnlyPagesInTransaction(
+    tx: DbTransaction,
+    params: {
+        tempo: number;
+        beatsPerMeasure: number;
+        pageByStartBeat: Map<number, number>;
+    },
+): Promise<void> {
+    const { tempo, beatsPerMeasure, pageByStartBeat } = params;
+
+    await _createFromTempoGroupInTransaction({
+        tx,
+        tempoGroup: {
+            name: "",
+            tempo,
+            bigBeatsPerMeasure: beatsPerMeasure,
+            numOfRepeats: TEMPO_ONLY_MEASURE_COUNT,
+        },
+        startingPosition: 0,
+    });
+
+    const sortedMeasures = await sortMeasuresByBeatPosition(tx);
+    const newPagesArgs = buildTempoOnlyPageArgs(
+        sortedMeasures,
+        pageByStartBeat,
+    );
+
+    if (newPagesArgs.length > 0) {
+        await createPagesInTransaction({ tx, newPages: newPagesArgs });
+    }
+
+    await updateUtilityInTransaction({
+        tx,
+        args: {
+            last_page_counts: TEMPO_ONLY_LAST_PAGE_MEASURES * beatsPerMeasure,
+        },
+    });
+}
+
+async function invalidateTempoOnlyQueries(
+    queryClient: QueryClient,
+): Promise<void> {
+    await queryClient.invalidateQueries({
+        queryKey: allDatabaseBeatsQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: measureKeys.all(),
+    });
+    await queryClient.invalidateQueries({
+        queryKey: allDatabasePagesQueryOptions().queryKey,
+    });
+}
+
+async function createTempoOnlyBeatsMeasuresAndPages(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const { tempo, beatsPerMeasure } = requireTempoOnlyData(form);
 
     const existingPages = await queryClient.fetchQuery(
         allDatabasePagesQueryOptions(),
@@ -326,79 +441,15 @@ async function createTempoOnlyBeatsMeasuresAndPages(
         db,
         "createTempoOnlyBeatsMeasuresAndPages",
         async (tx) => {
-            await _createFromTempoGroupInTransaction({
-                tx,
-                tempoGroup: {
-                    name: "",
-                    tempo: tempoData.tempo!,
-                    bigBeatsPerMeasure: beatsPerMeasure,
-                    numOfRepeats: TEMPO_ONLY_MEASURE_COUNT,
-                },
-                startingPosition: 0,
-            });
-
-            const measuresRaw = await tx.query.measures.findMany();
-            const beatsRaw = await tx.query.beats.findMany({
-                orderBy: asc(schema.beats.position),
-            });
-            const beatPositionById = new Map(
-                beatsRaw.map((beat) => [beat.id, beat.position]),
-            );
-            const sortedMeasures = measuresRaw
-                .map(realDatabaseMeasureToDatabaseMeasure)
-                .sort(
-                    (a, b) =>
-                        (beatPositionById.get(a.start_beat) ?? 0) -
-                        (beatPositionById.get(b.start_beat) ?? 0),
-                );
-
-            if (sortedMeasures.length < TEMPO_ONLY_MEASURE_COUNT) {
-                throw new Error(
-                    `Expected ${TEMPO_ONLY_MEASURE_COUNT} measures, got ${sortedMeasures.length}`,
-                );
-            }
-
-            const newPagesArgs: { start_beat: number; is_subset: boolean }[] =
-                [];
-            for (const measureNumber of TEMPO_ONLY_PAGE_START_MEASURE_NUMBERS) {
-                const measure = sortedMeasures[measureNumber - 1];
-                if (!measure) {
-                    throw new Error(
-                        `Missing measure ${measureNumber} for page creation`,
-                    );
-                }
-                if (pageByStartBeat.has(measure.start_beat)) {
-                    continue;
-                }
-                newPagesArgs.push({
-                    start_beat: measure.start_beat,
-                    is_subset: false,
-                });
-            }
-
-            if (newPagesArgs.length > 0) {
-                await createPagesInTransaction({ tx, newPages: newPagesArgs });
-            }
-
-            await updateUtilityInTransaction({
-                tx,
-                args: {
-                    last_page_counts:
-                        TEMPO_ONLY_LAST_PAGE_MEASURES * beatsPerMeasure,
-                },
+            await createTempoOnlyPagesInTransaction(tx, {
+                tempo,
+                beatsPerMeasure,
+                pageByStartBeat,
             });
         },
     );
 
-    await queryClient.invalidateQueries({
-        queryKey: allDatabaseBeatsQueryOptions().queryKey,
-    });
-    await queryClient.invalidateQueries({
-        queryKey: measureKeys.all(),
-    });
-    await queryClient.invalidateQueries({
-        queryKey: allDatabasePagesQueryOptions().queryKey,
-    });
+    await invalidateTempoOnlyQueries(queryClient);
 }
 
 /**
