@@ -261,6 +261,42 @@ describeDbTests("completeNewShow", (it) => {
         expect(window.electron.finalizeNewShowDraft).not.toHaveBeenCalled();
     });
 
+    it("aborts when tempo_only is missing time signature", async ({
+        task,
+        db,
+    }) => {
+        const wizardState: NewShowWizardState = {
+            project: {
+                projectName: "Invalid Tempo Show",
+                fileLocation: `/tmp/invalid-tempo-${task.id}.dots`,
+            },
+            ensemble: {
+                environment: "outdoor",
+                ensemble_type: "Marching Band",
+            },
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+            performers: { method: "skip", marchers: [] },
+            audio: { method: "skip" },
+            tempo: { method: "tempo_only", tempo: 120 },
+            draftFilePath: "/tmp/draft.dots",
+        };
+
+        const form = wizardStateToFormState(wizardState);
+        const settingsBefore = await getWorkspaceSettingsParsed({ db });
+
+        await expect(completeNewShow(form, queryClient)).rejects.toThrow(
+            /tempo and time signature/i,
+        );
+
+        const settingsAfter = await getWorkspaceSettingsParsed({ db });
+        expect(settingsAfter.projectName).toBe(settingsBefore.projectName);
+        expect(window.electron.finalizeNewShowDraft).not.toHaveBeenCalled();
+    });
+
     it("does not duplicate tempo-only timing data when completion is retried", async ({
         task,
         db: _db,
