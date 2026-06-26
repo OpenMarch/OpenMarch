@@ -119,35 +119,32 @@ interface WizardFormFieldProps {
     id?: string;
 }
 
-const WizardFormField = forwardRef<HTMLDivElement, WizardFormFieldProps>(
+const WizardFormField = forwardRef<HTMLFieldSetElement, WizardFormFieldProps>(
     ({ label, children, required, helperText, className, id }, ref) => {
         return (
-            <div
+            <fieldset
+                id={id}
                 className={twMerge(
-                    clsx("flex w-full flex-col gap-4", className),
+                    clsx(
+                        "m-0 flex w-full min-w-0 flex-col gap-4 border-0 p-0",
+                        className,
+                    ),
                 )}
                 ref={ref}
             >
-                <div className="flex flex-col gap-6">
-                    <label
-                        htmlFor={id}
-                        className="text-body text-text font-medium"
-                    >
-                        {label}
-                        {required && (
-                            <span className="text-accent ml-4 leading-none">
-                                *
-                            </span>
-                        )}
-                    </label>
-                    {helperText && (
-                        <p className="text-sub text-text/60 leading-relaxed">
-                            {helperText}
-                        </p>
+                <legend className="text-body text-text w-full p-0 font-medium">
+                    {label}
+                    {required && (
+                        <span className="text-accent ml-4 leading-none">*</span>
                     )}
-                </div>
+                </legend>
+                {helperText && (
+                    <p className="text-sub text-text/60 mt-6 leading-relaxed">
+                        {helperText}
+                    </p>
+                )}
                 {children}
-            </div>
+            </fieldset>
         );
     },
 );
