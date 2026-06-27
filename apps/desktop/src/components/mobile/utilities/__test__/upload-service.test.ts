@@ -137,7 +137,7 @@ describe("upload-service", () => {
                     show_data: expect.any(Blob),
                     set_active: true,
                     title: "My Title",
-                    labels: ["T1", "B1"],
+                    labels: JSON.stringify(["T1", "B1"]),
                     prefix_map: JSON.stringify({
                         T: "Trumpet",
                         B: "Trombone",

@@ -111,8 +111,9 @@ export const postApiEditorV1ProductionsProductionIdRevisions = (
     if (
         postApiEditorV1ProductionsProductionIdRevisionsBody.labels !== undefined
     ) {
-        postApiEditorV1ProductionsProductionIdRevisionsBody.labels.forEach(
-            (value) => formData.append(`labels`, value),
+        formData.append(
+            `labels`,
+            postApiEditorV1ProductionsProductionIdRevisionsBody.labels,
         );
     }
     if (
