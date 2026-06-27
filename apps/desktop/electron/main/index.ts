@@ -894,11 +894,51 @@ export async function finalizeNewShowDraft(
 
     DatabaseServices.closePersistentConnection();
 
+    let backupPath: string | null = null;
     if (fs.existsSync(finalPath)) {
-        await unlinkFileWithRetry(finalPath);
+        backupPath = join(
+            finalDir,
+            `.${basename(finalPath)}.bak-${randomUUID()}`,
+        );
+        try {
+            await moveFileWithRetry(finalPath, backupPath);
+        } catch (error) {
+            console.error(
+                "Failed to backup existing show before finalize:",
+                error,
+            );
+            captureException(error);
+            return -1;
+        }
     }
 
-    await moveFileWithRetry(draftPath, finalPath);
+    try {
+        await moveFileWithRetry(draftPath, finalPath);
+    } catch (error) {
+        console.error("Failed to finalize new show draft:", error);
+        if (backupPath && fs.existsSync(backupPath)) {
+            try {
+                await moveFileWithRetry(backupPath, finalPath);
+            } catch (restoreError) {
+                console.error(
+                    "Failed to restore show backup after finalize failure:",
+                    restoreError,
+                );
+                captureException(restoreError);
+            }
+        }
+        captureException(error);
+        return -1;
+    }
+
+    if (backupPath) {
+        try {
+            await unlinkFileWithRetry(backupPath);
+        } catch {
+            // best-effort cleanup
+        }
+    }
+
     currentNewShowDraftPath = null;
 
     await setActiveDb(finalPath, false);
