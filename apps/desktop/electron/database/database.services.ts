@@ -27,6 +27,16 @@ export class LegacyDatabaseResponse<T> {
 /* ============================ DATABASE ============================ */
 let DB_PATH = "";
 
+let persistentConnection: DatabaseSync | null = null;
+let persistentConnectionPath: string | null = null;
+
+/** Closes the long-lived SQL proxy connection so the database file can be moved or deleted. */
+export function closePersistentConnection() {
+    persistentConnection?.close();
+    persistentConnection = null;
+    persistentConnectionPath = null;
+}
+
 /**
  * Change the location of the database file the application and actively updates.
  *
@@ -59,9 +69,7 @@ export function setDbPath(path: string, isNewFile = false) {
     }
 
     // Reset any existing long-lived DB handle before opening a new path.
-    persistentConnection?.close();
-    persistentConnection = null;
-    persistentConnectionPath = null;
+    closePersistentConnection();
 
     DB_PATH = path;
     const db = connect();
@@ -272,9 +280,7 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
-let persistentConnection: DatabaseSync | null = null;
-let persistentConnectionPath: string | null = null;
-async function handleSqlProxy(
+export async function handleSqlProxy(
     _: any,
     sql: string,
     params: any[],
@@ -282,9 +288,7 @@ async function handleSqlProxy(
 ) {
     try {
         if (persistentConnectionPath !== DB_PATH) {
-            persistentConnection?.close();
-            persistentConnection = null;
-            persistentConnectionPath = null;
+            closePersistentConnection();
         }
 
         if (!persistentConnection) {
