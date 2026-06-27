@@ -103,7 +103,7 @@ async function createRevisionOnServer({
                 show_data: blob,
                 set_active: setActive,
                 title: title?.trim() || undefined,
-                labels,
+                labels: JSON.stringify(labels),
                 prefix_map: JSON.stringify(prefixMap),
                 ...canvasColors,
             },

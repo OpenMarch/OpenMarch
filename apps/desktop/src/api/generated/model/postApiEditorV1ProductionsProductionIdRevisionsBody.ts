@@ -23,7 +23,8 @@ export type PostApiEditorV1ProductionsProductionIdRevisionsBody = {
     canvas_grid_stroke?: string | null;
     /** @nullable */
     canvas_performer_text_color?: string | null;
-    labels?: string[];
+    /** JSON-encoded array of performer label strings */
+    labels?: string;
     /** JSON-encoded map of drill prefix to section name */
     prefix_map?: string;
 };
