@@ -129,6 +129,32 @@ const faqs = [
         ),
     },
     {
+        question:
+            "Are seats a one-time purchase, or do they renew each season?",
+        answer: (
+            <>
+                <p>
+                    Seats are purchased for the season, not as a perpetual
+                    one-time buy. Seats must be re-purchased for following
+                    seasons. Licenses do not automatically renew.
+                </p>
+                <p>
+                    Seats purchased for the 2026 season are valid through
+                    December 31, 2026 to align with the typical U.S. marching
+                    band season. If your program needs a different timeline, you
+                    can reach out to us at{" "}
+                    <a
+                        href="mailto:sales@openmarch.com"
+                        className="text-accent underline"
+                    >
+                        sales@openmarch.com
+                    </a>{" "}
+                    and we'll be happy to help.
+                </p>
+            </>
+        ),
+    },
+    {
         question: "What can students do inside the drill viewer?",
         answer: (
             <>
