@@ -174,6 +174,27 @@ export function capPlaceholderAudioDuration(durationSeconds: number): number {
     return MAX_PLACEHOLDER_AUDIO_SECONDS;
 }
 
+type PageWithTiming = {
+    timestamp: number;
+    duration: number;
+};
+
+/**
+ * Minimum silent placeholder duration from show pages (last page end + 10s),
+ * capped at {@link MAX_PLACEHOLDER_AUDIO_SECONDS}.
+ */
+export function computePlaceholderAudioDurationFromPages(
+    pages: PageWithTiming[],
+): number {
+    const calculatedMinimumDuration =
+        pages.length > 0
+            ? pages[pages.length - 1].timestamp +
+              pages[pages.length - 1].duration +
+              10
+            : 10;
+    return capPlaceholderAudioDuration(calculatedMinimumDuration);
+}
+
 function createSilentAudio(duration: number = 10): ArrayBuffer {
     const safeDuration = capPlaceholderAudioDuration(duration);
     // Audio context setup

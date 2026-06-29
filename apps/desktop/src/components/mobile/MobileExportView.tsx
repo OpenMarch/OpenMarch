@@ -26,7 +26,10 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
-import AudioFile from "@/global/classes/AudioFile";
+import AudioFile, {
+    computePlaceholderAudioDurationFromPages,
+} from "@/global/classes/AudioFile";
+import { useTimingObjects } from "@/hooks";
 import { apiPostFormData } from "@/auth/api-client";
 import {
     getGetApiEditorV1ProductionsProductionIdAudioFilesQueryKey,
@@ -34,7 +37,6 @@ import {
 } from "@/api/generated/audio-files/audio-files";
 import { patchApiEditorV1ProductionsId } from "@/api/generated/productions/productions";
 import {
-    isSilentPlaceholder,
     prepareAudioSyncResult,
     buildAudioUploadFormDataWithDuration,
     type AudioSyncResult,
@@ -170,22 +172,21 @@ export const SubmitRevisionForm = ({
         useState(false);
     const queryClient = useQueryClient();
     const selectedAudioFile = useSelectedAudioFile()?.selectedAudioFile;
+    const { pages } = useTimingObjects();
+    const placeholderAudioDuration = useMemo(
+        () => computePlaceholderAudioDurationFromPages(pages),
+        [pages],
+    );
     const { data: serverAudioFiles, isSuccess: serverAudioFilesLoaded } =
         useQuery(
             getGetApiEditorV1ProductionsProductionIdAudioFilesQueryOptions(
                 productionId,
             ),
         );
-    const hasSelectedNonSilentAudio =
-        selectedAudioFile != null &&
-        !isSilentPlaceholder(selectedAudioFile.path, selectedAudioFile.id);
+    const needsAudioSync = selectedAudioFile != null;
 
     useEffect(() => {
-        if (
-            productionId == null ||
-            selectedAudioFile == null ||
-            isSilentPlaceholder(selectedAudioFile.path, selectedAudioFile.id)
-        ) {
+        if (productionId == null || selectedAudioFile == null) {
             setAudioSyncResult(null);
             setAudioSyncLoading(false);
             return;
@@ -194,7 +195,9 @@ export const SubmitRevisionForm = ({
         setAudioSyncLoading(true);
         void (async () => {
             try {
-                const fullFile = await AudioFile.getSelectedAudioFile();
+                const fullFile = await AudioFile.getSelectedAudioFile(
+                    placeholderAudioDuration,
+                );
                 if (cancelled || fullFile == null || !serverAudioFilesLoaded)
                     return;
                 const result = await prepareAudioSyncResult(
@@ -221,6 +224,7 @@ export const SubmitRevisionForm = ({
     }, [
         productionId,
         selectedAudioFile,
+        placeholderAudioDuration,
         serverAudioFiles?.audio_files,
         serverAudioFilesLoaded,
     ]);
@@ -267,14 +271,6 @@ export const SubmitRevisionForm = ({
         if (productionId == null || audioSyncResult == null) return;
         const { serverAudioFileId, selectedAudioFileWithData } =
             audioSyncResult;
-        if (
-            isSilentPlaceholder(
-                selectedAudioFileWithData.path,
-                selectedAudioFileWithData.id,
-            )
-        ) {
-            return;
-        }
         try {
             if (serverAudioFileId != null) {
                 await patchApiEditorV1ProductionsId(productionId, {
@@ -395,7 +391,7 @@ export const SubmitRevisionForm = ({
     const hasError = uploadStatus === "error";
     const disableUpload =
         isUploading ||
-        (hasSelectedNonSilentAudio && audioSyncLoading) ||
+        (needsAudioSync && audioSyncLoading) ||
         audioUploadLoading ||
         backgroundImageUploadLoading ||
         backgroundSyncLoading;
@@ -461,7 +457,7 @@ export const SubmitRevisionForm = ({
                                     ? t("mobileExport.revision.publishing")
                                     : t("mobileExport.revision.pushing")}
                             </span>
-                        ) : (hasSelectedNonSilentAudio && audioSyncLoading) ||
+                        ) : (needsAudioSync && audioSyncLoading) ||
                           audioUploadLoading ||
                           backgroundImageUploadLoading ||
                           backgroundSyncLoading ? (
@@ -470,7 +466,7 @@ export const SubmitRevisionForm = ({
                                     size={16}
                                     className="animate-spin"
                                 />
-                                {hasSelectedNonSilentAudio && audioSyncLoading
+                                {needsAudioSync && audioSyncLoading
                                     ? t("mobileExport.revision.validatingAudio")
                                     : audioUploadLoading
                                       ? t(
