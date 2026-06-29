@@ -23,7 +23,7 @@
     mac: {
         target: ["dmg", "zip"],
         hardenedRuntime: true,
-        gatekeeperAssess: false,
+        gatekeeperAssess: true,
         darkModeSupport: true,
         entitlements: "./build/entitlements.mac.plist",
         notarize: true,
@@ -47,6 +47,7 @@
         ],
     },
     dmg: {
+        sign: true,
         background: "./build/installerBackground.png",
         window: {
             width: 640,
