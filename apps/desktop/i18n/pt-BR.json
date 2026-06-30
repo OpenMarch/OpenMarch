@@ -849,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Clique para copiar o caminho do arquivo",
+        "pathCopied": "Caminho do arquivo copiado para a área de transferência",
         "bugReport": "Enviar erro ou feedback",
         "bugReport.placeholder": "O que deu errado?\nO que você esperava?\nComo podemos reproduzir o problema?",
         "databasePathError": "Erro no Caminho do Banco de Dados",

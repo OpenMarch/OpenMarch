@@ -935,6 +935,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Click to copy file path",
+        "pathCopied": "File path copied to clipboard",
         "bugReport": "Submit bug or feedback",
         "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
         "databasePathError": "Database Path Error",

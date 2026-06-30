@@ -1,4 +1,5 @@
 import EffectItem from "@/components/inspector/lighting/EffectItem";
+import EffectLayersSection from "@/components/inspector/lighting/EffectLayersSection";
 import type { EffectPlaybackInfo } from "@/components/inspector/lighting/effectPlayback";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import type {
@@ -204,6 +205,7 @@ function SelectedEffectEditor({
                         })
                     }
                 />
+                <EffectLayersSection effect={effect} disabled={isPlayed} />
             </div>
         </div>
     );

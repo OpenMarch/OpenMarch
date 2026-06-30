@@ -14,6 +14,7 @@ import {
     lightingScenePositionByLightingSceneIdMapQueryOptions,
 } from "@/hooks/queries";
 import { useLightDesignerEffectGroupFocusSync } from "@/hooks/useLightDesignerEffectGroupFocusSync";
+import { useLightDesignerEffectLayerDrawSync } from "@/hooks/useLightDesignerEffectLayerDrawSync";
 import { useLightDesignerSelectedEffectSync } from "@/hooks/useLightDesignerSelectedEffectSync";
 import { useShallow } from "zustand/react/shallow";
 import { useQuery } from "@tanstack/react-query";
@@ -87,6 +88,7 @@ export default function LightDesignerInspector() {
 
     useLightDesignerEffectGroupFocusSync(activeLightingSceneId);
     useLightDesignerSelectedEffectSync(activeLightingSceneId, effectIdsInOrder);
+    useLightDesignerEffectLayerDrawSync(activeLightingSceneId);
 
     return (
         <div className="flex h-full min-h-0 w-xs min-w-0 shrink-0 flex-col gap-8">

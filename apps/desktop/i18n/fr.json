@@ -849,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Cliquez pour copier le chemin du fichier",
+        "pathCopied": "Chemin du fichier copié dans le presse-papiers",
         "bugReport": "Envoyer un rapport de bug ou des commentaires",
         "bugReport.placeholder": "Qu'est-ce qui s'est passé ?\nQu'attendiez-vous ?\nComment pouvons-nous reproduire le problème ?",
         "databasePathError": "Erreur de chemin de base de données",

@@ -849,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Haz clic para copiar la ruta del archivo",
+        "pathCopied": "Ruta del archivo copiada al portapapeles",
         "bugReport": "Enviar error o comentarios",
         "bugReport.placeholder": "¿Qué salió mal?\n¿Qué esperabas?\n¿Cómo podemos reproducir el problema?",
         "databasePathError": "Error de ruta de base de datos",

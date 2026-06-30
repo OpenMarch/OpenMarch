@@ -12,8 +12,10 @@ import {
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
+import EffectLayerListeners from "./listeners/EffectLayerListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
+import { useLightDesignerEffectLayerDrawStore } from "@/stores/LightDesignerEffectLayerDrawStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -29,6 +31,7 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { useRenderLightingEffectLayers } from "./hooks/useRenderLightingEffectLayers";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import { MarcherAppearance } from "./hooks/marcherAppearance";
 import { useHighlightedMarchers } from "./hooks/useHighlightedMarchers";
@@ -85,6 +88,8 @@ export default function Canvas({
         resetAlignmentEvent,
     } = useAlignmentEventStore()!;
     const workspaceMode = useWorkspaceViewStore.use.mode();
+    const effectLayerDrawState =
+        useLightDesignerEffectLayerDrawStore.use.drawState();
     const isCanvasEditingEnabled = workspaceMode === "editor";
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
@@ -106,6 +111,7 @@ export default function Canvas({
     useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas, workspaceMode });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    useRenderLightingEffectLayers({ canvas, isPlaying });
     useHighlightedMarchers({
         canvas,
         marcherVisuals,
@@ -211,12 +217,16 @@ export default function Canvas({
     useEffect(() => {
         if (canvas) {
             if (workspaceMode === "lightDesigner") {
-                canvas.setListeners(
-                    new DefaultListeners({
-                        canvas,
-                        persistMarcherEdits: false,
-                    }),
-                );
+                if (effectLayerDrawState.status === "drawing") {
+                    canvas.setListeners(new EffectLayerListeners({ canvas }));
+                } else {
+                    canvas.setListeners(
+                        new DefaultListeners({
+                            canvas,
+                            persistMarcherEdits: false,
+                        }),
+                    );
+                }
                 canvas.eventMarchers = [];
             } else {
                 switch (alignmentEvent) {
@@ -245,6 +255,7 @@ export default function Canvas({
     }, [
         canvas,
         workspaceMode,
+        effectLayerDrawState,
         alignmentEvent,
         alignmentEventMarchers,
         centerAndFitCanvas,

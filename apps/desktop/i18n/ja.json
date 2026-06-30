@@ -849,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "クリックしてファイルパスをコピー",
+        "pathCopied": "ファイルパスをクリップボードにコピーしました",
         "bugReport": "バグ や フィードバック を 提出 ",
         "bugReport.placeholder": "何が間違っていましたか？\n何を期待していましたか？\nどのようにして問題を再現できますか？",
         "databasePathError": " データベース パス エラー",
