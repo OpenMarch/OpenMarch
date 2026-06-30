@@ -28,6 +28,7 @@ import {
     getLightingEffectLayersByEffectId,
     replaceLightingEffectLayers,
 } from "../lightingEffectLayers";
+import { LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR } from "@openmarch/core";
 import { describeDbTests, schema, type DbTestAPI } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 
@@ -1225,6 +1226,100 @@ describeDbTests("lighting", (it) => {
                     lightingEffectId: effect.id,
                 });
                 expect(layers).toHaveLength(2);
+            });
+
+            it("rejects creating a fade effect with layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                await expect(
+                    createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "fade",
+                                args: '{"color":"#000000"}',
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+            });
+
+            it("rejects replacing layers on a fade effect", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: '{"color":"#000000"}',
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                        },
+                    ],
+                });
+
+                await expect(
+                    replaceLightingEffectLayers({
+                        db,
+                        lightingEffectId: effect.id,
+                        layers: [{ top: 0, left: 0, height: 10, width: 10 }],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+            });
+
+            it("allows clearing layers on a non-solid effect", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: '{"color":"#000000"}',
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                        },
+                    ],
+                });
+
+                await replaceLightingEffectLayers({
+                    db,
+                    lightingEffectId: effect.id,
+                    layers: [],
+                });
+
+                const layers = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layers).toHaveLength(0);
             });
         });
     });

@@ -1,4 +1,8 @@
 import { eq, inArray } from "drizzle-orm";
+import {
+    canLightingEffectTypeHaveLayers,
+    LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR,
+} from "@openmarch/core";
 import { transactionWithHistory } from "./history";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
@@ -243,6 +247,18 @@ export async function replaceLightingEffectLayersInTransaction({
     lightingEffectId: number;
     layers: readonly NewLightingEffectLayerFields[];
 }): Promise<DatabaseLightingEffectLayer[]> {
+    if (layers.length > 0) {
+        const effect = await tx.query.lighting_effects.findFirst({
+            where: eq(schema.lighting_effects.id, lightingEffectId),
+        });
+        if (!effect) {
+            throw new Error(`Lighting effect ${lightingEffectId} not found.`);
+        }
+        if (!canLightingEffectTypeHaveLayers(effect.type)) {
+            throw new Error(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+        }
+    }
+
     await assertLightingEffectLayersExclusivityForEffect({
         tx,
         lightingEffectId,
@@ -280,6 +296,14 @@ export async function replaceLightingEffectLayers({
     lightingEffectId: number;
     layers: readonly NewLightingEffectLayerFields[];
 }): Promise<DatabaseLightingEffectLayer[]> {
+    if (layers.length === 0) {
+        const existingLayers = await getLightingEffectLayersByEffectId({
+            db,
+            lightingEffectId,
+        });
+        if (existingLayers.length === 0) return [];
+    }
+
     return await transactionWithHistory(
         db,
         "replaceLightingEffectLayers",

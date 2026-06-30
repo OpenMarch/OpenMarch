@@ -4,6 +4,9 @@ const GROUP_OVERLAP_MESSAGE =
 const LAYER_OVERLAP_MESSAGE =
     "Effect layers cannot overlap. Adjust positions or sizes.";
 
+const LAYER_UNSUPPORTED_TYPE_MESSAGE =
+    "Effect layers are only supported for solid effects.";
+
 export function isLightingEffectGroupOverlapError(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error);
     return /already controlled/i.test(msg);
@@ -14,11 +17,21 @@ export function isLightingEffectLayerOverlapError(error: unknown): boolean {
     return /effect layers overlap/i.test(msg);
 }
 
+export function isLightingEffectLayerUnsupportedTypeError(
+    error: unknown,
+): boolean {
+    const msg = error instanceof Error ? error.message : String(error);
+    return /effect layers are only supported for solid/i.test(msg);
+}
+
 export function getLightingEffectLayerUpdateErrorMessage(
     error: unknown,
 ): string {
     if (isLightingEffectLayerOverlapError(error)) {
         return LAYER_OVERLAP_MESSAGE;
+    }
+    if (isLightingEffectLayerUnsupportedTypeError(error)) {
+        return LAYER_UNSUPPORTED_TYPE_MESSAGE;
     }
     return "Error updating effect layers";
 }
@@ -29,6 +42,9 @@ function getLightingEffectMutationErrorMessage(
 ): string {
     if (isLightingEffectLayerOverlapError(error)) {
         return LAYER_OVERLAP_MESSAGE;
+    }
+    if (isLightingEffectLayerUnsupportedTypeError(error)) {
+        return LAYER_UNSUPPORTED_TYPE_MESSAGE;
     }
     if (isLightingEffectGroupOverlapError(error)) {
         return GROUP_OVERLAP_MESSAGE;
