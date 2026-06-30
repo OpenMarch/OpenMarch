@@ -30,6 +30,7 @@ const tablesWithHistory = [
     schema.lighting_group_marchers,
     schema.lighting_effects,
     schema.lighting_effect_groups,
+    schema.lighting_effect_layers,
 ];
 
 let transactionWithHistoryTail = Promise.resolve<void>(undefined);

@@ -4,6 +4,12 @@ import {
     DbTransaction,
     transactionWithHistory,
 } from "@/db-functions";
+import {
+    DatabaseLightingEffectLayer,
+    getLightingEffectLayersByEffectId,
+    NewLightingEffectLayerFields,
+    replaceLightingEffectLayersInTransaction,
+} from "./lightingEffectLayers";
 import { schema } from "@/global/database/db";
 import { LightingEffectType } from "@openmarch/core";
 
@@ -712,6 +718,7 @@ export type DatabaseLightingEffect =
 export type LightingEffectWithMarchers = DatabaseLightingEffect & {
     marcherIds: Set<number>;
     lighting_group_ids: number[];
+    effect_layers: DatabaseLightingEffectLayer[];
 };
 
 export type NewLightingEffectArgs = Omit<
@@ -719,6 +726,7 @@ export type NewLightingEffectArgs = Omit<
     "id"
 > & {
     lighting_group_ids?: readonly number[];
+    effect_layers?: readonly NewLightingEffectLayerFields[];
 };
 
 export interface ModifiedLightingEffectArgs {
@@ -729,6 +737,7 @@ export interface ModifiedLightingEffectArgs {
     start_offset_beats?: number;
     duration_beats?: number;
     lighting_group_ids?: readonly number[];
+    effect_layers?: readonly NewLightingEffectLayerFields[];
 }
 
 async function getLightingGroupIdsForEffect({
@@ -917,7 +926,11 @@ export async function getLightingEffectWithMarchersById({
         db,
         groupIds: lighting_group_ids,
     });
-    return { ...effect, marcherIds, lighting_group_ids };
+    const effect_layers = await getLightingEffectLayersByEffectId({
+        db,
+        lightingEffectId: id,
+    });
+    return { ...effect, marcherIds, lighting_group_ids, effect_layers };
 }
 
 /**
@@ -975,7 +988,11 @@ export async function createLightingEffectsInTransaction({
     const affectedSceneIds = new Set<number>();
 
     for (const raw of newEffects) {
-        const { lighting_group_ids: groupIdsInput = [], ...effectFields } = raw;
+        const {
+            lighting_group_ids: groupIdsInput = [],
+            effect_layers: effectLayersInput,
+            ...effectFields
+        } = raw;
 
         const [row] = await tx
             .insert(schema.lighting_effects)
@@ -984,18 +1001,26 @@ export async function createLightingEffectsInTransaction({
         inserted.push(row);
         affectedSceneIds.add(row.scene_id);
 
-        if (groupIdsInput.length === 0) continue;
+        if (groupIdsInput.length > 0) {
+            await assertLightingGroupIdsBelongToScene({
+                tx,
+                sceneId: row.scene_id,
+                groupIds: groupIdsInput,
+            });
+            await replaceLightingEffectGroupsInTransaction({
+                tx,
+                lightingEffectId: row.id,
+                groupIds: groupIdsInput,
+            });
+        }
 
-        await assertLightingGroupIdsBelongToScene({
-            tx,
-            sceneId: row.scene_id,
-            groupIds: groupIdsInput,
-        });
-        await replaceLightingEffectGroupsInTransaction({
-            tx,
-            lightingEffectId: row.id,
-            groupIds: groupIdsInput,
-        });
+        if (effectLayersInput !== undefined) {
+            await replaceLightingEffectLayersInTransaction({
+                tx,
+                lightingEffectId: row.id,
+                layers: effectLayersInput,
+            });
+        }
     }
 
     for (const sceneId of affectedSceneIds)
@@ -1036,7 +1061,12 @@ export async function updateLightingEffectsInTransaction({
     const affectedSceneIds = new Set<number>();
 
     for (const row of modifiedEffects) {
-        const { id, lighting_group_ids: groupIds, ...fieldUpdatesRest } = row;
+        const {
+            id,
+            lighting_group_ids: groupIds,
+            effect_layers: effectLayers,
+            ...fieldUpdatesRest
+        } = row;
 
         const fieldUpdates = Object.fromEntries(
             Object.entries(fieldUpdatesRest).filter(
@@ -1078,6 +1108,14 @@ export async function updateLightingEffectsInTransaction({
                 tx,
                 lightingEffectId: id,
                 groupIds,
+            });
+        }
+
+        if (effectLayers !== undefined) {
+            await replaceLightingEffectLayersInTransaction({
+                tx,
+                lightingEffectId: id,
+                layers: effectLayers,
             });
         }
 

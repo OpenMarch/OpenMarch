@@ -13,9 +13,11 @@ import {
     ModifiedLightingGroupArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
+    NewLightingEffectLayerFields,
     NewLightingGroupArgs,
     NewLightingSceneArgs,
     removeMarchersFromLightingGroup,
+    replaceLightingEffectLayers,
     updateLightingEffects,
     updateLightingGroups,
     updateLightingScenes,
@@ -25,6 +27,8 @@ import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
 import {
     getLightingEffectBatchUpdateErrorMessage,
+    getLightingEffectCreateErrorMessage,
+    getLightingEffectLayerUpdateErrorMessage,
     getLightingEffectUpdateErrorMessage,
 } from "./lightingMutationErrors";
 import { lightingKeys } from "./queries";
@@ -321,7 +325,7 @@ export const createLightingEffectsMutationOptions = () => {
                 });
         },
         onError: (e, variables) => {
-            conToastError("Error creating lighting effects", e, variables);
+            conToastError(getLightingEffectCreateErrorMessage(e), e, variables);
         },
     });
 };
@@ -385,6 +389,30 @@ export const deleteLightingEffectsMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error deleting lighting effects", e, variables);
+        },
+    });
+};
+
+export const replaceLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            lightingEffectId,
+            layers,
+        }: {
+            lightingEffectId: number;
+            layers: readonly NewLightingEffectLayerFields[];
+        }) => replaceLightingEffectLayers({ db, lightingEffectId, layers }),
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(context.client, [
+                variables.lightingEffectId,
+            ]);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
         },
     });
 };

@@ -14,6 +14,7 @@ const historyKeyToInvalidationKeys = (historyKey: string[]): string[] => {
         case "lighting_group_marchers":
         case "lighting_effects":
         case "lighting_effect_groups":
+        case "lighting_effect_layers":
             return ["lighting_scenes"];
         default:
             return historyKey;
