@@ -287,6 +287,48 @@ export async function replaceLightingEffectLayersInTransaction({
         .returning();
 }
 
+export async function updateLightingEffectLayers({
+    db,
+    modifiedLayers,
+}: {
+    db: DbConnection;
+    modifiedLayers: ModifiedLightingEffectLayerArgs[];
+}): Promise<DatabaseLightingEffectLayer[]> {
+    if (modifiedLayers.length === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "updateLightingEffectLayers",
+        async (tx) => {
+            return await updateLightingEffectLayersInTransaction({
+                tx,
+                modifiedLayers,
+            });
+        },
+    );
+}
+
+export async function deleteLightingEffectLayers({
+    db,
+    layerIds,
+}: {
+    db: DbConnection;
+    layerIds: Set<number>;
+}): Promise<DatabaseLightingEffectLayer[]> {
+    if (layerIds.size === 0) return [];
+
+    return await transactionWithHistory(
+        db,
+        "deleteLightingEffectLayers",
+        async (tx) => {
+            return await deleteLightingEffectLayersInTransaction({
+                tx,
+                layerIds,
+            });
+        },
+    );
+}
+
 export async function replaceLightingEffectLayers({
     db,
     lightingEffectId,

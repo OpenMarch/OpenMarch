@@ -1,4 +1,5 @@
 import { useLightDesignerEffectLayerDrawStore } from "@/stores/LightDesignerEffectLayerDrawStore";
+import { useLightDesignerSelectedEffectLayerStore } from "@/stores/LightDesignerSelectedEffectLayerStore";
 import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { useEffect } from "react";
@@ -13,14 +14,23 @@ export function useLightDesignerEffectLayerDrawSync(
     const drawState = useLightDesignerEffectLayerDrawStore.use.drawState();
     const cancelDrawMode =
         useLightDesignerEffectLayerDrawStore.use.cancelDrawMode();
+    const clearSelectedLayer =
+        useLightDesignerSelectedEffectLayerStore.use.clearSelectedLayer();
     const selectedEffect =
         useLightDesignerSelectedEffectStore.use.selectedEffect();
 
     useEffect(() => {
         if (workspaceMode !== "lightDesigner") {
             cancelDrawMode();
+            clearSelectedLayer();
         }
-    }, [workspaceMode, cancelDrawMode]);
+    }, [workspaceMode, cancelDrawMode, clearSelectedLayer]);
+
+    useEffect(() => {
+        if (drawState.status === "drawing") {
+            clearSelectedLayer();
+        }
+    }, [clearSelectedLayer, drawState.status]);
 
     useEffect(() => {
         if (drawState.status !== "drawing") return;
@@ -39,4 +49,8 @@ export function useLightDesignerEffectLayerDrawSync(
             cancelDrawMode();
         }
     }, [cancelDrawMode, drawState, sceneId, selectedEffect]);
+
+    useEffect(() => {
+        clearSelectedLayer();
+    }, [clearSelectedLayer, selectedEffect?.effectId, sceneId]);
 }

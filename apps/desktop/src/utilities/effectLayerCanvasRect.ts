@@ -7,15 +7,17 @@ import {
 } from "@openmarch/core";
 import { fabric } from "fabric";
 
-export type EffectLayerCanvasRectStyle = "draft" | "persisted";
+export type EffectLayerCanvasRectStyle = "draft" | "persisted" | "selected";
 
 const FILL_OPACITY: Record<EffectLayerCanvasRectStyle, number> = {
     draft: 0.2,
     persisted: 0.15,
+    selected: 0.22,
 };
 
 export type LightingEffectLayerCanvasRect = fabric.Rect & {
     isLightingEffectLayer: true;
+    lightingEffectLayerId?: number;
 };
 
 export function resolveEffectLayerRectColor(
@@ -37,7 +39,7 @@ export function getEffectLayerRectStyles(
     return {
         fill: rgbaToString({ ...strokeColor, a: FILL_OPACITY[style] }),
         stroke: rgbaToString(strokeColor),
-        strokeWidth: 2,
+        strokeWidth: style === "selected" ? 3 : 2,
     };
 }
 
@@ -48,21 +50,32 @@ export function createEffectLayerCanvasRect({
     height,
     strokeColor,
     style,
+    layerId,
+    interactive = false,
 }: LightingEffectLayerRect & {
     strokeColor: RgbaColor;
     style: EffectLayerCanvasRectStyle;
+    layerId?: number;
+    interactive?: boolean;
 }): LightingEffectLayerCanvasRect {
+    const isSelected = style === "selected";
     const rect = new fabric.Rect({
         left,
         top,
         width,
         height,
         ...getEffectLayerRectStyles(strokeColor, style),
-        selectable: false,
-        evented: false,
+        selectable: isSelected,
+        evented: interactive,
+        hasControls: isSelected,
+        hasBorders: isSelected,
+        lockRotation: true,
         objectCaching: false,
     }) as LightingEffectLayerCanvasRect;
     rect.isLightingEffectLayer = true;
+    if (layerId != null) {
+        rect.lightingEffectLayerId = layerId;
+    }
     return rect;
 }
 
@@ -72,4 +85,11 @@ export function isLightingEffectLayerRect(
     return Boolean(
         (obj as { isLightingEffectLayer?: boolean }).isLightingEffectLayer,
     );
+}
+
+export function getLightingEffectLayerIdFromRect(
+    rect: fabric.Object,
+): number | null {
+    if (!isLightingEffectLayerRect(rect)) return null;
+    return rect.lightingEffectLayerId ?? null;
 }

@@ -7,9 +7,11 @@ import {
     deleteLightingSceneWithReassignment,
     deleteLightingEffects,
     deleteLightingScenes,
+    deleteLightingEffectLayers,
     DeleteLightingSceneWithReassignmentResult,
     getLightingGroupById,
     ModifiedLightingEffectArgs,
+    ModifiedLightingEffectLayerArgs,
     ModifiedLightingGroupArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
@@ -18,6 +20,7 @@ import {
     NewLightingSceneArgs,
     removeMarchersFromLightingGroup,
     replaceLightingEffectLayers,
+    updateLightingEffectLayers,
     updateLightingEffects,
     updateLightingGroups,
     updateLightingScenes,
@@ -406,6 +409,64 @@ export const replaceLightingEffectLayersMutationOptions = () => {
             invalidateLightingEffectQueries(context.client, [
                 variables.lightingEffectId,
             ]);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const updateLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async ({
+            lightingEffectId,
+            modifiedLayers,
+        }: {
+            lightingEffectId: number;
+            modifiedLayers: ModifiedLightingEffectLayerArgs[];
+        }) => {
+            await updateLightingEffectLayers({ db, modifiedLayers });
+            return lightingEffectId;
+        },
+        onSettled: async (_data, _error, variables, _result, context) => {
+            if (variables) {
+                invalidateLightingEffectQueries(context.client, [
+                    variables.lightingEffectId,
+                ]);
+            }
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const deleteLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async ({
+            lightingEffectId,
+            layerIds,
+        }: {
+            lightingEffectId: number;
+            layerIds: Set<number>;
+        }) => {
+            await deleteLightingEffectLayers({ db, layerIds });
+            return lightingEffectId;
+        },
+        onSettled: async (_data, _error, variables, _result, context) => {
+            if (variables) {
+                invalidateLightingEffectQueries(context.client, [
+                    variables.lightingEffectId,
+                ]);
+            }
         },
         onError: (e, variables) => {
             conToastError(

@@ -1,4 +1,5 @@
 import type { LightingEffectLayerRect } from "@/db-functions";
+import type { fabric } from "fabric";
 
 export const MIN_EFFECT_LAYER_DRAFT_PX = 4;
 
@@ -35,4 +36,24 @@ export function isEffectLayerRectLargeEnough(
     minSizePx = MIN_EFFECT_LAYER_DRAFT_PX,
 ): boolean {
     return rect.width >= minSizePx && rect.height >= minSizePx;
+}
+
+export function fabricRectToEffectLayerRect(
+    rect: fabric.Rect,
+): LightingEffectLayerRect {
+    const width = rect.getScaledWidth();
+    const height = rect.getScaledHeight();
+    rect.set({
+        width,
+        height,
+        scaleX: 1,
+        scaleY: 1,
+    });
+    rect.setCoords();
+    return {
+        left: rect.left ?? 0,
+        top: rect.top ?? 0,
+        width,
+        height,
+    };
 }

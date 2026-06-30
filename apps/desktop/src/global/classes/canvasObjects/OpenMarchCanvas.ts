@@ -23,8 +23,13 @@ import {
 } from "./GroupUtils";
 import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
-import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
+import {
+    ModifiedMarcherPageArgs,
+    ModifiedLightingEffectLayerArgs,
+    ShapePage,
+} from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { isLightingEffectLayerRect } from "@/utilities/effectLayerCanvasRect";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -86,6 +91,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     updateMarcherPagesFunction?: (
         marcherPages: ModifiedMarcherPageArgs[],
     ) => void;
+
+    updateLightingEffectLayerFunction?: (
+        layer: ModifiedLightingEffectLayerArgs,
+    ) => void;
+
+    deleteLightingEffectLayerFunction?: (layerId: number) => void;
+
+    revertLightingEffectLayersFunction?: () => void;
 
     // ---- AlignmentEvent changes ----
     /**
@@ -1014,7 +1027,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * @return — thisArg
      */
     setActiveObject(object: fabric.Object, e?: Event): fabric.Canvas {
-        const readOnly = this.marcherTransformsReadOnly;
+        const isEffectLayer = isLightingEffectLayerRect(object);
+        const readOnly = this.marcherTransformsReadOnly && !isEffectLayer;
         object.lockMovementX =
             readOnly || this.uiSettings.lockX || (object as any).locked;
         object.lockMovementY =
@@ -2131,10 +2145,12 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         const oldUiSettings = this._uiSettings;
         this._uiSettings = uiSettings;
         if (activeObject) {
+            const isEffectLayer = isLightingEffectLayerRect(activeObject);
+            const readOnly = this.marcherTransformsReadOnly && !isEffectLayer;
             activeObject.lockMovementX =
-                uiSettings.lockX || (activeObject as any).locked;
+                readOnly || uiSettings.lockX || (activeObject as any).locked;
             activeObject.lockMovementY =
-                uiSettings.lockY || (activeObject as any).locked;
+                readOnly || uiSettings.lockY || (activeObject as any).locked;
         }
 
         if (

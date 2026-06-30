@@ -5,17 +5,22 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
+    updateLightingEffectLayersMutationOptions,
+    deleteLightingEffectLayersMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
+    lightingKeys,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import EffectLayerListeners from "./listeners/EffectLayerListeners";
+import EffectLayerEditListeners from "./listeners/EffectLayerEditListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import { useLightDesignerEffectLayerDrawStore } from "@/stores/LightDesignerEffectLayerDrawStore";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -76,6 +81,14 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
+    const updateEffectLayer = useMutation(
+        updateLightingEffectLayersMutationOptions(),
+    );
+    const deleteEffectLayer = useMutation(
+        deleteLightingEffectLayersMutationOptions(),
+    );
+    const selectedEffect =
+        useLightDesignerSelectedEffectStore.use.selectedEffect();
     const { setSelectedShapePageIds } = useSelectionStore()!;
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -221,10 +234,7 @@ export default function Canvas({
                     canvas.setListeners(new EffectLayerListeners({ canvas }));
                 } else {
                     canvas.setListeners(
-                        new DefaultListeners({
-                            canvas,
-                            persistMarcherEdits: false,
-                        }),
+                        new EffectLayerEditListeners({ canvas }),
                     );
                 }
                 canvas.eventMarchers = [];
@@ -268,6 +278,42 @@ export default function Canvas({
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
         }
     }, [canvas, updateMarcherPages.mutate]);
+
+    useEffect(() => {
+        if (!canvas) return;
+
+        canvas.updateLightingEffectLayerFunction = (modified) => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            updateEffectLayer.mutate({
+                lightingEffectId: effectId,
+                modifiedLayers: [modified],
+            });
+        };
+
+        canvas.deleteLightingEffectLayerFunction = (layerId) => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            deleteEffectLayer.mutate({
+                lightingEffectId: effectId,
+                layerIds: new Set([layerId]),
+            });
+        };
+
+        canvas.revertLightingEffectLayersFunction = () => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            void queryClient.invalidateQueries({
+                queryKey: lightingKeys.lightingEffectById(effectId),
+            });
+        };
+    }, [
+        canvas,
+        queryClient,
+        selectedEffect?.effectId,
+        updateEffectLayer.mutate,
+        deleteEffectLayer.mutate,
+    ]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {
