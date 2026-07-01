@@ -1012,8 +1012,6 @@
                     "durationSeconds": "Duration (s)",
                     "color": "Color",
                     "changeDuration": "Change duration",
-                    "cycleDuration": "Cycle duration",
-                    "cycleFrequency": "Cycle frequency",
                     "fadeTargetColor": "Fade target color",
                     "fadeColors": "Colors",
                     "colorNumber": "Color {number}",

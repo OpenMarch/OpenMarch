@@ -29,8 +29,6 @@ const fadeArgsWithTwoColors = JSON.stringify({
 
 const wipeArgs = JSON.stringify({
     color: "#112233",
-    cycleDurationMs: 2000,
-    cycleFrequencyMs: 1000,
 });
 
 describe("EffectItem type selector", () => {
@@ -175,11 +173,9 @@ describe("EffectItem fade args editor", () => {
 });
 
 describe("EffectItem wipe args editor", () => {
-    it("renders color and cycle timing fields for wipe effects", () => {
+    it("renders color field for wipe effects", () => {
         render(<EffectItem {...baseProps} type="wipe" args={wipeArgs} />);
 
         expect(screen.getByText("Color")).toBeTruthy();
-        expect(screen.getByLabelText("Cycle duration")).toBeTruthy();
-        expect(screen.getByLabelText("Cycle frequency")).toBeTruthy();
     });
 });

@@ -6,3 +6,4 @@ export * from "./effect.registry";
 export * from "./effect.solid";
 export * from "./effect.wipe";
 export * from "./playback";
+export * from "./timing";

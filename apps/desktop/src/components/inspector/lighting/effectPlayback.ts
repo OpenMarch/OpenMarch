@@ -1,3 +1,5 @@
+import { getLightingEffectProgress } from "@openmarch/core";
+
 export type EffectPlaybackState = "upcoming" | "active" | "played";
 
 export type EffectPlaybackInfo = {
@@ -27,17 +29,17 @@ export function deriveEffectPlaybackStates(
         const startMs = Math.max(0, effect.startMs);
         const safeDurationMs = Math.max(0, effect.durationMs);
         const endMs = startMs + safeDurationMs;
+        const progress = getLightingEffectProgress(tSceneMs, {
+            startMs: effect.startMs,
+            durationMs: effect.durationMs,
+        });
+        const progressPct = Math.round(progress * 100);
+
         let state: EffectPlaybackState = "upcoming";
-        let progressPct = 0;
         if (safeDurationMs > 0 && tSceneMs >= startMs && tSceneMs < endMs) {
             state = "active";
-            progressPct = Math.min(
-                100,
-                Math.max(0, ((tSceneMs - startMs) / safeDurationMs) * 100),
-            );
         } else if (tSceneMs >= endMs) {
             state = "played";
-            progressPct = 100;
         }
 
         out.set(effect.id, { state, progressPct });

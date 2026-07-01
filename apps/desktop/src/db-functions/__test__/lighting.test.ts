@@ -36,8 +36,6 @@ import { getTestWithHistory } from "@/test/history";
 
 const wipeEffectArgsJson = JSON.stringify({
     color: "#000000",
-    cycleDurationMs: 2000,
-    cycleFrequencyMs: 1000,
 });
 
 /** Pages ordered by timeline (beat position), not primary key id. */
