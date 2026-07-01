@@ -2,8 +2,11 @@ import { createFieldTheme } from "@openmarch/core";
 import { describe, expect, it } from "vitest";
 import {
     createEffectLayerCanvasRect,
+    createWipeEffectLayerCanvasRect,
     getEffectLayerRectStyles,
+    getWipeFillOpacity,
     isLightingEffectLayerRect,
+    isWipeEffectLayerCanvasRect,
     resolveEffectLayerRectColor,
 } from "../effectLayerCanvasRect";
 
@@ -24,6 +27,16 @@ describe("resolveEffectLayerRectColor", () => {
         expect(resolveEffectLayerRectColor(fallback, "fade", "{}")).toBe(
             fallback,
         );
+    });
+
+    it("uses wipe effect color when available", () => {
+        expect(
+            resolveEffectLayerRectColor(
+                fallback,
+                "wipe",
+                JSON.stringify({ color: "#00ff00", directionDegrees: 90 }),
+            ),
+        ).toEqual({ r: 0, g: 255, b: 0, a: 1 });
     });
 });
 
@@ -68,5 +81,62 @@ describe("createEffectLayerCanvasRect", () => {
         expect(rect.evented).toBe(false);
         expect(rect.isLightingEffectLayer).toBe(true);
         expect(isLightingEffectLayerRect(rect)).toBe(true);
+    });
+});
+
+describe("createWipeEffectLayerCanvasRect", () => {
+    const strokeColor = { r: 100, g: 150, b: 200, a: 1 };
+
+    it("creates a tagged wipe rect with initial wipe state", () => {
+        const rect = createWipeEffectLayerCanvasRect({
+            left: 10,
+            top: 20,
+            width: 80,
+            height: 60,
+            strokeColor,
+            style: "persisted",
+            layerId: 5,
+            wipeProgress: 0.5,
+            wipeDirectionDegrees: 0,
+        });
+
+        expect(rect.isLightingEffectLayer).toBe(true);
+        expect(isWipeEffectLayerCanvasRect(rect)).toBe(true);
+        expect(rect.lightingEffectLayerId).toBe(5);
+        expect(rect.wipeProgress).toBe(0.5);
+        expect(rect.wipeDirectionDegrees).toBe(0);
+    });
+
+    it("updates wipe progress via setWipeState", () => {
+        const rect = createWipeEffectLayerCanvasRect({
+            left: 0,
+            top: 0,
+            width: 100,
+            height: 100,
+            strokeColor,
+            style: "persisted",
+            wipeProgress: 0,
+            wipeDirectionDegrees: 0,
+        });
+
+        rect.setWipeState({
+            progress: 0.75,
+            directionDegrees: 180,
+            fillColor: strokeColor,
+            style: "selected",
+        });
+
+        expect(rect.wipeProgress).toBe(0.75);
+        expect(rect.wipeDirectionDegrees).toBe(180);
+        expect(rect.rectStyle).toBe("selected");
+    });
+});
+
+describe("getWipeFillOpacity", () => {
+    it("returns higher opacity than persisted base fill", () => {
+        expect(getWipeFillOpacity("persisted")).toBeGreaterThan(0.15);
+        expect(getWipeFillOpacity("selected")).toBeGreaterThan(
+            getWipeFillOpacity("persisted"),
+        );
     });
 });

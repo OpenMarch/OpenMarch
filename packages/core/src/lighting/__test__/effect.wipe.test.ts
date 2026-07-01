@@ -1,8 +1,21 @@
 import { describe, expect, it } from "vitest";
 import {
+    getWipeRevealPolygonLocal,
     normalizeWipeDirectionDegrees,
     parseWipeEffectArgs,
+    type WipeRevealPoint,
 } from "../effect.wipe";
+
+function expectPolygonClose(
+    actual: WipeRevealPoint[],
+    expected: WipeRevealPoint[],
+) {
+    expect(actual).toHaveLength(expected.length);
+    for (let i = 0; i < expected.length; i++) {
+        expect(actual[i]!.x).toBeCloseTo(expected[i]!.x, 4);
+        expect(actual[i]!.y).toBeCloseTo(expected[i]!.y, 4);
+    }
+}
 
 describe("default wipe effect args", () => {
     it("falls back to defaults for invalid wipe args", () => {
@@ -75,6 +88,61 @@ describe("default wipe effect args", () => {
         });
     });
 });
+
+describe("getWipeRevealPolygonLocal", () => {
+    it("returns empty polygon at zero progress", () => {
+        expect(getWipeRevealPolygonLocal(100, 100, 0, 0)).toEqual([]);
+    });
+
+    it("returns full rect at 100% progress", () => {
+        expectPolygonClose(getWipeRevealPolygonLocal(100, 100, 1, 0), [
+            { x: 0, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 },
+        ]);
+    });
+
+    it("reveals left half at 50% for 0° (left to right)", () => {
+        expectPolygonClose(getWipeRevealPolygonLocal(100, 100, 0.5, 0), [
+            { x: 0, y: 0 },
+            { x: 50, y: 0 },
+            { x: 50, y: 100 },
+            { x: 0, y: 100 },
+        ]);
+    });
+
+    it("reveals bottom half at 50% for 90° (bottom to top)", () => {
+        expectPolygonClose(getWipeRevealPolygonLocal(100, 100, 0.5, 90), [
+            { x: 0, y: 50 },
+            { x: 100, y: 50 },
+            { x: 100, y: 100 },
+            { x: 0, y: 100 },
+        ]);
+    });
+
+    it("reveals right half at 50% for 180° (right to left)", () => {
+        expectPolygonClose(getWipeRevealPolygonLocal(100, 100, 0.5, 180), [
+            { x: 50, y: 0 },
+            { x: 100, y: 0 },
+            { x: 100, y: 100 },
+            { x: 50, y: 100 },
+        ]);
+    });
+
+    it("reveals a triangular portion at 50% for 45°", () => {
+        const polygon = getWipeRevealPolygonLocal(100, 100, 0.5, 45);
+        expect(polygon.length).toBeGreaterThanOrEqual(3);
+        for (const point of polygon) {
+            expect(point.x).toBeGreaterThanOrEqual(-WIPE_REVEAL_EPSILON);
+            expect(point.y).toBeGreaterThanOrEqual(-WIPE_REVEAL_EPSILON);
+            expect(point.x).toBeLessThanOrEqual(100 + WIPE_REVEAL_EPSILON);
+            expect(point.y).toBeLessThanOrEqual(100 + WIPE_REVEAL_EPSILON);
+        }
+    });
+});
+
+const WIPE_REVEAL_EPSILON = 1e-6;
 
 describe("normalizeWipeDirectionDegrees", () => {
     it("wraps values at 360", () => {
