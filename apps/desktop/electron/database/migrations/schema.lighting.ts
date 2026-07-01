@@ -73,7 +73,7 @@ export const lighting_effects = sqliteTable(
     (table) => [
         check(
             "lighting_effect_type_check",
-            sql`${table.type} IN ('solid', 'strobe', 'fade')`,
+            sql`${table.type} IN ('solid', 'strobe', 'fade', 'wipe')`,
         ),
         check(
             "lighting_effect_start_offset_beats_check",

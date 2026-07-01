@@ -34,6 +34,12 @@ import { LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR } from "@openmarch/core";
 import { describeDbTests, schema, type DbTestAPI } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
 
+const wipeEffectArgsJson = JSON.stringify({
+    color: "#000000",
+    cycleDurationMs: 2000,
+    cycleFrequencyMs: 1000,
+});
+
 /** Pages ordered by timeline (beat position), not primary key id. */
 async function pagesInTimelineOrder(db: DbTestAPI["db"]) {
     return db
@@ -909,8 +915,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -960,8 +966,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1010,8 +1016,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1053,8 +1059,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1122,8 +1128,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1171,8 +1177,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1216,8 +1222,8 @@ describeDbTests("lighting", (it) => {
                         newEffects: [
                             {
                                 scene_id: scene.id,
-                                type: "solid",
-                                args: "{}",
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
                                 start_offset_beats: 0,
                                 duration_beats: 2,
                                 effect_layers: [
@@ -1272,8 +1278,8 @@ describeDbTests("lighting", (it) => {
                         newEffects: [
                             {
                                 scene_id: scene.id,
-                                type: "solid",
-                                args: "{}",
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
                                 start_offset_beats: 0,
                                 duration_beats: 2,
                                 effect_layers: [
@@ -1320,8 +1326,8 @@ describeDbTests("lighting", (it) => {
                         newEffects: [
                             {
                                 scene_id: scene.id,
-                                type: "solid",
-                                args: "{}",
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
                                 start_offset_beats: 0,
                                 duration_beats: 2,
                                 effect_layers: [
@@ -1348,8 +1354,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1385,8 +1391,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                             effect_layers: [
@@ -1426,8 +1432,8 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "solid",
-                            args: "{}",
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
                             start_offset_beats: 0,
                             duration_beats: 2,
                         },
@@ -1448,6 +1454,34 @@ describeDbTests("lighting", (it) => {
                     lightingEffectId: effect.id,
                 });
                 expect(layers).toHaveLength(2);
+            });
+
+            it("rejects creating a solid effect with layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                await expect(
+                    createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "solid",
+                                args: '{"color":"#000000"}',
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
             });
 
             it("rejects creating a fade effect with layers", async ({

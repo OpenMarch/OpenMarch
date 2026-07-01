@@ -12,19 +12,21 @@ describe("LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE", () => {
         ).toEqual([...LightingEffectTypes].sort());
     });
 
-    it("only enables layers for solid effects", () => {
-        expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.solid).toBe(true);
+    it("only enables layers for wipe effects", () => {
+        expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.wipe).toBe(true);
+        expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.solid).toBe(false);
         expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.strobe).toBe(false);
         expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.fade).toBe(false);
     });
 });
 
 describe("canLightingEffectTypeHaveLayers", () => {
-    it("returns true for solid effects", () => {
-        expect(canLightingEffectTypeHaveLayers("solid")).toBe(true);
+    it("returns true for wipe effects", () => {
+        expect(canLightingEffectTypeHaveLayers("wipe")).toBe(true);
     });
 
-    it("returns false for fade and strobe effects", () => {
+    it("returns false for solid, fade, and strobe effects", () => {
+        expect(canLightingEffectTypeHaveLayers("solid")).toBe(false);
         expect(canLightingEffectTypeHaveLayers("fade")).toBe(false);
         expect(canLightingEffectTypeHaveLayers("strobe")).toBe(false);
     });

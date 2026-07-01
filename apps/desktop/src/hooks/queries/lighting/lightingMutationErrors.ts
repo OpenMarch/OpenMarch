@@ -5,7 +5,7 @@ const LAYER_OVERLAP_MESSAGE =
     "Effect layers cannot overlap. Adjust positions or sizes.";
 
 const LAYER_UNSUPPORTED_TYPE_MESSAGE =
-    "Effect layers are only supported for solid effects.";
+    "Effect layers are only supported for wipe effects.";
 
 export function isLightingEffectGroupOverlapError(error: unknown): boolean {
     const msg = error instanceof Error ? error.message : String(error);
@@ -21,7 +21,7 @@ export function isLightingEffectLayerUnsupportedTypeError(
     error: unknown,
 ): boolean {
     const msg = error instanceof Error ? error.message : String(error);
-    return /effect layers are only supported for solid/i.test(msg);
+    return /effect layers are only supported for wipe/i.test(msg);
 }
 
 export function getLightingEffectLayerUpdateErrorMessage(

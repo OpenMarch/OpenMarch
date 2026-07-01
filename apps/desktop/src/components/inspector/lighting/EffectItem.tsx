@@ -30,6 +30,7 @@ import {
 import { TrashIcon } from "@phosphor-icons/react";
 import { FadeEffectArgsInput } from "./EffectItem.fade";
 import { SolidEffectArgsInput } from "./EffectItem.solid";
+import { WipeEffectArgsInput } from "./EffectItem.wipe";
 
 function effectTypeLabel(
     effectType: LightingEffectType,
@@ -39,11 +40,13 @@ function effectTypeLabel(
         solid: "workspace.lightDesigner.effects.effectItem.typeSolid",
         strobe: "workspace.lightDesigner.effects.effectItem.typeStrobe",
         fade: "workspace.lightDesigner.effects.effectItem.typeFade",
+        wipe: "workspace.lightDesigner.effects.effectItem.typeWipe",
     } as const;
     const fallbackByType = {
         solid: "Solid",
         strobe: "Strobe",
         fade: "Fade",
+        wipe: "Wipe",
     } as const;
     return t(keyByType[effectType]) || fallbackByType[effectType];
 }
@@ -156,6 +159,17 @@ const EffectItem = ({
             );
         }
 
+        if (type === "wipe") {
+            const parsedArgs = parseEffectArgs("wipe", args);
+            return (
+                <WipeEffectArgsInput
+                    currentArgs={parsedArgs}
+                    currentArgsJson={args}
+                    argsChangeFn={argsChangeFn}
+                />
+            );
+        }
+
         const parsedArgs = parseEffectArgs(type, args) as SolidEffectArgs;
         return (
             <SolidEffectArgsInput
@@ -239,6 +253,12 @@ const EffectItem = ({
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeFade"
                                         defaultValue="Fade"
+                                    />
+                                </SelectItem>
+                                <SelectItem value="wipe">
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.typeWipe"
+                                        defaultValue="Wipe"
                                     />
                                 </SelectItem>
                             </SelectContent>

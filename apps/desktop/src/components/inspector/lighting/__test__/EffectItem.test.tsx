@@ -27,6 +27,12 @@ const fadeArgsWithTwoColors = JSON.stringify({
     colors: ["#ff0000", "#00ff00"],
 });
 
+const wipeArgs = JSON.stringify({
+    color: "#112233",
+    cycleDurationMs: 2000,
+    cycleFrequencyMs: 1000,
+});
+
 describe("EffectItem type selector", () => {
     it("enables fade but keeps strobe disabled", () => {
         const typeChangeFn = vi.fn();
@@ -56,6 +62,23 @@ describe("EffectItem type selector", () => {
         fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
         fireEvent.click(screen.getByText("Strobe"));
         expect(typeChangeFn).toHaveBeenCalledTimes(1);
+    });
+
+    it("enables wipe in the type selector", () => {
+        const typeChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="solid"
+                args={JSON.stringify({ color: "#112233" })}
+                typeChangeFn={typeChangeFn}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
+        fireEvent.click(screen.getByText("Wipe"));
+        expect(typeChangeFn).toHaveBeenCalledWith("wipe");
     });
 });
 
@@ -148,5 +171,15 @@ describe("EffectItem fade args editor", () => {
         expect(argsChangeFn).toHaveBeenCalledTimes(1);
         const nextArgs = JSON.parse(argsChangeFn.mock.calls[0]![0] as string);
         expect(nextArgs.colors).toEqual(["#ff0000", "#00ff00"]);
+    });
+});
+
+describe("EffectItem wipe args editor", () => {
+    it("renders color and cycle timing fields for wipe effects", () => {
+        render(<EffectItem {...baseProps} type="wipe" args={wipeArgs} />);
+
+        expect(screen.getByText("Color")).toBeTruthy();
+        expect(screen.getByLabelText("Cycle duration")).toBeTruthy();
+        expect(screen.getByLabelText("Cycle frequency")).toBeTruthy();
     });
 });
