@@ -39,6 +39,9 @@ export const WipeEffectArgsInput = ({
     const [cycleFrequencyInput, setCycleFrequencyInput] = useState(() =>
         String(currentArgs.cycleFrequencyMs / 1000),
     );
+    const [directionDegrees, setDirectionDegrees] = useState(
+        currentArgs.directionDegrees,
+    );
 
     useEffect(() => {
         setColorHex(currentArgs.color);
@@ -46,6 +49,7 @@ export const WipeEffectArgsInput = ({
         setCycleDurationInput(String(currentArgs.cycleDurationMs / 1000));
         setCycleFrequencyMs(currentArgs.cycleFrequencyMs);
         setCycleFrequencyInput(String(currentArgs.cycleFrequencyMs / 1000));
+        setDirectionDegrees(currentArgs.directionDegrees);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid array ref churn
     }, [currentArgsJson]);
 
@@ -74,6 +78,7 @@ export const WipeEffectArgsInput = ({
             color: colorHex,
             cycleDurationMs: nextDurationMs,
             cycleFrequencyMs,
+            directionDegrees,
         });
     };
 
@@ -97,6 +102,7 @@ export const WipeEffectArgsInput = ({
             color: colorHex,
             cycleDurationMs,
             cycleFrequencyMs: nextFrequencyMs,
+            directionDegrees,
         });
     };
 
@@ -108,6 +114,7 @@ export const WipeEffectArgsInput = ({
             color: nextHex,
             cycleDurationMs,
             cycleFrequencyMs,
+            directionDegrees,
         });
     };
 

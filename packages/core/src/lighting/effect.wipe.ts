@@ -5,6 +5,7 @@ export type WipeEffectArgs = {
     color: string;
     cycleDurationMs: number;
     cycleFrequencyMs: number;
+    directionDegrees: number;
 };
 
 /** Minimum wipe cycle duration in milliseconds. */
@@ -23,13 +24,18 @@ export const defaultWipeEffectArgs: WipeEffectArgs = {
     color: "#000000",
     cycleDurationMs: 2000,
     cycleFrequencyMs: 1000,
+    directionDegrees: 0,
 };
+
+export const normalizeWipeDirectionDegrees = (value: number): number =>
+    ((Math.round(value) % 360) + 360) % 360;
 
 const wipeEffectArgsInputSchema = z
     .object({
         color: ColorSchema.optional(),
         cycleDurationMs: z.number().nonnegative().optional(),
         cycleFrequencyMs: z.number().nonnegative().optional(),
+        directionDegrees: z.number().optional(),
     })
     .strip();
 
@@ -51,6 +57,9 @@ export const normalizeWipeEffectArgs = (
         color: input.color ?? defaultWipeEffectArgs.color,
         cycleDurationMs,
         cycleFrequencyMs,
+        directionDegrees: normalizeWipeDirectionDegrees(
+            input.directionDegrees ?? defaultWipeEffectArgs.directionDegrees,
+        ),
     };
 };
 
