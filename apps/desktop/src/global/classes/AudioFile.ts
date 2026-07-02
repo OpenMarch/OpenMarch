@@ -1,3 +1,6 @@
+/** Max length for generated silent-audio placeholders (avoids OOM from bad beat durations). */
+export const MAX_PLACEHOLDER_AUDIO_SECONDS = 1800;
+
 /**
  * An audio file object that represents an audio file in the database.
  *
@@ -57,6 +60,30 @@ export default class AudioFile {
     }
 
     /**
+     * Computes a SHA256 checksum of the raw audio data (hex string).
+     * Matches the output of Digest::SHA256.hexdigest(data) used by om-online.
+     *
+     * @param data Raw audio file bytes (ArrayBuffer or Uint8Array)
+     * @returns Hex string of the SHA256 hash
+     */
+    public static async computeChecksum(
+        data: ArrayBuffer | Uint8Array,
+    ): Promise<string> {
+        const buffer: ArrayBuffer =
+            data instanceof Uint8Array
+                ? (data.buffer.slice(
+                      data.byteOffset,
+                      data.byteOffset + data.byteLength,
+                  ) as ArrayBuffer)
+                : data;
+        const hashBuffer = await crypto.subtle.digest("SHA-256", buffer);
+        const hashArray = new Uint8Array(hashBuffer);
+        return Array.from(hashArray)
+            .map((b) => b.toString(16).padStart(2, "0"))
+            .join("");
+    }
+
+    /**
      * An array of all the AudioFile objects in the database without the audio data.
      * This is used for the front end to display the audio files without loading the whole file into memory.
      *
@@ -89,7 +116,7 @@ export default class AudioFile {
         if (!response) {
             // Create silent audio with at least the requested duration
             // Default to 10 seconds for initial load, but allow extension
-            const duration = Math.max(10, minDuration ?? 10);
+            const duration = capPlaceholderAudioDuration(minDuration ?? 10);
             const silentAudio = createSilentAudio(duration);
             const silentAudioFile = new AudioFile({
                 id: -1,
@@ -136,12 +163,24 @@ export interface ModifiedAudioFileArgs {
  *                 This is just a placeholder until the user adds real audio.
  * @returns A buffer containing the silent audio file
  */
+export function capPlaceholderAudioDuration(durationSeconds: number): number {
+    const requested = Math.max(10, durationSeconds);
+    if (requested <= MAX_PLACEHOLDER_AUDIO_SECONDS) {
+        return requested;
+    }
+    console.warn(
+        `Requested placeholder audio duration ${requested}s exceeds cap of ${MAX_PLACEHOLDER_AUDIO_SECONDS}s; using cap.`,
+    );
+    return MAX_PLACEHOLDER_AUDIO_SECONDS;
+}
+
 function createSilentAudio(duration: number = 10): ArrayBuffer {
+    const safeDuration = capPlaceholderAudioDuration(duration);
     // Audio context setup
     const sampleRate = 44100;
     const numberOfChannels = 2;
     const bitsPerSample = 16;
-    const totalSamples = Math.ceil(sampleRate * duration);
+    const totalSamples = Math.ceil(sampleRate * safeDuration);
 
     // Create the audio buffer
     const buffer = new ArrayBuffer(

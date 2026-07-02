@@ -5,11 +5,9 @@
     appId: "com.openmarch.app",
     productName: "OpenMarch",
     asar: true,
-    asarUnpack: [
-        "**/*.node",
-        "**/node_modules/libsql",
-        "**/node_modules/@libsql/**",
-    ],
+    asarUnpack: ["**/*.node"],
+    npmRebuild: false,
+    nodeGypRebuild: false,
     directories: {
         output: "release/${buildVersion}",
     },
@@ -17,7 +15,6 @@
         "dist-electron",
         "dist",
         "node_modules",
-        "node_modules/@libsql/**",
         "electron/database/migrations",
         "!**/node_modules/canvas/**",
     ],
@@ -39,6 +36,13 @@
                 role: "Editor",
                 icon: "./build/om-dots-file.icns",
                 rank: "Default",
+            },
+        ],
+        // Custom protocol handler for OAuth callbacks
+        protocols: [
+            {
+                name: "OpenMarch Auth",
+                schemes: ["openmarch"],
             },
         ],
     },
@@ -82,6 +86,8 @@
         perMachine: false,
         allowToChangeInstallationDirectory: true,
         deleteAppDataOnUninstall: true,
+        // Custom installer script for protocol handler registration
+        include: "./build/installer.nsh",
     },
 
     linux: {
@@ -94,6 +100,8 @@
                 name: "OpenMarch DOTS File",
             },
         ],
+        // Custom protocol handler for OAuth callbacks
+        mimeTypes: ["x-scheme-handler/openmarch"],
     },
     publish: [
         {

@@ -1,13 +1,13 @@
 import { schema } from "@/global/database/db";
 import { DbConnection } from "@/test/base";
-import { RunResult } from "libsql";
+import type { StatementResultingChanges } from "node:sqlite";
 import { SqliteRemoteResult } from "drizzle-orm/sqlite-proxy";
 import { SQLiteTransaction } from "drizzle-orm/sqlite-core";
 import { ExtractTablesWithRelations } from "drizzle-orm/relations";
 
 export type DbTransaction = SQLiteTransaction<
     "async",
-    void | SqliteRemoteResult<unknown> | RunResult,
+    void | SqliteRemoteResult<unknown> | StatementResultingChanges,
     typeof schema,
     ExtractTablesWithRelations<typeof schema>
 >;

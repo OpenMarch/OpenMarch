@@ -1,5 +1,5 @@
 /* eslint-disable max-lines-per-function */
-import { TestAPI } from "vitest";
+import { expect, TestAPI } from "vitest";
 import { DbConnection, DbTestAPI } from "./base";
 import { getTableName, Table } from "drizzle-orm";
 import { performRedo, performUndo } from "@/db-functions";
@@ -208,7 +208,7 @@ export const getTestWithHistory = <T extends DbTestAPI>(
         };
     }>({
         testUndoRedo: [
-            async ({ db, expect }, use) => {
+            async ({ db }, use) => {
                 if (skipHistoryTests) {
                     await use();
                     return;
@@ -275,7 +275,7 @@ export const getTestWithHistory = <T extends DbTestAPI>(
             },
             { auto: true },
         ],
-        expectNumberOfChanges: async ({ db, expect }, use) => {
+        expectNumberOfChanges: async ({ db }, use) => {
             if (skipHistoryTests) {
                 await use({
                     test: async () => {},

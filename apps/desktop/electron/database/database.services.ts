@@ -1,6 +1,6 @@
 /* eslint-disable no-console */
 import { ipcMain } from "electron";
-import Database from "libsql";
+import type { DatabaseSync } from "node:sqlite";
 import Constants from "../../src/global/Constants";
 import * as fs from "fs";
 import AudioFile, {
@@ -26,6 +26,16 @@ export class LegacyDatabaseResponse<T> {
 
 /* ============================ DATABASE ============================ */
 let DB_PATH = "";
+
+let persistentConnection: DatabaseSync | null = null;
+let persistentConnectionPath: string | null = null;
+
+/** Closes the long-lived SQL proxy connection so the database file can be moved or deleted. */
+export function closePersistentConnection() {
+    persistentConnection?.close();
+    persistentConnection = null;
+    persistentConnectionPath = null;
+}
 
 /**
  * Change the location of the database file the application and actively updates.
@@ -58,55 +68,69 @@ export function setDbPath(path: string, isNewFile = false) {
         }
     }
 
+    // Reset any existing long-lived DB handle before opening a new path.
+    closePersistentConnection();
+
     DB_PATH = path;
     const db = connect();
 
-    const user_version = (
-        db.prepare("PRAGMA user_version").get() as {
-            user_version: number;
-        }
-    ).user_version;
-    if (user_version === -1) {
-        db.close();
-        return failedDb(
-            `setDbPath: user_version is -1, meaning the database was not created successfully`,
-            500,
-        );
-    }
-
-    // Probe write access: on macOS, fs.accessSync can pass for Documents/Downloads
-    // even when the app lacks Full Disk Access, but SQLite writes fail with "disk I/O error".
     try {
-        const probeTable = "__om_write_probe__";
-        db.prepare(`DROP TABLE IF EXISTS ${probeTable}`).run();
-        db.prepare(`CREATE TABLE ${probeTable} (x INTEGER)`).run();
-        db.prepare(`DROP TABLE ${probeTable}`).run();
-    } catch (err: unknown) {
-        db.close();
-        const msg = err instanceof Error ? err.message : String(err);
-        if (/disk\s*i\/o\s*error|i\/o\s*error/i.test(msg)) {
+        const user_version = (
+            db.prepare("PRAGMA user_version").get() as {
+                user_version: number;
+            }
+        ).user_version;
+        if (user_version === -1) {
             return failedDb(
-                `setDbPath: Cannot write to database (missing folder access): ${path}`,
-                403,
+                `setDbPath: user_version is -1, meaning the database was not created successfully`,
+                500,
             );
         }
-        throw err;
-    }
 
-    return 200;
+        // Probe write access: on macOS, fs.accessSync can pass for Documents/Downloads
+        // even when the app lacks Full Disk Access, but SQLite writes fail with "disk I/O error".
+        try {
+            const probeTable = "__om_write_probe__";
+            db.prepare(`DROP TABLE IF EXISTS ${probeTable}`).run();
+            db.prepare(`CREATE TABLE ${probeTable} (x INTEGER)`).run();
+            db.prepare(`DROP TABLE ${probeTable}`).run();
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : String(err);
+            if (/disk\s*i\/o\s*error|i\/o\s*error/i.test(msg)) {
+                return failedDb(
+                    `setDbPath: Cannot write to database (missing folder access): ${path}`,
+                    403,
+                );
+            }
+            throw err;
+        }
+
+        return 200;
+    } finally {
+        // setDbPath only validates connectivity; close this temporary handle.
+        db.close();
+    }
 }
 
 export function getDbPath() {
     return DB_PATH;
 }
 
+let lastLoggedReadyState: boolean | null = null;
+let lastLoggedPath: string | null = null;
+
 export function databaseIsReady() {
     const isReady = DB_PATH.length > 0 && fs.existsSync(DB_PATH);
-    console.log("databaseIsReady:", isReady);
-    if (DB_PATH.length > 0) {
-        console.log("Database path:", DB_PATH);
-    } else {
-        console.log("Database path is empty");
+    // Only log when state or path changes to avoid noisy polling output
+    if (isReady !== lastLoggedReadyState || DB_PATH !== lastLoggedPath) {
+        console.log("databaseIsReady:", isReady);
+        if (DB_PATH.length > 0) {
+            console.log("Database path:", DB_PATH);
+        } else {
+            console.log("Database path is empty");
+        }
+        lastLoggedReadyState = isReady;
+        lastLoggedPath = DB_PATH;
     }
     return isReady;
 }
@@ -116,8 +140,13 @@ export function connect() {
         throw new Error("Database path is empty");
     }
     try {
-        const dbPath = DB_PATH;
-        return new Database(dbPath, { verbose: console.log });
+        const sqlite = process.getBuiltinModule?.("node:sqlite") as
+            | typeof import("node:sqlite")
+            | undefined;
+        if (!sqlite?.DatabaseSync) {
+            throw new Error("node:sqlite module is unavailable");
+        }
+        return new sqlite.DatabaseSync(DB_PATH);
     } catch (error: any) {
         console.error(error);
 
@@ -138,24 +167,32 @@ export function connect() {
  * https://orm.drizzle.team/docs/connect-drizzle-proxy
  */
 export async function handleSqlProxyWithDb(
-    db: Database.Database,
+    db: DatabaseSync,
     sql: string,
     params: any[],
     method: "all" | "run" | "get" | "values",
 ) {
     try {
+        // node:sqlite rejects `undefined` bind values while previous drivers
+        // tolerated them. Coerce to null for compatibility.
+        const normalizedParams = params.map((param) =>
+            param === undefined ? null : param,
+        );
+
         // prevent multiple queries
         // const sqlBody = sql.replace(/;/g, "");
 
-        const result = db.prepare(sql);
+        const statement = db.prepare(sql);
 
         let rows: any;
 
         switch (method) {
             case "all": {
                 // Drizzle's mapResultRow expects all results to be arrays
-                // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().all(...params) as any[][];
+                statement.setReturnArrays(true);
+                const rawValues = statement.all(
+                    ...normalizedParams,
+                ) as unknown as any[][];
                 // Return the raw arrays directly - Drizzle's mapResultRow expects arrays
                 rows = rawValues;
 
@@ -166,8 +203,10 @@ export async function handleSqlProxyWithDb(
             }
             case "get": {
                 // Drizzle's mapResultRow expects all results to be arrays
-                // Use raw() method to get the raw array values for all queries
-                const rawValues = result.raw().get(...params) as any[];
+                statement.setReturnArrays(true);
+                const rawValues = statement.get(...normalizedParams) as
+                    | any[]
+                    | undefined;
                 // Return the raw array directly - Drizzle's mapResultRow expects an array
                 rows = rawValues;
 
@@ -177,14 +216,17 @@ export async function handleSqlProxyWithDb(
                 return resultObj2;
             }
             case "run":
-                rows = result.run(...params);
+                rows = statement.run(...normalizedParams);
 
                 return {
                     rows: [], // no data returned for run
                 };
             case "values": {
                 // values() returns raw array values, similar to all() but used by migrator
-                const rawValues = result.raw().all(...params) as any[][];
+                statement.setReturnArrays(true);
+                const rawValues = statement.all(
+                    ...normalizedParams,
+                ) as unknown as any[][];
                 rows = rawValues;
 
                 return {
@@ -195,13 +237,42 @@ export async function handleSqlProxyWithDb(
                 throw new Error(`Unknown method: ${method}`);
         }
     } catch (error: any) {
+        const describeParam = (value: unknown): string => {
+            if (value === null) return "null";
+            if (value === undefined) return "undefined";
+            if (value instanceof Uint8Array) return "Uint8Array";
+            if (value instanceof Date) return "Date";
+            if (Array.isArray(value)) return "Array";
+            return typeof value;
+        };
+
         console.error("Error from SQL proxy:", error);
+        console.error("SQL proxy context:", {
+            method,
+            sql,
+            params: params.map((param) => (param === undefined ? null : param)),
+            paramTypes: params.map(describeParam),
+        });
         throw error;
     }
 }
 
-async function handleUnsafeSqlProxyWithDb(db: Database.Database, sql: string) {
-    return await db.exec(sql);
+async function handleUnsafeSqlProxyWithDb(db: DatabaseSync, sql: string) {
+    const beforeTotalChanges = (
+        db.prepare("SELECT total_changes() AS totalChanges").get() as {
+            totalChanges: number;
+        }
+    ).totalChanges;
+    db.exec(sql);
+    const afterTotalChanges = (
+        db.prepare("SELECT total_changes() AS totalChanges").get() as {
+            totalChanges: number;
+        }
+    ).totalChanges;
+    return {
+        success: true,
+        changes: Math.max(0, afterTotalChanges - beforeTotalChanges),
+    };
 }
 
 export const getOrmConnection = () => {
@@ -209,9 +280,7 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
-let persistentConnection: Database.Database | null = null;
-let persistentConnectionPath: string | null = null;
-async function handleSqlProxy(
+export async function handleSqlProxy(
     _: any,
     sql: string,
     params: any[],
@@ -219,9 +288,7 @@ async function handleSqlProxy(
 ) {
     try {
         if (persistentConnectionPath !== DB_PATH) {
-            persistentConnection?.close();
-            persistentConnection = null;
-            persistentConnectionPath = null;
+            closePersistentConnection();
         }
 
         if (!persistentConnection) {
@@ -244,11 +311,14 @@ async function handleSqlProxy(
 
 /** Directly executes the SQL query without any parameters */
 async function handleUnsafeSqlProxy(_: any, sql: string) {
+    const db = connect();
     try {
-        return await handleUnsafeSqlProxyWithDb(connect(), sql);
+        return await handleUnsafeSqlProxyWithDb(db, sql);
     } catch (error: any) {
         console.error("Error from unsafe SQL proxy:", error);
         throw error;
+    } finally {
+        db.close();
     }
 }
 
@@ -287,14 +357,12 @@ export function initHandlers() {
  * @param db The database connection
  * @returns Array of measures
  */
-async function getAudioFilesDetails(
-    db?: Database.Database,
-): Promise<AudioFile[]> {
+async function getAudioFilesDetails(db?: DatabaseSync): Promise<AudioFile[]> {
     const dbToUse = db || connect();
     const stmt = dbToUse.prepare(
         `SELECT id, path, nickname, selected FROM ${Constants.AudioFilesTableName}`,
     );
-    const response = stmt.all() as AudioFile[];
+    const response = stmt.all() as unknown as AudioFile[];
     if (!db) dbToUse.close();
     return response;
 }
@@ -307,7 +375,7 @@ async function getAudioFilesDetails(
  * @returns The currently selected audio file in the database. Includes audio data.
  */
 export async function getSelectedAudioFile(
-    db?: Database.Database,
+    db?: DatabaseSync,
 ): Promise<AudioFile | null> {
     const dbToUse = db || connect();
     try {
@@ -316,14 +384,15 @@ export async function getSelectedAudioFile(
         );
         const result = await stmt.get();
         if (result) {
-            return result as AudioFile;
+            return result as unknown as AudioFile;
         }
 
         // If no audio file is selected, select the first one
         const firstAudioFileStmt = dbToUse.prepare(
             `SELECT * FROM ${Constants.AudioFilesTableName} LIMIT 1`,
         );
-        const firstAudioFile = (await firstAudioFileStmt.get()) as AudioFile;
+        const firstAudioFile =
+            (await firstAudioFileStmt.get()) as unknown as AudioFile;
         if (!firstAudioFile) {
             console.error("No audio files in the database");
             return null;
@@ -361,8 +430,15 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
+type AudioFileInsert = {
+    data?: ArrayBuffer | Uint8Array;
+    path: string;
+    nickname?: string;
+    selected?: boolean;
+};
+
 export async function insertAudioFile(
-    audioFile: AudioFile,
+    audioFile: AudioFileInsert,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
@@ -390,8 +466,16 @@ export async function insertAudioFile(
                 )
             `);
         const created_at = new Date().toISOString();
+        const dataForInsert =
+            audioFile.data == null
+                ? null
+                : audioFile.data instanceof Uint8Array
+                  ? audioFile.data
+                  : new Uint8Array(audioFile.data);
         const insertResult = insertStmt.run({
-            ...audioFile,
+            data: dataForInsert,
+            path: audioFile.path,
+            nickname: audioFile.nickname ?? null,
             selected: 1,
             created_at,
             updated_at: created_at,
@@ -400,7 +484,13 @@ export async function insertAudioFile(
 
         output = {
             success: true,
-            result: [{ ...audioFile, id: id as number }],
+            result: [
+                {
+                    ...audioFile,
+                    id: id as number,
+                    selected: true,
+                } as AudioFile,
+            ],
         };
     } catch (error: any) {
         console.error("Insert audio file error:", error);

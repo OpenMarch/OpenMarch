@@ -156,8 +156,8 @@ export const marcherAppearancesQueryOptions = (
     pageId: number | null | undefined,
     queryClient: QueryClient,
 ) =>
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     queryOptions<MarcherAppearanceByIdMap>({
-        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: marcherAppearancesKeys.byPageId(pageId!),
         queryFn: async () => {
             const [

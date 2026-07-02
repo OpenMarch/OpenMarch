@@ -22,12 +22,15 @@ const { title, noindex = false } = Astro.props;
     <body
         class="overflow-x-hidden bg-bg-1 text-text flex justify-center items-start px-8"
     >
-        <main
-            class="max-w-[75rem] w-full py-8 flex flex-col gap-96 items-center"
-        >
-            <Nav client:load pathname={Astro.url.pathname} />
-            <slot />
-            <Footer hideDownloadCta={Astro.url.pathname === "/download"} />
+        <main class="w-full py-8 flex flex-col gap-96 items-center">
+            <div class="flex w-full max-w-1200 flex-col items-center gap-96">
+                <Nav client:load pathname={Astro.url.pathname} />
+                <slot />
+            </div>
+            <Footer
+                hideDownloadCta={Astro.url.pathname === "/download" ||
+                    Astro.url.pathname === "/mobile"}
+            />
         </main>
     </body>
 </html>

@@ -1,5 +1,5 @@
-import { test } from "e2e/fixtures.mjs";
-import { expect, Page } from "playwright/test";
+import { test } from "../fixtures.mjs";
+import { expect, type Page } from "playwright/test";
 
 const navigateToLaunchPageSettings = async (page: Page) => {
     await page.getByRole("tab", { name: "File" }).click();
@@ -104,30 +104,29 @@ settingsMenus.forEach(({ name, navigate }) => {
     }) => {
         const { page } = electronApp;
         await navigate(page);
-        await page.getByLabel("Zoom sensitivity").click();
-        // trackpadMode defaults to true, so slider is visible; ensure it's on
+
         const trackpadSwitch = page.getByRole("switch", {
             name: "Trackpad mode (recommended",
         });
+        const trackpadPanSensitivity = page.getByLabel(
+            "Trackpad pan sensitivity",
+        );
+        const zoomSensitivity = page.getByLabel("Zoom sensitivity");
+
         if (!(await trackpadSwitch.isChecked())) {
             await trackpadSwitch.click();
         }
-        await expect(
-            page.getByRole("slider", { name: "Trackpad pan sensitivity" }),
-        ).toBeVisible();
-        await page.getByLabel("Zoom sensitivity").click();
-        await page
-            .getByRole("slider", { name: "Trackpad pan sensitivity" })
-            .click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
-        await page
-            .getByRole("switch", { name: "Trackpad mode (recommended" })
-            .click();
+        await expect(trackpadPanSensitivity).toBeVisible();
+
+        await zoomSensitivity.click();
+        await trackpadPanSensitivity.getByRole("slider");
+        await zoomSensitivity.click();
+        await trackpadPanSensitivity.click();
+        await trackpadPanSensitivity.click();
+
+        await trackpadSwitch.click();
+        await trackpadSwitch.click();
+        await trackpadSwitch.click();
     });
 });
 

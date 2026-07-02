@@ -4,6 +4,7 @@ import {
     workspaceSettingsQueryOptions,
     updateWorkspaceSettingsMutationOptions,
 } from "@/hooks/queries/useWorkspaceSettings";
+import { MIN_TEMPO_BPM } from "@/global/classes/Beat";
 import {
     WorkspaceSettings,
     defaultWorkspaceSettings,
@@ -184,7 +185,7 @@ function WorkspaceSettingsModalContents() {
             key: "defaultTempo",
             label: t("workspaceSettings.defaultTempo"),
             value: inputValues.defaultTempo || "",
-            min: 1,
+            min: MIN_TEMPO_BPM,
             unit: t("workspaceSettings.units.bpm"),
         },
         {

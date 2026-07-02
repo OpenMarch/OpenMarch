@@ -14,7 +14,7 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToWhole": "Snap to nearest whole"
+            "snapToCustomFraction": "Apply snap"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
@@ -123,6 +123,12 @@
         "whenYouOptIn": "When you opt-in",
         "whenYouOptOut": "When you opt-out"
     },
+    "auth": {
+        "signIn": "Sign In",
+        "signInAriaLabel": "Sign in",
+        "signOut": "Sign Out",
+        "userFallback": "User"
+    },
     "audio": {
         "beats": {
             "create": {
@@ -228,6 +234,8 @@
         "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
         "coordinateSheets": "Coordinate Sheets",
         "drillCharts": "Drill Charts",
+        "mobile": "Mobile",
+        "mobilePreviewAlt": "OpenMarch mobile export preview",
         "errorRendering": "Error rendering {drillNumber}",
         "errorTitle": "Error exporting coordinate sheet",
         "exampleMarcherName": "Example Marcher",
@@ -281,6 +289,30 @@
         "organizeBySection": "Organize by Section",
         "organizeBySectionTooltip": "Create PDF files for each individual marcher, organized in folders by section.\\nIf this is not checked, one large PDF file will be created with every coordinate sheet in score order.",
         "page": "Page: {status}",
+        "video": "Video",
+        "videoAudioTrack": "Audio track: {name}",
+        "videoBackground": "Video background",
+        "videoExportFailed": "Video export failed: {error}",
+        "videoExportSuccess": "Successfully exported video!",
+        "videoFrameRate": "Frame rate",
+        "videoNoAudio": "No audio file selected. The video will use a silent audio track.",
+        "videoOpenFile": "Click to open video",
+        "videoOverlay": "On-screen info",
+        "videoOverlayClock": "Elapsed time",
+        "videoOverlayCountLabel": "Count",
+        "videoOverlayMeasures": "Measure numbers & rehearsal marks",
+        "videoOverlayPreviewHint": "Drag the overlay to move it (side handle = width, corner = size). Drag empty space to pan the field and scroll to zoom. Use the sliders below for fine adjustments.",
+        "videoFieldFraming": "Field framing",
+        "videoFieldScale": "Scale",
+        "videoFieldOffsetX": "Horizontal offset",
+        "videoFieldOffsetY": "Vertical offset",
+        "videoFieldResetFraming": "Reset field framing",
+        "videoPreviewLoading": "Loading preview…",
+        "videoOverlaySetCounts": "Sets & counts",
+        "videoOverlaySetLabel": "Set",
+        "videoOverlayTempo": "Tempo",
+        "videoRendering": "Rendering video... This may take several minutes.",
+        "videoResolution": "Resolution",
         "pageNotFound": "Error: Page not found for marcher page {id}",
         "pdfExportFailed": "PDF Export failed: {error}",
         "preview": "Preview",
@@ -296,6 +328,36 @@
         "unknownError": "Unknown error",
         "unsortedSection": "Unsorted",
         "useXYHeaders": "Use X/Y headers"
+    },
+    "ensembles": {
+        "attached": "(Attached)",
+        "attachDialog": {
+            "attach": "Attach",
+            "cancel": "Cancel",
+            "description": "Attach this .dots file to this production? This will allow you to upload from this file into the OpenMarch - On the Move mobile app.",
+            "title": "Attach to Production"
+        },
+        "attachToProduction": "Attach to production",
+        "createProduction": "Create production",
+        "createDialog": {
+            "cancel": "Cancel",
+            "create": "Create",
+            "creating": "Creating...",
+            "description": "Add a production to {ensembleName}.",
+            "failed": "Failed to create production",
+            "nameLabel": "Production name",
+            "namePlaceholder": "Production name",
+            "nameRequired": "Enter a production name.",
+            "title": "Create Production"
+        },
+        "createdAtHeader": "Created At",
+        "empty": "No ensembles found. Create one above!",
+        "error": "Error loading ensembles",
+        "loading": "Loading ensembles...",
+        "nameHeader": "Name",
+        "performersHeader": "Performers",
+        "productionsHeader": "Productions",
+        "viewDetails": "View ensemble details"
     },
     "field": {
         "general": {
@@ -320,6 +382,7 @@
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "deleteTooltip": "Delete this checkpoint from the field",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
             "name": "Name",
@@ -586,6 +649,81 @@
             "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
+        "newShow": {
+            "title": "New show",
+            "showName": "Show name",
+            "location": "Save location",
+            "browse": "Browse",
+            "environment": "Environment",
+            "outdoor": "Outdoor",
+            "indoor": "Indoor",
+            "moreOptions": "More options",
+            "designer": "Designer",
+            "client": "Client",
+            "tempo": "Default tempo (BPM)",
+            "create": "Create show",
+            "cancel": "Cancel",
+            "next": "Next",
+            "back": "Back",
+            "skip": "Skip",
+            "fileExistsWarning": "A file with this name already exists at this location. It will be replaced when you finish creating the show.",
+            "success": "Show created successfully",
+            "exitConfirm": {
+                "title": "Discard new show?",
+                "description": "You have unsaved changes in this setup flow. If you leave now, your draft will be deleted and nothing will be saved.",
+                "cancel": "Keep editing",
+                "confirm": "Discard"
+            },
+            "steps": {
+                "project": {
+                    "title": "Project details",
+                    "description": "Name your show and choose where to save it."
+                },
+                "ensemble": {
+                    "title": "Ensemble",
+                    "description": "Choose your performance environment and ensemble type.",
+                    "typeLabel": "Ensemble type"
+                },
+                "field": {
+                    "title": "Field setup",
+                    "description": "Pick a field template for your show."
+                },
+                "performers": {
+                    "title": "Performers",
+                    "description": "Add marchers now or skip and add them later in the editor.",
+                    "addNew": "Add performers",
+                    "added": "Added performers",
+                    "noneAdded": "No performers added yet."
+                },
+                "audio": {
+                    "title": "Audio",
+                    "description": "Import an audio file now, or skip and add one later.",
+                    "optionalDescription": "Audio is optional. You can skip this step and add audio later from the editor.",
+                    "waitingDb": "Preparing your show file…",
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again."
+                },
+                "tempo": {
+                    "title": "Tempo data",
+                    "description": "Set timing with a BPM or import MusicXML. You can skip this and edit tempo later.",
+                    "method": "Tempo source",
+                    "methodHelper": "Choose how you want to set up timing for this show.",
+                    "tempoOnly": "Tempo only",
+                    "musicXml": "MusicXML file",
+                    "skip": "Skip for now",
+                    "skipDescription": "Tempo data is optional. You can edit tempo later from the editor.",
+                    "timeSignature": "Time signature",
+                    "timeSignatureHelper": "Choose the meter for the starter measures in this show. You can change this later.",
+                    "waitingDb": "Preparing your show file…",
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again."
+                }
+            },
+            "errors": {
+                "nameRequired": "Show name is required",
+                "createFailed": "Failed to create show",
+                "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
+                "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
+            }
+        },
         "learn": {
             "guides": {
                 "title": "Guides"
@@ -676,6 +814,102 @@
         "deleteFailed": "Failed to delete measures - {error}",
         "updateFailed": "Failed to update measures - {error}"
     },
+    "mobileExport": {
+        "accessError": {
+            "description": "We could not validate that you have access to the OTM Production this show is attached to. The signed-in account may not have access, or the production may no longer exist.",
+            "hint": "Detach this file from the production to choose a different one, or close the sidebar and sign in with an account that has access.",
+            "title": "Could not validate On the Move access"
+        },
+        "audio": {
+            "active": "Active",
+            "add": "Add",
+            "addAlternate": "Add Alternate Audio File",
+            "addHelp": "Performers and instructors will be able to select this audio file in the mobile app.",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "editNickname": "Edit Nickname",
+            "loadFailed": "Failed to load audio files",
+            "nicknameLabel": "Nickname (optional)",
+            "nicknamePlaceholder": "Nickname (optional)",
+            "nicknamePlaceholderShort": "Nickname",
+            "optionsAriaLabel": "Audio file options",
+            "retry": "Retry",
+            "save": "Save",
+            "saving": "Saving…",
+            "setActive": "Set as active",
+            "title": "Audio Files",
+            "uploading": "Uploading…"
+        },
+        "close": "Close",
+        "confirmPublish": {
+            "cancel": "Cancel",
+            "description": "This will immediately make this show visible to all users registered to this ensemble.",
+            "publish": "Publish",
+            "title": "Publish to mobile app"
+        },
+        "date": {
+            "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+            "full": "{month} {day}, {year} - {time}",
+            "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+            "justNow": "Just now",
+            "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}"
+        },
+        "detach": {
+            "button": "Detach File from Production",
+            "cancel": "Cancel",
+            "confirm": "Are you sure you want to detach this file from the OTM Production? This means you will not be able to upload revisions to the mobile app. You can always re-attach it later",
+            "confirmButton": "Yes, Detach",
+            "failed": "Failed to detach file from production"
+        },
+        "loading": {
+            "checkingSignIn": "Checking sign-in...",
+            "validatingAccess": "Validating On the Move access..."
+        },
+        "logoAlt": "OTM Logo",
+        "revision": {
+            "audioSyncFailed": "Revision uploaded, but audio sync failed: {msg}",
+            "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
+            "initialTitle": "Initial revision",
+            "newTitleLabel": "New revision title",
+            "preparing": "Preparing...",
+            "publishButton": "Publish to mobile app",
+            "publishing": "Publishing to mobile app...",
+            "pushButton": "Push to Mobile App",
+            "pushing": "Pushing to Mobile App...",
+            "titlePlaceholder": "Describe what changed...",
+            "titleRequired": "Please provide a revision title",
+            "uploadFailedGeneric": "Upload failed. Check console for details.",
+            "uploadSuccess": "Upload successful",
+            "uploadingAudio": "Uploading audio...",
+            "uploadingImage": "Uploading image...",
+            "validatingAudio": "Validating audio..."
+        },
+        "revisions": {
+            "active": "Active",
+            "emptyMessage": "After you publish to the mobile app, you may push additional revisions to keep your show up-to-date.",
+            "listHeading": "All revisions"
+        },
+        "settings": {
+            "backgroundImage": {
+                "alt": "Production background",
+                "empty": "No background image",
+                "help": "The background image is automatically synced when you upload a new revision. To change it, change the background image in field editor and upload a new revision.",
+                "title": "Background image"
+            },
+            "button": "Settings",
+            "detach": {
+                "title": "Detach production"
+            },
+            "noProduction": "No production found",
+            "title": "Mobile app settings"
+        },
+        "signedOut": {
+            "createAccountPrompt": "Don't have an account yet? Create one now!",
+            "setupAccount": "Set up your account",
+            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
+        },
+        "title": "Export to Mobile"
+    },
     "music": {
         "accent": "Accent first beat",
         "addNewTempoGroupAfter": "Add a new tempo group after this one",
@@ -728,6 +962,7 @@
         "standard": "Standard",
         "startTempo": "Start Tempo *",
         "tempo": "Tempo *",
+        "tempoBelowMinimum": "Tempo must be at least {min} BPM",
         "tempoDescription": "Beats per minute",
         "tempoGroupCreated": "Tempo group created",
         "tempoGroupNamePlaceholder": "Optional",

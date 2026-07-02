@@ -54,24 +54,26 @@ words:
   - evented
   - fielddots
   - fieldots
+  - flac
   - forwardslash
   - français
   - frontfield
   - frontmatter
   - Geral
   - GLHF
+  - hexdigest
   - Hipp
   - idioma
   - importmap
   - Invalidators
   - launchpage
-  - libsql
   - lightridge
   - localappdata
   - Loudoun
   - Macbook's
   - madripoor
   - measurenb
+  - mediabunny
   - mello
   - merch
   - Meuli
@@ -90,16 +92,20 @@ words:
   - oklch
   - openmarch
   - openmarchdev
+  - OTMDEMO
+  - ONTHEMOVE
   - overscan
   - pacman
   - pagewidth
   - paperplane
   - pfps
+  - PKCE
   - Português
   - posthog
   - Pressable
   - PWDEBUG
   - pwsh
+  - Pyware
   - Rcoords
   - rels
   - rgba
@@ -110,6 +116,7 @@ words:
   - saario
   - samuelmeuli
   - Schachner
+  - Segoe
   - seti
   - shouldn
   - sicommand
@@ -157,9 +164,11 @@ words:
   - VMEA
   - vmin
   - Vree
+  - waivable
   - WASD
   - wavesurfer
   - winget
+  - Winterguard
   - Woodgrove
   - workerd
   - xlink
@@ -203,6 +212,8 @@ ignoreRegExpList:
   - "@[a-z\\-]+"
   - \(#.*\)
   - \u[0-9A-Fa-f]{4}
+  - ^import\s+.*$
+  - "[a-zA-Z]+\\=\\{[a-zA-Z0-9_$]+\\}"
 overrides:
   - filename:
       - "**/i18n/**"

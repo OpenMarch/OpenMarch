@@ -11,10 +11,12 @@ import {
 import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
-import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
 import { PDFExportService } from "./services/export-service";
+import { VideoExportService } from "./services/video-export-service";
 import {
     addRecentFile,
     getRecentFiles,
@@ -31,6 +33,11 @@ import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
 import Database from "libsql";
+import {
+    initAuthBeforeReady,
+    initAuthAfterReady,
+    handleAuthSecondInstance,
+} from "./auth";
 
 // The built directory structure
 //
@@ -45,6 +52,20 @@ import Database from "libsql";
 
 let isQuitting = false;
 const store = new Store();
+const DB_USER_VERSION = 7;
+
+/** Active new-show draft file in userData/new-show-drafts (not in recent files until finalized). */
+let currentNewShowDraftPath: string | null = null;
+
+function getNewShowDraftsDirectory(): string {
+    return join(app.getPath("userData"), "new-show-drafts");
+}
+
+function isNewShowDraftPath(filePath: string): boolean {
+    if (!filePath) return false;
+    const draftsDir = getNewShowDraftsDirectory();
+    return resolve(filePath).startsWith(resolve(draftsDir) + sep);
+}
 
 // Check if running in Playwright codegen mode
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
@@ -101,6 +122,9 @@ if (release().startsWith("6.1")) app.disableHardwareAcceleration();
 // Set application name for Windows 10+ notifications
 if (process.platform === "win32") app.setAppUserModelId(app.getName());
 
+// Initialize auth protocol handler before app is ready
+initAuthBeforeReady();
+
 if (!app.requestSingleInstanceLock()) {
     app.quit();
     process.exit(0);
@@ -140,6 +164,10 @@ async function createWindow(title?: string) {
     });
     app.commandLine.appendSwitch("enable-features", "AudioServiceOutOfProcess");
 
+    // Initialize auth IPC handlers before renderer navigation to avoid startup
+    // races where the renderer invokes auth channels before handlers exist.
+    initAuthAfterReady(() => win);
+
     win.webContents.session.webRequest.onHeadersReceived(
         (details, callback) => {
             callback({
@@ -174,6 +202,19 @@ async function createWindow(title?: string) {
             new Date().toLocaleString(),
         );
     });
+
+    win.webContents.on(
+        "did-start-navigation",
+        (_event, _url, _isInPlace, isMainFrame) => {
+            if (!isMainFrame || !currentNewShowDraftPath) return;
+            void discardNewShowDraft().catch((error) => {
+                console.error(
+                    "Error discarding new show draft on navigation:",
+                    error,
+                );
+            });
+        },
+    );
 
     win.on("close", async (event: Electron.Event) => {
         if (isQuitting) return;
@@ -241,43 +282,91 @@ async function createWindow(title?: string) {
     await autoUpdater.checkForUpdatesAndNotify();
 }
 
-void app.whenReady().then(async () => {
-    app.setName("OpenMarch");
-    console.log("NODE:", process.versions.node);
-
-    if (isCodegen) {
-        console.log("🎭 Running in Playwright Codegen mode");
-    } else {
-        console.log("Not running in codegen mode");
-    }
-
-    Menu.setApplicationMenu(applicationMenu);
-
+function resolveStartupDatabasePath(): string {
     let pathToOpen = store.get("databasePath") as string;
-    if (process.argv.length >= 2 && process.argv[1].endsWith(".dots")) {
-        pathToOpen = process.argv[1];
-    } else if (process.argv.length >= 3 && process.argv[2].endsWith(".dots")) {
-        pathToOpen = process.argv[2];
-    }
+    const pathFromArgs = process.argv.find((arg) => arg.endsWith(".dots"));
+    if (pathFromArgs) pathToOpen = pathFromArgs;
     console.log("Path to Open:", pathToOpen);
-    if (pathToOpen && pathToOpen.length > 0) await setActiveDb(pathToOpen);
-    DatabaseServices.initHandlers();
+    if (pathToOpen && isNewShowDraftPath(pathToOpen)) {
+        if (fs.existsSync(pathToOpen)) fs.unlinkSync(pathToOpen);
+        store.delete("databasePath");
+        return "";
+    }
+    return pathToOpen || "";
+}
 
-    // Database handlers
-    console.log("db_path: " + DatabaseServices.getDbPath());
+function getPlaywrightDefaultDocumentsPath(): string | undefined {
+    if (
+        process.env.PLAYWRIGHT_SESSION &&
+        process.env.PLAYWRIGHT_NEW_FILE_PATH
+    ) {
+        return dirname(process.env.PLAYWRIGHT_NEW_FILE_PATH);
+    }
+    return undefined;
+}
 
-    // File IO handlers
+async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
+    if (!win) return { canceled: true, filePath: "" };
+    const playwrightPath = getPlaywrightDefaultDocumentsPath();
+    if (playwrightPath && process.env.PLAYWRIGHT_NEW_FILE_PATH) {
+        return {
+            canceled: false,
+            filePath: process.env.PLAYWRIGHT_NEW_FILE_PATH,
+        };
+    }
+    return await dialog.showSaveDialog(win, options);
+}
+
+async function openRecentFile(filePath: string) {
+    store.set("databasePath", filePath);
+    addRecentFile(filePath);
+
+    const resCode = await setActiveDb(filePath);
+
+    win?.webContents.send("load-file-response", resCode);
+
+    return resCode;
+}
+
+function initDatabaseIpcHandlers() {
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
-    ipcMain.handle("database:getPath", () => {
-        return DatabaseServices.getDbPath();
-    });
+    ipcMain.handle("database:getPath", () => DatabaseServices.getDbPath());
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
+    ipcMain.handle("database:createAtPath", async (_, filePath: string) =>
+        createFileAtPath(filePath),
+    );
+    ipcMain.handle("dialog:showSaveDialog", async (_, options) =>
+        showSaveDialogHandler(options),
+    );
+    ipcMain.handle("getDefaultDocumentsPath", () => {
+        return getPlaywrightDefaultDocumentsPath() ?? app.getPath("documents");
+    });
+    ipcMain.handle("file:exists", (_, filePath: string) => {
+        if (!filePath) return false;
+        const pathToCheck = filePath.endsWith(".dots")
+            ? filePath
+            : `${filePath}.dots`;
+        return fs.existsSync(pathToCheck);
+    });
+    ipcMain.handle("newShow:getPending", () => {
+        return store.get("pendingNewShowDialog") === true;
+    });
+    ipcMain.handle("newShow:clearPending", () => {
+        store.set("pendingNewShowDialog", false);
+    });
+    ipcMain.handle("newShow:createDraft", async () => createNewShowDraft());
+    ipcMain.handle(
+        "newShow:finalizeDraft",
+        async (_, targetPath: string, projectName: string) =>
+            finalizeNewShowDraft(targetPath, projectName),
+    );
+    ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
+    ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             const newPath = await repairDatabase(dbPath);
-            // Set the new database path and reload the window
             await setActiveDb(newPath);
             return newPath;
         } catch (error) {
@@ -292,27 +381,44 @@ void app.whenReady().then(async () => {
         async (_, sourceFilePath?: string) =>
             newFileFromLastPage(sourceFilePath),
     );
+}
 
-    // Recent files handlers
+function initRecentFilesIpcHandlers() {
     ipcMain.handle("recent-files:get", getRecentFiles);
     ipcMain.handle("recent-files:remove", (_, filePath) =>
         removeRecentFile(filePath),
     );
     ipcMain.handle("recent-files:clear", clearRecentFiles);
     ipcMain.handle("recent-files:clear-missing", clearMissingRecentFiles);
-    ipcMain.handle("recent-files:open", async (_, filePath) => {
-        store.set("databasePath", filePath);
-        addRecentFile(filePath);
+    ipcMain.handle("recent-files:open", async (_, filePath) =>
+        openRecentFile(filePath),
+    );
+}
 
-        const resCode = await setActiveDb(filePath);
+function initIpcHandlers() {
+    initDatabaseIpcHandlers();
+    initRecentFilesIpcHandlers();
+}
 
-        // Handle alert dialogs in frontend
-        win?.webContents.send("load-file-response", resCode);
+void app.whenReady().then(async () => {
+    app.setName("OpenMarch");
+    console.log("NODE:", process.versions.node);
 
-        return resCode;
-    });
+    if (isCodegen) {
+        console.log("🎭 Running in Playwright Codegen mode");
+    } else {
+        console.log("Not running in codegen mode");
+    }
 
-    // Getters
+    Menu.setApplicationMenu(applicationMenu);
+
+    const pathToOpen = resolveStartupDatabasePath();
+    if (pathToOpen.length > 0) await setActiveDb(pathToOpen);
+    DatabaseServices.initHandlers();
+
+    console.log("db_path: " + DatabaseServices.getDbPath());
+
+    initIpcHandlers();
     initGetters();
 
     await createWindow("OpenMarch - " + store.get("databasePath"));
@@ -340,6 +446,27 @@ function initGetters() {
     ipcMain.handle("export:generateDocForMarcher", async (_, args) => {
         return await PDFExportService.generateDocForMarcher(args);
     });
+
+    // Video export (streamed file writing)
+    ipcMain.handle("export:videoStart", async (_, fileExtension: string) => {
+        return await VideoExportService.start(fileExtension);
+    });
+    ipcMain.handle(
+        "export:videoChunk",
+        async (_, sessionId: string, data: Uint8Array, position: number) => {
+            return await VideoExportService.writeChunk(
+                sessionId,
+                data,
+                position,
+            );
+        },
+    );
+    ipcMain.handle(
+        "export:videoEnd",
+        async (_, sessionId: string, success: boolean) => {
+            return await VideoExportService.end(sessionId, success);
+        },
+    );
 
     // Get current filename
     ipcMain.handle("get-current-filename", async () => {
@@ -384,9 +511,12 @@ app.on("open-file", async (event, path) => {
 //   });
 // }
 
-app.on("second-instance", () => {
-    if (win) {
-        // Focus on the main window if the user tried to open another
+app.on("second-instance", (_event, commandLine) => {
+    // First check if this is an auth callback (Windows/Linux)
+    const isAuthCallback = handleAuthSecondInstance(commandLine, () => win);
+
+    // If not an auth callback, just focus the window
+    if (!isAuthCallback && win) {
         if (win.isMinimized()) win.restore();
         win.focus();
     }
@@ -530,13 +660,7 @@ ipcMain.handle(
     },
 );
 
-app.on("second-instance", () => {
-    if (win) {
-        // Focus on the main window if the user tried to open another
-        if (win.isMinimized()) win.restore();
-        win.focus();
-    }
-});
+// Note: second-instance is already handled above with auth callback support
 
 app.on("activate", () => {
     const allWindows = BrowserWindow.getAllWindows();
@@ -566,10 +690,320 @@ ipcMain.handle("open-win", (_, arg) => {
 
 /************************************** FILE SYSTEM INTERACTIONS **************************************/
 /**
+ * Creates a new database file at the specified path.
+ *
+ * @param filePath The path where the file should be created
+ * @returns 200 for success, -1 for failure
+ */
+async function createFileAtPath(filePath: string) {
+    console.log("createFileAtPath:", filePath);
+
+    if (!filePath) return -1;
+
+    if (!filePath.endsWith(".dots")) {
+        filePath = `${filePath}.dots`;
+    }
+
+    if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+    await setActiveDb(filePath, true);
+
+    addRecentFile(filePath);
+
+    return 200;
+}
+
+/**
+ * Opens a new .dots file at path without reloading the window (for new-show wizard draft).
+ */
+async function openDatabaseAtPathWithoutReload(
+    filePath: string,
+    isNewFile: boolean,
+): Promise<number> {
+    if (!filePath || !win) return -1;
+
+    if (!filePath.endsWith(".dots")) {
+        filePath = `${filePath}.dots`;
+    }
+
+    if (isNewFile && fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+    }
+
+    let db: ReturnType<typeof DatabaseServices.connect> | undefined;
+    try {
+        const resCode = DatabaseServices.setDbPath(filePath, isNewFile);
+        if (resCode !== 200) {
+            return resCode;
+        }
+
+        store.set("databasePath", filePath);
+        win.setTitle("OpenMarch - " + filePath);
+
+        db = DatabaseServices.connect();
+        if (!db) {
+            console.error("Error connecting to database");
+            return -1;
+        }
+
+        const drizzleDb = getOrm(db);
+        const migrator = new DrizzleMigrationService(drizzleDb, db);
+        const migrationsFolder = join(
+            app.getAppPath(),
+            "electron",
+            "database",
+            "migrations",
+        );
+
+        db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
+        await migrator.applyPendingMigrations(migrationsFolder);
+        await DrizzleMigrationService.initializeDatabase(drizzleDb, db);
+
+        return 200;
+    } catch (error) {
+        captureException(error);
+        store.delete("databasePath");
+        DatabaseServices.setDbPath("", false);
+        console.error("Error opening database without reload:", error);
+        return -1;
+    } finally {
+        db?.close();
+    }
+}
+
+/**
+ * Creates a draft .dots under userData/new-show-drafts for the new-show wizard.
+ */
+export async function createNewShowDraft(): Promise<{ path: string } | number> {
+    const draftsDir = getNewShowDraftsDirectory();
+    if (!fs.existsSync(draftsDir)) {
+        fs.mkdirSync(draftsDir, { recursive: true });
+    }
+
+    const draftPath = join(draftsDir, `${randomUUID()}.dots`);
+    const result = await openDatabaseAtPathWithoutReload(draftPath, true);
+    if (result !== 200) {
+        return -1;
+    }
+
+    currentNewShowDraftPath = draftPath;
+    return { path: draftPath };
+}
+
+const sanitizeNewShowFilename = (name: string): string =>
+    name.trim().replace(/[<>:"/\\|?*]/g, "_");
+
+function resolveFinalizeTargetPath(
+    projectName: string,
+    targetPath: string,
+): string {
+    const trimmed = targetPath.trim();
+    const normalizedPath = trimmed.replace(/\\/g, "/");
+    const pathParts = normalizedPath.split("/");
+    const sanitized = sanitizeNewShowFilename(projectName) || "Untitled";
+    const lastPart = pathParts[pathParts.length - 1] || "";
+
+    if (!lastPart.endsWith(".dots")) {
+        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
+        return pathParts.join("/");
+    }
+
+    if (!lastPart.startsWith(sanitizeNewShowFilename(projectName))) {
+        pathParts[pathParts.length - 1] = `${sanitized}.dots`;
+        return pathParts.join("/");
+    }
+
+    return trimmed;
+}
+
+function sleep(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function moveFileWithRetry(source: string, dest: string): Promise<void> {
+    const resolvedSource = resolve(source);
+    const resolvedDest = resolve(dest);
+    const maxAttempts = 5;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            fs.renameSync(resolvedSource, resolvedDest);
+            return;
+        } catch (err: unknown) {
+            const code =
+                err && typeof err === "object" && "code" in err
+                    ? (err as NodeJS.ErrnoException).code
+                    : undefined;
+
+            if (code === "EXDEV") {
+                fs.copyFileSync(resolvedSource, resolvedDest);
+                fs.unlinkSync(resolvedSource);
+                return;
+            }
+
+            if (code === "EBUSY" && attempt < maxAttempts - 1) {
+                await sleep(25 * (attempt + 1));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+}
+
+async function unlinkFileWithRetry(filePath: string): Promise<void> {
+    const resolvedPath = resolve(filePath);
+    const maxAttempts = 5;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+            fs.unlinkSync(resolvedPath);
+            return;
+        } catch (err: unknown) {
+            const code =
+                err && typeof err === "object" && "code" in err
+                    ? (err as NodeJS.ErrnoException).code
+                    : undefined;
+
+            if (code === "EBUSY" && attempt < maxAttempts - 1) {
+                await sleep(25 * (attempt + 1));
+                continue;
+            }
+
+            throw err;
+        }
+    }
+}
+
+/**
+ * Moves the draft file to the user's chosen path and reloads into the editor.
+ */
+export async function finalizeNewShowDraft(
+    targetPath: string,
+    projectName?: string,
+): Promise<number> {
+    if (!currentNewShowDraftPath || !win) return -1;
+
+    const draftPath = resolve(currentNewShowDraftPath);
+    const finalPath = resolve(
+        projectName
+            ? resolveFinalizeTargetPath(projectName, targetPath)
+            : targetPath.endsWith(".dots")
+              ? targetPath
+              : `${targetPath}.dots`,
+    );
+
+    const finalDir = dirname(finalPath);
+    if (!fs.existsSync(finalDir)) {
+        fs.mkdirSync(finalDir, { recursive: true });
+    }
+
+    DatabaseServices.closePersistentConnection();
+
+    let backupPath: string | null = null;
+    if (fs.existsSync(finalPath)) {
+        backupPath = join(
+            finalDir,
+            `.${basename(finalPath)}.bak-${randomUUID()}`,
+        );
+        try {
+            await moveFileWithRetry(finalPath, backupPath);
+        } catch (error) {
+            console.error(
+                "Failed to backup existing show before finalize:",
+                error,
+            );
+            captureException(error);
+            return -1;
+        }
+    }
+
+    try {
+        await moveFileWithRetry(draftPath, finalPath);
+    } catch (error) {
+        console.error("Failed to finalize new show draft:", error);
+        if (backupPath && fs.existsSync(backupPath)) {
+            try {
+                await moveFileWithRetry(backupPath, finalPath);
+            } catch (restoreError) {
+                console.error(
+                    "Failed to restore show backup after finalize failure:",
+                    restoreError,
+                );
+                captureException(restoreError);
+            }
+        }
+        captureException(error);
+        return -1;
+    }
+
+    if (backupPath) {
+        try {
+            await unlinkFileWithRetry(backupPath);
+        } catch {
+            // best-effort cleanup
+        }
+    }
+
+    currentNewShowDraftPath = null;
+
+    await setActiveDb(finalPath, false);
+    addRecentFile(finalPath);
+
+    return 200;
+}
+
+/**
+ * Deletes the draft file and clears the DB connection without reloading.
+ */
+export async function discardNewShowDraft(): Promise<number> {
+    const draftPath = currentNewShowDraftPath
+        ? resolve(currentNewShowDraftPath)
+        : null;
+    currentNewShowDraftPath = null;
+
+    if (!draftPath) {
+        return 200;
+    }
+
+    DatabaseServices.closePersistentConnection();
+    DatabaseServices.setDbPath("", false);
+
+    const storedPath = store.get("databasePath") as string | undefined;
+    if (storedPath === draftPath) {
+        store.delete("databasePath");
+    }
+
+    if (fs.existsSync(draftPath)) {
+        await unlinkFileWithRetry(draftPath);
+    }
+
+    return 200;
+}
+
+/**
  * Creates a new database file path to connect to.
  *
  * @returns 200 for success, -1 for failure
  */
+/**
+ * Opens the new-show dialog in the renderer (LaunchPage modal).
+ * If a file is open, closes it and sets a flag so the dialog opens after reload.
+ */
+export async function requestNewShowFromMenu() {
+    if (!win) return -1;
+
+    const dbPath = DatabaseServices.getDbPath();
+    if (dbPath && dbPath.length > 0) {
+        store.set("pendingNewShowDialog", true);
+        return closeCurrentFile();
+    }
+
+    win.webContents.send("new-show:open");
+    return 200;
+}
+
 export async function newFile() {
     console.log("newFile");
 
@@ -588,7 +1022,6 @@ export async function newFile() {
         );
         filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
     } else {
-        // Get path to new file via dialog
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
@@ -597,16 +1030,7 @@ export async function newFile() {
         filePath = dialogResult.filePath;
     }
 
-    if (fs.existsSync(filePath)) {
-        fs.unlinkSync(filePath);
-    }
-    await setActiveDb(filePath, true);
-
-    // Add to recent files
-    addRecentFile(filePath);
-    win?.webContents.reload();
-
-    return 200;
+    return createFileAtPath(filePath);
 }
 
 // Database (main file)
@@ -1109,6 +1533,14 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
     if (!win) return -1;
 
+    if (currentNewShowDraftPath) {
+        await discardNewShowDraft();
+        if (!isAppQuitting) {
+            win.webContents.reload();
+        }
+        return 200;
+    }
+
     try {
         const svgResult = await requestSvgBeforeClose(win);
         updateRecentFileSvgPreview(DatabaseServices.getDbPath(), svgResult);
@@ -1130,6 +1562,45 @@ export async function closeCurrentFile(isAppQuitting = false) {
 
 // Audio files
 
+const AUDIO_FILE_DIALOG_FILTERS: Electron.FileFilter[] = [
+    {
+        name: "Audio File",
+        extensions: ["mp3", "wav", "ogg", "m4a", "aac", "webm"],
+    },
+    { name: "All Files", extensions: ["*"] },
+];
+
+function audioInsertError(
+    message: string,
+): DatabaseServices.LegacyDatabaseResponse<AudioFile[]> {
+    return { success: false, error: { message } };
+}
+
+async function pickAudioFilePath(): Promise<string | null> {
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+        filters: AUDIO_FILE_DIALOG_FILTERS,
+    });
+    if (result.canceled || !result.filePaths[0]) return null;
+    return result.filePaths[0];
+}
+
+async function readAudioFileBuffer(filePath: string): Promise<Buffer> {
+    return new Promise((resolve, reject) => {
+        fs.readFile(filePath, (err, data) => {
+            if (err) reject(err);
+            else resolve(data);
+        });
+    });
+}
+
+function bufferToArrayBuffer(data: Buffer): ArrayBuffer {
+    return data.buffer.slice(
+        data.byteOffset,
+        data.byteOffset + data.byteLength,
+    ) as ArrayBuffer;
+}
+
 /**
  * Opens a dialog to import an audio file to the database.
  *
@@ -1140,75 +1611,60 @@ export async function insertAudioFile(): Promise<
 > {
     console.log("insertAudioFile");
 
-    if (!win)
-        return {
-            success: false,
-            error: { message: "insertAudioFile: window not loaded" },
-        };
+    if (!win) return audioInsertError("insertAudioFile: window not loaded");
+
+    if (!DatabaseServices.databaseIsReady()) {
+        console.error("insertAudioFile: Database is not ready");
+        return audioInsertError(
+            "No file is open. Create or open a show first.",
+        );
+    }
 
     try {
-        // Open file dialog
-        const path = await dialog.showOpenDialog(win, {
-            filters: [
-                {
-                    name: "Audio File (.mp3, .wav, .ogg)",
-                    extensions: ["mp3", "wav", "ogg"],
-                },
-                { name: "All Files", extensions: ["*"] },
-            ],
-        });
-
-        if (path.canceled || !path.filePaths[0]) {
-            return {
-                success: false,
-                error: {
-                    message:
-                        "insertAudioFile: Operation was cancelled or no audio file was provided",
-                },
-            };
+        const filePath = await pickAudioFilePath();
+        if (!filePath) {
+            return audioInsertError(
+                "insertAudioFile: Operation was cancelled or no audio file was provided",
+            );
         }
 
-        console.log("loading audio file into buffer:", path.filePaths[0]);
+        console.log("loading audio file into buffer:", filePath);
+        const data = await readAudioFileBuffer(filePath);
 
-        // Read file asynchronously and wait for completion
-        const data = await new Promise<Buffer>((resolve, reject) => {
-            fs.readFile(path.filePaths[0], (err, data) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    resolve(data);
-                }
-            });
-        });
+        if (!DatabaseServices.databaseIsReady()) {
+            console.error(
+                "insertAudioFile: Database became unavailable during upload",
+            );
+            return audioInsertError(
+                "Database became unavailable. Please try again after ensuring the database file is ready.",
+            );
+        }
 
-        // Insert audio file into database
         const databaseResponse = await DatabaseServices.insertAudioFile({
-            id: -1,
-            data: Buffer.from(
-                data.buffer.slice(
-                    data.byteOffset,
-                    data.byteOffset + data.byteLength,
-                ),
-            ) as any as ArrayBuffer,
-            path: path.filePaths[0],
-            nickname: path.filePaths[0],
+            data: bufferToArrayBuffer(data),
+            path: filePath,
+            nickname: basename(filePath),
             selected: true,
         });
 
-        // Only reload after successful insertion
-        if (databaseResponse.success) {
-            win?.webContents.reload();
+        if (!databaseResponse.success) {
+            console.error(
+                "insertAudioFile: Failed to insert audio file:",
+                databaseResponse.error,
+            );
+        } else {
+            console.log(
+                "insertAudioFile: Successfully inserted audio file with ID:",
+                databaseResponse.result?.[0]?.id,
+            );
         }
 
         return databaseResponse;
     } catch (err) {
         console.error("Error inserting audio file:", err);
-        return {
-            success: false,
-            error: {
-                message: err instanceof Error ? err.message : String(err),
-            },
-        };
+        return audioInsertError(
+            err instanceof Error ? err.message : String(err),
+        );
     }
 }
 
@@ -1288,7 +1744,7 @@ async function setActiveDb(path: string, isNewFile = false) {
                 });
             }
         } else {
-            db.prepare("PRAGMA user_version = 7").run();
+            db.prepare(`PRAGMA user_version = ${DB_USER_VERSION}`).run();
         }
         await migrator.applyPendingMigrations(migrationsFolder);
 

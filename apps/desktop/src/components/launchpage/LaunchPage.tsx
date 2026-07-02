@@ -1,5 +1,4 @@
 import { Button, ListItem } from "@openmarch/ui";
-import NewFileModal from "@/components/file/NewFileModal";
 import TitleBar from "../titlebar/TitleBar";
 import clsx from "clsx";
 import {
@@ -13,12 +12,21 @@ import {
     TShirtIcon,
 } from "@phosphor-icons/react";
 import * as Tabs from "@radix-ui/react-tabs";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import SettingsContent from "./settings/SettingsContent";
 import { T } from "@tolgee/react";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
 import Toaster from "../ui/Toaster";
+import NewShowDialog from "./NewShowDialog";
+import { useQueryClient } from "@tanstack/react-query";
+import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
+import {
+    clearNewShowDialogSessionFlag,
+    OPEN_NEW_SHOW_DIALOG_EVENT,
+    requestOpenNewShowDialog,
+    shouldOpenNewShowDialogFromSession,
+} from "@/utilities/openNewShowDialog";
 
 interface LaunchPageProps {
     setDatabaseIsReady: (isReady: boolean) => void;
@@ -26,6 +34,52 @@ interface LaunchPageProps {
 
 export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
     const [selectedTab, setSelectedTab] = useState("files");
+    const [newShowOpen, setNewShowOpen] = useState(false);
+    const queryClient = useQueryClient();
+
+    const openNewShowDialog = useCallback(() => {
+        setNewShowOpen(true);
+    }, []);
+
+    useEffect(() => {
+        const tryOpenFromPending = async () => {
+            const pendingFromStore =
+                (await window.electron.getPendingNewShowDialog()) === true;
+            const pendingFromSession = shouldOpenNewShowDialogFromSession();
+
+            if (pendingFromStore || pendingFromSession) {
+                if (pendingFromStore) {
+                    await window.electron.clearPendingNewShowDialog();
+                }
+                clearNewShowDialogSessionFlag();
+                openNewShowDialog();
+            }
+        };
+
+        void tryOpenFromPending();
+
+        const handleOpenEvent = () => openNewShowDialog();
+        window.addEventListener(OPEN_NEW_SHOW_DIALOG_EVENT, handleOpenEvent);
+
+        const unsubscribe = window.electron.onNewShowOpen(() => {
+            openNewShowDialog();
+        });
+
+        return () => {
+            window.removeEventListener(
+                OPEN_NEW_SHOW_DIALOG_EVENT,
+                handleOpenEvent,
+            );
+            unsubscribe?.();
+        };
+    }, [openNewShowDialog]);
+
+    const handleCreated = useCallback(() => {
+        void queryClient.invalidateQueries({
+            queryKey: databaseReadyQueryOptions().queryKey,
+        });
+        setDatabaseIsReady(true);
+    }, [queryClient, setDatabaseIsReady]);
 
     return (
         <div className="from-bg-1 to-accent flex h-screen w-screen flex-col bg-linear-to-br from-[60%] to-[150%]">
@@ -39,6 +93,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
             >
                 <Sidebar
                     setDatabaseIsReady={setDatabaseIsReady}
+                    onCreateNew={() => void requestOpenNewShowDialog()}
                     selectedTab={selectedTab}
                 />
                 <FilesContent />
@@ -54,6 +109,11 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                 </Tabs.Content>
             </Tabs.Root>
 
+            <NewShowDialog
+                open={newShowOpen}
+                onOpenChange={setNewShowOpen}
+                onCreated={handleCreated}
+            />
             <Toaster />
         </div>
     );
@@ -61,15 +121,18 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
 
 function Sidebar({
     setDatabaseIsReady,
+    onCreateNew,
     selectedTab,
-}: LaunchPageProps & { selectedTab: string }) {
+}: LaunchPageProps & {
+    onCreateNew: () => void;
+    selectedTab: string;
+}) {
     async function handleOpenExisting() {
         console.log("Opening existing file...");
         try {
             const dataBaseIsReady = await window.electron.databaseLoad();
             console.log("Database load result:", dataBaseIsReady);
 
-            // If database loading was successful, update the state
             if (dataBaseIsReady === 200) {
                 setDatabaseIsReady(true);
             }
@@ -84,16 +147,17 @@ function Sidebar({
                     <T keyName="launchpage.title" />
                 </p>
                 <div className="flex min-w-0 gap-8">
-                    <NewFileModal onSuccess={setDatabaseIsReady}>
-                        <Button className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight">
-                            <PlusIcon size={24} className="flex-shrink-0" />
-                            <span className="h-fit min-w-0 leading-tight break-words">
-                                <T keyName="launchpage.files.createNew" />
-                            </span>
-                        </Button>
-                    </NewFileModal>
                     <Button
-                        onClick={handleOpenExisting}
+                        className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"
+                        onClick={onCreateNew}
+                    >
+                        <PlusIcon size={24} className="flex-shrink-0" />
+                        <span className="h-fit min-w-0 leading-tight break-words">
+                            <T keyName="launchpage.files.createNew" />
+                        </span>
+                    </Button>
+                    <Button
+                        onClick={() => void handleOpenExisting()}
                         className="h-fit w-full min-w-0 flex-shrink px-8 leading-tight"
                         variant="secondary"
                     >
