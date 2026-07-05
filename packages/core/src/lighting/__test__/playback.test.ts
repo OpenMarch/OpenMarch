@@ -203,4 +203,52 @@ describe("sampleMarcherLightingFill", () => {
             sampleMarcherLightingFill(plan, 500, 99, baseFill),
         ).toBeUndefined();
     });
+
+    it("gates wipe fill to marchers inside active wipe layers", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "wipe",
+                argsJson: JSON.stringify({
+                    color: "#ff0000",
+                    directionDegrees: 0,
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1, 2],
+                effectLayers: [{ left: 0, top: 0, width: 100, height: 100 }],
+            },
+        ]);
+
+        expect(
+            sampleMarcherLightingFill(plan, 500, 1, baseFill, {
+                marcherPosition: { x: 25, y: 50 },
+            }),
+        ).toEqual(hex6ToLightingRgba("#ff0000"));
+        expect(
+            sampleMarcherLightingFill(plan, 500, 2, baseFill, {
+                marcherPosition: { x: 75, y: 50 },
+            }),
+        ).toBeUndefined();
+    });
+
+    it("returns wipe fill for all group marchers when no layers are defined", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "wipe",
+                argsJson: JSON.stringify({
+                    color: "#ff0000",
+                    directionDegrees: 0,
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1],
+            },
+        ]);
+
+        expect(
+            sampleMarcherLightingFill(plan, 500, 1, baseFill, {
+                marcherPosition: { x: 999, y: 999 },
+            }),
+        ).toEqual(hex6ToLightingRgba("#ff0000"));
+    });
 });

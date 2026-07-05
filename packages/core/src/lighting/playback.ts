@@ -1,5 +1,9 @@
 import type { FadeEffectArgs } from "./effect.fade";
 import { parseEffectArgs } from "./effect.registry";
+import type { LightingEffectLayerRect } from "./effectLayers";
+import { parseWipeEffectArgs } from "./effect.wipe";
+import { getWipeActiveMarcherIds } from "./effect.wipe";
+import { getLightingEffectProgress } from "./timing";
 import type { SolidEffectArgs } from "./effect.solid";
 import type { LightingEffectType } from "./types";
 
@@ -22,6 +26,8 @@ export type LightingPlaybackEffectInput = {
      * (legacy sequential timeline).
      */
     startMs?: number;
+    /** Wipe-only spatial mask rects in canvas coordinates. */
+    effectLayers?: readonly LightingEffectLayerRect[];
 };
 
 export type ParsedLightingStep = {
@@ -30,6 +36,8 @@ export type ParsedLightingStep = {
     type: LightingEffectType;
     solidArgs: SolidEffectArgs;
     marcherIds: ReadonlySet<number>;
+    effectLayers: readonly LightingEffectLayerRect[];
+    wipeDirectionDegrees?: number;
 };
 
 export type LightingScenePlan = {
@@ -59,6 +67,7 @@ function buildStep(
     type: LightingEffectType,
     argsJson: string,
     marcherIds: readonly number[],
+    effectLayers: readonly LightingEffectLayerRect[] = [],
 ): ParsedLightingStep {
     const safeDuration = Math.max(0, durationMs);
     const parsedArgs = parseEffectArgs(type, argsJson);
@@ -68,12 +77,18 @@ function buildStep(
                   color: (parsedArgs as FadeEffectArgs).colors.at(-1)!,
               }
             : (parsedArgs as SolidEffectArgs);
+    const wipeDirectionDegrees =
+        type === "wipe"
+            ? parseWipeEffectArgs(argsJson).directionDegrees
+            : undefined;
     return {
         startMs,
         endMs: startMs + safeDuration,
         type,
         solidArgs,
         marcherIds: new Set(marcherIds),
+        effectLayers,
+        wipeDirectionDegrees,
     };
 }
 
@@ -89,7 +104,14 @@ export function buildLightingScenePlan(
     for (const e of effects) {
         const start = e.startMs !== undefined ? e.startMs : cursor;
         steps.push(
-            buildStep(start, e.durationMs, e.type, e.argsJson, e.marcherIds),
+            buildStep(
+                start,
+                e.durationMs,
+                e.type,
+                e.argsJson,
+                e.marcherIds,
+                e.effectLayers ?? [],
+            ),
         );
         cursor = Math.max(cursor, start + Math.max(0, e.durationMs));
     }
@@ -101,12 +123,18 @@ export function buildLightingScenePlan(
 /**
  * Returns a lighting fill override for a marcher at scene-local time, or `undefined` if the
  * marcher should use the normal appearance cascade (no active effect for this marcher at `tSceneMs`).
+ *
+ * For wipe steps with effect layers, pass `marcherPosition` in canvas coordinates so only
+ * marchers inside the active wipe region receive the fill.
  */
 export function sampleMarcherLightingFill(
     plan: LightingScenePlan,
     tSceneMs: number,
     marcherId: number,
     _baseFill: LightingRgba,
+    options?: {
+        marcherPosition?: { x: number; y: number };
+    },
 ): LightingRgba | undefined {
     if (plan.steps.length === 0) return undefined;
 
@@ -117,6 +145,25 @@ export function sampleMarcherLightingFill(
             s.marcherIds.has(marcherId),
     );
     if (!step) return undefined;
+
+    if (
+        step.type === "wipe" &&
+        step.effectLayers.length > 0 &&
+        options?.marcherPosition != null &&
+        step.wipeDirectionDegrees != null
+    ) {
+        const progress = getLightingEffectProgress(tSceneMs, {
+            startMs: step.startMs,
+            durationMs: step.endMs - step.startMs,
+        });
+        const activeMarcherIds = getWipeActiveMarcherIds(
+            step.effectLayers,
+            progress,
+            step.wipeDirectionDegrees,
+            [{ marcherId, ...options.marcherPosition }],
+        );
+        if (!activeMarcherIds.has(marcherId)) return undefined;
+    }
 
     return hex6ToLightingRgba(step.solidArgs.color);
 }

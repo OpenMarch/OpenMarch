@@ -1,4 +1,9 @@
 import { z } from "zod";
+import type {
+    LightingEffectLayerRect,
+    LightingMarcherPosition,
+} from "./effectLayers";
+import { getLightingEffectProgress } from "./timing";
 import { ColorSchema } from "./utils";
 
 export type WipeEffectArgs = {
@@ -160,4 +165,133 @@ export function getWipeRevealPolygonLocal(
     if (uniquePoints.length < 3) return [];
 
     return sortPointsAngularly(uniquePoints);
+}
+
+function isPointInPolygon(
+    x: number,
+    y: number,
+    polygon: readonly WipeRevealPoint[],
+): boolean {
+    if (polygon.length < 3) return false;
+
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+        const xi = polygon[i]!.x;
+        const yi = polygon[i]!.y;
+        const xj = polygon[j]!.x;
+        const yj = polygon[j]!.y;
+
+        const intersects =
+            yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+        if (intersects) inside = !inside;
+    }
+    return inside;
+}
+
+/** Layer-local point inside the revealed wipe region at the given progress. */
+export function isPointInWipeRevealLocal(
+    layerWidth: number,
+    layerHeight: number,
+    progress: number,
+    directionDegrees: number,
+    localX: number,
+    localY: number,
+): boolean {
+    const polygon = getWipeRevealPolygonLocal(
+        layerWidth,
+        layerHeight,
+        progress,
+        directionDegrees,
+    );
+    return isPointInPolygon(localX, localY, polygon);
+}
+
+function findContainingEffectLayer(
+    layers: readonly LightingEffectLayerRect[],
+    x: number,
+    y: number,
+): LightingEffectLayerRect | undefined {
+    for (const layer of layers) {
+        if (layer.width <= 0 || layer.height <= 0) continue;
+        if (
+            x >= layer.left &&
+            x < layer.left + layer.width &&
+            y >= layer.top &&
+            y < layer.top + layer.height
+        ) {
+            return layer;
+        }
+    }
+    return undefined;
+}
+
+/** Canvas-space position inside a layer's active wipe region. */
+export function isPositionInWipeReveal(
+    layers: readonly LightingEffectLayerRect[],
+    progress: number,
+    directionDegrees: number,
+    position: { x: number; y: number },
+): boolean {
+    const layer = findContainingEffectLayer(layers, position.x, position.y);
+    if (!layer) return false;
+
+    return isPointInWipeRevealLocal(
+        layer.width,
+        layer.height,
+        progress,
+        directionDegrees,
+        position.x - layer.left,
+        position.y - layer.top,
+    );
+}
+
+/**
+ * Returns marcher ids whose positions fall inside the active portion of a wipe
+ * at the given progress. When `layers` is empty, every provided marcher id is
+ * returned (group-wide wipe with no spatial mask).
+ */
+export function getWipeActiveMarcherIds(
+    layers: readonly LightingEffectLayerRect[],
+    progress: number,
+    directionDegrees: number,
+    marcherPositions: readonly LightingMarcherPosition[],
+): ReadonlySet<number> {
+    if (marcherPositions.length === 0) return new Set();
+
+    if (layers.length === 0) {
+        return new Set(marcherPositions.map((position) => position.marcherId));
+    }
+
+    const active = new Set<number>();
+    for (const position of marcherPositions) {
+        if (
+            isPositionInWipeReveal(layers, progress, directionDegrees, position)
+        ) {
+            active.add(position.marcherId);
+        }
+    }
+    return active;
+}
+
+/** Convenience wrapper: resolves wipe progress from scene-local timestamp. */
+export function getWipeActiveMarcherIdsAtTime({
+    layers,
+    directionDegrees,
+    effectWindowMs,
+    timestampMs,
+    marcherPositions,
+}: {
+    layers: readonly LightingEffectLayerRect[];
+    directionDegrees: number;
+    effectWindowMs: { startMs: number; durationMs: number };
+    timestampMs: number;
+    marcherPositions: readonly LightingMarcherPosition[];
+}): ReadonlySet<number> {
+    const progress = getLightingEffectProgress(timestampMs, effectWindowMs);
+    return getWipeActiveMarcherIds(
+        layers,
+        progress,
+        directionDegrees,
+        marcherPositions,
+    );
 }

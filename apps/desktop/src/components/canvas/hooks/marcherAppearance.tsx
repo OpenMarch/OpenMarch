@@ -184,7 +184,12 @@ const LightDesignerMarcherAppearances = ({
         .map((id, i) => {
             const d = effectResults[i]?.data;
             return d
-                ? `${id}:${d.type}:${d.args}:${d.start_offset_beats}:${d.duration_beats}:${[...d.marcherIds].sort((a, b) => a - b).join(".")}`
+                ? `${id}:${d.type}:${d.args}:${d.start_offset_beats}:${d.duration_beats}:${[...d.marcherIds].sort((a, b) => a - b).join(".")}:${d.effect_layers
+                      .map(
+                          (layer) =>
+                              `${layer.id}:${layer.left},${layer.top},${layer.width},${layer.height}`,
+                      )
+                      .join(";")}`
                 : "";
         })
         .join("|");
@@ -241,6 +246,12 @@ const LightDesignerMarcherAppearances = ({
                     durationMs,
                     marcherIds: [...row.marcherIds],
                     startMs,
+                    effectLayers: row.effect_layers.map((layer) => ({
+                        left: layer.left,
+                        top: layer.top,
+                        width: layer.width,
+                        height: layer.height,
+                    })),
                 });
             }
             out.set(sid, buildLightingScenePlan(inputs));
@@ -312,6 +323,7 @@ const LightDesignerMarcherAppearances = ({
                 if (!visualGroup || !appearancesForMarcher) return;
 
                 const canvasMarcher = visualGroup.getCanvasMarcher();
+                const marcherCenter = canvasMarcher.getCenterPoint();
                 let fillOverride: LightingRgba | undefined;
                 if (plan && active) {
                     fillOverride = sampleMarcherLightingFill(
@@ -319,6 +331,12 @@ const LightDesignerMarcherAppearances = ({
                         active.tSceneMs,
                         marcher.id,
                         baseFillForSample,
+                        {
+                            marcherPosition: {
+                                x: marcherCenter.x,
+                                y: marcherCenter.y,
+                            },
+                        },
                     );
                 }
                 const resolvedFill = fillOverride ?? defaultLightingBaseFill;
