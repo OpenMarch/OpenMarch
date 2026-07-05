@@ -626,6 +626,71 @@ export async function deletePages({
     return response;
 }
 
+export async function deletePageYank({
+    pageId,
+    db,
+}: {
+    pageId: number;
+    db: DbConnection;
+}): Promise<DatabasePage[]> {
+    if (pageId === FIRST_PAGE_ID) return [];
+
+    const response = await transactionWithHistory(
+        db,
+        "deletePageYank",
+        async (tx) => {
+            const pagesBeforeDeletion = await tx
+                .select()
+                .from(schema.pages)
+                .innerJoin(
+                    schema.beats,
+                    eq(schema.beats.id, schema.pages.start_beat),
+                )
+                .orderBy(asc(schema.beats.position))
+                .all();
+            const pageToDeleteIndex = pagesBeforeDeletion.findIndex(
+                ({ pages }) => pages.id === pageId,
+            );
+            if (pageToDeleteIndex === -1) return [];
+
+            const pageToDelete = pagesBeforeDeletion[pageToDeleteIndex];
+            const nextPage = pagesBeforeDeletion[pageToDeleteIndex + 1];
+            const yankLength = nextPage
+                ? nextPage.beats.position - pageToDelete.beats.position
+                : 0;
+            const laterPages = pagesBeforeDeletion.slice(pageToDeleteIndex + 1);
+
+            const response = await deletePagesInTransaction({
+                pageIds: new Set([pageId]),
+                tx,
+            });
+
+            if (yankLength > 0) {
+                for (const page of laterPages) {
+                    const targetBeat = await tx.query.beats.findFirst({
+                        where: eq(
+                            schema.beats.position,
+                            page.beats.position - yankLength,
+                        ),
+                    });
+                    assert(
+                        targetBeat != null,
+                        `Could not find target beat for yanked page ${page.pages.id}`,
+                    );
+                    await tx
+                        .update(schema.pages)
+                        .set({ start_beat: targetBeat.id })
+                        .where(eq(schema.pages.id, page.pages.id));
+                }
+            }
+
+            await ensureSecondBeatHasPage({ tx });
+            return response;
+        },
+    );
+    return response;
+}
+
 /**
  * Creates a new page at the next available beat after the current last page.
  *
