@@ -236,18 +236,36 @@ export default function GithubReleases() {
                                                           />
                                                           {asset.name.includes(
                                                               "darwin_arm64",
+                                                          ) ||
+                                                          asset.name.includes(
+                                                              "darwin-arm64",
+                                                          ) ||
+                                                          asset.name.includes(
+                                                              "macos-arm64",
                                                           )
                                                               ? "Apple Silicon"
                                                               : asset.name.includes(
                                                                       "darwin_x64",
+                                                                  ) ||
+                                                                  asset.name.includes(
+                                                                      "darwin-x64",
+                                                                  ) ||
+                                                                  asset.name.includes(
+                                                                      "macos-x64",
                                                                   )
                                                                 ? "Intel Mac"
                                                                 : asset.name.includes(
                                                                         "linux_x86_64",
+                                                                    ) ||
+                                                                    asset.name.includes(
+                                                                        "linux-x64",
                                                                     )
                                                                   ? "Linux x64 .AppImage"
                                                                   : asset.name.includes(
                                                                           "linux_arm64",
+                                                                      ) ||
+                                                                      asset.name.includes(
+                                                                          "linux-arm64",
                                                                       )
                                                                     ? "Linux ARM .AppImage"
                                                                     : asset.name.includes(
