@@ -18,7 +18,18 @@ import {
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { inArray, desc, eq, and, gte, lte, asc, isNotNull } from "drizzle-orm";
+import {
+    inArray,
+    desc,
+    eq,
+    and,
+    gte,
+    lte,
+    asc,
+    isNotNull,
+    sql,
+    count,
+} from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
     NewBeatArgs,
@@ -1729,6 +1740,67 @@ describeDbTests("pages", (it) => {
 
     describe("createLastPage", () => {
         describe("with existing pages", () => {
+            testWithHistory(
+                "creates a page when stale marcher pages exist for the reused page id",
+                async ({ db }) => {
+                    const newPageCounts = 8;
+                    const firstCreatedPage = await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+                    const marcherCount = await db
+                        .select({ count: count() })
+                        .from(schema.marchers)
+                        .get();
+                    assert(marcherCount != null, "Marcher count not found");
+
+                    await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
+                    await db
+                        .delete(schema.pages)
+                        .where(eq(schema.pages.id, firstCreatedPage.id));
+                    await db.run(sql.raw("PRAGMA foreign_keys = ON"));
+
+                    const staleMarcherPages = await db
+                        .select({ count: count() })
+                        .from(schema.marcher_pages)
+                        .where(
+                            eq(
+                                schema.marcher_pages.page_id,
+                                firstCreatedPage.id,
+                            ),
+                        )
+                        .get();
+                    expect(staleMarcherPages?.count).toBe(marcherCount.count);
+
+                    const secondCreatedPage = await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+
+                    expect(secondCreatedPage.id).toBe(firstCreatedPage.id);
+                    const recreatedMarcherPages = await db
+                        .select({ count: count() })
+                        .from(schema.marcher_pages)
+                        .where(
+                            eq(
+                                schema.marcher_pages.page_id,
+                                secondCreatedPage.id,
+                            ),
+                        )
+                        .get();
+                    expect(recreatedMarcherPages?.count).toBe(
+                        marcherCount.count,
+                    );
+
+                    const foreignKeyFailures = await db.all(
+                        sql.raw("PRAGMA foreign_key_check"),
+                    );
+                    expect(foreignKeyFailures).toEqual([]);
+                },
+            );
+
             testWithHistory.for([
                 {
                     newPageCounts: 8,

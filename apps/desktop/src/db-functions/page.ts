@@ -294,6 +294,11 @@ export const createPagesInTransaction = async ({
             pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
     );
 
+    const createdPageIds = createdPages.map((page) => page.id);
+    await tx
+        .delete(schema.marcher_pages)
+        .where(inArray(schema.marcher_pages.page_id, createdPageIds));
+
     await _createMarcherPages({
         tx,
         sortedNewPages,
@@ -535,6 +540,10 @@ export const deletePagesInTransaction = async ({
         lastPageBeforeDeletion != null,
         "Last page before deletion not found",
     );
+
+    await tx
+        .delete(schema.marcher_pages)
+        .where(inArray(schema.marcher_pages.page_id, Array.from(pageIds)));
 
     const deletedPages = await tx
         .delete(schema.pages)
