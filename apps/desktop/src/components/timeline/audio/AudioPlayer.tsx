@@ -4,7 +4,7 @@ import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile, {
-    capPlaceholderAudioDuration,
+    computePlaceholderAudioDurationFromPages,
 } from "@/global/classes/AudioFile";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useTimingObjects } from "@/hooks";
@@ -206,15 +206,7 @@ export default function AudioPlayer() {
 
     const largestMinimumDuration = useRef(0);
     const minimumAudioDuration = useMemo(() => {
-        const calculatedMinimumDuration =
-            pages.length > 0
-                ? pages[pages.length - 1].timestamp +
-                  pages[pages.length - 1].duration +
-                  10
-                : 10;
-        const cappedDuration = capPlaceholderAudioDuration(
-            calculatedMinimumDuration,
-        );
+        const cappedDuration = computePlaceholderAudioDurationFromPages(pages);
         if (cappedDuration > largestMinimumDuration.current)
             largestMinimumDuration.current = cappedDuration;
         return largestMinimumDuration.current;

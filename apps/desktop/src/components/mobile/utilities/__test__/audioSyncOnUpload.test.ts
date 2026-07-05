@@ -94,7 +94,8 @@ describe("audioSyncOnUpload", () => {
             mockComputeChecksum.mockClear();
         });
 
-        it("returns null for silent placeholder", async () => {
+        it("returns sync result for silent placeholder when data is present", async () => {
+            mockComputeChecksum.mockResolvedValue("silent-hash");
             const file: LocalAudioFileForSync = {
                 id: -1,
                 path: SILENT_AUDIO_PATH,
@@ -105,8 +106,10 @@ describe("audioSyncOnUpload", () => {
                 [{ id: 1, source_checksum: "x" }],
                 mockComputeChecksum,
             );
-            expect(result).toBe(null);
-            expect(mockComputeChecksum).not.toHaveBeenCalled();
+            expect(result).not.toBe(null);
+            expect(result?.serverAudioFileId).toBe(null);
+            expect(result?.selectedAudioFileWithData).toBe(file);
+            expect(mockComputeChecksum).toHaveBeenCalledWith(file.data);
         });
 
         it("returns null when file has no data", async () => {
