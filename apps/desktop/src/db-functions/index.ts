@@ -13,3 +13,4 @@ export * from "./shapePages";
 export * from "./shapePageMarchers";
 export * from "./tag";
 export * from "./lighting";
+export * from "./lightingEffectLayers";

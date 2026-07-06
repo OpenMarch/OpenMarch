@@ -32,72 +32,12 @@ import {
     canRedoQueryOptions,
 } from "@/hooks/queries/useHistory";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
+import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
-
-/**
- * The interface for the registered actions. This exists so it is easy to see what actions are available.
- */
-export enum RegisteredActionsEnum {
-    // Electron interactions
-    launchLoadFileDialogue = "launchLoadFileDialogue",
-    launchSaveFileDialogue = "launchSaveFileDialogue",
-    launchNewFileDialogue = "launchNewFileDialogue",
-    launchInsertAudioFileDialogue = "launchInsertAudioFileDialogue",
-    launchImportMusicXmlFileDialogue = "launchImportMusicXmlFileDialogue",
-    performUndo = "performUndo",
-    performRedo = "performRedo",
-
-    // Navigation and playback
-    nextPage = "nextPage",
-    lastPage = "lastPage",
-    previousPage = "previousPage",
-    firstPage = "firstPage",
-    playPause = "playPause",
-    toggleMetronome = "toggleMetronome",
-
-    // Batch editing
-    setAllMarchersToPreviousPage = "setAllMarchersToPreviousPage",
-    setSelectedMarchersToPreviousPage = "setSelectedMarchersToPreviousPage",
-    setAllMarchersToNextPage = "setAllMarchersToNextPage",
-    setSelectedMarchersToNextPage = "setSelectedMarchersToNextPage",
-
-    // Alignment
-    snapToNearestCustomFraction = "snapToNearestCustomFraction",
-    lockX = "lockX",
-    lockY = "lockY",
-    alignVertically = "alignVertically",
-    alignHorizontally = "alignHorizontally",
-    evenlyDistributeHorizontally = "evenlyDistributeHorizontally",
-    evenlyDistributeVertically = "evenlyDistributeVertically",
-    flipHorizontal = "flipHorizontal",
-    flipVertical = "flipVertical",
-    swapMarchers = "swapMarchers",
-    moveSelectedMarchersUp = "moveSelectedMarchersUp",
-    moveSelectedMarchersDown = "moveSelectedMarchersDown",
-    moveSelectedMarchersLeft = "moveSelectedMarchersLeft",
-    moveSelectedMarchersRight = "moveSelectedMarchersRight",
-
-    // UI settings
-    toggleNextPagePaths = "toggleNextPagePaths",
-    togglePreviousPagePaths = "togglePreviousPagePaths",
-    focusCanvas = "focusCanvas",
-    focusTimeline = "focusTimeline",
-
-    // Cursor Mode
-    applyQuickShape = "applyQuickShape",
-    createMarcherShape = "createMarcherShape",
-    deleteMarcherShape = "deleteMarcherShape",
-    cancelAlignmentUpdates = "cancelAlignmentUpdates",
-    alignmentEventDefault = "alignmentEventDefault",
-    alignmentEventLine = "alignmentEventLine",
-
-    // Select
-    selectAllMarchers = "selectAllMarchers",
-
-    // Shapes
-    createCircle = "createCircle",
-}
+import { isMarcherPlacementRegisteredAction } from "./marcherPlacementRegisteredActions";
+import { RegisteredActionsEnum } from "./registeredActionsEnum";
+export { RegisteredActionsEnum } from "./registeredActionsEnum";
 
 /**
  * THIS SHOULD NOT BE USED DIRECTLY. Use the RegisteredActionsEnum and RegisteredActionsObjects instead.
@@ -524,6 +464,7 @@ export const RegisteredActionsObjects: {
 // eslint-disable-next-line max-lines-per-function
 function RegisteredActionsHandler() {
     const { t } = useTolgee();
+    const workspaceMode = useWorkspaceViewStore.use.mode();
     const queryClient = useQueryClient();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { registeredButtonActions } = useRegisteredActionsStore()!;
@@ -716,6 +657,12 @@ function RegisteredActionsHandler() {
             }
 
             if (isElectronAction) return;
+            if (
+                workspaceMode === "lightDesigner" &&
+                isMarcherPlacementRegisteredAction(action)
+            ) {
+                return;
+            }
             if (!selectedPage) {
                 console.error("No selected page");
                 return;
@@ -1230,6 +1177,7 @@ function RegisteredActionsHandler() {
             }
         },
         [
+            workspaceMode,
             selectedPage,
             fieldProperties,
             marcherPagesLoaded,
@@ -1321,16 +1269,20 @@ function RegisteredActionsHandler() {
                     "ArrowRight",
                 ]);
 
+                const blockMarcherPlacementKeys =
+                    workspaceMode === "lightDesigner";
+
                 // Special handling for WASD/Arrow keys
                 if (
-                    code === "KeyW" ||
-                    code === "KeyA" ||
-                    code === "KeyS" ||
-                    code === "KeyD" ||
-                    code === "ArrowUp" ||
-                    code === "ArrowDown" ||
-                    code === "ArrowLeft" ||
-                    code === "ArrowRight"
+                    !blockMarcherPlacementKeys &&
+                    (code === "KeyW" ||
+                        code === "KeyA" ||
+                        code === "KeyS" ||
+                        code === "KeyD" ||
+                        code === "ArrowUp" ||
+                        code === "ArrowDown" ||
+                        code === "ArrowLeft" ||
+                        code === "ArrowRight")
                 ) {
                     e.preventDefault();
 
@@ -1426,7 +1378,7 @@ function RegisteredActionsHandler() {
                 });
             }
         },
-        [setUiSettings, triggerAction, uiSettings],
+        [setUiSettings, triggerAction, uiSettings, workspaceMode],
     );
 
     /**

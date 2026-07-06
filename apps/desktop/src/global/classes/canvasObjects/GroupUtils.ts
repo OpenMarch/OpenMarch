@@ -225,13 +225,19 @@ export const cleanupGroupHandlers = (group: fabric.Group) => {
     delete groupAny.__originalScaleY;
 };
 
-export const setGroupAttributes = (group: fabric.Group) => {
-    const isLocked = anyObjectsAreLocked(group);
-    group.hasControls = !isLocked;
+export const setGroupAttributes = (
+    group: fabric.Group,
+    options?: { disableGroupTransforms?: boolean },
+) => {
+    const disableGroupTransforms = options?.disableGroupTransforms === true;
+    const childLocked = anyObjectsAreLocked(group);
+    const transformsDisabled = disableGroupTransforms || childLocked;
+
+    group.hasControls = !transformsDisabled;
     group.hasBorders = true;
-    group.hasRotatingPoint = !isLocked;
-    group.lockRotation = isLocked; // Lock rotation if locked
-    (group as any).locked = isLocked;
+    group.hasRotatingPoint = !transformsDisabled;
+    group.lockRotation = transformsDisabled;
+    (group as any).locked = childLocked;
 
     // Disable Shift key uniform scaling - we handle axis locking ourselves
     (group as any).uniScaleKey = null;
@@ -242,8 +248,9 @@ export const setGroupAttributes = (group: fabric.Group) => {
     // Always cleanup existing handlers first to prevent accumulation
     cleanupGroupHandlers(group);
 
-    if (isLocked) {
-        group.evented = false;
+    if (transformsDisabled) {
+        // Light Designer: no scale/rotate handles but selection stays clickable
+        group.evented = disableGroupTransforms ? true : false;
     } else {
         const groupAny = group as any;
 

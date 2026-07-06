@@ -440,3 +440,61 @@ export function packEffectsIntoLanes(
     }
     return { placements, laneCount: laneEnds.length };
 }
+
+/** Half-open beat interval [start, start + duration). Zero or negative duration never overlaps. */
+export function lightingEffectBeatIntervalsOverlap(
+    a: { start_offset_beats: number; duration_beats: number },
+    b: { start_offset_beats: number; duration_beats: number },
+): boolean {
+    const startA = Math.max(0, a.start_offset_beats);
+    const durA = a.duration_beats;
+    const startB = Math.max(0, b.start_offset_beats);
+    const durB = b.duration_beats;
+    if (durA <= 0 || durB <= 0) return false;
+    const endA = startA + durA;
+    const endB = startB + durB;
+    return startA < endB && startB < endA;
+}
+
+/**
+ * Effects in the same scene (other than `targetEffectId`) that overlap the target interval
+ * in beat time and already reference `groupId`.
+ */
+export function findOverlappingEffectsWithGroup<
+    T extends {
+        id: number;
+        name: string | null;
+        start_offset_beats: number;
+        duration_beats: number;
+        lighting_group_ids: readonly number[];
+    },
+>(params: {
+    effects: readonly T[];
+    targetEffectId: number;
+    groupId: number;
+    effectNameFallback: string;
+}): { id: number; name: string }[] {
+    const target = params.effects.find((e) => e.id === params.targetEffectId);
+    if (!target) return [];
+
+    const conflicts: { id: number; name: string }[] = [];
+    for (const effect of params.effects) {
+        if (effect.id === params.targetEffectId) continue;
+        if (!effect.lighting_group_ids.includes(params.groupId)) continue;
+        if (
+            lightingEffectBeatIntervalsOverlap(
+                {
+                    start_offset_beats: target.start_offset_beats,
+                    duration_beats: target.duration_beats,
+                },
+                effect,
+            )
+        ) {
+            conflicts.push({
+                id: effect.id,
+                name: effect.name?.trim() || params.effectNameFallback,
+            });
+        }
+    }
+    return conflicts;
+}

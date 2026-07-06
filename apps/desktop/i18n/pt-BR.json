@@ -818,6 +818,10 @@
         "controls": {
             "label": "Controles de Reprodução"
         },
+        "createSceneCancel": "Cancelar",
+        "createSceneConfirm": "Criar",
+        "createSceneDescription": "Isso dividirá a cena atual no ponto em que você clicou e criará uma nova cena. Os efeitos após este ponto não serão mais visíveis",
+        "createSceneTitle": "Criar uma nova cena",
         "deleteScene": "Excluir cena",
         "label": "Linha do Tempo",
         "lightDesigner": {
@@ -845,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Clique para copiar o caminho do arquivo",
+        "pathCopied": "Caminho do arquivo copiado para a área de transferência",
         "bugReport": "Enviar erro ou feedback",
         "bugReport.placeholder": "O que deu errado?\nO que você esperava?\nComo podemos reproduzir o problema?",
         "databasePathError": "Erro no Caminho do Banco de Dados",
@@ -908,7 +914,6 @@
                 "sectionTitle": "Efeitos",
                 "addEffect": "Adicionar efeito",
                 "empty": "Ainda não há efeitos nesta cena.",
-                "rowLoading": "Carregando efeito…",
                 "effectItem": {
                     "defaultName": "Efeito {id}",
                     "name": "Nome",
@@ -920,6 +925,10 @@
                     "color": "Cor",
                     "fadeDurationSeconds": "Duração do fade (s)",
                     "fadeTargetColor": "Cor de destino do fade",
+                    "fadeColors": "Cores",
+                    "colorNumber": "Cor {number}",
+                    "addColor": "Adicionar cor",
+                    "removeColorAria": "Remover cor",
                     "strobePlaceholder": "O editor de estrobo ainda não foi implementado."
                 }
             }

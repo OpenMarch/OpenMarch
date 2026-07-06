@@ -818,6 +818,10 @@
         "controls": {
             "label": "再生 コントロール"
         },
+        "createSceneCancel": "キャンセル",
+        "createSceneConfirm": "作成",
+        "createSceneDescription": "クリックした位置で現在のシーンを分割し、新しいシーンを作成します。この位置より後のエフェクトは表示されなくなります",
+        "createSceneTitle": "新しいシーンを作成",
         "deleteScene": "シーンを削除",
         "label": "タイムライン",
         "lightDesigner": {
@@ -845,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "クリックしてファイルパスをコピー",
+        "pathCopied": "ファイルパスをクリップボードにコピーしました",
         "bugReport": "バグ や フィードバック を 提出 ",
         "bugReport.placeholder": "何が間違っていましたか？\n何を期待していましたか？\nどのようにして問題を再現できますか？",
         "databasePathError": " データベース パス エラー",
@@ -908,7 +914,6 @@
                 "sectionTitle": "エフェクト",
                 "addEffect": "エフェクトを追加",
                 "empty": "このシーンにまだエフェクトがありません。",
-                "rowLoading": "エフェクトを読み込み中…",
                 "effectItem": {
                     "defaultName": "エフェクト {id}",
                     "name": "名前",
@@ -920,6 +925,10 @@
                     "color": "色",
                     "fadeDurationSeconds": "フェード時間（秒）",
                     "fadeTargetColor": "フェードの終了色",
+                    "fadeColors": "色",
+                    "colorNumber": "色 {number}",
+                    "addColor": "色を追加",
+                    "removeColorAria": "色を削除",
                     "strobePlaceholder": "ストロボエディターはまだ実装されていません。"
                 }
             }

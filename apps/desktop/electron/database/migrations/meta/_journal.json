@@ -141,6 +141,20 @@
             "when": 1778033666754,
             "tag": "0019_high_manta",
             "breakpoints": true
+        },
+        {
+            "idx": 20,
+            "version": "6",
+            "when": 1782782987952,
+            "tag": "0020_thankful_ben_grimm",
+            "breakpoints": true
+        },
+        {
+            "idx": 21,
+            "version": "6",
+            "when": 1782871701154,
+            "tag": "0021_overconfident_guardian",
+            "breakpoints": true
         }
     ]
 }

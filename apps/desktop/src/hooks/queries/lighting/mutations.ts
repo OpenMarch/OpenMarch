@@ -1,4 +1,5 @@
 import {
+    addMarchersToLightingGroup,
     createLightingEffects,
     createLightingGroups,
     createLightingScenes,
@@ -6,18 +7,33 @@ import {
     deleteLightingSceneWithReassignment,
     deleteLightingEffects,
     deleteLightingScenes,
+    deleteLightingEffectLayers,
     DeleteLightingSceneWithReassignmentResult,
+    getLightingGroupById,
     ModifiedLightingEffectArgs,
+    ModifiedLightingEffectLayerArgs,
+    ModifiedLightingGroupArgs,
     ModifiedLightingSceneArgs,
     NewLightingEffectArgs,
+    NewLightingEffectLayerFields,
     NewLightingGroupArgs,
     NewLightingSceneArgs,
+    removeMarchersFromLightingGroup,
+    replaceLightingEffectLayers,
+    updateLightingEffectLayers,
     updateLightingEffects,
+    updateLightingGroups,
     updateLightingScenes,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
-import { mutationOptions } from "@tanstack/react-query";
+import { mutationOptions, type QueryClient } from "@tanstack/react-query";
 import { conToastError } from "@/utilities/utils";
+import {
+    getLightingEffectBatchUpdateErrorMessage,
+    getLightingEffectCreateErrorMessage,
+    getLightingEffectLayerUpdateErrorMessage,
+    getLightingEffectUpdateErrorMessage,
+} from "./lightingMutationErrors";
 import { lightingKeys } from "./queries";
 
 const invalidateAllLightingQueries = (qc: {
@@ -26,6 +42,18 @@ const invalidateAllLightingQueries = (qc: {
     void qc.invalidateQueries({
         queryKey: lightingKeys.allLightingScenes(),
     });
+};
+
+const invalidateLightingEffectQueries = (
+    qc: QueryClient,
+    effectIds: Iterable<number>,
+) => {
+    invalidateAllLightingQueries(qc);
+    for (const id of effectIds) {
+        void qc.invalidateQueries({
+            queryKey: lightingKeys.lightingEffectById(id),
+        });
+    }
 };
 
 // ============================================================================
@@ -173,6 +201,10 @@ export const createLightingGroupsMutationOptions = () => {
                 void qc.invalidateQueries({
                     queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
                 });
+                void qc.invalidateQueries({
+                    queryKey:
+                        lightingKeys.lightingGroupMembershipsBySceneId(sceneId),
+                });
             }
         },
         onError: (e, variables) => {
@@ -195,9 +227,90 @@ export const deleteLightingGroupsMutationOptions = () => {
     });
 };
 
-// ============================================================================
-// LIGHTING EFFECTS MUTATIONS
-// ============================================================================
+export const updateLightingGroupsMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: (modifiedGroups: ModifiedLightingGroupArgs[]) =>
+            updateLightingGroups({ db, modifiedGroups }),
+        onSuccess: async (data, _variables, _result, context) => {
+            const qc = context.client;
+            const sceneIds = new Set(data.map((group) => group.scene_id));
+            for (const sceneId of sceneIds) {
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
+                });
+            }
+        },
+        onError: (e, variables) => {
+            conToastError("Error updating lighting groups", e, variables);
+        },
+    });
+};
+
+export const addMarchersToLightingGroupMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            groupId,
+            marcherIds,
+        }: {
+            groupId: number;
+            marcherIds: readonly number[];
+        }) => addMarchersToLightingGroup({ db, groupId, marcherIds }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            const group = await getLightingGroupById({
+                db,
+                id: variables.groupId,
+            });
+            if (group != null)
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupMembershipsBySceneId(
+                        group.scene_id,
+                    ),
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error adding marchers to lighting group",
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const removeMarchersFromLightingGroupMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            groupId,
+            marcherIds,
+        }: {
+            groupId: number;
+            marcherIds: readonly number[];
+        }) => removeMarchersFromLightingGroup({ db, groupId, marcherIds }),
+        onSuccess: async (_data, variables, _result, context) => {
+            const qc = context.client;
+            invalidateAllLightingQueries(qc);
+            const group = await getLightingGroupById({
+                db,
+                id: variables.groupId,
+            });
+            if (group != null)
+                void qc.invalidateQueries({
+                    queryKey: lightingKeys.lightingGroupMembershipsBySceneId(
+                        group.scene_id,
+                    ),
+                });
+        },
+        onError: (e, variables) => {
+            conToastError(
+                "Error removing marchers from lighting group",
+                e,
+                variables,
+            );
+        },
+    });
+};
 
 export const createLightingEffectsMutationOptions = () => {
     return mutationOptions({
@@ -215,7 +328,7 @@ export const createLightingEffectsMutationOptions = () => {
                 });
         },
         onError: (e, variables) => {
-            conToastError("Error creating lighting effects", e, variables);
+            conToastError(getLightingEffectCreateErrorMessage(e), e, variables);
         },
     });
 };
@@ -229,15 +342,37 @@ export const updateLightingEffectsMutationOptions = () => {
             });
             return rows[0];
         },
-        onSuccess: async (_data, variables, _result, context) => {
-            const qc = context.client;
-            invalidateAllLightingQueries(qc);
-            void qc.invalidateQueries({
-                queryKey: lightingKeys.lightingEffectById(variables.id),
-            });
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(context.client, [variables.id]);
         },
         onError: (e, variables) => {
-            conToastError("Error updating lighting effect", e, variables);
+            conToastError(getLightingEffectUpdateErrorMessage(e), e, variables);
+        },
+    });
+};
+
+/** Single-transaction updates for overlap moves (strip group + add group) or multi-effect edits. */
+export const updateLightingEffectsBatchMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async (modifiedEffects: ModifiedLightingEffectArgs[]) => {
+            if (modifiedEffects.length === 0) return [];
+            return await updateLightingEffects({
+                db,
+                modifiedEffects,
+            });
+        },
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(
+                context.client,
+                variables.map((v) => v.id),
+            );
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectBatchUpdateErrorMessage(e),
+                e,
+                variables,
+            );
         },
     });
 };
@@ -257,6 +392,88 @@ export const deleteLightingEffectsMutationOptions = () => {
         },
         onError: (e, variables) => {
             conToastError("Error deleting lighting effects", e, variables);
+        },
+    });
+};
+
+export const replaceLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: ({
+            lightingEffectId,
+            layers,
+        }: {
+            lightingEffectId: number;
+            layers: readonly NewLightingEffectLayerFields[];
+        }) => replaceLightingEffectLayers({ db, lightingEffectId, layers }),
+        onSettled: async (_data, _error, variables, _result, context) => {
+            invalidateLightingEffectQueries(context.client, [
+                variables.lightingEffectId,
+            ]);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const updateLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async ({
+            lightingEffectId,
+            modifiedLayers,
+        }: {
+            lightingEffectId: number;
+            modifiedLayers: ModifiedLightingEffectLayerArgs[];
+        }) => {
+            await updateLightingEffectLayers({ db, modifiedLayers });
+            return lightingEffectId;
+        },
+        onSettled: async (_data, _error, variables, _result, context) => {
+            if (variables) {
+                invalidateLightingEffectQueries(context.client, [
+                    variables.lightingEffectId,
+                ]);
+            }
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const deleteLightingEffectLayersMutationOptions = () => {
+    return mutationOptions({
+        mutationFn: async ({
+            lightingEffectId,
+            layerIds,
+        }: {
+            lightingEffectId: number;
+            layerIds: Set<number>;
+        }) => {
+            await deleteLightingEffectLayers({ db, layerIds });
+            return lightingEffectId;
+        },
+        onSettled: async (_data, _error, variables, _result, context) => {
+            if (variables) {
+                invalidateLightingEffectQueries(context.client, [
+                    variables.lightingEffectId,
+                ]);
+            }
+        },
+        onError: (e, variables) => {
+            conToastError(
+                getLightingEffectLayerUpdateErrorMessage(e),
+                e,
+                variables,
+            );
         },
     });
 };

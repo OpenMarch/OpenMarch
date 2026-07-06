@@ -2,6 +2,7 @@ import { sql } from "drizzle-orm";
 import {
     check,
     integer,
+    real,
     sqliteTable,
     text,
     unique,
@@ -72,7 +73,7 @@ export const lighting_effects = sqliteTable(
     (table) => [
         check(
             "lighting_effect_type_check",
-            sql`${table.type} IN ('solid', 'strobe', 'fade')`,
+            sql`${table.type} IN ('solid', 'strobe', 'fade', 'wipe')`,
         ),
         check(
             "lighting_effect_start_offset_beats_check",
@@ -101,5 +102,25 @@ export const lighting_effect_groups = sqliteTable(
             table.lighting_effect_id,
             table.lighting_group_id,
         ),
+    ],
+);
+
+export const lighting_effect_layers = sqliteTable(
+    "lighting_effect_layers",
+    {
+        id: integer().primaryKey(),
+        lighting_effect_id: integer()
+            .notNull()
+            .references(() => lighting_effects.id, { onDelete: "cascade" }),
+        top: real().notNull(),
+        left: real().notNull(),
+        height: real().notNull(),
+        width: real().notNull(),
+    },
+    (table) => [
+        check("lighting_effect_layer_top_check", sql`${table.top} >= 0`),
+        check("lighting_effect_layer_left_check", sql`${table.left} >= 0`),
+        check("lighting_effect_layer_height_check", sql`${table.height} >= 0`),
+        check("lighting_effect_layer_width_check", sql`${table.width} >= 0`),
     ],
 );

@@ -3,6 +3,7 @@ import {
     DatabaseLightingScene,
     getLightingEffectIdsBySceneId,
     getLightingEffectWithMarchersById,
+    getLightingGroupMembershipsBySceneId,
     getLightingGroupsBySceneId,
     getUpcomingLightingSceneInPageId,
     getLightingSceneById,
@@ -28,6 +29,8 @@ export const lightingKeys = {
         [KEY_BASE, "effect_data", { effectId }] as const,
     lightingGroupsBySceneId: (sceneId: number) =>
         [KEY_BASE, "groups", { sceneId }] as const,
+    lightingGroupMembershipsBySceneId: (sceneId: number) =>
+        [KEY_BASE, "group_memberships", { sceneId }] as const,
 };
 
 export const allLightingScenesQueryOptions = () => {
@@ -157,6 +160,16 @@ export const lightingGroupsBySceneIdQueryOptions = (sceneId: number) =>
     queryOptions<DatabaseLightingGroup[]>({
         queryKey: lightingKeys.lightingGroupsBySceneId(sceneId),
         queryFn: async () => getLightingGroupsBySceneId({ db, sceneId }),
+        staleTime: DEFAULT_STALE_TIME,
+    });
+
+export const lightingGroupMembershipsBySceneIdQueryOptions = (
+    sceneId: number,
+) =>
+    queryOptions<Map<number, Set<number>>>({
+        queryKey: lightingKeys.lightingGroupMembershipsBySceneId(sceneId),
+        queryFn: async () =>
+            getLightingGroupMembershipsBySceneId({ db, sceneId }),
         staleTime: DEFAULT_STALE_TIME,
     });
 

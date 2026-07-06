@@ -2,6 +2,7 @@ import { faker } from "@faker-js/faker";
 import { asc, eq } from "drizzle-orm";
 import { expect } from "vitest";
 import {
+    addMarchersToLightingGroup,
     createLightingEffects,
     createLightingGroups,
     createLightingScenes,
@@ -16,12 +17,26 @@ import {
     getLightingScenePositionByLightingSceneIdMap,
     getLightingScenesByStartPageId,
     getLightingEffectsBySceneId,
+    getLightingGroupMembershipsBySceneId,
     getLightingGroupsBySceneId,
+    getMarcherIdsByLightingGroupId,
+    removeMarchersFromLightingGroup,
     updateLightingEffects,
     updateLightingScenes,
 } from "../lighting";
+import {
+    deleteLightingEffectLayers,
+    getLightingEffectLayersByEffectId,
+    replaceLightingEffectLayers,
+    updateLightingEffectLayers,
+} from "../lightingEffectLayers";
+import { LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR } from "@openmarch/core";
 import { describeDbTests, schema, type DbTestAPI } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
+
+const wipeEffectArgsJson = JSON.stringify({
+    color: "#000000",
+});
 
 /** Pages ordered by timeline (beat position), not primary key id. */
 async function pagesInTimelineOrder(db: DbTestAPI["db"]) {
@@ -43,7 +58,36 @@ describeDbTests("lighting", (it) => {
             schema.lighting_group_marchers,
             schema.lighting_effects,
             schema.lighting_effect_groups,
+            schema.lighting_effect_layers,
         ]);
+
+        async function createSceneAndGroup({
+            db,
+            startPageId,
+            sceneName = "S",
+            groupName = "G",
+        }: {
+            db: DbTestAPI["db"];
+            startPageId: number;
+            sceneName?: string;
+            groupName?: string;
+        }) {
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: sceneName }],
+            });
+            const [group] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: groupName,
+                        marcher_ids: [],
+                    },
+                ],
+            });
+            return { scene, group };
+        }
 
         it("creates scene → group → effect with group links and reads marchers via groups", async ({
             db,
@@ -125,7 +169,7 @@ describeDbTests("lighting", (it) => {
             );
         });
 
-        it("enforces one group per marcher per scene", async ({
+        it("moves a marcher when a second group is created with that marcher in the same scene", async ({
             db,
             marchersAndPages,
         }) => {
@@ -137,7 +181,7 @@ describeDbTests("lighting", (it) => {
                 newScenes: [{ start_page_id: startPageId, name: "S" }],
             });
 
-            await createLightingGroups({
+            const [g1] = await createLightingGroups({
                 db,
                 newGroups: [
                     {
@@ -148,18 +192,114 @@ describeDbTests("lighting", (it) => {
                 ],
             });
 
-            await expect(
-                createLightingGroups({
-                    db,
-                    newGroups: [
-                        {
-                            scene_id: scene.id,
-                            name: "G2",
-                            marcher_ids: [marcherId],
-                        },
-                    ],
-                }),
-            ).rejects.toThrow();
+            const [g2] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [marcherId],
+                    },
+                ],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g2.id }),
+            ).toEqual([marcherId]);
+        });
+
+        it("addMarchersToLightingGroup moves marchers between groups", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const mA = marchersAndPages.expectedMarchers[0].id;
+            const mB = marchersAndPages.expectedMarchers[1].id;
+
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "S" }],
+            });
+            const [g1] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G1",
+                        marcher_ids: [mA],
+                    },
+                ],
+            });
+            const [g2] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [mB],
+                    },
+                ],
+            });
+
+            await addMarchersToLightingGroup({
+                db,
+                groupId: g2.id,
+                marcherIds: [mA, mB],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
+            expect(
+                (
+                    await getMarcherIdsByLightingGroupId({ db, groupId: g2.id })
+                ).sort((a, b) => a - b),
+            ).toEqual([mA, mB].sort((a, b) => a - b));
+
+            const map = await getLightingGroupMembershipsBySceneId({
+                db,
+                sceneId: scene.id,
+            });
+            expect(map.get(g1.id)?.size ?? 0).toBe(0);
+            expect([...(map.get(g2.id) ?? [])].sort((a, b) => a - b)).toEqual(
+                [mA, mB].sort((a, b) => a - b),
+            );
+        });
+
+        it("removeMarchersFromLightingGroup clears membership rows", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const startPageId = marchersAndPages.expectedPages[0].id;
+            const marcherId = marchersAndPages.expectedMarchers[0].id;
+
+            const [scene] = await createLightingScenes({
+                db,
+                newScenes: [{ start_page_id: startPageId, name: "S" }],
+            });
+            const [g1] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G1",
+                        marcher_ids: [marcherId],
+                    },
+                ],
+            });
+
+            await removeMarchersFromLightingGroup({
+                db,
+                groupId: g1.id,
+                marcherIds: [marcherId],
+            });
+
+            expect(
+                await getMarcherIdsByLightingGroupId({ db, groupId: g1.id }),
+            ).toEqual([]);
         });
 
         it("returns empty arrays for empty batch creates", async ({ db }) => {
@@ -201,7 +341,7 @@ describeDbTests("lighting", (it) => {
                         {
                             scene_id: scene.id,
                             type: "fade",
-                            args: '{"durationMs":100,"color":"#000000"}',
+                            args: '{"color":"#000000"}',
                             name: "F",
                             start_offset_beats: 0,
                             duration_beats: 1,
@@ -382,6 +522,1059 @@ describeDbTests("lighting", (it) => {
                     ],
                 }),
             ).rejects.toThrow(/expected/);
+        });
+
+        it("rejects creating an effect that overlaps an assigned group", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+
+            await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: "{}",
+                            start_offset_beats: 2,
+                            duration_beats: 2,
+                            lighting_group_ids: [group.id],
+                        },
+                    ],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("rejects updating start time into an assigned group overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [{ id: second.id, start_offset_beats: 3 }],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows updating start time when assigned group intervals only touch", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            const [updated] = await updateLightingEffects({
+                db,
+                modifiedEffects: [{ id: second.id, start_offset_beats: 4 }],
+            });
+
+            expect(updated.start_offset_beats).toBe(4);
+        });
+
+        it("rejects updating duration into an assigned group overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [{ id: first.id, duration_beats: 6 }],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows updating duration when assigned group intervals only touch", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 5,
+                        duration_beats: 3,
+                        lighting_group_ids: [group.id],
+                    },
+                ],
+            });
+
+            const [updated] = await updateLightingEffects({
+                db,
+                modifiedEffects: [{ id: first.id, duration_beats: 5 }],
+            });
+
+            expect(updated.duration_beats).toBe(5);
+        });
+
+        it("rejects assigning a group controlled by an overlapping effect", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [secondGroup] = await createLightingGroups({
+                db,
+                newGroups: [
+                    {
+                        scene_id: scene.id,
+                        name: "G2",
+                        marcher_ids: [],
+                    },
+                ],
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 2,
+                        duration_beats: 4,
+                        lighting_group_ids: [secondGroup.id],
+                    },
+                ],
+            });
+
+            await expect(
+                updateLightingEffects({
+                    db,
+                    modifiedEffects: [
+                        { id: second.id, lighting_group_ids: [group.id] },
+                    ],
+                }),
+            ).rejects.toThrow(/already controlled/);
+        });
+
+        it("allows assigning a shared group when effect intervals do not overlap", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 4,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            await updateLightingEffects({
+                db,
+                modifiedEffects: [
+                    { id: second.id, lighting_group_ids: [group.id] },
+                ],
+            });
+
+            const updated = await getLightingEffectWithMarchersById({
+                db,
+                id: second.id,
+            });
+            expect(updated?.lighting_group_ids).toEqual([group.id]);
+        });
+
+        it("allows batch updates that release and claim a group in one final valid state", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene, group } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+            const [first, second] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "solid",
+                        args: "{}",
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                        lighting_group_ids: [group.id],
+                    },
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: "{}",
+                        start_offset_beats: 2,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            await updateLightingEffects({
+                db,
+                modifiedEffects: [
+                    { id: first.id, lighting_group_ids: [] },
+                    { id: second.id, lighting_group_ids: [group.id] },
+                ],
+            });
+
+            const firstUpdated = await getLightingEffectWithMarchersById({
+                db,
+                id: first.id,
+            });
+            const secondUpdated = await getLightingEffectWithMarchersById({
+                db,
+                id: second.id,
+            });
+            expect(firstUpdated?.lighting_group_ids).toEqual([]);
+            expect(secondUpdated?.lighting_group_ids).toEqual([group.id]);
+        });
+
+        it("allows simultaneous group control in different scenes", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const firstScene = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+                sceneName: "S1",
+            });
+            const secondScene = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[1].id,
+                sceneName: "S2",
+            });
+
+            await expect(
+                createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: firstScene.scene.id,
+                            type: "solid",
+                            args: "{}",
+                            start_offset_beats: 0,
+                            duration_beats: 4,
+                            lighting_group_ids: [firstScene.group.id],
+                        },
+                        {
+                            scene_id: secondScene.scene.id,
+                            type: "solid",
+                            args: "{}",
+                            start_offset_beats: 0,
+                            duration_beats: 4,
+                            lighting_group_ids: [secondScene.group.id],
+                        },
+                    ],
+                }),
+            ).resolves.toHaveLength(2);
+        });
+
+        describe("lighting effect layers", () => {
+            it("creates an effect with layers and reads them back", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 50, width: 40 },
+                                { top: 0, left: 40, height: 30, width: 60 },
+                            ],
+                        },
+                    ],
+                });
+
+                const withLayers = await getLightingEffectWithMarchersById({
+                    db,
+                    id: effect.id,
+                });
+                expect(withLayers?.effect_layers).toHaveLength(2);
+                expect(withLayers?.effect_layers).toEqual(
+                    expect.arrayContaining([
+                        expect.objectContaining({
+                            lighting_effect_id: effect.id,
+                            top: 0,
+                            left: 0,
+                            height: 50,
+                            width: 40,
+                        }),
+                        expect.objectContaining({
+                            lighting_effect_id: effect.id,
+                            top: 0,
+                            left: 40,
+                            height: 30,
+                            width: 60,
+                        }),
+                    ]),
+                );
+            });
+
+            it("replaces layers on update", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                await updateLightingEffects({
+                    db,
+                    modifiedEffects: [
+                        {
+                            id: effect.id,
+                            effect_layers: [
+                                { top: 5, left: 5, height: 15, width: 25 },
+                            ],
+                        },
+                    ],
+                });
+
+                const layers = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layers).toHaveLength(1);
+                expect(layers[0]).toMatchObject({
+                    top: 5,
+                    left: 5,
+                    height: 15,
+                    width: 25,
+                });
+            });
+
+            it("cascade-deletes layers when the effect is deleted", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 1, left: 2, height: 3, width: 4 },
+                            ],
+                        },
+                    ],
+                });
+
+                const beforeDelete = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(beforeDelete).toHaveLength(1);
+
+                await deleteLightingEffects({
+                    db,
+                    effectIds: new Set([effect.id]),
+                });
+
+                const afterDelete = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(afterDelete).toHaveLength(0);
+            });
+
+            it("updates a single layer geometry", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                                { top: 0, left: 20, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                const layersBefore = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                const layerToMove = layersBefore[0]!;
+
+                const updated = await updateLightingEffectLayers({
+                    db,
+                    modifiedLayers: [
+                        {
+                            id: layerToMove.id,
+                            top: 50,
+                            left: 50,
+                            height: 30,
+                            width: 40,
+                        },
+                    ],
+                });
+
+                expect(updated).toHaveLength(1);
+                expect(updated[0]).toMatchObject({
+                    id: layerToMove.id,
+                    top: 50,
+                    left: 50,
+                    height: 30,
+                    width: 40,
+                });
+
+                const layersAfter = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layersAfter).toHaveLength(2);
+                expect(
+                    layersAfter.find((layer) => layer.id === layerToMove.id),
+                ).toMatchObject({
+                    top: 50,
+                    left: 50,
+                    height: 30,
+                    width: 40,
+                });
+            });
+
+            it("deletes a single layer by id", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                                { top: 0, left: 20, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                const layersBefore = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                const layerToDelete = layersBefore[0]!;
+                const layerToKeep = layersBefore[1]!;
+
+                const deleted = await deleteLightingEffectLayers({
+                    db,
+                    layerIds: new Set([layerToDelete.id]),
+                });
+
+                expect(deleted).toHaveLength(1);
+                expect(deleted[0]?.id).toBe(layerToDelete.id);
+
+                const layersAfter = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layersAfter).toHaveLength(1);
+                expect(layersAfter[0]?.id).toBe(layerToKeep.id);
+            });
+
+            it("rejects updating a layer into overlap", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                                { top: 0, left: 20, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                const layers = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                const layerToMove = layers[1]!;
+
+                await expect(
+                    updateLightingEffectLayers({
+                        db,
+                        modifiedLayers: [
+                            {
+                                id: layerToMove.id,
+                                left: 5,
+                                top: 5,
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(/effect layers overlap/i);
+            });
+
+            testWithHistory(
+                "supports undo/redo when updating a layer",
+                async ({ db, marchersAndPages }) => {
+                    const { scene } = await createSceneAndGroup({
+                        db,
+                        startPageId: marchersAndPages.expectedPages[0].id,
+                    });
+
+                    const [effect] = await createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    });
+
+                    const [layer] = await getLightingEffectLayersByEffectId({
+                        db,
+                        lightingEffectId: effect.id,
+                    });
+
+                    await updateLightingEffectLayers({
+                        db,
+                        modifiedLayers: [
+                            {
+                                id: layer!.id,
+                                top: 100,
+                                left: 100,
+                                height: 50,
+                                width: 50,
+                            },
+                        ],
+                    });
+
+                    const layers = await getLightingEffectLayersByEffectId({
+                        db,
+                        lightingEffectId: effect.id,
+                    });
+                    expect(layers).toHaveLength(1);
+                    expect(layers[0]).toMatchObject({
+                        top: 100,
+                        left: 100,
+                        height: 50,
+                        width: 50,
+                    });
+                },
+            );
+
+            testWithHistory(
+                "supports undo/redo when replacing layers",
+                async ({ db, marchersAndPages }) => {
+                    const { scene } = await createSceneAndGroup({
+                        db,
+                        startPageId: marchersAndPages.expectedPages[0].id,
+                    });
+
+                    const [effect] = await createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    });
+
+                    await replaceLightingEffectLayers({
+                        db,
+                        lightingEffectId: effect.id,
+                        layers: [
+                            { top: 100, left: 100, height: 50, width: 50 },
+                        ],
+                    });
+
+                    const layers = await getLightingEffectLayersByEffectId({
+                        db,
+                        lightingEffectId: effect.id,
+                    });
+                    expect(layers).toHaveLength(1);
+                    expect(layers[0]).toMatchObject({
+                        top: 100,
+                        left: 100,
+                        height: 50,
+                        width: 50,
+                    });
+                },
+            );
+
+            it("rejects creating an effect with overlapping layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                await expect(
+                    createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "wipe",
+                                args: wipeEffectArgsJson,
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                    { top: 5, left: 5, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(/effect layers overlap/i);
+            });
+
+            it("rejects replacing layers with overlapping rects", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                await expect(
+                    replaceLightingEffectLayers({
+                        db,
+                        lightingEffectId: effect.id,
+                        layers: [
+                            { top: 0, left: 0, height: 10, width: 10 },
+                            { top: 5, left: 5, height: 10, width: 10 },
+                        ],
+                    }),
+                ).rejects.toThrow(/effect layers overlap/i);
+            });
+
+            it("rejects updating an effect with overlapping layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                            effect_layers: [
+                                { top: 0, left: 0, height: 10, width: 10 },
+                            ],
+                        },
+                    ],
+                });
+
+                await expect(
+                    updateLightingEffects({
+                        db,
+                        modifiedEffects: [
+                            {
+                                id: effect.id,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                    { top: 5, left: 5, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(/effect layers overlap/i);
+            });
+
+            it("allows adjacent non-overlapping layers on replace", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "wipe",
+                            args: wipeEffectArgsJson,
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                        },
+                    ],
+                });
+
+                await replaceLightingEffectLayers({
+                    db,
+                    lightingEffectId: effect.id,
+                    layers: [
+                        { top: 0, left: 0, height: 10, width: 10 },
+                        { top: 0, left: 10, height: 10, width: 10 },
+                    ],
+                });
+
+                const layers = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layers).toHaveLength(2);
+            });
+
+            it("rejects creating a solid effect with layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                await expect(
+                    createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "solid",
+                                args: '{"color":"#000000"}',
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+            });
+
+            it("rejects creating a fade effect with layers", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                await expect(
+                    createLightingEffects({
+                        db,
+                        newEffects: [
+                            {
+                                scene_id: scene.id,
+                                type: "fade",
+                                args: '{"color":"#000000"}',
+                                start_offset_beats: 0,
+                                duration_beats: 2,
+                                effect_layers: [
+                                    { top: 0, left: 0, height: 10, width: 10 },
+                                ],
+                            },
+                        ],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+            });
+
+            it("rejects replacing layers on a fade effect", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: '{"color":"#000000"}',
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                        },
+                    ],
+                });
+
+                await expect(
+                    replaceLightingEffectLayers({
+                        db,
+                        lightingEffectId: effect.id,
+                        layers: [{ top: 0, left: 0, height: 10, width: 10 }],
+                    }),
+                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
+            });
+
+            it("allows clearing layers on a non-solid effect", async ({
+                db,
+                marchersAndPages,
+            }) => {
+                const { scene } = await createSceneAndGroup({
+                    db,
+                    startPageId: marchersAndPages.expectedPages[0].id,
+                });
+
+                const [effect] = await createLightingEffects({
+                    db,
+                    newEffects: [
+                        {
+                            scene_id: scene.id,
+                            type: "fade",
+                            args: '{"color":"#000000"}',
+                            start_offset_beats: 0,
+                            duration_beats: 2,
+                        },
+                    ],
+                });
+
+                await replaceLightingEffectLayers({
+                    db,
+                    lightingEffectId: effect.id,
+                    layers: [],
+                });
+
+                const layers = await getLightingEffectLayersByEffectId({
+                    db,
+                    lightingEffectId: effect.id,
+                });
+                expect(layers).toHaveLength(0);
+            });
         });
     });
 

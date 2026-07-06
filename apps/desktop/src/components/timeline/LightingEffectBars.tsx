@@ -7,7 +7,7 @@ import {
 import { updateLightingEffectsMutationOptions } from "@/hooks/queries/lighting/mutations";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
 import { parseEffectArgs } from "@openmarch/core";
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import clsx from "clsx";
 import { DotsSixIcon, DotsSixVerticalIcon } from "@phosphor-icons/react";
 import {
@@ -22,7 +22,9 @@ import {
 } from "./SceneTimeline.utils";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 
+const CLICK_MOVE_THRESHOLD_PX = 4;
 const HEADER_GAP_PX = 4;
 const LANE_HEIGHT_PX = 18;
 const LANE_GAP_PX = 4;
@@ -43,6 +45,22 @@ type DragState = {
     /** scene-local px boundary positions (length = totalBeats + 1). */
     beatBoundaryPx: number[];
 };
+
+/** Syncs drag preview position on the bar element (inline styles bypass React). */
+function applyEffectBarBoundaryStyles(
+    bar: HTMLElement,
+    beatBoundaryPx: number[],
+    startBeats: number,
+    durationBeats: number,
+) {
+    const { leftPx, widthPx: barWidth } = barPxFromBoundary(
+        beatBoundaryPx,
+        startBeats,
+        durationBeats,
+    );
+    bar.style.left = `${leftPx}px`;
+    bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
+}
 
 type LightingEffectBarsProps = {
     sceneId: number;
@@ -83,6 +101,9 @@ export default function LightingEffectBars({
     onLaneCountChange,
 }: LightingEffectBarsProps) {
     const { isPlaying } = useIsPlaying()!;
+    const selectedEffect =
+        useLightDesignerSelectedEffectStore.use.selectedEffect();
+    const selectEffect = useLightDesignerSelectedEffectStore.use.selectEffect();
     const { data: sceneData } = useQuery(
         lightingSceneDataByIdQueryOptions(sceneId),
     );
@@ -138,11 +159,9 @@ export default function LightingEffectBars({
         [effects],
     );
 
-    const lastReportedLanes = useRef<number>(-1);
-    if (lastReportedLanes.current !== laneCount) {
-        lastReportedLanes.current = laneCount;
+    useEffect(() => {
         onLaneCountChange?.(laneCount);
-    }
+    }, [laneCount, onLaneCountChange]);
 
     const containerRef = useRef<HTMLDivElement>(null);
     const dragState = useRef<DragState | null>(null);
@@ -195,13 +214,12 @@ export default function LightingEffectBars({
                 `[data-effect-bar-id="${effectDrag.effectId}"]`,
             );
             if (bar) {
-                const { leftPx, widthPx: barWidth } = barPxFromBoundary(
+                applyEffectBarBoundaryStyles(
+                    bar,
                     effectDrag.beatBoundaryPx,
                     newStart,
                     newDuration,
                 );
-                bar.style.left = `${leftPx}px`;
-                bar.style.width = `${Math.max(MIN_BAR_PX, barWidth)}px`;
                 bar.dataset.newStart = String(newStart);
                 bar.dataset.newDuration = String(newDuration);
             }
@@ -209,44 +227,69 @@ export default function LightingEffectBars({
         }
     }, []);
 
-    const onPointerUp = useCallback(() => {
-        const effectDrag = dragState.current;
-        const container = containerRef.current;
-        document.removeEventListener("pointermove", onPointerMove);
-        document.removeEventListener("pointerup", onPointerUp);
-        if (effectDrag && container) {
-            const bar = container.querySelector<HTMLElement>(
-                `[data-effect-bar-id="${effectDrag.effectId}"]`,
-            );
-            if (bar) {
-                const newStart = Number(bar.dataset.newStart);
-                const newDuration = Number(bar.dataset.newDuration);
-                delete bar.dataset.newStart;
-                delete bar.dataset.newDuration;
-                const startChanged =
-                    Number.isFinite(newStart) &&
-                    newStart !== effectDrag.originalStart;
-                const durationChanged =
-                    Number.isFinite(newDuration) &&
-                    newDuration !== effectDrag.originalDuration;
-                if (startChanged || durationChanged) {
-                    updateEffect({
-                        id: effectDrag.effectId,
-                        ...(startChanged
-                            ? { start_offset_beats: newStart }
-                            : {}),
-                        ...(durationChanged
-                            ? { duration_beats: newDuration }
-                            : {}),
-                    });
+    const onPointerUp = useCallback(
+        (ev: PointerEvent) => {
+            const effectDrag = dragState.current;
+            const container = containerRef.current;
+            document.removeEventListener("pointermove", onPointerMove);
+            document.removeEventListener("pointerup", onPointerUp);
+            if (effectDrag && container) {
+                const bar = container.querySelector<HTMLElement>(
+                    `[data-effect-bar-id="${effectDrag.effectId}"]`,
+                );
+                if (bar) {
+                    const newStart = Number(bar.dataset.newStart);
+                    const newDuration = Number(bar.dataset.newDuration);
+                    delete bar.dataset.newStart;
+                    delete bar.dataset.newDuration;
+                    const startChanged =
+                        Number.isFinite(newStart) &&
+                        newStart !== effectDrag.originalStart;
+                    const durationChanged =
+                        Number.isFinite(newDuration) &&
+                        newDuration !== effectDrag.originalDuration;
+                    if (startChanged || durationChanged) {
+                        const dragSnapshot = effectDrag;
+                        updateEffect(
+                            {
+                                id: effectDrag.effectId,
+                                ...(startChanged
+                                    ? { start_offset_beats: newStart }
+                                    : {}),
+                                ...(durationChanged
+                                    ? { duration_beats: newDuration }
+                                    : {}),
+                            },
+                            {
+                                onError: () => {
+                                    applyEffectBarBoundaryStyles(
+                                        bar,
+                                        dragSnapshot.beatBoundaryPx,
+                                        dragSnapshot.originalStart,
+                                        dragSnapshot.originalDuration,
+                                    );
+                                },
+                            },
+                        );
+                    } else if (
+                        !isPlaying &&
+                        Math.abs(ev.clientX - effectDrag.pointerDownX) <
+                            CLICK_MOVE_THRESHOLD_PX
+                    ) {
+                        selectEffect({
+                            effectId: effectDrag.effectId,
+                            sceneId,
+                        });
+                    }
                 }
+                dragState.current = null;
+                return;
             }
-            dragState.current = null;
-            return;
-        }
 
-        dragState.current = null;
-    }, [onPointerMove, updateEffect]);
+            dragState.current = null;
+        },
+        [isPlaying, onPointerMove, sceneId, selectEffect, updateEffect],
+    );
 
     const startDrag = useCallback(
         (
@@ -312,6 +355,9 @@ export default function LightingEffectBars({
                 const showCenterDot =
                     renderWidth >= CENTER_DOT_MIN_BAR_WIDTH_PX;
                 const top = p.lane * (LANE_HEIGHT_PX + LANE_GAP_PX);
+                const isSelected =
+                    selectedEffect?.effectId === effect.id &&
+                    selectedEffect?.sceneId === sceneId;
                 return (
                     <div
                         key={p.effectId}
@@ -319,6 +365,8 @@ export default function LightingEffectBars({
                         className={clsx(
                             "border-stroke absolute overflow-clip rounded-[6px] border transition-[top] duration-200 ease-out",
                             !isPlaying && "cursor-grab active:cursor-grabbing",
+                            isSelected &&
+                                "ring-accent z-10 ring-2 ring-offset-1 ring-offset-transparent",
                         )}
                         style={{
                             top: `${top}px`,
@@ -385,7 +433,9 @@ export default function LightingEffectBars({
                                     className={clsx(
                                         "absolute top-0 left-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
                                     )}
-                                    style={{ width: `${HANDLE_WIDTH_PX}px` }}
+                                    style={{
+                                        width: `${HANDLE_WIDTH_PX}px`,
+                                    }}
                                     onPointerDown={(e) =>
                                         startDrag(
                                             e,
@@ -402,7 +452,9 @@ export default function LightingEffectBars({
                                     className={clsx(
                                         "absolute top-0 right-0 h-full cursor-ew-resize border-0 bg-transparent p-0",
                                     )}
-                                    style={{ width: `${HANDLE_WIDTH_PX}px` }}
+                                    style={{
+                                        width: `${HANDLE_WIDTH_PX}px`,
+                                    }}
                                     onPointerDown={(e) =>
                                         startDrag(
                                             e,
@@ -430,7 +482,9 @@ function getEffectColor(effect: LightingEffectWithMarchers): string {
     try {
         const parsed = parseEffectArgs(effect.type, effect.args) as {
             color?: string;
+            colors?: string[];
         };
+        if (parsed.colors?.length) return parsed.colors[0]!;
         if (parsed && typeof parsed.color === "string") return parsed.color;
     } catch {
         // fall through

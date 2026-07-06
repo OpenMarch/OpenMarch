@@ -32,16 +32,13 @@ describe("buildLightingScenePlan", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 500, color: "#00ff00" }),
+                argsJson: JSON.stringify({ color: "#00ff00" }),
                 durationMs: 500,
                 marcherIds: [1],
             },
@@ -58,17 +55,14 @@ describe("buildLightingScenePlan", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 100,
                 startMs: 500,
                 marcherIds: [1],
             },
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 500, color: "#00ff00" }),
+                argsJson: JSON.stringify({ color: "#00ff00" }),
                 durationMs: 200,
                 marcherIds: [2],
             },
@@ -86,10 +80,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#ff0000",
-                }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
@@ -108,10 +99,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#112233",
-                }),
+                argsJson: JSON.stringify({ color: "#112233" }),
                 durationMs: 1000,
                 marcherIds: [5],
             },
@@ -124,10 +112,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "strobe",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#abcdef",
-                }),
+                argsJson: JSON.stringify({ color: "#abcdef" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
@@ -141,7 +126,7 @@ describe("sampleMarcherLightingFill", () => {
             {
                 type: "fade",
                 argsJson: JSON.stringify({
-                    durationMs: 1000,
+                    changeDurationMs: 1000,
                     color: "#ffffff",
                 }),
                 durationMs: 1000,
@@ -156,17 +141,14 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({
-                    durationMs: 1000,
-                    color: "#0000ff",
-                }),
+                argsJson: JSON.stringify({ color: "#0000ff" }),
                 durationMs: 1000,
                 marcherIds: [1],
             },
             {
                 type: "fade",
                 argsJson: JSON.stringify({
-                    durationMs: 1000,
+                    changeDurationMs: 1000,
                     color: "#ff0000",
                 }),
                 durationMs: 1000,
@@ -181,7 +163,7 @@ describe("sampleMarcherLightingFill", () => {
         const plan = buildLightingScenePlan([
             {
                 type: "solid",
-                argsJson: JSON.stringify({ durationMs: 100, color: "#ff0000" }),
+                argsJson: JSON.stringify({ color: "#ff0000" }),
                 durationMs: 100,
                 marcherIds: [1],
             },
@@ -189,5 +171,84 @@ describe("sampleMarcherLightingFill", () => {
         expect(
             sampleMarcherLightingFill(plan, 100, 1, baseFill),
         ).toBeUndefined();
+    });
+
+    it("returns each marcher group's color when steps overlap in time", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "solid",
+                argsJson: JSON.stringify({ color: "#ff0000" }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1, 2],
+            },
+            {
+                type: "solid",
+                argsJson: JSON.stringify({
+                    durationMs: 1000,
+                    color: "#00ff00",
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [3, 4],
+            },
+        ]);
+        expect(sampleMarcherLightingFill(plan, 500, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#ff0000"),
+        );
+        expect(sampleMarcherLightingFill(plan, 500, 3, baseFill)).toEqual(
+            hex6ToLightingRgba("#00ff00"),
+        );
+        expect(
+            sampleMarcherLightingFill(plan, 500, 99, baseFill),
+        ).toBeUndefined();
+    });
+
+    it("gates wipe fill to marchers inside active wipe layers", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "wipe",
+                argsJson: JSON.stringify({
+                    color: "#ff0000",
+                    directionDegrees: 0,
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1, 2],
+                effectLayers: [{ left: 0, top: 0, width: 100, height: 100 }],
+            },
+        ]);
+
+        expect(
+            sampleMarcherLightingFill(plan, 500, 1, baseFill, {
+                marcherPosition: { x: 25, y: 50 },
+            }),
+        ).toEqual(hex6ToLightingRgba("#ff0000"));
+        expect(
+            sampleMarcherLightingFill(plan, 500, 2, baseFill, {
+                marcherPosition: { x: 75, y: 50 },
+            }),
+        ).toBeUndefined();
+    });
+
+    it("returns wipe fill for all group marchers when no layers are defined", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "wipe",
+                argsJson: JSON.stringify({
+                    color: "#ff0000",
+                    directionDegrees: 0,
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1],
+            },
+        ]);
+
+        expect(
+            sampleMarcherLightingFill(plan, 500, 1, baseFill, {
+                marcherPosition: { x: 999, y: 999 },
+            }),
+        ).toEqual(hex6ToLightingRgba("#ff0000"));
     });
 });

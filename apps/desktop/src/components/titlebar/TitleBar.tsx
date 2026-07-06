@@ -13,13 +13,15 @@ import {
 } from "@openmarch/ui";
 import VersionChecker from "../VersionCheck";
 import FileControls from "./FileControls";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
+import { toast } from "sonner";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 // eslint-disable-next-line max-lines-per-function
 export default function TitleBar({ showControls }: { showControls?: boolean }) {
     const isMacOS = window.electron.isMacOS;
     const { uiSettings } = useUiSettingsStore();
+    const { t } = useTranslate();
 
     const [dbPath, setDbPath] = useState<string>("");
     const [dbPathError, setDbPathError] = useState<boolean>(false);
@@ -47,6 +49,14 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
               .split(/[/\\]/)
               .filter((segment) => segment.length > 0)
               .pop() ?? dbPath);
+
+    const handleCopyPath = () => {
+        if (!dbPath || dbPathError) return;
+
+        void navigator.clipboard.writeText(dbPath).then(() => {
+            toast.success(t("titlebar.pathCopied"));
+        });
+    };
 
     return (
         <>
@@ -97,9 +107,15 @@ export default function TitleBar({ showControls }: { showControls?: boolean }) {
                         {showControls && <FileControls />}
                     </div>
                 </div>
-                <p className="text-sub absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 text-center">
+                <button
+                    type="button"
+                    className="titlebar-button text-sub hover:text-accent absolute top-1/2 left-1/2 w-[30%] -translate-x-1/2 -translate-y-1/2 cursor-pointer truncate text-center outline-hidden duration-150 ease-out disabled:cursor-default disabled:hover:text-inherit"
+                    onClick={handleCopyPath}
+                    disabled={!dbPath || dbPathError}
+                    title={t("titlebar.copyPath")}
+                >
                     {displayDbPath}
-                </p>
+                </button>
                 <div
                     className={`titlebar-button flex gap-12 ${isMacOS ? "pr-24" : ""}`}
                 >

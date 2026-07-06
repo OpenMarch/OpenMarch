@@ -523,7 +523,46 @@
             "title": "Page {pageNumber}"
         },
         "light": {
-            "title": "Scene - {sceneName}"
+            "title": "Scene - {sceneName}",
+            "groupsTitle": "Groups",
+            "groups": {
+                "newGroup": "New group",
+                "empty": "Create a group to target effects on marchers.",
+                "groupFallback": "Group",
+                "clearFocus": "Clear focus",
+                "focusCanvas": "Focus",
+                "addToSelectedEffect": "+ Add to Effect",
+                "removeFromSelectedEffect": "Remove from Effect",
+                "clickGroupToFocus": "Click on a group to focus it on the canvas. Shift-click to add multiple groups.",
+                "add": "Add",
+                "addBy": {
+                    "section": "Section",
+                    "tag": "Tag",
+                    "family": "Family",
+                    "prefix": "Drill prefix"
+                },
+                "currentSelectionCount": "Current Selection ({count})",
+                "dragToAddToGroup": "Drag to add to a group",
+                "moveConflictTitle": "Some marchers are already in another group",
+                "moveConflictDescription": "Choose how to assign the dragged marchers.",
+                "moveAllToThisGroup": "Move all marchers to this group",
+                "moveUnassignedOnly": "Move only unassigned marchers",
+                "groupItem": {
+                    "defaultName": "Group {id}",
+                    "name": "Name",
+                    "selectAllMarchersInGroup": "Select all marchers in group"
+                },
+                "addSelection": "Current selection",
+                "noMarchersSelected": "No marchers selected",
+                "addSelectionPartial": "Add {count} marchers to group",
+                "removeSelectionPartial": "Remove {count} marchers from group",
+                "deleteAria": "Delete group",
+                "deleteTitle": "Delete this group?",
+                "deleteDescription": "This group may be referenced by lighting effects. Those links will be removed.",
+                "cancel": "Cancel",
+                "deleteConfirm": "Delete",
+                "emptyPrefixLabel": "(none)"
+            }
         },
         "shape": {
             "addSegmentButton": "Add",
@@ -865,6 +904,10 @@
         "controls": {
             "label": "Playback Controls"
         },
+        "createSceneCancel": "Cancel",
+        "createSceneConfirm": "Create",
+        "createSceneDescription": "This will split the current scene at the point you clicked and create a new scene. Effects after this point will no longer be visible",
+        "createSceneTitle": "Create a new scene",
         "deleteScene": "Delete scene",
         "label": "Timeline",
         "lightDesigner": {
@@ -892,6 +935,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Click to copy file path",
+        "pathCopied": "File path copied to clipboard",
         "bugReport": "Submit bug or feedback",
         "bugReport.placeholder": "What went wrong?\nWhat did you expect?\nHow can we reproduce the issue?",
         "databasePathError": "Database Path Error",
@@ -952,10 +997,10 @@
                 "noPage": "Select a page to edit lighting effects.",
                 "loading": "Loading…",
                 "noScene": "No lighting scene for this page.",
-                "sectionTitle": "Effects",
+                "sectionTitle": "Selected effect",
                 "addEffect": "Add effect",
                 "empty": "No effects in this scene yet.",
-                "rowLoading": "Loading effect…",
+                "selectOnTimeline": "Select an effect on the timeline to edit it",
                 "effectItem": {
                     "defaultName": "Effect {id}",
                     "name": "Name",
@@ -963,11 +1008,21 @@
                     "typeSolid": "Solid",
                     "typeStrobe": "Strobe",
                     "typeFade": "Fade",
+                    "typeWipe": "Wipe",
                     "durationSeconds": "Duration (s)",
                     "color": "Color",
-                    "fadeDurationSeconds": "Fade duration (s)",
+                    "changeDuration": "Change duration",
                     "fadeTargetColor": "Fade target color",
-                    "strobePlaceholder": "Strobe editor is not implemented yet."
+                    "fadeColors": "Colors",
+                    "colorNumber": "Color {number}",
+                    "addColor": "Add color",
+                    "removeColorAria": "Remove color",
+                    "strobePlaceholder": "Strobe editor is not implemented yet.",
+                    "deleteAria": "Delete effect",
+                    "deleteTitle": "Delete this effect?",
+                    "deleteDescription": "This effect will be removed from the current lighting scene.",
+                    "cancel": "Cancel",
+                    "deleteConfirm": "Delete"
                 }
             }
         }

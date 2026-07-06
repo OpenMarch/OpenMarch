@@ -5,16 +5,22 @@ import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
     marcherPagesByPageQueryOptions,
     updateMarcherPagesMutationOptions,
+    updateLightingEffectLayersMutationOptions,
+    deleteLightingEffectLayersMutationOptions,
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
+    lightingKeys,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
+import EffectLayerListeners from "./listeners/EffectLayerListeners";
+import EffectLayerEditListeners from "./listeners/EffectLayerEditListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
-import ViewOnlyListeners from "./listeners/ViewOnlyListeners";
+import { useLightDesignerEffectLayerDrawStore } from "@/stores/LightDesignerEffectLayerDrawStore";
+import { useLightDesignerSelectedEffectStore } from "@/stores/LightDesignerSelectedEffectStore";
 import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
@@ -30,8 +36,10 @@ import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
+import { useRenderLightingEffectLayers } from "./hooks/useRenderLightingEffectLayers";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import { MarcherAppearance } from "./hooks/marcherAppearance";
+import { useHighlightedMarchers } from "./hooks/useHighlightedMarchers";
 
 /**
  * The field/stage UI of OpenMarch
@@ -73,6 +81,14 @@ export default function Canvas({
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
     );
+    const updateEffectLayer = useMutation(
+        updateLightingEffectLayersMutationOptions(),
+    );
+    const deleteEffectLayer = useMutation(
+        deleteLightingEffectLayersMutationOptions(),
+    );
+    const selectedEffect =
+        useLightDesignerSelectedEffectStore.use.selectedEffect();
     const { setSelectedShapePageIds } = useSelectionStore()!;
 
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -85,6 +101,8 @@ export default function Canvas({
         resetAlignmentEvent,
     } = useAlignmentEventStore()!;
     const workspaceMode = useWorkspaceViewStore.use.mode();
+    const effectLayerDrawState =
+        useLightDesignerEffectLayerDrawStore.use.drawState();
     const isCanvasEditingEnabled = workspaceMode === "editor";
     const { isFullscreen, perspective, setPerspective } = useFullscreenStore();
     const [canvas, setCanvas] = useState<OpenMarchCanvas | null>(null);
@@ -97,10 +115,21 @@ export default function Canvas({
 
     // Custom hooks for the canvas
     useEditablePath();
-    useSelectionListeners({ canvas, isCanvasEditingEnabled });
+    useSelectionListeners({
+        canvas,
+        isCanvasEditingEnabled,
+        syncFabricSelection:
+            workspaceMode === "editor" || workspaceMode === "lightDesigner",
+    });
     useMovementListeners({ canvas, isCanvasEditingEnabled });
     useAnimation({ canvas, workspaceMode });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
+    useRenderLightingEffectLayers({ canvas, isPlaying });
+    useHighlightedMarchers({
+        canvas,
+        marcherVisuals,
+        selectedPageId: selectedPage?.id,
+    });
 
     // Function to center and fit the canvas to the container
     const centerAndFitCanvas = useCallback(() => {
@@ -190,11 +219,24 @@ export default function Canvas({
         }
     }, [workspaceMode, resetAlignmentEvent]);
 
+    // Light Designer: selection + pan/zoom like DefaultListeners, but no persisted marcher moves
+    useEffect(() => {
+        if (!canvas) return;
+        canvas.marcherTransformsReadOnly = workspaceMode === "lightDesigner";
+        canvas.refreshActiveMarcherLocks();
+    }, [canvas, workspaceMode]);
+
     // Initiate listeners
     useEffect(() => {
         if (canvas) {
             if (workspaceMode === "lightDesigner") {
-                canvas.setListeners(new ViewOnlyListeners({ canvas }));
+                if (effectLayerDrawState.status === "drawing") {
+                    canvas.setListeners(new EffectLayerListeners({ canvas }));
+                } else {
+                    canvas.setListeners(
+                        new EffectLayerEditListeners({ canvas }),
+                    );
+                }
                 canvas.eventMarchers = [];
             } else {
                 switch (alignmentEvent) {
@@ -223,6 +265,7 @@ export default function Canvas({
     }, [
         canvas,
         workspaceMode,
+        effectLayerDrawState,
         alignmentEvent,
         alignmentEventMarchers,
         centerAndFitCanvas,
@@ -235,6 +278,42 @@ export default function Canvas({
             canvas.updateMarcherPagesFunction = updateMarcherPages.mutate;
         }
     }, [canvas, updateMarcherPages.mutate]);
+
+    useEffect(() => {
+        if (!canvas) return;
+
+        canvas.updateLightingEffectLayerFunction = (modified) => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            updateEffectLayer.mutate({
+                lightingEffectId: effectId,
+                modifiedLayers: [modified],
+            });
+        };
+
+        canvas.deleteLightingEffectLayerFunction = (layerId) => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            deleteEffectLayer.mutate({
+                lightingEffectId: effectId,
+                layerIds: new Set([layerId]),
+            });
+        };
+
+        canvas.revertLightingEffectLayersFunction = () => {
+            const effectId = selectedEffect?.effectId;
+            if (effectId == null) return;
+            void queryClient.invalidateQueries({
+                queryKey: lightingKeys.lightingEffectById(effectId),
+            });
+        };
+    }, [
+        canvas,
+        queryClient,
+        selectedEffect?.effectId,
+        updateEffectLayer.mutate,
+        deleteEffectLayer.mutate,
+    ]);
 
     // Sync canvas with marcher visuals
     useEffect(() => {

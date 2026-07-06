@@ -28,6 +28,8 @@ interface ColorPickerProps {
     disableAlpha?: boolean;
 }
 
+type CloseAction = "save" | "discard";
+
 function getContrastingColor(color: RgbaColor): string {
     return color.r * 0.299 + color.g * 0.587 + color.b * 0.114 > 186
         ? "#000000"
@@ -57,66 +59,99 @@ export default function ColorPicker({
     doNotUseForm = false,
     disableAlpha = false,
 }: ColorPickerProps) {
+    const [open, setOpen] = useState(false);
     const [currentColor, setCurrentColor] = useState<RgbaColor>(initialColor);
     const pickerRef = useRef<HTMLDivElement>(null);
+    const currentColorRef = useRef<RgbaColor>(initialColor);
+    const closeActionRef = useRef<CloseAction | null>(null);
 
-    // Reset the current color to the initial color when the initial color changes
+    // Sync from props only while the popover is closed (avoid mid-edit resets after save).
     useEffect(() => {
+        if (open) return;
+        currentColorRef.current = initialColor;
+        setCurrentColor(initialColor);
+    }, [initialColor, open]);
+
+    const commitColor = useCallback(() => {
+        const color = currentColorRef.current;
+        onChange?.(color);
+        onBlur?.(color);
+    }, [onBlur, onChange]);
+
+    const handleOpenChange = useCallback(
+        (nextOpen: boolean) => {
+            if (nextOpen) {
+                closeActionRef.current = null;
+                currentColorRef.current = initialColor;
+                setCurrentColor(initialColor);
+                setOpen(true);
+                return;
+            }
+
+            if (!open) return;
+
+            const action = closeActionRef.current;
+            closeActionRef.current = null;
+
+            if (action !== "discard") {
+                commitColor();
+            }
+            setOpen(false);
+        },
+        [commitColor, initialColor, open],
+    );
+
+    const handleSaveClick = useCallback(() => {
+        closeActionRef.current = "save";
+    }, []);
+
+    const handleDiscardClick = useCallback(() => {
+        closeActionRef.current = "discard";
+        currentColorRef.current = initialColor;
         setCurrentColor(initialColor);
     }, [initialColor]);
 
-    const handleClose = useCallback(
-        (colorToUse?: RgbaColor) => {
-            const color = colorToUse ?? currentColor;
-            onChange && onChange(color);
-            onBlur && onBlur(color);
-        },
-        [currentColor, onBlur, onChange],
-    );
-
     const handleChange = (color: ColorResult) => {
-        setCurrentColor(disableAlpha ? { ...color.rgba, a: 1 } : color.rgba);
+        const next = disableAlpha ? { ...color.rgba, a: 1 } : color.rgba;
+        currentColorRef.current = next;
+        setCurrentColor(next);
     };
-
-    const handleBlur = useCallback(
-        (event: React.FocusEvent) => {
-            if (
-                pickerRef.current &&
-                !pickerRef.current.contains(event.relatedTarget)
-            ) {
-                handleClose();
-            }
-        },
-        [handleClose],
-    );
 
     const handleKeyDown = useCallback(
         (event: React.KeyboardEvent) => {
             if (event.key === "Enter") {
                 event.preventDefault();
-                handleClose();
+                closeActionRef.current = "save";
+                handleOpenChange(false);
+            }
+            if (event.key === "Escape") {
+                event.preventDefault();
+                closeActionRef.current = "discard";
+                currentColorRef.current = initialColor;
+                setCurrentColor(initialColor);
+                handleOpenChange(false);
             }
         },
-        [handleClose],
+        [handleOpenChange, initialColor],
     );
 
     const resetToDefault = useCallback(() => {
-        if (defaultColor) {
-            setCurrentColor(defaultColor);
-            handleClose(defaultColor);
-        }
-    }, [defaultColor, handleClose]);
+        if (!defaultColor) return;
+        currentColorRef.current = defaultColor;
+        setCurrentColor(defaultColor);
+        commitColor();
+    }, [commitColor, defaultColor]);
 
     const internalComponent = (
         <DefaultColorPicker
+            open={open}
+            onOpenChange={handleOpenChange}
             currentColor={currentColor}
-            initialColor={initialColor}
             disableAlpha={disableAlpha}
-            handleBlur={handleBlur}
+            onSaveClick={handleSaveClick}
+            onDiscardClick={handleDiscardClick}
             handleKeyDown={handleKeyDown}
-            handleClose={handleClose}
-            setCurrentColor={setCurrentColor}
-            resetToDefault={resetToDefault}
+            resetToDefault={defaultColor ? resetToDefault : undefined}
             handleChange={handleChange}
         />
     );
@@ -140,109 +175,37 @@ export default function ColorPicker({
                 ref={pickerRef}
                 className={className}
             >
-                <div className="flex items-center gap-8">
-                    <Popover.Root>
-                        <Popover.Trigger
-                            className="flex-between font border-stroke text-body rounded-6 col-span-5 flex h-fit w-fit cursor-pointer items-center justify-center border px-12 py-6 font-mono leading-none"
-                            style={{
-                                backgroundColor: rgbaToHex(currentColor),
-                                color: getContrastingColor(currentColor),
-                            }}
-                            tabIndex={0}
-                        >
-                            {rgbaToHex(currentColor).toUpperCase()}
-                            {!disableAlpha && (
-                                <>
-                                    {"-a"}
-                                    {currentColor.a === 1
-                                        ? 1
-                                        : currentColor.a === 0
-                                          ? 0
-                                          : currentColor.a.toPrecision(2)}
-                                </>
-                            )}
-                        </Popover.Trigger>
-                        <Popover.Portal>
-                            <Popover.Content
-                                align="start"
-                                side="bottom"
-                                sideOffset={8}
-                                collisionPadding={20}
-                                avoidCollisions={true}
-                                className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
-                            >
-                                <div className="z-50 my-8 flex items-center justify-between px-12">
-                                    <Popover.Close
-                                        className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-red-800"
-                                        onClick={() => {
-                                            setCurrentColor(initialColor);
-                                        }}
-                                    >
-                                        <T keyName="colorPicker.discard" />
-                                        <TrashSimpleIcon size={22} />
-                                    </Popover.Close>
-                                    <Popover.Close
-                                        className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-green-800"
-                                        onClick={() => handleClose()}
-                                    >
-                                        <T keyName="colorPicker.save" />
-                                        <CheckIcon size={22} />
-                                    </Popover.Close>
-                                </div>
-                                <Sketch
-                                    color={rgbaToHsva(currentColor)}
-                                    onChange={handleChange}
-                                    onBlur={handleBlur}
-                                    onKeyDown={handleKeyDown}
-                                    disableAlpha={disableAlpha}
-                                    className="bg-fg-2"
-                                />
-                            </Popover.Content>
-                        </Popover.Portal>
-                    </Popover.Root>
-
-                    <Button
-                        tooltipSide="right"
-                        size="compact"
-                        tooltipText={"Reset to default"}
-                        variant="secondary"
-                        onClick={resetToDefault}
-                        className="rounded-6 h-full"
-                        content="icon"
-                    >
-                        <ArrowUUpLeftIcon size={20} />
-                    </Button>
-                </div>
+                {internalComponent}
             </FormField>
         );
 }
 
 type InternalPickerProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
     currentColor: RgbaColor;
-    initialColor: RgbaColor;
     disableAlpha: boolean;
-    handleBlur: (event: React.FocusEvent) => void;
+    onSaveClick: () => void;
+    onDiscardClick: () => void;
     handleKeyDown: (event: React.KeyboardEvent) => void;
-    handleClose: () => void;
-    setCurrentColor: (color: RgbaColor) => void;
-    resetToDefault: () => void;
+    resetToDefault?: () => void;
     handleChange: (color: ColorResult) => void;
 };
 
 function DefaultColorPicker({
+    open,
+    onOpenChange,
     currentColor,
-    initialColor,
     disableAlpha,
-    handleBlur,
+    onSaveClick,
+    onDiscardClick,
     handleKeyDown,
-    handleClose,
-    setCurrentColor,
     resetToDefault,
     handleChange,
 }: InternalPickerProps) {
     return (
         <div className="flex items-center gap-8">
-            <Popover.Root>
+            <Popover.Root open={open} onOpenChange={onOpenChange}>
                 <Popover.Trigger
                     className="flex-between font border-stroke text-body rounded-6 col-span-5 flex h-fit w-fit cursor-pointer items-center justify-center border px-12 py-6 font-mono leading-none"
                     style={{
@@ -271,20 +234,19 @@ function DefaultColorPicker({
                         collisionPadding={20}
                         avoidCollisions={true}
                         className="rounded-6 shadow-modal animate-fade-in z-50 bg-white p-2"
+                        onOpenAutoFocus={(event) => event.preventDefault()}
                     >
                         <div className="z-50 my-8 flex items-center justify-between px-12">
                             <Popover.Close
                                 className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-red-800"
-                                onClick={() => {
-                                    setCurrentColor(initialColor);
-                                }}
+                                onClick={onDiscardClick}
                             >
                                 <T keyName="colorPicker.discard" />
                                 <TrashSimpleIcon size={22} />
                             </Popover.Close>
                             <Popover.Close
                                 className="text-sub flex w-fit items-center gap-4 text-black duration-150 ease-out hover:text-green-800"
-                                onClick={handleClose}
+                                onClick={onSaveClick}
                             >
                                 <T keyName="colorPicker.save" />
                                 <CheckIcon size={22} />
@@ -293,7 +255,6 @@ function DefaultColorPicker({
                         <Sketch
                             color={rgbaToHsva(currentColor)}
                             onChange={handleChange}
-                            onBlur={handleBlur}
                             onKeyDown={handleKeyDown}
                             disableAlpha={disableAlpha}
                             className="bg-fg-2"
@@ -305,6 +266,7 @@ function DefaultColorPicker({
             <Button
                 tooltipSide="right"
                 size="compact"
+                hidden={resetToDefault == null}
                 tooltipText={"Reset to default"}
                 variant="secondary"
                 onClick={resetToDefault}

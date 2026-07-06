@@ -818,6 +818,10 @@
         "controls": {
             "label": "Controles de Reproducción"
         },
+        "createSceneCancel": "Cancelar",
+        "createSceneConfirm": "Crear",
+        "createSceneDescription": "Esto dividirá la escena actual en el punto donde hiciste clic y creará una nueva escena. Los efectos posteriores a este punto ya no serán visibles",
+        "createSceneTitle": "Crear una nueva escena",
         "deleteScene": "Eliminar escena",
         "label": "Cronología",
         "lightDesigner": {
@@ -845,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Haz clic para copiar la ruta del archivo",
+        "pathCopied": "Ruta del archivo copiada al portapapeles",
         "bugReport": "Enviar error o comentarios",
         "bugReport.placeholder": "¿Qué salió mal?\n¿Qué esperabas?\n¿Cómo podemos reproducir el problema?",
         "databasePathError": "Error de ruta de base de datos",
@@ -908,7 +914,6 @@
                 "sectionTitle": "Efectos",
                 "addEffect": "Añadir efecto",
                 "empty": "Aún no hay efectos en esta escena.",
-                "rowLoading": "Cargando efecto…",
                 "effectItem": {
                     "defaultName": "Efecto {id}",
                     "name": "Nombre",
@@ -920,6 +925,10 @@
                     "color": "Color",
                     "fadeDurationSeconds": "Duración del fundido (s)",
                     "fadeTargetColor": "Color de destino del fundido",
+                    "fadeColors": "Colores",
+                    "colorNumber": "Color {number}",
+                    "addColor": "Añadir color",
+                    "removeColorAria": "Eliminar color",
                     "strobePlaceholder": "El editor de estroboscópico aún no está implementado."
                 }
             }

@@ -818,6 +818,10 @@
         "controls": {
             "label": "Contrôles de lecture"
         },
+        "createSceneCancel": "Annuler",
+        "createSceneConfirm": "Créer",
+        "createSceneDescription": "Cela divisera la scène actuelle au point où vous avez cliqué et créera une nouvelle scène. Les effets après ce point ne seront plus visibles",
+        "createSceneTitle": "Créer une nouvelle scène",
         "deleteScene": "Supprimer la scène",
         "label": "Chronologie",
         "lightDesigner": {
@@ -845,6 +849,8 @@
         }
     },
     "titlebar": {
+        "copyPath": "Cliquez pour copier le chemin du fichier",
+        "pathCopied": "Chemin du fichier copié dans le presse-papiers",
         "bugReport": "Envoyer un rapport de bug ou des commentaires",
         "bugReport.placeholder": "Qu'est-ce qui s'est passé ?\nQu'attendiez-vous ?\nComment pouvons-nous reproduire le problème ?",
         "databasePathError": "Erreur de chemin de base de données",
@@ -908,7 +914,6 @@
                 "sectionTitle": "Effets",
                 "addEffect": "Ajouter un effet",
                 "empty": "Aucun effet dans cette scène pour le moment.",
-                "rowLoading": "Chargement de l'effet…",
                 "effectItem": {
                     "defaultName": "Effet {id}",
                     "name": "Nom",
@@ -920,6 +925,10 @@
                     "color": "Couleur",
                     "fadeDurationSeconds": "Durée du fondu (s)",
                     "fadeTargetColor": "Couleur cible du fondu",
+                    "fadeColors": "Couleurs",
+                    "colorNumber": "Couleur {number}",
+                    "addColor": "Ajouter une couleur",
+                    "removeColorAria": "Supprimer la couleur",
                     "strobePlaceholder": "L'éditeur stroboscope n'est pas encore disponible."
                 }
             }

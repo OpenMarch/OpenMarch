@@ -18,6 +18,10 @@ import {
 
 export const DEFAULT_DOT_RADIUS = 5;
 
+/** Matches `--color-red` in packages/ui tailwind theme */
+const MARCHER_HIGHLIGHT_STROKE = "rgb(255, 0, 0)";
+const MARCHER_HIGHLIGHT_RECT_SIZE = DEFAULT_DOT_RADIUS * 3;
+
 /**
  * A CanvasMarcher is the object used on the canvas to represent a marcher.
  * It includes things such as the fabric objects and other canvas-specific properties.
@@ -36,6 +40,7 @@ export default class CanvasMarcher
 
     /** The object that represents the dot on the canvas */
     dotObject: fabric.Object;
+    private highlightRect?: fabric.Rect;
     private _locked: boolean = false;
     private _lockedReason: string = "";
 
@@ -268,6 +273,34 @@ export default class CanvasMarcher
         this.on("moving", this.handleMoving.bind(this));
 
         this.refreshLockedStatus();
+    }
+
+    /**
+     * Shows or hides a red dashed outline rectangle around this marcher (hover / sidebar highlight).
+     */
+    setMarcherHighlight(active: boolean) {
+        if (active) {
+            if (!this.highlightRect) {
+                this.highlightRect = new fabric.Rect({
+                    originX: "center",
+                    originY: "center",
+                    left: 0,
+                    top: 0,
+                    width: MARCHER_HIGHLIGHT_RECT_SIZE,
+                    height: MARCHER_HIGHLIGHT_RECT_SIZE,
+                    fill: "transparent",
+                    stroke: MARCHER_HIGHLIGHT_STROKE,
+                    strokeWidth: 4,
+                    strokeDashArray: [3, 5],
+                    selectable: false,
+                    evented: false,
+                });
+                this.insertAt(this.highlightRect, 0, false);
+            }
+            this.highlightRect.set({ visible: true });
+        } else if (this.highlightRect) {
+            this.highlightRect.set({ visible: false });
+        }
     }
 
     /**

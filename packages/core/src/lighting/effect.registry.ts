@@ -11,12 +11,19 @@ import {
     solidEffectArgsSchema,
 } from "./effect.solid";
 import type { SolidEffectArgs } from "./effect.solid";
+import {
+    defaultWipeEffectArgs,
+    parseWipeEffectArgs,
+    wipeEffectArgsSchema,
+} from "./effect.wipe";
+import type { WipeEffectArgs } from "./effect.wipe";
 import type { LightingEffectType } from "./types";
 
 export type LightingEffectArgsByType = {
     solid: SolidEffectArgs;
     fade: FadeEffectArgs;
     strobe: SolidEffectArgs;
+    wipe: WipeEffectArgs;
 };
 
 export type LightingEffectDefinition<T extends LightingEffectType> = {
@@ -43,6 +50,11 @@ export const effectRegistry: {
         defaultArgs: defaultSolidEffectArgs,
         schema: solidEffectArgsSchema,
         parseArgs: parseSolidEffectArgs,
+    },
+    wipe: {
+        defaultArgs: defaultWipeEffectArgs,
+        schema: wipeEffectArgsSchema,
+        parseArgs: parseWipeEffectArgs,
     },
 };
 
