@@ -1,5 +1,6 @@
 import { z } from "zod";
-import { ColorSchema } from "./utils";
+import { ColorSchema, hex6ToLightingRgba } from "./utils";
+import type { LightingRgba, LightingSampleContext } from "./utils";
 
 export type FadeEffectArgs = {
     /** MIlliseconds it takes to change from one color to another */
@@ -75,3 +76,9 @@ export const parseFadeEffectArgs = (argsJson: string): FadeEffectArgs => {
         return defaultFadeEffectArgs;
     }
 };
+
+export function sampleFadeEffectFill({
+    args,
+}: LightingSampleContext<FadeEffectArgs>): LightingRgba {
+    return hex6ToLightingRgba(args.colors.at(-1)!);
+}

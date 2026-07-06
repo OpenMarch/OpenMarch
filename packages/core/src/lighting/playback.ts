@@ -1,19 +1,11 @@
-import type { FadeEffectArgs } from "./effect.fade";
-import { parseEffectArgs } from "./effect.registry";
+import {
+    parseEffectArgs,
+    sampleEffectFill,
+    type AnyLightingEffectArgs,
+} from "./effect.registry";
 import type { LightingEffectLayerRect } from "./effectLayers";
-import { parseWipeEffectArgs } from "./effect.wipe";
-import { getWipeActiveMarcherIds } from "./effect.wipe";
-import { getLightingEffectProgress } from "./timing";
-import type { SolidEffectArgs } from "./effect.solid";
 import type { LightingEffectType } from "./types";
-
-/** RGBA in 0–255 / 0–1 range (matches theme marcher colors in app). */
-export type LightingRgba = {
-    r: number;
-    g: number;
-    b: number;
-    a: number;
-};
+import { hex6ToLightingRgba, type LightingRgba } from "./utils";
 
 export type LightingPlaybackEffectInput = {
     type: LightingEffectType;
@@ -34,10 +26,9 @@ export type ParsedLightingStep = {
     startMs: number;
     endMs: number;
     type: LightingEffectType;
-    solidArgs: SolidEffectArgs;
+    args: AnyLightingEffectArgs;
     marcherIds: ReadonlySet<number>;
     effectLayers: readonly LightingEffectLayerRect[];
-    wipeDirectionDegrees?: number;
 };
 
 export type LightingScenePlan = {
@@ -45,21 +36,6 @@ export type LightingScenePlan = {
     /** End time of the last effect step (0 if no steps). */
     effectsEndMs: number;
 };
-
-const HEX6 = /^#?([0-9a-fA-F]{6})$/;
-
-export function hex6ToLightingRgba(hex: string): LightingRgba {
-    const m = HEX6.exec(hex.trim());
-    const hexBody = m?.[1];
-    if (!hexBody) return { r: 0, g: 0, b: 0, a: 1 };
-    const n = parseInt(hexBody, 16);
-    return {
-        r: (n >> 16) & 255,
-        g: (n >> 8) & 255,
-        b: n & 255,
-        a: 1,
-    };
-}
 
 function buildStep(
     startMs: number,
@@ -70,25 +46,13 @@ function buildStep(
     effectLayers: readonly LightingEffectLayerRect[] = [],
 ): ParsedLightingStep {
     const safeDuration = Math.max(0, durationMs);
-    const parsedArgs = parseEffectArgs(type, argsJson);
-    const solidArgs: SolidEffectArgs =
-        type === "fade"
-            ? {
-                  color: (parsedArgs as FadeEffectArgs).colors.at(-1)!,
-              }
-            : (parsedArgs as SolidEffectArgs);
-    const wipeDirectionDegrees =
-        type === "wipe"
-            ? parseWipeEffectArgs(argsJson).directionDegrees
-            : undefined;
     return {
         startMs,
         endMs: startMs + safeDuration,
         type,
-        solidArgs,
+        args: parseEffectArgs(type, argsJson),
         marcherIds: new Set(marcherIds),
         effectLayers,
-        wipeDirectionDegrees,
     };
 }
 
@@ -146,24 +110,19 @@ export function sampleMarcherLightingFill(
     );
     if (!step) return undefined;
 
-    if (
-        step.type === "wipe" &&
-        step.effectLayers.length > 0 &&
-        options?.marcherPosition != null &&
-        step.wipeDirectionDegrees != null
-    ) {
-        const progress = getLightingEffectProgress(tSceneMs, {
+    return sampleEffectFill(step.type, {
+        args: step.args,
+        timestampMs: tSceneMs,
+        window: {
             startMs: step.startMs,
             durationMs: step.endMs - step.startMs,
-        });
-        const activeMarcherIds = getWipeActiveMarcherIds(
-            step.effectLayers,
-            progress,
-            step.wipeDirectionDegrees,
-            [{ marcherId, ...options.marcherPosition }],
-        );
-        if (!activeMarcherIds.has(marcherId)) return undefined;
-    }
-
-    return hex6ToLightingRgba(step.solidArgs.color);
+        },
+        marcherId,
+        baseFill: _baseFill,
+        layers: step.effectLayers,
+        marcherPosition: options?.marcherPosition,
+    });
 }
+
+export { hex6ToLightingRgba };
+export type { LightingRgba };

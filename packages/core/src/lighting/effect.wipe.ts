@@ -4,7 +4,8 @@ import type {
     LightingMarcherPosition,
 } from "./effectLayers";
 import { getLightingEffectProgress } from "./timing";
-import { ColorSchema } from "./utils";
+import { ColorSchema, hex6ToLightingRgba } from "./utils";
+import type { LightingRgba, LightingSampleContext } from "./utils";
 
 export type WipeEffectArgs = {
     color: string;
@@ -294,4 +295,26 @@ export function getWipeActiveMarcherIdsAtTime({
         directionDegrees,
         marcherPositions,
     );
+}
+
+export function sampleWipeEffectFill({
+    args,
+    timestampMs,
+    window,
+    marcherId,
+    marcherPosition,
+    layers,
+}: LightingSampleContext<WipeEffectArgs>): LightingRgba | undefined {
+    if (layers.length > 0 && marcherPosition != null) {
+        const activeMarcherIds = getWipeActiveMarcherIdsAtTime({
+            layers,
+            directionDegrees: args.directionDegrees,
+            effectWindowMs: window,
+            timestampMs,
+            marcherPositions: [{ marcherId, ...marcherPosition }],
+        });
+        if (!activeMarcherIds.has(marcherId)) return undefined;
+    }
+
+    return hex6ToLightingRgba(args.color);
 }

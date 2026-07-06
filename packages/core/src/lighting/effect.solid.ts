@@ -1,4 +1,6 @@
 import { z } from "zod";
+import { hex6ToLightingRgba } from "./utils";
+import type { LightingRgba, LightingSampleContext } from "./utils";
 
 export type SolidEffectArgs = {
     color: string;
@@ -22,3 +24,9 @@ export const parseSolidEffectArgs = (argsJson: string): SolidEffectArgs => {
         return defaultSolidEffectArgs;
     }
 };
+
+export function sampleSolidEffectFill({
+    args,
+}: LightingSampleContext<SolidEffectArgs>): LightingRgba {
+    return hex6ToLightingRgba(args.color);
+}
