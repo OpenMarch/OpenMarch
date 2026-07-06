@@ -23,7 +23,7 @@
     mac: {
         target: ["dmg", "zip"],
         hardenedRuntime: true,
-        gatekeeperAssess: false,
+        gatekeeperAssess: true,
         darkModeSupport: true,
         entitlements: "./build/entitlements.mac.plist",
         notarize: true,
@@ -38,8 +38,16 @@
                 rank: "Default",
             },
         ],
+        // Custom protocol handler for OAuth callbacks
+        protocols: [
+            {
+                name: "OpenMarch Auth",
+                schemes: ["openmarch"],
+            },
+        ],
     },
     dmg: {
+        sign: true,
         background: "./build/installerBackground.png",
         window: {
             width: 640,
@@ -79,6 +87,8 @@
         perMachine: false,
         allowToChangeInstallationDirectory: true,
         deleteAppDataOnUninstall: true,
+        // Custom installer script for protocol handler registration
+        include: "./build/installer.nsh",
     },
 
     linux: {
@@ -91,6 +101,8 @@
                 name: "OpenMarch DOTS File",
             },
         ],
+        // Custom protocol handler for OAuth callbacks
+        mimeTypes: ["x-scheme-handler/openmarch"],
     },
     publish: [
         {

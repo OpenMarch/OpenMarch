@@ -1,10 +1,23 @@
 import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
 import Page from "@/global/classes/Page";
-import { contextBridge, ipcRenderer, SaveDialogOptions } from "electron";
+import {
+    contextBridge,
+    ipcRenderer,
+    type IpcRendererEvent,
+    type SaveDialogOptions,
+} from "electron";
 import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import type {
+    AuthState,
+    AuthError,
+    LoginResult,
+    LogoutResult,
+    AccessTokenResult,
+} from "@om-electron/main/auth/types";
+import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { HistoryResponse } from "@/db-functions";
 
 function domReady(
@@ -150,6 +163,12 @@ const APP_API = {
     databaseSave: () => ipcRenderer.invoke("database:save"),
     databaseLoad: () => ipcRenderer.invoke("database:load"),
     databaseCreate: () => ipcRenderer.invoke("database:create"),
+    databaseCreateAtPath: (filePath: string) =>
+        ipcRenderer.invoke("database:createAtPath", filePath),
+    getDefaultDocumentsPath: () =>
+        ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
+    fileExists: (filePath: string) =>
+        ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
     repairDatabase: (dbPath: string) =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
@@ -182,7 +201,33 @@ const APP_API = {
     removeFetchListener: () => ipcRenderer.removeAllListeners("fetch:all"),
 
     showSaveDialog: (options: SaveDialogOptions) =>
-        ipcRenderer.invoke("show-save-dialog", options),
+        ipcRenderer.invoke("dialog:showSaveDialog", options),
+
+    getPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:getPending") as Promise<boolean>,
+    clearPendingNewShowDialog: () =>
+        ipcRenderer.invoke("newShow:clearPending") as Promise<void>,
+    onNewShowOpen: (callback: () => void) => {
+        const listener = () => callback();
+        ipcRenderer.on("new-show:open", listener);
+        return () => {
+            ipcRenderer.removeListener("new-show:open", listener);
+        };
+    },
+    createNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:createDraft") as Promise<
+            { path: string } | number
+        >,
+    finalizeNewShowDraft: (targetPath: string, projectName: string) =>
+        ipcRenderer.invoke(
+            "newShow:finalizeDraft",
+            targetPath,
+            projectName,
+        ) as Promise<number>,
+    discardNewShowDraft: () =>
+        ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
+    getNewShowDraftPath: () =>
+        ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
 
     export: {
         pdf: (params: {
@@ -208,6 +253,22 @@ const APP_API = {
             individualCharts: boolean;
             notesAppendixPages?: { pageName: string; notes: string }[];
         }) => ipcRenderer.invoke("export:generateDocForMarcher", args),
+
+        videoStart: (
+            fileExtension: string,
+        ): Promise<{ sessionId: string; filePath: string } | null> =>
+            ipcRenderer.invoke("export:videoStart", fileExtension),
+        videoChunk: (
+            sessionId: string,
+            data: Uint8Array,
+            position: number,
+        ): Promise<void> =>
+            ipcRenderer.invoke("export:videoChunk", sessionId, data, position),
+        videoEnd: (
+            sessionId: string,
+            success: boolean,
+        ): Promise<string | null> =>
+            ipcRenderer.invoke("export:videoEnd", sessionId, success),
     },
 
     getCurrentFilename: () => ipcRenderer.invoke("get-current-filename"),
@@ -282,6 +343,51 @@ const APP_API = {
     // Shell
     openExternal: (url: string) =>
         ipcRenderer.invoke("shell:openExternal", url),
+    // Authentication
+    auth: {
+        /** Initiates OAuth login flow - opens browser to Clerk */
+        login: () =>
+            ipcRenderer.invoke(AUTH_IPC_CHANNELS.LOGIN) as Promise<LoginResult>,
+
+        /** Logs out and clears all tokens */
+        logout: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.LOGOUT,
+            ) as Promise<LogoutResult>,
+
+        /** Gets the current authentication state */
+        getState: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.GET_STATE,
+            ) as Promise<AuthState>,
+
+        /** Gets a valid access token (auto-refreshes if needed) */
+        getAccessToken: () =>
+            ipcRenderer.invoke(
+                AUTH_IPC_CHANNELS.GET_ACCESS_TOKEN,
+            ) as Promise<AccessTokenResult>,
+
+        /** Subscribes to auth state changes */
+        onStateChanged: (callback: (state: AuthState) => void) => {
+            const handler = (_event: IpcRendererEvent, state: AuthState) =>
+                callback(state);
+            ipcRenderer.on(AUTH_IPC_CHANNELS.STATE_CHANGED, handler);
+            return () =>
+                ipcRenderer.removeListener(
+                    AUTH_IPC_CHANNELS.STATE_CHANGED,
+                    handler,
+                );
+        },
+
+        /** Subscribes to auth errors */
+        onError: (callback: (error: AuthError) => void) => {
+            const handler = (_event: IpcRendererEvent, error: AuthError) =>
+                callback(error);
+            ipcRenderer.on(AUTH_IPC_CHANNELS.ERROR, handler);
+            return () =>
+                ipcRenderer.removeListener(AUTH_IPC_CHANNELS.ERROR, handler);
+        },
+    },
 };
 
 contextBridge.exposeInMainWorld("electron", APP_API);

@@ -50,7 +50,7 @@
         "zod": "^3.25.76"
     },
     "devDependencies": {
-        "@playwright/test": "^1.56.1",
+        "@playwright/test": "1.60.0",
         "@tailwindcss/typography": "^0.5.16",
         "tailwindcss-intersect": "^2.2.0",
         "tailwindcss-motion": "^1.1.1",

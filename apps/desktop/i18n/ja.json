@@ -259,6 +259,14 @@
         "pageNotFound": "エラー : ページが見つかりません マーチャーページ {id}",
         "pdfExportFailed": "PDFエクスポートに失敗しました: {error}",
         "preview": "プレビュー",
+        "videoBackground": "動画の背景",
+        "videoOverlayPreviewHint": "オーバーレイをドラッグして移動（横ハンドル＝幅、角＝サイズ）。空白をドラッグしてフィールドを移動し、スクロールでズーム。下のスライダーで微調整できます。",
+        "videoFieldFraming": "フィールドのフレーミング",
+        "videoFieldScale": "倍率",
+        "videoFieldOffsetX": "水平オフセット",
+        "videoFieldOffsetY": "垂直オフセット",
+        "videoFieldResetFraming": "フレーミングをリセット",
+        "videoPreviewLoading": "プレビューを読み込み中…",
         "processingPage": "{pageNumber} ページ中 {totalPages} ページを 処理しています: {pageName}",
         "quarterPageLayout": "四分の一 ページ レイアウト",
         "roundingDenominator": "座標 丸め:",
@@ -271,6 +279,22 @@
         "unknownError": "不明なエラー",
         "unsortedSection": "未分類",
         "useXYHeaders": "X/Y ヘッダーを使用"
+    },
+    "ensembles": {
+        "attached": "(添付済み)",
+        "attachDialog": {
+            "attach": "添付",
+            "cancel": "キャンセル",
+            "description": "この .dots ファイルをこのプロダクションに添付しますか？このファイルから OpenMarch - On the Move モバイルアプリにアップロードできるようになります。",
+            "title": "プロダクションに添付"
+        },
+        "createdAtHeader": "作成日",
+        "empty": "アンサンブルが見つかりません。上で作成してください！",
+        "error": "アンサンブルの読み込みに失敗しました",
+        "loading": "アンサンブルを読み込み中...",
+        "nameHeader": "名前",
+        "performersHeader": "出演者",
+        "productionsHeader": "プロダクション"
     },
     "field": {
         "general": {
@@ -671,6 +695,7 @@
         "standard": "スタンダード",
         "startTempo": "スタート テンポ *",
         "tempo": "テンポ *",
+        "tempoBelowMinimum": "テンポは {min} BPM 以上である必要があります",
         "tempoDescription": "分 解能",
         "tempoGroupCreated": "テンポ グループ作成",
         "tempoGroupNamePlaceholder": "オプション",
@@ -833,7 +858,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "ページを削除",
+                "delete": "削除",
+                "deleteInPlace": "その場",
+                "deleteInPlaceTooltip": "このページを削除し、後続ページの位置はそのままにします。",
+                "deleteYank": "ヤンク",
+                "deleteYankTooltip": "このページを削除し、その長さ分だけ後続ページを前に詰めます。",
                 "subsetToggle": "サブセット",
                 "title": "ページ {pageName}"
             },

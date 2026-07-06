@@ -7,5 +7,15 @@ declare namespace NodeJS {
         DIST: string;
         /** /dist/ or /public/ */
         VITE_PUBLIC: string;
+        /** Clerk OAuth domain; set with VITE_CLERK_CLIENT_ID to enable sign-in. */
+        VITE_CLERK_AUTHORIZATION_DOMAIN?: string;
+        /** Clerk OAuth client ID; set with VITE_CLERK_AUTHORIZATION_DOMAIN to enable sign-in. */
+        VITE_CLERK_CLIENT_ID?: string;
+        /** Clerk accounts sign-up URL; required for the "Set up account" CTA when sign-in is enabled. */
+        VITE_SIGN_UP_URL?: string;
+        /** API URL */
+        VITE_API_URL?: string;
+        /** Editor API base URL */
+        VITE_EDITOR_API_URL?: string;
     }
 }

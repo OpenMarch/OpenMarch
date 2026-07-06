@@ -1,6 +1,15 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
-import { handleSqlProxyWithDb } from "../database.services";
+import { existsSync, mkdtempSync, renameSync, rmSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
+import {
+    closePersistentConnection,
+    handleSqlProxy,
+    handleSqlProxyWithDb,
+    insertAudioFile,
+    setDbPath,
+} from "../database.services";
 
 describe("Database Services", () => {
     describe("sql proxy", () => {
@@ -75,6 +84,100 @@ describe("Database Services", () => {
                 "all",
             );
             expect(result).toEqual({ rows: [] });
+        });
+    });
+
+    describe("persistent connection", () => {
+        let tempDir: string;
+        let dbPath: string;
+
+        beforeEach(() => {
+            tempDir = mkdtempSync(
+                join(tmpdir(), "openmarch-persistent-connection-test-"),
+            );
+            dbPath = join(tempDir, "test.dots");
+
+            const db = new DatabaseSync(dbPath);
+            db.exec("CREATE TABLE test (id INTEGER PRIMARY KEY, name TEXT)");
+            db.close();
+
+            setDbPath(dbPath);
+        });
+
+        afterEach(() => {
+            closePersistentConnection();
+            setDbPath("", false);
+            rmSync(tempDir, { recursive: true, force: true });
+        });
+
+        it("releases the database file so it can be renamed", async () => {
+            await handleSqlProxy(null, "SELECT 1", [], "get");
+
+            const renamedPath = join(tempDir, "renamed.dots");
+            closePersistentConnection();
+            renameSync(dbPath, renamedPath);
+
+            expect(existsSync(renamedPath)).toBe(true);
+            expect(existsSync(dbPath)).toBe(false);
+        });
+    });
+
+    describe("audio files", () => {
+        let tempDir: string;
+        let dbPath: string;
+
+        beforeEach(() => {
+            tempDir = mkdtempSync(join(tmpdir(), "openmarch-audio-test-"));
+            dbPath = join(tempDir, "test.dots");
+
+            const db = new DatabaseSync(dbPath);
+            db.exec(`
+                CREATE TABLE audio_files (
+                    id INTEGER PRIMARY KEY,
+                    path TEXT NOT NULL,
+                    nickname TEXT,
+                    data BLOB,
+                    selected INTEGER NOT NULL DEFAULT 0,
+                    created_at TEXT NOT NULL,
+                    updated_at TEXT NOT NULL
+                )
+            `);
+            db.close();
+
+            setDbPath(dbPath);
+        });
+
+        afterEach(() => {
+            setDbPath("", false);
+            rmSync(tempDir, { recursive: true, force: true });
+        });
+
+        it("should ignore non-insert fields when binding named parameters", async () => {
+            const result = await insertAudioFile({
+                id: -1,
+                data: new Uint8Array([1, 2, 3]),
+                path: "/tmp/test.mp3",
+                nickname: "test.mp3",
+                selected: true,
+            });
+
+            expect(result.success).toBe(true);
+            expect(result.result?.[0].id).toBe(1);
+
+            const db = new DatabaseSync(dbPath);
+            const inserted = db
+                .prepare(
+                    "SELECT id, path, nickname, selected FROM audio_files WHERE id = 1",
+                )
+                .get();
+            db.close();
+
+            expect(inserted).toEqual({
+                id: 1,
+                path: "/tmp/test.mp3",
+                nickname: "test.mp3",
+                selected: 1,
+            });
         });
     });
 });

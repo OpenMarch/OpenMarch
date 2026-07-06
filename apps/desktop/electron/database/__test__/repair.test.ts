@@ -18,6 +18,7 @@ import { runInSqliteTransaction } from "@/test/sqliteTransaction";
 
 describe("DatabaseSync Repair", () => {
     let tempDir: string;
+    let userDataDir: string;
 
     beforeEach(() => {
         // Mock app.getAppPath to return the correct path for tests
@@ -36,6 +37,13 @@ describe("DatabaseSync Repair", () => {
 
         // Create a temporary directory for test databases
         tempDir = fs.mkdtempSync(path.join(os.tmpdir(), "repair-test-"));
+        userDataDir = path.join(tempDir, "userData");
+        vi.mocked(app.getPath as (name: string) => string).mockImplementation(
+            (name: string) => {
+                if (name === "userData") return userDataDir;
+                return tempDir;
+            },
+        );
         // Mock console methods to reduce noise in test output
         vi.spyOn(console, "log").mockImplementation(() => {});
         vi.spyOn(console, "debug").mockImplementation(() => {});
@@ -45,11 +53,7 @@ describe("DatabaseSync Repair", () => {
     afterEach(() => {
         // Clean up temporary files and directories
         try {
-            const files = fs.readdirSync(tempDir);
-            for (const file of files) {
-                fs.unlinkSync(path.join(tempDir, file));
-            }
-            fs.rmdirSync(tempDir);
+            fs.rmSync(tempDir, { recursive: true, force: true });
         } catch (error) {
             // Ignore cleanup errors
         }
@@ -65,6 +69,13 @@ describe("DatabaseSync Repair", () => {
             setupFn(db);
         }
         return db;
+    };
+
+    const getRepairTempEntries = () => {
+        const repairTempRoot = path.join(userDataDir, "repair-temp");
+        return fs.existsSync(repairTempRoot)
+            ? fs.readdirSync(repairTempRoot)
+            : [];
     };
 
     const createNewDatabaseWithMigrations = async (
@@ -1037,6 +1048,34 @@ describe("DatabaseSync Repair", () => {
 
             // Temp file should be cleaned up by the time repair completes
             expect(fs.existsSync(tempDbPath)).toBe(false);
+            expect(getRepairTempEntries()).toHaveLength(0);
+            expect(fs.existsSync(fixedPath)).toBe(true);
+
+            fs.unlinkSync(fixedPath);
+            fs.unlinkSync(originalDbPath);
+        });
+
+        it("should clean up the app data repair workspace after using it", async () => {
+            const originalDbPath = path.join(tempDir, "test.dots");
+            const originalDb = await createTestDatabase(
+                originalDbPath,
+                (db) => {
+                    db.exec(`
+                    CREATE TABLE field_properties (id INTEGER PRIMARY KEY CHECK (id = 1), json_data TEXT NOT NULL);
+                    INSERT INTO field_properties (id, json_data) VALUES (1, '{"test": "data"}');
+                    CREATE TABLE utility (id INTEGER PRIMARY KEY CHECK (id = 0), last_page_counts INTEGER);
+                    INSERT INTO utility (id, last_page_counts) VALUES (0, 8);
+                    CREATE TABLE workspace_settings (id INTEGER PRIMARY KEY CHECK (id = 1), json_data TEXT NOT NULL);
+                    INSERT INTO workspace_settings (id, json_data) VALUES (1, '{}');
+                `);
+                },
+            );
+            originalDb.close();
+
+            const fixedPath = await repairDatabase(originalDbPath);
+
+            expect(fixedPath).toBe(path.join(tempDir, "test - FIXED.dots"));
+            expect(getRepairTempEntries()).toHaveLength(0);
             expect(fs.existsSync(fixedPath)).toBe(true);
 
             fs.unlinkSync(fixedPath);
@@ -1090,6 +1129,7 @@ describe("DatabaseSync Repair", () => {
 
             // Temp file should be cleaned up even on failure
             expect(fs.existsSync(tempDbPath)).toBe(false);
+            expect(getRepairTempEntries()).toHaveLength(0);
 
             if (fs.existsSync(originalDbPath)) {
                 fs.unlinkSync(originalDbPath);

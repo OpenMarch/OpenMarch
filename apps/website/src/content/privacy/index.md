@@ -1,7 +1,7 @@
 ---
 title: "OpenMarch Privacy Policy"
 description: "Privacy Policy for OpenMarch"
-lastUpdated: "2026-02-28"
+lastUpdated: "2026-05-31"
 ---
 
 ## 1. INTRODUCTION
@@ -12,7 +12,7 @@ This Privacy Policy (the “**Policy**”) explains how OpenMarch LLC (“**Open
 
 As explained further in this section, you will have the opportunity to provide us with certain personal information. In addition, we may collect certain personal information automatically through your use of the Services. The rest of this section provides a more detailed explanation of the personal information we collect and how we use that personal information.
 
-1. **Account Creation**. If you register for an administrator account with the Services, you will need to provide your name and email address. You will also have the opportunity to provide a photo of yourself. As part of the account creation process, you may choose to provide the foregoing information using certain third-party accounts, like Google and Apple. OpenMarch uses this information to manage your account and communicate with you about your use of the Services.
+1. **Account Creation**. If you register for an administrator account with the Services, you will need to provide your name, email address, school name, and school district name. You may also optionally provide a phone number and a photo of yourself. As part of the account creation process, you may choose to provide the foregoing information using certain third-party accounts, like Google and Apple. OpenMarch uses this information to manage your account and communicate with you about your use of the Services.
 
 2. **Payment Processing**. If you are an administrator, you can purchase access to the Mobile App for performers in your ensemble and other authorized users. Your payment information will be processed by our third-party payment processor. We will not have access to your payment information.
 

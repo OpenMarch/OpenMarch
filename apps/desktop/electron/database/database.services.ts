@@ -27,6 +27,16 @@ export class LegacyDatabaseResponse<T> {
 /* ============================ DATABASE ============================ */
 let DB_PATH = "";
 
+let persistentConnection: DatabaseSync | null = null;
+let persistentConnectionPath: string | null = null;
+
+/** Closes the long-lived SQL proxy connection so the database file can be moved or deleted. */
+export function closePersistentConnection() {
+    persistentConnection?.close();
+    persistentConnection = null;
+    persistentConnectionPath = null;
+}
+
 /**
  * Change the location of the database file the application and actively updates.
  *
@@ -59,9 +69,7 @@ export function setDbPath(path: string, isNewFile = false) {
     }
 
     // Reset any existing long-lived DB handle before opening a new path.
-    persistentConnection?.close();
-    persistentConnection = null;
-    persistentConnectionPath = null;
+    closePersistentConnection();
 
     DB_PATH = path;
     const db = connect();
@@ -108,13 +116,21 @@ export function getDbPath() {
     return DB_PATH;
 }
 
+let lastLoggedReadyState: boolean | null = null;
+let lastLoggedPath: string | null = null;
+
 export function databaseIsReady() {
     const isReady = DB_PATH.length > 0 && fs.existsSync(DB_PATH);
-    console.log("databaseIsReady:", isReady);
-    if (DB_PATH.length > 0) {
-        console.log("Database path:", DB_PATH);
-    } else {
-        console.log("Database path is empty");
+    // Only log when state or path changes to avoid noisy polling output
+    if (isReady !== lastLoggedReadyState || DB_PATH !== lastLoggedPath) {
+        console.log("databaseIsReady:", isReady);
+        if (DB_PATH.length > 0) {
+            console.log("Database path:", DB_PATH);
+        } else {
+            console.log("Database path is empty");
+        }
+        lastLoggedReadyState = isReady;
+        lastLoggedPath = DB_PATH;
     }
     return isReady;
 }
@@ -264,9 +280,7 @@ export const getOrmConnection = () => {
     return getOrm(persistentConnection);
 };
 
-let persistentConnection: DatabaseSync | null = null;
-let persistentConnectionPath: string | null = null;
-async function handleSqlProxy(
+export async function handleSqlProxy(
     _: any,
     sql: string,
     params: any[],
@@ -274,9 +288,7 @@ async function handleSqlProxy(
 ) {
     try {
         if (persistentConnectionPath !== DB_PATH) {
-            persistentConnection?.close();
-            persistentConnection = null;
-            persistentConnectionPath = null;
+            closePersistentConnection();
         }
 
         if (!persistentConnection) {
@@ -418,8 +430,15 @@ async function setSelectAudioFile(
     return result as AudioFile;
 }
 
+type AudioFileInsert = {
+    data?: ArrayBuffer | Uint8Array;
+    path: string;
+    nickname?: string;
+    selected?: boolean;
+};
+
 export async function insertAudioFile(
-    audioFile: AudioFile,
+    audioFile: AudioFileInsert,
 ): Promise<LegacyDatabaseResponse<AudioFile[]>> {
     const db = connect();
     const stmt = db.prepare(
@@ -454,8 +473,9 @@ export async function insertAudioFile(
                   ? audioFile.data
                   : new Uint8Array(audioFile.data);
         const insertResult = insertStmt.run({
-            ...audioFile,
             data: dataForInsert,
+            path: audioFile.path,
+            nickname: audioFile.nickname ?? null,
             selected: 1,
             created_at,
             updated_at: created_at,
@@ -464,7 +484,13 @@ export async function insertAudioFile(
 
         output = {
             success: true,
-            result: [{ ...audioFile, id: id as number }],
+            result: [
+                {
+                    ...audioFile,
+                    id: id as number,
+                    selected: true,
+                } as AudioFile,
+            ],
         };
     } catch (error: any) {
         console.error("Insert audio file error:", error);

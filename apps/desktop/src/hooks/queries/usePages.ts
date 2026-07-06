@@ -13,6 +13,7 @@ import {
     getPages,
     realDatabasePageToDatabasePage,
     deletePages,
+    deletePageYank,
     transactionWithHistory,
     updatePagesInTransaction,
     updateLastPageCounts,
@@ -138,16 +139,17 @@ const updatePagesAndLastPageCounts = async ({
 /**
  * Query options for the pages query
  *
- * @param args - the filters to use for the query, or the page id to fetch
+ * @param enabled - whether the query should run
  * @returns
  */
-export const allDatabasePagesQueryOptions = () => {
+export const allDatabasePagesQueryOptions = (enabled = true) => {
     return queryOptions<DatabasePage[]>({
         queryKey: pageKeys.all(),
         queryFn: async () => {
             return await pageQueries.getAll(db);
         },
         staleTime: DEFAULT_STALE_TIME,
+        enabled,
     });
 };
 
@@ -211,6 +213,23 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
             // Invalidate all page queries
             void invalidatePageQueries(qc);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                tolgee.t("pages.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const deletePageYankMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
+        onSuccess: async (_, variables) => {
+            toast.success(tolgee.t("pages.deletedSuccessfully"));
+            await invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(

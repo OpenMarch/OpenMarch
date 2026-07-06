@@ -37,6 +37,7 @@ import { useSelectionListeners } from "./hooks/canvasListeners.selection";
 import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useRenderLightingEffectLayers } from "./hooks/useRenderLightingEffectLayers";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import { MarcherAppearance } from "./hooks/marcherAppearance";
 import { useHighlightedMarchers } from "./hooks/useHighlightedMarchers";
@@ -90,8 +91,11 @@ export default function Canvas({
     const selectedEffect =
         useLightDesignerSelectedEffectStore.use.selectedEffect();
     const { setSelectedShapePageIds } = useSelectionStore()!;
+    const databaseReady = useDatabaseReady();
 
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady),
+    );
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,

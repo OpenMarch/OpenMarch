@@ -423,7 +423,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
 
 // eslint-disable-next-line max-lines-per-function
 function MarcherEditor() {
-    const { selectedMarchers } = useSelectedMarchers()!;
+    const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
     const selectedMarcherIds = useMemo(
         () => new Set(selectedMarchers.map((marcher) => marcher.id)),
         [selectedMarchers],
@@ -561,6 +561,24 @@ function MarcherEditor() {
         marcherPages,
     ]);
 
+    const selectMaxStepMarcher = useCallback(() => {
+        if (!minMaxStepSize?.max) return;
+        setSelectedMarchers(
+            selectedMarchers.filter(
+                (marcher) => marcher.id === minMaxStepSize.max!.marcher_id,
+            ),
+        );
+    }, [minMaxStepSize, selectedMarchers, setSelectedMarchers]);
+
+    const selectMinStepMarcher = useCallback(() => {
+        if (!minMaxStepSize?.min) return;
+        setSelectedMarchers(
+            selectedMarchers.filter(
+                (marcher) => marcher.id === minMaxStepSize.min!.marcher_id,
+            ),
+        );
+    }, [minMaxStepSize, selectedMarchers, setSelectedMarchers]);
+
     const resetForm = useCallback(() => {
         coordsFormRef.current?.reset();
 
@@ -645,7 +663,10 @@ function MarcherEditor() {
                                             </p>
                                         </div>
                                         <div className="mt-6 flex justify-between">
-                                            <label className="text-body leading-none opacity-80">
+                                            <button
+                                                className="text-body leading-none opacity-80 hover:underline"
+                                                onClick={selectMinStepMarcher}
+                                            >
                                                 {
                                                     selectedMarchers.find(
                                                         (marcher) =>
@@ -654,7 +675,7 @@ function MarcherEditor() {
                                                                 ?.marcher_id,
                                                     )?.drill_number
                                                 }
-                                            </label>
+                                            </button>
                                             <p className="text-body leading-none">
                                                 {minMaxStepSize.min.displayString()}
                                             </p>
@@ -665,7 +686,10 @@ function MarcherEditor() {
                                             </p>
                                         </div>
                                         <div className="flex justify-between pt-6">
-                                            <label className="text-body leading-none opacity-80">
+                                            <button
+                                                className="text-body leading-none opacity-80 hover:underline"
+                                                onClick={selectMaxStepMarcher}
+                                            >
                                                 {
                                                     selectedMarchers.find(
                                                         (marcher) =>
@@ -674,7 +698,7 @@ function MarcherEditor() {
                                                                 ?.marcher_id,
                                                     )?.drill_number
                                                 }
-                                            </label>
+                                            </button>
                                             <p className="text-body leading-none">
                                                 {minMaxStepSize.max.displayString()}
                                             </p>
