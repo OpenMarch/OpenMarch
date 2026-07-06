@@ -1101,7 +1101,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "Delete",
+                "delete": "Delete",
+                "deleteInPlace": "In Place",
+                "deleteInPlaceTooltip": "Delete this page and keep later pages where they are.",
+                "deleteYank": "Yank",
+                "deleteYankTooltip": "Delete this page and pull later pages back by its length.",
                 "subsetToggle": "Subset",
                 "title": "Page {pageName}"
             },

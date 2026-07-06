@@ -13,6 +13,7 @@ import {
     getPages,
     realDatabasePageToDatabasePage,
     deletePages,
+    deletePageYank,
     transactionWithHistory,
     updatePagesInTransaction,
     updateLastPageCounts,
@@ -212,6 +213,23 @@ export const deletePagesMutationOptions = (qc: QueryClient) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
             // Invalidate all page queries
             void invalidatePageQueries(qc);
+        },
+        onError: (e, variables) => {
+            conToastError(
+                tolgee.t("pages.deleteFailed", { error: e.message }),
+                e,
+                variables,
+            );
+        },
+    });
+};
+
+export const deletePageYankMutationOptions = (qc: QueryClient) => {
+    return mutationOptions({
+        mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
+        onSuccess: async (_, variables) => {
+            toast.success(tolgee.t("pages.deletedSuccessfully"));
+            await invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(

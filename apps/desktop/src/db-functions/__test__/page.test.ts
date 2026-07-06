@@ -3,6 +3,7 @@ import {
     createPages,
     updatePages,
     deletePages,
+    deletePageYank,
     FIRST_PAGE_ID,
     createLastPage,
     DatabasePage,
@@ -1733,6 +1734,101 @@ describeDbTests("pages", (it) => {
                                 (index + 1) * newPageCounts + 1,
                             );
                     }
+                },
+            );
+        });
+
+        describe("delete page yank", () => {
+            const createLastPages = async ({
+                db,
+                counts,
+            }: {
+                db: Parameters<typeof createLastPage>[0]["db"];
+                counts: number[];
+            }) => {
+                for (const newPageCounts of counts)
+                    await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+                return await getPagesInOrder({ tx: db });
+            };
+
+            const pagePositions = (pages: DatabasePageWithBeat[]) =>
+                pages.map((page) => page.beatObject.position);
+
+            testWithHistory(
+                "pulls all subsequent pages back by the deleted page length",
+                async ({ db, expectNumberOfChanges }) => {
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [8, 12, 4, 10],
+                    });
+                    expect(pagePositions(pagesBeforeDelete)).toEqual([
+                        0, 1, 9, 21, 25,
+                    ]);
+
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState(db);
+
+                    const deletedPages = await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[2].id,
+                    });
+
+                    expect(deletedPages).toHaveLength(1);
+                    expect(deletedPages[0].id).toBe(pagesBeforeDelete[2].id);
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 9, 13]);
+
+                    await expectNumberOfChanges.test(db, 1, databaseState);
+                },
+            );
+
+            testWithHistory(
+                "pulls the third page to the second beat when yanking the second page",
+                async ({ db }) => {
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [16, 16, 16],
+                    });
+                    expect(pagePositions(pagesBeforeDelete)).toEqual([
+                        0, 1, 17, 33,
+                    ]);
+
+                    await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[1].id,
+                    });
+
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 17]);
+                },
+            );
+
+            testWithHistory(
+                "deleting the last page updates last page counts",
+                async ({ db }) => {
+                    const getLastPageCounts = async () =>
+                        (await db.query.utility.findFirst())!.last_page_counts;
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [9, 10, 23],
+                    });
+                    expect(await getLastPageCounts()).toBe(23);
+
+                    await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[3].id,
+                    });
+
+                    expect(await getLastPageCounts()).toBe(10);
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 10]);
                 },
             );
         });
