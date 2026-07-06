@@ -229,7 +229,7 @@ export const deletePageYankMutationOptions = (qc: QueryClient) => {
         mutationFn: (pageId: number) => deletePageYank({ db, pageId }),
         onSuccess: async (_, variables) => {
             toast.success(tolgee.t("pages.deletedSuccessfully"));
-            void invalidatePageQueries(qc);
+            await invalidatePageQueries(qc);
         },
         onError: (e, variables) => {
             conToastError(

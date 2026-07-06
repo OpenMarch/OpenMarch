@@ -863,7 +863,7 @@
             "contextMenu": {
                 "delete": "Supprimer",
                 "deleteInPlace": "Sur place",
-                "deleteInPlaceTooltip": "Supprime cette page et garde les pages suivantes a leur position.",
+                "deleteInPlaceTooltip": "Supprime cette page et garde les pages suivantes à leur position.",
                 "deleteYank": "Tirer",
                 "deleteYankTooltip": "Supprime cette page et recule les pages suivantes de sa longueur.",
                 "subsetToggle": "Sous-ensemble",
