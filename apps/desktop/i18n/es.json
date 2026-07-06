@@ -861,7 +861,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "Eliminar",
+                "delete": "Eliminar",
+                "deleteInPlace": "En sitio",
+                "deleteInPlaceTooltip": "Elimina esta página y deja las páginas posteriores donde están.",
+                "deleteYank": "Tirar",
+                "deleteYankTooltip": "Elimina esta página y mueve las páginas posteriores hacia atrás por su longitud.",
                 "subsetToggle": "Subconjunto",
                 "title": "Página {pageName}"
             },

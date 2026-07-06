@@ -845,7 +845,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "Excluir",
+                "delete": "Excluir",
+                "deleteInPlace": "No lugar",
+                "deleteInPlaceTooltip": "Exclui esta página e mantém as páginas seguintes onde estão.",
+                "deleteYank": "Puxar",
+                "deleteYankTooltip": "Exclui esta página e puxa as páginas seguintes para trás pelo seu comprimento.",
                 "subsetToggle": "Subconjunto",
                 "title": "Página {pageName}"
             },
