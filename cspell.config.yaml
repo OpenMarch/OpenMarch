@@ -65,6 +65,7 @@ words:
   - Hipp
   - idioma
   - importmap
+  - infobar
   - Invalidators
   - launchpage
   - lightridge
@@ -90,10 +91,10 @@ words:
   - nums
   - NURBS
   - oklch
+  - ONTHEMOVE
   - openmarch
   - openmarchdev
   - OTMDEMO
-  - ONTHEMOVE
   - overscan
   - pacman
   - pagewidth

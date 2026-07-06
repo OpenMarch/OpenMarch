@@ -728,6 +728,27 @@
                 "title": "Video Guides"
             }
         },
+        "infobar": {
+            "community": {
+                "placeholderBody": "Placeholder only: community posts and updates are not connected yet. This card will be replaced later.",
+                "placeholderTitle": "Placeholder community",
+                "title": "Community"
+            },
+            "news": {
+                "loading": "Loading news...",
+                "noInternet": "No internet, could not fetch news",
+                "placeholderBody": "Placeholder only: launch page news is not connected to a real source yet. This card will be replaced later.",
+                "placeholderTitle": "Placeholder news",
+                "title": "News"
+            },
+            "placeholderNotice": "Temporary placeholder content",
+            "scores": {
+                "placeholderBody": "Placeholder only: score data is not available here yet. This card will be replaced later.",
+                "placeholderTitle": "Placeholder scores",
+                "title": "Scores"
+            },
+            "title": "Info"
+        },
         "merch": "Get OpenMarch Merch!",
         "settings": {
             "title": "Settings"

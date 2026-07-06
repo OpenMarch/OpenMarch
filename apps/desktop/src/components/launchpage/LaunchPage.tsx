@@ -17,6 +17,7 @@ import SettingsContent from "./settings/SettingsContent";
 import { T } from "@tolgee/react";
 import FilesContent from "./files/FilesContent";
 import LearnContent from "./learn/LearnContent";
+import InfoBar from "./InfoBar";
 import Toaster from "../ui/Toaster";
 import NewShowDialog from "./NewShowDialog";
 import { useQueryClient } from "@tanstack/react-query";
@@ -107,6 +108,7 @@ export default function LaunchPage({ setDatabaseIsReady }: LaunchPageProps) {
                     </h3>
                     <SettingsContent />
                 </Tabs.Content>
+                <InfoBar />
             </Tabs.Root>
 
             <NewShowDialog
@@ -141,7 +143,7 @@ function Sidebar({
         }
     }
     return (
-        <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full w-[350px] flex-col justify-between border p-12">
+        <Tabs.List className="bg-fg-1 border-stroke rounded-6 flex h-full max-w-[350px] min-w-[350px] flex-col justify-between border p-12">
             <section className="flex flex-col gap-12">
                 <p className="text-body text-text/60">
                     <T keyName="launchpage.title" />
