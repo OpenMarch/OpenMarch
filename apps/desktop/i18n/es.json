@@ -968,6 +968,7 @@
                     "typeFade": "Fundido",
                     "durationSeconds": "Duración (s)",
                     "color": "Color",
+                    "direction": "Dirección",
                     "fadeDurationSeconds": "Duración del fundido (s)",
                     "fadeTargetColor": "Color de destino del fundido",
                     "fadeColors": "Colores",

@@ -1249,6 +1249,7 @@
                     "typeWipe": "Wipe",
                     "durationSeconds": "Duration (s)",
                     "color": "Color",
+                    "direction": "Direction",
                     "changeDuration": "Change duration",
                     "fadeTargetColor": "Fade target color",
                     "fadeColors": "Colors",

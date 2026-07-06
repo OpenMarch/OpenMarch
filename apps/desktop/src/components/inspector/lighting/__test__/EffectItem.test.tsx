@@ -29,6 +29,7 @@ const fadeArgsWithTwoColors = JSON.stringify({
 
 const wipeArgs = JSON.stringify({
     color: "#112233",
+    directionDegrees: 90,
 });
 
 describe("EffectItem type selector", () => {
@@ -173,9 +174,190 @@ describe("EffectItem fade args editor", () => {
 });
 
 describe("EffectItem wipe args editor", () => {
-    it("renders color field for wipe effects", () => {
+    it("renders color and direction fields for wipe effects", () => {
         render(<EffectItem {...baseProps} type="wipe" args={wipeArgs} />);
 
         expect(screen.getByText("Color")).toBeTruthy();
+        expect(
+            screen.getByRole("spinbutton", { name: "Direction" }),
+        ).toBeTruthy();
+        expect(screen.getByRole("slider", { name: "Direction" })).toBeTruthy();
+    });
+
+    it("normalizes direction degrees when the input is committed", () => {
+        const argsChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="wipe"
+                args={wipeArgs}
+                argsChangeFn={argsChangeFn}
+            />,
+        );
+
+        const directionInput = screen.getByRole("spinbutton", {
+            name: "Direction",
+        });
+        fireEvent.change(directionInput, { target: { value: "370" } });
+        fireEvent.blur(directionInput);
+
+        expect(argsChangeFn).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(argsChangeFn.mock.calls[0]![0] as string)).toEqual({
+            color: "#112233",
+            directionDegrees: 10,
+        });
+    });
+
+    it("does not commit dial changes until pointer up", () => {
+        const argsChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="wipe"
+                args={wipeArgs}
+                argsChangeFn={argsChangeFn}
+            />,
+        );
+
+        const dial = screen.getByRole("slider", { name: "Direction" });
+        vi.spyOn(dial, "getBoundingClientRect").mockReturnValue({
+            left: 0,
+            top: 0,
+            right: 100,
+            bottom: 100,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            toJSON: () => ({}),
+        });
+        Object.assign(dial, {
+            setPointerCapture: vi.fn(),
+            hasPointerCapture: vi.fn(() => true),
+            releasePointerCapture: vi.fn(),
+        });
+
+        const dispatchPointerEvent = (
+            type: string,
+            clientX: number,
+            clientY: number,
+            shiftKey = false,
+        ) => {
+            const event = new Event(type, {
+                bubbles: true,
+                cancelable: true,
+            });
+            Object.defineProperties(event, {
+                pointerId: { value: 1 },
+                clientX: { value: clientX },
+                clientY: { value: clientY },
+                shiftKey: { value: shiftKey },
+            });
+            fireEvent(dial, event);
+        };
+
+        dispatchPointerEvent("pointerdown", 50, 0);
+        dispatchPointerEvent("pointermove", 100, 50);
+
+        expect(argsChangeFn).not.toHaveBeenCalled();
+
+        dispatchPointerEvent("pointerup", 0, 50);
+
+        expect(argsChangeFn).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(argsChangeFn.mock.calls[0]![0] as string)).toEqual({
+            color: "#112233",
+            directionDegrees: 180,
+        });
+    });
+
+    it("snaps dial pointer changes to 15 degrees unless shift is held", () => {
+        const argsChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="wipe"
+                args={wipeArgs}
+                argsChangeFn={argsChangeFn}
+            />,
+        );
+
+        const dial = screen.getByRole("slider", { name: "Direction" });
+        vi.spyOn(dial, "getBoundingClientRect").mockReturnValue({
+            left: 0,
+            top: 0,
+            right: 100,
+            bottom: 100,
+            x: 0,
+            y: 0,
+            width: 100,
+            height: 100,
+            toJSON: () => ({}),
+        });
+        Object.assign(dial, {
+            setPointerCapture: vi.fn(),
+            hasPointerCapture: vi.fn(() => true),
+            releasePointerCapture: vi.fn(),
+        });
+
+        const dispatchPointerEvent = (
+            type: string,
+            clientX: number,
+            clientY: number,
+            shiftKey = false,
+        ) => {
+            const event = new Event(type, {
+                bubbles: true,
+                cancelable: true,
+            });
+            Object.defineProperties(event, {
+                pointerId: { value: 1 },
+                clientX: { value: clientX },
+                clientY: { value: clientY },
+                shiftKey: { value: shiftKey },
+            });
+            fireEvent(dial, event);
+        };
+
+        dispatchPointerEvent("pointerdown", 100, 41);
+        dispatchPointerEvent("pointerup", 100, 41);
+
+        expect(JSON.parse(argsChangeFn.mock.calls[0]![0] as string)).toEqual({
+            color: "#112233",
+            directionDegrees: 15,
+        });
+
+        dispatchPointerEvent("pointerdown", 100, 41, true);
+        dispatchPointerEvent("pointerup", 100, 41, true);
+
+        expect(JSON.parse(argsChangeFn.mock.calls[1]![0] as string)).toEqual({
+            color: "#112233",
+            directionDegrees: 10,
+        });
+    });
+
+    it("commits keyboard changes from the dial", () => {
+        const argsChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="wipe"
+                args={wipeArgs}
+                argsChangeFn={argsChangeFn}
+            />,
+        );
+
+        fireEvent.keyDown(screen.getByRole("slider", { name: "Direction" }), {
+            key: "ArrowUp",
+        });
+
+        expect(argsChangeFn).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(argsChangeFn.mock.calls[0]![0] as string)).toEqual({
+            color: "#112233",
+            directionDegrees: 91,
+        });
     });
 });

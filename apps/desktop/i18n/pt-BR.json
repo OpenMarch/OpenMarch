@@ -952,6 +952,7 @@
                     "typeFade": "Fade",
                     "durationSeconds": "Duração (s)",
                     "color": "Cor",
+                    "direction": "Direção",
                     "fadeDurationSeconds": "Duração do fade (s)",
                     "fadeTargetColor": "Cor de destino do fade",
                     "fadeColors": "Cores",

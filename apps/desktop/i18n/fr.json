@@ -968,6 +968,7 @@
                     "typeFade": "Fondu",
                     "durationSeconds": "Durée (s)",
                     "color": "Couleur",
+                    "direction": "Direction",
                     "fadeDurationSeconds": "Durée du fondu (s)",
                     "fadeTargetColor": "Couleur cible du fondu",
                     "fadeColors": "Couleurs",

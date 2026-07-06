@@ -952,6 +952,7 @@
                     "typeFade": "フェード",
                     "durationSeconds": "時間（秒）",
                     "color": "色",
+                    "direction": "方向",
                     "fadeDurationSeconds": "フェード時間（秒）",
                     "fadeTargetColor": "フェードの終了色",
                     "fadeColors": "色",
