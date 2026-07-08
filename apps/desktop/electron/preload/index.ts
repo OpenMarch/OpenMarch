@@ -301,6 +301,13 @@ const APP_API = {
         ipcRenderer.invoke("audio:insert") as Promise<
             DbServices.LegacyDatabaseResponse<AudioFile[]>
         >,
+    insertAudioFileFromBuffer: (args: {
+        data: ArrayBuffer;
+        nickname: string;
+    }) =>
+        ipcRenderer.invoke("audio:insertBuffer", args) as Promise<
+            DbServices.LegacyDatabaseResponse<AudioFile[]>
+        >,
     getAudioFilesDetails: () =>
         ipcRenderer.invoke("audio:getAll") as Promise<AudioFile[]>,
     getSelectedAudioFile: () =>

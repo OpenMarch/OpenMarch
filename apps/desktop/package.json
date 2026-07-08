@@ -43,6 +43,7 @@
         "@fontsource/dm-mono": "^5.2.6",
         "@fontsource/dm-sans": "^5.2.6",
         "@openmarch/core": "workspace:*",
+        "@openmarch/drill-interop": "workspace:*",
         "@openmarch/metronome": "workspace:*",
         "@openmarch/musicxml-parser": "workspace:*",
         "@openmarch/schema": "0.4.2",

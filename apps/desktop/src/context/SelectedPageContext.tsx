@@ -49,6 +49,8 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
             setSelectedPage(
                 pages.find((page) => page.id === selectedPage.id) || null,
             );
+        else if (!pageWasSet && !selectedPage && pages.length > 0)
+            setSelectedPage(pages[0]!);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [pages]);
 

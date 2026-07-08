@@ -4,6 +4,7 @@ import MarchersModal from "@/components/marcher/MarchersModal";
 import MetronomeModal from "@/components/music/MetronomeModal";
 import WorkspaceSettingsModal from "@/components/sidebar/WorkspaceSettingsModal";
 import AppearanceModal from "@/components/marcher/appearance/AppearanceModal";
+import ImportModal from "@/components/import/ImportModal";
 import MobileExportModal from "../mobile/MobileExportModal";
 
 export default function Sidebar() {
@@ -18,6 +19,7 @@ export default function Sidebar() {
                 <FieldModal />
                 <MetronomeModal />
                 <AppearanceModal />
+                <ImportModal />
             </div>
             <div className="flex flex-col gap-16">
                 <MobileExportModal />

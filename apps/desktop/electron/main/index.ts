@@ -374,6 +374,11 @@ function initDatabaseIpcHandlers() {
         }
     });
     ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle(
+        "audio:insertBuffer",
+        async (_, args: { data: ArrayBuffer; nickname: string }) =>
+            insertAudioFileFromBuffer(args),
+    );
 }
 
 function initRecentFilesIpcHandlers() {
@@ -1289,6 +1294,37 @@ export async function insertAudioFile(): Promise<
         return databaseResponse;
     } catch (err) {
         console.error("Error inserting audio file:", err);
+        return audioInsertError(
+            err instanceof Error ? err.message : String(err),
+        );
+    }
+}
+
+/**
+ * Inserts an audio file from an in-memory buffer (e.g. audio bundled inside an
+ * imported drill package) and selects it, without prompting the user for a file.
+ */
+export async function insertAudioFileFromBuffer({
+    data,
+    nickname,
+}: {
+    data: ArrayBuffer;
+    nickname: string;
+}): Promise<DatabaseServices.LegacyDatabaseResponse<AudioFile[]>> {
+    if (!DatabaseServices.databaseIsReady()) {
+        return audioInsertError(
+            "No file is open. Create or open a show first.",
+        );
+    }
+    try {
+        return await DatabaseServices.insertAudioFile({
+            data,
+            path: nickname,
+            nickname,
+            selected: true,
+        });
+    } catch (err) {
+        console.error("Error inserting audio file from buffer:", err);
         return audioInsertError(
             err instanceof Error ? err.message : String(err),
         );
