@@ -20,6 +20,7 @@ import {
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
+import SoundSportTemplates from "@/global/classes/fieldTemplates/SoundSport";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
@@ -125,6 +126,18 @@ export default function FieldPropertiesSelector({
                                     <>
                                         <SelectLabel>Football</SelectLabel>
                                         {Object.values(FootballTemplates).map(
+                                            (template) => (
+                                                <SelectItem
+                                                    key={template.name}
+                                                    value={template.name}
+                                                >
+                                                    {template.name}
+                                                </SelectItem>
+                                            ),
+                                        )}
+                                        <SelectSeparator />
+                                        <SelectLabel>SoundSport</SelectLabel>
+                                        {Object.values(SoundSportTemplates).map(
                                             (template) => (
                                                 <SelectItem
                                                     key={template.name}
