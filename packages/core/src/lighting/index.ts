@@ -1,4 +1,5 @@
 export * from "./types";
+export * from "./schema";
 export * from "./effectLayers";
 export * from "./effect";
 export * from "./effect.fade";
