@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
-import {
-    getDefaultFieldTemplate,
-    SOUNDSPORT_ENSEMBLE_TYPE,
-} from "../getDefaultFieldTemplate";
+import { getDefaultFieldTemplate } from "../getDefaultFieldTemplate";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("getDefaultFieldTemplate", () => {
@@ -25,14 +22,14 @@ describe("getDefaultFieldTemplate", () => {
     });
 
     it("selects the SoundSport preset for the SoundSport ensemble type", () => {
-        expect(
-            getDefaultFieldTemplate("outdoor", SOUNDSPORT_ENSEMBLE_TYPE),
-        ).toBe(FieldPropertiesTemplates.SOUNDSPORT_8to5);
+        expect(getDefaultFieldTemplate("outdoor", "SoundSport")).toBe(
+            FieldPropertiesTemplates.SOUNDSPORT_8to5,
+        );
     });
 
     it("keeps the indoor floor even if the ensemble type is SoundSport", () => {
-        expect(
-            getDefaultFieldTemplate("indoor", SOUNDSPORT_ENSEMBLE_TYPE),
-        ).toBe(FieldPropertiesTemplates.INDOOR_50x80_8to5);
+        expect(getDefaultFieldTemplate("indoor", "SoundSport")).toBe(
+            FieldPropertiesTemplates.INDOOR_50x80_8to5,
+        );
     });
 });

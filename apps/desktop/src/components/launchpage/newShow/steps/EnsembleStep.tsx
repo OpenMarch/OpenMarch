@@ -13,7 +13,6 @@ import type {
     NewShowEnsembleData,
     NewShowEnvironment,
 } from "../../newShowTypes";
-import { SOUNDSPORT_ENSEMBLE_TYPE } from "./getDefaultFieldTemplate";
 
 const INDOOR_ENSEMBLE_TYPES = [
     "Indoor Percussion",
@@ -25,7 +24,7 @@ const INDOOR_ENSEMBLE_TYPES = [
 const OUTDOOR_ENSEMBLE_TYPES = [
     "Marching Band",
     "Drum Corps",
-    SOUNDSPORT_ENSEMBLE_TYPE,
+    "SoundSport",
     "Other",
 ];
 

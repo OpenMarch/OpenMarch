@@ -20,9 +20,7 @@ import {
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
-import SoundSportTemplates, {
-    SOUNDSPORT_ENSEMBLE_TYPE,
-} from "@/global/classes/fieldTemplates/SoundSport";
+import SoundSportTemplates from "@/global/classes/fieldTemplates/SoundSport";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
@@ -99,12 +97,9 @@ export default function FieldPropertiesSelector({
         ? "Custom"
         : currentTemplate?.name || fieldProperties?.name || "";
 
-    // When no environment is given (e.g. the field settings editor), show every
-    // outdoor option. When an ensemble is known, scope the outdoor list: the
-    // SoundSport ensemble only sees SoundSport fields, everything else sees
-    // football fields.
+    // No environment (field editor) shows all outdoor fields; a known ensemble scopes the list.
     const showAllOutdoor = environment === undefined;
-    const isSoundSportEnsemble = ensembleType === SOUNDSPORT_ENSEMBLE_TYPE;
+    const isSoundSportEnsemble = ensembleType === "SoundSport";
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">

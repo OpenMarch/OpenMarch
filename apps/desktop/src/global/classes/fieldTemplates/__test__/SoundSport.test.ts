@@ -2,8 +2,7 @@ import { describe, it, expect } from "vitest";
 import { FieldProperties } from "@openmarch/core";
 import SoundSportTemplates from "../SoundSport";
 
-// The SoundSport performance area is 30 yards wide by 20 yards deep.
-// 30 yards = 90 ft = 1080 in ; 20 yards = 60 ft = 720 in.
+// SoundSport area: 30 yd wide (90 ft / 1080 in) x 20 yd deep (60 ft / 720 in).
 const EXPECTED_WIDTH_INCHES = 1080;
 const EXPECTED_HEIGHT_INCHES = 720;
 
