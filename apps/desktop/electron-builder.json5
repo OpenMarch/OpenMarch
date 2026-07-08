@@ -18,10 +18,11 @@
         "electron/database/migrations",
         "!**/node_modules/canvas/**",
     ],
-    artifactName: "${productName}_${buildVersion}-${platform}_${arch}.${ext}",
+    artifactName: "${productName}-${platform}-${arch}.${ext}",
 
     mac: {
         target: ["dmg", "zip"],
+        artifactName: "${productName}-macos-${arch}.${ext}",
         hardenedRuntime: true,
         gatekeeperAssess: true,
         darkModeSupport: true,
@@ -69,7 +70,7 @@
     },
     win: {
         target: "nsis",
-        artifactName: "${productName}_${buildVersion}.${ext}",
+        artifactName: "${productName}-windows.${ext}",
         // Note: Azure signing is configured in electron-builder-sign.json5
         // which extends this config and is only used for signed releases
         fileAssociations: [
@@ -93,6 +94,7 @@
 
     linux: {
         target: ["snap", "AppImage"],
+        artifactName: "${productName}-linux-${arch}.${ext}",
         category: "Graphics",
         synopsis: "OpenMarch is an open source drill writing software built on web app frameworks. Our goal is to be a free and easy drill writing solution for marching bands, indoor programs, and applicable performing ensembles. OpenMarch hopes to be enough for 90% of ensembles with reasonable design needs. We want to make drill writing effortless. OpenMarch is designed with three principles: stay free, stay fast, and stay simple.\nOpenMarch is designed with three principles:\n\tStay free - All of the technologies OpenMarch uses have been intentionally chosen to minimize operation costs. This ensures that OpenMarch remains accessible to everyone, regardless of their financial situation.\n\tStay fast - OpenMarch is built with performance in mind. We want to ensure that the software runs smoothly on any device, making the drill writing process efficient and enjoyable.\n\tStay simple - We focus on providing essential features without unnecessary complexity. Our interface is intuitive and easy to use, allowing you to create drill without a steep learning curve.",
         fileAssociations: [
