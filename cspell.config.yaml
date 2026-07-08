@@ -21,6 +21,7 @@ words:
   - blockqoute
   - bostick
   - BRHS
+  - BORD
   - canvas
   - Catmull
   - ccpa
@@ -31,6 +32,7 @@ words:
   - clsx
   - codegen
   - colours
+  - ciphertext
   - Configuración
   - cooldown
   - couldn
@@ -92,6 +94,7 @@ words:
   - oklch
   - openmarch
   - openmarchdev
+  - overcounts
   - OTMDEMO
   - ONTHEMOVE
   - overscan
@@ -167,6 +170,7 @@ words:
   - waivable
   - WASD
   - wavesurfer
+  - westside
   - winget
   - Winterguard
   - Woodgrove
@@ -214,6 +218,7 @@ ignoreRegExpList:
   - \u[0-9A-Fa-f]{4}
   - ^import\s+.*$
   - "[a-zA-Z]+\\=\\{[a-zA-Z0-9_$]+\\}"
+  - '[`"][A-Za-z0-9+/]+={0,2}[`"]'
 overrides:
   - filename:
       - "**/i18n/**"
