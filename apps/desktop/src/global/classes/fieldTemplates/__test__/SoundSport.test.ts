@@ -17,8 +17,8 @@ describe("SoundSport templates", () => {
     it("exposes exactly the 8-to-5 and 6-to-5 variants", () => {
         expect(templates).toHaveLength(2);
         expect(templates.map((t) => t.name)).toEqual([
-            "SoundSport (8 to 5 steps)",
-            "SoundSport (6 to 5 steps)",
+            "SoundSport - 8 to 5 steps",
+            "SoundSport - 6 to 5 steps",
         ]);
     });
 
