@@ -38,9 +38,41 @@ the reader resilient to naming differences.
   frames (`PG15`) and a couple of skippable selection/visibility chunks.
 - A trailing `END.` tag terminates the body.
 
-Chunk tags observed: `PRF3`, `CST7`, `PTB7`, `GRD1`, `PG15`, `SEL2`, `VIS2`,
-plus prop/color/playlist chunks we don't need. Only the chunks below carry data
-we import; everything else is skipped by length.
+**Complete chunk inventory** (confirmed by walking the sample document; 23 tags).
+Only the five marked ✅ are read; the rest are skipped by length. Several of the
+skipped chunks carry real data we don't yet map — see §7.
+
+| Tag    | Read? | Count | Meaning (✝ = inferred from bytes, not confirmed)                                                                                                            |
+| ------ | ----- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `3DJV` | —     | 1     | File magic + header: `u16` version (`15`) then two Java millisecond timestamps (created/modified).✝                                                         |
+| `PRP1` | —     | 1     | Explicit prop list — `u16 count` then prop records; empty (`count 0`) in the sample.                                                                        |
+| `PRF3` | ✅\*  | 1     | Show metadata. Only the title is read; the tail (render tag `PYJAVA2`, font `SansSerif`, point sizes, text colors) is skipped.                              |
+| `PTL1` | —     | 1     | 3-byte flag/config.✝                                                                                                                                        |
+| `CVR1` | —     | 1     | Floor-cover selection (`u32`, `0` = none in the sample).                                                                                                    |
+| `GRD1` | ✅    | 1     | Field / grid definition (§2.5).                                                                                                                             |
+| `CST7` | ✅    | 1     | Cast list (§2.3).                                                                                                                                           |
+| `COLR` | —     | 1     | **Color palette** — `u16 count` then N colors, each **three `u32`** (R,G,B, 0–255). Sample: 7 colors (blue/red/orange/green/purple/magenta/teal). See §2.7. |
+| `PLS2` | —     | 1     | **Prop/backdrop image list** — `u16 count` then per entry a UTF-16BE file path + index. Sample: the 4 bundled images. See §2.7.                             |
+| `TLL2` | —     | 1     | Timeline-track list — `u16 count` then named tracks (`"Main"` → `"N;-1;-1"`).✝                                                                              |
+| `PTB7` | ✅    | 1     | Set list (§2.4).                                                                                                                                            |
+| `PTU1` | —     | 1     | Custom performer note-column definitions (`"Note 1".."Note 5"`) + per-performer values.                                                                     |
+| `PG15` | ✅    | 500   | Page frames — one per count (§2.6).                                                                                                                         |
+| `VsD1` | —     | 1     | Small visual-settings block; contains a color (`0xFFFC18`).✝                                                                                                |
+| `TxD1` | —     | 1     | **Section/id grouping table** — `u16` ids in 1000-banded ranges (1000s … 8000s = sections). See §2.7.                                                       |
+| `FAB1` | —     | 1     | Fabric/backdrop layer (empty in the sample).                                                                                                                |
+| `SYNC` | —     | 1     | **Audio sync** — UTF-16BE audio file path + sync data.                                                                                                      |
+| `RMAP` | —     | 1     | Fixed-width id/reference map — 6-byte records `(u16,u16,u16)`, `0xFFFF` = unset. **Not** a tempo map (corrected). See §2.7.                                 |
+| `COM2` | —     | 1     | **Continuity text** (~19 KB) — per-phrase move instructions (`"hold"`, `"Float"`) + marker-group mask + applied marker ids. See §2.7.                       |
+| `CORD` | —     | 1     | Coordinate-sheet vocabulary — 13 strings (`"Side 1"`, `"Hash"`, `"In Front Of"`, `"Behind"`, `"Inside"`, `"yd ln"`…).                                       |
+| `SEL2` | —     | 26    | Saved selection/tool state — marker mask + active tool (`"ArcTool"`) + coord block. Editor state.                                                           |
+| `VIS2` | —     | 13    | View snapshots — `u16 count` then full 69-byte marker records (§2.6). Editor state.                                                                         |
+| `END.` | —     | 1     | Body terminator.                                                                                                                                            |
+
+\* `PRF3` is read for the title only. The parser breaks out of the chunk loop as
+soon as it has seen the page frames, so chunks that follow `PG15` in the stream
+(`VsD1`, `TxD1`, `FAB1`, `SYNC`, `RMAP`, `COM2`, `CORD`) are never even reached —
+they are skipped structurally, not just by length. Meanings marked ✝ are inferred
+from byte inspection of one sample; the rest were decoded (§2.7).
 
 ### 2.2 `PRF3` — show metadata (title)
 
@@ -150,6 +182,73 @@ X/Y values live only in the encrypted ASCII block.
 There is no elevation / Z in this record. The parser currently skips the binary
 table and reads positions only from the encrypted block.
 
+> **Reality check (measured against the sample export).** The layout above is the
+> source tool's in-memory marker class. In the actual interchange export, most of
+> those fields are **not populated** — a column-variance scan across all 500
+> frames shows offsets 48 (facing angle), 51–68 (symbol, inline X/Y, selected,
+> visibility, rotation) are constant defaults (angle stays `1`, rotation `0`,
+> symbol `0x30`, marker type at 47 is `0` for every record). **Body facing and
+> rotation are therefore not recoverable from this file** — do not plan features
+> on them. The bytes that _do_ vary per marker are the id (0–7), the linkage-id
+> fields (8–37, so follow/reference links are real), and two small fields at
+> offset 41 (values 0–6) and 50 (a flag byte) whose exact meaning can't be pinned
+> from a single file (offset 41 is not stably per-marker, so it is not a clean
+> color index). Treat everything except id + linkage ids as unconfirmed for
+> exported files.
+
+### 2.7 Decoded formats for the unparsed chunks
+
+Byte-level layouts recovered from the sample export. None of these are read by the
+reader today; they are documented here so a future importer pass can pick them up
+(see §7). All integers big-endian.
+
+**`COLR` — color palette.** `u16 count`, then `count` colors, each **three `u32`**
+(red, green, blue, each `0–255`). The sample's 7 colors:
+
+```
+0: (0,0,255)    blue        4: (153,0,204)  purple
+1: (255,0,51)   red         5: (255,51,204) magenta
+2: (255,153,0)  orange      6: (102,255,204) teal
+3: (51,255,51)  green
+```
+
+This is the show's color set. How a performer maps to a palette index is **not**
+settled from one file (the per-marker byte at offset 41 of the `PG15` record is
+not stably per-marker; the likeliest scheme is per-section via `TxD1`).
+
+**`TxD1` — section / id grouping.** `u8 count`, then a run of `u16` ids grouped in
+1000-banded ranges: `1000–1999`, `2000–2999`, … `8000–8999`. Each band is a
+section and the members are its performer ids in drill order. `RMAP` shares this
+id space. Together with `CST7` labels and `COLR`, this is enough to reconstruct
+section membership and, probably, section color.
+
+**`RMAP` — id/reference map.** Fixed-width 6-byte records, read as three `u16`
+`(a, b, c)`; `0xFFFF` marks an unset slot. `a` clusters around `1000/1001`, `b`
+around `8000/8002`, `c` ranges widely (0, 4000s, 5000s, 7000s). It maps performer
+ids to reference ids/values — **not** a tempo map (an earlier guess, now
+corrected). The real audio alignment is in `SYNC`.
+
+**`PLS2` — prop/backdrop image list.** `u16 count`, then per entry `u16 pathLen`
+(UTF-16 code units), the **UTF-16BE** absolute path, and a small index/flag
+trailer. The sample lists the four bundled images (`Light Gray.jpg`,
+`curtain.jpeg`, `curatin 2.jpg`, `Pink Flag.png`).
+
+**`COM2` — continuity text.** `u16 count` of performers, then per-phrase records:
+a marker-group mask (a run of symbol chars like `XXXX…`/`ssss…`), a length-prefixed
+move-instruction string (`"hold"`, `"Float"`, …), and the list of 6-byte marker
+ids the instruction applies to. This is the human-readable drill continuity — the
+count-by-count "what each performer does" text. OpenMarch has no continuity-text
+home today, but this is the richest written-instruction data in the file.
+
+**`SYNC` — audio sync.** Leads with the UTF-16BE audio file path, followed by sync
+data that aligns the count timeline to the audio. Pairs with `RMAP`/measures for
+true musical timing (§7 #9).
+
+**`CORD` — coordinate-sheet vocabulary.** 13 length-prefixed ASCII strings
+(`"Side 1"`, `"Side 2"`, `"Back"`, `"Front"`, `"steps"`, `"yd ln"`, `"side line"`,
+`"In Front Of"`, `"Behind"`, `"Inside"`, `"Outside"`, `"Hash"`). The phrasing the
+source uses when printing coordinate sheets; localization/config, not drill data.
+
 ## 3. Coordinate block encryption & record layout
 
 Each `PG15` block is a **Base64-encoded AES-128-CBC ciphertext**. The scheme is
@@ -255,21 +354,49 @@ currently map it into OpenMarch. Listed roughly by value.
    sets against the straight-line default and emit a pathway when it deviates. This
    is the single biggest fidelity improvement and is pure importer work.
 
-2. **Stable source ids → re-import / merge (needs a schema change).** The source
-   gives each performer a stable `u64` id and each set an id. OpenMarch marchers
+2. **Per-marker linkage ids → nothing (unparsed, but narrower than hoped).**
+   Every `PG15` frame carries a 69-byte record per marker (layout in §2.6) that
+   the reader skips wholesale (`reader.skip(count * PAGE_RECORD_BYTES)` in
+   `readPageFrame`). A column-variance scan across all 500 frames shows the
+   export **strips most of that record** — facing angle, rotation, symbol, marker
+   type, inline X/Y, selected, and visibility are all constant defaults, so
+   **body facing/rotation are not recoverable** (an earlier version of this doc
+   claimed they were "right there"; that was wrong for exported files). What does
+   vary and is worth reading:
+   - **Linkage ids 0/1/2 + sub-ids** (offsets 8–37) — the follow/leader/link
+     relationships between markers. This is the structured source of the same
+     motion that item #1 reconstructs geometrically; parsing it would make
+     follow-the-leader and gate turns exact instead of inferred.
+   - A small enum at offset 41 (values 0–6) and a flag byte at offset 50 — not
+     stably per-marker, meaning unconfirmed from a single file.
+
+   Authoritative marker classification (prop vs. reference vs. performer), which
+   we currently re-derive heuristically from the coordinate block (`src/props.ts`),
+   is therefore **not** available from this record in the export — the type byte
+   is zeroed. The `COM2` continuity text (item #7) is a better source of movement
+   intent than this table.
+
+3. **Stable source ids → re-import / merge (needs a schema change).** The source
+   gives each performer a stable `u64` id and each set an id (`CST7`/`PTB7`),
+   both currently used only as join keys and then dropped. OpenMarch marchers
    have no place to store an external id, so every import is a destructive full
    replace. Adding an optional `external_id` (source id) column to `marchers` (and
    likely `pages`) would let a re-import **merge** — update moved coordinates and
    add/remove marchers instead of wiping user edits. This is the foundation for
    robust multi-format interop, not just one-shot import.
 
-3. **Set names/labels have nowhere to go.** Source sets are named as measure
+4. **Show title has nowhere to go.** `PRF3` yields the show title, but the
+   importer only uses it for the success toast (`importDrillPackage`) — it is
+   never stored as the show's name. Anything in the `PRF3` payload after the
+   title (possible subtitle/author/organization) is also unparsed (see §2.2).
+
+5. **Set names/labels have nowhere to go.** Source sets are named as measure
    ranges (`"179-182"`, `"234-END"`). OpenMarch `pages` have no name/label column
    (pages are numbered positionally), so the label is currently dropped — only the
    director note is carried. Options: add a `pages.name`/`label` column, or fold
    the label into `pages.notes`.
 
-4. **Marker classification uses ids, not just coordinates.** Each page frame
+6. **Marker classification uses ids, not just coordinates.** Each page frame
    mixes cast performers, props, and reference geometry. Cast comes from `CST7`.
    Non-cast markers are classified by **symbol** (`s` vs `X`), **movement**
    across set-boundary frames, and interior position for static props. The
@@ -285,17 +412,58 @@ currently map it into OpenMarch. Listed roughly by value.
    their drill labels; performers only present in page frames (`s`, not cast) import
    as **Other** with generated labels until a label source is found.
 
-5. **Bundled assets.** The package includes a field-surface image, floor cover,
-   props, and figurine images. The surface image is now extracted onto
-   `DrillShow.surface` (via `SRFC`), but the importer does not yet write it to
-   `field_properties.image` / toggle `showFieldImage`; the rest have no OpenMarch
-   home.
+7. **Visual / appearance data → nothing (unparsed chunks).** The source is a 3D
+   product: it renders figurines wearing a uniform and carrying an instrument,
+   over a field surface, floor cover, and fabric/backdrop. That appearance layer
+   lives in chunks the reader never touches (see the §2.1 inventory):
+   - **`COLR` — color palette (decoded, §2.7).** 7 colors, each three `u32` RGB.
+     This is the show's color set. OpenMarch marchers _do_ have a color concept,
+     so the palette is mappable today. The open question is the per-performer →
+     palette-index mapping: it is **not** in the `PG15` record (offset 41 is not
+     stably per-marker), so the likely route is per-section via `TxD1` (§2.7).
+   - **`COM2` — continuity text (decoded, §2.7).** Per-phrase written movement
+     instructions (`"hold"`, `"Float"`, …) with the marker group each applies to.
+     This is the richest human-readable data in the file. OpenMarch has no
+     continuity-text home yet, but it could seed page/marcher notes.
+   - **`FAB1` (fabric), `CVR1` (floor cover), `PRP1` (props), `VsD1`,
+     `PLS2` (prop image list).** The appearance/figurine layers from
+     `package.ini`'s `[Include]` (`figurines`, `fabric`, `floorCover`, `ground`).
+     In the sample the figurine/fabric _files_ are empty, so per-performer
+     appearance (uniform style, instrument, body) is defined by these chunks +
+     the palette, not by standalone images. The actual 3D figurine/instrument
+     **meshes are built into the source app**, not shipped in the package — the
+     file carries only the _selection_ (which uniform/instrument/color), never the
+     geometry. So a full 3D uniform/instrument recreation is out of scope; the
+     realistic wins are the color palette and section grouping.
+   - **`PTU1` / `TxD1` / `TLL2`.** Custom performer note-columns, section/id
+     grouping, and timeline tracks (§2.7).
 
-6. **Musical timing is a placeholder.** The source is count-based with no tempo,
-   so the importer synthesizes 120 bpm beats and no measures. Count positions are
-   preserved but the timeline is not musically aligned to the audio. If a tempo or
-   measure map ever becomes available it would map to `measures`.
+   Note: the 69-byte `PG15` record does **not** carry usable per-marker visual
+   state in the export — facing/symbol/type/visibility are zeroed (see item #2).
+
+8. **Bundled asset images.** The package also ships raster images: the field
+   surface (`SRFC`), plus props and backdrops (in the sample: `Light Gray.jpg`,
+   `curtain.jpeg`, `curatin 2.jpg`, `Pink Flag.png`). The surface image is now
+   extracted onto `DrillShow.surface`, but the importer does not yet write it to
+   `field_properties.image` / toggle `showFieldImage`; the prop/backdrop images
+   have no OpenMarch home. The `package.ini` manifest is not parsed — assets are
+   located by extension — so its `[Include]`/`[Attachment]`/`[Files]` metadata
+   (which names each asset and its layer) is unused.
+
+9. **Musical timing is under-mapped.** The importer synthesizes 120 bpm beats and
+   no measures. The document does carry a `SYNC` chunk (audio sync — the audio
+   file path plus alignment data), so the count timeline _can_ be aligned to the
+   audio. Note the correction from earlier drafts: `RMAP` is **not** a tempo/measure
+   map — decoding it (§2.7) shows a fixed-width performer-id → reference-id table,
+   not per-measure tempo. No explicit tempo or measure map was found in the sample;
+   `SYNC` is the lever for audio alignment, and measures would still have to be
+   inferred from it. This remains lower-priority than #1.
 
 Summary: nothing above blocks a working one-shot import. Curved-path
 reconstruction (#1) is the biggest quality win and needs no schema change;
-`external_id` (#2) is the one change worth making for durable interop.
+parsing the linkage ids in the 69-byte marker table (#2) would make
+follow-the-leader exact (but facing/rotation are stripped from the export, so
+scope that down); `external_id` (#3) is the one schema change worth making for
+durable interop. On the visual side, `COLR` (#7, decoded) is the cleanest win —
+7 RGB colors already sitting in plain bytes — and `COM2` continuity text (#7) is
+the richest human-readable data if a notes home exists for it.
