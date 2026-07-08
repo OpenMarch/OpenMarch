@@ -68,11 +68,13 @@ skipped chunks carry real data we don't yet map — see §7.
 | `VIS2` | —     | 13    | View snapshots — `u16 count` then full 69-byte marker records (§2.6). Editor state.                                                                         |
 | `END.` | —     | 1     | Body terminator.                                                                                                                                            |
 
-\* `PRF3` is read for the title only. The parser breaks out of the chunk loop as
-soon as it has seen the page frames, so chunks that follow `PG15` in the stream
-(`VsD1`, `TxD1`, `FAB1`, `SYNC`, `RMAP`, `COM2`, `CORD`) are never even reached —
-they are skipped structurally, not just by length. Meanings marked ✝ are inferred
-from byte inspection of one sample; the rest were decoded (§2.7).
+\* `PRF3` is read for the title only. The parser breaks out of the chunk loop on
+the first generic chunk seen _after_ the page frames (`if (rawPages.length > 0)
+break`). In the sample that chunk is `VsD1` — it is read as a chunk boundary and
+then triggers the break — so everything past it (`TxD1`, `FAB1`, `SYNC`, `RMAP`,
+`COM2`, `CORD`, `END.`) is **never reached at all**, not merely skipped by length.
+Meanings marked ✝ are inferred from byte inspection of one sample; the rest were
+decoded (§2.7).
 
 ### 2.2 `PRF3` — show metadata (title)
 
