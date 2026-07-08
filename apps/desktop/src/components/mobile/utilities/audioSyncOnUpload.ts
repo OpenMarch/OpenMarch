@@ -38,7 +38,7 @@ export type AudioSyncResult = {
 
 /**
  * Returns true if the given path/id represent the in-memory silent placeholder
- * (not a real file to sync).
+ * (generated when no audio file is stored locally).
  */
 export function isSilentPlaceholder(path: string, id: number): boolean {
     return path === SILENT_AUDIO_PATH || id === -1;
@@ -62,9 +62,9 @@ export function findServerAudioFileIdBySourceChecksum(
 
 /**
  * Prepares the audio sync result: compute checksum of local file, find matching server file.
- * Returns null if file has no data or is silent placeholder.
+ * Returns null if file has no data.
  *
- * @param fullFile - Local audio file with data
+ * @param fullFile - Local audio file with data (including silent placeholder)
  * @param serverAudioFiles - List of server audio files (with id and source_checksum)
  * @param computeChecksum - Async checksum function (e.g. AudioFile.computeChecksum)
  */
@@ -73,7 +73,6 @@ export async function prepareAudioSyncResult(
     serverAudioFiles: ServerAudioFileWithChecksum[],
     computeChecksum: (data: ArrayBuffer | Uint8Array) => Promise<string>,
 ): Promise<AudioSyncResult | null> {
-    if (isSilentPlaceholder(fullFile.path, fullFile.id)) return null;
     const data = fullFile.data;
     if (data == null) return null;
     const sourceChecksum = await computeChecksum(data);

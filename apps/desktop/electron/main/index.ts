@@ -365,6 +365,7 @@ function initDatabaseIpcHandlers() {
     ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
+            DatabaseServices.closePersistentConnection();
             const newPath = await repairDatabase(dbPath);
             await setActiveDb(newPath);
             return newPath;

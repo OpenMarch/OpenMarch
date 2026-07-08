@@ -1,7 +1,8 @@
 import {
     transactionWithHistory,
-    createPages,
+    createPagesInTransaction,
     updatePagesInTransaction,
+    updateLastPageCounts,
 } from "@/db-functions";
 import { db } from "@/global/database/db";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -29,17 +30,27 @@ export const _splitPage = async ({ page }: SplitPageArgs) => {
 
     await transactionWithHistory(db, "splitPage", async (tx) => {
         // Create the new page
-        await createPages({
+        await createPagesInTransaction({
             newPages: [splitResult.newPageArgs],
-            db: tx,
+            tx,
         });
 
         // Update the original page if needed
         if (splitResult.modifyPageRequest) {
-            await updatePagesInTransaction({
-                modifiedPages: splitResult.modifyPageRequest.modifiedPagesArgs,
-                tx,
-            });
+            if (splitResult.modifyPageRequest.modifiedPagesArgs.length > 0) {
+                await updatePagesInTransaction({
+                    modifiedPages:
+                        splitResult.modifyPageRequest.modifiedPagesArgs,
+                    tx,
+                });
+            }
+            if (splitResult.modifyPageRequest.lastPageCounts != null) {
+                await updateLastPageCounts({
+                    lastPageCounts:
+                        splitResult.modifyPageRequest.lastPageCounts,
+                    tx,
+                });
+            }
         }
     });
 };

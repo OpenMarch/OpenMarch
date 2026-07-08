@@ -845,7 +845,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "ページを削除",
+                "delete": "削除",
+                "deleteInPlace": "その場",
+                "deleteInPlaceTooltip": "このページを削除し、後続ページの位置はそのままにします。",
+                "deleteYank": "ヤンク",
+                "deleteYankTooltip": "このページを削除し、その長さ分だけ後続ページを前に詰めます。",
                 "subsetToggle": "サブセット",
                 "title": "ページ {pageName}"
             },
