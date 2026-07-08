@@ -292,6 +292,7 @@ export const generateTimingObjects = ({
             last_page_counts: 0,
             default_beat_duration: 0.5,
             id: 1,
+            notes: null,
             updated_at: faker.date.recent().toISOString(),
         },
         fetchTimingObjects: async () => {},

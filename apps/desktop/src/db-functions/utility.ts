@@ -10,6 +10,8 @@ export type DatabaseUtility = typeof schema.utility.$inferSelect;
  */
 export interface ModifiedUtilityArgs {
     last_page_counts?: number;
+    /** Show-level notes (e.g. production/credit notes from an imported drill). */
+    notes?: string | null;
 }
 
 /**

@@ -67,6 +67,49 @@ describeWithFixture("parseDrillPackage (real sample)", () => {
         });
     });
 
+    it("reads the full grid: step ratio, sidelines, hashes, yard lines", async () => {
+        const show = await load();
+        const { grid } = show;
+        expect(grid.stepsPerUnitX).toBeCloseTo(1.6, 5);
+        expect(grid.stepsPerUnitY).toBeCloseTo(1.6, 5);
+        expect(grid.sidelinesY).toEqual([-26.25, 26.25]);
+        expect(grid.hashesY).toEqual([-8.75, 8.75]);
+        expect(grid.yardLinesX).toHaveLength(21);
+        expect(grid.yardLinesX[0]).toBe(-50);
+        expect(grid.yardLinesX.at(-1)).toBe(50);
+        expect(grid.measurementSystem).toBe("imperial");
+        expect(grid.templateName).toBe("default");
+    });
+
+    it("extracts the field-surface image", async () => {
+        const show = await load();
+        expect(show.surface).toBeDefined();
+        expect(show.surface!.data.byteLength).toBeGreaterThan(0);
+    });
+
+    it("splits the closing production note off the final set", async () => {
+        const show = await load();
+        // The credit block moves to show-level production notes...
+        expect(show.productionNotes).toContain("Bright Designs");
+        expect(show.productionNotes).toContain("Brighton & Trevor");
+        // ...and the final set keeps only its own move note.
+        const lastNote = show.sets.at(-1)!.notes ?? "";
+        expect(lastNote).toContain("Hold to END");
+        expect(lastNote).not.toContain("Bright Designs");
+    });
+
+    it("decodes note text as UTF-8 (no mojibake)", async () => {
+        const show = await load();
+        const joined = [
+            show.productionNotes ?? "",
+            ...show.sets.map((s) => s.notes ?? ""),
+        ].join("\n");
+        // The closing note contains typographic punctuation (’ and —). Reading
+        // the bytes as Latin-1 would surface the tell-tale "Â"/"â" mojibake.
+        expect(joined).toContain("Bright Designs");
+        expect(joined).not.toMatch(/Ã|Â|â€/);
+    });
+
     it("extracts the show audio", async () => {
         const show = await load();
         expect(show.audio).toBeDefined();

@@ -1,12 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { FieldProperties } from "@openmarch/core";
-import {
-    deriveMarcherFromLabel,
-    fieldGeometry,
-    sourcePointToPixels,
-    type FieldGeometry,
-} from "../drillTransform";
-import type { DrillFieldBorder } from "@openmarch/drill-interop";
+import { deriveMarcherFromLabel, sourcePointToPixels } from "../drillTransform";
+import type { DrillGrid } from "@openmarch/drill-interop";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("deriveMarcherFromLabel", () => {
     it("splits a label into an alphabetic prefix and numeric order", () => {
@@ -49,80 +44,61 @@ describe("deriveMarcherFromLabel", () => {
 });
 
 describe("sourcePointToPixels", () => {
-    const border: DrillFieldBorder = {
-        minX: -50,
-        maxX: 50,
-        minY: -26.25,
-        maxY: 26.25,
+    // A standard 8-to-5 high-school grid: sidelines at ±26.25 units, hashes at
+    // ±8.75 units, 1.6 steps per unit (so the field is 84 steps deep).
+    const grid: DrillGrid = {
+        border: { minX: -50, maxX: 50, minY: -26.25, maxY: 26.25 },
+        stepsPerUnitX: 1.6,
+        stepsPerUnitY: 1.6,
+        sidelinesY: [-26.25, 26.25],
+        hashesY: [-8.75, 8.75],
+        yardLinesX: [-50, -25, 0, 25, 50],
+        measurementSystem: "imperial",
+        templateName: "default",
     };
-    const field: FieldGeometry = {
-        pixelsPerStep: 10,
-        centerFrontPoint: { xPixels: 500, yPixels: 420 },
-        maxXSteps: 80,
-        frontYSteps: 0,
-        backYSteps: -84,
-    };
+    const field =
+        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+    const pps = field.pixelsPerStep;
+    const cfp = field.centerFrontPoint;
 
-    it("derives signed back sideline steps from unsigned y checkpoints", () => {
-        const geometry = fieldGeometry(
-            new FieldProperties({
-                name: "Test Field",
-                xCheckpoints: [
-                    {
-                        id: 1,
-                        name: "50",
-                        axis: "x",
-                        terseName: "50",
-                        stepsFromCenterFront: 80,
-                        useAsReference: true,
-                        visible: true,
-                    },
-                ],
-                yCheckpoints: [
-                    {
-                        id: 1,
-                        name: "Front Sideline",
-                        axis: "y",
-                        terseName: "FSL",
-                        stepsFromCenterFront: 0,
-                        useAsReference: true,
-                        visible: true,
-                    },
-                    {
-                        id: 2,
-                        name: "Back Sideline",
-                        axis: "y",
-                        terseName: "BSL",
-                        stepsFromCenterFront: 84,
-                        useAsReference: true,
-                        visible: true,
-                    },
-                ],
-            }),
-        );
-        expect(geometry.frontYSteps).toBe(0);
-        expect(geometry.backYSteps).toBe(-84);
+    // Steps behind the front sideline -> canvas pixels (negative goes up).
+    const yForSteps = (stepsBehindFront: number) =>
+        cfp.yPixels - stepsBehindFront * pps;
+
+    // The source's front (audience) sideline is its LARGEST y, +26.25.
+    it("places the center-front source point on the field's center front", () => {
+        const p = sourcePointToPixels({ x: 0, y: 26.25 }, grid, field);
+        expect(p.x).toBeCloseTo(cfp.xPixels, 5);
+        expect(p.y).toBeCloseTo(cfp.yPixels, 5);
     });
 
-    it("places the front-center source point on the center front point", () => {
-        const p = sourcePointToPixels({ x: 0, y: border.minY }, border, field);
-        expect(p.x).toBeCloseTo(500, 5);
-        expect(p.y).toBeCloseTo(420, 5);
+    it("places the front hash exactly 28 steps behind the front sideline", () => {
+        const p = sourcePointToPixels({ x: 0, y: 8.75 }, grid, field);
+        expect(p.x).toBeCloseTo(cfp.xPixels, 5);
+        expect(p.y).toBeCloseTo(yForSteps(28), 5);
     });
 
-    it("maps the far corner to the field extents", () => {
-        const p = sourcePointToPixels(
-            { x: border.maxX, y: border.maxY },
-            border,
-            field,
-        );
-        expect(p.x).toBeCloseTo(1300, 5);
-        expect(p.y).toBeCloseTo(-420, 5);
+    it("places the back hash exactly 56 steps behind the front sideline", () => {
+        const p = sourcePointToPixels({ x: 0, y: -8.75 }, grid, field);
+        expect(p.y).toBeCloseTo(yForSteps(56), 5);
     });
 
-    it("maps mid-field to half depth above the front sideline", () => {
-        const p = sourcePointToPixels({ x: 0, y: 0 }, border, field);
-        expect(p.x).toBeCloseTo(500, 5);
-        expect(p.y).toBeCloseTo(0, 5);
+    it("places the back sideline at its true depth (84 steps), not stretched", () => {
+        const p = sourcePointToPixels({ x: 0, y: -26.25 }, grid, field);
+        expect(p.y).toBeCloseTo(yForSteps(84), 5);
+    });
+
+    it("does not flip the field front-to-back", () => {
+        // The source front sideline must land nearer the bottom of the canvas
+        // (larger pixel y) than the source back sideline.
+        const front = sourcePointToPixels({ x: 0, y: 26.25 }, grid, field);
+        const back = sourcePointToPixels({ x: 0, y: -26.25 }, grid, field);
+        expect(front.y).toBeGreaterThan(back.y);
+    });
+
+    it("converts x by true step size (side 2 is positive)", () => {
+        // The 50 (x = 25 units from center) is 40 steps toward side 2.
+        const p = sourcePointToPixels({ x: 25, y: 26.25 }, grid, field);
+        expect(p.x).toBeCloseTo(cfp.xPixels + 40 * pps, 5);
     });
 });

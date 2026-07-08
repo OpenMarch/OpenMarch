@@ -1,4 +1,3 @@
-import { FieldProperties } from "@openmarch/core";
 import { useMutation } from "@tanstack/react-query";
 import { parseDrillPackage, type DrillShow } from "@openmarch/drill-interop";
 import {
@@ -19,7 +18,8 @@ import {
     type NewMarcherArgs,
     type NewPageArgs,
 } from "@/db-functions";
-import { db } from "@/global/database/db";
+import { db, schema } from "@/global/database/db";
+import { eq } from "drizzle-orm";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
 import { useTimingObjects } from "@/hooks";
@@ -28,7 +28,9 @@ import { coordinateDataKeys } from "@/hooks/queries/useCoordinateData";
 import { marcherPageKeys } from "@/hooks/queries/useMarcherPages";
 import { marcherKeys } from "@/hooks/queries/useMarchers";
 import { marcherWithVisualsKeys } from "@/hooks/queries/useMarchersWithVisuals";
-import { fieldGeometry, sourcePointToPixels } from "./drillTransform";
+import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
+import { sourcePointToPixels } from "./drillTransform";
+import { resolveDrillField } from "./resolveField";
 import { resolveSectionForDrillPrefix } from "@/global/drillLabel";
 
 export type DrillImportResult = {
@@ -54,11 +56,15 @@ export const _importDrillShow = async (
         "importDrillShow",
         // eslint-disable-next-line max-lines-per-function
         async (tx) => {
-            const fieldRow = await tx.query.field_properties.findFirst();
-            if (!fieldRow) throw new Error("Field properties not found");
-            const geometry = fieldGeometry(
-                new FieldProperties(JSON.parse(fieldRow.json_data)),
-            );
+            // Reconstruct (or match) the field the drill was designed on and set
+            // it as the show's field, so coordinates land on the same geometry
+            // instead of being stretched onto whatever field was loaded before.
+            const field = resolveDrillField(show.grid);
+            await tx
+                .update(schema.field_properties)
+                .set({ json_data: JSON.stringify(field) })
+                .where(eq(schema.field_properties.id, 1))
+                .run();
 
             // Clear the existing show. The first beat and first page are permanent
             // anchors and are reused for the drill's opening set.
@@ -128,6 +134,17 @@ export const _importDrillShow = async (
             const pageIdForSet = (index: number): number =>
                 index === 0 ? FIRST_PAGE_ID : createdPages[index - 1]!.id;
 
+            // The opening set reuses the permanent first page, which is created
+            // without notes — carry the set's note onto it so it isn't dropped.
+            const firstSetNotes = show.sets[0]?.notes;
+            if (firstSetNotes) {
+                await tx
+                    .update(schema.pages)
+                    .set({ notes: firstSetNotes })
+                    .where(eq(schema.pages.id, FIRST_PAGE_ID))
+                    .run();
+            }
+
             const allPerformers = [
                 ...show.performers,
                 ...show.props,
@@ -158,15 +175,16 @@ export const _importDrillShow = async (
                     if (marcher_id === undefined) continue;
                     const { x, y } = sourcePointToPixels(
                         point,
-                        show.field,
-                        geometry,
+                        show.grid,
+                        field,
                     );
                     modifiedMarcherPages.push({ marcher_id, page_id, x, y });
                 }
             });
             await updateMarcherPagesInTransaction({ tx, modifiedMarcherPages });
 
-            // Hold the final formation for the remainder of the show.
+            // Hold the final formation for the remainder of the show, and carry
+            // the show-level production note (a closing credit) if there is one.
             const lastSet = show.sets.at(-1);
             if (lastSet) {
                 await updateUtilityInTransaction({
@@ -176,6 +194,7 @@ export const _importDrillShow = async (
                             1,
                             show.totalCounts - lastSet.startCount,
                         ),
+                        notes: show.productionNotes ?? null,
                     },
                 });
             }
@@ -239,6 +258,10 @@ export const useImportDrillPackage = () => {
                 }),
                 queryClient.invalidateQueries({
                     queryKey: coordinateDataKeys.all,
+                }),
+                // The import switches the show's field to match the source grid.
+                queryClient.invalidateQueries({
+                    queryKey: fieldPropertiesKeys.all,
                 }),
             ]);
             await fetchTimingObjects();

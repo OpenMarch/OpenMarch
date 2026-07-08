@@ -68,6 +68,21 @@ export class BinaryReader {
         return result;
     }
 
+    /**
+     * Reads `length` bytes as UTF-8. Use this for human-authored text (titles,
+     * set notes) that may contain smart quotes, dashes, or accents; reading such
+     * bytes as Latin-1 produces mojibake (e.g. `It's` -> `Itâ€™s`).
+     */
+    utf8(length: number): string {
+        const text = BinaryReader.utf8Decoder.decode(
+            this.bytes.subarray(this.offset, this.offset + length),
+        );
+        this.offset += length;
+        return text;
+    }
+
+    private static readonly utf8Decoder = new TextDecoder("utf-8");
+
     /** Reads a raw slice of `length` bytes. */
     slice(length: number): Uint8Array {
         const result = this.bytes.subarray(this.offset, this.offset + length);

@@ -2,6 +2,7 @@ import { BinaryReader } from "./binaryReader";
 import { decodeCoordinateBlock } from "./crypto";
 import type {
     DrillFieldBorder,
+    DrillGrid,
     DrillPerformer,
     DrillPoint,
     DrillSet,
@@ -27,9 +28,27 @@ export interface DrillDocument {
     supplemental: DrillPerformer[];
     sets: DrillSet[];
     field: DrillFieldBorder;
+    grid: DrillGrid;
+    /**
+     * Show-level production notes (a closing credit / thank-you block). Authors
+     * conventionally type these into the final set's note after a blank line;
+     * this is that trailing block, split out from the set's own move note.
+     */
+    productionNotes?: string;
     /** Total number of counts (page frames) in the show. */
     totalCounts: number;
 }
+
+/** Sentinel grid used when a document lacks a readable `GRD1` chunk. */
+const EMPTY_GRID: DrillGrid = {
+    border: { minX: 0, minY: 0, maxX: 0, maxY: 0 },
+    stepsPerUnitX: 1,
+    stepsPerUnitY: 1,
+    sidelinesY: [],
+    hashesY: [],
+    yardLinesX: [],
+    measurementSystem: "imperial",
+};
 
 interface ParsedSet {
     id: string;
@@ -55,7 +74,7 @@ export async function parseDrillDocument(
     let title: string | undefined;
     let performers: DrillPerformer[] = [];
     let parsedSets: ParsedSet[] = [];
-    let field: DrillFieldBorder = { minX: 0, minY: 0, maxX: 0, maxY: 0 };
+    let grid: DrillGrid = EMPTY_GRID;
     const rawPages: RawPageFrame[] = [];
 
     while (reader.remaining >= 4) {
@@ -89,7 +108,7 @@ export async function parseDrillDocument(
                 parsedSets = readSetList(payload);
                 break;
             case "GRD1":
-                field = readFieldBorder(payload) ?? field;
+                grid = readGrid(payload) ?? grid;
                 break;
             default:
                 // Unhandled chunk (colors, playlist, etc.) — skipped.
@@ -107,7 +126,7 @@ export async function parseDrillDocument(
     const { props, supplemental } = discoverMarkers(
         pages,
         castIds,
-        field,
+        grid,
         boundaries,
     );
     const markerIds = new Set([
@@ -116,15 +135,40 @@ export async function parseDrillDocument(
         ...supplemental.map((p) => p.id),
     ]);
     const sets = buildSets(parsedSets, pages, markerIds);
+    const productionNotes = extractProductionNotes(sets);
     return {
         title,
         performers,
         props,
         supplemental,
         sets,
-        field,
+        field: grid.border,
+        grid,
+        productionNotes,
         totalCounts: pages.length,
     };
+}
+
+/**
+ * Splits a closing production note off the final set's note. The author's move
+ * note and their show credit share the last set's single note field, separated
+ * by a blank line; everything after the first blank line is treated as the
+ * show-level note and removed from the set. Returns undefined when the last set
+ * has no note or no blank-line split.
+ */
+function extractProductionNotes(sets: DrillSet[]): string | undefined {
+    const last = sets.at(-1);
+    if (!last?.notes) return undefined;
+
+    const blankLine = last.notes.match(/\n[ \t]*\n/);
+    if (blankLine?.index === undefined) return undefined;
+
+    const head = last.notes.slice(0, blankLine.index).trim();
+    const tail = last.notes.slice(blankLine.index + blankLine[0].length).trim();
+    if (!tail) return undefined;
+
+    last.notes = head.length > 0 ? head : undefined;
+    return tail;
 }
 
 interface PageFrame {
@@ -185,7 +229,7 @@ function readTitle(payload: Uint8Array): string | undefined {
     const reader = new BinaryReader(payload);
     const length = reader.u16();
     if (length === 0 || length > reader.remaining) return undefined;
-    return reader.ascii(length) || undefined;
+    return reader.utf8(length) || undefined;
 }
 
 /** `CST7`: `u16 count`, then `u64 id, i32 labelLen, label, 8 reserved bytes`. */
@@ -228,7 +272,7 @@ function readSetList(payload: Uint8Array): ParsedSet[] {
         const name = reader.ascii(titleLength);
         const noteLength = reader.u32();
         if (noteLength > reader.remaining) break;
-        const note = reader.ascii(noteLength);
+        const note = reader.utf8(noteLength);
         reader.skip(16);
         sets.push({
             id,
@@ -240,14 +284,54 @@ function readSetList(payload: Uint8Array): ParsedSet[] {
     return sets;
 }
 
+const NUM = String.raw`(-?\d+(?:\.\d+)?)`;
+
 /**
- * `GRD1`: a count-prefixed list of length-prefixed ASCII tokens. We only need
- * the `BORD minX minY maxX maxY` token, which defines the field rectangle.
+ * `GRD1`: a count-prefixed list of length-prefixed ASCII tokens describing the
+ * grid. We read the tokens needed to convert coordinates into real steps and to
+ * reconstruct the field:
+ *
+ * - `BORD minX minY maxX maxY` — the field rectangle (source units).
+ * - `GRID hStep hUnit vStep vUnit …` — steps per unit on each axis.
+ * - `HZMJ y` — horizontal major line (a sideline).
+ * - `HZHS y` — hash line.
+ * - `VTMJ x` — vertical major line (a yard line).
+ * - `UNIT a b` — measurement system (0 = imperial, non-zero = metric).
+ * - `CTITL path` — the grid template file the drill was designed on.
+ * - `SRFC path` — the field-surface image.
  */
-function readFieldBorder(payload: Uint8Array): DrillFieldBorder | undefined {
+function readGrid(payload: Uint8Array): DrillGrid | undefined {
     const text = new BinaryReader(payload).ascii(payload.length);
+
+    const border = matchBorder(text);
+    if (!border) return undefined;
+
+    const grid = text.match(
+        new RegExp(`GRID\\s+${NUM}\\s+${NUM}\\s+${NUM}\\s+${NUM}`),
+    );
+    const stepsPerUnitX = grid ? ratio(grid[1]!, grid[2]!) : 1;
+    const stepsPerUnitY = grid ? ratio(grid[3]!, grid[4]!) : 1;
+
+    const unit = text.match(new RegExp(`UNIT\\s+${NUM}`));
+    const measurementSystem =
+        unit && parseFloat(unit[1]!) !== 0 ? "metric" : "imperial";
+
+    return {
+        border,
+        stepsPerUnitX,
+        stepsPerUnitY,
+        sidelinesY: collectValues(text, "HZMJ"),
+        hashesY: collectValues(text, "HZHS"),
+        yardLinesX: collectValues(text, "VTMJ"),
+        measurementSystem,
+        templateName: baseName(matchPath(text, "CTITL")),
+        surfaceImageName: matchPath(text, "SRFC")?.split(/[\\/]/).pop(),
+    };
+}
+
+function matchBorder(text: string): DrillFieldBorder | undefined {
     const match = text.match(
-        /BORD\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)\s+(-?\d+(?:\.\d+)?)/,
+        new RegExp(`BORD\\s+${NUM}\\s+${NUM}\\s+${NUM}\\s+${NUM}`),
     );
     if (!match) return undefined;
     return {
@@ -256,6 +340,42 @@ function readFieldBorder(payload: Uint8Array): DrillFieldBorder | undefined {
         maxX: parseFloat(match[3]!),
         maxY: parseFloat(match[4]!),
     };
+}
+
+/** Ratio of two numeric strings, guarding against a zero/invalid denominator. */
+function ratio(numerator: string, denominator: string): number {
+    const d = parseFloat(denominator);
+    return d !== 0 ? parseFloat(numerator) / d : 1;
+}
+
+/** All leading numeric values for a repeated single-value token (e.g. `HZMJ`). */
+function collectValues(text: string, token: string): number[] {
+    const values: number[] = [];
+    const pattern = new RegExp(`${token}\\s+${NUM}`, "g");
+    for (const match of text.matchAll(pattern)) {
+        values.push(parseFloat(match[1]!));
+    }
+    return values;
+}
+
+/**
+ * The path argument of a token whose value is an unquoted file path. Tokens are
+ * separated by control bytes, so a run of printable ASCII captures the whole
+ * path and stops at the next token's length/separator byte.
+ */
+function matchPath(text: string, token: string): string | undefined {
+    // eslint-disable-next-line no-control-regex
+    const match = text.match(new RegExp(`${token}[\\x20-\\x7e]+`));
+    if (!match) return undefined;
+    const value = match[0].slice(token.length).trim();
+    return value || undefined;
+}
+
+/** The file's base name without extension, e.g. `".../default.grd"` -> `"default"`. */
+function baseName(path: string | undefined): string | undefined {
+    if (!path) return undefined;
+    const file = path.split(/[\\/]/).pop() ?? path;
+    return file.replace(/\.[^.]+$/, "") || undefined;
 }
 
 /**

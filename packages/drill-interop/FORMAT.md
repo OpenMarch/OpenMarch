@@ -81,15 +81,26 @@ the show) at which the set is reached. See §4 for how sets map to page frames.
 ### 2.5 `GRD1` — field / grid definition
 
 Payload is a count-prefixed list of length-prefixed ASCII tokens describing the
-grid. We only extract the field boundary token:
+grid. The tokens we read into `DrillGrid` (`readGrid` in `document.ts`):
 
-```
-BORD <minX> <minY> <maxX> <maxY>
-```
+| Token   | Example (sample)             | Meaning                                     |
+| ------- | ---------------------------- | ------------------------------------------- |
+| `BORD`  | `BORD -50 -26.25 50 26.25`   | Field rectangle (source units, §5).         |
+| `GRID`  | `GRID 8 5 8 5 …`             | Steps per unit: `8/5 = 1.6` on each axis.   |
+| `UNIT`  | `UNIT 0 0`                   | Measurement system (`0` = imperial).        |
+| `HZMJ`  | `HZMJ -26.25` / `HZMJ 26.25` | Horizontal major line — a sideline (units). |
+| `HZHS`  | `HZHS -8.75` / `HZHS 8.75`   | Hash line (units).                          |
+| `VTMJ`  | `VTMJ -50.0` … `VTMJ 50.0`   | Vertical major line — a yard line (units).  |
+| `CTITL` | `.../Layouts/default.grd`    | Grid template the drill was designed on.    |
+| `SRFC`  | `.../…Football Surface.jpg`  | Field-surface image file.                   |
 
-For a standard high-school football field the sample yields
-`BORD -50 -26.25 50 26.25`. These bounds are in the source tool's field units
-(see §5) and define the rectangle that coordinates are measured against.
+For the standard high-school sample: `BORD -50 -26.25 50 26.25`, `GRID 8 5 8 5`
+(1.6 steps/unit), sidelines `HZMJ ±26.25`, hashes `HZHS ±8.75`. Multiplying by
+1.6 steps/unit gives a field 84 steps deep with hashes 28/56 steps behind the
+front sideline. `HZMN`/`VTMN` (minor lines) are present but not read.
+
+The step ratio and landmarks are what let the importer place coordinates by true
+step size and reconstruct the field, rather than guessing (see §5).
 
 ### 2.6 `PG15` — page frames (per-count positions)
 
@@ -184,23 +195,45 @@ This is implemented in `deriveSetStartCounts` / `buildSets` in `document.ts`.
 
 - Origin is the **center of the field**; coordinates are in field units (steps).
 - **X**: positive toward the audience's right; the sample field spans ±50.
-- **Y**: positive toward the **back** of the field; the sample spans ±26.25, so
-  `minY` (−26.25) is the **front** sideline and `maxY` (+26.25) is the back.
+- **Y**: positive toward the **front** (audience) sideline; the sample spans
+  ±26.25, so `maxY` (+26.25) is the **front** sideline and `minY` (−26.25) is the
+  back. This is the **opposite** of OpenMarch — mixing the two flips the show
+  front-to-back — so the importer treats the source's _largest_ sideline value as
+  the front (`sourceFrontSidelineUnits`).
 
 OpenMarch, by contrast, uses canvas pixels with a top-left origin and measures
-steps from the _center-front_ point, with Y trending positive toward the front
-(bottom of the canvas). Y checkpoints store unsigned distance from the front
-sideline, but canvas coordinates use signed steps (negative toward the back /
-top of the canvas). The importer converts between the two with an affine fit of
-the source field rectangle onto OpenMarch's field geometry — see
-`apps/desktop/src/components/import/drillTransform.ts`. Because it fits
-rectangles rather than assuming a fixed unit, it stays correct regardless of the
-source tool's unit choice.
+steps from the _center-front_ point, with Y trending negative toward the back
+(top of the canvas).
+
+The importer converts by the source grid's **true step size**, anchored on the
+shared physical reference both tools agree on — the center of the front sideline
+(the source's `maxY`):
+
+- `xSteps = point.x * grid.stepsPerUnitX`
+- `stepsFromCenterFront = (point.y - frontSidelineUnits) * grid.stepsPerUnitY`
+  where `frontSidelineUnits = max(sidelinesY)`
+
+See `apps/desktop/src/components/import/drillTransform.ts`. A marcher therefore
+keeps its real step distance from the front sideline and the 50, so hashes land
+exactly on their step counts and the back sideline falls at its true depth — it
+is **not** stretched to match a differently-sized field template. (An affine
+rectangle fit was tried first; it smeared coordinates by 1–3 steps whenever the
+source and OpenMarch modeled the same field with slightly different numbers, e.g.
+an 84-step-deep source grid onto OpenMarch's 85.33-step HS template.)
+
+To close the loop, the importer also picks the field itself:
+`resolveDrillField` (`apps/desktop/src/components/import/resolveField.ts`)
+fingerprints the grid (depth, hashes, half-width in steps) against OpenMarch's
+built-in templates and switches to the best match; when nothing matches (custom
+or indoor grids) it reconstructs a custom `FieldProperties` from the grid's own
+`HZMJ`/`HZHS`/`VTMJ` landmarks and `GRID` step ratio. The resolved field is
+saved as the show's field during import.
 
 ## 6. Reader entry points
 
-- `parseDrillPackage(buffer)` — unzip, locate the document + audio, parse.
+- `parseDrillPackage(buffer)` — unzip, locate the document + audio + surface, parse.
 - `parseDrillDocument(bytes)` — walk the chunk stream into the normalized model.
+- `readGrid(payload)` (in `document.ts`) — parse the `GRD1` tokens into `DrillGrid`.
 - `src/crypto.ts` — the fixed-key AES-CBC coordinate-block decoder (Web Crypto,
   so it runs in both Node and the Electron renderer).
 
@@ -239,17 +272,24 @@ currently map it into OpenMarch. Listed roughly by value.
 4. **Marker classification uses ids, not just coordinates.** Each page frame
    mixes cast performers, props, and reference geometry. Cast comes from `CST7`.
    Non-cast markers are classified by **symbol** (`s` vs `X`), **movement**
-   across set-boundary frames, and interior position for static props. Reference
-   ticks can share coordinates with real markers on a single frame; they are
-   dropped by stable id + static position even when overlapping. Explicit props
-   may also appear in a `PRP8` chunk after the coordinate block (not parsed yet).
+   across set-boundary frames, and interior position for static props. The
+   position tests (on a sideline/endline, in the yard-number band near a
+   sideline, near field center, interior prop) are expressed in real steps
+   against the grid's own landmarks via the coordinate subsystem (`src/coords.ts`,
+   shared with the importer) rather than hardcoded source-unit constants, so they
+   hold for any field size, unit, or grid. Reference ticks can share coordinates
+   with real markers on a single frame; they are dropped by stable id + static
+   position even when overlapping. Explicit props may also appear in a `PRP8`
+   chunk after the coordinate block (not parsed yet).
    Front ensemble / pit performers that the author listed in `CST7` import with
    their drill labels; performers only present in page frames (`s`, not cast) import
    as **Other** with generated labels until a label source is found.
 
 5. **Bundled assets.** The package includes a field-surface image, floor cover,
-   props, and figurine images. The surface image is importable into
-   `field_properties.image` with a little work; the rest have no OpenMarch home.
+   props, and figurine images. The surface image is now extracted onto
+   `DrillShow.surface` (via `SRFC`), but the importer does not yet write it to
+   `field_properties.image` / toggle `showFieldImage`; the rest have no OpenMarch
+   home.
 
 6. **Musical timing is a placeholder.** The source is count-based with no tempo,
    so the importer synthesizes 120 bpm beats and no measures. Count positions are

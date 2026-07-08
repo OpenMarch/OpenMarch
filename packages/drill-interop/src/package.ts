@@ -1,10 +1,11 @@
 import JSZip from "jszip";
 import { parseDrillDocument } from "./document";
-import type { DrillAudio, DrillShow } from "./types";
+import type { DrillAudio, DrillImage, DrillShow } from "./types";
 
 /** The inner drill document extension inside the interchange package. */
 const DOCUMENT_EXTENSION = ".3dj";
 const AUDIO_EXTENSIONS = [".ogg", ".wav", ".mp3", ".m4a", ".aac", ".flac"];
+const IMAGE_EXTENSIONS = [".jpg", ".jpeg", ".png"];
 
 /**
  * Reads a drill interchange package (a `.3dz` archive) into a normalized
@@ -26,6 +27,7 @@ export async function parseDrillPackage(
     const documentBytes = await zip.files[documentEntry]!.async("uint8array");
     const document = await parseDrillDocument(documentBytes);
     const audio = await extractAudio(zip);
+    const surface = await extractSurface(zip, document.grid.surfaceImageName);
 
     return {
         title: document.title,
@@ -34,8 +36,11 @@ export async function parseDrillPackage(
         supplemental: document.supplemental,
         sets: document.sets,
         field: document.field,
+        grid: document.grid,
+        productionNotes: document.productionNotes,
         totalCounts: document.totalCounts,
         audio,
+        surface,
     };
 }
 
@@ -48,5 +53,31 @@ async function extractAudio(zip: JSZip): Promise<DrillAudio | undefined> {
 
     const data = await zip.files[audioEntry]!.async("uint8array");
     const name = audioEntry.split("/").pop() ?? audioEntry;
+    return { name, data };
+}
+
+/**
+ * Extracts the field-surface image. Prefers the file the grid's `SRFC` token
+ * names; otherwise falls back to the first bundled image. Props and figurine
+ * images share these extensions, so the named match is more reliable.
+ */
+async function extractSurface(
+    zip: JSZip,
+    surfaceImageName: string | undefined,
+): Promise<DrillImage | undefined> {
+    const isImage = (name: string) => {
+        const lower = name.toLowerCase();
+        return IMAGE_EXTENSIONS.some((ext) => lower.endsWith(ext));
+    };
+    const named =
+        surfaceImageName &&
+        Object.keys(zip.files).find(
+            (name) => (name.split("/").pop() ?? name) === surfaceImageName,
+        );
+    const entry = named || Object.keys(zip.files).find(isImage);
+    if (!entry) return undefined;
+
+    const data = await zip.files[entry]!.async("uint8array");
+    const name = entry.split("/").pop() ?? entry;
     return { name, data };
 }
