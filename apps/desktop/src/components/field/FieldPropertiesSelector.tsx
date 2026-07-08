@@ -20,18 +20,22 @@ import {
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
-import SoundSportTemplates from "@/global/classes/fieldTemplates/SoundSport";
+import SoundSportTemplates, {
+    SOUNDSPORT_ENSEMBLE_TYPE,
+} from "@/global/classes/fieldTemplates/SoundSport";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 interface FieldPropertiesSelectorProps {
     environment?: "indoor" | "outdoor";
+    ensembleType?: string;
     onTemplateChange?: (template: FieldProperties) => void;
     currentTemplate?: FieldProperties;
 }
 
 export default function FieldPropertiesSelector({
     environment,
+    ensembleType,
     onTemplateChange,
     currentTemplate: externalCurrentTemplate,
 }: FieldPropertiesSelectorProps = {}) {
@@ -95,6 +99,13 @@ export default function FieldPropertiesSelector({
         ? "Custom"
         : currentTemplate?.name || fieldProperties?.name || "";
 
+    // When no environment is given (e.g. the field settings editor), show every
+    // outdoor option. When an ensemble is known, scope the outdoor list: the
+    // SoundSport ensemble only sees SoundSport fields, everything else sees
+    // football fields.
+    const showAllOutdoor = environment === undefined;
+    const isSoundSportEnsemble = ensembleType === SOUNDSPORT_ENSEMBLE_TYPE;
+
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
@@ -124,30 +135,44 @@ export default function FieldPropertiesSelector({
                                 {(environment === undefined ||
                                     environment === "outdoor") && (
                                     <>
-                                        <SelectLabel>Football</SelectLabel>
-                                        {Object.values(FootballTemplates).map(
-                                            (template) => (
-                                                <SelectItem
-                                                    key={template.name}
-                                                    value={template.name}
-                                                >
-                                                    {template.name}
-                                                </SelectItem>
-                                            ),
+                                        {(showAllOutdoor ||
+                                            !isSoundSportEnsemble) && (
+                                            <>
+                                                <SelectLabel>
+                                                    Football
+                                                </SelectLabel>
+                                                {Object.values(
+                                                    FootballTemplates,
+                                                ).map((template) => (
+                                                    <SelectItem
+                                                        key={template.name}
+                                                        value={template.name}
+                                                    >
+                                                        {template.name}
+                                                    </SelectItem>
+                                                ))}
+                                                <SelectSeparator />
+                                            </>
                                         )}
-                                        <SelectSeparator />
-                                        <SelectLabel>SoundSport</SelectLabel>
-                                        {Object.values(SoundSportTemplates).map(
-                                            (template) => (
-                                                <SelectItem
-                                                    key={template.name}
-                                                    value={template.name}
-                                                >
-                                                    {template.name}
-                                                </SelectItem>
-                                            ),
+                                        {(showAllOutdoor ||
+                                            isSoundSportEnsemble) && (
+                                            <>
+                                                <SelectLabel>
+                                                    SoundSport
+                                                </SelectLabel>
+                                                {Object.values(
+                                                    SoundSportTemplates,
+                                                ).map((template) => (
+                                                    <SelectItem
+                                                        key={template.name}
+                                                        value={template.name}
+                                                    >
+                                                        {template.name}
+                                                    </SelectItem>
+                                                ))}
+                                                <SelectSeparator />
+                                            </>
                                         )}
-                                        <SelectSeparator />
                                     </>
                                 )}
                                 {(environment === undefined ||
