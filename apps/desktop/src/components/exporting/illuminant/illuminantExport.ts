@@ -39,6 +39,10 @@ export type IlluminantVisualizerRequest = IlluminantVisualizerSource & {
     width?: number;
     height?: number;
     hideIds?: boolean;
+    /** Absolute path to a local audio file; set by Electron main before POST. */
+    audioPath?: string;
+    /** Show audio offset in seconds; set by Electron main before POST. */
+    audioOffsetSeconds?: number;
 };
 
 export type IlluminantVisualizerResponse =

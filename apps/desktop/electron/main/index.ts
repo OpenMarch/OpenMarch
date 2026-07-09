@@ -12,6 +12,7 @@ import Store from "electron-store";
 import * as fs from "fs";
 import { release } from "node:os";
 import { randomUUID } from "node:crypto";
+import { promises as fsPromises } from "node:fs";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { applicationMenu } from "./application-menu";
@@ -37,6 +38,13 @@ import {
     initAuthAfterReady,
     handleAuthSecondInstance,
 } from "./auth";
+import { getWorkspaceSettingsParsed } from "../../src/db-functions/workspaceSettings";
+import {
+    audioFileToBuffer,
+    buildTempAudioPath,
+    enrichIlluminantVisualizerRequestWithAudio,
+    shouldIncludeAudioInVisualizerRequest,
+} from "./services/illuminant-visualize-audio";
 
 // The built directory structure
 //
@@ -97,24 +105,64 @@ ipcMain.handle("env:get", () => {
 
 ipcMain.handle("lighting:visualize", async (_, requestBody: unknown) => {
     console.log("[Illuminant export] POST http://localhost:8788/visualize");
-    const response = await fetch("http://localhost:8788/visualize", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(requestBody),
-    });
-    const responseText = await response.text();
-    console.log(
-        `[Illuminant export] Visualizer responded with ${response.status}`,
-    );
+    const request =
+        typeof requestBody === "object" && requestBody !== null
+            ? (requestBody as Record<string, unknown>)
+            : {};
+    let tempAudioPath: string | null = null;
+
     try {
-        return JSON.parse(responseText);
-    } catch {
-        return {
-            error: response.ok
-                ? "Visualizer returned invalid JSON"
-                : `Visualizer request failed with status ${response.status}`,
-            stdout: responseText,
-        };
+        const audioFile = await DatabaseServices.getSelectedAudioFile();
+        let enrichedRequest: Record<string, unknown> = request;
+
+        if (shouldIncludeAudioInVisualizerRequest(audioFile)) {
+            const drizzleDb = getOrm(DatabaseServices.connect()!);
+            const settings = await getWorkspaceSettingsParsed({
+                db: drizzleDb,
+            });
+            tempAudioPath = buildTempAudioPath(
+                audioFile.path,
+                app.getPath("temp"),
+            );
+            await fsPromises.writeFile(
+                tempAudioPath,
+                audioFileToBuffer(audioFile.data),
+            );
+            enrichedRequest = enrichIlluminantVisualizerRequestWithAudio(
+                request,
+                tempAudioPath,
+                settings,
+            );
+            console.log(
+                "[Illuminant export] Including audio",
+                tempAudioPath,
+                `offset=${settings.audioOffsetSeconds}s`,
+            );
+        }
+
+        const response = await fetch("http://localhost:8788/visualize", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify(enrichedRequest),
+        });
+        const responseText = await response.text();
+        console.log(
+            `[Illuminant export] Visualizer responded with ${response.status}`,
+        );
+        try {
+            return JSON.parse(responseText);
+        } catch {
+            return {
+                error: response.ok
+                    ? "Visualizer returned invalid JSON"
+                    : `Visualizer request failed with status ${response.status}`,
+                stdout: responseText,
+            };
+        }
+    } finally {
+        if (tempAudioPath) {
+            await fsPromises.unlink(tempAudioPath).catch(() => undefined);
+        }
     }
 });
 
