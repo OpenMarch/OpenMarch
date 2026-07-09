@@ -95,6 +95,29 @@ ipcMain.handle("env:get", () => {
     };
 });
 
+ipcMain.handle("lighting:visualize", async (_, requestBody: unknown) => {
+    console.log("[Illuminant export] POST http://localhost:8788/visualize");
+    const response = await fetch("http://localhost:8788/visualize", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(requestBody),
+    });
+    const responseText = await response.text();
+    console.log(
+        `[Illuminant export] Visualizer responded with ${response.status}`,
+    );
+    try {
+        return JSON.parse(responseText);
+    } catch {
+        return {
+            error: response.ok
+                ? "Visualizer returned invalid JSON"
+                : `Visualizer request failed with status ${response.status}`,
+            stdout: responseText,
+        };
+    }
+});
+
 ipcMain.handle("shell:openExternal", async (_, url: string) => {
     try {
         const parsedUrl = new URL(url);

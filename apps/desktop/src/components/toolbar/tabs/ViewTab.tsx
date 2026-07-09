@@ -2,6 +2,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
+import IlluminantExportButton from "@/components/exporting/illuminant/IlluminantExportButton";
 
 export default function ViewTab() {
     return (
@@ -84,6 +85,9 @@ function UiSettingsToolbar() {
                         <EyeSlashIcon size={24} />
                     )}
                 </button>
+            </ToolbarSection>
+            <ToolbarSection>
+                <IlluminantExportButton />
             </ToolbarSection>
             {/* <ToolbarSection>
                 <button
