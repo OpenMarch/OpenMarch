@@ -454,6 +454,7 @@
             "stepsFromFrontToHomeLabel": "Steps from front to home label bottom",
             "stepsFromFrontToHomeLabelTop": "Steps from front to home label top",
             "stepSize": "Step Size",
+            "stepSizeWarningThreshold": "Step Size Warning Threshold",
             "temporaryPath": "Temporary Path",
             "top": "Top",
             "useHashes": "Use Hashes",
@@ -514,6 +515,7 @@
             "stepsFromFrontToHomeLabel": "Number of steps from the front sideline to the outside of the home number (closer to the front sideline)",
             "stepsFromFrontToHomeLabelTop": "Number of steps from the front sideline to the inside of the home number (closer to the center of the field)",
             "stepSize": "The size of each step on the field in inches or centimeters",
+            "stepSizeWarningThreshold": "Marchers whose step exceeds this real-world distance are flagged with a warning-colored path. Set very large to disable.",
             "useHashes": "Use hashes for the Y-checkpoints, like a football field. If unchecked, lines will be used."
         },
         "units": {
@@ -566,6 +568,7 @@
             "noPageSelected": "No page selected.",
             "section": "Section",
             "stepSize": "Step Size",
+            "stepSizeWarning": "Step size exceeds threshold",
             "swapMarchers": "Swap marchers",
             "title": "{count} Marchers",
             "titleSingle": "Marcher {drillNumber}"

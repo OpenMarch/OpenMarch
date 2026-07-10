@@ -246,4 +246,53 @@ describe("FieldProperties", () => {
         expect(field.prettyWidth).toBe(`${widthInMeters} m`);
         expect(field.prettyHeight).toBe(`${heightInMeters} m`);
     });
+
+    describe("stepSizeWarningThreshold", () => {
+        const baseArgs = { name: "test", xCheckpoints, yCheckpoints };
+
+        it("defaults to 45 inches when not provided", () => {
+            const fp = new FieldProperties(baseArgs);
+            expect(fp.stepSizeWarningThresholdInches).toBe(45);
+            expect(
+                FieldProperties.DEFAULT_STEP_SIZE_WARNING_THRESHOLD_INCHES,
+            ).toBe(45);
+        });
+
+        it("preserves an explicit value", () => {
+            const fp = new FieldProperties({
+                ...baseArgs,
+                stepSizeWarningThresholdInches: 30,
+            });
+            expect(fp.stepSizeWarningThresholdInches).toBe(30);
+        });
+
+        it("round-trips through JSON serialization", () => {
+            const fp = new FieldProperties({
+                ...baseArgs,
+                stepSizeWarningThresholdInches: 30,
+            });
+            const restored = new FieldProperties(
+                JSON.parse(JSON.stringify(fp)),
+            );
+            expect(restored.stepSizeWarningThresholdInches).toBe(30);
+        });
+
+        it("falls back to the default for legacy JSON without the field", () => {
+            const fp = new FieldProperties(baseArgs);
+            const legacy = JSON.parse(JSON.stringify(fp));
+            delete legacy.stepSizeWarningThresholdInches;
+            expect(
+                new FieldProperties(legacy).stepSizeWarningThresholdInches,
+            ).toBe(45);
+        });
+
+        it("converts to centimeters for metric fields", () => {
+            const fp = new FieldProperties({
+                ...baseArgs,
+                measurementSystem: "metric",
+                stepSizeWarningThresholdInches: 45,
+            });
+            expect(fp.stepSizeWarningThresholdInUnits).toBeCloseTo(114.3);
+        });
+    });
 });
