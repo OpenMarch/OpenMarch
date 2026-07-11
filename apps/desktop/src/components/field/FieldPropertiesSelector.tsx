@@ -118,7 +118,11 @@ export default function FieldPropertiesSelector({
                         />
                         <SelectContent>
                             <SelectGroup>
-                                <SelectLabel>Football</SelectLabel>
+                                <SelectLabel>
+                                    {t(
+                                        "fieldProperties.fieldTemplate.football",
+                                    )}
+                                </SelectLabel>
                                 {Object.values(FootballTemplates).map(
                                     (template) => (
                                         <SelectItem
@@ -129,8 +133,12 @@ export default function FieldPropertiesSelector({
                                         </SelectItem>
                                     ),
                                 )}
-                                <SelectSeparator />
-                                <SelectLabel>Grid</SelectLabel>
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.grid")}
+                                </SelectLabel>
                                 {Object.values(GridFieldTemplates).map(
                                     (template) => (
                                         <SelectItem
@@ -141,8 +149,12 @@ export default function FieldPropertiesSelector({
                                         </SelectItem>
                                     ),
                                 )}
-                                <SelectSeparator />
-                                <SelectLabel>Custom</SelectLabel>
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.custom")}
+                                </SelectLabel>
                                 {(currentTemplate?.isCustom ||
                                     fieldProperties?.isCustom) && (
                                     <SelectItem key="custom" value="Custom">

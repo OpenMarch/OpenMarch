@@ -411,7 +411,10 @@
             "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
         },
         "fieldTemplate": {
-            "label": "Field Template"
+            "label": "Field Template",
+            "football": "Football",
+            "grid": "Grid",
+            "custom": "Custom"
         },
         "fieldType": {
             "label": "Field type"
