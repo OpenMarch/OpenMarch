@@ -43,6 +43,9 @@ export const ACTIVITIES: ActivityDefinition[] = [
 
 export const ACTIVITY_LABELS: string[] = ACTIVITIES.map((a) => a.label);
 
+// Activity a new show starts on before the user picks one
+export const DEFAULT_ACTIVITY: string = ACTIVITY_LABELS[0];
+
 // Default field template for a new show, based on the chosen activity
 export function getDefaultFieldTemplate(activity?: string): FieldProperties {
     const match = ACTIVITIES.find((a) => a.label === activity);

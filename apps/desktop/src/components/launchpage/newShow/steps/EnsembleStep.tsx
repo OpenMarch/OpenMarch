@@ -6,7 +6,7 @@ import {
 } from "@openmarch/ui";
 import { WizardFormField } from "@/components/ui/FormField";
 import { useTranslate } from "@tolgee/react";
-import { ACTIVITY_LABELS } from "@/global/classes/Activities";
+import { ACTIVITY_LABELS, DEFAULT_ACTIVITY } from "@/global/classes/Activities";
 import type { NewShowEnsembleData } from "../../newShowTypes";
 import { useEffect, useRef, useState } from "react";
 
@@ -21,7 +21,7 @@ export default function EnsembleStep({
 }: EnsembleStepProps) {
     const { t } = useTranslate();
     const [activity, setActivity] = useState(
-        ensemble?.activity ?? ACTIVITY_LABELS[0],
+        ensemble?.activity ?? DEFAULT_ACTIVITY,
     );
 
     const hasSyncedInitial = useRef(ensemble !== null);

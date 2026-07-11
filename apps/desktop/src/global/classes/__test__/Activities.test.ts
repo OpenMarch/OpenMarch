@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
     ACTIVITIES,
     ACTIVITY_LABELS,
+    DEFAULT_ACTIVITY,
     getDefaultFieldTemplate,
 } from "../Activities";
 import FieldPropertiesTemplates from "../FieldProperties.templates";
@@ -17,6 +18,10 @@ describe("Activities registry", () => {
             "Indoor Winds",
             "Other",
         ]);
+    });
+
+    it("DEFAULT_ACTIVITY is the first activity label", () => {
+        expect(DEFAULT_ACTIVITY).toBe(ACTIVITY_LABELS[0]);
     });
 
     it("every activity points at a real field template", () => {
