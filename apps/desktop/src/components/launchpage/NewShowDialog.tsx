@@ -224,8 +224,7 @@ export default function NewShowDialog({
             const withDefaults: NewShowWizardState = {
                 ...wizardState,
                 ensemble: wizardState.ensemble ?? {
-                    environment: "outdoor",
-                    ensemble_type: "Marching Band",
+                    activity: "Marching Band",
                 },
                 field: wizardState.field ?? {
                     template:

@@ -1,11 +1,9 @@
 import FootballTemplates from "./fieldTemplates/Football";
-import IndoorTemplates from "./fieldTemplates/Indoor";
-import SoundSportTemplates from "./fieldTemplates/SoundSport";
+import GridFieldTemplates from "./fieldTemplates/GridFields";
 
 const FieldPropertiesTemplates = {
     ...FootballTemplates,
-    ...IndoorTemplates,
-    ...SoundSportTemplates,
+    ...GridFieldTemplates,
 } as const;
 
 export default FieldPropertiesTemplates;

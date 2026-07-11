@@ -3,7 +3,7 @@ import { FieldProperties } from "@openmarch/core";
 import FieldPropertiesSelector from "@/components/field/FieldPropertiesSelector";
 import FieldPreview from "@/components/field/FieldPreview";
 import type { NewShowEnsembleData, NewShowFieldData } from "../../newShowTypes";
-import { getDefaultFieldTemplate } from "./getDefaultFieldTemplate";
+import { getDefaultFieldTemplate } from "@/global/classes/Activities";
 import { T } from "@tolgee/react";
 
 interface FieldStepProps {
@@ -17,15 +17,13 @@ export default function FieldStep({
     field,
     onChange,
 }: FieldStepProps) {
-    const environment = ensemble?.environment ?? "outdoor";
-    const ensembleType = ensemble?.ensemble_type;
-    const defaultTemplate = getDefaultFieldTemplate(environment, ensembleType);
+    const activity = ensemble?.activity;
+    const defaultTemplate = getDefaultFieldTemplate(activity);
 
     const [currentTemplate, setCurrentTemplate] = useState<FieldProperties>(
         field?.template ?? defaultTemplate,
     );
-    const prevEnvironment = useRef(environment);
-    const prevEnsembleType = useRef(ensembleType);
+    const prevActivity = useRef(activity);
     const hasInitializedField = useRef(field !== null);
 
     useEffect(() => {
@@ -38,19 +36,14 @@ export default function FieldStep({
             return;
         }
 
-        if (
-            prevEnvironment.current === environment &&
-            prevEnsembleType.current === ensembleType
-        )
-            return;
-        prevEnvironment.current = environment;
-        prevEnsembleType.current = ensembleType;
+        if (prevActivity.current === activity) return;
+        prevActivity.current = activity;
         setCurrentTemplate(defaultTemplate);
         onChange({
             template: defaultTemplate,
             isCustom: defaultTemplate.isCustom ?? false,
         });
-    }, [environment, ensembleType, field, defaultTemplate, onChange]);
+    }, [activity, field, defaultTemplate, onChange]);
 
     const handleTemplateChange = (template: FieldProperties) => {
         setCurrentTemplate(template);
@@ -63,8 +56,6 @@ export default function FieldStep({
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
             <FieldPropertiesSelector
-                environment={environment}
-                ensembleType={ensembleType}
                 currentTemplate={currentTemplate}
                 onTemplateChange={handleTemplateChange}
             />

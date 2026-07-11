@@ -19,21 +19,16 @@ import {
     updateFieldPropertiesMutationOptions,
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
-import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
-import SoundSportTemplates from "@/global/classes/fieldTemplates/SoundSport";
+import GridFieldTemplates from "@/global/classes/fieldTemplates/GridFields";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 interface FieldPropertiesSelectorProps {
-    environment?: "indoor" | "outdoor";
-    ensembleType?: string;
     onTemplateChange?: (template: FieldProperties) => void;
     currentTemplate?: FieldProperties;
 }
 
 export default function FieldPropertiesSelector({
-    environment,
-    ensembleType,
     onTemplateChange,
     currentTemplate: externalCurrentTemplate,
 }: FieldPropertiesSelectorProps = {}) {
@@ -97,10 +92,6 @@ export default function FieldPropertiesSelector({
         ? "Custom"
         : currentTemplate?.name || fieldProperties?.name || "";
 
-    // No environment (field editor) shows all outdoor fields; a known ensemble scopes the list.
-    const showAllOutdoor = environment === undefined;
-    const isSoundSportEnsemble = ensembleType === "SoundSport";
-
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
@@ -127,66 +118,30 @@ export default function FieldPropertiesSelector({
                         />
                         <SelectContent>
                             <SelectGroup>
-                                {(environment === undefined ||
-                                    environment === "outdoor") && (
-                                    <>
-                                        {(showAllOutdoor ||
-                                            !isSoundSportEnsemble) && (
-                                            <>
-                                                <SelectLabel>
-                                                    Football
-                                                </SelectLabel>
-                                                {Object.values(
-                                                    FootballTemplates,
-                                                ).map((template) => (
-                                                    <SelectItem
-                                                        key={template.name}
-                                                        value={template.name}
-                                                    >
-                                                        {template.name}
-                                                    </SelectItem>
-                                                ))}
-                                                <SelectSeparator />
-                                            </>
-                                        )}
-                                        {(showAllOutdoor ||
-                                            isSoundSportEnsemble) && (
-                                            <>
-                                                <SelectLabel>
-                                                    SoundSport
-                                                </SelectLabel>
-                                                {Object.values(
-                                                    SoundSportTemplates,
-                                                ).map((template) => (
-                                                    <SelectItem
-                                                        key={template.name}
-                                                        value={template.name}
-                                                    >
-                                                        {template.name}
-                                                    </SelectItem>
-                                                ))}
-                                                <SelectSeparator />
-                                            </>
-                                        )}
-                                    </>
+                                <SelectLabel>Football</SelectLabel>
+                                {Object.values(FootballTemplates).map(
+                                    (template) => (
+                                        <SelectItem
+                                            key={template.name}
+                                            value={template.name}
+                                        >
+                                            {template.name}
+                                        </SelectItem>
+                                    ),
                                 )}
-                                {(environment === undefined ||
-                                    environment === "indoor") && (
-                                    <>
-                                        <SelectLabel>Indoor</SelectLabel>
-                                        {Object.values(IndoorTemplates).map(
-                                            (template) => (
-                                                <SelectItem
-                                                    key={template.name}
-                                                    value={template.name}
-                                                >
-                                                    {template.name}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                        <SelectSeparator />
-                                    </>
+                                <SelectSeparator />
+                                <SelectLabel>Grid</SelectLabel>
+                                {Object.values(GridFieldTemplates).map(
+                                    (template) => (
+                                        <SelectItem
+                                            key={template.name}
+                                            value={template.name}
+                                        >
+                                            {template.name}
+                                        </SelectItem>
+                                    ),
                                 )}
+                                <SelectSeparator />
                                 <SelectLabel>Custom</SelectLabel>
                                 {(currentTemplate?.isCustom ||
                                     fieldProperties?.isCustom) && (

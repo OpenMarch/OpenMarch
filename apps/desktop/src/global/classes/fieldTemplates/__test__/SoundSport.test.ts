@@ -1,21 +1,21 @@
 import { describe, it, expect } from "vitest";
 import { FieldProperties } from "@openmarch/core";
-import SoundSportTemplates from "../SoundSport";
+import GridFieldTemplates from "../GridFields";
 
-// SoundSport area: 30 yd wide (90 ft / 1080 in) x 20 yd deep (60 ft / 720 in).
 const EXPECTED_WIDTH_INCHES = 1080;
 const EXPECTED_HEIGHT_INCHES = 720;
 
-/** Convert a FieldProperties' pixel dimension back to real-world inches. */
 function toInches(pixels: number): number {
     return pixels / FieldProperties.PIXELS_PER_INCH;
 }
 
 describe("SoundSport templates", () => {
-    const templates = Object.values(SoundSportTemplates);
+    const templates = [
+        GridFieldTemplates.SOUNDSPORT_8to5,
+        GridFieldTemplates.SOUNDSPORT_6to5,
+    ];
 
-    it("exposes exactly the 8-to-5 and 6-to-5 variants", () => {
-        expect(templates).toHaveLength(2);
+    it("exposes the 8-to-5 and 6-to-5 variants", () => {
         expect(templates.map((t) => t.name)).toEqual([
             "SoundSport - 8 to 5 steps",
             "SoundSport - 6 to 5 steps",
@@ -29,8 +29,8 @@ describe("SoundSport templates", () => {
     });
 
     it("uses the correct step sizes", () => {
-        expect(SoundSportTemplates.SOUNDSPORT_8to5.stepSizeInches).toBe(22.5);
-        expect(SoundSportTemplates.SOUNDSPORT_6to5.stepSizeInches).toBe(30);
+        expect(GridFieldTemplates.SOUNDSPORT_8to5.stepSizeInches).toBe(22.5);
+        expect(GridFieldTemplates.SOUNDSPORT_6to5.stepSizeInches).toBe(30);
     });
 
     it.each(templates)(

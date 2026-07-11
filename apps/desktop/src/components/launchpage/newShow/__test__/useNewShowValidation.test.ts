@@ -89,8 +89,7 @@ describe("useNewShowValidation", () => {
         const state: NewShowWizardState = {
             ...DEFAULT_NEW_SHOW_WIZARD_STATE,
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
