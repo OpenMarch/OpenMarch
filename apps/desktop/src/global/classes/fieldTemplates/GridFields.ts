@@ -1,74 +1,88 @@
 import { Checkpoint, FieldProperties } from "@openmarch/core";
 
-const IndoorTemplates = {
+const GridFieldTemplates = {
     INDOOR_40x60_8to5: new FieldProperties({
         name: "Indoor 40x60 - 24-inch steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 30 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 30 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 24,
         isCustom: false,
     }),
     INDOOR_50x70_8to5: new FieldProperties({
         name: "Indoor 50x70 - 24-inch steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 35 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 25 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 35 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 25 }),
         stepSizeInches: 24,
         isCustom: false,
     }),
     INDOOR_50x80_8to5: new FieldProperties({
         name: "Indoor 50x80 - 24-inch steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 40 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 25 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 40 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 25 }),
         stepSizeInches: 24,
         isCustom: false,
     }),
     INDOOR_50x90_8to5: new FieldProperties({
         name: "Indoor 50x90 - 24-inch steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 45 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 25 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 45 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 25 }),
         stepSizeInches: 24,
         isCustom: false,
     }),
-    // 6 to 5
     INDOOR_40x60_6to5: new FieldProperties({
         name: "Indoor 40x60 - 6 to 5 Steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 24 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 16 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 24 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 16 }),
         stepSizeInches: 30,
         isCustom: false,
     }),
     INDOOR_50x70_6to5: new FieldProperties({
         name: "Indoor 50x70 - 6 to 5 Steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 28 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 28 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 30,
         isCustom: false,
     }),
     INDOOR_50x80_6to5: new FieldProperties({
         name: "Indoor 50x80 - 6 to 5 Steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 32 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 32 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
         stepSizeInches: 30,
         isCustom: false,
     }),
     INDOOR_50x90_6to5: new FieldProperties({
         name: "Indoor 50x90 - 6 to 5 Steps",
-        xCheckpoints: createIndoorXCheckpoints({ xSteps: 36 }),
-        yCheckpoints: createIndoorYCheckpoints({ ySteps: 20 }),
+        xCheckpoints: createGridXCheckpoints({ xSteps: 36 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
+        stepSizeInches: 30,
+        isCustom: false,
+    }),
+    // SoundSport area: 30 yd wide x 20 yd deep
+    SOUNDSPORT_8to5: new FieldProperties({
+        name: "SoundSport - 8 to 5 steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 48 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 32 }),
+        stepSizeInches: 22.5,
+        isCustom: false,
+    }),
+    SOUNDSPORT_6to5: new FieldProperties({
+        name: "SoundSport - 6 to 5 steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 36 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 24 }),
         stepSizeInches: 30,
         isCustom: false,
     }),
 } as const;
 
-export default IndoorTemplates;
+export default GridFieldTemplates;
 
 /**
- * Creates an array of checkpoint objects for the x-axis of an indoor field.
+ * Creates an array of checkpoint objects for the x-axis of a grid field.
  *
  * @param {number} params.xSteps - The number of steps along the x-axis.
  * @returns {Checkpoint[]} - An array of checkpoint objects for the x-axis.
  */
-export function createIndoorXCheckpoints({
+export function createGridXCheckpoints({
     xSteps,
 }: {
     xSteps: number;
@@ -139,12 +153,12 @@ export function createIndoorXCheckpoints({
 }
 
 /**
- * Creates an array of checkpoint objects for the y-axis of an indoor field.
+ * Creates an array of checkpoint objects for the y-axis of a grid field.
  *
  * @param {number} params.ySteps - The number of steps along the y-axis.
  * @returns {Checkpoint[]} - An array of checkpoint objects for the y-axis.
  */
-export function createIndoorYCheckpoints({
+export function createGridYCheckpoints({
     ySteps,
 }: {
     ySteps: number;
