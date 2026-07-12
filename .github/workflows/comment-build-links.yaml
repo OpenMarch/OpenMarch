@@ -36,7 +36,7 @@ jobs:
                 repo,
                 commit_sha: run.head_sha,
               });
-              const openPr = pulls.find(p => p.state === 'open') || pulls[0];
+              const openPr = pulls.find(p => p.state === 'open');
               pr = openPr?.number;
             }
             if (!pr) {
@@ -64,7 +64,7 @@ jobs:
               per_page: 100,
             });
 
-            const buildArtifacts = artifacts.filter(a => a.name.endsWith(`-pr-${pr}`));
+            const buildArtifacts = artifacts.filter(a => a.name.endsWith(`-artifacts-pr-${pr}`));
             if (buildArtifacts.length === 0) {
               core.info(`No build artifacts for PR #${pr}; skipping comment.`);
               return;
