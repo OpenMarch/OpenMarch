@@ -65,7 +65,7 @@ test("Back navigation returns to project step", async ({
 
     await expect(
         dialog.getByRole("heading", {
-            name: "Ensemble",
+            name: "Activity",
             exact: true,
             level: 2,
         }),
@@ -108,7 +108,7 @@ test("Refresh during wizard discards draft and returns to launch page", async ({
 
     await expect(
         dialog.getByRole("heading", {
-            name: "Ensemble",
+            name: "Activity",
             exact: true,
             level: 2,
         }),
