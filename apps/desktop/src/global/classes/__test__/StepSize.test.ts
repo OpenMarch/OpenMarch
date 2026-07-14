@@ -511,5 +511,24 @@ describe("StepSize", () => {
             // 21.5in threshold puts the 22.5in step 1.0in over, past the buffer
             expect(eightToFive.exceedsThreshold(21.5)).toBe(true);
         });
+
+        it("never warns when the threshold is 0, even for an enormous step", () => {
+            const huge = new StepSize({
+                marcher_id: 1,
+                startingX: 900,
+                startingY: 644.96,
+                endingX: 900,
+                endingY: 824.96,
+                counts: 2,
+                fieldProperties: legacyMockNCAAFieldProperties,
+            });
+            expect(huge.inchesPerStep).toBeGreaterThan(45);
+            expect(huge.exceedsThreshold(0)).toBe(false);
+            expect(eightToFive.exceedsThreshold(0)).toBe(false);
+        });
+
+        it("never warns for a negative threshold", () => {
+            expect(eightToFive.exceedsThreshold(-10)).toBe(false);
+        });
     });
 });

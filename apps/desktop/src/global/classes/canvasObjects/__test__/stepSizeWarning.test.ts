@@ -70,6 +70,37 @@ describe("evaluatePathWarning", () => {
         expect(result).toEqual({ show: true, isWarning: true });
     });
 
+    describe("with a threshold of 0", () => {
+        const noWarningField = new FieldProperties({
+            ...legacyMockNCAAFieldProperties,
+            stepSizeWarningThresholdInches: 0,
+        });
+
+        it("does not warn on a path that would otherwise be over threshold", () => {
+            const result = evaluatePathWarning({
+                start: { x: 900, y: 644.96 },
+                end: { x: 900, y: 824.96 },
+                counts: 2,
+                fieldProperties: noWarningField,
+                pathEnabled: true,
+                allowForceShow: true,
+            });
+            expect(result).toEqual({ show: true, isWarning: false });
+        });
+
+        it("does not force-show a hidden path that would otherwise be over threshold", () => {
+            const result = evaluatePathWarning({
+                start: { x: 900, y: 644.96 },
+                end: { x: 900, y: 824.96 },
+                counts: 2,
+                fieldProperties: noWarningField,
+                pathEnabled: false,
+                allowForceShow: true,
+            });
+            expect(result).toEqual({ show: false, isWarning: false });
+        });
+    });
+
     it("does not warn when counts are undefined", () => {
         const result = evaluatePathWarning({
             start: { x: 900, y: 644.96 },

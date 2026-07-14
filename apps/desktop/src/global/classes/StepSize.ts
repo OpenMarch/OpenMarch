@@ -118,8 +118,10 @@ export class StepSize {
     }
 
     // True when this move's per-step distance exceeds the threshold in inches
+    // A threshold of 0 or less turns step size warnings off entirely
     // 0.5 inch tolerance absorbs floating-point noise near the threshold
     exceedsThreshold(thresholdInches: number): boolean {
+        if (thresholdInches <= 0) return false;
         return this.inchesPerStep > thresholdInches + 0.5;
     }
 
