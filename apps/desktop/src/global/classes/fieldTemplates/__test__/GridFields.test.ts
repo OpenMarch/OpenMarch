@@ -1,15 +1,15 @@
 import { describe, it, expect, vi } from "vitest";
-import { createIndoorXCheckpoints, createIndoorYCheckpoints } from "../Indoor";
+import { createGridXCheckpoints, createGridYCheckpoints } from "../GridFields";
 
-describe("createIndoorXCheckpoints", () => {
+describe("createGridXCheckpoints", () => {
     it("should throw error when xSteps is less than 4", () => {
-        expect(() => createIndoorXCheckpoints({ xSteps: 3 })).toThrow(
+        expect(() => createGridXCheckpoints({ xSteps: 3 })).toThrow(
             "xSteps must be at least 4",
         );
     });
 
     it("should create correct checkpoints for minimum xSteps (4)", () => {
-        let checkpoints = createIndoorXCheckpoints({ xSteps: 4 }).sort(
+        let checkpoints = createGridXCheckpoints({ xSteps: 4 }).sort(
             (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
         );
         expect(checkpoints).toHaveLength(3);
@@ -19,7 +19,7 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 8 steps", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 8 }).sort(
+        const checkpoints = createGridXCheckpoints({ xSteps: 8 }).sort(
             (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
         );
         expect(checkpoints).toHaveLength(3);
@@ -29,7 +29,7 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 12 steps", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 12 }).sort(
+        const checkpoints = createGridXCheckpoints({ xSteps: 12 }).sort(
             (a, b) => a.stepsFromCenterFront - b.stepsFromCenterFront,
         );
         expect(checkpoints).toHaveLength(5);
@@ -46,7 +46,7 @@ describe("createIndoorXCheckpoints", () => {
     });
 
     it("should handle non-divisible-by-4 steps", () => {
-        const checkpoints = createIndoorXCheckpoints({ xSteps: 10 });
+        const checkpoints = createGridXCheckpoints({ xSteps: 10 });
         expect(checkpoints).toHaveLength(5);
         expect(
             checkpoints
@@ -55,15 +55,15 @@ describe("createIndoorXCheckpoints", () => {
         ).toEqual([-5, -4, 0, 4, 5]);
     });
 });
-describe("createIndoorYCheckpoints", () => {
+describe("createGridYCheckpoints", () => {
     it("should throw error when ySteps is less than 4", () => {
-        expect(() => createIndoorYCheckpoints({ ySteps: 3 })).toThrow(
+        expect(() => createGridYCheckpoints({ ySteps: 3 })).toThrow(
             "ySteps must be at least 4",
         );
     });
 
     it("should create correct checkpoints for minimum ySteps (4)", () => {
-        const checkpoints = createIndoorYCheckpoints({ ySteps: 4 });
+        const checkpoints = createGridYCheckpoints({ ySteps: 4 });
         expect(checkpoints).toHaveLength(2);
         expect(checkpoints[0]).toEqual({
             id: 0,
@@ -86,7 +86,7 @@ describe("createIndoorYCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 8 steps", () => {
-        const checkpoints = createIndoorYCheckpoints({ ySteps: 8 });
+        const checkpoints = createGridYCheckpoints({ ySteps: 8 });
         expect(checkpoints).toHaveLength(3);
         expect(
             checkpoints
@@ -97,7 +97,7 @@ describe("createIndoorYCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 16 steps", () => {
-        const checkpoints = createIndoorYCheckpoints({ ySteps: 16 });
+        const checkpoints = createGridYCheckpoints({ ySteps: 16 });
         expect(checkpoints).toHaveLength(5);
         expect(
             checkpoints
@@ -121,7 +121,7 @@ describe("createIndoorYCheckpoints", () => {
     });
 
     it("should create correct checkpoints for 18 steps", () => {
-        const checkpoints = createIndoorYCheckpoints({ ySteps: 18 });
+        const checkpoints = createGridYCheckpoints({ ySteps: 18 });
         expect(checkpoints).toHaveLength(7);
         expect(
             checkpoints
@@ -141,7 +141,7 @@ describe("createIndoorYCheckpoints", () => {
 
     it("should handle non-divisible-by-4 steps with correct warning", () => {
         const consoleSpy = vi.spyOn(console, "warn");
-        const checkpoints = createIndoorYCheckpoints({ ySteps: 6 });
+        const checkpoints = createGridYCheckpoints({ ySteps: 6 });
         expect(checkpoints).toHaveLength(4);
         expect(
             checkpoints

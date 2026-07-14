@@ -21,7 +21,7 @@ export default function AnalyticsOptInModal({
 
         const checkEnv = async () => {
             const env = await window.electron.getEnv();
-            if (env.isPlaywright || env.isCI) {
+            if (env.isPlaywrightSession || env.isCI) {
                 posthog.opt_out_capturing();
                 Sentry.init({
                     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
