@@ -14,7 +14,8 @@ function Inspector() {
             </p>
 
             {/* Scrollable inspector content */}
-            <div className="mt-8 flex min-h-0 flex-1 flex-col gap-48 overflow-y-auto">
+            {/* relative so Radix's visually-hidden native selects are contained here instead of escaping to the document */}
+            <div className="relative mt-8 flex min-h-0 flex-1 flex-col gap-48 overflow-y-auto">
                 <PageEditor />
                 <MarcherEditor />
                 <ShapeEditor />
