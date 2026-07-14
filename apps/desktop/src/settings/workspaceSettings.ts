@@ -11,8 +11,7 @@ export const workspaceSettingsSchema = z.object({
     projectName: z.string().optional(),
     designer: z.string().optional(),
     client: z.string().optional(),
-    ensembleEnvironment: z.enum(["indoor", "outdoor"]).optional(),
-    ensembleType: z.string().optional(),
+    activity: z.string().optional(),
 
     // Mobile export settings
     otmProductionId: z.preprocess(
@@ -36,8 +35,7 @@ export const defaultWorkspaceSettings: WorkspaceSettings = {
     projectName: undefined,
     designer: undefined,
     client: undefined,
-    ensembleEnvironment: undefined,
-    ensembleType: undefined,
+    activity: undefined,
     otmProductionId: undefined,
 };
 

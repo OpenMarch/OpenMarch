@@ -40,6 +40,7 @@ import { invalidateDatabaseReadyQueries } from "@/hooks/useDatabaseReady";
 import { completeNewShow } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
+import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
 
 interface NewShowDialogProps {
     open: boolean;
@@ -224,8 +225,7 @@ export default function NewShowDialog({
             const withDefaults: NewShowWizardState = {
                 ...wizardState,
                 ensemble: wizardState.ensemble ?? {
-                    environment: "outdoor",
-                    ensemble_type: "Marching Band",
+                    activity: DEFAULT_ACTIVITY,
                 },
                 field: wizardState.field ?? {
                     template:

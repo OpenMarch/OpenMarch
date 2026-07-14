@@ -35,8 +35,7 @@ describe("newShowCompletion helpers", () => {
                 fileLocation: "/tmp/test-show.dots",
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -93,8 +92,7 @@ describeDbTests("completeNewShow", (it) => {
                 client: "Client Name",
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -121,8 +119,7 @@ describeDbTests("completeNewShow", (it) => {
         expect(settings.defaultTempo).toBe(100);
         expect(settings.defaultBeatsPerMeasure).toBe(4);
         expect(settings.defaultNewPageCounts).toBe(16);
-        expect(settings.ensembleEnvironment).toBe("outdoor");
-        expect(settings.ensembleType).toBe("Marching Band");
+        expect(settings.activity).toBe("Marching Band");
 
         const field = await getFieldProperties();
         expect(field.name).toBe(
@@ -163,8 +160,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/triple-meter-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -209,8 +205,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/audio-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -240,8 +235,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/xml-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -271,8 +265,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/invalid-tempo-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -312,8 +305,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/retry-show-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:
@@ -368,8 +360,7 @@ describeDbTests("completeNewShow", (it) => {
                 fileLocation: `/tmp/performer-retry-${task.id}.dots`,
             },
             ensemble: {
-                environment: "outdoor",
-                ensemble_type: "Marching Band",
+                activity: "Marching Band",
             },
             field: {
                 template:

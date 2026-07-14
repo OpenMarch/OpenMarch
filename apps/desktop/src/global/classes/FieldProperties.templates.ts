@@ -1,9 +1,9 @@
 import FootballTemplates from "./fieldTemplates/Football";
-import IndoorTemplates from "./fieldTemplates/Indoor";
+import GridFieldTemplates from "./fieldTemplates/GridFields";
 
 const FieldPropertiesTemplates = {
     ...FootballTemplates,
-    ...IndoorTemplates,
+    ...GridFieldTemplates,
 } as const;
 
 export default FieldPropertiesTemplates;

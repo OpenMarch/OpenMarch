@@ -1,8 +1,6 @@
 import type { FieldProperties } from "@openmarch/core";
 import type { NewMarcherArgs } from "@/db-functions";
 
-export type NewShowEnvironment = "indoor" | "outdoor";
-
 export type NewShowStepId =
     | "project"
     | "ensemble"
@@ -28,8 +26,7 @@ export interface NewShowProjectData {
 }
 
 export interface NewShowEnsembleData {
-    environment: NewShowEnvironment;
-    ensemble_type: string;
+    activity: string;
 }
 
 export interface NewShowFieldData {
@@ -104,7 +101,6 @@ export const DEFAULT_NEW_SHOW_WIZARD_STATE: NewShowWizardState = {
 export type NewShowFormState = {
     projectName: string;
     filePath: string;
-    environment: NewShowEnvironment;
     fieldTemplate: FieldProperties;
     designer?: string;
     client?: string;
@@ -130,7 +126,6 @@ export function wizardStateToFormState(
     return {
         projectName: state.project.projectName,
         filePath: state.project.fileLocation,
-        environment: state.ensemble.environment,
         fieldTemplate: state.field.template,
         designer: state.project.designer,
         client: state.project.client,
