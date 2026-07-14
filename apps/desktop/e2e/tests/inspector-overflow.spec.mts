@@ -16,15 +16,14 @@ test.describe("inspector layout", () => {
         const result = await page.evaluate(() => {
             const html = document.documentElement;
 
-            const scrollArea = [
-                ...document.querySelectorAll("#app div"),
-            ].find(
+            const scrollArea = [...document.querySelectorAll("#app div")].find(
                 (el) =>
                     getComputedStyle(el).overflowY === "auto" &&
                     el.closest("#app")?.lastElementChild?.contains(el),
             ) as HTMLElement | undefined;
 
-            if (!scrollArea) return { error: "inspector scroll area not found" };
+            if (!scrollArea)
+                return { error: "inspector scroll area not found" };
 
             // Make the inspector content tall enough to push the select below the fold.
             const filler = document.createElement("div");
