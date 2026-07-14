@@ -411,7 +411,10 @@
             "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
         },
         "fieldTemplate": {
-            "label": "Field Template"
+            "label": "Field Template",
+            "football": "Football",
+            "grid": "Grid",
+            "custom": "Custom"
         },
         "fieldType": {
             "label": "Field type"
@@ -643,9 +646,6 @@
             "showName": "Show name",
             "location": "Save location",
             "browse": "Browse",
-            "environment": "Environment",
-            "outdoor": "Outdoor",
-            "indoor": "Indoor",
             "moreOptions": "More options",
             "designer": "Designer",
             "client": "Client",
@@ -669,9 +669,9 @@
                     "description": "Name your show and choose where to save it."
                 },
                 "ensemble": {
-                    "title": "Ensemble",
-                    "description": "Choose your performance environment and ensemble type.",
-                    "typeLabel": "Ensemble type"
+                    "title": "Activity",
+                    "description": "Choose your activity.",
+                    "typeLabel": "Activity"
                 },
                 "field": {
                     "title": "Field setup",
