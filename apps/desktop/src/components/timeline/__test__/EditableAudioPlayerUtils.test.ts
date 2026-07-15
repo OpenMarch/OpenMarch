@@ -1133,7 +1133,7 @@ describe("createNewBeatsForTempoChange", () => {
 
     it("should handle very slow tempo", () => {
         const beats = [createMockBeat(1, 0)];
-        const tempo = 30; // 30 BPM = 2 seconds per beat
+        const tempo = 40; // 40 BPM = 1.5 seconds per beat (minimum allowed tempo)
         const audioDuration = 6;
 
         const result = createNewBeatsForTempoChange({
@@ -1144,8 +1144,8 @@ describe("createNewBeatsForTempoChange", () => {
             pages: [],
         });
 
-        expect(result.newBeats[0].duration).toBeCloseTo(2); // 60/30 = 2 seconds per beat
-        expect(result.newBeats.length).toBeCloseTo(3); // Should fit 3 beats in 6 seconds at 2 sec/beat
+        expect(result.newBeats[0].duration).toBeCloseTo(1.5); // 60/40 = 1.5 seconds per beat
+        expect(result.newBeats.length).toBeCloseTo(4); // Should fit 4 beats in 6 seconds at 1.5 sec/beat
     });
 
     it("should handle very fast tempo", () => {

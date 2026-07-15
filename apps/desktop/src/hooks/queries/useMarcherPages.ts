@@ -62,8 +62,8 @@ export const allMarcherPagesQueryOptions = ({
 }: {
     pinkyPromiseThatYouKnowWhatYouAreDoing?: boolean;
 }) => {
+    // eslint-disable-next-line @tanstack/query/exhaustive-deps
     return queryOptions({
-        // eslint-disable-next-line @tanstack/query/exhaustive-deps
         queryKey: marcherPageKeys.all(),
         queryFn: async () => {
             const mpResponse = await getAllMarcherPages({
@@ -264,7 +264,8 @@ export const useUpdateSelectedMarchers = (
     );
     const { data: fieldProperties, isSuccess: fieldPropertiesLoaded } =
         useQuery(fieldPropertiesQueryOptions());
-    const { selectedMarchers } = useSelectedMarchers()!;
+    const selectedMarchersContext = useSelectedMarchers();
+    const selectedMarchers = selectedMarchersContext?.selectedMarchers ?? [];
     const { t } = useTolgee();
 
     return useMutation({
@@ -342,6 +343,7 @@ export const useUpdateSelectedMarchers = (
  * @returns A mutation function that takes a marcher transform function and updates the selected marchers on the selected page.
  */
 export const useUpdateSelectedMarchersOnSelectedPage = () => {
-    const { selectedPage } = useSelectedPage()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
     return useUpdateSelectedMarchers(selectedPage?.id);
 };

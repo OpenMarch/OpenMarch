@@ -38,8 +38,8 @@
         "@openmarch/config": "workspace:*",
         "fast-check": "^4.3.0",
         "tsup": "^8.5.0",
-        "typescript": "latest",
-        "vitest": "^2.1.9"
+        "typescript": "catalog:",
+        "vitest": "^3.2.3"
     },
     "dependencies": {
         "svg-path-commander": "^2.1.11",

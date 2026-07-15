@@ -5,7 +5,6 @@
         "lib": ["DOM", "DOM.Iterable", "ESNext"],
         "allowJs": true,
         "skipLibCheck": true,
-        "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
         "strict": true,
         "forceConsistentCasingInFileNames": true,
@@ -15,9 +14,9 @@
         "isolatedModules": true,
         "noEmit": true,
         "jsx": "react-jsx",
-        "baseUrl": "./",
         "paths": {
-            "@/*": ["src/*"]
+            "@/*": ["./src/*"],
+            "@om-electron/*": ["./electron/*"]
         },
         "types": ["vite/client"],
         "typeRoots": ["./node_modules/@types", "./types"]
@@ -29,7 +28,12 @@
         "**/*.test.tsx",
         "**/*.spec.mts",
         "e2e",
-        "vitest.setup.ts"
+        "vitest.setup.ts",
+        "**/*.msw.ts"
     ],
-    "references": [{ "path": "./tsconfig.node.json" }]
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
 }

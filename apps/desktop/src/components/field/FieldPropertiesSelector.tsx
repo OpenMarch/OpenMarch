@@ -19,40 +19,78 @@ import {
     updateFieldPropertiesMutationOptions,
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
-import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
+import GridFieldTemplates from "@/global/classes/fieldTemplates/GridFields";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
-export default function FieldPropertiesSelector() {
+interface FieldPropertiesSelectorProps {
+    onTemplateChange?: (template: FieldProperties) => void;
+    currentTemplate?: FieldProperties;
+}
+
+export default function FieldPropertiesSelector({
+    onTemplateChange,
+    currentTemplate: externalCurrentTemplate,
+}: FieldPropertiesSelectorProps = {}) {
     const queryClient = useQueryClient();
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const databaseReady = useDatabaseReady();
+    const isControlled = Boolean(onTemplateChange);
+
+    const { data: fieldProperties, isLoading } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady && !externalCurrentTemplate),
+    );
     const { mutate: setFieldProperties } = useMutation(
         updateFieldPropertiesMutationOptions(queryClient),
     );
-    const [currentTemplate, setCurrentTemplate] = useState<
+    const [internalCurrentTemplate, setInternalCurrentTemplate] = useState<
         FieldProperties | undefined
     >(fieldProperties);
     const selectRef = useRef<HTMLButtonElement>(null);
     const { t } = useTolgee();
 
-    const handleFieldTypeChange = useCallback((value: string) => {
-        const template = Object.values(FieldPropertiesTemplates).find(
-            (FieldPropertiesTemplate) => FieldPropertiesTemplate.name === value,
-        );
-        if (!template) console.error("Template not found", value);
+    const currentTemplate = externalCurrentTemplate || internalCurrentTemplate;
 
-        setCurrentTemplate(template);
-    }, []);
+    const handleFieldTypeChange = useCallback(
+        (value: string) => {
+            const template = Object.values(FieldPropertiesTemplates).find(
+                (fieldPropertiesTemplate) =>
+                    fieldPropertiesTemplate.name === value,
+            );
+            if (!template) {
+                console.error("Template not found", value);
+                return;
+            }
+
+            if (onTemplateChange) {
+                onTemplateChange(template);
+            } else {
+                setInternalCurrentTemplate(template);
+            }
+        },
+        [onTemplateChange],
+    );
 
     const applyChanges = useCallback(() => {
         if (currentTemplate) setFieldProperties(currentTemplate);
     }, [currentTemplate, setFieldProperties]);
 
     useEffect(() => {
-        setCurrentTemplate(fieldProperties);
-    }, [fieldProperties]);
+        if (!externalCurrentTemplate && fieldProperties) {
+            setInternalCurrentTemplate(fieldProperties);
+        }
+    }, [fieldProperties, externalCurrentTemplate]);
 
-    if (!fieldProperties)
+    if (!externalCurrentTemplate && !fieldProperties && !isLoading) {
         return <div>{t("fieldProperties.errors.notDefined")}</div>;
+    }
+
+    if (isLoading && !externalCurrentTemplate) {
+        return <div>Loading...</div>;
+    }
+
+    const selectValue = currentTemplate?.isCustom
+        ? "Custom"
+        : currentTemplate?.name || fieldProperties?.name || "";
 
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
@@ -62,48 +100,64 @@ export default function FieldPropertiesSelector() {
                 >
                     <Select
                         onValueChange={handleFieldTypeChange}
-                        defaultValue={
-                            fieldProperties.isCustom
-                                ? "Custom"
-                                : fieldProperties.name
-                        }
+                        {...(isControlled
+                            ? { value: selectValue }
+                            : {
+                                  defaultValue: fieldProperties?.isCustom
+                                      ? "Custom"
+                                      : fieldProperties?.name,
+                              })}
                         ref={selectRef}
                     >
                         <SelectTriggerButton
                             label={
-                                fieldProperties.name ||
+                                currentTemplate?.name ||
+                                fieldProperties?.name ||
                                 t("fieldProperties.fieldType.label")
                             }
                         />
                         <SelectContent>
                             <SelectGroup>
-                                <SelectLabel>Football</SelectLabel>
-                                {Object.entries(FootballTemplates).map(
-                                    (template, index) => (
+                                <SelectLabel>
+                                    {t(
+                                        "fieldProperties.fieldTemplate.football",
+                                    )}
+                                </SelectLabel>
+                                {Object.values(FootballTemplates).map(
+                                    (template) => (
                                         <SelectItem
-                                            key={index}
-                                            value={template[1].name}
+                                            key={template.name}
+                                            value={template.name}
                                         >
-                                            {template[1].name}
+                                            {template.name}
                                         </SelectItem>
                                     ),
                                 )}
-                                <SelectSeparator />
-                                <SelectLabel>Indoor</SelectLabel>
-                                {Object.entries(IndoorTemplates).map(
-                                    (template, index) => (
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.grid")}
+                                </SelectLabel>
+                                {Object.values(GridFieldTemplates).map(
+                                    (template) => (
                                         <SelectItem
-                                            key={index}
-                                            value={template[1].name}
+                                            key={template.name}
+                                            value={template.name}
                                         >
-                                            {template[1].name}
+                                            {template.name}
                                         </SelectItem>
                                     ),
                                 )}
-                                <SelectSeparator />
-                                <SelectLabel>Custom</SelectLabel>
-                                {fieldProperties.isCustom && (
-                                    <SelectItem key={"custom"} value={"Custom"}>
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.custom")}
+                                </SelectLabel>
+                                {(currentTemplate?.isCustom ||
+                                    fieldProperties?.isCustom) && (
+                                    <SelectItem key="custom" value="Custom">
                                         {t("fieldProperties.customFieldName")}
                                     </SelectItem>
                                 )}
@@ -111,28 +165,33 @@ export default function FieldPropertiesSelector() {
                         </SelectContent>
                     </Select>
                 </StaticFormField>
-                <Button
-                    className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
-                    onClick={applyChanges}
+                {!isControlled && (
+                    <Button
+                        className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}
+                        onClick={applyChanges}
+                    >
+                        <T keyName="fieldProperties.applyFieldType" />
+                    </Button>
+                )}
+            </div>
+            {!isControlled && (
+                <div
+                    hidden={
+                        fieldProperties?.name === currentTemplate?.name ||
+                        (fieldProperties?.width === currentTemplate?.width &&
+                            fieldProperties?.height ===
+                                currentTemplate?.height &&
+                            fieldProperties?.centerFrontPoint.xPixels ===
+                                currentTemplate?.centerFrontPoint.xPixels &&
+                            fieldProperties?.centerFrontPoint.yPixels ===
+                                currentTemplate?.centerFrontPoint.yPixels)
+                    }
                 >
-                    <T keyName="fieldProperties.applyFieldType" />
-                </Button>
-            </div>
-            <div
-                hidden={
-                    fieldProperties?.name === currentTemplate?.name ||
-                    (fieldProperties?.width === currentTemplate?.width &&
-                        fieldProperties?.height === currentTemplate?.height &&
-                        fieldProperties?.centerFrontPoint.xPixels ===
-                            currentTemplate?.centerFrontPoint.xPixels &&
-                        fieldProperties?.centerFrontPoint.yPixels ===
-                            currentTemplate?.centerFrontPoint.yPixels)
-                }
-            >
-                <DangerNote>
-                    <T keyName="fieldProperties.applyFieldTypeWarning" />
-                </DangerNote>
-            </div>
+                    <DangerNote>
+                        <T keyName="fieldProperties.applyFieldTypeWarning" />
+                    </DangerNote>
+                </div>
+            )}
         </div>
     );
 }

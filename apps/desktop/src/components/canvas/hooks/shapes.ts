@@ -17,10 +17,10 @@ export const useRenderMarcherShapes = ({
     isPlaying: boolean;
 }) => {
     const { data: shapePagesOnSelectedPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id!),
+        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
     );
     const { data: shapePageMarchersOnSelectedPage } = useQuery(
-        shapePageMarchersQueryByPageIdOptions(selectedPage?.id!),
+        shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
     );
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change

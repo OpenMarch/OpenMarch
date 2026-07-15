@@ -12,6 +12,8 @@ import clsx from "clsx";
 import React, { useMemo } from "react";
 import { mixedMeterPermutations } from "./TempoUtils";
 import { T, useTolgee } from "@tolgee/react";
+import { isValidTempoBpm, MIN_TEMPO_BPM } from "@/global/classes/Beat";
+import { toast } from "sonner";
 export const maxMixedMeterBeats = 30;
 
 interface NewTempoGroupFormProps {
@@ -79,6 +81,15 @@ const NewTempoGroupForm = React.forwardRef<
         const endTempoValue =
             endTempo && !isMixedMeter ? parseInt(endTempo) : undefined;
         const repeatsValue = parseInt(repeats) || 4;
+
+        if (!isValidTempoBpm(tempoValue)) {
+            toast.error(t("music.tempoBelowMinimum", { min: MIN_TEMPO_BPM }));
+            return;
+        }
+        if (endTempoValue != null && !isValidTempoBpm(endTempoValue)) {
+            toast.error(t("music.tempoBelowMinimum", { min: MIN_TEMPO_BPM }));
+            return;
+        }
 
         let newTempoGroup: TempoGroup;
         if (isMixedMeter) {
@@ -149,7 +160,7 @@ const NewTempoGroupForm = React.forwardRef<
                         name="tempo"
                         type="number"
                         unit="bpm"
-                        min={1}
+                        min={MIN_TEMPO_BPM}
                         value={tempo}
                         onChange={(e) => setTempo(e.target.value)}
                         required
@@ -216,7 +227,7 @@ const NewTempoGroupForm = React.forwardRef<
                             id="end-tempo-input"
                             name="endTempo"
                             type="number"
-                            min={1}
+                            min={MIN_TEMPO_BPM}
                             unit="bpm"
                             placeholder={t("music.endTempoPlaceholder")}
                             value={endTempo}

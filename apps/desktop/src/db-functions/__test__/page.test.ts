@@ -3,6 +3,7 @@ import {
     createPages,
     updatePages,
     deletePages,
+    deletePageYank,
     FIRST_PAGE_ID,
     createLastPage,
     DatabasePage,
@@ -18,7 +19,18 @@ import {
 } from "../page";
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { getTestWithHistory } from "@/test/history";
-import { inArray, desc, eq, and, gte, lte, asc, isNotNull } from "drizzle-orm";
+import {
+    inArray,
+    desc,
+    eq,
+    and,
+    gte,
+    lte,
+    asc,
+    isNotNull,
+    sql,
+    count,
+} from "drizzle-orm";
 import {
     FIRST_BEAT_ID,
     NewBeatArgs,
@@ -1725,10 +1737,166 @@ describeDbTests("pages", (it) => {
                 },
             );
         });
+
+        describe("delete page yank", () => {
+            const createLastPages = async ({
+                db,
+                counts,
+            }: {
+                db: Parameters<typeof createLastPage>[0]["db"];
+                counts: number[];
+            }) => {
+                for (const newPageCounts of counts)
+                    await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+                return await getPagesInOrder({ tx: db });
+            };
+
+            const pagePositions = (pages: DatabasePageWithBeat[]) =>
+                pages.map((page) => page.beatObject.position);
+
+            testWithHistory(
+                "pulls all subsequent pages back by the deleted page length",
+                async ({ db, expectNumberOfChanges }) => {
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [8, 12, 4, 10],
+                    });
+                    expect(pagePositions(pagesBeforeDelete)).toEqual([
+                        0, 1, 9, 21, 25,
+                    ]);
+
+                    const databaseState =
+                        await expectNumberOfChanges.getDatabaseState(db);
+
+                    const deletedPages = await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[2].id,
+                    });
+
+                    expect(deletedPages).toHaveLength(1);
+                    expect(deletedPages[0].id).toBe(pagesBeforeDelete[2].id);
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 9, 13]);
+
+                    await expectNumberOfChanges.test(db, 1, databaseState);
+                },
+            );
+
+            testWithHistory(
+                "pulls the third page to the second beat when yanking the second page",
+                async ({ db }) => {
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [16, 16, 16],
+                    });
+                    expect(pagePositions(pagesBeforeDelete)).toEqual([
+                        0, 1, 17, 33,
+                    ]);
+
+                    await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[1].id,
+                    });
+
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 17]);
+                },
+            );
+
+            testWithHistory(
+                "deleting the last page updates last page counts",
+                async ({ db }) => {
+                    const getLastPageCounts = async () =>
+                        (await db.query.utility.findFirst())!.last_page_counts;
+                    const pagesBeforeDelete = await createLastPages({
+                        db,
+                        counts: [9, 10, 23],
+                    });
+                    expect(await getLastPageCounts()).toBe(23);
+
+                    await deletePageYank({
+                        db,
+                        pageId: pagesBeforeDelete[3].id,
+                    });
+
+                    expect(await getLastPageCounts()).toBe(10);
+                    expect(
+                        pagePositions(await getPagesInOrder({ tx: db })),
+                    ).toEqual([0, 1, 10]);
+                },
+            );
+        });
     });
 
     describe("createLastPage", () => {
         describe("with existing pages", () => {
+            testWithHistory(
+                "creates a page when stale marcher pages exist for the reused page id",
+                async ({ db }) => {
+                    const newPageCounts = 8;
+                    const firstCreatedPage = await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+                    const marcherCount = await db
+                        .select({ count: count() })
+                        .from(schema.marchers)
+                        .get();
+                    assert(marcherCount != null, "Marcher count not found");
+
+                    await db.run(sql.raw("PRAGMA foreign_keys = OFF"));
+                    await db
+                        .delete(schema.pages)
+                        .where(eq(schema.pages.id, firstCreatedPage.id));
+                    await db.run(sql.raw("PRAGMA foreign_keys = ON"));
+
+                    const staleMarcherPages = await db
+                        .select({ count: count() })
+                        .from(schema.marcher_pages)
+                        .where(
+                            eq(
+                                schema.marcher_pages.page_id,
+                                firstCreatedPage.id,
+                            ),
+                        )
+                        .get();
+                    expect(staleMarcherPages?.count).toBe(marcherCount.count);
+
+                    const secondCreatedPage = await createLastPage({
+                        db,
+                        newPageCounts,
+                        createNewBeats: true,
+                    });
+
+                    expect(secondCreatedPage.id).toBe(firstCreatedPage.id);
+                    const recreatedMarcherPages = await db
+                        .select({ count: count() })
+                        .from(schema.marcher_pages)
+                        .where(
+                            eq(
+                                schema.marcher_pages.page_id,
+                                secondCreatedPage.id,
+                            ),
+                        )
+                        .get();
+                    expect(recreatedMarcherPages?.count).toBe(
+                        marcherCount.count,
+                    );
+
+                    const foreignKeyFailures = await db.all(
+                        sql.raw("PRAGMA foreign_key_check"),
+                    );
+                    expect(foreignKeyFailures).toEqual([]);
+                },
+            );
+
             testWithHistory.for([
                 {
                     newPageCounts: 8,

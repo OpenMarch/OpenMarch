@@ -43,6 +43,7 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useRenderProps } from "./hooks/props";
 import { usePropClipboard } from "./hooks/propClipboard";
+import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
@@ -127,6 +128,7 @@ export default function Canvas({
     const pagesCountRef = useRef(pages.length);
     pagesCountRef.current = pages.length;
     const { setSelectedShapePageIds } = useSelectionStore()!;
+    const databaseReady = useDatabaseReady();
 
     // Props queries
     const { data: props } = useQuery(allPropsQueryOptions());
@@ -229,7 +231,9 @@ export default function Canvas({
     // Prop drawing state
     const { drawingMode, resetDrawingState } = usePropDrawingStore();
 
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
+    const { data: fieldProperties } = useQuery(
+        fieldPropertiesQueryOptions(databaseReady),
+    );
     const { uiSettings } = useUiSettingsStore()!;
     const {
         alignmentEvent,

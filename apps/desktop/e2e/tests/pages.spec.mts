@@ -1,53 +1,73 @@
-import { test } from "e2e/fixtures.mjs";
-import { expect, Page } from "playwright/test";
+import { test } from "../fixtures.mjs";
+import { expect, type Page } from "playwright/test";
+import fs from "fs-extra";
+import initSqlJs from "sql.js";
+
+const getPageStartPositions = async (databasePath: string) => {
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
+    });
+    const db = new SQL.Database(fs.readFileSync(databasePath));
+    const result = db.exec(`
+        SELECT pages.id, beats.position
+        FROM pages
+        INNER JOIN beats ON pages.start_beat = beats.id
+        ORDER BY beats.position ASC
+    `);
+    db.close();
+
+    return (result[0]?.values ?? []).map(([id, position]) => ({
+        id: Number(id),
+        position: Number(position),
+    }));
+};
 
 export const createNewPage = async (page: Page) => {
-    // Extract only the Pages section from the snapshot
-    const snapshotBefore = await page.locator("#timeline").ariaSnapshot();
+    const pagesTextBefore = (await page.locator("#pages").textContent()) ?? "";
+    let pageNamesBefore: string[] = pagesTextBefore.match(/\d+[A-Z]?/g) ?? [];
 
-    // Find the Pages section (from "paragraph: Pages" to next "paragraph:" or end)
-    const pagesMatch = snapshotBefore.match(
-        /- paragraph: Pages(.*?)(?=- paragraph:|$)/s,
-    );
-    if (!pagesMatch) throw new Error("Pages section not found");
+    // Fallback for cases where text content is not exposed on #pages.
+    if (pageNamesBefore.length === 0) {
+        const snapshotBefore = await page.locator("#timeline").ariaSnapshot();
+        pageNamesBefore = Array.from(
+            snapshotBefore.matchAll(
+                /listitem(?:\s+"[^"]*")?[^\n]*\n\s*-\s*(?:generic|text)[^\n]*:\s*"?(\d+[A-Z]?)"?/g,
+            ),
+            (match) => match[1] ?? "",
+        ).filter(Boolean);
 
-    const pagesSection = pagesMatch[1];
-
-    const firstPageNamePattern = /"First page": "(\w*)"/;
-    const firstPageNameMatch = pagesSection.match(firstPageNamePattern);
-    const firstPageName = firstPageNameMatch ? firstPageNameMatch[1] : null;
-    if (!firstPageName) throw new Error("First page name not found");
-
-    const pageNamesBefore: string[] = [firstPageName];
-
-    // Pattern handles various formats:
-    // - text: "0 1 2" or - text: 0 1 2 (with newlines)
-    // Pages- text: 0 1- button (without newlines)
-    const allPageNamesPattern = /- text: "?([^"\n]+?)"?(?=\n|- |$)/g;
-    const textMatches = pagesSection.matchAll(allPageNamesPattern);
-
-    for (const match of textMatches) {
-        const text = match[1].trim();
-        // If the text contains spaces, it's multiple pages in one string
-        if (text.includes(" ")) {
-            pageNamesBefore.push(...text.split(/\s+/));
-        } else {
-            // Single page name
-            pageNamesBefore.push(text);
+        if (pageNamesBefore.length === 0) {
+            const pagesBlock = snapshotBefore.match(/Pages([\s\S]*?)(Audio|$)/);
+            pageNamesBefore = Array.from(
+                (pagesBlock?.[1] ?? "").matchAll(
+                    /(?:^|[^A-Za-z0-9])(\d+[A-Z]?)(?=[^A-Za-z0-9]|$)/g,
+                ),
+                (match) => match[1] ?? "",
+            ).filter(Boolean);
         }
     }
 
+    if (pageNamesBefore.length === 0) pageNamesBefore = ["0"];
+
     const lastPageNameBefore = pageNamesBefore[pageNamesBefore.length - 1];
+    if (!lastPageNameBefore) throw new Error("Unable to determine last page");
     const lastPageNumber = parseInt(
         lastPageNameBefore.match(/^\d+/)?.[0] ?? "",
     );
 
-    // create new page
-    await page.locator("#pages").getByRole("button").click();
-
     const expectedNewPageName = lastPageNumber + 1;
-    await expect(page.locator("#pages")).toContainText(
-        expectedNewPageName.toString(),
+    const pagesLocator = page.locator("#pages");
+    const addPageButton = pagesLocator.getByRole("button");
+
+    await expect(addPageButton).toBeVisible();
+    await addPageButton.click();
+
+    await expect(pagesLocator).toContainText(expectedNewPageName.toString(), {
+        timeout: 15_000,
+    });
+    await expect(page.locator("#app")).toContainText(
+        `Page ${expectedNewPageName}`,
+        { timeout: 10_000 },
     );
 };
 
@@ -185,7 +205,7 @@ test("Delete page", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^3$/ }).first().click({
         button: "right",
     });
-    await page.getByRole("button").click();
+    await page.getByRole("button", { name: "In Place" }).click();
     for (const pageName of ["0", "1", "2"])
         await expect(page.locator("#pages")).toContainText(pageName);
     await expect(page.locator("#pages")).not.toContainText("3");
@@ -195,8 +215,47 @@ test("Delete page", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^1$/ }).first().click({
         button: "right",
     });
-    await page.getByRole("button").click();
+    await page.getByRole("button", { name: "In Place" }).click();
     for (const pageName of ["0", "1"]) // page is renamed to 1
         await expect(page.locator("#pages")).toContainText(pageName);
     await expect(page.locator("#pages")).not.toContainText("2");
+});
+
+test("Delete page with yank", async ({ electronApp }) => {
+    const { databasePath, page } = electronApp;
+
+    await createNewPage(page);
+    await createNewPage(page);
+    await createNewPage(page);
+    await createNewPage(page);
+
+    for (const pageName of ["0", "1", "2", "3", "4"])
+        await expect(page.locator("#pages")).toContainText(pageName);
+
+    const positionsBeforeDelete = await getPageStartPositions(databasePath);
+    expect(positionsBeforeDelete.length).toBe(5);
+
+    const pageToDelete = positionsBeforeDelete[2];
+    const nextPage = positionsBeforeDelete[3];
+    const yankLength = nextPage.position - pageToDelete.position;
+
+    await page.locator("div").filter({ hasText: /^2$/ }).first().click();
+    await page.locator("div").filter({ hasText: /^2$/ }).first().click({
+        button: "right",
+    });
+    await page.getByRole("button", { name: "Yank" }).click();
+
+    await expect(page.locator("#pages")).not.toContainText("4");
+    for (const pageName of ["0", "1", "2", "3"])
+        await expect(page.locator("#pages")).toContainText(pageName);
+
+    await expect
+        .poll(() => getPageStartPositions(databasePath))
+        .toEqual([
+            ...positionsBeforeDelete.slice(0, 2),
+            ...positionsBeforeDelete.slice(3).map((pagePosition) => ({
+                ...pagePosition,
+                position: pagePosition.position - yankLength,
+            })),
+        ]);
 });

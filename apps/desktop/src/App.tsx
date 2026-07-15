@@ -26,7 +26,11 @@ import { useFullscreenStore } from "./stores/FullscreenStore";
 import AnalyticsOptInModal from "./components/AnalyticsOptInModal";
 import { attachCodegenListeners } from "@/components/canvas/listeners/CodegenListeners";
 import ErrorBoundary from "./ErrorBoundary";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+    QueryCache,
+    QueryClient,
+    QueryClientProvider,
+} from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { createAllUndoTriggers } from "./db-functions";
 import { db } from "./global/database/db";
@@ -40,9 +44,16 @@ import { useLoadFileErrorHandler } from "./hooks/useLoadFileErrorHandler";
 export const queryClient = new QueryClient({
     defaultOptions: {
         queries: {
-            networkMode: "offlineFirst",
+            networkMode: "always",
         },
     },
+    queryCache: new QueryCache({
+        onError: (_error, query) => {
+            if (query?.meta?.errorMessage) {
+                console.error(query.meta.errorMessage);
+            }
+        },
+    }),
 });
 
 function App() {
@@ -64,11 +75,14 @@ function App() {
     // Check if running in codegen mode
     const isCodegen = window.electron.isCodegen;
     if (isCodegen) {
+        // eslint-disable-next-line no-console
         console.log("🎭 React app running in Playwright Codegen mode");
     }
 
     useEffect(() => {
         if (pluginsLoadedRef.current) return;
+        // Only load plugins after database is ready and canvas is available
+        if (!databaseIsReady) return;
         pluginsLoadedRef.current = true;
         console.debug("Loading plugins...");
         void window.plugins
@@ -112,7 +126,7 @@ function App() {
             .then(() => {
                 console.debug("All plugins loaded.");
             });
-    }, []);
+    }, [databaseIsReady]);
 
     useEffect(() => {
         // Check if database is ready
@@ -215,7 +229,12 @@ function App() {
                     <AlertModal />
                     {/* Always show LaunchPage when no file is selected, regardless of database state */}
                     {!databaseIsReady ? (
-                        <LaunchPage setDatabaseIsReady={setDatabaseIsReady} />
+                        <SelectedAudioFileProvider>
+                            <RegisteredActionsHandler />
+                            <LaunchPage
+                                setDatabaseIsReady={setDatabaseIsReady}
+                            />
+                        </SelectedAudioFileProvider>
                     ) : (
                         <TooltipProvider
                             delayDuration={500}

@@ -27,22 +27,22 @@
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
-    "@payloadcms/db-d1-sqlite": "3.73.0",
-    "@payloadcms/next": "3.73.0",
-    "@payloadcms/richtext-lexical": "3.73.0",
-    "@payloadcms/storage-r2": "3.73.0",
-    "@payloadcms/ui": "3.73.0",
+    "@opennextjs/cloudflare": "^1.19.11",
+    "@payloadcms/db-d1-sqlite": "3.84.1",
+    "@payloadcms/next": "3.84.1",
+    "@payloadcms/richtext-lexical": "3.84.1",
+    "@payloadcms/storage-r2": "3.84.1",
+    "@payloadcms/ui": "3.84.1",
     "cross-env": "^7.0.3",
     "dotenv": "16.4.7",
     "graphql": "^16.8.1",
-    "next": "16.1.6",
-    "payload": "3.73.0",
+    "next": "16.1.7",
+    "payload": "3.84.1",
     "react": "19.2.1",
     "react-dom": "19.2.1"
   },
   "devDependencies": {
-    "@playwright/test": "1.56.1",
+    "@playwright/test": "1.60.0",
     "@testing-library/react": "16.3.0",
     "@types/node": "^22.5.4",
     "@types/react": "19.2.9",
@@ -51,24 +51,17 @@
     "eslint": "^9.16.0",
     "eslint-config-next": "16.1.6",
     "jsdom": "26.1.0",
-    "playwright": "1.56.1",
-    "playwright-core": "1.56.1",
+    "playwright": "1.60.0",
+    "playwright-core": "1.60.0",
     "prettier": "^3.4.2",
-    "typescript": "5.7.3",
+    "typescript": "catalog:",
     "vite-tsconfig-paths": "5.1.4",
     "vitest": "3.2.3",
-    "wrangler": "^4.59.2"
+    "wrangler": "^4.94.0"
   },
   "engines": {
     "node": "^18.20.2 || >=20.9.0",
     "pnpm": "^9 || ^10"
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "sharp",
-      "esbuild",
-      "unrs-resolver"
-    ]
   },
   "cloudflare": {
     "bindings": {

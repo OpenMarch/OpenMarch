@@ -1,7 +1,7 @@
 ---
 title: "OpenMarch Terms of Service"
 description: "Terms of Service for OpenMarch"
-lastUpdated: "2026-02-28"
+lastUpdated: "2026-06-13"
 ---
 
 ## 1. Agreement
@@ -62,6 +62,10 @@ OpenMarch hereby grants you permission to access and use the Services, provided
 2. Payment and Billing Information. By providing a credit card or other payment method for the payment of fees, you represent and warrant that you are authorized to use the designated payment method and that you authorize our third-party payment processor to charge your payment method for the total amount of your fee(s) (including any applicable taxes and other charges) (collectively, a “**Transaction**”). If the payment method cannot be verified, is invalid, or is otherwise not acceptable, you must resolve any problem we (or our third-party payment processor) encounter before the Transaction is completed. You acknowledge that the amount billed may vary due to promotional offers, changes in the Services, or changes in applicable taxes or other charges, and you authorize us (or our third-party payment processor) to charge your payment method for the corresponding amount.
 
 3. Pricing and Availability. All prices are shown in U.S. dollars and applicable taxes and other charges, if any, are additional. Prices may be adjusted at any time and for any reason (or no reason) and without providing you prior notice. Services are subject to availability, and we reserve the right to cancel all or part of the Services and to discontinue making certain Services available without prior notice.
+
+4. Refunds. For information about refunds, including the minimum period during which you may request a refund for eligible purchases, please see our [Refund Policy](/refunds).
+
+5. Seat Compliance. If the number of Performers or other authorized users affiliated with an Ensemble exceeds the number of seats purchased for that Ensemble, OpenMarch may notify the applicable Admin(s). If the Ensemble has not purchased additional seats or reduced its user count to within the purchased limit within a reasonable period following such notice, OpenMarch may restrict the ability of users in excess of the purchased seat count to create or submit new content through the Services until the seat count is brought into compliance, without affecting access to previously created content.
 
 ## 9. Content
 

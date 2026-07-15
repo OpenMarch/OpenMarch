@@ -14,7 +14,7 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Habilitar movimento em Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToWhole": "Ajustar para o inteiro mais próximo"
+            "snapToCustomFraction": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
@@ -259,6 +259,14 @@
         "pageNotFound": "Erro: Página não encontrada para a página do caminhante {id}",
         "pdfExportFailed": "Falha na exportação de PDF: {error}",
         "preview": "Pré-visualização",
+        "videoBackground": "Fundo do vídeo",
+        "videoOverlayPreviewHint": "Arraste a sobreposição para movê-la (alça lateral = largura, canto = tamanho). Arraste o espaço vazio para mover o campo e use a roda do mouse para zoom. Use os controles deslizantes abaixo para ajustes finos.",
+        "videoFieldFraming": "Enquadramento do campo",
+        "videoFieldScale": "Escala",
+        "videoFieldOffsetX": "Deslocamento horizontal",
+        "videoFieldOffsetY": "Deslocamento vertical",
+        "videoFieldResetFraming": "Redefinir enquadramento",
+        "videoPreviewLoading": "Carregando pré-visualização…",
         "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Layout de quarto de página",
         "roundingDenominator": "Arredondamento de coordenadas:",
@@ -271,6 +279,22 @@
         "unknownError": "Erro desconhecido",
         "unsortedSection": "Sem classificação",
         "useXYHeaders": "Usar cabeçalhos X/Y"
+    },
+    "ensembles": {
+        "attached": "(Anexado)",
+        "attachDialog": {
+            "attach": "Anexar",
+            "cancel": "Cancelar",
+            "description": "Anexar este arquivo .dots a esta produção? Isso permitirá enviar deste arquivo para o app móvel OpenMarch - On the Move.",
+            "title": "Anexar à produção"
+        },
+        "createdAtHeader": "Criado em",
+        "empty": "Nenhum conjunto encontrado. Crie um acima!",
+        "error": "Erro ao carregar conjuntos",
+        "loading": "Carregando conjuntos...",
+        "nameHeader": "Nome",
+        "performersHeader": "Intérpretes",
+        "productionsHeader": "Produções"
     },
     "field": {
         "general": {
@@ -295,6 +319,7 @@
             "delete": "Excluir",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
             "deleteTooltip": "Excluir este ponto de verificação do campo",
+            "minimumRequired": "S\u00e3o necess\u00e1rios pelo menos 2 pontos de verifica\u00e7\u00e3o de {axis}",
             "fieldLabel": "Rótulo de Campo",
             "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
             "name": "Nome",
@@ -667,6 +692,7 @@
         "standard": "Padrão",
         "startTempo": "Tempo Inicial *",
         "tempo": "Tempo *",
+        "tempoBelowMinimum": "O tempo deve ser de pelo menos {min} BPM",
         "tempoDescription": "Batidas por minuto",
         "tempoGroupCreated": "Grupo de Tempos criado",
         "tempoGroupNamePlaceholder": "Opcional",
@@ -819,7 +845,11 @@
         },
         "page": {
             "contextMenu": {
-                "deletePage": "Excluir",
+                "delete": "Excluir",
+                "deleteInPlace": "No lugar",
+                "deleteInPlaceTooltip": "Exclui esta página e mantém as páginas seguintes onde estão.",
+                "deleteYank": "Puxar",
+                "deleteYankTooltip": "Exclui esta página e puxa as páginas seguintes para trás pelo seu comprimento.",
                 "subsetToggle": "Subconjunto",
                 "title": "Página {pageName}"
             },

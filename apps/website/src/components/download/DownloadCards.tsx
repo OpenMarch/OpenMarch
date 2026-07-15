@@ -8,8 +8,10 @@ import {
     DialogClose,
 } from "@openmarch/ui";
 import { LogoWindows, LogoMacOS, LogoLinux } from "@/components/Logos";
-import { CURRENT_VERSION } from "@/constants";
 import { HeartIcon } from "@phosphor-icons/react";
+
+const LATEST_RELEASE_DOWNLOAD_URL =
+    "https://github.com/OpenMarch/OpenMarch/releases/latest/download";
 
 export default function DownloadCards() {
     const [donationDialogOpen, setDonationDialogOpen] = useState(false);
@@ -27,10 +29,10 @@ export default function DownloadCards() {
                 {/* Windows Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoWindows />
-                    <h1 className="text-h1">Windows</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">Windows</h1>
                     <div className="flex flex-wrap gap-12">
                         <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}.exe`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-windows.exe`}
                             onClick={handleDownloadClick}
                             download
                         >
@@ -42,10 +44,10 @@ export default function DownloadCards() {
                 {/* macOS Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoMacOS />
-                    <h1 className="text-h1">macOS</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">macOS</h1>
                     <div className="flex flex-col items-center justify-center gap-12">
                         <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_arm64.dmg`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-macos-arm64.dmg`}
                             onClick={handleDownloadClick}
                             download
                         >
@@ -54,7 +56,7 @@ export default function DownloadCards() {
                             </Button>
                         </a>
                         <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-darwin_x64.dmg`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-macos-x64.dmg`}
                             onClick={handleDownloadClick}
                             download
                         >
@@ -68,10 +70,10 @@ export default function DownloadCards() {
                 {/* Linux Card */}
                 <div className="rounded-6 border-stroke bg-fg-1 flex flex-col items-center justify-center gap-24 border p-48 max-[600px]:p-24">
                     <LogoLinux />
-                    <h1 className="text-h1">Linux</h1>
+                    <h1 className="text-h1 max-[520px]:text-h2">Linux</h1>
                     <div className="flex flex-col items-center justify-center gap-12">
                         <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_x86_64.AppImage`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-linux-x64.AppImage`}
                             onClick={handleDownloadClick}
                             download
                         >
@@ -80,7 +82,7 @@ export default function DownloadCards() {
                             </Button>
                         </a>
                         <a
-                            href={`https://github.com/OpenMarch/OpenMarch/releases/download/${CURRENT_VERSION}/OpenMarch_${CURRENT_VERSION.substring(1)}-linux_arm64.AppImage`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-linux-arm64.AppImage`}
                             onClick={handleDownloadClick}
                             download
                         >

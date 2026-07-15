@@ -1,0 +1,47 @@
+---
+import { Button } from "@openmarch/ui";
+---
+
+<section
+    class="w-full flex flex-col items-center justify-center gap-12"
+    id="pricing"
+>
+    <h1 class="text-h1 max-[580px]:text-h2">Pricing</h1>
+    <div class="grid grid-cols-1 gap-16 min-[900px]:grid-cols-2">
+        <div
+            class="flex w-full max-w-sm flex-col items-start justify-center gap-8 rounded-[36px] border border-accent p-24 max-[480px]:rounded-24 max-[480px]:p-16"
+        >
+            <p class="text-sub font-mono">OPENMARCH: ON THE MOVE</p>
+            <h2 class="text-h2 max-[480px]:text-h3">Free</h2>
+            <ul class="list-disc pl-20">
+                <li class="text-body">
+                    5 free seats for your ensemble in 2026
+                </li>
+                <li class="text-body">Enough for yourself and your staff</li>
+                <li class="text-body">No credit card required</li>
+                <li class="text-body">
+                    All the same features as the paid plan
+                </li>
+            </ul>
+            <a href="/otm/getting-started/"
+                ><Button variant="secondary">Try Now</Button></a
+            >
+        </div>
+        <div
+            class="flex w-full max-w-sm flex-col items-start justify-center gap-8 rounded-[36px] border border-accent p-24 max-[480px]:rounded-24 max-[480px]:p-16"
+        >
+            <p class="text-sub font-mono">OPENMARCH: ON THE MOVE</p>
+            <h2 class="text-h2 max-[480px]:text-h3">$5 per seat</h2>
+            <ul class="list-disc pl-20">
+                <li class="text-body">See your path and coordinates</li>
+                <li class="text-body">Visualize the big picture</li>
+                <li class="text-body">Upload changes instantly</li>
+                <li class="text-body">Speed up your show learning process</li>
+                <li class="text-body">Built by the OpenMarch team</li>
+            </ul>
+            <a href="/otm/getting-started/"
+                ><Button variant="primary">Get Started</Button></a
+            >
+        </div>
+    </div>
+</section>

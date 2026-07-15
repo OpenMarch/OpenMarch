@@ -52,18 +52,21 @@ const EPSILON = 10e2; // round to 3 decimal places to prevent floating point err
  * If the denominator is 4, the coordinates will be rounded to the nearest .25.
  *
  * @param marcherPages
- * @param denominator Nearest 1/n step. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
+ * @param denominatorX Nearest 1/n step on the X axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
+ * @param denominatorY Nearest 1/n step on the Y axis. 4 -> 1/4 = nearest quarter step. 10 -> 1/10 = nearest tenth step.
  * @returns
  */
 export function getRoundCoordinates({
     marcherPages,
-    denominator,
+    denominatorX,
+    denominatorY,
     fieldProperties,
     xAxis = true,
     yAxis = true,
 }: {
     marcherPages: MarcherPage[];
-    denominator: number;
+    denominatorX: number;
+    denominatorY: number;
     fieldProperties: FieldProperties;
     xAxis: boolean;
     yAxis: boolean;
@@ -74,25 +77,25 @@ export function getRoundCoordinates({
         let newX = marcherPage.x as number;
         let newY = marcherPage.y as number;
 
-        if (xAxis) {
+        if (xAxis && denominatorX > 0) {
             const xStepsFromOrigin =
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.xPixels -
                     (marcherPage.x as number));
             const roundedXSteps =
-                Math.round(xStepsFromOrigin * denominator) / denominator;
+                Math.round(xStepsFromOrigin * denominatorX) / denominatorX;
             newX =
                 fieldProperties.centerFrontPoint.xPixels -
                 roundedXSteps / stepsPerPixel;
             newX = Math.round(newX * EPSILON) / EPSILON;
         }
-        if (yAxis) {
+        if (yAxis && denominatorY > 0) {
             const yStepsFromOrigin =
                 stepsPerPixel *
                 (fieldProperties.centerFrontPoint.yPixels -
                     (marcherPage.y as number));
             const roundedYSteps =
-                Math.round(yStepsFromOrigin * denominator) / denominator;
+                Math.round(yStepsFromOrigin * denominatorY) / denominatorY;
             newY =
                 fieldProperties.centerFrontPoint.yPixels -
                 roundedYSteps / stepsPerPixel;
@@ -381,7 +384,8 @@ export function evenlyDistributeVertically({
  * @param distance - The distance to move the marcherPages in steps. Default is 1 step.
  * @param snap - Whether to snap the coordinates to the grid. Default is false.
  * @param fieldProperties - The field properties to use for snapping.
- * @param snapDenominator - The denominator for snapping. Default is 1 (grid).
+ * @param snapDenominatorX - The denominator for snapping on the X axis. Default is 1 (grid).
+ * @param snapDenominatorY - The denominator for snapping on the Y axis. Default is 1 (grid).
  * @returns The modified marcherPages with updated coordinates.
  */
 export function moveMarchersXY({
@@ -390,14 +394,16 @@ export function moveMarchersXY({
     distance = 1,
     snap = false,
     fieldProperties,
-    snapDenominator = 1, // default for grid
+    snapDenominatorX = 1, // default for grid
+    snapDenominatorY = 1,
 }: {
     marcherPages: MarcherPage[];
     direction: "up" | "down" | "left" | "right";
     distance?: number;
     snap?: boolean;
     fieldProperties: FieldProperties;
-    snapDenominator?: number;
+    snapDenominatorX?: number;
+    snapDenominatorY?: number;
 }): ModifiedMarcherPageArgs[] {
     checkMarcherPagesAreSamePage(marcherPages);
 
@@ -427,7 +433,8 @@ export function moveMarchersXY({
     if (snap) {
         return getRoundCoordinates({
             marcherPages: movedPages,
-            denominator: snapDenominator,
+            denominatorX: snapDenominatorX,
+            denominatorY: snapDenominatorY,
             fieldProperties,
             xAxis: direction === "left" || direction === "right",
             yAxis: direction === "up" || direction === "down",

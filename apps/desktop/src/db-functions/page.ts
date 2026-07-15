@@ -336,6 +336,11 @@ export const createPagesInTransaction = async ({
             pageBeatMap.get(a.id)!.position - pageBeatMap.get(b.id)!.position,
     );
 
+    const createdPageIds = createdPages.map((page) => page.id);
+    await tx
+        .delete(schema.marcher_pages)
+        .where(inArray(schema.marcher_pages.page_id, createdPageIds));
+
     await _createMarcherPages({
         tx,
         sortedNewPages,
@@ -578,6 +583,10 @@ export const deletePagesInTransaction = async ({
         "Last page before deletion not found",
     );
 
+    await tx
+        .delete(schema.marcher_pages)
+        .where(inArray(schema.marcher_pages.page_id, Array.from(pageIds)));
+
     const deletedPages = await tx
         .delete(schema.pages)
         .where(inArray(schema.pages.id, Array.from(pageIds)))
@@ -652,6 +661,63 @@ export async function deletePages({
                 pageIds,
                 tx,
             });
+            await ensureSecondBeatHasPage({ tx });
+            return response;
+        },
+    );
+    return response;
+}
+
+export async function deletePageYank({
+    pageId,
+    db,
+}: {
+    pageId: number;
+    db: DbConnection;
+}): Promise<DatabasePage[]> {
+    if (pageId === FIRST_PAGE_ID) return [];
+
+    const pagesBeforeDeletion = await getPagesInOrder({ tx: db });
+    const pageToDeleteIndex = pagesBeforeDeletion.findIndex(
+        (p) => p.id === pageId,
+    );
+    assert(pageToDeleteIndex !== -1, `Page ${pageId} not found`);
+
+    const pageToDelete = pagesBeforeDeletion[pageToDeleteIndex];
+    const nextPage = pagesBeforeDeletion[pageToDeleteIndex + 1];
+    const yankLength = nextPage
+        ? nextPage.beatObject.position - pageToDelete.beatObject.position
+        : 0;
+    const laterPages = pagesBeforeDeletion.slice(pageToDeleteIndex + 1);
+
+    const response = await transactionWithHistory(
+        db,
+        "deletePageYank",
+        async (tx) => {
+            const response = await deletePagesInTransaction({
+                pageIds: new Set([pageId]),
+                tx,
+            });
+
+            if (yankLength > 0) {
+                for (const page of laterPages) {
+                    const targetBeat = await tx.query.beats.findFirst({
+                        where: eq(
+                            schema.beats.position,
+                            page.beatObject.position - yankLength,
+                        ),
+                    });
+                    assert(
+                        targetBeat != null,
+                        `Could not find target beat for yanked page ${page.id}`,
+                    );
+                    await tx
+                        .update(schema.pages)
+                        .set({ start_beat: targetBeat.id })
+                        .where(eq(schema.pages.id, page.id));
+                }
+            }
+
             await ensureSecondBeatHasPage({ tx });
             return response;
         },

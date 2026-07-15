@@ -2,6 +2,7 @@
 /* eslint-disable no-empty-pattern */
 import { test as base, _electron as electron } from "@playwright/test";
 import type { ElectronApplication, Page } from "playwright";
+import { createRequire } from "node:module";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs-extra";
@@ -17,6 +18,11 @@ const distAssetsDir = path.resolve(__dirname, "../dist-electron/main");
 const mainFile = path.resolve(distAssetsDir, "index.js");
 const dbPath = "../electron/database/migrations/_blank.dots";
 const blankDatabaseFile = path.resolve(__dirname, dbPath);
+const requireFromDesktop = createRequire(
+    path.join(__dirname, "../package.json"),
+);
+// Resolve from the desktop package so pnpm does not depend on Playwright's lookup path.
+const electronExecutable = requireFromDesktop("electron") as string;
 
 // Ensure necessary directories and files exist (similar to _codegen.mjs checks)
 if (!fs.existsSync(distAssetsDir)) {
@@ -41,9 +47,17 @@ const PLAYWRIGHT_ENV = {
     ELECTRON_ENABLE_LOGGING: "1",
     ELECTRON_ENABLE_STACK_DUMPING: "1",
     PLAYWRIGHT_SESSION: "true",
-    DISPLAY: ":0",
     DEBUG: "pw:browser",
 };
+
+const launchElectron = (options: {
+    args: string[];
+    env?: typeof PLAYWRIGHT_ENV;
+}) =>
+    electron.launch({
+        executablePath: electronExecutable,
+        ...options,
+    });
 
 const getTempDotsPath = (testInfo: { outputDir: string }) => {
     return path.resolve(testInfo.outputDir, "temp.dots");
@@ -142,7 +156,7 @@ export const test = base.extend<MyFixtures>({
 
         let browser: ElectronApplication | undefined;
         try {
-            browser = await electron.launch({
+            browser = await launchElectron({
                 args: [
                     mainFile,
                     tempDatabaseFile,
@@ -174,7 +188,7 @@ export const test = base.extend<MyFixtures>({
     electronAppEmpty: async ({}, use) => {
         let browser: ElectronApplication | undefined;
         try {
-            browser = await electron.launch({
+            browser = await launchElectron({
                 args: [
                     mainFile,
                     ".",
@@ -205,9 +219,11 @@ export const test = base.extend<MyFixtures>({
         }
     },
     /**
-     * Fixture for testing new file creation.
-     * Launches the app with PLAYWRIGHT_NEW_FILE_PATH env variable set,
-     * which causes the main process to use this path instead of showing the save dialog.
+     * Fixture for testing new file creation via the new-show wizard.
+     * Launches the app with PLAYWRIGHT_NEW_FILE_PATH set so the main process
+     * uses that path's directory as the default save location (and as the
+     * save-dialog result if Browse is clicked). Pair with a matching project
+     * name derived from the filename (e.g. basename without .dots).
      */
     electronAppNewFile: async ({}, use, testInfo) => {
         // Create a path for the new test file in the test output directory
@@ -223,7 +239,7 @@ export const test = base.extend<MyFixtures>({
 
         let browser: ElectronApplication | undefined;
         try {
-            browser = await electron.launch({
+            browser = await launchElectron({
                 args: [
                     mainFile,
                     ".",
