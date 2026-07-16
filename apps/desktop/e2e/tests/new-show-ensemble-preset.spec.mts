@@ -1,6 +1,9 @@
 import { test } from "../fixtures.mjs";
 import { expect } from "@playwright/test";
-import { fillProjectStep, openNewShowWizard } from "../utils/new-show-wizard.mjs";
+import {
+    fillProjectStep,
+    openNewShowWizard,
+} from "../utils/new-show-wizard.mjs";
 
 const dialogOf = (page: Parameters<typeof openNewShowWizard>[0]) =>
     page.getByRole("dialog", { name: "New show" });
@@ -17,7 +20,11 @@ async function advanceToPerformersStep(
 
     await dialog.getByRole("button", { name: "Next" }).click();
     await expect(
-        dialog.getByRole("heading", { name: "Activity", exact: true, level: 2 }),
+        dialog.getByRole("heading", {
+            name: "Activity",
+            exact: true,
+            level: 2,
+        }),
     ).toBeVisible();
     await dialog.getByRole("button", { name: "Next" }).click();
 
@@ -50,7 +57,11 @@ test("Activity step shows the ensemble size selector", async ({
     await dialog.getByRole("button", { name: "Next" }).click();
 
     await expect(
-        dialog.getByRole("heading", { name: "Activity", exact: true, level: 2 }),
+        dialog.getByRole("heading", {
+            name: "Activity",
+            exact: true,
+            level: 2,
+        }),
     ).toBeVisible();
     await expect(dialog.getByText("Ensemble size")).toBeVisible();
 });
