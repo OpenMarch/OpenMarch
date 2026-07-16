@@ -667,8 +667,15 @@
                 },
                 "ensemble": {
                     "title": "Activity",
-                    "description": "Choose your activity.",
-                    "typeLabel": "Activity"
+                    "description": "Choose your activity and approximate ensemble size.",
+                    "typeLabel": "Activity",
+                    "sizeLabel": "Ensemble size",
+                    "sizeOption": "{label} (~{count, plural, one {# performer} other {# performers}})",
+                    "size": {
+                        "small": "Small",
+                        "medium": "Medium",
+                        "large": "Large"
+                    }
                 },
                 "field": {
                     "title": "Field setup",
@@ -678,7 +685,7 @@
                     "title": "Performers",
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "addNew": "Add performers",
-                    "added": "Added performers",
+                    "added": "Added performers ({count})",
                     "noneAdded": "No performers added yet."
                 },
                 "audio": {

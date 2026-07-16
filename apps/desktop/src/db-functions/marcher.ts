@@ -41,6 +41,7 @@ type StartingData = {
         y: number;
     };
     spacing: number;
+    rowSpacing: number;
 };
 
 const DEFAULT_STARTING_DATA: StartingData = {
@@ -49,6 +50,7 @@ const DEFAULT_STARTING_DATA: StartingData = {
         y: 100,
     },
     spacing: 25,
+    rowSpacing: 50,
 };
 
 const undoTriggersReadyMap = new WeakMap<DbConnection, Promise<void>>();
@@ -82,6 +84,7 @@ const calculateStartingData = async (
     const pixelsPerStep = fieldProperties.pixelsPerStep;
     const _stepInterval = 2;
     const intervalInPixels = _stepInterval * pixelsPerStep;
+    const rowIntervalInPixels = _stepInterval * 2 * pixelsPerStep;
 
     // start 4 steps in front of and inside the top left corner of the field
     let startingPoint = {
@@ -118,6 +121,7 @@ const calculateStartingData = async (
     return {
         point: startingPoint,
         spacing: intervalInPixels,
+        rowSpacing: rowIntervalInPixels,
     };
 };
 
@@ -160,16 +164,35 @@ export async function createMarchersInTransaction({
     // Create a marcherPage for each marcher
     const newMarcherPages: ModifiedMarcherPageArgs[] = [];
 
+    // group marchers by section so each section forms its own row
+    const sectionOrder: string[] = [];
+    const marchersBySection = new Map<string, DatabaseMarcher[]>();
+    for (const marcher of createdMarchers) {
+        if (!marchersBySection.has(marcher.section)) {
+            marchersBySection.set(marcher.section, []);
+            sectionOrder.push(marcher.section);
+        }
+        marchersBySection.get(marcher.section)!.push(marcher);
+    }
+
     for (const page of allPages) {
         const startingData = await calculateStartingData(tx, page.id);
-        for (const [index, marcher] of createdMarchers.entries()) {
-            newMarcherPages.push({
-                marcher_id: marcher.id,
-                page_id: page.id,
-                x: startingData.point.x + index * startingData.spacing,
-                y: startingData.point.y,
+        // each section row sits further toward the front than the one before it
+        sectionOrder.forEach((section, rowIndex) => {
+            const rowMarchers = marchersBySection.get(section)!;
+            rowMarchers.forEach((marcher, columnIndex) => {
+                newMarcherPages.push({
+                    marcher_id: marcher.id,
+                    page_id: page.id,
+                    x:
+                        startingData.point.x +
+                        columnIndex * startingData.spacing,
+                    y:
+                        startingData.point.y +
+                        rowIndex * startingData.rowSpacing,
+                });
             });
-        }
+        });
     }
     const marcherPagePromises: Promise<unknown>[] = [];
     for (const marcherPage of newMarcherPages) {

@@ -41,6 +41,7 @@ import { completeNewShow } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
+import { DEFAULT_ENSEMBLE_SIZE } from "@/global/classes/EnsembleTemplates";
 
 interface NewShowDialogProps {
     open: boolean;
@@ -226,6 +227,7 @@ export default function NewShowDialog({
                 ...wizardState,
                 ensemble: wizardState.ensemble ?? {
                     activity: DEFAULT_ACTIVITY,
+                    size: DEFAULT_ENSEMBLE_SIZE,
                 },
                 field: wizardState.field ?? {
                     template:
@@ -331,6 +333,7 @@ export default function NewShowDialog({
             case "performers":
                 return (
                     <PerformersStep
+                        ensemble={wizardState.ensemble}
                         performers={wizardState.performers}
                         onChange={handlePerformersChange}
                     />

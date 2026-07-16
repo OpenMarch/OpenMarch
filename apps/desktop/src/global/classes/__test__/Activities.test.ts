@@ -26,7 +26,7 @@ describe("Activities registry", () => {
 
     it("every activity points at a real field template", () => {
         const known = new Set(Object.values(FieldPropertiesTemplates));
-        for (const activity of ACTIVITIES) {
+        for (const activity of Object.values(ACTIVITIES)) {
             expect(known.has(activity.defaultTemplate)).toBe(true);
         }
     });
