@@ -63,7 +63,9 @@ test("Activity step shows the ensemble size selector", async ({
             level: 2,
         }),
     ).toBeVisible();
-    await expect(dialog.getByText("Ensemble size")).toBeVisible();
+    await expect(
+        dialog.getByText("Ensemble size", { exact: true }),
+    ).toBeVisible();
 });
 
 test("Performers step is pre-filled from the activity preset", async ({
