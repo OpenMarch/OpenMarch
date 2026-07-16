@@ -257,7 +257,7 @@ export const SECTIONS: { [key: string]: Section } = {
         family: FAMILIES.Battery,
         name: "Cymbals",
         tName: "section.instrument.cymbals",
-        prefix: "C",
+        prefix: "CM",
     }),
     FlubDrum: new Section({
         family: FAMILIES.Battery,
