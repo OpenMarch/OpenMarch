@@ -6,10 +6,15 @@ import {
 } from "@tanstack/react-query";
 import { marcherPagesByPageQueryOptions } from "./useMarcherPages";
 import { Pathway, pathwaysByPageQueryOptions } from "./usePathways";
-import { CoordinateDefinition, MarcherTimeline } from "@/utilities/Keyframes";
+import {
+    CoordinateDefinition,
+    MarcherTimeline,
+    InterpolatedGeometry,
+} from "@/utilities/Keyframes";
 import { assert } from "@/utilities/utils";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { propPageGeometryQueryOptions } from "./useProps";
 
 const KEY_BASE = "coordinateData";
 export const coordinateDataKeys = {
@@ -38,10 +43,11 @@ type MarcherTimelinesByMarcherId = Map<number, MarcherTimeline>;
  * @param pathwaysById - a record of pathway IDs to their pathways
  * @returns - a record of marcher IDs to their timelines for the page
  */
-const getMarcherTimelines = (
+export const getMarcherTimelines = (
     destinationTimestamp: number,
     marcherPages: MarcherPagesByMarcher,
     pathwaysById: Record<number, Pathway>,
+    geometryByMarcherPageId: Map<number, InterpolatedGeometry>,
 ): MarcherTimelinesByMarcherId => {
     if (marcherPages == null) {
         console.debug("not loading timeline");
@@ -88,6 +94,7 @@ const getMarcherTimelines = (
         const pathData = marcherPage.path_data_id
             ? pathwaysById[marcherPage.path_data_id].path_data
             : undefined;
+        const geometry = geometryByMarcherPageId.get(marcherPage.id);
         // Add the marcher page position as the base coordinate
         coordinateMap.set(destinationTimestamp, {
             x: marcherPage.x,
@@ -95,6 +102,7 @@ const getMarcherTimelines = (
             path: pathData,
             previousPathPosition: marcherPage.path_start_position || 0,
             nextPathPosition: marcherPage.path_end_position || 1,
+            ...(geometry ? { geometry } : {}),
         });
         // // Add midset positions at their progress placements
         // for (const midset of midsetsForMarcherPage) {
@@ -137,15 +145,31 @@ export const coordinateDataQueryOptions = (
                 pathwaysByPageQueryOptions(page.id),
             );
 
-            const [marcherPages, pathways] = await Promise.all([
+            const geometryPromise = qc.fetchQuery(
+                propPageGeometryQueryOptions(),
+            );
+
+            const [marcherPages, pathways, geometries] = await Promise.all([
                 marcherPagesPromise,
                 pathwaysPromise,
+                geometryPromise,
             ]);
+
+            const geometryByMarcherPageId = new Map<
+                number,
+                InterpolatedGeometry
+            >(
+                (geometries ?? []).map((g) => [
+                    g.marcher_page_id,
+                    { width: g.width, height: g.height, rotation: g.rotation ?? 0 },
+                ]),
+            );
 
             return getMarcherTimelines(
                 (page.timestamp + page.duration) * 1000,
                 marcherPages ?? {},
                 pathways ?? {},
+                geometryByMarcherPageId,
             );
         },
         staleTime: DEFAULT_STALE_TIME,
