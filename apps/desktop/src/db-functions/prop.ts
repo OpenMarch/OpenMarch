@@ -50,12 +50,7 @@ export type GeometryPropagation = "current" | "forward" | "all";
 /** Geometry fields copied from a previous page when creating a new page */
 export type PropPageGeometrySource = Pick<
     DatabasePropPageGeometry,
-    | "shape_type"
-    | "width"
-    | "height"
-    | "radius"
-    | "rotation"
-    | "custom_geometry"
+    "shape_type" | "width" | "height" | "rotation" | "custom_geometry"
 >;
 
 /** Row shape for inserting prop_page_geometry (no id, no timestamps) */
@@ -64,7 +59,6 @@ export type NewPropPageGeometryRow = {
     shape_type: string;
     width: number;
     height: number;
-    radius: number | null;
     rotation: number;
     custom_geometry: string | null;
 };
@@ -92,7 +86,6 @@ export function buildPropPageGeometriesFromPrevious({
                   shape_type: prev.shape_type,
                   width: prev.width,
                   height: prev.height,
-                  radius: prev.radius,
                   rotation: prev.rotation,
                   custom_geometry: prev.custom_geometry,
               }
@@ -101,7 +94,6 @@ export function buildPropPageGeometriesFromPrevious({
                   shape_type: "rectangle",
                   width: defaultWidth,
                   height: defaultHeight,
-                  radius: null,
                   rotation: 0,
                   custom_geometry: null,
               };
@@ -222,7 +214,6 @@ async function createPropsInTransaction({
             shape_type: propArgs?.shape_type ?? "rectangle",
             width: propArgs?.width ?? DEFAULT_PROP_WIDTH,
             height: propArgs?.height ?? DEFAULT_PROP_HEIGHT,
-            radius: null,
             rotation: 0,
             custom_geometry: propArgs?.custom_geometry ?? null,
         };

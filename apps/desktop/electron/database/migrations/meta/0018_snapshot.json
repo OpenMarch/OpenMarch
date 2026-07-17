@@ -1,8 +1,8 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "0bd7af47-5e21-45a3-803d-949ea6c1fbab",
-    "prevId": "a77891e2-e574-4164-b212-0f3e7e4c2745",
+    "id": "6533e3d2-0809-4c95-8256-91830a1e91a8",
+    "prevId": "0bd7af47-5e21-45a3-803d-949ea6c1fbab",
     "tables": {
         "audio_files": {
             "name": "audio_files",
@@ -638,7 +638,12 @@
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
-            "checkConstraints": {}
+            "checkConstraints": {
+                "marchers_type_check": {
+                    "name": "marchers_type_check",
+                    "value": "type IN ('marcher', 'prop')"
+                }
+            }
         },
         "measures": {
             "name": "measures",
@@ -989,13 +994,6 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "radius": {
-                    "name": "radius",
-                    "type": "real",
-                    "primaryKey": false,
-                    "notNull": false,
-                    "autoincrement": false
-                },
                 "custom_geometry": {
                     "name": "custom_geometry",
                     "type": "text",
@@ -1069,10 +1067,6 @@
                 "prop_page_geometry_height_check": {
                     "name": "prop_page_geometry_height_check",
                     "value": "height > 0"
-                },
-                "prop_page_geometry_radius_check": {
-                    "name": "prop_page_geometry_radius_check",
-                    "value": "radius IS NULL OR radius > 0"
                 }
             }
         },

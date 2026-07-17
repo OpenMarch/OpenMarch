@@ -20,7 +20,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
-            radius: null,
             rotation: 0,
             custom_geometry: null,
         });
@@ -29,7 +28,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
-            radius: null,
             rotation: 0,
             custom_geometry: null,
         });
@@ -42,7 +40,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
                 shape_type: string;
                 width: number;
                 height: number;
-                radius: number | null;
                 rotation: number;
                 custom_geometry: string | null;
             }
@@ -51,7 +48,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "circle",
             width: 20,
             height: 20,
-            radius: 10,
             rotation: 45,
             custom_geometry: null,
         });
@@ -67,7 +63,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "circle",
             width: 20,
             height: 20,
-            radius: 10,
             rotation: 45,
             custom_geometry: null,
         });
@@ -76,7 +71,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
-            radius: null,
             rotation: 0,
             custom_geometry: null,
         });
@@ -94,7 +88,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
                 shape_type: string;
                 width: number;
                 height: number;
-                radius: number | null;
                 rotation: number;
                 custom_geometry: string | null;
             }
@@ -103,7 +96,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "polygon",
             width: 30,
             height: 25,
-            radius: null,
             rotation: 0,
             custom_geometry: customGeometry,
         });
@@ -116,7 +108,6 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             shape_type: "polygon",
             width: 30,
             height: 25,
-            radius: null,
             rotation: 0,
             custom_geometry: customGeometry,
         });

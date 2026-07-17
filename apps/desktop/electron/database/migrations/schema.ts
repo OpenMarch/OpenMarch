@@ -205,8 +205,6 @@ export const prop_page_geometry = sqliteTable(
         width: real().notNull(),
         /** Height in feet/meters */
         height: real().notNull(),
-        /** Radius for circles */
-        radius: real(),
         /** JSON for custom shapes (Phase 2) */
         custom_geometry: text(),
         /** 2D rotation in degrees (yaw - rotation on canvas plane) */
@@ -218,10 +216,6 @@ export const prop_page_geometry = sqliteTable(
     (table) => [
         check("prop_page_geometry_width_check", sql`width > 0`),
         check("prop_page_geometry_height_check", sql`height > 0`),
-        check(
-            "prop_page_geometry_radius_check",
-            sql`radius IS NULL OR radius > 0`,
-        ),
         index("idx_prop_page_geometry_mp_id").on(table.marcher_page_id),
     ],
 );

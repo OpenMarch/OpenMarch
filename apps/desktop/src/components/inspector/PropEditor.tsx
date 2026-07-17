@@ -128,12 +128,6 @@ export default function PropEditor() {
                         label={t("inspector.prop.height")}
                         value={fmtFeet(geometry.height, notSet)}
                     />
-                    {geometry.radius != null && (
-                        <Row
-                            label={t("inspector.prop.radius")}
-                            value={fmtFeet(geometry.radius, notSet)}
-                        />
-                    )}
                     <Row
                         label={t("inspector.prop.rotation")}
                         value={`${geometry.rotation}°`}
