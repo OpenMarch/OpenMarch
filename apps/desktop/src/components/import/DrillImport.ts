@@ -1,5 +1,10 @@
 import { useMutation } from "@tanstack/react-query";
-import { parseDrillPackage, type DrillShow } from "@openmarch/drill-interop";
+import {
+    audioOffsetSecondsFromSync,
+    beatDurationsFromSyncTimestamps,
+    parseDrillPackage,
+    type DrillShow,
+} from "@openmarch/drill-interop";
 import {
     FIRST_BEAT_ID,
     FIRST_PAGE_ID,
@@ -18,6 +23,10 @@ import {
     type NewMarcherArgs,
     type NewPageArgs,
 } from "@/db-functions";
+import {
+    getWorkspaceSettingsParsed,
+    updateWorkspaceSettingsParsed,
+} from "@/db-functions/workspaceSettings";
 import { db, schema } from "@/global/database/db";
 import { eq } from "drizzle-orm";
 import { queryClient } from "@/App";
@@ -29,6 +38,7 @@ import { marcherPageKeys } from "@/hooks/queries/useMarcherPages";
 import { marcherKeys } from "@/hooks/queries/useMarchers";
 import { marcherWithVisualsKeys } from "@/hooks/queries/useMarchersWithVisuals";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
+import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
 import { sourcePointToPixels } from "./drillTransform";
 import { resolveDrillField } from "./resolveField";
 import { resolveSectionForDrillPrefix } from "@/global/drillLabel";
@@ -40,7 +50,7 @@ export type DrillImportResult = {
     sets: number;
 };
 
-/** A neutral, default 120bpm beat; musical timing can be imported separately. */
+/** Fallback when the package has no SYNC timestamps. */
 const DEFAULT_BEAT_DURATION_SECONDS = 0.5;
 
 /**
@@ -99,15 +109,26 @@ export const _importDrillShow = async (
                 ),
             });
 
-            // One beat per count for the full show length. The first beat (position
-            // 0) already exists, so we add the remaining counts after it.
-            const newBeats: NewBeatArgs[] = Array.from(
-                { length: Math.max(0, show.totalCounts - 1) },
-                () => ({
-                    duration: DEFAULT_BEAT_DURATION_SECONDS,
+            // One beat per count. Prefer SYNC-derived durations so tempo matches
+            // the source audio; fall back to a flat 120bpm grid when missing.
+            const durations = beatDurationsFromSyncTimestamps({
+                timestamps: show.audioSync?.timestamps,
+                totalCounts: show.totalCounts,
+                fallbackDuration: DEFAULT_BEAT_DURATION_SECONDS,
+            });
+            if (durations.length > 0) {
+                await tx
+                    .update(schema.beats)
+                    .set({ duration: durations[0]! })
+                    .where(eq(schema.beats.id, FIRST_BEAT_ID))
+                    .run();
+            }
+            const newBeats: NewBeatArgs[] = durations
+                .slice(1)
+                .map((duration) => ({
+                    duration,
                     include_in_measure: true,
-                }),
-            );
+                }));
             const createdBeats =
                 newBeats.length > 0
                     ? await createBeatsInTransaction({
@@ -223,7 +244,7 @@ async function importDrillAudio(show: DrillShow): Promise<void> {
 
 /**
  * Parses a drill interchange package (`.3dz`) and imports it into the current
- * show: marchers, sets/pages, coordinates, and embedded audio.
+ * show: marchers, sets/pages, coordinates, embedded audio, and audio sync.
  */
 export const importDrillPackage = async (
     file: File,
@@ -231,6 +252,7 @@ export const importDrillPackage = async (
     const show = await parseDrillPackage(await file.arrayBuffer());
     const { marchers, sets } = await _importDrillShow(show);
     await importDrillAudio(show);
+    await applyDrillAudioOffset(show);
     return {
         success: true,
         message: show.title
@@ -240,6 +262,24 @@ export const importDrillPackage = async (
         sets,
     };
 };
+
+/**
+ * Trims the imported audio's lead-in via workspace `audioOffsetSeconds` so
+ * count 0 lines up with the SYNC timestamp (negative = trim start).
+ *
+ * TODO(feature/drill-import-audio-lead-in): Keep the pre-count audio instead of
+ * cutting it — insert intro beats / a hold before page 1 so the lead-in plays
+ * while the first formation is still deferred.
+ */
+async function applyDrillAudioOffset(show: DrillShow): Promise<void> {
+    const offset = audioOffsetSecondsFromSync(show.audioSync?.timestamps);
+    if (offset === 0) return;
+    const settings = await getWorkspaceSettingsParsed({ db });
+    await updateWorkspaceSettingsParsed({
+        db,
+        settings: { ...settings, audioOffsetSeconds: offset },
+    });
+}
 
 /** React Query mutation that imports a drill package and refreshes all data. */
 export const useImportDrillPackage = () => {
@@ -262,6 +302,9 @@ export const useImportDrillPackage = () => {
                 // The import switches the show's field to match the source grid.
                 queryClient.invalidateQueries({
                     queryKey: fieldPropertiesKeys.all,
+                }),
+                queryClient.invalidateQueries({
+                    queryKey: workspaceSettingsKeys.all(),
                 }),
             ]);
             await fetchTimingObjects();

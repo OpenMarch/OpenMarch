@@ -32,11 +32,26 @@ export interface DrillShow {
     productionNotes?: string;
     /** Total number of counts (beats) in the show, across all sets. */
     totalCounts: number;
+    /**
+     * Per-count audio timestamps from the document's `SYNC` chunk, when present.
+     * Used to build real beat durations and align the imported audio.
+     */
+    audioSync?: DrillAudioSync;
     /** Embedded show audio, when the package includes it. */
     audio?: DrillAudio;
     /** Embedded field-surface image, when the package includes it. */
     surface?: DrillImage;
 }
+
+/**
+ * Audio alignment from a `SYNC` chunk: seconds into the audio file when each
+ * count occurs (`timestamps[i]` ↔ count `i`).
+ */
+export type DrillAudioSync = {
+    /** Source-tool path to the audio file (informational). */
+    path: string;
+    timestamps: number[];
+};
 
 /** A single performer/marcher in the cast. */
 export interface DrillPerformer {

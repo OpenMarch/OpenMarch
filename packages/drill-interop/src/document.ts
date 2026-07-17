@@ -1,6 +1,7 @@
 import { BinaryReader } from "./binaryReader";
 import { decodeCoordinateBlock } from "./crypto";
 import type {
+    DrillAudioSync,
     DrillFieldBorder,
     DrillGrid,
     DrillPerformer,
@@ -9,6 +10,7 @@ import type {
 } from "./types";
 import { parseDrillLabel } from "./label";
 import { discoverMarkers, type CoordinateRecord } from "./props";
+import { readAudioSync } from "./sync";
 
 /** Number of characters describing a single performer in a coordinate block. */
 const RECORD_LENGTH = 39;
@@ -37,6 +39,8 @@ export interface DrillDocument {
     productionNotes?: string;
     /** Total number of counts (page frames) in the show. */
     totalCounts: number;
+    /** Per-count audio timestamps from `SYNC`, when present. */
+    audioSync?: DrillAudioSync;
 }
 
 /** Sentinel grid used when a document lacks a readable `GRD1` chunk. */
@@ -75,6 +79,7 @@ export async function parseDrillDocument(
     let performers: DrillPerformer[] = [];
     let parsedSets: ParsedSet[] = [];
     let grid: DrillGrid = EMPTY_GRID;
+    let audioSync: DrillAudioSync | undefined;
     const rawPages: RawPageFrame[] = [];
 
     while (reader.remaining >= 4) {
@@ -110,14 +115,15 @@ export async function parseDrillDocument(
             case "GRD1":
                 grid = readGrid(payload) ?? grid;
                 break;
+            case "SYNC":
+                audioSync = readAudioSync(payload) ?? audioSync;
+                break;
             default:
-                // Unhandled chunk (colors, playlist, etc.) — skipped.
+                // Unhandled chunk (colors, playlist, props, editor state, etc.).
+                // Page frames (PG15) are often interleaved with PRP8/SEL2/VIS2, so
+                // we must not stop after the first page — keep scanning to END.
                 break;
         }
-
-        // Pages always follow the metadata chunks; once we've seen them and hit
-        // an unrelated chunk, the drill body is done.
-        if (rawPages.length > 0) break;
     }
 
     const pages = await Promise.all(rawPages.map(decodePageFrame));
@@ -146,6 +152,7 @@ export async function parseDrillDocument(
         grid,
         productionNotes,
         totalCounts: pages.length,
+        audioSync,
     };
 }
 
@@ -254,26 +261,34 @@ function readCast(payload: Uint8Array): DrillPerformer[] {
 }
 
 /**
- * `PTB7`: a 4-byte header, then repeated records of
+ * `PTB7`: `u16 version, u16 count`, then `count` records of
  * `u64 id, u16 cumulativeCount, 3 reserved, u16 titleLen, title,
  *  i32 noteLen, note, 16 reserved`.
+ *
+ * Some packages include a nameless leading placeholder set (`titleLen === 0`);
+ * those are dropped. Older parsers treated `titleLen === 0` as end-of-list,
+ * which skipped every set when the placeholder came first.
  */
-function readSetList(payload: Uint8Array): ParsedSet[] {
+export function readSetList(payload: Uint8Array): ParsedSet[] {
     const reader = new BinaryReader(payload);
-    reader.skip(4);
+    if (reader.remaining < 4) return [];
+    reader.u16(); // version
+    const count = reader.u16();
+    if (count <= 0 || count > 10_000) return [];
+
     const sets: ParsedSet[] = [];
-    while (reader.remaining >= 8) {
+    for (let i = 0; i < count && reader.remaining >= 8; i++) {
         const id = reader.u64String();
         const cumulativeCount = reader.u16();
         reader.skip(3);
         const titleLength = reader.u16();
-        if (titleLength === 0 || titleLength > 64) break;
-        if (reader.remaining < titleLength) break;
-        const name = reader.ascii(titleLength);
+        if (titleLength > 64 || titleLength > reader.remaining) break;
+        const name = titleLength > 0 ? reader.ascii(titleLength) : "";
         const noteLength = reader.u32();
         if (noteLength > reader.remaining) break;
         const note = reader.utf8(noteLength);
         reader.skip(16);
+        if (name.length === 0) continue;
         sets.push({
             id,
             name,

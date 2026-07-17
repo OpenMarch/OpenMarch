@@ -116,4 +116,16 @@ describeWithFixture("parseDrillPackage (real sample)", () => {
         expect(show.audio!.name.toLowerCase()).toMatch(/\.ogg$/);
         expect(show.audio!.data.byteLength).toBeGreaterThan(0);
     });
+
+    it("reads SYNC audio timestamps for beat alignment", async () => {
+        const show = await load();
+        expect(show.audioSync).toBeDefined();
+        expect(show.audioSync!.timestamps.length).toBeGreaterThan(10);
+        // Timestamps are monotonically increasing seconds into the audio.
+        for (let i = 1; i < show.audioSync!.timestamps.length; i++) {
+            expect(show.audioSync!.timestamps[i]!).toBeGreaterThan(
+                show.audioSync!.timestamps[i - 1]!,
+            );
+        }
+    });
 });

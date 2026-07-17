@@ -39,6 +39,7 @@ export async function parseDrillPackage(
         grid: document.grid,
         productionNotes: document.productionNotes,
         totalCounts: document.totalCounts,
+        audioSync: document.audioSync,
         audio,
         surface,
     };

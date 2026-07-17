@@ -50,6 +50,12 @@ export class BinaryReader {
         return value;
     }
 
+    f64(): number {
+        const value = this.view.getFloat64(this.offset, false);
+        this.offset += 8;
+        return value;
+    }
+
     /** Reads an unsigned 64-bit integer as a decimal string (avoids precision loss). */
     u64String(): string {
         const high = this.view.getUint32(this.offset, false);

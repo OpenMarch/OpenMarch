@@ -60,7 +60,7 @@ skipped chunks carry real data we don't yet map — see §7.
 | `VsD1` | —     | 1     | Small visual-settings block; contains a color (`0xFFFC18`).✝                                                                                                |
 | `TxD1` | —     | 1     | **Section/id grouping table** — `u16` ids in 1000-banded ranges (1000s … 8000s = sections). See §2.7.                                                       |
 | `FAB1` | —     | 1     | Fabric/backdrop layer (empty in the sample).                                                                                                                |
-| `SYNC` | —     | 1     | **Audio sync** — UTF-16BE audio file path + sync data.                                                                                                      |
+| `SYNC` | ✅    | 1     | **Audio sync** — UTF-16BE path + per-count `f64` timestamps (§2.8).                                                                                         |
 | `RMAP` | —     | 1     | Fixed-width id/reference map — 6-byte records `(u16,u16,u16)`, `0xFFFF` = unset. **Not** a tempo map (corrected). See §2.7.                                 |
 | `COM2` | —     | 1     | **Continuity text** (~19 KB) — per-phrase move instructions (`"hold"`, `"Float"`) + marker-group mask + applied marker ids. See §2.7.                       |
 | `CORD` | —     | 1     | Coordinate-sheet vocabulary — 13 strings (`"Side 1"`, `"Hash"`, `"In Front Of"`, `"Behind"`, `"Inside"`, `"yd ln"`…).                                       |
@@ -68,13 +68,12 @@ skipped chunks carry real data we don't yet map — see §7.
 | `VIS2` | —     | 13    | View snapshots — `u16 count` then full 69-byte marker records (§2.6). Editor state.                                                                         |
 | `END.` | —     | 1     | Body terminator.                                                                                                                                            |
 
-\* `PRF3` is read for the title only. The parser breaks out of the chunk loop on
-the first generic chunk seen _after_ the page frames (`if (rawPages.length > 0)
-break`). In the sample that chunk is `VsD1` — it is read as a chunk boundary and
-then triggers the break — so everything past it (`TxD1`, `FAB1`, `SYNC`, `RMAP`,
-`COM2`, `CORD`, `END.`) is **never reached at all**, not merely skipped by length.
-Meanings marked ✝ are inferred from byte inspection of one sample; the rest were
-decoded (§2.7).
+\* `PRF3` is read for the title only. Page frames (`PG15`) are often interleaved
+with `PRP8` / `SEL2` / `VIS2`, so the chunk loop keeps scanning until `END.` (or
+an unreadable length) rather than stopping after the first post-page chunk.
+Trailing metadata (`TxD1`, `FAB1`, `SYNC`, `RMAP`, `COM2`, `CORD`) is skipped by
+length. Meanings marked ✝ are inferred from byte inspection of one sample; the
+rest were decoded (§2.7).
 
 ### 2.2 `PRF3` — show metadata (title)
 
@@ -96,21 +95,44 @@ to the 18-digit id embedded in each coordinate record.
 
 ### 2.4 `PTB7` — set list (named formations)
 
-Payload: a 4-byte header, then repeated records of:
+Payload:
+
+```
+u16 version           // observed: 1
+u16 count             // number of set records that follow
+```
+
+then `count` records of:
 
 ```
 u64 id
 u16 cumulativeCount   // running count total reached at this set
 3 bytes               // reserved
-u16 titleLen
+u16 titleLen          // may be 0 for a nameless placeholder set
 titleLen bytes        // set name, e.g. "179-182", "234-END"
 i32 noteLen
 noteLen bytes         // optional director note
 16 bytes              // reserved / trailer
 ```
 
-`cumulativeCount` is the key to timing: it is the count index (from the start of
-the show) at which the set is reached. See §4 for how sets map to page frames.
+Nameless placeholder sets (`titleLen === 0`) are skipped. `cumulativeCount` is
+the key to timing: it is the count index (from the start of the show) at which
+the set is reached. See §4 for how sets map to page frames.
+
+### 2.8 `SYNC` — audio sync
+
+Payload:
+
+```
+u16 pathLen                 // UTF-16 code units
+pathLen × u16               // UTF-16BE audio path (often a source-machine file: URL)
+u16 count                   // number of timestamps that follow
+count × f64 (big-endian)    // seconds into the audio when count i occurs
+```
+
+`timestamps[0]` is the lead-in (audio may start before count 0). Beat durations
+are the deltas between consecutive timestamps; OpenMarch applies
+`audioOffsetSeconds = -timestamps[0]` so timeline t=0 matches count 0.
 
 ### 2.5 `GRD1` — field / grid definition
 
@@ -242,9 +264,7 @@ ids the instruction applies to. This is the human-readable drill continuity — 
 count-by-count "what each performer does" text. OpenMarch has no continuity-text
 home today, but this is the richest written-instruction data in the file.
 
-**`SYNC` — audio sync.** Leads with the UTF-16BE audio file path, followed by sync
-data that aligns the count timeline to the audio. Pairs with `RMAP`/measures for
-true musical timing (§7 #9).
+**`SYNC` — audio sync.** See §2.8.
 
 **`CORD` — coordinate-sheet vocabulary.** 13 length-prefixed ASCII strings
 (`"Side 1"`, `"Side 2"`, `"Back"`, `"Front"`, `"steps"`, `"yd ln"`, `"side line"`,

@@ -16,6 +16,11 @@ export {
     COMMON_DRILL_LABEL_PREFIXES,
     type ParsedDrillLabel,
 } from "./label";
+export {
+    readAudioSync,
+    beatDurationsFromSyncTimestamps,
+    audioOffsetSecondsFromSync,
+} from "./sync";
 export type {
     DrillShow,
     DrillPerformer,
@@ -24,5 +29,6 @@ export type {
     DrillFieldBorder,
     DrillGrid,
     DrillAudio,
+    DrillAudioSync,
     DrillImage,
 } from "./types";
