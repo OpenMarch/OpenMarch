@@ -23,7 +23,11 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { buildPropPageGeometriesFromPrevious } from "@/db-functions/prop";
-import { DEFAULT_PROP_WIDTH, DEFAULT_PROP_HEIGHT } from "@/global/classes/Prop";
+import {
+    DEFAULT_PROP_WIDTH,
+    DEFAULT_PROP_HEIGHT,
+    isProp,
+} from "@/global/classes/Prop";
 import { assert } from "@/utilities/utils";
 import { WorkspaceSettings } from "@/settings/workspaceSettings";
 import {
@@ -205,7 +209,7 @@ const _createMarcherPages = async ({
     const allMarchers = await tx.query.marchers.findMany();
     if (allMarchers.length === 0) return;
 
-    const propMarchers = allMarchers.filter((m) => m.type === "prop");
+    const propMarchers = allMarchers.filter(isProp);
     const propMarcherIds = new Set(propMarchers.map((m) => m.id));
 
     for (const page of sortedNewPages) {

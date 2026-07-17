@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFormProps } from "../../global/Interfaces";
 import Marcher from "@/global/classes/Marcher";
+import { isNotProp } from "@/global/classes/Prop";
 import { Button, TooltipClassName } from "@openmarch/ui";
 import {
     DotsThreeOutlineIcon,
@@ -88,14 +89,14 @@ export default function MarcherList({
     }
 
     function handleCancel() {
-        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
+        setLocalMarchers(marchers?.filter(isNotProp));
         deletionsRef.current = [];
         changesRef.current = {};
     }
 
     // Update local marchers when marchers are fetched (filter out props)
     useEffect(() => {
-        setLocalMarchers(marchers?.filter((m) => m.type !== "prop"));
+        setLocalMarchers(marchers?.filter(isNotProp));
     }, [marchers]);
 
     // Activate submit with an external activator (like a button in a parent component)

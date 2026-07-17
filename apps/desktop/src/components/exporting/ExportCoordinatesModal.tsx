@@ -46,6 +46,7 @@ import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
 import Marcher from "@/global/classes/Marcher";
+import { isNotProp } from "@/global/classes/Prop";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
@@ -190,7 +191,7 @@ function CoordinateSheetExport() {
             setProgress(15);
 
             const processedMarchers = marchers
-                .filter((m) => m.type !== "prop")
+                .filter(isNotProp)
                 .map((marcher) => ({
                     ...marcher,
                     // Use raw DB section with the numeric part of drill_number as fallback display name

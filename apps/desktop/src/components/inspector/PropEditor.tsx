@@ -7,6 +7,7 @@ import {
     marcherPagesByPageQueryOptions,
 } from "@/hooks/queries";
 import { InspectorCollapsible } from "./InspectorCollapsible";
+import { isNotProp } from "@/global/classes/Prop";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 
@@ -43,7 +44,7 @@ export default function PropEditor() {
     const selectedProp = useMemo(() => {
         if (selectedMarchers.length !== 1) return null;
         const marcher = selectedMarchers[0];
-        if (marcher.type !== "prop" || !props) return null;
+        if (isNotProp(marcher) || !props) return null;
         return props.find((p) => p.marcher_id === marcher.id) ?? null;
     }, [selectedMarchers, props]);
 

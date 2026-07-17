@@ -9,6 +9,7 @@ import {
     DatabasePropPageGeometry,
     DEFAULT_PROP_WIDTH,
     DEFAULT_PROP_HEIGHT,
+    PROP_MARCHER_TYPE,
     SurfaceType,
     ShapeType,
 } from "@/global/classes/Prop";
@@ -170,7 +171,7 @@ async function createPropsInTransaction({
             drill_prefix: prefix,
             drill_order: nextOrder,
             notes: prop.notes,
-            type: "prop" as const,
+            type: PROP_MARCHER_TYPE,
         });
     }
 
