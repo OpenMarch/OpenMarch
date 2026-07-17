@@ -1,12 +1,23 @@
 import { IPath } from "@openmarch/core";
 
 type Coordinate = { x: number; y: number };
+
+export type InterpolatedGeometry = {
+    /** Feet */
+    width: number;
+    /** Feet */
+    height: number;
+    /** Degrees */
+    rotation: number;
+};
+
 export type CoordinateDefinition = {
     x: number;
     y: number;
     path?: IPath;
     previousPathPosition?: number;
     nextPathPosition?: number;
+    geometry?: InterpolatedGeometry;
 };
 
 /**
@@ -21,6 +32,27 @@ export type MarcherTimeline = {
 };
 
 const PathLengthCache = new WeakMap<IPath, number>();
+
+/** Normalizes an angle in degrees to the [0, 360) range. */
+const normalizeAngle = (angle: number): number => ((angle % 360) + 360) % 360;
+
+/**
+ * Interpolates prop geometry between two keyframes. Width and height are linear;
+ * rotation follows the shortest angular path (e.g. 350°→10° sweeps +20°, not −340°)
+ * and is normalized to [0, 360).
+ */
+export function lerpGeometry(
+    from: InterpolatedGeometry,
+    to: InterpolatedGeometry,
+    t: number,
+): InterpolatedGeometry {
+    const rotationDelta = ((to.rotation - from.rotation + 540) % 360) - 180;
+    return {
+        width: from.width + (to.width - from.width) * t,
+        height: from.height + (to.height - from.height) * t,
+        rotation: normalizeAngle(from.rotation + rotationDelta * t),
+    };
+}
 
 /**
  * Get the coordinates at a given time for a marcher.
