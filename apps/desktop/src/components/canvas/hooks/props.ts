@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
+import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import {
     allPropsQueryOptions,
     propPageGeometryQueryOptions,
@@ -100,20 +101,15 @@ export function useRenderProps({
                 canvas.remove(prop);
             });
 
-        const geometryByMpId = new Map(
-            propGeometries.map((g) => [g.marcher_page_id, g]),
-        );
-        const marcherPagesForPage = Object.values(marcherPages);
         const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
+        const resolvedProps = resolvePropsForPage({
+            props,
+            geometries: propGeometries,
+            marcherPages,
+        });
 
-        for (const prop of props) {
-            const marcherPage = marcherPagesForPage.find(
-                (mp) => mp.marcher_id === prop.marcher_id,
-            );
-            if (!marcherPage) continue;
-
-            const geometry = geometryByMpId.get(marcherPage.id);
-            if (!geometry || !geometry.visible) continue;
+        for (const { prop, marcherPage, geometry } of resolvedProps) {
+            if (!geometry.visible) continue;
             if (hiddenPropIds[prop.id.toString()]) continue;
 
             const canvasProp = new CanvasProp({

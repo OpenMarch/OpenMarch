@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
+import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import {
     allPropsQueryOptions,
     propPageGeometryQueryOptions,
@@ -76,16 +77,25 @@ export function usePropClipboard({
                     .filter(CanvasProp.isCanvasProp);
                 if (activeProps.length === 0) return;
 
+                const resolvedByMarcherId = new Map(
+                    resolvePropsForPage({
+                        props,
+                        geometries: propGeometries,
+                        marcherPages,
+                    }).map((r) => [r.prop.marcher_id, r]),
+                );
+
                 clipboardRef.current = activeProps
                     .map((cp) => {
-                        const mp = marcherPages[cp.marcherObj.id];
-                        const prop = props.find(
-                            (p) => p.marcher_id === cp.marcherObj.id,
+                        const resolved = resolvedByMarcherId.get(
+                            cp.marcherObj.id,
                         );
-                        const geom = propGeometries.find(
-                            (g) => g.marcher_page_id === mp?.id,
-                        );
-                        if (!mp || !prop || !geom) return null;
+                        if (!resolved) return null;
+                        const {
+                            prop,
+                            marcherPage: mp,
+                            geometry: geom,
+                        } = resolved;
                         return {
                             name:
                                 prop.marcher.name ?? prop.marcher.drill_prefix,

@@ -17,6 +17,7 @@ import {
     DatabasePropPageGeometry,
     getPixelsPerFoot,
 } from "@/global/classes/Prop";
+import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import {
     applyMarcherAppearancesForPage,
     type MarcherAppearancesByPageId,
@@ -306,23 +307,24 @@ const renderIndividualMarcherChartsForPage = (args: {
 const addPropsForPage = ({
     canvas,
     props,
-    geometryByMpId,
+    geometries,
     marcherPagesByMarcher,
     pixelsPerFoot,
 }: {
     canvas: OpenMarchCanvas;
     props: PropWithMarcher[];
-    geometryByMpId: Map<number, DatabasePropPageGeometry>;
+    geometries: DatabasePropPageGeometry[];
     marcherPagesByMarcher: Record<number, MarcherPage>;
     pixelsPerFoot: number;
 }): fabric.Object[] => {
     const objectsToRemove: fabric.Object[] = [];
-    for (const prop of props) {
-        const marcherPage = marcherPagesByMarcher[prop.marcher_id];
-        if (!marcherPage) continue;
-
-        const geometry = geometryByMpId.get(marcherPage.id);
-        if (!geometry || !geometry.visible) continue;
+    const resolved = resolvePropsForPage({
+        props,
+        geometries,
+        marcherPages: marcherPagesByMarcher,
+    });
+    for (const { prop, marcherPage, geometry } of resolved) {
+        if (!geometry.visible) continue;
 
         // Create CanvasProp without background image for export
         const canvasProp = new CanvasProp({
@@ -452,9 +454,6 @@ export const generateDrillChartExportSVGs = async (args: {
     const propMarcherIds = new Set(
         (propsWithMarchers ?? []).map((p) => p.marcher_id),
     );
-    const geometryByMpId = new Map(
-        (propGeometries ?? []).map((g) => [g.marcher_page_id, g]),
-    );
     const pixelsPerFoot = propsWithMarchers?.length
         ? getPixelsPerFoot(fieldProperties)
         : 0;
@@ -491,7 +490,7 @@ export const generateDrillChartExportSVGs = async (args: {
         const propObjects = addPropsForPage({
             canvas,
             props: propsWithMarchers ?? [],
-            geometryByMpId,
+            geometries: propGeometries ?? [],
             marcherPagesByMarcher: marcherPagesByMarcherForCurrentPage,
             pixelsPerFoot,
         });

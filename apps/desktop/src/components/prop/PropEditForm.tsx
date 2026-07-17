@@ -20,6 +20,7 @@ import {
     SelectTriggerButton,
 } from "@openmarch/ui";
 import { SurfaceType, PropWithMarcher } from "@/global/classes/Prop";
+import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { StaticFormField } from "@/components/ui/FormField";
 
@@ -60,12 +61,13 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
 
     const currentGeometry = useMemo(() => {
         if (!allGeometries || !marcherPages) return null;
-        const marcherPage = Object.values(marcherPages).find(
-            (mp) => mp.marcher_id === prop.marcher_id,
-        );
-        if (!marcherPage) return null;
-        return allGeometries.find((g) => g.marcher_page_id === marcherPage.id);
-    }, [allGeometries, marcherPages, prop.marcher_id]);
+        const [resolved] = resolvePropsForPage({
+            props: [prop],
+            geometries: allGeometries,
+            marcherPages,
+        });
+        return resolved?.geometry ?? null;
+    }, [allGeometries, marcherPages, prop]);
 
     const [name, setName] = useState(prop.marcher.name || "");
     const [surfaceType, setSurfaceType] = useState<SurfaceType>(
