@@ -1,5 +1,5 @@
 import type { FieldProperties } from "@openmarch/core";
-import type { NewMarcherArgs } from "@/db-functions";
+import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
 
 export type NewShowStepId =
     | "start"
@@ -49,11 +49,29 @@ export interface PreviousDotsCoordinateData {
     y: number;
 }
 
+export interface PreviousDotsTagData {
+    key: number;
+    name?: string | null;
+    description?: string | null;
+    icon?: string | null;
+    color_hex?: string | null;
+}
+
+export interface PreviousDotsMarcherTagData {
+    drill_prefix: string;
+    drill_order: number;
+    tagKey: number;
+}
+
 export interface PreviousDotsImportData {
     sourcePath: string;
     field: NewShowFieldData;
+    fieldImage?: Uint8Array | null;
     performers: NewShowPerformersData;
     coordinates: PreviousDotsCoordinateData[];
+    sectionAppearances: NewSectionAppearanceArgs[];
+    tags: PreviousDotsTagData[];
+    marcherTags: PreviousDotsMarcherTagData[];
 }
 
 export type NewShowMarcherDraft = NewMarcherArgs & { tempId?: string };

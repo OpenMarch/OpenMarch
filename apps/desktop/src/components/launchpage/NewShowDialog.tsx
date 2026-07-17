@@ -43,6 +43,27 @@ import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
 import { FieldProperties } from "@openmarch/core";
+import { appearanceModelRawToParsed } from "@/entity-components/appearance";
+import type { NewSectionAppearanceArgs } from "@/db-functions";
+import type { PreviousDotsSectionAppearanceImport } from "@om-electron/main/services/previous-dots-import-service";
+
+function toNewSectionAppearanceArgs(
+    appearance: PreviousDotsSectionAppearanceImport,
+): NewSectionAppearanceArgs {
+    const parsed = appearanceModelRawToParsed({
+        fill_color: appearance.fill_color,
+        outline_color: appearance.outline_color,
+        shape_type: appearance.shape_type,
+        visible: appearance.visible,
+        label_visible: appearance.label_visible,
+        equipment_name: appearance.equipment_name,
+        equipment_state: appearance.equipment_state,
+    });
+    return {
+        section: appearance.section,
+        ...parsed,
+    };
+}
 
 interface NewShowDialogProps {
     open: boolean;
@@ -270,6 +291,12 @@ export default function NewShowDialog({
                 method: result.marchers.length > 0 ? "add" : "skip",
                 marchers: result.marchers,
             };
+            const fieldImage =
+                result.fieldImage != null
+                    ? result.fieldImage instanceof Uint8Array
+                        ? result.fieldImage
+                        : new Uint8Array(result.fieldImage)
+                    : null;
 
             setWizardState((prev) => ({
                 ...prev,
@@ -285,8 +312,14 @@ export default function NewShowDialog({
                         template: fieldTemplate,
                         isCustom: fieldTemplate.isCustom ?? false,
                     },
+                    fieldImage,
                     performers,
                     coordinates: result.coordinates,
+                    sectionAppearances: result.sectionAppearances.map(
+                        toNewSectionAppearanceArgs,
+                    ),
+                    tags: result.tags,
+                    marcherTags: result.marcherTags,
                 },
             }));
             setCompletedSteps((prev) => {
