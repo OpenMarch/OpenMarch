@@ -101,7 +101,7 @@ export function useRenderProps({
                 canvas.remove(prop);
             });
 
-        const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
+        const pixelsPerFoot = getPixelsPerFoot();
         const resolvedProps = resolvePropsForPage({
             props,
             geometries: propGeometries,

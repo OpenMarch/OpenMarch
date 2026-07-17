@@ -454,9 +454,7 @@ export const generateDrillChartExportSVGs = async (args: {
     const propMarcherIds = new Set(
         (propsWithMarchers ?? []).map((p) => p.marcher_id),
     );
-    const pixelsPerFoot = propsWithMarchers?.length
-        ? getPixelsPerFoot(fieldProperties)
-        : 0;
+    const pixelsPerFoot = propsWithMarchers?.length ? getPixelsPerFoot() : 0;
 
     // Filter marchers to only non-prop marchers for coordinate tracking
     const nonPropMarchers = marchers.filter((m) => !propMarcherIds.has(m.id));

@@ -22,29 +22,8 @@ export const DEFAULT_PROP_WIDTH = 15;
 export const DEFAULT_PROP_HEIGHT = 15;
 
 /**
- * Calculates pixels per foot from field properties.
- * Uses PIXELS_PER_INCH from FieldProperties for consistency across field types.
+ * Pixels per foot, derived from PIXELS_PER_INCH for consistency across field types.
  */
-export function getPixelsPerFoot(fieldProperties: FieldProperties): number {
+export function getPixelsPerFoot(): number {
     return FieldProperties.PIXELS_PER_INCH * 12;
-}
-
-/**
- * Converts feet to pixels
- */
-export function feetToPixels(
-    feet: number,
-    fieldProperties: FieldProperties,
-): number {
-    return feet * getPixelsPerFoot(fieldProperties);
-}
-
-/**
- * Converts pixels to feet
- */
-export function pixelsToFeet(
-    pixels: number,
-    fieldProperties: FieldProperties,
-): number {
-    return pixels / getPixelsPerFoot(fieldProperties);
 }

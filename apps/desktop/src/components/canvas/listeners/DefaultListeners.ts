@@ -180,7 +180,7 @@ export default class DefaultListeners implements CanvasListeners {
         // Handle all marcher/prop movement in a single loop
         // Since CanvasProp extends CanvasMarcher, getActiveObjectsByType(CanvasMarcher) returns both
         const fp = this.canvas.fieldProperties;
-        const pixelsPerFoot = fp ? getPixelsPerFoot(fp) : 6;
+        const pixelsPerFoot = fp ? getPixelsPerFoot() : 6;
         const pageId = this.canvas.currentPage?.id;
 
         this.canvas

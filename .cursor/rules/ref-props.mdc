@@ -85,12 +85,11 @@ type PropDrawingMode = "rectangle" | "circle" | "arc" | "polygon" | "freehand" |
 Props use real-world feet for dimensions, converted to canvas pixels:
 
 ```typescript
-import { getPixelsPerFoot, feetToPixels, pixelsToFeet } from "@/global/classes/Prop";
+import { getPixelsPerFoot } from "@/global/classes/Prop";
 
-// 8-to-5 step = 22.5 inches
-const pixelsPerFoot = getPixelsPerFoot(fieldProperties);
-const widthPx = feetToPixels(10, fieldProperties);  // 10 feet -> pixels
-const widthFt = pixelsToFeet(150, fieldProperties);  // 150 pixels -> feet
+const pixelsPerFoot = getPixelsPerFoot();
+const widthPx = 10 * pixelsPerFoot; // 10 feet -> pixels
+const widthFt = 150 / pixelsPerFoot; // 150 pixels -> feet
 ```
 
 Default prop size: `DEFAULT_PROP_WIDTH = 15`, `DEFAULT_PROP_HEIGHT = 15` (pixels).

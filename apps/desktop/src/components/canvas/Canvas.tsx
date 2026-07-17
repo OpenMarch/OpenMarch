@@ -360,7 +360,7 @@ export default function Canvas({
     const pixelsToFeetLocal = useCallback(
         (pixels: number) => {
             if (!fieldProperties) return pixels;
-            return pixels / getPixelsPerFoot(fieldProperties);
+            return pixels / getPixelsPerFoot();
         },
         [fieldProperties],
     );
