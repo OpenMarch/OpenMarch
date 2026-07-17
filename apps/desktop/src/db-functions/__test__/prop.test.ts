@@ -22,6 +22,7 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             height: DEFAULT_PROP_HEIGHT,
             radius: null,
             rotation: 0,
+            custom_geometry: null,
         });
         expect(result[1]).toEqual({
             marcher_page_id: 11,
@@ -30,6 +31,7 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             height: DEFAULT_PROP_HEIGHT,
             radius: null,
             rotation: 0,
+            custom_geometry: null,
         });
     });
 
@@ -42,6 +44,7 @@ describe("buildPropPageGeometriesFromPrevious", () => {
                 height: number;
                 radius: number | null;
                 rotation: number;
+                custom_geometry: string | null;
             }
         >();
         prev.set(1, {
@@ -50,6 +53,7 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             height: 20,
             radius: 10,
             rotation: 45,
+            custom_geometry: null,
         });
         const result = buildPropPageGeometriesFromPrevious({
             previousGeometryByMarcherId: prev,
@@ -65,6 +69,7 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             height: 20,
             radius: 10,
             rotation: 45,
+            custom_geometry: null,
         });
         expect(result[1]).toEqual({
             marcher_page_id: 11,
@@ -73,6 +78,47 @@ describe("buildPropPageGeometriesFromPrevious", () => {
             height: DEFAULT_PROP_HEIGHT,
             radius: null,
             rotation: 0,
+            custom_geometry: null,
+        });
+    });
+
+    it("preserves custom_geometry and shape_type for custom-shaped props", () => {
+        const customGeometry = JSON.stringify([
+            { x: 0, y: 0 },
+            { x: 10, y: 0 },
+            { x: 5, y: 10 },
+        ]);
+        const prev = new Map<
+            number,
+            {
+                shape_type: string;
+                width: number;
+                height: number;
+                radius: number | null;
+                rotation: number;
+                custom_geometry: string | null;
+            }
+        >();
+        prev.set(1, {
+            shape_type: "polygon",
+            width: 30,
+            height: 25,
+            radius: null,
+            rotation: 0,
+            custom_geometry: customGeometry,
+        });
+        const result = buildPropPageGeometriesFromPrevious({
+            previousGeometryByMarcherId: prev,
+            newPropMarcherPages: [{ id: 10, marcher_id: 1 }],
+        });
+        expect(result[0]).toEqual({
+            marcher_page_id: 10,
+            shape_type: "polygon",
+            width: 30,
+            height: 25,
+            radius: null,
+            rotation: 0,
+            custom_geometry: customGeometry,
         });
     });
 
