@@ -79,7 +79,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
     const [height, setHeight] = useState(
         to3Decimals(currentGeometry?.height ?? 15),
     );
-    const [visible, setVisible] = useState(currentGeometry?.visible ?? true);
+    const [visible, setVisible] = useState(
+        !!(currentGeometry?.visible ?? true),
+    );
 
     const hasImage = useMemo(
         () => propImages?.some((i) => i.prop_id === prop.id) ?? false,
@@ -91,7 +93,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
         if (currentGeometry) {
             setWidth(to3Decimals(currentGeometry.width));
             setHeight(to3Decimals(currentGeometry.height));
-            setVisible(currentGeometry.visible);
+            setVisible(!!currentGeometry.visible);
         }
     }, [currentGeometry]);
 
@@ -109,11 +111,27 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
     }, []);
 
     const { mutate: updateProps } = updatePropsMutation;
+    const { mutate: updateGeometry } = updateGeometryMutation;
     const handleOpacityCommit = useCallback(
         (values: number[]) => {
             updateProps([{ id: prop.id, image_opacity: values[0] }]);
         },
         [prop.id, updateProps],
+    );
+
+    const handleVisibleChange = useCallback(
+        (next: boolean) => {
+            setVisible(next);
+            if (!selectedPage) return;
+            // Persist immediately — a switch should take effect without Apply.
+            updateGeometry({
+                propId: prop.id,
+                currentPageId: selectedPage.id,
+                changes: { visible: next },
+                propagation: "current",
+            });
+        },
+        [prop.id, selectedPage, updateGeometry],
     );
 
     const handleSaveProperties = async () => {
@@ -260,7 +278,11 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                     Geometry{selectedPage ? ` — ${selectedPage.name}` : ""}
                 </h5>
                 <StaticFormField label="Visible">
-                    <Switch checked={visible} onCheckedChange={setVisible} />
+                    <Switch
+                        checked={visible}
+                        onCheckedChange={handleVisibleChange}
+                        disabled={isPending || !selectedPage}
+                    />
                 </StaticFormField>
                 <StaticFormField label="Width (ft)">
                     <Input
