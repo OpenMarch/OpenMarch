@@ -6,6 +6,7 @@ import { dbMarcherToMarcher } from "../Marcher";
 import { schema } from "@/global/database/db";
 import CanvasMarcher from "./CanvasMarcher";
 import { createPropFabricShape, type CustomGeometryData } from "./propShapes";
+import type { InterpolatedGeometry } from "@/utilities/Keyframes";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 type Point = { x: number; y: number };
@@ -309,4 +310,44 @@ export default class CanvasProp extends CanvasMarcher {
             this.setCoords();
         }
     }
+
+    /**
+     * During live animation, apply interpolated position (via super) and, when
+     * present, interpolated geometry (size + rotation). `this.geometry` is the
+     * page this prop was rendered from, so scaling by target/base yields the
+     * target size on screen.
+     */
+    setLiveCoordinates(coords: {
+        x: number;
+        y: number;
+        geometry?: InterpolatedGeometry;
+    }) {
+        super.setLiveCoordinates(coords);
+        if (coords.geometry) {
+            const { scaleX, scaleY, angle } = computePropLiveTransform(
+                { width: this.geometry.width, height: this.geometry.height },
+                coords.geometry,
+            );
+            this.scaleX = scaleX;
+            this.scaleY = scaleY;
+            this.angle = angle;
+            this.setCoords();
+        }
+    }
+}
+
+/**
+ * Given a prop's base geometry (the page it was rendered from, in feet) and a
+ * target interpolated geometry, returns the fabric transform to apply live.
+ * Guards against a zero base dimension.
+ */
+export function computePropLiveTransform(
+    base: { width: number; height: number },
+    target: InterpolatedGeometry,
+): { scaleX: number; scaleY: number; angle: number } {
+    return {
+        scaleX: base.width > 0 ? target.width / base.width : 1,
+        scaleY: base.height > 0 ? target.height / base.height : 1,
+        angle: target.rotation,
+    };
 }

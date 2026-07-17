@@ -15,6 +15,7 @@ import {
     AppearanceComponentOptional,
     appearanceIsHidden,
 } from "@/entity-components/appearance";
+import type { InterpolatedGeometry } from "@/utilities/Keyframes";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -786,7 +787,11 @@ export default class CanvasMarcher
      *
      * @param coords The new coordinates (in database terms) to set the marcher to.
      */
-    setLiveCoordinates(coords: { x: number; y: number }) {
+    setLiveCoordinates(coords: {
+        x: number;
+        y: number;
+        geometry?: InterpolatedGeometry;
+    }) {
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
 
         this.left = newCanvasCoords.x;
