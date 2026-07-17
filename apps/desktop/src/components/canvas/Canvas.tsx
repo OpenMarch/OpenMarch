@@ -43,6 +43,7 @@ import { useMovementListeners } from "./hooks/canvasListeners.movement";
 import { useRenderMarcherShapes } from "./hooks/shapes";
 import { useRenderProps } from "./hooks/props";
 import { usePropClipboard } from "./hooks/propClipboard";
+import { usePropImageCache } from "./hooks/usePropImageCache";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
@@ -161,72 +162,8 @@ export default function Canvas({
     }, [props]);
 
     // Prop image cache — persists loaded HTMLImageElement objects across renders.
-    // imageCacheVersion is state so that when async loading finishes, the prop
-    // rendering effect re-runs and picks up the newly cached elements.
-    const propImageCacheRef = useRef<
-        Map<number, { el: HTMLImageElement; url: string }>
-    >(new Map());
-    const [imageCacheVersion, setImageCacheVersion] = useState(0);
-    useEffect(() => {
-        if (!propImages) return;
-        let cancelled = false;
-
-        const revokeAll = (
-            cache: Map<number, { el: HTMLImageElement; url: string }>,
-        ) => {
-            for (const { url } of cache.values()) URL.revokeObjectURL(url);
-        };
-
-        if (propImages.length === 0) {
-            if (propImageCacheRef.current.size > 0) {
-                revokeAll(propImageCacheRef.current);
-                propImageCacheRef.current = new Map();
-                setImageCacheVersion((v) => v + 1);
-            }
-            return;
-        }
-        const loadImg = (
-            data: Uint8Array,
-        ): Promise<{ el: HTMLImageElement; url: string }> =>
-            new Promise((resolve, reject) => {
-                const blob = new Blob([(data as any).buffer ?? data]);
-                const url = URL.createObjectURL(blob);
-                const img = new Image();
-                img.onload = () => resolve({ el: img, url });
-                img.onerror = () => {
-                    URL.revokeObjectURL(url);
-                    reject(new Error("Image load failed"));
-                };
-                img.src = url;
-            });
-        void (async () => {
-            const newCache = new Map<
-                number,
-                { el: HTMLImageElement; url: string }
-            >();
-            const loaded: string[] = [];
-            await Promise.all(
-                propImages.map(async ({ prop_id, image }) => {
-                    try {
-                        const entry = await loadImg(image);
-                        loaded.push(entry.url);
-                        if (!cancelled) newCache.set(prop_id, entry);
-                        else URL.revokeObjectURL(entry.url);
-                    } catch {
-                        /* skip broken images */
-                    }
-                }),
-            );
-            if (!cancelled) {
-                revokeAll(propImageCacheRef.current);
-                propImageCacheRef.current = newCache;
-                setImageCacheVersion((v) => v + 1);
-            }
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [propImages]);
+    const { propImageCacheRef, imageCacheVersion } =
+        usePropImageCache(propImages);
 
     // Prop drawing state
     const { drawingMode, resetDrawingState } = usePropDrawingStore();
