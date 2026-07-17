@@ -126,7 +126,10 @@ export function useRenderProps({
                 .filter(CanvasProp.isCanvasProp)
                 .forEach((cp) => {
                     const mp = marcherPages[cp.marcherObj.id];
-                    if (mp) cp.setMarcherCoords(mp);
+                    if (mp) {
+                        cp.setMarcherCoords(mp);
+                        cp.resetLiveGeometry();
+                    }
                     const prop = propById.get(cp.propId);
                     if (prop) {
                         const showName =

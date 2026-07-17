@@ -159,10 +159,16 @@ export const coordinateDataQueryOptions = (
                 number,
                 InterpolatedGeometry
             >(
-                (geometries ?? []).map((g) => [
-                    g.marcher_page_id,
-                    { width: g.width, height: g.height, rotation: g.rotation ?? 0 },
-                ]),
+                (geometries ?? [])
+                    .filter((g) => !!g.visible)
+                    .map((g) => [
+                        g.marcher_page_id,
+                        {
+                            width: g.width,
+                            height: g.height,
+                            rotation: g.rotation ?? 0,
+                        },
+                    ]),
             );
 
             return getMarcherTimelines(

@@ -869,7 +869,10 @@ export default function Canvas({
                         .filter(CanvasProp.isCanvasProp)
                         .forEach((cp) => {
                             const mp = marcherPages[cp.marcherObj.id];
-                            if (mp) cp.setMarcherCoords(mp);
+                            if (mp) {
+                                cp.setMarcherCoords(mp);
+                                cp.resetLiveGeometry();
+                            }
                         });
                     canvas.requestRenderAll();
                 })

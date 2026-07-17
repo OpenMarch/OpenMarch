@@ -311,6 +311,14 @@ export default class CanvasProp extends CanvasMarcher {
         }
     }
 
+    /** Resets any live-animation scale/rotation back to this prop's static page geometry. */
+    resetLiveGeometry(): void {
+        this.scaleX = 1;
+        this.scaleY = 1;
+        this.angle = this.geometry.rotation ?? 0;
+        this.setCoords();
+    }
+
     /**
      * During live animation, apply interpolated position (via super) and, when
      * present, interpolated geometry (size + rotation). `this.geometry` is the
