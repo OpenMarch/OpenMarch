@@ -5,6 +5,7 @@ import { DatabaseProp, DatabasePropPageGeometry } from "../Prop";
 import { dbMarcherToMarcher } from "../Marcher";
 import { schema } from "@/global/database/db";
 import CanvasMarcher from "./CanvasMarcher";
+import { createPropFabricShape, type CustomGeometryData } from "./propShapes";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 type Point = { x: number; y: number };
@@ -31,35 +32,6 @@ function createImagePattern(
         source: offscreen as unknown as HTMLImageElement,
         repeat: "no-repeat",
     });
-}
-
-interface CustomGeometryData {
-    points?: Point[];
-    originalWidth?: number;
-    originalHeight?: number;
-    /** Whether a freehand path should be closed. Defaults to true. */
-    closed?: boolean;
-}
-
-/** Scales points from original dimensions to target dimensions, centered at origin */
-function scalePointsToCenter(
-    points: Point[],
-    origWidth: number,
-    origHeight: number,
-    targetWidth: number,
-    targetHeight: number,
-): Point[] {
-    const xs = points.map((p) => p.x);
-    const ys = points.map((p) => p.y);
-    const origCenterX = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const origCenterY = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const scaleX = targetWidth / (origWidth || 1);
-    const scaleY = targetHeight / (origHeight || 1);
-
-    return points.map((p) => ({
-        x: (p.x - origCenterX) * scaleX,
-        y: (p.y - origCenterY) * scaleY,
-    }));
 }
 
 /**
@@ -229,7 +201,7 @@ export default class CanvasProp extends CanvasMarcher {
         fillColor: string | fabric.Pattern;
         outlineColor: string;
     }): fabric.Object {
-        const baseProps: fabric.IGroupOptions = {
+        const baseProps: fabric.IObjectOptions = {
             left: 0,
             top: 0,
             fill: fillColor as string, // fabric accepts Pattern here at runtime
@@ -250,70 +222,11 @@ export default class CanvasProp extends CanvasMarcher {
             }
         }
 
-        switch (shapeType) {
-            case "circle":
-                return new fabric.Ellipse({
-                    rx: widthPixels / 2,
-                    ry: heightPixels / 2,
-                    ...baseProps,
-                });
-
-            case "polygon":
-                if (customData?.points && customData.points.length >= 3) {
-                    const scaledPoints = scalePointsToCenter(
-                        customData.points,
-                        customData.originalWidth || 1,
-                        customData.originalHeight || 1,
-                        widthPixels,
-                        heightPixels,
-                    );
-                    return new fabric.Polygon(scaledPoints, baseProps);
-                }
-                break;
-
-            case "arc":
-                if (customData?.points && customData.points.length === 3) {
-                    const [sp1, sp2, sp3] = scalePointsToCenter(
-                        customData.points,
-                        customData.originalWidth || 1,
-                        customData.originalHeight || 1,
-                        widthPixels,
-                        heightPixels,
-                    );
-                    const pathData = `M ${sp1.x} ${sp1.y} Q ${sp2.x} ${sp2.y} ${sp3.x} ${sp3.y}`;
-                    return new fabric.Path(pathData, baseProps);
-                }
-                break;
-
-            case "freehand":
-                if (customData?.points && customData.points.length >= 2) {
-                    const scaledPoints = scalePointsToCenter(
-                        customData.points,
-                        customData.originalWidth || 1,
-                        customData.originalHeight || 1,
-                        widthPixels,
-                        heightPixels,
-                    );
-                    const openPath =
-                        `M ${scaledPoints[0].x} ${scaledPoints[0].y}` +
-                        scaledPoints
-                            .slice(1)
-                            .map((p) => ` L ${p.x} ${p.y}`)
-                            .join("");
-                    const pathData =
-                        customData.closed !== false
-                            ? openPath + " Z"
-                            : openPath;
-                    return new fabric.Path(pathData, baseProps);
-                }
-                break;
-        }
-
-        // Default: rectangle
-        return new fabric.Rect({
-            width: widthPixels,
-            height: heightPixels,
-            ...baseProps,
+        return createPropFabricShape(shapeType, {
+            customData,
+            widthPixels,
+            heightPixels,
+            baseProps,
         });
     }
 
