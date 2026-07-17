@@ -64,7 +64,7 @@ export function lerpGeometry(
 export const getCoordinatesAtTime = (
     timestampMilliseconds: number,
     marcherTimeline: MarcherTimeline,
-): Coordinate | null => {
+): (Coordinate & { geometry?: InterpolatedGeometry }) | null => {
     if (timestampMilliseconds < 0)
         throw new Error(
             `Cannot use negative timestamp: ${timestampMilliseconds}`,
@@ -135,7 +135,16 @@ export const getCoordinatesAtTime = (
         };
     }
 
-    return interpolatedCoordinate;
+    const result: Coordinate & { geometry?: InterpolatedGeometry } =
+        interpolatedCoordinate;
+    if (previousCoordinate.geometry && nextCoordinate.geometry) {
+        result.geometry = lerpGeometry(
+            previousCoordinate.geometry,
+            nextCoordinate.geometry,
+            keyframeProgress,
+        );
+    }
+    return result;
 };
 
 /**
