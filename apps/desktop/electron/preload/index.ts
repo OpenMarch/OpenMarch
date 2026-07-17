@@ -167,6 +167,17 @@ const APP_API = {
         ipcRenderer.invoke("database:createAtPath", filePath),
     getDefaultDocumentsPath: () =>
         ipcRenderer.invoke("getDefaultDocumentsPath") as Promise<string>,
+    getDefaultFilesDirectory: () =>
+        ipcRenderer.invoke(
+            "settings:getDefaultFilesDirectory",
+        ) as Promise<string>,
+    setDefaultFilesDirectory: (dir: string) =>
+        ipcRenderer.invoke(
+            "settings:setDefaultFilesDirectory",
+            dir,
+        ) as Promise<boolean>,
+    selectDirectory: () =>
+        ipcRenderer.invoke("dialog:selectDirectory") as Promise<string | null>,
     fileExists: (filePath: string) =>
         ipcRenderer.invoke("file:exists", filePath) as Promise<boolean>,
     repairDatabase: (dbPath: string) =>
