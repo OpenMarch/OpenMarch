@@ -42,6 +42,8 @@ export default class CanvasMarcher
     private _lockedReason: string = "";
     /** Whether to skip creating/updating the text label (used by props) */
     protected _skipTextLabel: boolean = false;
+    /** Whether this object may be scaled/resized (props can; marchers can't) */
+    protected _scalable: boolean = false;
 
     readonly objectToGloballySelect: Marcher;
 
@@ -145,6 +147,7 @@ export default class CanvasMarcher
      * @param customShape Optional custom shape to use instead of the default dot (for props)
      * @param skipTextLabel If true, don't create a text label (for props)
      * @param hasControls Whether to show resize controls (props need these, marchers don't)
+     * @param scalable Whether the object may be scaled/resized (props can, marchers can't)
      */
     // eslint-disable-next-line max-lines-per-function
     constructor({
@@ -152,9 +155,11 @@ export default class CanvasMarcher
         coordinate,
         dotRadius = CanvasMarcher.dotRadius,
         appearances: appearancesInput,
+        // Prop-oriented options (defaults preserve marcher behavior)
         customShape,
         skipTextLabel = false,
         hasControls = false,
+        scalable = false,
     }: {
         marcher: Marcher;
         coordinate: CoordinateLike;
@@ -169,6 +174,8 @@ export default class CanvasMarcher
         skipTextLabel?: boolean;
         /** Show resize controls (used by CanvasProp) */
         hasControls?: boolean;
+        /** Allow scaling/resizing (used by CanvasProp) */
+        scalable?: boolean;
     }) {
         // Normalize to array
         const appearances = appearancesInput
@@ -217,6 +224,7 @@ export default class CanvasMarcher
         });
         this.dotObject = markerShape;
         this._skipTextLabel = skipTextLabel;
+        this._scalable = scalable;
         this.appearances = appearances ?? [];
 
         // Get visibility values from appearances
@@ -811,11 +819,13 @@ export default class CanvasMarcher
     }
 
     /**
-     * Overrides the scale method to prevent scaling of CanvasMarcher objects.
-     * Calling this method will have no effect.
+     * Scaling is prevented for marchers but allowed for scalable objects (props).
+     * For non-scalable objects, calling this has no effect.
      */
-    scale(_value: number): this {
-        // Prevent scaling
+    scale(value: number): this {
+        if (this._scalable) {
+            return fabric.Group.prototype.scale.call(this, value) as this;
+        }
         return this;
     }
 

@@ -108,6 +108,7 @@ export default class CanvasProp extends CanvasMarcher {
             customShape: shapeObject,
             skipTextLabel: true,
             hasControls: true,
+            scalable: true,
         });
 
         // Store prop-specific properties
@@ -307,10 +308,5 @@ export default class CanvasProp extends CanvasMarcher {
             this.top = (edges.t + edges.b) / 2;
             this.setCoords();
         }
-    }
-
-    /** Override scale to allow scaling (unlike marchers which prevent it) */
-    scale(value: number): this {
-        return fabric.Group.prototype.scale.call(this, value) as this;
     }
 }
