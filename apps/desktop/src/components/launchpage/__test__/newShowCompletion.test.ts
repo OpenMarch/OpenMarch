@@ -16,6 +16,8 @@ import { allDatabasePagesQueryOptions } from "@/hooks/queries/usePages";
 import { allDatabaseMeasuresQueryOptions } from "@/hooks/queries/useMeasures";
 import { getUtility } from "@/db-functions/utility";
 import { getMarchers } from "@/db-functions/marcher";
+import { marcherPagesByPageId } from "@/db-functions/marcherPage";
+import { FIRST_PAGE_ID } from "@/db-functions/page";
 
 describe("newShowCompletion helpers", () => {
     it("sanitizeFilename removes invalid characters", () => {
@@ -30,6 +32,7 @@ describe("newShowCompletion helpers", () => {
 
     it("maps split audio and tempo wizard state to completion form state", () => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Test Show",
                 fileLocation: "/tmp/test-show.dots",
@@ -85,6 +88,7 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Test Show",
                 fileLocation: `/tmp/test-show-${task.id}.dots`,
@@ -155,6 +159,7 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Triple Meter Show",
                 fileLocation: `/tmp/triple-meter-${task.id}.dots`,
@@ -200,6 +205,7 @@ describeDbTests("completeNewShow", (it) => {
         window.electron.getAudioFilesDetails = vi.fn().mockResolvedValue([]);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Audio Show",
                 fileLocation: `/tmp/audio-show-${task.id}.dots`,
@@ -230,6 +236,7 @@ describeDbTests("completeNewShow", (it) => {
         db: _db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "XML Show",
                 fileLocation: `/tmp/xml-show-${task.id}.dots`,
@@ -260,6 +267,7 @@ describeDbTests("completeNewShow", (it) => {
         db,
     }) => {
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Invalid Tempo Show",
                 fileLocation: `/tmp/invalid-tempo-${task.id}.dots`,
@@ -300,6 +308,7 @@ describeDbTests("completeNewShow", (it) => {
             .mockResolvedValueOnce(200);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Retry Show",
                 fileLocation: `/tmp/retry-show-${task.id}.dots`,
@@ -355,6 +364,7 @@ describeDbTests("completeNewShow", (it) => {
             .mockResolvedValueOnce(200);
 
         const wizardState: NewShowWizardState = {
+            start: { mode: "blank" },
             project: {
                 projectName: "Performer Retry Show",
                 fileLocation: `/tmp/performer-retry-${task.id}.dots`,
@@ -400,5 +410,114 @@ describeDbTests("completeNewShow", (it) => {
 
         const marchers = await getMarchers({ db });
         expect(marchers).toHaveLength(2);
+    });
+
+    it("applies imported previous dots performers and first-page coordinates", async ({
+        task,
+        db,
+    }) => {
+        const importedField =
+            FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES;
+        const wizardState: NewShowWizardState = {
+            start: { mode: "importPrevious" },
+            project: {
+                projectName: "Imported Previous Show",
+                fileLocation: `/tmp/imported-previous-${task.id}.dots`,
+            },
+            ensemble: {
+                activity: "Marching Band",
+            },
+            field: {
+                template: importedField,
+                isCustom: false,
+            },
+            performers: {
+                method: "add",
+                marchers: [
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 1,
+                    },
+                    {
+                        section: "Trumpet",
+                        drill_prefix: "T",
+                        drill_order: 2,
+                    },
+                ],
+            },
+            audio: { method: "skip" },
+            tempo: { method: "skip" },
+            draftFilePath: "/tmp/draft.dots",
+            previousDotsImport: {
+                sourcePath: "/tmp/source.dots",
+                field: {
+                    template: importedField,
+                    isCustom: false,
+                },
+                performers: {
+                    method: "add",
+                    marchers: [
+                        {
+                            section: "Trumpet",
+                            drill_prefix: "T",
+                            drill_order: 1,
+                        },
+                        {
+                            section: "Trumpet",
+                            drill_prefix: "T",
+                            drill_order: 2,
+                        },
+                    ],
+                },
+                coordinates: [
+                    {
+                        drill_prefix: "T",
+                        drill_order: 1,
+                        x: 321,
+                        y: 654,
+                    },
+                    {
+                        drill_prefix: "T",
+                        drill_order: 2,
+                        x: 987,
+                        y: 123,
+                    },
+                ],
+            },
+        };
+
+        await completeNewShow(wizardStateToFormState(wizardState), queryClient);
+
+        const marchers = await getMarchers({ db });
+        const marcherByDrillNumber = new Map(
+            marchers.map((marcher) => [
+                `${marcher.drill_prefix}${marcher.drill_order}`,
+                marcher,
+            ]),
+        );
+        const firstPageMarcherPages = await marcherPagesByPageId({
+            db,
+            pageId: FIRST_PAGE_ID,
+        });
+        const firstPageByMarcherId = new Map(
+            firstPageMarcherPages.map((marcherPage) => [
+                marcherPage.marcher_id,
+                marcherPage,
+            ]),
+        );
+
+        const t1 = marcherByDrillNumber.get("T1");
+        const t2 = marcherByDrillNumber.get("T2");
+        expect(t1).toBeDefined();
+        expect(t2).toBeDefined();
+        expect(firstPageByMarcherId.get(t1!.id)).toMatchObject({
+            x: 321,
+            y: 654,
+        });
+        expect(firstPageByMarcherId.get(t2!.id)).toMatchObject({
+            x: 987,
+            y: 123,
+        });
     });
 });

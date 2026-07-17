@@ -10,6 +10,7 @@ import * as DbServices from "@om-electron/database/database.services";
 
 import Plugin from "../../src/global/classes/Plugin";
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
 import type {
     AuthState,
     AuthError,
@@ -228,6 +229,10 @@ const APP_API = {
         ipcRenderer.invoke("newShow:discardDraft") as Promise<number>,
     getNewShowDraftPath: () =>
         ipcRenderer.invoke("newShow:getDraftPath") as Promise<string | null>,
+    choosePreviousDotsFile: () =>
+        ipcRenderer.invoke(
+            "newShow:choosePreviousDotsFile",
+        ) as Promise<PreviousDotsImportResult | null>,
 
     export: {
         pdf: (params: {

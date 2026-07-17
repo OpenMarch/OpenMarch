@@ -661,6 +661,15 @@
                 "confirm": "Discard"
             },
             "steps": {
+                "start": {
+                    "title": "Start setup",
+                    "description": "Choose how to start this show.",
+                    "blank": "Start blank show",
+                    "blankDescription": "Choose field and performers in the next steps.",
+                    "importPrevious": "Import previous .dots file",
+                    "importPreviousDescription": "Reuse performers, field setup, and the last set coordinates from an existing show.",
+                    "importSummary": "Selected {fileName}. {count, plural, one {# performer} other {# performers}} will be imported."
+                },
                 "project": {
                     "title": "Project details",
                     "description": "Name your show and choose where to save it."
@@ -706,6 +715,7 @@
             "errors": {
                 "nameRequired": "Show name is required",
                 "createFailed": "Failed to create show",
+                "importFailed": "Failed to import previous .dots file",
                 "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
                 "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
             }

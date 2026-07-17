@@ -32,6 +32,7 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -363,6 +364,9 @@ function initDatabaseIpcHandlers() {
     );
     ipcMain.handle("newShow:discardDraft", async () => discardNewShowDraft());
     ipcMain.handle("newShow:getDraftPath", () => currentNewShowDraftPath);
+    ipcMain.handle("newShow:choosePreviousDotsFile", async () =>
+        choosePreviousDotsFile(win),
+    );
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
             DatabaseServices.closePersistentConnection();

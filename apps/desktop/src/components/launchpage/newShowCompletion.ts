@@ -38,11 +38,13 @@ import { createAllUndoTriggers } from "@/db-functions/history";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
+import { marcherPageKeys } from "@/hooks/queries/useMarcherPages";
 import {
     createMarchers,
     deleteMarchers,
     getMarchers,
 } from "@/db-functions/marcher";
+import { updateMarcherPagesInTransaction } from "@/db-functions/marcherPage";
 import AudioFile from "@/global/classes/AudioFile";
 import {
     deleteMeasuresInTransaction,
@@ -244,6 +246,61 @@ async function applyPerformersSettings(
 
     await queryClient.invalidateQueries({
         queryKey: allMarchersQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+    });
+}
+
+function drillNumberKey(marcher: {
+    drill_prefix: string;
+    drill_order: number;
+}): string {
+    return `${marcher.drill_prefix}\u0000${marcher.drill_order}`;
+}
+
+async function applyPreviousDotsCoordinates(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const coordinates = form.previousDotsImport?.coordinates;
+    if (!coordinates?.length) return;
+
+    const coordinateByDrillNumber = new Map(
+        coordinates.map((coordinate) => [
+            drillNumberKey(coordinate),
+            coordinate,
+        ]),
+    );
+    const marchers = await getMarchers({ db });
+    const updates = marchers.flatMap((marcher) => {
+        const coordinate = coordinateByDrillNumber.get(drillNumberKey(marcher));
+        if (!coordinate) return [];
+        return [
+            {
+                marcher_id: marcher.id,
+                page_id: FIRST_PAGE_ID,
+                x: coordinate.x,
+                y: coordinate.y,
+            },
+        ];
+    });
+
+    if (updates.length === 0) return;
+
+    await transactionWithHistory(
+        db,
+        "applyPreviousDotsCoordinates",
+        async (tx) => {
+            await updateMarcherPagesInTransaction({
+                tx,
+                modifiedMarcherPages: updates,
+            });
+        },
+    );
+
+    await queryClient.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
     });
 }
 
@@ -573,6 +630,7 @@ export async function completeNewShow(
         await createBeatsAndPages(queryClient);
     }
     await applyPerformersSettings(form.performers, queryClient);
+    await applyPreviousDotsCoordinates(form, queryClient);
 
     const finalizeResult = await window.electron.finalizeNewShowDraft(
         targetPath,
