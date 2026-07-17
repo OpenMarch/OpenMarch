@@ -1,12 +1,8 @@
 import { create } from "zustand";
+import type { ShapeType } from "@/global/classes/Prop";
 
-export type PropDrawingMode =
-    | "rectangle"
-    | "circle"
-    | "arc"
-    | "polygon"
-    | "freehand"
-    | null;
+/** The active prop-drawing shape, or null when not drawing. */
+export type PropDrawingMode = ShapeType | null;
 
 type PropDrawingStore = {
     drawingMode: PropDrawingMode;
