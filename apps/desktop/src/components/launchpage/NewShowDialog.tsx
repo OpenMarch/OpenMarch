@@ -301,6 +301,15 @@ export default function NewShowDialog({
             setWizardState((prev) => ({
                 ...prev,
                 start: { mode: "importPrevious" },
+                project: {
+                    projectName: prev.project?.projectName ?? "",
+                    fileLocation: prev.project?.fileLocation ?? "",
+                    designer: result.designer,
+                    client: result.client,
+                },
+                ensemble: result.activity
+                    ? { activity: result.activity }
+                    : prev.ensemble,
                 field: {
                     template: fieldTemplate,
                     isCustom: fieldTemplate.isCustom ?? false,

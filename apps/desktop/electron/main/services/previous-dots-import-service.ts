@@ -3,6 +3,7 @@ import { dialog } from "electron";
 import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
 import { desc, eq, isNotNull } from "drizzle-orm";
+import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWorkspaceSettings";
 
 export interface PreviousDotsMarcherImport {
     name?: string | null;
@@ -54,6 +55,9 @@ export interface PreviousDotsImportResult {
     sectionAppearances: PreviousDotsSectionAppearanceImport[];
     tags: PreviousDotsTagImport[];
     marcherTags: PreviousDotsMarcherTagImport[];
+    designer?: string;
+    client?: string;
+    activity?: string;
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -136,6 +140,21 @@ async function readPreviousDotsFile(
             )
             .all();
 
+        let workspaceSettingsJson: string | undefined;
+        try {
+            const workspaceSettings =
+                await orm.query.workspace_settings.findFirst({
+                    columns: { json_data: true },
+                });
+            workspaceSettingsJson = workspaceSettings?.json_data;
+        } catch {
+            // Older files may lack workspace_settings
+        }
+
+        const { designer, client, activity } = parseFromWorkspaceSettings(
+            workspaceSettingsJson,
+        );
+
         const fieldImage = fieldProperties.image
             ? new Uint8Array(fieldProperties.image)
             : null;
@@ -155,6 +174,9 @@ async function readPreviousDotsFile(
                 color_hex: tag.color_hex,
             })),
             marcherTags: marcherTagsRaw,
+            designer,
+            client,
+            activity,
         };
     } finally {
         db.close();
