@@ -61,9 +61,6 @@ export const dialog = {
     showSaveDialog: vi.fn(),
     showMessageBox: vi.fn(),
     showErrorBox: vi.fn(),
-    getDefaultFilesDirectory: vi.fn().mockResolvedValue(""),
-    setDefaultFilesDirectory: vi.fn().mockResolvedValue(true),
-    selectDirectory: vi.fn().mockResolvedValue(null),
 };
 
 export const shell = {
