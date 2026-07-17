@@ -134,8 +134,6 @@ export const marchers = sqliteTable(
     "marchers",
     {
         id: integer().primaryKey(),
-        /** "marcher" or "prop" */
-        type: text().notNull().default("marcher"),
         /** The name of the marcher. Optional */
         name: text(),
         /** The section the marcher is in. E.g. "Color Guard" */
@@ -149,11 +147,10 @@ export const marchers = sqliteTable(
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
         ...timestamps,
+        /** "marcher" or "prop". Added via ALTER in 0017, so it is the last column. */
+        type: text().notNull().default("marcher"),
     },
-    (table) => [
-        unique().on(table.drill_prefix, table.drill_order),
-        check("marchers_type_check", sql`type IN ('marcher', 'prop')`),
-    ],
+    (table) => [unique().on(table.drill_prefix, table.drill_order)],
 );
 
 export const props = sqliteTable(

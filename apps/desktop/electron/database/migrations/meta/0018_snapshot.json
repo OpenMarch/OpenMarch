@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "6533e3d2-0809-4c95-8256-91830a1e91a8",
+    "id": "56f008a4-9473-4d45-8fd4-3eb9d6f35fc1",
     "prevId": "0bd7af47-5e21-45a3-803d-949ea6c1fbab",
     "tables": {
         "audio_files": {
@@ -561,14 +561,6 @@
                     "notNull": true,
                     "autoincrement": false
                 },
-                "type": {
-                    "name": "type",
-                    "type": "text",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": "'marcher'"
-                },
                 "name": {
                     "name": "name",
                     "type": "text",
@@ -626,6 +618,14 @@
                     "notNull": true,
                     "autoincrement": false,
                     "default": "(CURRENT_TIMESTAMP)"
+                },
+                "type": {
+                    "name": "type",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": "'marcher'"
                 }
             },
             "indexes": {
@@ -638,12 +638,7 @@
             "foreignKeys": {},
             "compositePrimaryKeys": {},
             "uniqueConstraints": {},
-            "checkConstraints": {
-                "marchers_type_check": {
-                    "name": "marchers_type_check",
-                    "value": "type IN ('marcher', 'prop')"
-                }
-            }
+            "checkConstraints": {}
         },
         "measures": {
             "name": "measures",
