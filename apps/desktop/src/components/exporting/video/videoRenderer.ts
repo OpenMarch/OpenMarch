@@ -15,7 +15,12 @@ import {
 import { FieldProperties } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
+import MarcherPage from "@/global/classes/MarcherPage";
 import { SectionAppearance } from "@/db-functions";
+import {
+    type PropWithMarcher,
+    type DatabasePropPageGeometry,
+} from "@/global/classes/Prop";
 import { type MarcherTimeline } from "@/utilities/Keyframes";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
@@ -49,6 +54,9 @@ export interface VideoExportArgs {
     backgroundImage?: HTMLImageElement;
     gridLines: boolean;
     halfLines: boolean;
+    props: PropWithMarcher[];
+    propGeometries: DatabasePropPageGeometry[];
+    marcherPagesByPage: Record<number, Record<number, MarcherPage>>;
     /** Raw bytes of the selected audio file */
     audioData: ArrayBuffer;
     /** Same offset that live playback applies (workspace setting) */
@@ -228,6 +236,9 @@ export async function exportVideo(
             backgroundImage: args.backgroundImage,
             gridLines: args.gridLines,
             halfLines: args.halfLines,
+            props: args.props,
+            propGeometries: args.propGeometries,
+            marcherPagesByPage: args.marcherPagesByPage,
         });
 
         const frameCanvas = document.createElement("canvas");

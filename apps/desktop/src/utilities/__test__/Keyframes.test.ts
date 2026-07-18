@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach } from "vitest";
 import {
     CoordinateDefinition,
     getCoordinatesAtTime,
+    lerpGeometry,
     MarcherTimeline,
 } from "../Keyframes";
 import { Path, Line, Arc, CubicCurve, Spline } from "@openmarch/core";
@@ -879,5 +880,57 @@ describe("getCoordinatesAtTime", () => {
                 ).toBeInstanceOf(Spline);
             });
         });
+    });
+});
+
+describe("lerpGeometry", () => {
+    it("linearly interpolates width and height", () => {
+        const from = { width: 10, height: 10, rotation: 0 };
+        const to = { width: 20, height: 30, rotation: 0 };
+        expect(lerpGeometry(from, to, 0)).toEqual({ width: 10, height: 10, rotation: 0 });
+        expect(lerpGeometry(from, to, 0.5)).toEqual({ width: 15, height: 20, rotation: 0 });
+        expect(lerpGeometry(from, to, 1)).toEqual({ width: 20, height: 30, rotation: 0 });
+    });
+
+    it("takes the shortest angular path across the 0/360 seam (forward)", () => {
+        const from = { width: 10, height: 10, rotation: 350 };
+        const to = { width: 10, height: 10, rotation: 10 };
+        expect(lerpGeometry(from, to, 0).rotation).toBe(350);
+        expect(lerpGeometry(from, to, 0.5).rotation).toBe(0);
+        expect(lerpGeometry(from, to, 1).rotation).toBe(10);
+    });
+
+    it("takes the shortest angular path across the 0/360 seam (backward)", () => {
+        const from = { width: 10, height: 10, rotation: 10 };
+        const to = { width: 10, height: 10, rotation: 350 };
+        expect(lerpGeometry(from, to, 0.5).rotation).toBe(0);
+        expect(lerpGeometry(from, to, 1).rotation).toBe(350);
+    });
+});
+
+describe("getCoordinatesAtTime geometry interpolation", () => {
+    it("interpolates geometry when both keyframes carry it", () => {
+        const pathMap = new Map<number, CoordinateDefinition>();
+        pathMap.set(0, { x: 0, y: 0, geometry: { width: 10, height: 10, rotation: 0 } });
+        pathMap.set(1000, { x: 100, y: 100, geometry: { width: 20, height: 20, rotation: 0 } });
+        const timeline: MarcherTimeline = { pathMap, sortedTimestamps: [0, 1000] };
+
+        const result = getCoordinatesAtTime(500, timeline);
+        expect(result).toEqual({
+            x: 50,
+            y: 50,
+            geometry: { width: 15, height: 15, rotation: 0 },
+        });
+    });
+
+    it("omits geometry when only one keyframe carries it", () => {
+        const pathMap = new Map<number, CoordinateDefinition>();
+        pathMap.set(0, { x: 0, y: 0, geometry: { width: 10, height: 10, rotation: 0 } });
+        pathMap.set(1000, { x: 100, y: 100 });
+        const timeline: MarcherTimeline = { pathMap, sortedTimestamps: [0, 1000] };
+
+        const result = getCoordinatesAtTime(500, timeline);
+        expect(result).toEqual({ x: 50, y: 50 });
+        expect(result?.geometry).toBeUndefined();
     });
 });

@@ -1,0 +1,174 @@
+---
+description: When working with database schema, migrations, transactions, undo/redo, or Drizzle ORM queries
+alwaysApply: false
+---
+
+# Database & Schema Reference
+
+## Overview
+
+OpenMarch uses SQLite (libsql) with Drizzle ORM. The renderer process executes queries through a SQLite proxy that communicates with the main process via IPC. All mutations use `transactionWithHistory()` for automatic undo/redo support.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `electron/database/migrations/schema.ts` | Drizzle schema (all tables) |
+| `electron/database/migrations/relations.ts` | Table relations |
+| `electron/database/db.ts` | Main process DB connection (libsql) |
+| `src/global/database/db.ts` | Renderer DB connection (proxy) |
+| `src/db-functions/history.ts` | `transactionWithHistory`, undo/redo system |
+| `src/db-functions/types.ts` | `DbConnection`, `DbTransaction` types |
+| `electron/database/database.services.ts` | SQL proxy IPC handlers |
+| `electron/database/services/DrizzleMigrationService.ts` | Migration runner |
+
+## Database Tables
+
+### Core Entities
+- `marchers` - Performers (section, drill_prefix, drill_order, name, type)
+- `pages` - Drill pages (name, counts, order, start_beat FK)
+- `beats` - Timing points (position, duration, include_in_measure)
+- `measures` - Musical measures (start_beat FK, number, rehearsal_mark)
+- `marcher_pages` - Marcher position per page (x, y, rotation, appearance overrides)
+
+### Props
+- `props` - Props/equipment (marcher_id FK, surface_type, default dimensions)
+- `prop_page_geometry` - Prop geometry per page (shape_type, width, height, rotation)
+
+### Shapes
+- `shapes` - Shape definitions (name)
+- `shape_pages` - Shape per page (svg_path, notes)
+- `shape_page_marchers` - Marcher-to-shape assignments (position on shape)
+
+### Pathways
+- `pathways` - Path data between positions (path_data text, notes)
+
+### Appearances
+- `section_appearances` - Section-level visual defaults
+- `tags` - Tag definitions (name, color)
+- `tag_appearances` - Tag visual overrides per page
+- `marcher_tags` - Marcher-to-tag assignments
+
+### Audio & Settings
+- `audio_files` - Audio file metadata (path, nickname, selected)
+- `field_properties` - Field configuration JSON (singleton, id=1)
+- `utility` - Utility settings key-value store
+- `workspace_settings` - Workspace settings key-value store
+
+### History
+- `history_undo` - Undo stack (sequence, history_group, sql)
+- `history_redo` - Redo stack (sequence, history_group, sql)
+- `history_stats` - Current group counters (cur_undo_group, cur_redo_group, group_limit)
+
+### Views
+- `timing_objects` - Unified view joining pages, beats, measures
+
+## Renderer DB Connection
+
+The renderer uses a Drizzle proxy that sends SQL over IPC:
+
+```typescript
+// src/global/database/db.ts
+import { drizzle } from "drizzle-orm/sqlite-proxy";
+import * as schema from "../../../electron/database/migrations/schema";
+
+export const db = drizzle(
+    async (sql, params, method) => {
+        return await window.electron.sqlProxy(sql, params, method);
+    },
+    { schema, casing: "snake_case" },
+);
+
+export type DB = typeof db;
+export { schema };
+```
+
+## Type Inference
+
+Always use Drizzle-inferred types, never manually define interfaces that duplicate schema:
+
+```typescript
+import { schema } from "@/global/database/db";
+
+// Select type (what you get from queries)
+type DatabaseMarcher = typeof schema.marchers.$inferSelect;
+
+// Insert type (what you pass to inserts)
+type NewMarcherInsert = typeof schema.marchers.$inferInsert;
+
+// Custom args (omit auto-generated fields)
+type NewMarcherArgs = Omit<typeof schema.marchers.$inferInsert, "id" | "created_at" | "updated_at">;
+
+// Modified args (partial + required id)
+type ModifiedMarcherArgs = Partial<typeof schema.marchers.$inferInsert> & { id: number };
+```
+
+## Transaction Pattern
+
+All mutations MUST use `transactionWithHistory` for undo/redo:
+
+```typescript
+import { transactionWithHistory, DbConnection, DbTransaction } from "@/db-functions";
+import { schema } from "@/global/database/db";
+
+// InTransaction function - core logic, accepts tx
+export const createItemsInTransaction = async ({
+    newItems,
+    tx,
+}: {
+    newItems: NewItemArgs[];
+    tx: DbTransaction;
+}) => {
+    return await tx.insert(schema.table_name).values(newItems).returning();
+};
+
+// Standalone function - wraps InTransaction with history
+export async function createItems({
+    newItems,
+    db,
+}: {
+    newItems: NewItemArgs[];
+    db: DbConnection;
+}) {
+    return await transactionWithHistory(db, "createItems", async (tx) => {
+        return await createItemsInTransaction({ newItems, tx });
+    });
+}
+```
+
+**Key rule**: By default, only provide `InTransaction` functions. Standalone wrappers are only needed when the function will frequently be called on its own (not as part of a larger transaction).
+
+## Tables With History Tracking
+
+These tables have SQL triggers that auto-record changes to the undo stack:
+
+```
+beats, pages, measures, marchers, marcher_pages,
+shapes, shape_pages, shape_page_marchers,
+field_properties, section_appearances, utility,
+tags, tag_appearances, marcher_tags
+```
+
+Tables NOT tracked: `props`, `prop_page_geometry`, `pathways`, `audio_files`, `workspace_settings`, `history_*`
+
+## Undo/Redo System
+
+- SQL triggers on tracked tables capture INSERT/UPDATE/DELETE as reverse SQL statements
+- `transactionWithHistory()` groups all changes in one call into a single undo group
+- `performUndo(db)` / `performRedo(db)` execute the reverse SQL
+- Triggers switch between undo/redo mode during history actions
+- Global transaction lock prevents concurrent transactions (`window.__dbTransactionLock`)
+
+## Migrations
+
+- Generate: `pnpm migrate` in `apps/desktop/`
+- Files: `electron/database/migrations/0000_*.sql` through `0017_*.sql`
+- Runner: `DrizzleMigrationService.ts` - creates backup, disables triggers, applies migrations, recreates triggers
+- Version tracking: `PRAGMA user_version`
+
+## Gotchas
+
+- The `transactionWithHistory` function asserts that the history group was incremented exactly once. If your function doesn't modify any tracked table, the assertion fails.
+- `withTransactionLock()` is needed when using `db.transaction()` directly (without history).
+- Boolean values in SQLite are stored as `0|1` integers - transform in your db-functions layer.
+- The renderer DB proxy cannot execute raw SQL directly - use `window.electron.unsafeSqlProxy()` for trigger creation.

@@ -4,6 +4,14 @@ import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
+import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
+import MarcherPage from "@/global/classes/MarcherPage";
+import { resolvePropsForPage } from "@/global/classes/propSelectors";
+import {
+    getPixelsPerFoot,
+    type PropWithMarcher,
+    type DatabasePropPageGeometry,
+} from "@/global/classes/Prop";
 import {
     getCoordinatesAtTime,
     type MarcherTimeline,
@@ -92,6 +100,12 @@ export interface VideoRenderContext {
     marcherTimelines: Map<number, MarcherTimeline>;
     marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     lastAppliedPageId: number | null;
+    props: PropWithMarcher[];
+    propGeometries: DatabasePropPageGeometry[];
+    marcherPagesByPage: Record<number, Record<number, MarcherPage>>;
+    canvasPropsById: Record<number, CanvasProp>;
+    lastPropsPageId: number | null;
+    pixelsPerFoot: number;
     staticFieldCache: {
         key: string;
         canvas: HTMLCanvasElement;
@@ -109,6 +123,9 @@ export interface CreateVideoRenderContextArgs {
     backgroundImage?: HTMLImageElement;
     gridLines: boolean;
     halfLines: boolean;
+    props: PropWithMarcher[];
+    propGeometries: DatabasePropPageGeometry[];
+    marcherPagesByPage: Record<number, Record<number, MarcherPage>>;
 }
 
 export async function createVideoRenderContext(
@@ -132,6 +149,12 @@ export async function createVideoRenderContext(
         marcherTimelines: args.marcherTimelines,
         marcherAppearancesByPageId: args.marcherAppearancesByPageId,
         lastAppliedPageId: null,
+        props: args.props,
+        propGeometries: args.propGeometries,
+        marcherPagesByPage: args.marcherPagesByPage,
+        canvasPropsById: {},
+        lastPropsPageId: null,
+        pixelsPerFoot: getPixelsPerFoot(),
         staticFieldCache: null,
         dispose: () => initialized.canvas.dispose(),
     };
@@ -175,25 +198,32 @@ function configureCanvasForFrame({
     );
 }
 
-function hideMarchers(context: VideoRenderContext) {
-    const visibility = Object.values(context.canvasMarchersById).map(
-        (canvasMarcher) => ({
-            canvasMarcher,
-            marcherVisible: canvasMarcher.visible,
-            labelVisible: canvasMarcher.textLabel.visible,
-        }),
-    );
+export function hideMarchers(context: VideoRenderContext) {
+    // Props sit on the canvas but are not in canvasMarchersById; include them
+    // so the static field cache capture does not bake them in as ghosts.
+    const objects: CanvasMarcher[] = [
+        ...Object.values(context.canvasMarchersById),
+        ...Object.values(context.canvasPropsById),
+    ];
+    const visibility = objects.map((canvasMarcher) => ({
+        canvasMarcher,
+        marcherVisible: canvasMarcher.visible,
+        labelVisible: canvasMarcher.textLabel?.visible ?? false,
+    }));
     for (const { canvasMarcher } of visibility) {
         canvasMarcher.visible = false;
-        canvasMarcher.textLabel.visible = false;
+        if (canvasMarcher.textLabel) canvasMarcher.textLabel.visible = false;
     }
     return visibility;
 }
 
-function restoreMarcherVisibility(visibility: ReturnType<typeof hideMarchers>) {
+export function restoreMarcherVisibility(
+    visibility: ReturnType<typeof hideMarchers>,
+) {
     for (const { canvasMarcher, marcherVisible, labelVisible } of visibility) {
         canvasMarcher.visible = marcherVisible;
-        canvasMarcher.textLabel.visible = labelVisible;
+        if (canvasMarcher.textLabel)
+            canvasMarcher.textLabel.visible = labelVisible;
     }
 }
 
@@ -258,7 +288,46 @@ function applyAppearancesAtTime(context: VideoRenderContext, timeMs: number) {
     context.lastAppliedPageId = activePage.id;
 }
 
-function setMarcherPositionsAtTime(
+/**
+ * Rebuild the CanvasProps whenever the active playback page changes, mirroring
+ * live playback's useRenderProps. Each CanvasProp's base geometry is the "from"
+ * page it was built from, so setLiveCoordinates can scale/rotate it correctly.
+ */
+export function rebuildPropsForTime(
+    context: VideoRenderContext,
+    timeMs: number,
+) {
+    if (context.props.length === 0) return;
+    const activePage = getPlaybackPageForTimeMs(context.sortedPages, timeMs);
+    if (activePage.id === context.lastPropsPageId) return;
+
+    for (const cp of Object.values(context.canvasPropsById)) {
+        context.canvas.remove(cp);
+    }
+    context.canvasPropsById = {};
+
+    const marcherPagesForPage = context.marcherPagesByPage[activePage.id] ?? {};
+    const resolved = resolvePropsForPage({
+        props: context.props,
+        geometries: context.propGeometries,
+        marcherPages: marcherPagesForPage,
+    });
+    for (const { prop, marcherPage, geometry } of resolved) {
+        if (!geometry.visible) continue;
+        const canvasProp = new CanvasProp({
+            marcher: prop.marcher,
+            prop,
+            geometry,
+            coordinate: { x: marcherPage.x, y: marcherPage.y },
+            pixelsPerFoot: context.pixelsPerFoot,
+        });
+        context.canvas.add(canvasProp);
+        context.canvasPropsById[prop.marcher_id] = canvasProp;
+    }
+    context.lastPropsPageId = activePage.id;
+}
+
+export function setMarcherPositionsAtTime(
     context: VideoRenderContext,
     timeMilliseconds: number,
 ) {
@@ -269,6 +338,15 @@ function setMarcherPositionsAtTime(
         if (!timeline) continue;
         const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
         if (coords) canvasMarcher.setLiveCoordinates(coords);
+    }
+
+    for (const [marcherId, canvasProp] of Object.entries(
+        context.canvasPropsById,
+    )) {
+        const timeline = context.marcherTimelines.get(Number(marcherId));
+        if (!timeline) continue;
+        const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
+        if (coords) canvasProp.setLiveCoordinates(coords);
     }
 }
 
@@ -319,6 +397,7 @@ export function renderVideoFrame(
 
     const timeMs = Math.min(timeSeconds * 1000, durationSeconds * 1000 - 1);
     applyAppearancesAtTime(context, timeMs);
+    rebuildPropsForTime(context, timeMs);
     setMarcherPositionsAtTime(context, timeMs);
 
     const staticFieldCanvas = getStaticFieldCanvas({

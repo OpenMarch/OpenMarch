@@ -15,6 +15,7 @@ import {
     AppearanceComponentOptional,
     appearanceIsHidden,
 } from "@/entity-components/appearance";
+import type { InterpolatedGeometry } from "@/utilities/Keyframes";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -29,8 +30,10 @@ export default class CanvasMarcher
     // Styles
     static theme: FieldTheme = DEFAULT_FIELD_THEME;
     private static readonly dotRadius = DEFAULT_DOT_RADIUS;
-    private static readonly gridOffset = FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
-    readonly classString = Selectable.SelectableClasses.MARCHER;
+    protected static readonly gridOffset =
+        FieldProperties.GRID_STROKE_WIDTH / 2; // used to center the grid line
+    readonly classString: Selectable.SelectableClasses =
+        Selectable.SelectableClasses.MARCHER;
     backgroundRectangle: fabric.Rect;
     textLabel: fabric.Text;
 
@@ -38,6 +41,10 @@ export default class CanvasMarcher
     dotObject: fabric.Object;
     private _locked: boolean = false;
     private _lockedReason: string = "";
+    /** Whether to skip creating/updating the text label (used by props) */
+    protected _skipTextLabel: boolean = false;
+    /** Whether this object may be scaled/resized (props can; marchers can't) */
+    protected _scalable: boolean = false;
 
     readonly objectToGloballySelect: Marcher;
 
@@ -138,6 +145,10 @@ export default class CanvasMarcher
      * @param marcherPage The MarcherPage object to set the initial coordinates from
      * @param dotRadius The radius of the dot
      * @param appearances The appearances to apply to the marcher in priority order
+     * @param customShape Optional custom shape to use instead of the default dot (for props)
+     * @param skipTextLabel If true, don't create a text label (for props)
+     * @param hasControls Whether to show resize controls (props need these, marchers don't)
+     * @param scalable Whether the object may be scaled/resized (props can, marchers can't)
      */
     // eslint-disable-next-line max-lines-per-function
     constructor({
@@ -145,6 +156,11 @@ export default class CanvasMarcher
         coordinate,
         dotRadius = CanvasMarcher.dotRadius,
         appearances: appearancesInput,
+        // Prop-oriented options (defaults preserve marcher behavior)
+        customShape,
+        skipTextLabel = false,
+        hasControls = false,
+        scalable = false,
     }: {
         marcher: Marcher;
         coordinate: CoordinateLike;
@@ -153,6 +169,14 @@ export default class CanvasMarcher
         appearances?:
             | AppearanceComponentOptional
             | AppearanceComponentOptional[];
+        /** Custom shape to use instead of default dot (used by CanvasProp) */
+        customShape?: fabric.Object;
+        /** Skip creating text label (used by CanvasProp) */
+        skipTextLabel?: boolean;
+        /** Show resize controls (used by CanvasProp) */
+        hasControls?: boolean;
+        /** Allow scaling/resizing (used by CanvasProp) */
+        scalable?: boolean;
     }) {
         // Normalize to array
         const appearances = appearancesInput
@@ -178,25 +202,30 @@ export default class CanvasMarcher
             outlineColorValue || CanvasMarcher.theme.defaultMarcher.outline,
         );
 
-        const markerShape = CanvasMarcher.createMarkerShape({
-            shapeType,
-            fillColor,
-            outlineColor,
-            outlineColorValue,
-            coordinate,
-            dotRadius,
-        });
+        // Use custom shape if provided, otherwise create the default marker shape
+        const markerShape =
+            customShape ||
+            CanvasMarcher.createMarkerShape({
+                shapeType,
+                fillColor,
+                outlineColor,
+                outlineColorValue,
+                coordinate,
+                dotRadius,
+            });
 
         super([markerShape], {
-            hasControls: false,
+            ...ActiveObjectArgs,
+            hasControls,
             hasBorders: true,
             originX: "center",
             originY: "center",
-            // lockRotation: true,
             hoverCursor: "pointer",
-            ...ActiveObjectArgs,
+            lockRotation: !hasControls, // Props (hasControls=true) can rotate, marchers can't
         });
         this.dotObject = markerShape;
+        this._skipTextLabel = skipTextLabel;
+        this._scalable = scalable;
         this.appearances = appearances ?? [];
 
         // Get visibility values from appearances
@@ -221,20 +250,26 @@ export default class CanvasMarcher
             equipment_state: equipmentState,
         };
 
-        this.textLabel = new fabric.Text(marcher.drill_number, {
-            left: coordinate.x,
-            top: coordinate.y - CanvasMarcher.dotRadius * 2.2,
-            originX: "center",
-            originY: "center",
-            fontFamily: "courier new",
-            fill: rgbaToString(CanvasMarcher.theme.defaultMarcher.label),
-            fontWeight: "bold",
-            fontSize: 14,
-            selectable: false,
-            hasControls: false,
-            hasBorders: false,
-            visible: labelVisible === true,
-        });
+        // Create text label unless skipped (e.g., for props)
+        if (!skipTextLabel) {
+            this.textLabel = new fabric.Text(marcher.drill_number, {
+                left: coordinate.x,
+                top: coordinate.y - CanvasMarcher.dotRadius * 2.2,
+                originX: "center",
+                originY: "center",
+                fontFamily: "courier new",
+                fill: rgbaToString(CanvasMarcher.theme.defaultMarcher.label),
+                fontWeight: "bold",
+                fontSize: 14,
+                selectable: false,
+                hasControls: false,
+                hasBorders: false,
+                visible: labelVisible === true,
+            });
+        } else {
+            // Create a dummy invisible text label to satisfy the property type
+            this.textLabel = new fabric.Text("", { visible: false });
+        }
 
         // Apply visibility to the marcher
         const isVisible = visible === true;
@@ -661,6 +696,7 @@ export default class CanvasMarcher
      * Updates the position of the text label to follow the dot.
      */
     updateTextLabelPosition() {
+        if (this._skipTextLabel) return;
         const absoluteCoords = this.getAbsoluteCoords();
         this.textLabel.set({
             left: absoluteCoords.x,
@@ -751,7 +787,11 @@ export default class CanvasMarcher
      *
      * @param coords The new coordinates (in database terms) to set the marcher to.
      */
-    setLiveCoordinates(coords: { x: number; y: number }) {
+    setLiveCoordinates(coords: {
+        x: number;
+        y: number;
+        geometry?: InterpolatedGeometry;
+    }) {
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
 
         this.left = newCanvasCoords.x;
@@ -784,11 +824,13 @@ export default class CanvasMarcher
     }
 
     /**
-     * Overrides the scale method to prevent scaling of CanvasMarcher objects.
-     * Calling this method will have no effect.
+     * Scaling is prevented for marchers but allowed for scalable objects (props).
+     * For non-scalable objects, calling this has no effect.
      */
-    scale(_value: number): this {
-        // Prevent scaling
+    scale(value: number): this {
+        if (this._scalable) {
+            return fabric.Group.prototype.scale.call(this, value) as this;
+        }
         return this;
     }
 

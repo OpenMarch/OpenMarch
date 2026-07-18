@@ -147,8 +147,74 @@ export const marchers = sqliteTable(
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
         ...timestamps,
+        /** "marcher" or "prop". Added via ALTER in 0017, so it is the last column. */
+        type: text().notNull().default("marcher"),
     },
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
+);
+
+export const props = sqliteTable(
+    "props",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .unique()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        /** "floor" (marched over), "platform" (stand on), "obstacle" (blocks) */
+        surface_type: text().notNull().default("obstacle"),
+        asset_url: text(),
+        prop_category: text(),
+        default_width: real(),
+        default_height: real(),
+        image: browserSafeBinaryBlob(),
+        image_opacity: real().notNull().default(1),
+        ...timestamps,
+    },
+    (table) => [
+        index("idx_props_marcher_id").on(table.marcher_id),
+        check(
+            "props_default_width_check",
+            sql`default_width IS NULL OR default_width > 0`,
+        ),
+        check(
+            "props_default_height_check",
+            sql`default_height IS NULL OR default_height > 0`,
+        ),
+        check(
+            "props_image_opacity_check",
+            sql`image_opacity >= 0 AND image_opacity <= 1`,
+        ),
+    ],
+);
+
+export const prop_page_geometry = sqliteTable(
+    "prop_page_geometry",
+    {
+        id: integer().primaryKey(),
+        marcher_page_id: integer()
+            .notNull()
+            .unique()
+            .references(() => marcher_pages.id, { onDelete: "cascade" }),
+        /** "rectangle", "circle", "arc", "polygon", "freehand" — see ShapeType in Prop.ts */
+        shape_type: text().notNull().default("rectangle"),
+        /** Width in feet/meters */
+        width: real().notNull(),
+        /** Height in feet/meters */
+        height: real().notNull(),
+        /** JSON for custom shapes (Phase 2) */
+        custom_geometry: text(),
+        /** 2D rotation in degrees (yaw - rotation on canvas plane) */
+        rotation: real().notNull().default(0),
+        /** Whether the prop is visible on this page */
+        visible: integer({ mode: "boolean" }).notNull().default(true),
+        ...timestamps,
+    },
+    (table) => [
+        check("prop_page_geometry_width_check", sql`width > 0`),
+        check("prop_page_geometry_height_check", sql`height > 0`),
+        index("idx_prop_page_geometry_mp_id").on(table.marcher_page_id),
+    ],
 );
 
 export const pathways = sqliteTable("pathways", {

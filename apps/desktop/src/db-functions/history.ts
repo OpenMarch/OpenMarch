@@ -16,6 +16,8 @@ const tablesWithHistory = [
     schema.measures,
     schema.marchers,
     schema.marcher_pages,
+    schema.props,
+    schema.prop_page_geometry,
     schema.shapes,
     schema.shape_pages,
     schema.shape_page_marchers,

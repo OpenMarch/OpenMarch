@@ -1112,7 +1112,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 4,
                     },
-                    expectedString: "1 → 6",
+                    expectedString: "1 -> 6",
                 },
                 {
                     testDescription: "last measure is different counts",
@@ -1126,7 +1126,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 3,
                     },
-                    expectedString: "1 → 7",
+                    expectedString: "1 -> 7",
                 },
                 {
                     testDescription: "last measure is not a sequential number",
@@ -1140,7 +1140,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 3,
                     },
-                    expectedString: "1 → 5000",
+                    expectedString: "1 -> 5000",
                 },
                 {
                     testDescription: "not ending on the last beat",
@@ -1151,7 +1151,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 3,
                     },
-                    expectedString: "1 → 6(3)",
+                    expectedString: "1 -> 6(3)",
                 },
                 {
                     testDescription: "ending on the first beat",
@@ -1162,7 +1162,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 1,
                     },
-                    expectedString: "1 → 6(1)",
+                    expectedString: "1 -> 6(1)",
                 },
                 {
                     testDescription: "not starting on the first beat",
@@ -1173,7 +1173,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 3,
                         measureBeatToEndOn: 4,
                     },
-                    expectedString: "1(3) → 6",
+                    expectedString: "1(3) -> 6",
                 },
                 {
                     testDescription: "starting on the last beat",
@@ -1184,7 +1184,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 4,
                         measureBeatToEndOn: 4,
                     },
-                    expectedString: "1(4) → 6",
+                    expectedString: "1(4) -> 6",
                 },
                 {
                     testDescription: "both measures",
@@ -1195,7 +1195,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 2,
                         measureBeatToEndOn: 3,
                     },
-                    expectedString: "1(2) → 6(3)",
+                    expectedString: "1(2) -> 6(3)",
                 },
                 {
                     testDescription: "playing in the same measure",
@@ -1213,7 +1213,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 2,
                         measureBeatToEndOn: 4,
                     },
-                    expectedString: "1(2) → 1",
+                    expectedString: "1(2) -> 1",
                 },
                 {
                     testDescription: "playing in the same measure pull forward",
@@ -1222,7 +1222,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 1,
                         measureBeatToEndOn: 2,
                     },
-                    expectedString: "1 → 1(2)",
+                    expectedString: "1 -> 1(2)",
                 },
                 {
                     testDescription: "playing in the same measure in between",
@@ -1231,7 +1231,7 @@ describe("Page", () => {
                         measureBeatToStartOn: 2,
                         measureBeatToEndOn: 3,
                     },
-                    expectedString: "1(2) → 1(3)",
+                    expectedString: "1(2) -> 1(3)",
                 },
             ])("%# - $testDescription", ({ pageObject, expectedString }) => {
                 const result = measureRangeString(pageObject);
