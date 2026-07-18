@@ -1274,6 +1274,8 @@ function VideoExport() {
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
+    const { data: propsWithMarchers } = useQuery(allPropsQueryOptions());
+    const { data: propGeometries } = useQuery(propPageGeometryQueryOptions());
     const { data: marcherIdsByTagId } = useQuery(
         marcherIdsForAllTagIdsQueryOptions(),
     );
@@ -1414,6 +1416,9 @@ function VideoExport() {
                     backgroundImage,
                     gridLines: uiSettings.gridLines,
                     halfLines: uiSettings.halfLines,
+                    props: propsWithMarchers ?? [],
+                    propGeometries: propGeometries ?? [],
+                    marcherPagesByPage: marcherPages?.marcherPagesByPage ?? {},
                 });
                 if (cancelled) {
                     ctx.dispose();
@@ -1445,6 +1450,9 @@ function VideoExport() {
         backgroundImage,
         uiSettings.gridLines,
         uiSettings.halfLines,
+        propsWithMarchers,
+        propGeometries,
+        marcherPages,
     ]);
 
     const previewLoading =
@@ -1547,6 +1555,9 @@ function VideoExport() {
                 backgroundImage,
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
+                props: propsWithMarchers ?? [],
+                propGeometries: propGeometries ?? [],
+                marcherPagesByPage: marcherPages?.marcherPagesByPage ?? {},
                 audioData: audioFile.data,
                 audioOffsetSeconds: workspaceSettings?.audioOffsetSeconds ?? 0,
                 width,
@@ -1613,6 +1624,9 @@ function VideoExport() {
         marcherAppearancesByPageId,
         uiSettings.gridLines,
         uiSettings.halfLines,
+        propsWithMarchers,
+        propGeometries,
+        marcherPages,
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
         videoTheme,
