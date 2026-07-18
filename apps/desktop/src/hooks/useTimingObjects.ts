@@ -101,6 +101,10 @@ export const _combineTimingObjects = (
         workspaceSettingsLoading || workspaceSettingsError
             ? 0
             : (workspaceSettings?.pageNumberOffset ?? 0);
+    const pageStartingSubsetLetter =
+        workspaceSettingsLoading || workspaceSettingsError
+            ? ""
+            : (workspaceSettings?.pageStartingSubsetLetter ?? "");
     const measurementNumberOffset =
         workspaceSettingsLoading || workspaceSettingsError
             ? 1
@@ -192,7 +196,8 @@ export const _combineTimingObjects = (
         allMeasures: createdMeasures,
         allBeats: createdBeats,
         lastPageCounts,
-        pageNumberOffset: pageNumberOffset,
+        pageNumberOffset,
+        pageStartingSubsetLetter,
     });
 
     const processedData = {

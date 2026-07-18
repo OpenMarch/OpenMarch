@@ -65,6 +65,7 @@ function WorkspaceSettingsModalContents() {
         defaultNewPageCounts: string;
         audioOffsetSeconds: string;
         pageNumberOffset: string;
+        pageStartingSubsetLetter: string;
         measurementOffset: string;
     }>({
         defaultTempo: "",
@@ -72,6 +73,7 @@ function WorkspaceSettingsModalContents() {
         defaultNewPageCounts: "",
         audioOffsetSeconds: "",
         pageNumberOffset: "",
+        pageStartingSubsetLetter: "",
         measurementOffset: "",
     });
 
@@ -88,13 +90,14 @@ function WorkspaceSettingsModalContents() {
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
                 audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
                 pageNumberOffset: settings.pageNumberOffset.toString(),
+                pageStartingSubsetLetter: settings.pageStartingSubsetLetter,
                 measurementOffset: settings.measurementOffset.toString(),
             });
         }
     }, [settings]);
 
     const handleFieldChange = useCallback(
-        (field: keyof WorkspaceSettings, value: number) => {
+        (field: keyof WorkspaceSettings, value: number | string) => {
             if (!localSettings) return;
 
             setLocalSettings({
@@ -122,6 +125,8 @@ function WorkspaceSettingsModalContents() {
                 defaultWorkspaceSettings.audioOffsetSeconds.toString(),
             pageNumberOffset:
                 defaultWorkspaceSettings.pageNumberOffset.toString(),
+            pageStartingSubsetLetter:
+                defaultWorkspaceSettings.pageStartingSubsetLetter,
             measurementOffset:
                 defaultWorkspaceSettings.measurementOffset.toString(),
         });
@@ -138,6 +143,7 @@ function WorkspaceSettingsModalContents() {
                 defaultNewPageCounts: settings.defaultNewPageCounts.toString(),
                 audioOffsetSeconds: settings.audioOffsetSeconds.toString(),
                 pageNumberOffset: settings.pageNumberOffset.toString(),
+                pageStartingSubsetLetter: settings.pageStartingSubsetLetter,
                 measurementOffset: settings.measurementOffset.toString(),
             });
         }
@@ -173,6 +179,7 @@ function WorkspaceSettingsModalContents() {
         unit?: string;
         float?: boolean;
         canBeNegative?: boolean;
+        isString?: boolean;
     }> = [
         {
             key: "defaultTempo",
@@ -208,6 +215,13 @@ function WorkspaceSettingsModalContents() {
             label: t("workspaceSettings.pageNumberOffset"),
             value: inputValues.pageNumberOffset || "",
             canBeNegative: true,
+        },
+        {
+            key: "pageStartingSubsetLetter",
+            label: t("workspaceSettings.pageStartingSubsetLetter"),
+            value: inputValues.pageStartingSubsetLetter || "",
+            pattern: "[A-Za-z]*",
+            isString: true,
         },
         {
             key: "measurementOffset",
@@ -249,6 +263,7 @@ function WorkspaceSettingsModalContents() {
                             unit,
                             float,
                             canBeNegative,
+                            isString,
                         }) => {
                             // Generate pattern based on float and canBeNegative flags
                             const inputPattern =
@@ -258,22 +273,35 @@ function WorkspaceSettingsModalContents() {
                                     : "[0-9]*");
 
                             // Generate regex for filtering input
-                            const filterRegex = new RegExp(
-                                `[^${canBeNegative ? "-" : ""}0-9${float ? "." : ""}]`,
-                                "g",
-                            );
+                            const filterRegex = isString
+                                ? /[^A-Za-z]/g
+                                : new RegExp(
+                                      `[^${canBeNegative ? "-" : ""}0-9${float ? "." : ""}]`,
+                                      "g",
+                                  );
 
                             return (
                                 <FormField key={key} label={label}>
                                     <UnitInput
                                         type="text"
-                                        inputMode="numeric"
+                                        inputMode={
+                                            isString ? "text" : "numeric"
+                                        }
                                         pattern={inputPattern}
                                         containerClassName={inputClassname}
                                         unit={unit ?? ""}
                                         onBlur={(e) => {
                                             e.preventDefault();
-                                            // Use parseFloat for float fields, parseInt for integers
+                                            if (isString) {
+                                                const upper =
+                                                    e.target.value.toUpperCase();
+                                                setInputValues((prev) => ({
+                                                    ...prev,
+                                                    [key]: upper,
+                                                }));
+                                                handleFieldChange(key, upper);
+                                                return;
+                                            }
                                             const parsedValue = float
                                                 ? parseFloat(e.target.value)
                                                 : parseInt(e.target.value, 10);
@@ -288,7 +316,6 @@ function WorkspaceSettingsModalContents() {
                                                     parsedValue,
                                                 );
                                             } else if (e.target.value === "") {
-                                                // If empty, set to minimum value
                                                 handleFieldChange(
                                                     key,
                                                     min ?? 0,
@@ -296,7 +323,6 @@ function WorkspaceSettingsModalContents() {
                                             }
                                         }}
                                         onChange={(e) => {
-                                            // Filter input based on float and canBeNegative flags
                                             const filtered =
                                                 e.target.value.replace(
                                                     filterRegex,
@@ -309,7 +335,7 @@ function WorkspaceSettingsModalContents() {
                                         }}
                                         onKeyDown={blurOnEnter}
                                         value={value}
-                                        required
+                                        required={!isString}
                                     />
                                 </FormField>
                             );
