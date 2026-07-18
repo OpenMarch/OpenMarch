@@ -72,6 +72,8 @@ export interface PreviousDotsImportData {
     sectionAppearances: NewSectionAppearanceArgs[];
     tags: PreviousDotsTagData[];
     marcherTags: PreviousDotsMarcherTagData[];
+    /** Last named page number from the source file; applied as pageNumberOffset. */
+    pageNumberOffset: number;
 }
 
 export type NewShowMarcherDraft = NewMarcherArgs & { tempId?: string };

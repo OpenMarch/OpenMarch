@@ -539,6 +539,7 @@ describeDbTests("completeNewShow", (it) => {
                         tagKey: 20,
                     },
                 ],
+                pageNumberOffset: 18,
             },
         };
 
@@ -619,5 +620,8 @@ describeDbTests("completeNewShow", (it) => {
                 `${t1!.id}:${frontId}`,
             ]),
         );
+
+        const settings = await getWorkspaceSettingsParsed({ db });
+        expect(settings.pageNumberOffset).toBe(18);
     });
 });

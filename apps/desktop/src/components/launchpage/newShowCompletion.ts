@@ -166,6 +166,9 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
         defaultBeatsPerMeasure,
         defaultNewPageCounts: getDefaultNewPageCounts(form),
         activity: form.ensemble?.activity,
+        ...(form.previousDotsImport != null
+            ? { pageNumberOffset: form.previousDotsImport.pageNumberOffset }
+            : {}),
     });
     await updateWorkspaceSettingsParsed({ db, settings: updatedSettings });
 }

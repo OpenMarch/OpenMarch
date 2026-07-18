@@ -329,6 +329,7 @@ export default function NewShowDialog({
                     ),
                     tags: result.tags,
                     marcherTags: result.marcherTags,
+                    pageNumberOffset: result.pageNumberOffset,
                 },
             }));
             setCompletedSteps((prev) => {

@@ -2,8 +2,9 @@ import { getOrm, schema } from "@om-electron/database/db";
 import { dialog } from "electron";
 import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
-import { desc, eq, isNotNull } from "drizzle-orm";
+import { asc, desc, eq, isNotNull } from "drizzle-orm";
 import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWorkspaceSettings";
+import { getLastPageNumber } from "@/global/classes/Page";
 
 export interface PreviousDotsMarcherImport {
     name?: string | null;
@@ -58,6 +59,8 @@ export interface PreviousDotsImportResult {
     designer?: string;
     client?: string;
     activity?: string;
+    /** Last named page number from the source file; used as the new show's pageNumberOffset. */
+    pageNumberOffset: number;
 }
 
 // eslint-disable-next-line max-lines-per-function
@@ -151,8 +154,27 @@ async function readPreviousDotsFile(
             // Older files may lack workspace_settings
         }
 
-        const { designer, client, activity } = parseFromWorkspaceSettings(
-            workspaceSettingsJson,
+        const {
+            designer,
+            client,
+            activity,
+            pageNumberOffset: sourcePageNumberOffset,
+        } = parseFromWorkspaceSettings(workspaceSettingsJson);
+
+        const orderedPages = await orm
+            .select({ is_subset: schema.pages.is_subset })
+            .from(schema.pages)
+            .innerJoin(
+                schema.beats,
+                eq(schema.pages.start_beat, schema.beats.id),
+            )
+            .orderBy(asc(schema.beats.position))
+            .all();
+
+        const isSubsetFlags = orderedPages.map((page) => page.is_subset === 1);
+        const pageNumberOffset = getLastPageNumber(
+            isSubsetFlags,
+            sourcePageNumberOffset ?? 0,
         );
 
         const fieldImage = fieldProperties.image
@@ -177,6 +199,7 @@ async function readPreviousDotsFile(
             designer,
             client,
             activity,
+            pageNumberOffset,
         };
     } finally {
         db.close();

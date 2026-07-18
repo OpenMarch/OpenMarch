@@ -1,6 +1,7 @@
 import Page, {
     fromDatabasePages,
     generatePageNames,
+    getLastPageNumber,
     measureRangeString,
     yankOrPushPagesAfterIndex,
 } from "../Page";
@@ -315,6 +316,45 @@ describe("Page", () => {
         it("should handle zero offset explicitly", () => {
             const result = generatePageNames([false, false, true, false], 0);
             expect(result).toEqual(["0", "1", "1A", "2"]);
+        });
+    });
+
+    describe("getLastPageNumber", () => {
+        it("returns pageNumberOffset when input is empty", () => {
+            expect(getLastPageNumber([])).toBe(0);
+            expect(getLastPageNumber([], 5)).toBe(5);
+        });
+
+        it("returns the last named page number for sequential pages", () => {
+            expect(getLastPageNumber([false, false, false, false])).toBe(3);
+        });
+
+        it("returns the last named page number when subsets are present", () => {
+            expect(
+                getLastPageNumber([
+                    false,
+                    false,
+                    true,
+                    false,
+                    true,
+                    true,
+                    false,
+                ]),
+            ).toBe(3);
+        });
+
+        it("returns the last named page number with a source offset", () => {
+            expect(
+                getLastPageNumber(
+                    [false, false, true, false, true, true, false],
+                    3,
+                ),
+            ).toBe(6);
+        });
+
+        it("returns the number when the last page is a subset", () => {
+            expect(getLastPageNumber([false, false, true, true])).toBe(1);
+            expect(getLastPageNumber([false, false, true, true], 10)).toBe(11);
         });
     });
 

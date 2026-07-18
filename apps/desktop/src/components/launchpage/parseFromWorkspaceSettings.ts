@@ -1,7 +1,12 @@
 /** Extract non-empty trimmed fields from workspace_settings JSON. */
 export function parseFromWorkspaceSettings(
     jsonData: string | null | undefined,
-): { designer?: string; client?: string; activity?: string } {
+): {
+    designer?: string;
+    client?: string;
+    activity?: string;
+    pageNumberOffset?: number;
+} {
     if (!jsonData) return {};
 
     try {
@@ -21,8 +26,14 @@ export function parseFromWorkspaceSettings(
             typeof record.activity === "string"
                 ? record.activity.trim() || undefined
                 : undefined;
+        const pageNumberOffset =
+            typeof record.pageNumberOffset === "number" &&
+            Number.isFinite(record.pageNumberOffset) &&
+            Number.isInteger(record.pageNumberOffset)
+                ? record.pageNumberOffset
+                : undefined;
 
-        return { designer, client, activity };
+        return { designer, client, activity, pageNumberOffset };
     } catch {
         return {};
     }

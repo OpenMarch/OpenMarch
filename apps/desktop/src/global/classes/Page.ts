@@ -365,6 +365,25 @@ export const generatePageNames = (
 };
 
 /**
+ * Returns the numeric part of the last page name for an ordered subset list.
+ *
+ * This is the last named page number (e.g. 3 from "3" or "3B"), not the page count.
+ * Empty input returns `pageNumberOffset`.
+ */
+export const getLastPageNumber = (
+    isSubsetArr: boolean[],
+    pageNumberOffset: number = 0,
+): number => {
+    if (isSubsetArr.length === 0) return pageNumberOffset;
+
+    const pageNames = generatePageNames(isSubsetArr, pageNumberOffset);
+    const lastName = pageNames[pageNames.length - 1];
+    const match = lastName.match(/^(-?\d+)/);
+    if (!match) return pageNumberOffset;
+    return parseInt(match[1], 10);
+};
+
+/**
  * Finds the next page in a sequence of pages based on the current page's nextPageId.
  *
  * @param currentPage The current page from which to find the next page.
