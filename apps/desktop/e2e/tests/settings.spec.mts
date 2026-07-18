@@ -146,3 +146,12 @@ settingsMenus.forEach(({ name, navigate }) => {
         await page.getByRole("tab", { name: "Community" }).click();
     });
 });
+
+test("Launch page - default files folder row is visible", async ({
+    electronApp,
+}) => {
+    const { page } = electronApp;
+    await navigateToLaunchPageSettings(page);
+    await expect(page.getByText("Default files folder")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Edit" })).toBeVisible();
+});
