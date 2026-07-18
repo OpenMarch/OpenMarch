@@ -38,10 +38,12 @@ Directory used to pre-fill new-file location resolves in priority order:
    `databaseGetPath()`)
 3. else the OS Documents folder (existing fallback via `getDefaultDocumentsPath()`)
 
-**Implicit "remember first choice"** happens in the main process at the single choke
-point `createFileAtPath()` (`apps/desktop/electron/main/index.ts:697`). Both the
-wizard (`database:createAtPath`) and the legacy `newFile()` route through it. After a
-successful create:
+**Implicit "remember first choice"** happens in the main process after a successful
+create. NOTE (corrected during implementation): the new-show wizard does **not** route
+through `createFileAtPath()` — it finalizes through `finalizeNewShowDraft()`, and
+`database:createAtPath`/`database:create` have no renderer callers. So the write-once
+persistence is applied in **both** `finalizeNewShowDraft()` (the live wizard path) and
+`createFileAtPath()` (secondary/legacy). In each, after a successful create:
 
 ```
 if (!store.get("defaultFilesDirectory")) {
