@@ -981,6 +981,14 @@ export async function finalizeNewShowDraft(
     await setActiveDb(finalPath, false);
     addRecentFile(finalPath);
 
+    const dirToPersist = computeDefaultDirectoryToPersist(
+        store.get("defaultFilesDirectory") as string | undefined,
+        finalPath,
+    );
+    if (dirToPersist) {
+        store.set("defaultFilesDirectory", dirToPersist);
+    }
+
     return 200;
 }
 
