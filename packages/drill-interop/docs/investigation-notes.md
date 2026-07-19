@@ -90,8 +90,21 @@ choice has to be validated globally, not locally.
 
 ### Placeholder vs nameless sets
 
-- Drop only: nameless + no notes + `cumulativeCount === 0` (page-0 anchor).
-- Keep nameless sets that have notes (westoak / some eastside drafts label by note).
+- The **first** record with `cumulativeCount === 0` is the page-0 anchor: drop
+  it, merging its note into the set that takes its place.
+- Judge it by position + count, never by nameless-ness — later-part exports name
+  the anchor after the carried-in formation (`36A`, `8A`, `8`, `A`).
+- Keep nameless sets everywhere else (westoak / some eastside drafts label by note).
+
+### Careful: the notes are forward-looking
+
+A set's note describes the move **leaving** it (`"Move 16"` on set N = the
+16-count move from N to N+1), and a set's formation sits at the _previous_
+record's cumulative count. So a note's stated count matches the **next** page's
+duration, not its own. Comparing note counts to their own page's duration makes
+the mapping look off by one when it is correct — a trap that cost real time
+here. `15A` being the source's last official set (20 records → 19 sets + the
+materialized trailing hold) is the check that the current mapping is right.
 
 ---
 
@@ -376,11 +389,10 @@ gitignored / not always present).
 - [ ] Optionally add local (gitignored) fixture tests for eastside13 / westoak
       part1 (5 slots) / westoak part3 (text-free) / Swansea.
 - [ ] New workstream: `PTB6` + `PTBT` + `PAGE` + `CST6` for 2019–2021 exports.
-- [ ] **Product decision needed** — leading-placeholder drop rule is too narrow.
-      10 of 50 files import an extra zero-count page ahead of the real opening
-      set, in three shapes needing different answers (drop / merge the note /
-      drop). Full breakdown in `FORMAT.md` §7 item 10. Repro:
-      `npx tsx scripts/diag-pages.mts <file.3dz>` — look for two pages at count 0.
+- [x] Leading page-0 anchor — fixed. Identified by position + `cumulativeCount
+  === 0`, not by looking nameless; its note is merged into the surviving
+      first set. 10 files no longer import a duplicate zero-count page. See
+      `FORMAT.md` §2.4.
 
 ---
 

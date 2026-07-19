@@ -171,10 +171,24 @@ Observed shapes across real exports:
 | eastside draft 13, titled records | 3    | u16      | u32      | none        | 16      |
 | westoak 2025 part 1               | 4    | u16      | u16      | 4 × u16     | 8       |
 
-Nameless _placeholder_ sets (nameless, no note, count 0) are dropped — they map
-to OpenMarch's own page-0 anchor. Nameless sets that carry a note are kept: some
-exports label every set only by its note. This rule is **known to be too narrow**
-— see §7.
+**The leading page-0 anchor.** A set's formation sits at the _previous_ record's
+cumulative count (§4), so a first record whose own count is `0` puts its
+formation and the next set's both at count 0. That record is the source's page-0
+anchor; it maps onto OpenMarch's own first page rather than a page of its own,
+and is dropped — otherwise the import gains a duplicate zero-count page and
+every later page carries the wrong label.
+
+It is identified by **position and count alone** (`i === 0 && cumulativeCount
+=== 0`), never by looking nameless. Exports of a show's later parts name the
+anchor after the formation carried in from the previous part — `36A`, `8A`, `8`,
+`A` — and dropping only nameless records would leave those files duplicated
+while an older, narrower rule (nameless + no note + count 0) silently deleted
+nothing at all. Its note is genuine staging guidance for the opening formation
+(`"Winds should be facing direction of curve to LB1…"`), so it is prepended to
+the surviving set's note rather than discarded.
+
+Nameless sets elsewhere in the list are always kept: some exports label every
+set only by its note.
 
 The trailer carries the source's **subset marker** the byte 5 positions before
 each record's end: `1` when the _next_ set is a labeled subset (a hold like
@@ -590,30 +604,6 @@ currently map it into OpenMarch. Listed roughly by value.
    not per-measure tempo. No explicit tempo or measure map was found in the sample;
    `SYNC` is the lever for audio alignment, and measures would still have to be
    inferred from it. This remains lower-priority than #1.
-
-10. **The leading-placeholder drop rule is too narrow (open question).** A set
-    list normally opens with an anchor record for the source's page 0, which we
-    drop so it maps onto OpenMarch's own first page. The rule only fires on
-    _nameless, note-less, `cumulativeCount === 0`_ records, and **10 of the 50
-    `PTB7` files on hand** slip past it, importing an extra zero-count page
-    ahead of the real opening set. Three distinct shapes, needing different
-    answers:
-    - `eastside2026Draft7_7` / `_13`: the anchor's only text is a bare `"0"`
-      (which the record framing puts in a note slot rather than the title), so
-      page 1 imports with the junk note `"0"` and page 2 is the real opening
-      set. Should be dropped.
-    - `hartsville2025-part1` / `hartsville 2026 - part 1`: the anchor carries a
-      substantial real opening-set note ("Winds should be facing direction of
-      curve to LB1…"). Dropping it would lose the note — it likely wants
-      **merging** into the first page rather than dropping.
-    - `Part 2v2`, `batesburg-leesville-2025-part 4`, `westoak2025-part2`: the
-      anchor is nameless and note-less but has a non-zero `cumulativeCount`, so
-      only the `=== 0` clause keeps it alive. Clearly droppable.
-
-    This is a product decision about page semantics (the existing drop/subset
-    rules were confirmed with product), so the parser has been left as-is.
-    Reproduce with `npx tsx scripts/diag-pages.mts <file.3dz>` and look for two
-    consecutive pages at count 0.
 
 Summary: nothing above blocks a working one-shot import. Curved-path
 reconstruction (#1) is the biggest quality win and needs no schema change;

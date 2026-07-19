@@ -358,9 +358,9 @@ export function readSetList(payload: Uint8Array): ParsedSet[] {
     // tiling is normally a truncated payload being eaten as empty records).
     // When *nothing* anywhere recovered text, that ambiguity is absent: take the
     // tiling that actually consumes the payload.
-    if (!anyText && bestEmpty) return bestEmpty.sets;
+    if (!anyText && bestEmpty) return dropLeadingAnchor(bestEmpty.sets);
 
-    if (best.result.complete) return best.result.sets;
+    if (best.result.complete) return dropLeadingAnchor(best.result.sets);
 
     // Mid-file shape switch: keep the best uniform head, then adapt the tail.
     // Only trust the resume when it finishes the file or recovers more real text
@@ -371,9 +371,39 @@ export function readSetList(payload: Uint8Array): ParsedSet[] {
         rank(adapted) > rank(best.result) &&
         (adapted.complete || adapted.score > best.result.score)
     ) {
-        return adapted.sets;
+        return dropLeadingAnchor(adapted.sets);
     }
-    return best.result.sets;
+    return dropLeadingAnchor(best.result.sets);
+}
+
+/**
+ * Drops the leading page-0 anchor, folding its note into the set that takes its
+ * place.
+ *
+ * A set's formation sits at the *previous* record's cumulative count (§4), so a
+ * leading record whose own count is 0 puts its formation and the next set's
+ * both at count 0 — two pages on the same beat, and every later page carrying
+ * the wrong label. That record is the source's page-0 anchor and maps onto
+ * OpenMarch's own first page rather than a page of its own.
+ *
+ * The anchor is identified by **position and count only**, never by looking
+ * nameless: exports of a show's later parts name it after the formation carried
+ * in from the previous part (`36A`, `8A`, `8`, `A`), and some name it `"0"` or
+ * leave it blank with a stray `"0"` note. Its note is real staging guidance for
+ * the opening formation, so it is prepended to the surviving set rather than
+ * discarded.
+ */
+function dropLeadingAnchor(sets: ParsedSet[]): ParsedSet[] {
+    if (sets.length < 2) return sets;
+    const [anchor, next, ...rest] = sets as [
+        ParsedSet,
+        ParsedSet,
+        ...ParsedSet[],
+    ];
+    if (anchor.cumulativeCount !== 0) return sets;
+
+    const notes = [anchor.notes, next.notes].filter(Boolean).join("\n\n");
+    return [{ ...next, notes: notes || undefined }, ...rest];
 }
 
 /** Every shape the detector tries for a single `PTB7` record. */
@@ -431,8 +461,7 @@ const meaningful = (s: string) =>
     s.length > 0 && PRINTABLE.test(s) && /[A-Za-z0-9]/.test(s);
 
 interface ParsedRecord {
-    /** Undefined when this is the dropped leading placeholder. */
-    set: ParsedSet | undefined;
+    set: ParsedSet;
     cumulativeCount: number;
     end: number;
     score: number;
@@ -504,16 +533,15 @@ function parseOneRecord(
     const notes = [note1, ...laterNotes]
         .filter((n) => n.length > 0)
         .join("\n\n");
-    const set =
-        name === "" && notes === "" && cumulativeCount === 0
-            ? undefined
-            : {
-                  id,
-                  name,
-                  cumulativeCount,
-                  notes: notes || undefined,
-                  subsetFollows,
-              };
+    // Whether the leading record is a page-0 anchor is decided once, over the
+    // whole list, in `dropLeadingAnchor` — it depends on position, not content.
+    const set = {
+        id,
+        name,
+        cumulativeCount,
+        notes: notes || undefined,
+        subsetFollows,
+    };
     return { set, cumulativeCount, end: reader.position, score, layout };
 }
 
@@ -551,7 +579,7 @@ function tileSetRecords(
         lastCum = rec.cumulativeCount;
         score += rec.score;
         parsed++;
-        if (rec.set) sets.push(rec.set);
+        sets.push(rec.set);
     }
 
     return { sets, parsed, complete: body.length - pos <= 2, score };
@@ -601,7 +629,7 @@ function resumeAfterTile(
 
     const tail = searchRecords(body, count, head.length, pos, lastCum);
     const records = tail ? [...head, ...tail] : head;
-    const sets = records.flatMap((r) => (r.set ? [r.set] : []));
+    const sets = records.map((r) => r.set);
     const score = records.reduce((total, r) => total + r.score, 0);
     const end = records.length ? records[records.length - 1]!.end : 0;
     return {
