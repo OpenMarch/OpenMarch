@@ -57,6 +57,7 @@ skipped chunks carry real data we don't yet map — see §7.
 | `PTB7` | ✅    | 1     | Set list (§2.4).                                                                                                                                            |
 | `PTU1` | —     | 1     | Custom performer note-column definitions (`"Note 1".."Note 5"`) + per-performer values.                                                                     |
 | `PG15` | ✅    | 500   | Page frames — one per count (§2.6).                                                                                                                         |
+| `PRP8` | ✅    | 18    | **On-field text boxes** + prop/marker objects, interleaved with the page frames (§2.9).                                                                     |
 | `VsD1` | —     | 1     | Small visual-settings block; contains a color (`0xFFFC18`).✝                                                                                                |
 | `TxD1` | —     | 1     | **Section/id grouping table** — `u16` ids in 1000-banded ranges (1000s … 8000s = sections). See §2.7.                                                       |
 | `FAB1` | —     | 1     | Fabric/backdrop layer (empty in the sample).                                                                                                                |
@@ -230,6 +231,34 @@ is a locked zero-duration anchor, so count 1 is the first beat with real timelin
 presence; the importer applies `audioOffsetSeconds = -timestamps[1]` so timeline
 t=0 aligns with count 1 and every count ≥1 (i.e. every set arrival) lands exactly
 on its SYNC timestamp.
+
+### 2.9 `PRP8` — on-field text boxes
+
+Designers place blocks of text on the field beside the formation they describe
+(`"HOLD"`, `"All face FRONT"`, `"Subset for tubas."`, a title card on the
+opening page). These are real page notes and often the _only_ notes a file has —
+Jack Britt writes nothing into `PTB7` and puts everything here.
+
+Payload: `u16 count`, then that many objects, each led by a type byte:
+
+```
+u8 type
+u64 id
+f32 x1, y1, x2, y2      // bounding box
+type 2 (text):  4 flag bytes, u16 textLen, textLen bytes (UTF-8)
+type 1 (prop):  14 bytes  // fixed-width prop/marker record, skipped
+```
+
+**Binding text to a page.** A `PRP8` chunk carries no count of its own. The
+chunks are interleaved with the page frames and each one appears in the stream
+directly _after_ the frame it annotates, so the reader tracks how many `PG15`
+frames it has consumed: the text belongs to the formation at that frame. Those
+counts land exactly on set `cumulativeCount` values, and the result is
+self-checking — in Jack Britt every `"HOLD"` lands on a subset page, and the box
+reading `"Subset for tubas."` lands on `12A`.
+
+Several boxes can annotate one formation; they are folded into that page's notes
+after the set's own move note (§4).
 
 ### 2.5 `GRD1` — field / grid definition
 
@@ -552,8 +581,8 @@ currently map it into OpenMarch. Listed roughly by value.
    shared with the importer) rather than hardcoded source-unit constants, so they
    hold for any field size, unit, or grid. Reference ticks can share coordinates
    with real markers on a single frame; they are dropped by stable id + static
-   position even when overlapping. Explicit props may also appear in a `PRP8`
-   chunk after the coordinate block (not parsed yet).
+   position even when overlapping. `PRP8` also carries explicit prop/marker
+   objects alongside the text boxes we now read (§2.9); those are still skipped.
    Front ensemble / pit performers that the author listed in `CST7` import with
    their drill labels; performers only present in page frames (`s`, not cast) import
    as **Other** with generated labels until a label source is found.

@@ -390,7 +390,7 @@ gitignored / not always present).
       part1 (5 slots) / westoak part3 (text-free) / Swansea.
 - [ ] New workstream: `PTB6` + `PTBT` + `PAGE` + `CST6` for 2019–2021 exports.
 - [x] Leading page-0 anchor — fixed. Identified by position + `cumulativeCount
-  === 0`, not by looking nameless; its note is merged into the surviving
+=== 0`, not by looking nameless; its note is merged into the surviving
       first set. 10 files no longer import a duplicate zero-count page. See
       `FORMAT.md` §2.4.
 

@@ -11,6 +11,7 @@ import type {
 import { parseDrillLabel } from "./label";
 import { discoverMarkers, type CoordinateRecord } from "./props";
 import { readAudioSync } from "./sync";
+import { readFieldText, type DrillFieldText } from "./text";
 
 /** Number of characters describing a single performer in a coordinate block. */
 const RECORD_LENGTH = 39;
@@ -87,6 +88,7 @@ export async function parseDrillDocument(
     let grid: DrillGrid = EMPTY_GRID;
     let audioSync: DrillAudioSync | undefined;
     const rawPages: RawPageFrame[] = [];
+    const fieldText: DrillFieldText[] = [];
 
     while (reader.remaining >= 4) {
         const tag = reader.ascii(4);
@@ -124,6 +126,11 @@ export async function parseDrillDocument(
             case "SYNC":
                 audioSync = readAudioSync(payload) ?? audioSync;
                 break;
+            case "PRP8":
+                // Interleaved with the page frames: the chunk follows the frame
+                // it annotates, so the last frame read is that formation.
+                fieldText.push(...readFieldText(payload, rawPages.length - 1));
+                break;
             default:
                 // Unhandled chunk (colors, playlist, props, editor state, etc.).
                 // Page frames (PG15) are often interleaved with PRP8/SEL2/VIS2, so
@@ -146,7 +153,7 @@ export async function parseDrillDocument(
         ...props.map((p) => p.id),
         ...supplemental.map((p) => p.id),
     ]);
-    const sets = buildSets(parsedSets, pages, markerIds);
+    const sets = buildSets(parsedSets, pages, markerIds, fieldText);
     const productionNotes = extractProductionNotes(sets);
     return {
         title,
@@ -849,8 +856,22 @@ function buildSets(
     parsedSets: ParsedSet[],
     pages: PageFrame[],
     markerIds: Set<string>,
+    fieldText: DrillFieldText[] = [],
 ): DrillSet[] {
     if (parsedSets.length === 0 || pages.length === 0) return [];
+
+    // On-field text is placed beside a formation, so it belongs to the page that
+    // arrives on that count. Several boxes can annotate one formation.
+    const textByCount = new Map<number, string[]>();
+    for (const { count, text } of fieldText) {
+        const existing = textByCount.get(count);
+        if (existing) existing.push(text);
+        else textByCount.set(count, [text]);
+    }
+    const notesFor = (startCount: number, own: string | undefined) =>
+        [own, ...(textByCount.get(startCount) ?? [])]
+            .filter((n) => n && n.length > 0)
+            .join("\n\n") || undefined;
 
     const boundaries = deriveSetStartCounts(parsedSets, pages.length);
     const sets: DrillSet[] = [];
@@ -865,7 +886,7 @@ function buildSets(
             // First page is permanently non-subset in OpenMarch (SQLite trigger);
             // otherwise the source flags a subset on the *previous* set.
             isSubset: i > 0 && parsedSets[i - 1]!.subsetFollows,
-            notes: parsed.notes,
+            notes: notesFor(startCount, parsed.notes),
             coordinates: pickCoordinates(pages, startCount, markerIds),
         });
     }
@@ -882,7 +903,7 @@ function buildSets(
             startCount: trailingStart,
             counts: trailingStart - lastStart,
             isSubset: lastParsed.subsetFollows,
-            notes: undefined,
+            notes: notesFor(trailingStart, undefined),
             coordinates: pickCoordinates(pages, trailingStart, markerIds),
         });
     }
