@@ -32,12 +32,45 @@ describeWithFixture("parseDrillPackage (real sample)", () => {
 
     it("reads the named sets with cumulative counts", async () => {
         const show = await load();
-        expect(show.sets).toHaveLength(24);
+        // 24 named sets plus the source's trailing closing hold (`234-END` is
+        // flagged as followed by a subset, so its own cumulative count marks one
+        // more page that has no record of its own).
+        expect(show.sets).toHaveLength(25);
         expect(show.sets[0]!.name).toBe("179-182");
         expect(show.sets[0]!.startCount).toBe(0);
+        expect(show.sets[0]!.isSubset).toBe(false);
         expect(show.sets[1]!.name).toBe("183-185");
         expect(show.sets[1]!.startCount).toBe(16);
-        expect(show.sets.at(-1)!.name).toBe("234-END");
+        // Last named set, then the materialized trailing hold.
+        expect(show.sets.at(-2)!.name).toBe("234-END");
+        expect(show.sets.at(-1)!.name).toBe("");
+        expect(show.sets.at(-1)!.isSubset).toBe(true);
+        expect(show.sets.at(-1)!.startCount).toBe(260);
+    });
+
+    it("marks subsets from the source's own flag, not a geometry guess", async () => {
+        const show = await load();
+        // Subsets come from the PTB7 trailer flag on the preceding set, so a
+        // labeled hold is caught even if the dots move within it.
+        const subsetNames = show.sets
+            .filter((s) => s.isSubset)
+            .map((s) => s.name);
+        // Named subsets plus the trailing closing hold (which has no source name).
+        expect(subsetNames).toEqual([
+            "186-188",
+            "203-204",
+            "219-220",
+            "228-230",
+            "",
+        ]);
+        // The first set is never a subset (OpenMarch anchors page 0), and every
+        // subset is preceded by a main set.
+        expect(show.sets[0]!.isSubset).toBe(false);
+        for (let i = 0; i < show.sets.length; i++) {
+            if (show.sets[i]!.isSubset) {
+                expect(show.sets[i - 1]!.isSubset).toBe(false);
+            }
+        }
     });
 
     it("decodes coordinates for every cast member and prop at each set", async () => {
@@ -92,8 +125,10 @@ describeWithFixture("parseDrillPackage (real sample)", () => {
         // The credit block moves to show-level production notes...
         expect(show.productionNotes).toContain("Bright Designs");
         expect(show.productionNotes).toContain("Brighton & Trevor");
-        // ...and the final set keeps only its own move note.
-        const lastNote = show.sets.at(-1)!.notes ?? "";
+        // ...and the last note-bearing set (234-END) keeps only its move note.
+        // The trailing closing-hold page after it carries no note of its own.
+        expect(show.sets.at(-1)!.notes).toBeUndefined();
+        const lastNote = show.sets.at(-2)!.notes ?? "";
         expect(lastNote).toContain("Hold to END");
         expect(lastNote).not.toContain("Bright Designs");
     });

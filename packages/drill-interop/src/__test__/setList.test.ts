@@ -34,6 +34,13 @@ describe("readSetList", () => {
         expect(sets.every((s) => s.name.length > 0)).toBe(true);
     });
 
+    it("reads the trailer subset marker per set", () => {
+        const sets = readSetList(JACK_BRITT_PTB7_HEAD);
+        // "1-8" is flagged, so the next set ("9-16") is a subset; "9-16" is not.
+        expect(sets[0]).toMatchObject({ name: "1-8", subsetFollows: true });
+        expect(sets[1]).toMatchObject({ name: "9-16", subsetFollows: false });
+    });
+
     it("returns empty for a truncated payload", () => {
         expect(readSetList(new Uint8Array([0x00, 0x01]))).toEqual([]);
     });

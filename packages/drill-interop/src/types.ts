@@ -74,8 +74,17 @@ export interface DrillSet {
      * is reached. The first set is `0`.
      */
     startCount: number;
-    /** Number of counts spent moving to this set from the previous one. */
+    /**
+     * Counts from the previous set's arrival to this set's arrival (0 for the
+     * first set). In OpenMarch the first page is a 0-count anchor; these counts
+     * land on the *next* page (transition to this set).
+     */
     counts: number;
+    /**
+     * When true, this set holds the same formation as the previous set (a
+     * labeled hold). Maps to OpenMarch `pages.is_subset` — names like `1A`.
+     */
+    isSubset: boolean;
     /** Optional director note attached to the set. */
     notes?: string;
     /** Performer id -> position at this set, in source field units. */

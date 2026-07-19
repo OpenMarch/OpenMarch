@@ -98,7 +98,7 @@ to the 18-digit id embedded in each coordinate record.
 Payload:
 
 ```
-u16 version           // observed: 1
+u16 version           // NOT a reliable layout key (see below)
 u16 count             // number of set records that follow
 ```
 
@@ -107,17 +107,97 @@ then `count` records of:
 ```
 u64 id
 u16 cumulativeCount   // running count total reached at this set
-3 bytes               // reserved
-u16 titleLen          // may be 0 for a nameless placeholder set
+skip bytes            // reserved (see "layout detection" below)
+titleLen              // 1- or 2-byte prefix; may be 0 (set named only by its note)
 titleLen bytes        // set name, e.g. "179-182", "234-END"
-i32 noteLen
-noteLen bytes         // optional director note
-16 bytes              // reserved / trailer
+note1Len              // 1-, 2-, or 4-byte prefix
+note1Len bytes        // move note (UTF-8)
+[noteLen]             // further note slots; absent in some exports, else 1..4 of
+[noteLen bytes]       //   them, all sharing one prefix width (UTF-8)
+trailer bytes         // reserved
 ```
 
-Nameless placeholder sets (`titleLen === 0`) are skipped. `cumulativeCount` is
-the key to timing: it is the count index (from the start of the show) at which
-the set is reached. See §4 for how sets map to page frames.
+`note1` is the set's move note. The later slots are secondary staging
+annotations and are usually empty — but there are **up to five notes per set**:
+`PTU1` names them `Note 1`…`Note 5` (§2.7), and real exports do fill three
+(`westoak2025-part1` set 0 carries a featured-performer note, a staging note,
+and a color-group legend). The first slot's length prefix is commonly `u32`
+while the later ones are `u16`, so the two widths are detected separately.
+
+**Layout detection.** The record _shape_ drifts between Pyware exporter builds —
+and occasionally between records _within one file_: the pre-title `skip`, the
+width of the title/note length prefixes, how many note slots are present, and
+the trailer size all vary, and the `version` byte does **not** identify which.
+Rather than key off `version` or a fixed skip, the parser **detects the layout
+by tiling**: it tries every shape in a small grid and keeps the one that reads
+exactly `count` records while consuming the whole payload. When more than one
+shape tiles (a wrong one can, because `skip` and `trailer` bytes are both
+discarded and trade off against each other), ties are broken by a score that
+rewards genuine set names and notes — so the shape that recovers the most real
+text wins. The final record may be truncated (a note that runs to the payload
+end with no trailer); it is read defensively.
+
+Two corollaries are easy to get wrong:
+
+- Among tilings that _don't_ finish the file, prefer the one that recovered the
+  most text, not the one that read the most records — a misaligned small-record
+  shape can always tile more records out of the same bytes.
+- A "complete" tiling that recovered **no** text is normally a truncated payload
+  being eaten as many empty records, so it loses to a partial tiling with real
+  titles. The exception: some shows genuinely have no titles or notes at all, so
+  _every_ shape scores zero. When nothing anywhere recovered text, that
+  ambiguity is gone and the complete tiling is taken.
+
+**Per-record shape variation.** When no single shape tiles the whole payload,
+the parser replays the best uniform shape for as long as it works and then
+_searches_ for a per-record shape assignment over the remainder, accepting only
+an assignment that consumes the entire payload in exactly `count` records and
+backtracking otherwise. This is required, not defensive: in
+`eastside2026draft7_13` exactly one record (the first with a real measure-range
+title, `"32-39"`) is framed differently from its neighbors — two reserved bytes
+move from the record's tail to its head, leaving the record length unchanged —
+and the records after it revert to the original shape. Choosing greedily per
+record does not work, because a run of empty records admits many shapes whose
+end offsets differ by only a byte or two and all score zero; the wrong choice
+stays locally plausible (its successor's `cumulativeCount` still looks sane) and
+only fails several records later.
+
+Observed shapes across real exports:
+
+| example                           | skip | titleLen | note1Len | later notes | trailer |
+| --------------------------------- | ---- | -------- | -------- | ----------- | ------- |
+| westside/jackbritt/part1/westoak  | 3    | u16      | u32      | 1 × u16     | 14      |
+| eastside (draft 7 / 13)           | 1    | u16      | u32      | 1 × u16     | 16      |
+| eastside draft 13, titled records | 3    | u16      | u32      | none        | 16      |
+| westoak 2025 part 1               | 4    | u16      | u16      | 4 × u16     | 8       |
+
+Nameless _placeholder_ sets (nameless, no note, count 0) are dropped — they map
+to OpenMarch's own page-0 anchor. Nameless sets that carry a note are kept: some
+exports label every set only by its note. This rule is **known to be too narrow**
+— see §7.
+
+The trailer carries the source's **subset marker** the byte 5 positions before
+each record's end: `1` when the _next_ set is a labeled subset (a hold like
+`12A`), and `0` otherwise. Reading it from the record _end_ (rather than a fixed
+trailer offset) makes it invariant to how the reserved bytes split between `skip`
+and `trailer`. OpenMarch reads it directly — a set is a subset when the previous
+set's marker is `1` — which catches labeled holds even when the dots move within
+them (a geometry-only "same formation" test misses those).
+
+> An earlier revision of this document described `eastside2026draft7_13` as
+> using an optional ~5-byte field containing the constant `0x0130` before the
+> title on some records. That was a misread of the hex: `01 30` is simply a
+> `u16` length of `1` followed by the title `"0"`. The real variation is the
+> per-record reframing described above, and these files now parse fully.
+
+Every record — including the last — carries a `cumulativeCount`. For a non-final
+record that count is the _next_ set's start; the **final** record's count marks
+one more formation the source reaches after it. That formation is a real page in
+the source (a closing page or hold, e.g. `15A`) even though it has no record of
+its own, so OpenMarch materializes it at that count (see §4). Its type follows
+the same rule as any other page: it is a subset when the final record's marker
+is `1` (a closing hold like `15A`), and a plain page otherwise (e.g. a final
+`16`). This is why the final marker matters despite having no following record.
 
 ### 2.8 `SYNC` — audio sync
 
@@ -131,8 +211,11 @@ count × f64 (big-endian)    // seconds into the audio when count i occurs
 ```
 
 `timestamps[0]` is the lead-in (audio may start before count 0). Beat durations
-are the deltas between consecutive timestamps; OpenMarch applies
-`audioOffsetSeconds = -timestamps[0]` so timeline t=0 matches count 0.
+are the deltas between consecutive timestamps. OpenMarch's `FIRST_BEAT` (count 0)
+is a locked zero-duration anchor, so count 1 is the first beat with real timeline
+presence; the importer applies `audioOffsetSeconds = -timestamps[1]` so timeline
+t=0 aligns with count 1 and every count ≥1 (i.e. every set arrival) lands exactly
+on its SYNC timestamp.
 
 ### 2.5 `GRD1` — field / grid definition
 
@@ -306,11 +389,38 @@ are treated as **props** (see `src/props.ts`); the rest are dropped.
 - Set start counts are derived so the first set is at count `0`, and each later
   set starts at the **previous** set's cumulative count. The formation for a set
   is the `PG15` frame at that start count.
-- The final named set holds its formation through the remaining frames to the end
-  of the show (the sample's named sets run to count ~260 while frames run to
-  500 — the tail is the closing hold).
+- The final named set's _own_ cumulative count marks one more formation the
+  source reaches after it — a closing page/hold that has no record of its own
+  (e.g. `15A`). It is materialized as an extra page at that count when it lands
+  before the last frame, so the imported page list matches the source's. Its
+  subset flag comes from the final record's trailer marker (§2.7). That page holds
+  its formation through the remaining frames to the end of the show (the sample's
+  named sets run to count ~260 while frames run to 500 — the tail is that hold).
 
 This is implemented in `deriveSetStartCounts` / `buildSets` in `document.ts`.
+
+### OpenMarch import mapping
+
+OpenMarch stores each page's formation at **end of page**
+(`timestamp + duration`). Page `0` is a permanent zero-count anchor on beat `0`,
+and beat `0` (`FIRST_BEAT`) is locked at duration `0`.
+
+- Beat grid: one beat per count after `FIRST_BEAT`. `createdBeats[i]` is count
+  `i+1` and carries the count `(i+1)→(i+2)` interval (`durations[i+1]`). The
+  dropped `durations[0]` (count `0→1`) is compensated by `audioOffsetSeconds`
+  (§2.8), so the grid stays locked to SYNC.
+- Set `0` → page `0` (beat `0`, `0` counts) — the opening formation at t=0.
+- Set `i > 0` → page spanning [set `i-1` arrival, set `i` arrival]; its keyframe
+  at page end = set `i`'s arrival = SYNC time. The first created page starts at
+  count `1` (page `0` already owns count `0`).
+- The final page has no successor to bound it, so `last_page_counts` is set
+  explicitly to run to the end of the show: the last count the audio covers
+  (`SYNC.length − 1`) when SYNC is present, else `totalCounts`, clamped to at
+  least the last set's arrival and at most `totalCounts`. This fully includes a
+  closing set/hold (e.g. an ending subset that marks the end of a hold). When the
+  last set is a subset (flagged on the previous set), extending it holds the
+  formation with no stretched movement; it holds exactly until the music ends.
+- With `pageNumberOffset = 1`, names read `1` (anchor), `1A`, `2`, ….
 
 ## 5. Coordinate system & units
 
@@ -480,6 +590,30 @@ currently map it into OpenMarch. Listed roughly by value.
    not per-measure tempo. No explicit tempo or measure map was found in the sample;
    `SYNC` is the lever for audio alignment, and measures would still have to be
    inferred from it. This remains lower-priority than #1.
+
+10. **The leading-placeholder drop rule is too narrow (open question).** A set
+    list normally opens with an anchor record for the source's page 0, which we
+    drop so it maps onto OpenMarch's own first page. The rule only fires on
+    _nameless, note-less, `cumulativeCount === 0`_ records, and **10 of the 50
+    `PTB7` files on hand** slip past it, importing an extra zero-count page
+    ahead of the real opening set. Three distinct shapes, needing different
+    answers:
+    - `eastside2026Draft7_7` / `_13`: the anchor's only text is a bare `"0"`
+      (which the record framing puts in a note slot rather than the title), so
+      page 1 imports with the junk note `"0"` and page 2 is the real opening
+      set. Should be dropped.
+    - `hartsville2025-part1` / `hartsville 2026 - part 1`: the anchor carries a
+      substantial real opening-set note ("Winds should be facing direction of
+      curve to LB1…"). Dropping it would lose the note — it likely wants
+      **merging** into the first page rather than dropping.
+    - `Part 2v2`, `batesburg-leesville-2025-part 4`, `westoak2025-part2`: the
+      anchor is nameless and note-less but has a non-zero `cumulativeCount`, so
+      only the `=== 0` clause keeps it alive. Clearly droppable.
+
+    This is a product decision about page semantics (the existing drop/subset
+    rules were confirmed with product), so the parser has been left as-is.
+    Reproduce with `npx tsx scripts/diag-pages.mts <file.3dz>` and look for two
+    consecutive pages at count 0.
 
 Summary: nothing above blocks a working one-shot import. Curved-path
 reconstruction (#1) is the biggest quality win and needs no schema change;

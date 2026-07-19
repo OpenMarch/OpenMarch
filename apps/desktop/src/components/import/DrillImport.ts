@@ -1,6 +1,5 @@
 import { useMutation } from "@tanstack/react-query";
 import {
-    audioOffsetSecondsFromSync,
     beatDurationsFromSyncTimestamps,
     parseDrillPackage,
     type DrillShow,
@@ -50,7 +49,29 @@ export type DrillImportResult = {
     sets: number;
 };
 
-/** Fallback when the package has no SYNC timestamps. */
+/** Ordered stages of an import, surfaced to the UI as a plain-English checklist. */
+export const DRILL_IMPORT_STEPS = [
+    "read",
+    "field",
+    "sets",
+    "marchers",
+    "finish",
+] as const;
+export type DrillImportStep = (typeof DRILL_IMPORT_STEPS)[number];
+
+/** Plain-English label shown for each import step. */
+export const DRILL_IMPORT_STEP_LABELS: Record<DrillImportStep, string> = {
+    read: "Reading the drill file",
+    field: "Setting up the field",
+    sets: "Building the sets and timing",
+    marchers: "Placing your marchers",
+    finish: "Adding music and finishing up",
+};
+
+/** Reports the step an import is starting. Pure UI callback — never touches the DB. */
+export type DrillImportProgress = (step: DrillImportStep) => void;
+
+/** Fallback per-count duration when the package has no SYNC timestamps. */
 const DEFAULT_BEAT_DURATION_SECONDS = 0.5;
 
 /**
@@ -60,12 +81,14 @@ const DEFAULT_BEAT_DURATION_SECONDS = 0.5;
 // eslint-disable-next-line max-lines-per-function
 export const _importDrillShow = async (
     show: DrillShow,
+    onProgress?: DrillImportProgress,
 ): Promise<Omit<DrillImportResult, "message" | "success">> => {
     return await transactionWithHistory(
         db,
         "importDrillShow",
         // eslint-disable-next-line max-lines-per-function
         async (tx) => {
+            onProgress?.("field");
             // Reconstruct (or match) the field the drill was designed on and set
             // it as the show's field, so coordinates land on the same geometry
             // instead of being stretched onto whatever field was loaded before.
@@ -109,26 +132,22 @@ export const _importDrillShow = async (
                 ),
             });
 
-            // One beat per count. Prefer SYNC-derived durations so tempo matches
-            // the source audio; fall back to a flat 120bpm grid when missing.
+            onProgress?.("sets");
+            // Beat durations come from the source SYNC track so tempo matches the
+            // audio. FIRST_BEAT (count 0) is locked at duration 0, so it cannot
+            // hold the count 0→1 interval; we create one beat per remaining count.
+            // createdBeats[i] is count i+1 and carries the count (i+1)→(i+2)
+            // interval, i.e. durations[i+1]. Dropping durations[0] (count 0→1)
+            // shifts the whole grid earlier by that one interval; the audio offset
+            // below trims to count 1 to compensate, so every count ≥1 lands exactly.
             const durations = beatDurationsFromSyncTimestamps({
                 timestamps: show.audioSync?.timestamps,
                 totalCounts: show.totalCounts,
                 fallbackDuration: DEFAULT_BEAT_DURATION_SECONDS,
             });
-            if (durations.length > 0) {
-                await tx
-                    .update(schema.beats)
-                    .set({ duration: durations[0]! })
-                    .where(eq(schema.beats.id, FIRST_BEAT_ID))
-                    .run();
-            }
             const newBeats: NewBeatArgs[] = durations
                 .slice(1)
-                .map((duration) => ({
-                    duration,
-                    include_in_measure: true,
-                }));
+                .map((duration) => ({ duration, include_in_measure: true }));
             const createdBeats =
                 newBeats.length > 0
                     ? await createBeatsInTransaction({
@@ -137,15 +156,23 @@ export const _importDrillShow = async (
                           startingPosition: 0,
                       })
                     : [];
+            // count c → the beat at that count. count 0 is FIRST_BEAT; count c≥1
+            // is createdBeats[c-1] (beat position c).
             const beatIdAtCount = (count: number): number =>
                 count <= 0 ? FIRST_BEAT_ID : createdBeats[count - 1]!.id;
 
-            // Create pages before marchers so createMarchersInTransaction seeds a
-            // marcher_page row for every page in one pass.
+            // OpenMarch shows a page's formation at the END of the page
+            // (timestamp + duration). So a set's page must END on that set's
+            // arrival beat: page for set i spans [set i-1 arrival, set i arrival].
+            // set[0] is the opening formation on FIRST_PAGE (t=0). The first
+            // created page begins at count 1 (FIRST_PAGE already owns count 0).
             const [, ...laterSets] = show.sets;
-            const newPages: NewPageArgs[] = laterSets.map((set) => ({
-                start_beat: beatIdAtCount(set.startCount),
-                is_subset: false,
+            const pageStartCounts = laterSets.map((_set, j) =>
+                j === 0 ? 1 : show.sets[j]!.startCount,
+            );
+            const newPages: NewPageArgs[] = laterSets.map((set, j) => ({
+                start_beat: beatIdAtCount(pageStartCounts[j]!),
+                is_subset: set.isSubset,
                 notes: set.notes ?? null,
             }));
             const createdPages =
@@ -155,8 +182,6 @@ export const _importDrillShow = async (
             const pageIdForSet = (index: number): number =>
                 index === 0 ? FIRST_PAGE_ID : createdPages[index - 1]!.id;
 
-            // The opening set reuses the permanent first page, which is created
-            // without notes — carry the set's note onto it so it isn't dropped.
             const firstSetNotes = show.sets[0]?.notes;
             if (firstSetNotes) {
                 await tx
@@ -166,6 +191,7 @@ export const _importDrillShow = async (
                     .run();
             }
 
+            onProgress?.("marchers");
             const allPerformers = [
                 ...show.performers,
                 ...show.props,
@@ -185,12 +211,13 @@ export const _importDrillShow = async (
                 marcherIdByPerformer.set(p.id, createdMarchers[i]!.id),
             );
 
-            // Write real coordinates for every performer at every set.
             const modifiedMarcherPages: ModifiedMarcherPageArgs[] = [];
-            show.sets.forEach((set, index) => {
-                const page_id = pageIdForSet(index);
+            const pushCoords = (
+                page_id: number,
+                coordinates: DrillShow["sets"][number]["coordinates"],
+            ) => {
                 for (const [performerId, point] of Object.entries(
-                    set.coordinates,
+                    coordinates,
                 )) {
                     const marcher_id = marcherIdByPerformer.get(performerId);
                     if (marcher_id === undefined) continue;
@@ -201,20 +228,34 @@ export const _importDrillShow = async (
                     );
                     modifiedMarcherPages.push({ marcher_id, page_id, x, y });
                 }
-            });
+            };
+            show.sets.forEach((set, index) =>
+                pushCoords(pageIdForSet(index), set.coordinates),
+            );
             await updateMarcherPagesInTransaction({ tx, modifiedMarcherPages });
 
-            // Hold the final formation for the remainder of the show, and carry
-            // the show-level production note (a closing credit) if there is one.
+            // The final page has no page after it to bound its end, so its length
+            // is set explicitly. It runs to the end of the show so the closing
+            // set/hold (e.g. an ending subset marking the end of a hold) is fully
+            // included. "End of show" is the last count the audio covers when SYNC
+            // is present (so we hold exactly to the music, never into silence),
+            // clamped to at least the last set's arrival and at most the frame
+            // count. When the last set is a hold (subset = same dots), extending it
+            // holds the formation with no stretched movement.
             const lastSet = show.sets.at(-1);
             if (lastSet) {
+                const lastPageStart = pageStartCounts.at(-1) ?? 0;
+                const syncCounts = show.audioSync?.timestamps.length ?? 0;
+                const audioEndCount =
+                    syncCounts > 1 ? syncCounts - 1 : show.totalCounts;
+                const endCount = Math.min(
+                    show.totalCounts,
+                    Math.max(lastSet.startCount, audioEndCount),
+                );
                 await updateUtilityInTransaction({
                     tx,
                     args: {
-                        last_page_counts: Math.max(
-                            1,
-                            show.totalCounts - lastSet.startCount,
-                        ),
+                        last_page_counts: Math.max(1, endCount - lastPageStart),
                         notes: show.productionNotes ?? null,
                     },
                 });
@@ -248,11 +289,14 @@ async function importDrillAudio(show: DrillShow): Promise<void> {
  */
 export const importDrillPackage = async (
     file: File,
+    onProgress?: DrillImportProgress,
 ): Promise<DrillImportResult> => {
+    onProgress?.("read");
     const show = await parseDrillPackage(await file.arrayBuffer());
-    const { marchers, sets } = await _importDrillShow(show);
+    const { marchers, sets } = await _importDrillShow(show, onProgress);
+    onProgress?.("finish");
     await importDrillAudio(show);
-    await applyDrillAudioOffset(show);
+    await applyDrillWorkspaceSettings(show);
     return {
         success: true,
         message: show.title
@@ -264,20 +308,26 @@ export const importDrillPackage = async (
 };
 
 /**
- * Trims the imported audio's lead-in via workspace `audioOffsetSeconds` so
- * count 0 lines up with the SYNC timestamp (negative = trim start).
- *
- * TODO(feature/drill-import-audio-lead-in): Keep the pre-count audio instead of
- * cutting it — insert intro beats / a hold before page 1 so the lead-in plays
- * while the first formation is still deferred.
+ * Aligns workspace settings with the imported drill:
+ * - `pageNumberOffset = 1` so page names match source (`1`, `1A`, `2` — not `0A`)
+ * - `audioOffsetSeconds` trims the audio lead-in so the timeline lines up with
+ *   the SYNC track. We trim to count 1 (`timestamps[1]`), not count 0, because
+ *   OpenMarch's FIRST_BEAT (count 0) is a zero-duration anchor: count 1 is the
+ *   first beat with real timeline presence, so aligning it to its SYNC time
+ *   makes every set arrival land exactly on the music.
  */
-async function applyDrillAudioOffset(show: DrillShow): Promise<void> {
-    const offset = audioOffsetSecondsFromSync(show.audioSync?.timestamps);
-    if (offset === 0) return;
+async function applyDrillWorkspaceSettings(show: DrillShow): Promise<void> {
     const settings = await getWorkspaceSettingsParsed({ db });
+    const timestamps = show.audioSync?.timestamps;
+    const audioOffsetSeconds =
+        timestamps && timestamps.length > 1 ? -timestamps[1]! : 0;
     await updateWorkspaceSettingsParsed({
         db,
-        settings: { ...settings, audioOffsetSeconds: offset },
+        settings: {
+            ...settings,
+            pageNumberOffset: 1,
+            audioOffsetSeconds,
+        },
     });
 }
 
@@ -286,7 +336,13 @@ export const useImportDrillPackage = () => {
     const { fetchTimingObjects } = useTimingObjects();
     const { setPageToSelect } = useSelectedPage() ?? {};
     return useMutation({
-        mutationFn: (file: File) => importDrillPackage(file),
+        mutationFn: ({
+            file,
+            onProgress,
+        }: {
+            file: File;
+            onProgress?: DrillImportProgress;
+        }) => importDrillPackage(file, onProgress),
         onSuccess: async () => {
             await Promise.all([
                 queryClient.invalidateQueries({ queryKey: marcherKeys.all() }),

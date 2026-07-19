@@ -60,6 +60,12 @@ interface ParsedSet {
     /** Cumulative count at which the set is reached. */
     cumulativeCount: number;
     notes?: string;
+    /**
+     * The source's own subset marker: when true, the *next* set is a labeled
+     * subset (a hold/continuation like `12A`). Read from the record trailer;
+     * see {@link readSetList} and {@link buildSets}.
+     */
+    subsetFollows: boolean;
 }
 
 /**
@@ -164,7 +170,9 @@ export async function parseDrillDocument(
  * has no note or no blank-line split.
  */
 function extractProductionNotes(sets: DrillSet[]): string | undefined {
-    const last = sets.at(-1);
+    // The closing credit lives on the last set that actually has a note; a
+    // trailing closing-hold page carries none, so skip past it.
+    const last = [...sets].reverse().find((s) => s.notes);
     if (!last?.notes) return undefined;
 
     const blankLine = last.notes.match(/\n[ \t]*\n/);
@@ -261,42 +269,441 @@ function readCast(payload: Uint8Array): DrillPerformer[] {
 }
 
 /**
- * `PTB7`: `u16 version, u16 count`, then `count` records of
- * `u64 id, u16 cumulativeCount, 3 reserved, u16 titleLen, title,
- *  i32 noteLen, note, 16 reserved`.
+ * A candidate byte layout for a `PTB7` set record. The record shape is
+ * consistent within a file but drifts between exporter builds, so we detect it
+ * per file instead of hard-coding one (see {@link readSetList}).
+ */
+interface SetLayout {
+    /** Reserved bytes between the cumulative count and the title length. */
+    skip: number;
+    /** Width of the title length prefix. */
+    title: 1 | 2;
+    /** Width of the move-note length prefix. */
+    note1: 1 | 2 | 4;
+    /** Width of the secondary-note length prefix; 0 when the field is absent. */
+    note2: 0 | 1 | 2 | 4;
+    /**
+     * Further note slots beyond the second, each prefixed like `note2`. Exports
+     * carry up to five (`PTU1` names them `Note 1`…`Note 5`); most sets fill only
+     * the first one or two, so the extra slots are usually empty.
+     */
+    extraNotes: number;
+    /** Reserved bytes after the notes. */
+    trailer: number;
+}
+
+/**
+ * The subset marker sits a fixed distance from a record's end (5 bytes),
+ * regardless of how the reserved bytes are split between `skip` and `trailer`.
+ * Reading it from the end makes detection robust to that ambiguity.
+ */
+const SUBSET_MARKER_FROM_END = 5;
+
+const PRINTABLE = /^[\x20-\x7e]*$/;
+/** Control bytes that never appear in human-authored notes (tab/LF/CR allowed). */
+// eslint-disable-next-line no-control-regex
+const CONTROL = /[\x00-\x08\x0e-\x1f]/;
+
+/**
+ * `PTB7`: `u16 version, u16 count`, then `count` set records:
+ * `u64 id, u16 cumulativeCount, skip, titleLen, title, note1Len, note1,
+ *  [note2Len, note2], trailer`.
  *
- * Some packages include a nameless leading placeholder set (`titleLen === 0`);
- * those are dropped. Older parsers treated `titleLen === 0` as end-of-list,
- * which skipped every set when the placeholder came first.
+ * The record shape drifts between Pyware exporter builds — and occasionally
+ * *within* a single file (a draft that starts with one shape and switches when
+ * the first measure-range title appears). `version` does not identify the
+ * shape. Detection is two-stage:
+ *
+ * 1. **Uniform tiling** — try every shape in a small grid; keep the one that
+ *    reads the most records / recovers the most text. A complete tiling (all
+ *    `count` records, payload consumed) wins immediately.
+ * 2. **Resume + adapt** — if the best shape dies mid-file, replay it for the
+ *    head and, from the failure point, pick a fresh shape per remaining record
+ *    (preferring continuity, requiring the successor's cumulative count to stay
+ *    monotonic). The resume is kept only when it finishes the file or recovers
+ *    more real text than the uniform head alone.
+ *
+ * The subset marker is the byte {@link SUBSET_MARKER_FROM_END} bytes before each
+ * record's end: `1` means the *next* set is a labeled subset (a hold like
+ * `12A`). Reading it from the record end is invariant to the skip/trailer split.
+ *
+ * The leading placeholder set (nameless, no note, count 0) is dropped — it maps
+ * to OpenMarch's own page-0 anchor. Other nameless sets are kept: some exports
+ * label every set only by its note.
  */
 export function readSetList(payload: Uint8Array): ParsedSet[] {
     const reader = new BinaryReader(payload);
     if (reader.remaining < 4) return [];
-    reader.u16(); // version
+    reader.u16(); // version — unreliable as a layout key (see above)
     const count = reader.u16();
     if (count <= 0 || count > 10_000) return [];
+    const body = payload.subarray(reader.position);
 
-    const sets: ParsedSet[] = [];
-    for (let i = 0; i < count && reader.remaining >= 8; i++) {
-        const id = reader.u64String();
-        const cumulativeCount = reader.u16();
-        reader.skip(3);
-        const titleLength = reader.u16();
-        if (titleLength > 64 || titleLength > reader.remaining) break;
-        const name = titleLength > 0 ? reader.ascii(titleLength) : "";
-        const noteLength = reader.u32();
-        if (noteLength > reader.remaining) break;
-        const note = reader.utf8(noteLength);
-        reader.skip(16);
-        if (name.length === 0) continue;
-        sets.push({
-            id,
-            name,
-            cumulativeCount,
-            notes: note.length > 0 ? note : undefined,
-        });
+    let best: { result: TileResult; layout: SetLayout } | undefined;
+    let bestEmpty: TileResult | undefined;
+    let anyText = false;
+    for (const layout of layoutCandidates()) {
+        const r = tileSetRecords(body, count, layout);
+        if (!r) continue;
+        if (r.score > 0) anyText = true;
+        if (!best || rank(r) > rank(best.result)) best = { result: r, layout };
+        if (r.complete && (!bestEmpty || r.parsed > bestEmpty.parsed)) {
+            bestEmpty = r;
+        }
     }
-    return sets;
+    if (!best) return [];
+
+    // Some shows carry no set titles or notes at all, so every tiling scores
+    // zero and `rank` cannot prefer a complete one (a zero-score "complete"
+    // tiling is normally a truncated payload being eaten as empty records).
+    // When *nothing* anywhere recovered text, that ambiguity is absent: take the
+    // tiling that actually consumes the payload.
+    if (!anyText && bestEmpty) return bestEmpty.sets;
+
+    if (best.result.complete) return best.result.sets;
+
+    // Mid-file shape switch: keep the best uniform head, then adapt the tail.
+    // Only trust the resume when it finishes the file or recovers more real text
+    // — otherwise a truncated payload's leftover bytes can fake empty records.
+    const adapted = resumeAfterTile(body, count, best.layout);
+    if (
+        adapted &&
+        rank(adapted) > rank(best.result) &&
+        (adapted.complete || adapted.score > best.result.score)
+    ) {
+        return adapted.sets;
+    }
+    return best.result.sets;
+}
+
+/** Every shape the detector tries for a single `PTB7` record. */
+function* layoutCandidates(): Generator<SetLayout> {
+    for (let skip = 0; skip <= 10; skip++)
+        for (const title of [2, 1] as const)
+            for (const note1 of [4, 2, 1] as const)
+                for (const note2 of [2, 4, 1, 0] as const)
+                    // `PTU1` names five note slots; a record can carry any
+                    // number of the later ones, usually empty.
+                    for (
+                        let extraNotes = 0;
+                        extraNotes <= (note2 ? 3 : 0);
+                        extraNotes++
+                    )
+                        // Trailers below 8 only appear in misaligned fakes; real
+                        // exports use ~12–16 reserved bytes after the notes.
+                        for (let trailer = 8; trailer <= 20; trailer++)
+                            yield {
+                                skip,
+                                title,
+                                note1,
+                                note2,
+                                extraNotes,
+                                trailer,
+                            };
+}
+
+interface TileResult {
+    sets: ParsedSet[];
+    /** Records parsed before running out of payload. */
+    parsed: number;
+    /** Whole payload consumed as exactly `count` records. */
+    complete: boolean;
+    /** Weighted length of the genuine names/notes recovered. */
+    score: number;
+}
+
+/**
+ * Ranks a tiling for layout selection. A complete tiling that recovered real
+ * text beats everything; complete tilings that recovered nothing are treated as
+ * suspicious (trailer=0 layouts can fake-consume a truncated payload as many
+ * empty records). Otherwise more records win, then more recovered text.
+ */
+function rank(r: TileResult): number {
+    if (r.complete && r.score > 0) return 1e12 + r.parsed * 1e6 + r.score;
+    if (r.complete) return r.parsed * 1e3 + r.score;
+    // Among partial tilings, recovered text is the stronger signal: a misaligned
+    // shape with small records can always tile *more* records out of the same
+    // bytes, but only the right one reads set names back out of them.
+    return r.score * 1e6 + r.parsed;
+}
+
+const meaningful = (s: string) =>
+    s.length > 0 && PRINTABLE.test(s) && /[A-Za-z0-9]/.test(s);
+
+interface ParsedRecord {
+    /** Undefined when this is the dropped leading placeholder. */
+    set: ParsedSet | undefined;
+    cumulativeCount: number;
+    end: number;
+    score: number;
+    layout: SetLayout;
+}
+
+/**
+ * Tries to read one set record at `start` under `layout`. Returns undefined when
+ * the shape misaligns. `allowTruncatedTrailer` is true only for the final record.
+ */
+function parseOneRecord(
+    body: Uint8Array,
+    start: number,
+    lastCum: number,
+    layout: SetLayout,
+    allowTruncatedTrailer: boolean,
+): ParsedRecord | undefined {
+    const reader = new BinaryReader(body);
+    reader.seek(start);
+    const readLen = (w: 1 | 2 | 4): number =>
+        w === 1 ? reader.slice(1)[0]! : w === 2 ? reader.u16() : reader.u32();
+
+    if (reader.remaining < 10 + layout.skip) return undefined;
+    const id = reader.u64String();
+    const cumulativeCount = reader.u16();
+    if (cumulativeCount < lastCum || cumulativeCount > 10_000) return undefined;
+    reader.skip(layout.skip);
+
+    if (reader.remaining < layout.title) return undefined;
+    const titleLength = readLen(layout.title);
+    if (titleLength > 64 || titleLength > reader.remaining) return undefined;
+    const name = reader.ascii(titleLength);
+    if (!PRINTABLE.test(name)) return undefined;
+
+    if (reader.remaining < layout.note1) return undefined;
+    const note1Length = readLen(layout.note1);
+    if (note1Length > reader.remaining) return undefined;
+    const note1 = reader.utf8(note1Length);
+    if (note1Length > 0 && CONTROL.test(note1)) return undefined;
+
+    const laterNotes: string[] = [];
+    if (layout.note2) {
+        for (let slot = 0; slot <= layout.extraNotes; slot++) {
+            if (reader.remaining < layout.note2) return undefined;
+            const noteLength = readLen(layout.note2);
+            if (noteLength > reader.remaining) return undefined;
+            const note = reader.utf8(noteLength);
+            if (noteLength > 0 && CONTROL.test(note)) return undefined;
+            laterNotes.push(note);
+        }
+    }
+
+    let subsetFollows = false;
+    if (reader.remaining < layout.trailer) {
+        if (!allowTruncatedTrailer) return undefined;
+    } else {
+        reader.slice(layout.trailer);
+        const end = reader.position;
+        subsetFollows =
+            end >= SUBSET_MARKER_FROM_END &&
+            body[end - SUBSET_MARKER_FROM_END] === 1;
+    }
+
+    let score = 0;
+    if (meaningful(name)) score += name.length * 10;
+    if (meaningful(note1)) score += note1.length;
+    for (const note of laterNotes) if (meaningful(note)) score += note.length;
+
+    const notes = [note1, ...laterNotes]
+        .filter((n) => n.length > 0)
+        .join("\n\n");
+    const set =
+        name === "" && notes === "" && cumulativeCount === 0
+            ? undefined
+            : {
+                  id,
+                  name,
+                  cumulativeCount,
+                  notes: notes || undefined,
+                  subsetFollows,
+              };
+    return { set, cumulativeCount, end: reader.position, score, layout };
+}
+
+/** Peek the cumulative count of the record that would start at `pos`, if any. */
+function peekCum(body: Uint8Array, pos: number): number | undefined {
+    if (pos + 10 > body.length) return undefined;
+    return (body[pos + 8]! << 8) | body[pos + 9]!;
+}
+
+/**
+ * Attempts to parse the `PTB7` body as `count` records under one
+ * {@link SetLayout}. Returns the records parsed (possibly a truncated head) with
+ * completeness and a text score, or `undefined` when the layout misaligns on the
+ * very first record.
+ */
+function tileSetRecords(
+    body: Uint8Array,
+    count: number,
+    layout: SetLayout,
+): TileResult | undefined {
+    const sets: ParsedSet[] = [];
+    let score = 0;
+    let lastCum = -1;
+    let parsed = 0;
+    let pos = 0;
+
+    for (let i = 0; i < count; i++) {
+        const rec = parseOneRecord(body, pos, lastCum, layout, i === count - 1);
+        if (!rec) {
+            return parsed === 0
+                ? undefined
+                : { sets, parsed, complete: false, score };
+        }
+        pos = rec.end;
+        lastCum = rec.cumulativeCount;
+        score += rec.score;
+        parsed++;
+        if (rec.set) sets.push(rec.set);
+    }
+
+    return { sets, parsed, complete: body.length - pos <= 2, score };
+}
+
+/** Extra weight for a record that reuses the layout of the record before it. */
+const CONTINUITY_BONUS = 4;
+/**
+ * Replays `headLayout` until it fails, then searches for a per-record layout
+ * assignment over the remaining records.
+ *
+ * Records that carry a real title can be framed differently from their empty
+ * neighbors (two reserved bytes move from the record's tail to its head), and
+ * the file switches back afterwards — so this is a per-record variation, not a
+ * one-way mid-file switch.
+ *
+ * Choosing greedily does not work: consecutive empty records admit many layouts
+ * whose end offsets differ by a byte or two, all scoring zero, and picking the
+ * wrong one only becomes visible several records later. The search therefore
+ * treats "consumes the whole payload in exactly `count` records" as the
+ * acceptance test, backtracking when a prefix leads nowhere, and among the
+ * assignments that survive prefers the one recovering the most text (with a nudge
+ * toward keeping the layout stable between adjacent records).
+ */
+function resumeAfterTile(
+    body: Uint8Array,
+    count: number,
+    headLayout: SetLayout,
+): TileResult | undefined {
+    const head: ParsedRecord[] = [];
+    let lastCum = -1;
+    let pos = 0;
+
+    for (let i = 0; i < count; i++) {
+        const rec = parseOneRecord(
+            body,
+            pos,
+            lastCum,
+            headLayout,
+            i === count - 1,
+        );
+        if (!rec) break;
+        head.push(rec);
+        pos = rec.end;
+        lastCum = rec.cumulativeCount;
+    }
+
+    const tail = searchRecords(body, count, head.length, pos, lastCum);
+    const records = tail ? [...head, ...tail] : head;
+    const sets = records.flatMap((r) => (r.set ? [r.set] : []));
+    const score = records.reduce((total, r) => total + r.score, 0);
+    const end = records.length ? records[records.length - 1]!.end : 0;
+    return {
+        sets,
+        parsed: records.length,
+        complete: records.length === count && body.length - end <= 2,
+        score,
+    };
+}
+
+/**
+ * Finds the highest-scoring way to read records `from`..`count - 1` starting at
+ * `pos` such that the payload ends up fully consumed. Returns undefined when no
+ * assignment does. Memoized on the search state, so the branching over layouts
+ * stays bounded even on long set lists.
+ */
+function searchRecords(
+    body: Uint8Array,
+    count: number,
+    from: number,
+    pos: number,
+    lastCum: number,
+): ParsedRecord[] | undefined {
+    const memo = new Map<string, ParsedRecord[] | undefined>();
+
+    const walk = (
+        i: number,
+        at: number,
+        cum: number,
+        prev: SetLayout | undefined,
+    ): ParsedRecord[] | undefined => {
+        if (i === count) return body.length - at <= 2 ? [] : undefined;
+
+        const key = `${i}:${at}:${cum}`;
+        const cached = memo.get(key);
+        if (cached !== undefined || memo.has(key)) {
+            // Cached without the continuity nudge; it only breaks ties.
+            return cached;
+        }
+
+        let best: ParsedRecord[] | undefined;
+        let bestScore = -1;
+        for (const rec of candidateRecords(body, at, cum, i === count - 1)) {
+            const rest = walk(i + 1, rec.end, rec.cumulativeCount, rec.layout);
+            if (!rest) continue;
+            const continuity =
+                prev && sameLayout(prev, rec.layout) ? CONTINUITY_BONUS : 0;
+            const total =
+                rec.score +
+                continuity +
+                rest.reduce((sum, r) => sum + r.score, 0);
+            if (total > bestScore) {
+                bestScore = total;
+                best = [rec, ...rest];
+            }
+        }
+        memo.set(key, best);
+        return best;
+    };
+
+    return walk(from, pos, lastCum, undefined);
+}
+
+/**
+ * Every distinct way to read one record at `pos`, keyed by where it ends: layouts
+ * that agree on the end offset are interchangeable for the walk, so only the
+ * best-scoring one of each is kept.
+ */
+function candidateRecords(
+    body: Uint8Array,
+    pos: number,
+    lastCum: number,
+    last: boolean,
+): ParsedRecord[] {
+    const byEnd = new Map<number, ParsedRecord>();
+    for (const layout of layoutCandidates()) {
+        const rec = parseOneRecord(body, pos, lastCum, layout, last);
+        if (!rec) continue;
+        if (!last) {
+            const nextCum = peekCum(body, rec.end);
+            if (
+                nextCum === undefined ||
+                nextCum < rec.cumulativeCount ||
+                nextCum > 10_000
+            )
+                continue;
+        }
+        const existing = byEnd.get(rec.end);
+        if (!existing || rec.score > existing.score) byEnd.set(rec.end, rec);
+    }
+    return [...byEnd.values()];
+}
+
+function sameLayout(a: SetLayout, b: SetLayout): boolean {
+    return (
+        a.skip === b.skip &&
+        a.title === b.title &&
+        a.note1 === b.note1 &&
+        a.note2 === b.note2 &&
+        a.extraNotes === b.extraNotes &&
+        a.trailer === b.trailer
+    );
 }
 
 const NUM = String.raw`(-?\d+(?:\.\d+)?)`;
@@ -397,6 +804,18 @@ function baseName(path: string | undefined): string | undefined {
  * Joins the named set list to the per-count page frames. Each named set is
  * reached at a specific cumulative count; the page frame at that count holds
  * the set's formation. Cast members and discovered props are kept.
+ *
+ * A set is marked `isSubset` from the source's own marker: the previous set's
+ * {@link ParsedSet.subsetFollows} flag. This matches source page numbering like
+ * `1`, `1A`, `2`, and — unlike a geometry heuristic — catches labeled holds
+ * that still contain movement.
+ *
+ * Every set (including the last) carries a cumulative count. For non-final sets
+ * that count is the next set's start; the final set's count marks one more
+ * formation the source reaches afterward — a closing page/hold that has no
+ * record of its own. We emit it too, so the imported page list matches the
+ * source's. Its type follows the same rule: it is a subset when the final named
+ * set is flagged (a closing hold like `15A`), and a plain page otherwise.
  */
 function buildSets(
     parsedSets: ParsedSet[],
@@ -411,21 +830,49 @@ function buildSets(
         const parsed = parsedSets[i]!;
         const startCount = boundaries[i]!;
         const previousStart = i === 0 ? 0 : boundaries[i - 1]!;
-        const frame = pages[Math.min(startCount, pages.length - 1)]!;
-
-        const coordinates: Record<string, DrillPoint> = {};
-        for (const [id, record] of frame.records) {
-            if (markerIds.has(id)) coordinates[id] = record.point;
-        }
         sets.push({
             name: parsed.name,
             startCount,
             counts: i === 0 ? 0 : startCount - previousStart,
+            // First page is permanently non-subset in OpenMarch (SQLite trigger);
+            // otherwise the source flags a subset on the *previous* set.
+            isSubset: i > 0 && parsedSets[i - 1]!.subsetFollows,
             notes: parsed.notes,
-            coordinates,
+            coordinates: pickCoordinates(pages, startCount, markerIds),
+        });
+    }
+
+    const lastParsed = parsedSets[parsedSets.length - 1]!;
+    const lastStart = boundaries[boundaries.length - 1]!;
+    const trailingStart = Math.min(
+        lastParsed.cumulativeCount,
+        pages.length - 1,
+    );
+    if (trailingStart > lastStart) {
+        sets.push({
+            name: "",
+            startCount: trailingStart,
+            counts: trailingStart - lastStart,
+            isSubset: lastParsed.subsetFollows,
+            notes: undefined,
+            coordinates: pickCoordinates(pages, trailingStart, markerIds),
         });
     }
     return sets;
+}
+
+/** Marker positions at a given count, restricted to known markers. */
+function pickCoordinates(
+    pages: PageFrame[],
+    count: number,
+    markerIds: Set<string>,
+): Record<string, DrillPoint> {
+    const frame = pages[Math.min(count, pages.length - 1)]!;
+    const coordinates: Record<string, DrillPoint> = {};
+    for (const [id, record] of frame.records) {
+        if (markerIds.has(id)) coordinates[id] = record.point;
+    }
+    return coordinates;
 }
 
 /**
