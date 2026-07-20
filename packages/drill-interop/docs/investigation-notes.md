@@ -64,12 +64,13 @@ choice has to be validated globally, not locally.
 ### Subset marker
 
 - Byte **5 from the end of each record** (`trailer[end - 5] === 1`).
-- Means: the **next** set is a labeled subset (e.g. `12A`).
+- Means: **this** set is a labeled subset (e.g. `12A`) — the record the flag sits
+  on, not the next one. Confirmed by the on-field text: every flagged record in
+  Jack Britt has a `"HOLD"` / `"Subset for tubas."` box on its own count.
 - Reading from the record end is invariant to skip/trailer splits (those bytes
   trade off against each other in equally-valid tilings).
-- Trailing closing holds: last set’s `cumulativeCount` can mark one more page
-  with no record of its own; we materialize it. Subset-ness follows the same
-  previous-set flag rule. Product requirement: match the source pages.
+- The closing hold is the **last record itself** (Jack Britt `15A` = `"60-END"`),
+  not an extra page inferred after it. See the mapping section below.
 
 ### Ranking pitfalls (learned the hard way)
 
@@ -147,22 +148,22 @@ Two traps that cost real time here:
 
 Paths are wherever they lived when tested (Downloads / iCloud Bright Designs folder).
 
-| File                                                                                                                      | Era / tags                   | Set parse status                      | Notes                                                       |
-| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------- | ----------------------------------------------------------- |
-| `sample.3dz` (fixture, westside part4)                                                                                    | `PTB7` + `PG15`              | ✅ 25 sets (24 named + trailing hold) | Committed test guardrail                                    |
-| Jack Britt Act 1                                                                                                          | `PTB7`                       | ✅ ~19 sets, subsets flagged          | Subset flag discovery source (`12A`); trailing hold (`15A`) |
-| Part 1                                                                                                                    | `PTB7`                       | ✅ ~13 sets                           | Broke older single-note walk (uses note2)                   |
-| westoak2025-part 2                                                                                                        | `PTB7`                       | ✅ ~29 sets                           | Nameless; labeled by notes; `version` 9-ish                 |
-| eastside2026 Draft7_7-TS                                                                                                  | `PTB7`                       | ✅ 11 sets                            | Layout `skip=1, t=u16, n1=u32, n2=u16, tr=16`               |
-| eastside2026 draft7_13-MS                                                                                                 | `PTB7`                       | ✅ 23 sets                            | Was 20/23 — per-record shape variation, see Open case A     |
-| Eastside2025-part2-081625                                                                                                 | `PTB7`                       | ✅ 11 sets                            | Nameless + notes                                            |
-| eastside2025-part3                                                                                                        | `PTB7`                       | ✅ 23 sets                            | Real titles e.g. `150-151`                                  |
-| hartsville 2026 - part 1                                                                                                  | `PTB7`                       | ✅ 14 sets                            |                                                             |
-| The Wedge / Creative Groupings                                                                                            | promo stubs                  | ✅ 0 useful sets                      | No real drill content                                       |
-| westoak2025-part1, west oak hs part 1                                                                                     | `PTB7`                       | ✅ 13 sets                            | Was 1/13 — **five note slots**, see Closed case C           |
-| westoak2025-part3, hartsville2025-part2, batesburg2025 v2/v3, westside2025part4-old, westsidehs2026-part1, lhs2025 insert | `PTB7`                       | ✅ full                               | Was 0–2 — **text-free set lists**, see Closed case C        |
-| Swansea HS 2021 - Mvt 1                                                                                                   | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Older generation — see below                                |
-| Dreher HS 2019 Mvt. I                                                                                                     | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Same generation as Swansea                                  |
+| File                                                                                                                      | Era / tags                   | Set parse status                      | Notes                                                          |
+| ------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ------------------------------------- | -------------------------------------------------------------- |
+| `sample.3dz` (fixture, westside part4)                                                                                    | `PTB7` + `PG15`              | ✅ 25 sets (24 named + trailing hold) | Committed test guardrail                                       |
+| Jack Britt Act 1                                                                                                          | `PTB7`                       | ✅ 20 sets, subsets flagged           | Subset-flag and set→page mapping reference file (`12A`, `15A`) |
+| Part 1                                                                                                                    | `PTB7`                       | ✅ ~13 sets                           | Broke older single-note walk (uses note2)                      |
+| westoak2025-part 2                                                                                                        | `PTB7`                       | ✅ ~29 sets                           | Nameless; labeled by notes; `version` 9-ish                    |
+| eastside2026 Draft7_7-TS                                                                                                  | `PTB7`                       | ✅ 11 sets                            | Layout `skip=1, t=u16, n1=u32, n2=u16, tr=16`                  |
+| eastside2026 draft7_13-MS                                                                                                 | `PTB7`                       | ✅ 23 sets                            | Was 20/23 — per-record shape variation, see Open case A        |
+| Eastside2025-part2-081625                                                                                                 | `PTB7`                       | ✅ 11 sets                            | Nameless + notes                                               |
+| eastside2025-part3                                                                                                        | `PTB7`                       | ✅ 23 sets                            | Real titles e.g. `150-151`                                     |
+| hartsville 2026 - part 1                                                                                                  | `PTB7`                       | ✅ 14 sets                            |                                                                |
+| The Wedge / Creative Groupings                                                                                            | promo stubs                  | ✅ 0 useful sets                      | No real drill content                                          |
+| westoak2025-part1, west oak hs part 1                                                                                     | `PTB7`                       | ✅ 13 sets                            | Was 1/13 — **five note slots**, see Closed case C              |
+| westoak2025-part3, hartsville2025-part2, batesburg2025 v2/v3, westside2025part4-old, westsidehs2026-part1, lhs2025 insert | `PTB7`                       | ✅ full                               | Was 0–2 — **text-free set lists**, see Closed case C           |
+| Swansea HS 2021 - Mvt 1                                                                                                   | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Older generation — see below                                   |
+| Dreher HS 2019 Mvt. I                                                                                                     | **`PTB6` + `PAGE` + `CST6`** | ❌ not supported                      | Same generation as Swansea                                     |
 
 ---
 
@@ -237,20 +238,21 @@ Result: **23/23 sets**, and the same change fixed `Part 2v2.3dz` (17→19).
 the best end-to-end check that the page list still matches the source:
 
 ```
-page 1    src="1-8"     start=   0  counts=  0
-page 1A   src="9-16"    start=  24  counts= 24  SUBSET
-page 2    src="17-18"   start=  48  counts= 24
+page 1    src=""         start=   0  counts=  0   ← opening formation
+page 1A   src="1-8"      start=  24  counts= 24  SUBSET  ← "HOLD" text box
+page 2    src="9-16"     start=  48  counts= 24
 …
-page 12   src="50-51"   start= 180  counts=  8
-page 12A  src="52-53"   start= 188  counts=  8  SUBSET   ← the documented subset
+page 12   src="48-49"    start= 180  counts=  8
+page 12A  src="50-51"    start= 188  counts=  8  SUBSET  ← "Subset for tubas."
 …
-page 15   src="60-END"  start= 220  counts= 16
-page 15A  src=""        start= 244  counts= 24  SUBSET   ← materialized trailing hold
+page 15   src="56-59"    start= 220  counts= 16
+page 15A  src="60-END"   start= 244  counts= 24  SUBSET  ← "HOLD TO END"
 ```
 
-Both landmarks from the product discussion are present: the `12A` subset comes
-from the source's own marker (not geometry), and `15A` is materialized from the
-final record's `cumulativeCount` despite having no record of its own.
+`15A` is the last page, matching the source's own last official set — but as
+`"60-END"` carrying its own note, not an unnamed synthesized page. Each subset
+is the record the source flagged, and each carries the text box that names it a
+hold.
 
 ---
 
@@ -341,14 +343,14 @@ Useful when comparing drafts; not all are parsed today.
 
 ## Subset / trailing-page product decisions
 
-Confirmed with product:
-
 - Prefer the **source’s own subset flag** over geometry (`formationsMatch`).
-- **Must** materialize trailing pages implied by the last set’s
-  `cumulativeCount` (e.g. Jack Britt `15A`), even when that page has no
-  `PTB7` row of its own.
-- Subset vs plain for that trailing page = same rule as any other page (flag
-  on the previous/final named set).
+  Still true, and unchanged.
+- The page list must match the source's (Jack Britt ends at `15A`). Still true —
+  but this no longer needs a materialized trailing page. That requirement came
+  from the shifted mapping, where the last record's count had nowhere to go;
+  with the mapping corrected, the closing hold _is_ the last record.
+- Every record is a page, so all 50 `PTB7` files yield exactly their declared
+  set count.
 
 ---
 
@@ -373,7 +375,7 @@ find ~/Library/Mobile\ Documents ~/Downloads -iname "*.3dz" -not -path "*/.Trash
 ```
 
 ~20 s for 55 files. A file is healthy when parsed equals the declared count, or
-is one below it (the dropped page-0 placeholder).
+equals the declared count — every record is a page.
 
 ### ⚠️ The desktop app runs `dist/`, not `src/`
 
@@ -422,13 +424,13 @@ gitignored / not always present).
 
 ## Key code / doc pointers
 
-| Path                                     | Role                                                      |
-| ---------------------------------------- | --------------------------------------------------------- |
-| `src/document.ts`                        | `readSetList`, tiling, resume, `buildSets`, trailing page |
-| `src/binaryReader.ts`                    | BE cursor                                                 |
-| `src/crypto.ts`                          | `PG15` coordinate block decrypt                           |
-| `FORMAT.md`                              | Spec-style format doc (may lag this notes file)           |
-| `src/__test__/setList.test.ts`           | Synthetic `PTB7` head + subset flag                       |
-| `src/__test__/parseDrillPackage.test.ts` | Full pipeline on `sample.3dz`                             |
-| `scripts/diag-setlist.mts`               | Per-file / whole-corpus set-list diagnostics              |
-| `scripts/diag-setlist.mts`               | Per-file / whole-corpus set-list diagnostics              |
+| Path                                     | Role                                                         |
+| ---------------------------------------- | ------------------------------------------------------------ |
+| `src/document.ts`                        | `readSetList`, tiling, resume, `buildSets`, set→page mapping |
+| `src/binaryReader.ts`                    | BE cursor                                                    |
+| `src/crypto.ts`                          | `PG15` coordinate block decrypt                              |
+| `FORMAT.md`                              | Spec-style format doc (may lag this notes file)              |
+| `src/__test__/setList.test.ts`           | Synthetic `PTB7` head + subset flag                          |
+| `src/__test__/parseDrillPackage.test.ts` | Full pipeline on `sample.3dz`                                |
+| `scripts/diag-setlist.mts`               | Per-file / whole-corpus set-list diagnostics                 |
+| `scripts/diag-setlist.mts`               | Per-file / whole-corpus set-list diagnostics                 |

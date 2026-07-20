@@ -462,7 +462,7 @@ and beat `0` (`FIRST_BEAT`) is locked at duration `0`.
   (`SYNC.length − 1`) when SYNC is present, else `totalCounts`, clamped to at
   least the last set's arrival and at most `totalCounts`. This fully includes a
   closing set/hold (e.g. an ending subset that marks the end of a hold). When the
-  last set is a subset (flagged on the previous set), extending it holds the
+  last set is a subset (flagged on the set itself), extending it holds the
   formation with no stretched movement; it holds exactly until the music ends.
 - With `pageNumberOffset = 1`, names read `1` (anchor), `1A`, `2`, ….
 
@@ -569,7 +569,8 @@ currently map it into OpenMarch. Listed roughly by value.
 5. **Set names/labels have nowhere to go.** Source sets are named as measure
    ranges (`"179-182"`, `"234-END"`). OpenMarch `pages` have no name/label column
    (pages are numbered positionally), so the label is currently dropped — only the
-   director note is carried. Options: add a `pages.name`/`label` column, or fold
+   notes are carried. Generated page numbers do match the source's own set
+   numbering (`1`, `1A`, `2`, …), so the loss is the measure range itself. Options: add a `pages.name`/`label` column, or fold
    the label into `pages.notes`.
 
 6. **Marker classification uses ids, not just coordinates.** Each page frame
@@ -599,8 +600,10 @@ currently map it into OpenMarch. Listed roughly by value.
      stably per-marker), so the likely route is per-section via `TxD1` (§2.7).
    - **`COM2` — continuity text (decoded, §2.7).** Per-phrase written movement
      instructions (`"hold"`, `"Float"`, …) with the marker group each applies to.
-     This is the richest human-readable data in the file. OpenMarch has no
-     continuity-text home yet, but it could seed page/marcher notes.
+     The richest _unmapped_ human-readable data left in the file, now that the
+     `PRP8` text boxes (§2.9) are imported into page notes. Unlike those, `COM2`
+     is per-marker-group rather than per-page, so it has no home yet — it would
+     want marcher-level notes, not page notes.
    - **`FAB1` (fabric), `CVR1` (floor cover), `PRP1` (props), `VsD1`,
      `PLS2` (prop image list).** The appearance/figurine layers from
      `package.ini`'s `[Include]` (`figurines`, `fabric`, `floorCover`, `ground`).
@@ -642,4 +645,5 @@ follow-the-leader exact (but facing/rotation are stripped from the export, so
 scope that down); `external_id` (#3) is the one schema change worth making for
 durable interop. On the visual side, `COLR` (#7, decoded) is the cleanest win —
 7 RGB colors already sitting in plain bytes — and `COM2` continuity text (#7) is
-the richest human-readable data if a notes home exists for it.
+the richest remaining human-readable data, if a marcher-level notes home exists
+for it (the page-level text boxes are already imported, §2.9).
