@@ -62,11 +62,11 @@ interface ParsedSet {
     cumulativeCount: number;
     notes?: string;
     /**
-     * The source's own subset marker: when true, the *next* set is a labeled
-     * subset (a hold/continuation like `12A`). Read from the record trailer;
-     * see {@link readSetList} and {@link buildSets}.
+     * The source's own subset marker: when true, *this* set is a labeled subset
+     * (a hold/continuation like `12A`). Read from the record trailer; see
+     * {@link readSetList} and {@link buildSets}.
      */
-    subsetFollows: boolean;
+    isSubset: boolean;
 }
 
 /**
@@ -365,9 +365,9 @@ export function readSetList(payload: Uint8Array): ParsedSet[] {
     // tiling is normally a truncated payload being eaten as empty records).
     // When *nothing* anywhere recovered text, that ambiguity is absent: take the
     // tiling that actually consumes the payload.
-    if (!anyText && bestEmpty) return dropLeadingAnchor(bestEmpty.sets);
+    if (!anyText && bestEmpty) return bestEmpty.sets;
 
-    if (best.result.complete) return dropLeadingAnchor(best.result.sets);
+    if (best.result.complete) return best.result.sets;
 
     // Mid-file shape switch: keep the best uniform head, then adapt the tail.
     // Only trust the resume when it finishes the file or recovers more real text
@@ -378,39 +378,9 @@ export function readSetList(payload: Uint8Array): ParsedSet[] {
         rank(adapted) > rank(best.result) &&
         (adapted.complete || adapted.score > best.result.score)
     ) {
-        return dropLeadingAnchor(adapted.sets);
+        return adapted.sets;
     }
-    return dropLeadingAnchor(best.result.sets);
-}
-
-/**
- * Drops the leading page-0 anchor, folding its note into the set that takes its
- * place.
- *
- * A set's formation sits at the *previous* record's cumulative count (§4), so a
- * leading record whose own count is 0 puts its formation and the next set's
- * both at count 0 — two pages on the same beat, and every later page carrying
- * the wrong label. That record is the source's page-0 anchor and maps onto
- * OpenMarch's own first page rather than a page of its own.
- *
- * The anchor is identified by **position and count only**, never by looking
- * nameless: exports of a show's later parts name it after the formation carried
- * in from the previous part (`36A`, `8A`, `8`, `A`), and some name it `"0"` or
- * leave it blank with a stray `"0"` note. Its note is real staging guidance for
- * the opening formation, so it is prepended to the surviving set rather than
- * discarded.
- */
-function dropLeadingAnchor(sets: ParsedSet[]): ParsedSet[] {
-    if (sets.length < 2) return sets;
-    const [anchor, next, ...rest] = sets as [
-        ParsedSet,
-        ParsedSet,
-        ...ParsedSet[],
-    ];
-    if (anchor.cumulativeCount !== 0) return sets;
-
-    const notes = [anchor.notes, next.notes].filter(Boolean).join("\n\n");
-    return [{ ...next, notes: notes || undefined }, ...rest];
+    return best.result.sets;
 }
 
 /** Every shape the detector tries for a single `PTB7` record. */
@@ -521,13 +491,13 @@ function parseOneRecord(
         }
     }
 
-    let subsetFollows = false;
+    let isSubset = false;
     if (reader.remaining < layout.trailer) {
         if (!allowTruncatedTrailer) return undefined;
     } else {
         reader.slice(layout.trailer);
         const end = reader.position;
-        subsetFollows =
+        isSubset =
             end >= SUBSET_MARKER_FROM_END &&
             body[end - SUBSET_MARKER_FROM_END] === 1;
     }
@@ -540,14 +510,14 @@ function parseOneRecord(
     const notes = [note1, ...laterNotes]
         .filter((n) => n.length > 0)
         .join("\n\n");
-    // Whether the leading record is a page-0 anchor is decided once, over the
-    // whole list, in `dropLeadingAnchor` — it depends on position, not content.
+    // Every record becomes a page, including a leading count-0 anchor: it is the
+    // opening formation, and OpenMarch's own first page.
     const set = {
         id,
         name,
         cumulativeCount,
         notes: notes || undefined,
-        subsetFollows,
+        isSubset,
     };
     return { set, cumulativeCount, end: reader.position, score, layout };
 }
@@ -841,7 +811,7 @@ function baseName(path: string | undefined): string | undefined {
  * the set's formation. Cast members and discovered props are kept.
  *
  * A set is marked `isSubset` from the source's own marker: the previous set's
- * {@link ParsedSet.subsetFollows} flag. This matches source page numbering like
+ * {@link ParsedSet.isSubset} flag. This matches source page numbering like
  * `1`, `1A`, `2`, and — unlike a geometry heuristic — catches labeled holds
  * that still contain movement.
  *
@@ -852,6 +822,21 @@ function baseName(path: string | undefined): string | undefined {
  * source's. Its type follows the same rule: it is a subset when the final named
  * set is flagged (a closing hold like `15A`), and a plain page otherwise.
  */
+/**
+ * Turns parsed set records into pages.
+ *
+ * A record's formation stands on its own `cumulativeCount`, and its note and
+ * measure range describe how the show *arrives* there — so a page runs from the
+ * previous record's count to its own, and shows the formation at the end. The
+ * opening formation (count 0) is a zero-count page; when no record sits on
+ * count 0, one is synthesized so the first real set keeps its counts.
+ *
+ * The trailer flag marks the record it sits on as a subset, so it is read
+ * directly rather than off the previous record. Both readings are confirmed by
+ * the on-field text (§2.9): every flagged record in Jack Britt has a `"HOLD"`
+ * box on its own count, and the one reading `"Subset for tubas."` sits on the
+ * record flagged as a subset.
+ */
 function buildSets(
     parsedSets: ParsedSet[],
     pages: PageFrame[],
@@ -861,56 +846,53 @@ function buildSets(
     if (parsedSets.length === 0 || pages.length === 0) return [];
 
     // On-field text is placed beside a formation, so it belongs to the page that
-    // arrives on that count. Several boxes can annotate one formation.
+    // stands on that count. Several boxes can annotate one formation.
     const textByCount = new Map<number, string[]>();
     for (const { count, text } of fieldText) {
         const existing = textByCount.get(count);
         if (existing) existing.push(text);
         else textByCount.set(count, [text]);
     }
-    const notesFor = (startCount: number, own: string | undefined) =>
-        [own, ...(textByCount.get(startCount) ?? [])]
+    const notesFor = (count: number, own: string | undefined) =>
+        [own, ...(textByCount.get(count) ?? [])]
             .filter((n) => n && n.length > 0)
             .join("\n\n") || undefined;
 
-    const boundaries = deriveSetStartCounts(parsedSets, pages.length);
+    const counts = deriveSetStartCounts(parsedSets, pages.length);
     const sets: DrillSet[] = [];
+
+    // OpenMarch's first page is the opening formation, on count 0 with no
+    // duration. Exports usually carry a record for it; when one does not, the
+    // page is synthesized so the first real set is not flattened to zero counts.
+    if (counts[0] !== 0) {
+        sets.push({
+            name: "",
+            startCount: 0,
+            counts: 0,
+            isSubset: false,
+            notes: notesFor(0, undefined),
+            coordinates: pickCoordinates(pages, 0, markerIds),
+        });
+    }
+
     for (let i = 0; i < parsedSets.length; i++) {
         const parsed = parsedSets[i]!;
-        const startCount = boundaries[i]!;
-        const previousStart = i === 0 ? 0 : boundaries[i - 1]!;
+        const startCount = counts[i]!;
+        const previous = i === 0 ? 0 : counts[i - 1]!;
         sets.push({
             name: parsed.name,
             startCount,
-            counts: i === 0 ? 0 : startCount - previousStart,
-            // First page is permanently non-subset in OpenMarch (SQLite trigger);
-            // otherwise the source flags a subset on the *previous* set.
-            isSubset: i > 0 && parsedSets[i - 1]!.subsetFollows,
+            // First page is permanently non-subset in OpenMarch (SQLite trigger).
+            counts: sets.length === 0 ? 0 : startCount - previous,
+            isSubset: sets.length > 0 && parsed.isSubset,
             notes: notesFor(startCount, parsed.notes),
             coordinates: pickCoordinates(pages, startCount, markerIds),
         });
     }
 
-    const lastParsed = parsedSets[parsedSets.length - 1]!;
-    const lastStart = boundaries[boundaries.length - 1]!;
-    const trailingStart = Math.min(
-        lastParsed.cumulativeCount,
-        pages.length - 1,
-    );
-    if (trailingStart > lastStart) {
-        sets.push({
-            name: "",
-            startCount: trailingStart,
-            counts: trailingStart - lastStart,
-            isSubset: lastParsed.subsetFollows,
-            notes: notesFor(trailingStart, undefined),
-            coordinates: pickCoordinates(pages, trailingStart, markerIds),
-        });
-    }
     return sets;
 }
 
-/** Marker positions at a given count, restricted to known markers. */
 function pickCoordinates(
     pages: PageFrame[],
     count: number,
@@ -929,14 +911,15 @@ function pickCoordinates(
  * 0 and subsequent sets at the previous cumulative value, giving the page-frame
  * index that holds each set's formation.
  */
+/**
+ * The count each set's formation stands on: its own `cumulativeCount`, clamped
+ * to the frames actually present.
+ */
 function deriveSetStartCounts(
     parsedSets: ParsedSet[],
     pageCount: number,
 ): number[] {
-    const starts: number[] = [0];
-    for (let i = 1; i < parsedSets.length; i++) {
-        const value = parsedSets[i - 1]!.cumulativeCount;
-        starts.push(Math.min(value, pageCount - 1));
-    }
-    return starts;
+    return parsedSets.map((set) =>
+        Math.min(set.cumulativeCount, pageCount - 1),
+    );
 }

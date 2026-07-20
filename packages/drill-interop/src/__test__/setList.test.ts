@@ -27,18 +27,21 @@ const JACK_BRITT_PTB7_HEAD = Uint8Array.from([
 describe("readSetList", () => {
     it("reads named sets after a nameless placeholder", () => {
         const sets = readSetList(JACK_BRITT_PTB7_HEAD);
-        expect(sets.length).toBeGreaterThanOrEqual(3);
-        expect(sets[0]).toMatchObject({ name: "1-8", cumulativeCount: 24 });
-        expect(sets[1]).toMatchObject({ name: "9-16", cumulativeCount: 48 });
-        expect(sets[2]).toMatchObject({ name: "17-18", cumulativeCount: 56 });
-        expect(sets.every((s) => s.name.length > 0)).toBe(true);
+        expect(sets.length).toBeGreaterThanOrEqual(4);
+        // The leading record is the count-0 opening formation; the old parser
+        // treated its empty title as end-of-list and returned [].
+        expect(sets[0]).toMatchObject({ name: "", cumulativeCount: 0 });
+        expect(sets[1]).toMatchObject({ name: "1-8", cumulativeCount: 24 });
+        expect(sets[2]).toMatchObject({ name: "9-16", cumulativeCount: 48 });
+        expect(sets[3]).toMatchObject({ name: "17-18", cumulativeCount: 56 });
     });
 
     it("reads the trailer subset marker per set", () => {
         const sets = readSetList(JACK_BRITT_PTB7_HEAD);
-        // "1-8" is flagged, so the next set ("9-16") is a subset; "9-16" is not.
-        expect(sets[0]).toMatchObject({ name: "1-8", subsetFollows: true });
-        expect(sets[1]).toMatchObject({ name: "9-16", subsetFollows: false });
+        // The flag marks the set it sits on: "1-8" is the labeled hold, and it
+        // is the one the source's own on-field "HOLD" text box annotates.
+        expect(sets[1]).toMatchObject({ name: "1-8", isSubset: true });
+        expect(sets[2]).toMatchObject({ name: "9-16", isSubset: false });
     });
 
     it("returns empty for a truncated payload", () => {

@@ -172,21 +172,12 @@ Observed shapes across real exports:
 | eastside draft 13, titled records | 3    | u16      | u32      | none        | 16      |
 | westoak 2025 part 1               | 4    | u16      | u16      | 4 × u16     | 8       |
 
-**The leading page-0 anchor.** A set's formation sits at the _previous_ record's
-cumulative count (§4), so a first record whose own count is `0` puts its
-formation and the next set's both at count 0. That record is the source's page-0
-anchor; it maps onto OpenMarch's own first page rather than a page of its own,
-and is dropped — otherwise the import gains a duplicate zero-count page and
-every later page carries the wrong label.
-
-It is identified by **position and count alone** (`i === 0 && cumulativeCount
-=== 0`), never by looking nameless. Exports of a show's later parts name the
-anchor after the formation carried in from the previous part — `36A`, `8A`, `8`,
-`A` — and dropping only nameless records would leave those files duplicated
-while an older, narrower rule (nameless + no note + count 0) silently deleted
-nothing at all. Its note is genuine staging guidance for the opening formation
-(`"Winds should be facing direction of curve to LB1…"`), so it is prepended to
-the surviving set's note rather than discarded.
+**Every record is a page**, including a leading record on count 0 — that is the
+opening formation, and it becomes OpenMarch's first page. Exports of a show's
+later parts name it after the formation carried in from the previous part
+(`36A`, `8A`, `8`, `A`); others leave it blank. When a file has no count-0
+record, an empty opening page is synthesized so the first real set keeps its
+counts.
 
 Nameless sets elsewhere in the list are always kept: some exports label every
 set only by its note.
@@ -195,9 +186,13 @@ The trailer carries the source's **subset marker** the byte 5 positions before
 each record's end: `1` when the _next_ set is a labeled subset (a hold like
 `12A`), and `0` otherwise. Reading it from the record _end_ (rather than a fixed
 trailer offset) makes it invariant to how the reserved bytes split between `skip`
-and `trailer`. OpenMarch reads it directly — a set is a subset when the previous
-set's marker is `1` — which catches labeled holds even when the dots move within
-them (a geometry-only "same formation" test misses those).
+and `trailer`. OpenMarch reads it directly, which catches labeled holds even when
+the dots move within them (a geometry-only "same formation" test misses those).
+
+The flag marks the record it sits on, not the following one. The on-field text
+(§2.9) confirms it independently: in Jack Britt all five flagged records have a
+text box on their own count, four reading `"HOLD"` and the fifth
+`"Subset for tubas."`.
 
 > An earlier revision of this document described `eastside2026draft7_13` as
 > using an optional ~5-byte field containing the constant `0x0130` before the
@@ -205,14 +200,13 @@ them (a geometry-only "same formation" test misses those).
 > `u16` length of `1` followed by the title `"0"`. The real variation is the
 > per-record reframing described above, and these files now parse fully.
 
-Every record — including the last — carries a `cumulativeCount`. For a non-final
-record that count is the _next_ set's start; the **final** record's count marks
-one more formation the source reaches after it. That formation is a real page in
-the source (a closing page or hold, e.g. `15A`) even though it has no record of
-its own, so OpenMarch materializes it at that count (see §4). Its type follows
-the same rule as any other page: it is a subset when the final record's marker
-is `1` (a closing hold like `15A`), and a plain page otherwise (e.g. a final
-`16`). This is why the final marker matters despite having no following record.
+Every record — including the last — carries a `cumulativeCount`, and it is that
+record's **own** arrival: the formation stands on that count, and the label's
+measure range names the counts spent getting there. Jack Britt is the proof —
+every label's measure count times its counts-per-measure equals its own count
+minus the previous record's, 3 counts/measure through the opening 3/4 section
+and 4 thereafter, across all 18 sets. So the closing hold (`15A`, `"60-END"`) is
+the last record itself, not an extra page inferred after it.
 
 ### 2.8 `SYNC` — audio sync
 
@@ -429,16 +423,23 @@ are treated as **props** (see `src/props.ts`); the rest are dropped.
 
 - `PG15` frames are indexed by count: frame `k` = positions at count `k`.
 - `PTB7` gives each named set a `cumulativeCount`.
-- Set start counts are derived so the first set is at count `0`, and each later
-  set starts at the **previous** set's cumulative count. The formation for a set
-  is the `PG15` frame at that start count.
-- The final named set's _own_ cumulative count marks one more formation the
-  source reaches after it — a closing page/hold that has no record of its own
-  (e.g. `15A`). It is materialized as an extra page at that count when it lands
-  before the last frame, so the imported page list matches the source's. Its
-  subset flag comes from the final record's trailer marker (§2.7). That page holds
-  its formation through the remaining frames to the end of the show (the sample's
-  named sets run to count ~260 while frames run to 500 — the tail is that hold).
+- That count is the set's **own** arrival. A set's formation is the `PG15` frame
+  at its own count, and its page runs from the previous record's count to it —
+  so the page's duration is the difference between them, and the formation shows
+  at the end of the page (which is also how OpenMarch renders a page).
+- A set's note and measure-range label describe how the show _arrives_ at it
+  ("Move 16" on a set spanning 16 counts), not how it leaves.
+- The opening formation is count 0 with no duration. Most exports carry a record
+  for it; when one does not, an empty page is synthesized in its place.
+- The last record is the show's closing formation. It holds through the
+  remaining frames to the end (the sample's records run to count ~260 while
+  frames run to 500 — the tail is that hold), so no extra page is materialized
+  after it.
+
+Reading the record's count as the _next_ set's start instead — with a trailing
+page bolted on to absorb the last one — produces the same page count and the
+same page numbers, so it looks right at a glance. What gives it away is that
+every label, note, and set of coordinates lands one page late.
 
 This is implemented in `deriveSetStartCounts` / `buildSets` in `document.ts`.
 

@@ -90,21 +90,45 @@ choice has to be validated globally, not locally.
 
 ### Placeholder vs nameless sets
 
-- The **first** record with `cumulativeCount === 0` is the page-0 anchor: drop
-  it, merging its note into the set that takes its place.
-- Judge it by position + count, never by nameless-ness — later-part exports name
-  the anchor after the carried-in formation (`36A`, `8A`, `8`, `A`).
-- Keep nameless sets everywhere else (westoak / some eastside drafts label by note).
+- Every record becomes a page, including a leading count-0 record — that is the
+  opening formation and becomes OpenMarch's first page. Nothing is dropped, and
+  all 50 `PTB7` files now yield exactly their declared set count.
+- Earlier sessions dropped that record (and later merged its note into the next
+  set). Both were compensating for the shifted mapping above; with the mapping
+  fixed the record is simply a page.
+- Keep nameless sets everywhere (westoak / some eastside drafts label by note).
 
-### Careful: the notes are forward-looking
+### The set-to-page mapping (settled — and it fooled us twice)
 
-A set's note describes the move **leaving** it (`"Move 16"` on set N = the
-16-count move from N to N+1), and a set's formation sits at the _previous_
-record's cumulative count. So a note's stated count matches the **next** page's
-duration, not its own. Comparing note counts to their own page's duration makes
-the mapping look off by one when it is correct — a trap that cost real time
-here. `15A` being the source's last official set (20 records → 19 sets + the
-materialized trailing hold) is the check that the current mapping is right.
+A record's `cumulativeCount` is its **own** arrival. Its formation stands on
+that count; its page runs from the previous record's count to it; its note and
+measure-range label describe how you _get there_. The trailer flag marks the
+record it sits on as the subset.
+
+Two independent proofs, both from Jack Britt:
+
+1. **Measure arithmetic.** Every label's measure count × counts-per-measure
+   equals its own count minus the previous record's — 3.0 through the opening
+   3/4 section, 4.0 after, across all 18 sets, never fractional. So `"1-8"`
+   names the 24 counts _ending_ at count 24.
+2. **On-field text** (`PRP8`, §2.9), which binds to counts without going through
+   `PTB7` at all. All five flagged records have a text box on their own count:
+   four say `"HOLD"`, the fifth says `"Subset for tubas."`.
+
+The old reading — count = the _next_ set's start, plus a materialized trailing
+page to absorb the last one — yields the **same page count and the same page
+numbers** (Jack Britt: 20 pages ending at `15A`), which is why it survived so
+long. Only the contents are shifted one page late.
+
+Two traps that cost real time here:
+
+- A note's stated count ("Move 16") matches its own page's duration only under
+  the correct mapping. An earlier session note in this file claimed notes were
+  "forward-looking" to explain the mismatch — that was wrong; the mismatch was
+  the bug.
+- `15A` being the last page is **not** evidence for the old model. Both models
+  produce it; the corrected one produces it as `"60-END"` with its own
+  `"HOLD TO END"` note instead of an unnamed synthesized page.
 
 ---
 
