@@ -1,4 +1,4 @@
-import { SECTIONS } from "../Sections";
+import { SECTIONS, FAMILIES } from "../Sections";
 import { describe, expect, it } from "vitest";
 
 describe("Section", () => {
@@ -40,5 +40,30 @@ describe("Section", () => {
             expect(SECTIONS.Tuba.family.toString()).toBe("Brass");
             expect(SECTIONS.Flute.family.toString()).toBe("Woodwind");
         });
+    });
+});
+
+describe("SectionFamily colors", () => {
+    it("gives every family a valid rgba color", () => {
+        for (const family of Object.values(FAMILIES)) {
+            const { r, g, b, a } = family.color;
+            for (const channel of [r, g, b]) {
+                expect(channel).toBeGreaterThanOrEqual(0);
+                expect(channel).toBeLessThanOrEqual(255);
+            }
+            expect(a).toBeGreaterThanOrEqual(0);
+            expect(a).toBeLessThanOrEqual(1);
+        }
+    });
+
+    it("assigns distinct colors across families", () => {
+        const keys = Object.values(FAMILIES).map(
+            (f) => `${f.color.r},${f.color.g},${f.color.b}`,
+        );
+        expect(new Set(keys).size).toBe(keys.length);
+    });
+
+    it("exposes a section's family color through the section", () => {
+        expect(SECTIONS.Trumpet.family.color).toEqual(FAMILIES.Brass.color);
     });
 });

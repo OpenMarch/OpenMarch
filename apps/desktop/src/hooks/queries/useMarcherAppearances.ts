@@ -9,6 +9,7 @@ import {
 } from ".";
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import Marcher from "@/global/classes/Marcher";
+import { getSectionObjectByName } from "@/global/classes/Sections";
 import {
     TagAppearance,
     SectionAppearance,
@@ -97,6 +98,7 @@ export const _combineMarcherAppearances = ({
     tagAppearances,
     marcherPages,
     fieldProperties,
+    includeSectionFamilyColor = true,
 }: {
     marchers: Marcher[];
     sectionAppearances: SectionAppearance[];
@@ -104,6 +106,8 @@ export const _combineMarcherAppearances = ({
     tagAppearances: TagAppearance[];
     marcherPages: MarcherPagesByMarcher;
     fieldProperties: FieldProperties;
+    // The mobile export models colors per section, so it opts out of this fallback
+    includeSectionFamilyColor?: boolean;
 }): MarcherAppearanceByIdMap => {
     if (!marchers) {
         return {};
@@ -143,6 +147,16 @@ export const _combineMarcherAppearances = ({
             : undefined;
         if (sectionAppearance) {
             appearances.push(sectionAppearance);
+        }
+
+        // fall back to the section's family color when no custom appearance sets a fill
+        if (includeSectionFamilyColor) {
+            appearances.push({
+                fill_color: getSectionObjectByName(marcher.section).family
+                    .color,
+                visible: true,
+                label_visible: true,
+            });
         }
 
         appearances.push(defaultMarcherAppearance);

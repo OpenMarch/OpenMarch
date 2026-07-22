@@ -692,7 +692,14 @@
                     "waitingDb": "Preparing your show file…"
                 },
                 "ensemble": {
-                    "description": "Choose your activity.",
+                    "description": "Choose your activity and approximate ensemble size.",
+                    "size": {
+                        "large": "Large",
+                        "medium": "Medium",
+                        "small": "Small"
+                    },
+                    "sizeLabel": "Ensemble size",
+                    "sizeOption": "{label} (~{count, plural, one {# performer} other {# performers}})",
                     "title": "Activity",
                     "typeLabel": "Activity"
                 },
@@ -701,7 +708,7 @@
                     "title": "Field setup"
                 },
                 "performers": {
-                    "added": "Added performers",
+                    "added": "Added performers ({count})",
                     "addNew": "Add performers",
                     "description": "Add marchers now or skip and add them later in the editor.",
                     "noneAdded": "No performers added yet.",

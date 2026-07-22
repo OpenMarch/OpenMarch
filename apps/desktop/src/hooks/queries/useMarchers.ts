@@ -21,6 +21,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
+import { marcherAppearancesKeys } from "./useMarcherAppearances";
 
 const { marchers } = schema;
 
@@ -100,6 +101,10 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: coordinateDataKeys.all,
             });
+            // Recompute dot appearances so new marchers get their section family color
+            void qc.invalidateQueries({
+                queryKey: marcherAppearancesKeys.all(),
+            });
         },
         onError: (e, variables) => {
             conToastError(`Error creating marchers`, e, variables);
@@ -123,6 +128,10 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
 
             void qc.invalidateQueries({
                 queryKey: marcherPageKeys.all(),
+            });
+            // Section edits change the family color, so refresh appearances
+            void qc.invalidateQueries({
+                queryKey: marcherAppearancesKeys.all(),
             });
         },
         onError: (e, variables) => {

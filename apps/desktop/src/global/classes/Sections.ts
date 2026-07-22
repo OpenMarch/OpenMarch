@@ -1,3 +1,15 @@
+import type { RgbaColor } from "@openmarch/core";
+
+// Per-family dot colors, used as the default fill when a section has no custom appearance
+const FAMILY_COLORS = {
+    green: { r: 60, g: 180, b: 75, a: 1 },
+    blue: { r: 0, g: 130, b: 200, a: 1 },
+    orange: { r: 245, g: 130, b: 49, a: 1 },
+    purple: { r: 145, g: 30, b: 180, a: 1 },
+    brown: { r: 101, g: 67, b: 33, a: 1 },
+    teal: { r: 0, g: 128, b: 128, a: 1 },
+} as const satisfies Record<string, RgbaColor>;
+
 class Section {
     private static currentScoreOrder = 0;
     /** The name of the section. E.g. "Baritone" */
@@ -57,10 +69,13 @@ export class SectionFamily {
     readonly name: string;
     readonly tName: string;
     readonly scoreOrder: number;
-    constructor(name: string, tName: string) {
+    /** Default dot color for sections in this family */
+    readonly color: RgbaColor;
+    constructor(name: string, tName: string, color: RgbaColor) {
         this.name = name;
         this.scoreOrder = SectionFamily.currentScoreOrder++;
         this.tName = tName;
+        this.color = color;
     }
 
     /**
@@ -89,12 +104,32 @@ export class SectionFamily {
  * This is used for sorting sections in the UI. Family order supersedes score order.
  */
 export const FAMILIES: { [key: string]: SectionFamily } = {
-    Woodwind: new SectionFamily("Woodwind", "section.family.woodwind"),
-    Brass: new SectionFamily("Brass", "section.family.brass"),
-    Battery: new SectionFamily("Battery", "section.family.battery"),
-    Guard: new SectionFamily("Guard", "section.family.guard"),
-    Other: new SectionFamily("Other", "section.family.other"),
-    Pit: new SectionFamily("Pit", "section.family.pit"),
+    Woodwind: new SectionFamily(
+        "Woodwind",
+        "section.family.woodwind",
+        FAMILY_COLORS.green,
+    ),
+    Brass: new SectionFamily(
+        "Brass",
+        "section.family.brass",
+        FAMILY_COLORS.blue,
+    ),
+    Battery: new SectionFamily(
+        "Battery",
+        "section.family.battery",
+        FAMILY_COLORS.orange,
+    ),
+    Guard: new SectionFamily(
+        "Guard",
+        "section.family.guard",
+        FAMILY_COLORS.purple,
+    ),
+    Other: new SectionFamily(
+        "Other",
+        "section.family.other",
+        FAMILY_COLORS.brown,
+    ),
+    Pit: new SectionFamily("Pit", "section.family.pit", FAMILY_COLORS.teal),
 };
 
 /**
@@ -222,7 +257,7 @@ export const SECTIONS: { [key: string]: Section } = {
         family: FAMILIES.Battery,
         name: "Cymbals",
         tName: "section.instrument.cymbals",
-        prefix: "C",
+        prefix: "CM",
     }),
     FlubDrum: new Section({
         family: FAMILIES.Battery,
