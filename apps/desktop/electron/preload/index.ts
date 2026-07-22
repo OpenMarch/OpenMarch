@@ -1,5 +1,6 @@
-import AudioFile, { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
-import Page from "@/global/classes/Page";
+import type AudioFile from "@/global/classes/AudioFile";
+import type { ModifiedAudioFileArgs } from "@/global/classes/AudioFile";
+import type Page from "@/global/classes/Page";
 import {
     contextBridge,
     ipcRenderer,
@@ -19,7 +20,7 @@ import type {
     AccessTokenResult,
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
-import { HistoryResponse } from "@/db-functions";
+import type { HistoryResponse } from "@/db-functions";
 
 function domReady(
     condition: DocumentReadyState[] = ["complete", "interactive"],

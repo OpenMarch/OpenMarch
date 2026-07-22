@@ -4,7 +4,7 @@ import type { BrowserWindow } from "electron";
 import { DatabaseSync } from "node:sqlite";
 import { asc, desc, eq, isNotNull } from "drizzle-orm";
 import { parseFromWorkspaceSettings } from "@/components/launchpage/parseFromWorkspaceSettings";
-import { getLastPageNumber } from "@/global/classes/Page";
+import { getLastPageNumber } from "@openmarch/core";
 
 export interface PreviousDotsMarcherImport {
     name?: string | null;

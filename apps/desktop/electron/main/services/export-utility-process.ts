@@ -3,9 +3,9 @@ import { DatabaseSync } from "node:sqlite";
 import PDFDocument from "pdfkit";
 import fs from "fs";
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
-import Marcher from "@/global/classes/Marcher";
-import Page from "@/global/classes/Page";
-import MarcherPage from "@/global/classes/MarcherPage";
+import type Marcher from "@/global/classes/Marcher";
+import type Page from "@/global/classes/Page";
+import type MarcherPage from "@/global/classes/MarcherPage";
 import { FieldProperties } from "@openmarch/core";
 import { getOrm } from "@om-electron/database/db";
 

@@ -25,7 +25,7 @@ import {
     updateRecentFileSvgPreview,
     clearMissingRecentFiles,
 } from "./services/recent-files-service";
-import AudioFile from "../../src/global/classes/AudioFile";
+import type AudioFile from "../../src/global/classes/AudioFile";
 import { init, captureException } from "@sentry/electron/main";
 
 import { DrizzleMigrationService } from "../database/services/DrizzleMigrationService";

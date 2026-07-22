@@ -9,8 +9,10 @@ import {
     NewPageArgs,
 } from "@/db-functions";
 import { ModifyPagesRequest } from "@/hooks/queries/usePages";
+import { generatePageNames, getLastPageNumber } from "@openmarch/core";
 import { measureRangeString as _measureRangeString } from "./Page.utils";
 export const measureRangeString = _measureRangeString;
+export { generatePageNames, getLastPageNumber };
 interface Page {
     /** The id of the page in the database
      *
@@ -256,132 +258,6 @@ export function fromDatabasePages({
 
     return createdPages;
 }
-
-/**
- * Creates a list of page names based on the list of booleans that pages are subsets or not.
- *
- * E.g. [False, False, True, False, True, True, False] => ["1", "2", "2A", "3", "3A", "3B", "4"]
- *
- * NOTE - the first page will always evaluate to false no matter what is provided.
- *
- * @param pages boolean[] - A list to define if pages are subsets are not. Should align with the order of the pages.
- * @returns A list of page names in the order that the list of booleans was provided.
- */
-export const generatePageNames = (
-    isSubsetArr: boolean[],
-    pageNumberOffset: number = 0,
-) => {
-    const pageNames: string[] = [pageNumberOffset.toString()];
-    let curPageNumber = pageNumberOffset;
-    let curSubsetLetter = "";
-
-    /**
-     * Increments a letter to the next letter in the alphabet.
-     *
-     * @param letters The letters to increment.
-     * @returns A -> B, B -> C, ..., Z -> AA, AA -> AB, etc. Letters are always capitalized.
-     */
-    const incrementLetters = (letters: string) => {
-        let result = [];
-        let carry = true; // Start with the assumption that we need to increment the last character
-
-        const capitalizedLetters = letters.toUpperCase();
-
-        // Traverse from last to first character to handle the carry
-        for (let i = capitalizedLetters.length - 1; i >= 0; i--) {
-            let char = capitalizedLetters[i];
-            if (carry) {
-                if (char === "Z") {
-                    result.push("A");
-                } else {
-                    result.push(String.fromCharCode(char.charCodeAt(0) + 1));
-                    carry = false; // No carry needed if we haven't wrapped from 'Z' to 'A'
-                }
-            } else {
-                result.push(char); // If no carry, keep current character as is
-            }
-        }
-
-        // If the string was all 'Z's, we will have carry left over after processing all characters
-        if (carry) {
-            result.push("A"); // Append 'A' to handle cases like 'ZZ' -> 'AAA'
-        }
-
-        // Since we've constructed the result in reverse order, reverse it back and join into a string
-        return result.reverse().join("");
-    };
-
-    /**
-     * Get the next page name based on the current page name.
-     *
-     * @param pageNumber The number of the current page.
-     * @param subsetString The subset letter of the current page. If null, the page is not a subset.
-     * @param incrementSubset Whether it is the number or the subset letter that should be incremented.
-     *      Default is false, which increments the number. If true, increments the subset letter and not the number.
-     * @returns
-     */
-    const getNextPageName = ({
-        pageNumber,
-        subsetString,
-        incrementSubset = false,
-    }: {
-        pageNumber: number;
-        subsetString: string | null;
-        incrementSubset?: boolean;
-    }) => {
-        let newPageNumber = pageNumber;
-        let newSubsetString = subsetString || "";
-
-        if (incrementSubset) {
-            // If there is no subset, start with "A"
-            if (!subsetString || subsetString === "") newSubsetString = "A";
-            // Otherwise, increment the subset letter
-            else newSubsetString = incrementLetters(subsetString);
-        } else {
-            newPageNumber = pageNumber + 1;
-            newSubsetString = "";
-        }
-
-        return newPageNumber + newSubsetString;
-    };
-
-    // Loop through the pages and create the page names
-    // 1, 2, 2A, 3, 3A, 3B, 4, etc.
-    for (let i = 1; i < isSubsetArr.length; i++) {
-        const pageName = getNextPageName({
-            pageNumber: curPageNumber,
-            subsetString: isSubsetArr[i] ? curSubsetLetter : null,
-            incrementSubset: isSubsetArr[i],
-        });
-        pageNames.push(pageName);
-        if (isSubsetArr[i]) {
-            curSubsetLetter = incrementLetters(curSubsetLetter);
-        } else {
-            curPageNumber++;
-            curSubsetLetter = "";
-        }
-    }
-    return pageNames;
-};
-
-/**
- * Returns the numeric part of the last page name for an ordered subset list.
- *
- * This is the last named page number (e.g. 3 from "3" or "3B"), not the page count.
- * Empty input returns `pageNumberOffset`.
- */
-export const getLastPageNumber = (
-    isSubsetArr: boolean[],
-    pageNumberOffset: number = 0,
-): number => {
-    if (isSubsetArr.length === 0) return pageNumberOffset;
-
-    const pageNames = generatePageNames(isSubsetArr, pageNumberOffset);
-    const lastName = pageNames[pageNames.length - 1];
-    const match = lastName.match(/^(-?\d+)/);
-    if (!match) return pageNumberOffset;
-    return parseInt(match[1], 10);
-};
 
 /**
  * Finds the next page in a sequence of pages based on the current page's nextPageId.
