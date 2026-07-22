@@ -668,6 +668,7 @@
             "errors": {
                 "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
                 "createFailed": "Failed to create show",
+                "importFailed": "Failed to import previous .dots file",
                 "nameRequired": "Show name is required",
                 "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
             },
@@ -710,6 +711,15 @@
                 "project": {
                     "description": "Name your show and choose where to save it.",
                     "title": "Project details"
+                },
+                "start": {
+                    "blank": "Start blank show",
+                    "blankDescription": "Choose field and performers in the next steps.",
+                    "description": "Choose how to start this show.",
+                    "importPrevious": "Import previous .dots file",
+                    "importPreviousDescription": "Reuse performers, field setup, and the last set coordinates from an existing show.",
+                    "importSummary": "Selected {fileName}. {count, plural, one {# performer} other {# performers}} will be imported.",
+                    "title": "Start setup"
                 },
                 "tempo": {
                     "dbNotReady": "The show file is not ready. Go back to the project step and try again.",

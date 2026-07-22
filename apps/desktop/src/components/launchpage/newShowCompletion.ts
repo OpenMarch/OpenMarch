@@ -14,7 +14,10 @@ import {
     FIRST_PAGE_ID,
 } from "@/db-functions/page";
 import { transactionWithHistory } from "@/db-functions/history";
-import { updateFieldProperties } from "@/global/classes/FieldProperties";
+import {
+    updateFieldProperties,
+    updateFieldPropertiesImage,
+} from "@/global/classes/FieldProperties";
 import {
     updateWorkspaceSettingsParsed,
     getWorkspaceSettingsParsed,
@@ -38,11 +41,20 @@ import { createAllUndoTriggers } from "@/db-functions/history";
 import { databaseReadyQueryOptions } from "@/hooks/useDatabaseReady";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
+import { marcherPageKeys } from "@/hooks/queries/useMarcherPages";
+import { sectionAppearanceKeys } from "@/hooks/queries/useSectionAppearances";
+import { tagKeys } from "@/hooks/queries/tags/queries";
 import {
     createMarchers,
     deleteMarchers,
     getMarchers,
 } from "@/db-functions/marcher";
+import { updateMarcherPagesInTransaction } from "@/db-functions/marcherPage";
+import { createSectionAppearances } from "@/db-functions/sectionAppearance";
+import {
+    _createTagsInTransaction,
+    createMarcherTags,
+} from "@/db-functions/tag";
 import AudioFile from "@/global/classes/AudioFile";
 import {
     deleteMeasuresInTransaction,
@@ -157,6 +169,9 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
         defaultBeatsPerMeasure,
         defaultNewPageCounts: getDefaultNewPageCounts(form),
         activity: form.ensemble?.activity,
+        ...(form.previousDotsImport != null
+            ? { pageNumberOffset: form.previousDotsImport.pageNumberOffset }
+            : {}),
     });
     await updateWorkspaceSettingsParsed({ db, settings: updatedSettings });
 }
@@ -244,6 +259,151 @@ async function applyPerformersSettings(
 
     await queryClient.invalidateQueries({
         queryKey: allMarchersQueryOptions().queryKey,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+    });
+}
+
+function drillNumberKey(marcher: {
+    drill_prefix: string;
+    drill_order: number;
+}): string {
+    return `${marcher.drill_prefix}\u0000${marcher.drill_order}`;
+}
+
+async function applyPreviousDotsCoordinates(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const coordinates = form.previousDotsImport?.coordinates;
+    if (!coordinates?.length) return;
+
+    const coordinateByDrillNumber = new Map(
+        coordinates.map((coordinate) => [
+            drillNumberKey(coordinate),
+            coordinate,
+        ]),
+    );
+    const marchers = await getMarchers({ db });
+    const updates = marchers.flatMap((marcher) => {
+        const coordinate = coordinateByDrillNumber.get(drillNumberKey(marcher));
+        if (!coordinate) return [];
+        return [
+            {
+                marcher_id: marcher.id,
+                page_id: FIRST_PAGE_ID,
+                x: coordinate.x,
+                y: coordinate.y,
+            },
+        ];
+    });
+
+    if (updates.length === 0) return;
+
+    await transactionWithHistory(
+        db,
+        "applyPreviousDotsCoordinates",
+        async (tx) => {
+            await updateMarcherPagesInTransaction({
+                tx,
+                modifiedMarcherPages: updates,
+            });
+        },
+    );
+
+    await queryClient.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+    });
+}
+
+async function applyPreviousDotsFieldImage(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const fieldImage = form.previousDotsImport?.fieldImage;
+    if (fieldImage == null || fieldImage.length === 0) return;
+
+    await updateFieldPropertiesImage(fieldImage);
+    await queryClient.invalidateQueries({
+        queryKey: fieldPropertiesKeys.detail(),
+    });
+}
+
+async function applyPreviousDotsSectionAppearances(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const sectionAppearances = form.previousDotsImport?.sectionAppearances;
+    if (!sectionAppearances?.length) return;
+
+    await createSectionAppearances({
+        db,
+        newItems: sectionAppearances,
+    });
+    await queryClient.invalidateQueries({
+        queryKey: sectionAppearanceKeys.all(),
+    });
+}
+
+async function applyPreviousDotsMarcherTags(
+    form: NewShowFormState,
+    queryClient: QueryClient,
+): Promise<void> {
+    const importData = form.previousDotsImport;
+    if (!importData?.tags.length) return;
+
+    const tagIdByKey = new Map<number, number>();
+    await transactionWithHistory(db, "createTags", async (tx) => {
+        for (const tag of importData.tags) {
+            const [createdTag] = await _createTagsInTransaction({
+                tx,
+                newTags: [
+                    {
+                        name: tag.name,
+                        description: tag.description,
+                        icon: tag.icon,
+                        color_hex: tag.color_hex,
+                    },
+                ],
+            });
+            tagIdByKey.set(tag.key, createdTag.id);
+        }
+    });
+
+    if (!importData.marcherTags.length) {
+        await queryClient.invalidateQueries({
+            queryKey: tagKeys.allTags(),
+        });
+        return;
+    }
+
+    const marchers = await getMarchers({ db });
+    const marcherIdByDrillNumber = new Map(
+        marchers.map((marcher) => [drillNumberKey(marcher), marcher.id]),
+    );
+
+    const newMarcherTags = importData.marcherTags.flatMap((marcherTag) => {
+        const marcherId = marcherIdByDrillNumber.get(
+            drillNumberKey(marcherTag),
+        );
+        const tagId = tagIdByKey.get(marcherTag.tagKey);
+        if (marcherId == null || tagId == null) return [];
+        return [{ marcher_id: marcherId, tag_id: tagId }];
+    });
+
+    if (newMarcherTags.length > 0) {
+        await createMarcherTags({ db, newMarcherTags });
+    }
+
+    await queryClient.invalidateQueries({
+        queryKey: tagKeys.allTags(),
+    });
+    await queryClient.invalidateQueries({
+        queryKey: tagKeys.allMarcherTags(),
+    });
+    await queryClient.invalidateQueries({
+        queryKey: tagKeys.marcherIdsByTagIdMap(),
     });
 }
 
@@ -567,12 +727,16 @@ export async function completeNewShow(
     await applyProjectSettings(form);
     await applyMusicSettings(form.audio, form.tempo);
     await updateFieldProperties(form.fieldTemplate);
+    await applyPreviousDotsFieldImage(form, queryClient);
     if (form.tempo?.method === "tempo_only") {
         await createTempoOnlyBeatsMeasuresAndPages(form, queryClient);
     } else {
         await createBeatsAndPages(queryClient);
     }
     await applyPerformersSettings(form.performers, queryClient);
+    await applyPreviousDotsCoordinates(form, queryClient);
+    await applyPreviousDotsSectionAppearances(form, queryClient);
+    await applyPreviousDotsMarcherTags(form, queryClient);
 
     const finalizeResult = await window.electron.finalizeNewShowDraft(
         targetPath,

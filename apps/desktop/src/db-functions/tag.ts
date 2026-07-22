@@ -30,12 +30,16 @@ export const getTagName = (tag: { tag_id: number; name?: string | null }) =>
 export interface NewTagArgs {
     name?: string | null;
     description?: string | null;
+    icon?: string | null;
+    color_hex?: string | null;
 }
 
 export interface ModifiedTagArgs {
     id: number;
     name?: string | null;
     description?: string | null;
+    icon?: string | null;
+    color_hex?: string | null;
 }
 
 /**

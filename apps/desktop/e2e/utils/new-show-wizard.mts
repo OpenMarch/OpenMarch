@@ -13,6 +13,25 @@ export async function openNewShowWizard(page: Page) {
     await expect(dialog).toBeVisible();
     await expect(
         dialog.getByRole("heading", {
+            name: "Start setup",
+            exact: true,
+            level: 2,
+        }),
+    ).toBeVisible();
+}
+
+export async function selectBlankStart(page: Page) {
+    const dialog = wizardDialog(page);
+    await dialog.getByRole("button", { name: /Start blank show/ }).click();
+    await expect(dialog.getByRole("button", { name: "Next" })).toBeEnabled();
+}
+
+export async function goToProjectStep(page: Page) {
+    await selectBlankStart(page);
+    const dialog = wizardDialog(page);
+    await dialog.getByRole("button", { name: "Next" }).click();
+    await expect(
+        dialog.getByRole("heading", {
             name: "Project details",
             exact: true,
             level: 2,
@@ -33,6 +52,7 @@ export async function completeNewShowWizard(
     { projectName }: CompleteNewShowWizardOptions,
 ) {
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, projectName);
 
     const dialog = wizardDialog(page);

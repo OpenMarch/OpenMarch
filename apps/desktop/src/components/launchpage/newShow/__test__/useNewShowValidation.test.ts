@@ -8,6 +8,22 @@ import {
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
 describe("useNewShowValidation", () => {
+    it("requires a setup mode on start step", () => {
+        const { result } = renderHook(() =>
+            useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "start"),
+        );
+        expect(result.current).toBe(false);
+
+        const withStart: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            start: { mode: "importPrevious" },
+        };
+        const { result: selectedResult } = renderHook(() =>
+            useNewShowValidation(withStart, "start"),
+        );
+        expect(selectedResult.current).toBe(true);
+    });
+
     it("requires project name and file location on project step", () => {
         const { result } = renderHook(() =>
             useNewShowValidation(DEFAULT_NEW_SHOW_WIZARD_STATE, "project"),

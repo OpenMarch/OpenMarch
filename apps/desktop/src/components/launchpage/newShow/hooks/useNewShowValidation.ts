@@ -21,6 +21,8 @@ export function useNewShowValidation(
         }
 
         switch (currentStep) {
+            case "start":
+                return state.start !== null;
             case "project": {
                 const project = state.project;
                 return (
