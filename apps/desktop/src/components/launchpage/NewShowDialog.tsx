@@ -268,6 +268,13 @@ export default function NewShowDialog({
             ...prev,
             start: { mode: "blank" },
             previousDotsImport: undefined,
+            project: prev.project
+                ? {
+                      projectName: prev.project.projectName,
+                      fileLocation: prev.project.fileLocation,
+                  }
+                : null,
+            ensemble: null,
             field: null,
             performers: null,
         }));
@@ -309,7 +316,7 @@ export default function NewShowDialog({
                 },
                 ensemble: result.activity
                     ? { activity: result.activity }
-                    : prev.ensemble,
+                    : null,
                 field: {
                     template: fieldTemplate,
                     isCustom: fieldTemplate.isCustom ?? false,
