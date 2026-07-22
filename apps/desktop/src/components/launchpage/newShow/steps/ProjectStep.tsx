@@ -79,6 +79,12 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     useEffect(() => {
         const fetchDefaultDirectory = async () => {
             try {
+                const storedDefault =
+                    await window.electron.getDefaultFilesDirectory();
+                if (storedDefault?.trim()) {
+                    setDefaultDirectory(normalizePath(storedDefault));
+                    return;
+                }
                 const lastFilePath = await window.electron.databaseGetPath();
                 if (lastFilePath?.trim()) {
                     const normalizedPath = normalizePath(lastFilePath);

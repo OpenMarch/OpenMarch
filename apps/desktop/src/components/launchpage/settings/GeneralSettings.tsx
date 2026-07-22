@@ -9,6 +9,7 @@ import {
     SelectContent,
     SelectItem,
     SelectTriggerButton,
+    Button,
 } from "@openmarch/ui";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
@@ -26,6 +27,23 @@ export default function GeneralSettings() {
     const tolgee = useTolgee();
     const [currentLanguage, setCurrentLanguage] = useState("en");
     const { uiSettings, setUiSettings } = useUiSettingsStore();
+
+    const [defaultFilesFolder, setDefaultFilesFolder] = useState("");
+
+    useEffect(() => {
+        const loadDefaultFilesFolder = async () => {
+            const stored = await window.electron.getDefaultFilesDirectory();
+            setDefaultFilesFolder(stored ?? "");
+        };
+        void loadDefaultFilesFolder();
+    }, []);
+
+    const handleEditDefaultFilesFolder = async () => {
+        const selected = await window.electron.selectDirectory();
+        if (!selected) return;
+        const ok = await window.electron.setDefaultFilesDirectory(selected);
+        if (ok) setDefaultFilesFolder(selected);
+    };
 
     useEffect(() => {
         // Load saved language from electron store
@@ -128,6 +146,27 @@ export default function GeneralSettings() {
                         })
                     }
                 />
+            </div>
+
+            <div className="flex h-[2.5rem] items-center justify-between px-8">
+                <p className="text-body text-text-subtitle">
+                    <T keyName="settings.general.defaultFilesFolder" />
+                </p>
+                <div className="flex items-center gap-8">
+                    <span className="text-text-subtitle text-sub max-w-[220px] truncate">
+                        {defaultFilesFolder || (
+                            <T keyName="settings.general.defaultFilesFolder.notSet" />
+                        )}
+                    </span>
+                    <Button
+                        type="button"
+                        variant="secondary"
+                        size="compact"
+                        onClick={() => void handleEditDefaultFilesFolder()}
+                    >
+                        <T keyName="settings.general.defaultFilesFolder.edit" />
+                    </Button>
+                </div>
             </div>
         </div>
     );

@@ -32,6 +32,7 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
+import { computeDefaultDirectoryToPersist } from "./services/default-files-directory";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -563,6 +564,33 @@ ipcMain.handle("set-language", (event, language) => {
     store.set("language", language);
 });
 
+// Default files directory
+
+ipcMain.handle("settings:getDefaultFilesDirectory", () => {
+    return (store.get("defaultFilesDirectory", "") as string) || "";
+});
+
+ipcMain.handle("settings:setDefaultFilesDirectory", (_event, dir: string) => {
+    try {
+        if (!dir || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
+            return false;
+        }
+        store.set("defaultFilesDirectory", dir);
+        return true;
+    } catch {
+        return false;
+    }
+});
+
+ipcMain.handle("dialog:selectDirectory", async () => {
+    if (!win) return null;
+    const result = await dialog.showOpenDialog(win, {
+        properties: ["openDirectory", "createDirectory"],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+});
+
 // file management
 
 ipcMain.handle("closeCurrentFile", () => {
@@ -704,6 +732,14 @@ async function createFileAtPath(filePath: string) {
     await setActiveDb(filePath, true);
 
     addRecentFile(filePath);
+
+    const dirToPersist = computeDefaultDirectoryToPersist(
+        store.get("defaultFilesDirectory") as string | undefined,
+        filePath,
+    );
+    if (dirToPersist) {
+        store.set("defaultFilesDirectory", dirToPersist);
+    }
 
     return 200;
 }
@@ -945,6 +981,14 @@ export async function finalizeNewShowDraft(
     await setActiveDb(finalPath, false);
     addRecentFile(finalPath);
 
+    const dirToPersist = computeDefaultDirectoryToPersist(
+        store.get("defaultFilesDirectory") as string | undefined,
+        finalPath,
+    );
+    if (dirToPersist) {
+        store.set("defaultFilesDirectory", dirToPersist);
+    }
+
     return 200;
 }
 
@@ -1016,8 +1060,12 @@ export async function newFile() {
         );
         filePath = process.env.PLAYWRIGHT_NEW_FILE_PATH;
     } else {
+        const storedDefaultDir = store.get("defaultFilesDirectory") as
+            | string
+            | undefined;
         const dialogResult = await dialog.showSaveDialog(win, {
             buttonLabel: "Create New",
+            defaultPath: storedDefaultDir || undefined,
             filters: [{ name: "OpenMarch File", extensions: ["dots"] }],
         });
         if (dialogResult.canceled || !dialogResult.filePath) return;
