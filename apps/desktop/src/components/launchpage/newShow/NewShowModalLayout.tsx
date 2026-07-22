@@ -1,7 +1,7 @@
 import { ReactNode } from "react";
 import NewShowProgressIndicator from "./components/NewShowProgressIndicator";
 import NewShowNavigationButtons from "./components/NewShowNavigationButtons";
-import type { NewShowStepId } from "./newShowTypes";
+import { NewShowStepId } from "../newShowTypes";
 
 interface NewShowModalLayoutProps {
     currentStepIndex: number;

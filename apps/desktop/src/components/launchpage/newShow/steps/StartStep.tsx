@@ -1,11 +1,6 @@
-import { Button } from "@openmarch/ui";
 import { T, useTranslate } from "@tolgee/react";
-import {
-    DownloadSimpleIcon,
-    FileArrowUpIcon,
-    FileIcon,
-    FilePlusIcon,
-} from "@phosphor-icons/react";
+import { DownloadSimpleIcon, FileIcon } from "@phosphor-icons/react";
+import type { KeyboardEvent } from "react";
 import type { NewShowStartData } from "../../newShowTypes";
 import clsx from "clsx";
 
@@ -30,9 +25,18 @@ export default function StartStep({
     const selectedMode = start?.mode;
     const sourceName = importedSourcePath?.split(/[\\/]/).pop();
 
+    const handleCardKeyDown = (event: KeyboardEvent, onSelect: () => void) => {
+        if (isImporting) return;
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            onSelect();
+        }
+    };
+
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-12">
             <div
+                role="button"
                 tabIndex={isImporting ? -1 : 0}
                 className={clsx(
                     "rounded-6 h-auto justify-start gap-12 border p-16 text-left",
@@ -44,6 +48,7 @@ export default function StartStep({
                         : "cursor-pointer",
                 )}
                 onClick={isImporting ? undefined : onStartBlank}
+                onKeyDown={(e) => handleCardKeyDown(e, onStartBlank)}
             >
                 <span className="flex items-center gap-8">
                     <FileIcon size={28} />
@@ -56,6 +61,7 @@ export default function StartStep({
                 </span>
             </div>
             <div
+                role="button"
                 tabIndex={isImporting ? -1 : 0}
                 className={clsx(
                     "rounded-6 h-auto justify-start gap-12 border p-16 text-left",
@@ -67,6 +73,7 @@ export default function StartStep({
                         : "cursor-pointer",
                 )}
                 onClick={isImporting ? undefined : onImportPrevious}
+                onKeyDown={(e) => handleCardKeyDown(e, onImportPrevious)}
             >
                 <span className="flex items-center gap-8">
                     <DownloadSimpleIcon size={28} />
