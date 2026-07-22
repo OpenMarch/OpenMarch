@@ -51,7 +51,10 @@ import {
 } from "@/db-functions/marcher";
 import { updateMarcherPagesInTransaction } from "@/db-functions/marcherPage";
 import { createSectionAppearances } from "@/db-functions/sectionAppearance";
-import { createMarcherTags, createTags } from "@/db-functions/tag";
+import {
+    _createTagsInTransaction,
+    createMarcherTags,
+} from "@/db-functions/tag";
 import AudioFile from "@/global/classes/AudioFile";
 import {
     deleteMeasuresInTransaction,
@@ -350,19 +353,23 @@ async function applyPreviousDotsMarcherTags(
     const importData = form.previousDotsImport;
     if (!importData?.tags.length) return;
 
-    const createdTags = await createTags({
-        db,
-        newTags: importData.tags.map((tag) => ({
-            name: tag.name,
-            description: tag.description,
-            icon: tag.icon,
-            color_hex: tag.color_hex,
-        })),
+    const tagIdByKey = new Map<number, number>();
+    await transactionWithHistory(db, "createTags", async (tx) => {
+        for (const tag of importData.tags) {
+            const [createdTag] = await _createTagsInTransaction({
+                tx,
+                newTags: [
+                    {
+                        name: tag.name,
+                        description: tag.description,
+                        icon: tag.icon,
+                        color_hex: tag.color_hex,
+                    },
+                ],
+            });
+            tagIdByKey.set(tag.key, createdTag.id);
+        }
     });
-
-    const tagIdByKey = new Map(
-        importData.tags.map((tag, index) => [tag.key, createdTags[index].id]),
-    );
 
     if (!importData.marcherTags.length) {
         await queryClient.invalidateQueries({
