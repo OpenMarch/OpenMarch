@@ -205,14 +205,7 @@ export function MobileExportModalContents() {
                 </div>
             </header>
 
-            <div
-                className={clsx(
-                    "flex grow flex-col gap-16 pr-3",
-                    isSignedInView
-                        ? "overflow-y-auto"
-                        : "min-h-0 flex-1 overflow-hidden",
-                )}
-            >
+            <div className="flex min-h-0 flex-1 grow flex-col gap-16 overflow-y-auto pr-3">
                 <div
                     className={clsx(
                         "flex flex-col gap-12",
@@ -296,7 +289,7 @@ function SignedOutMobileExportContent() {
         " block h-200 w-auto shrink-0  drop-shadow-text-subtitle",
     );
     return (
-        <div className="text-body text-text-subtitle flex h-full min-h-0 flex-col gap-24 overflow-hidden text-center">
+        <div className="text-body text-text-subtitle flex h-full min-h-0 flex-col gap-24 overflow-y-auto text-center">
             <div className="flex shrink-0 grow flex-col items-center gap-16">
                 <div className="translate-x-[-32px]">
                     <img

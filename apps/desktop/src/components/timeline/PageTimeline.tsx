@@ -18,12 +18,13 @@ import {
     ModifyPagesRequest,
     updatePagesMutationOptions,
 } from "@/hooks/queries";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import {
     getAvailableOffsets,
     useCreateLastPageOnTimeline,
 } from "./PageTimeline.utils";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
@@ -56,6 +57,10 @@ export default function PageTimeline() {
 
     const { mutate: createDefaultTempoGroupAndPage } =
         useCreateLastPageOnTimeline();
+    // Creating a page needs the workspace settings, which load asynchronously
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
+    );
     const { t } = useTolgee();
 
     // Calculate the width of a page based on its duration
@@ -510,8 +515,9 @@ export default function PageTimeline() {
             </ul>
             {!isFullscreen && (
                 <button
-                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
+                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => createDefaultTempoGroupAndPage()}
+                    disabled={!workspaceSettings}
                 >
                     <PlusIcon size={20} />
                 </button>

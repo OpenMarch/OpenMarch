@@ -19,18 +19,16 @@ import {
     updateFieldPropertiesMutationOptions,
 } from "@/hooks/queries";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
-import IndoorTemplates from "@/global/classes/fieldTemplates/Indoor";
+import GridFieldTemplates from "@/global/classes/fieldTemplates/GridFields";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 
 interface FieldPropertiesSelectorProps {
-    environment?: "indoor" | "outdoor";
     onTemplateChange?: (template: FieldProperties) => void;
     currentTemplate?: FieldProperties;
 }
 
 export default function FieldPropertiesSelector({
-    environment,
     onTemplateChange,
     currentTemplate: externalCurrentTemplate,
 }: FieldPropertiesSelectorProps = {}) {
@@ -120,41 +118,43 @@ export default function FieldPropertiesSelector({
                         />
                         <SelectContent>
                             <SelectGroup>
-                                {(environment === undefined ||
-                                    environment === "outdoor") && (
-                                    <>
-                                        <SelectLabel>Football</SelectLabel>
-                                        {Object.values(FootballTemplates).map(
-                                            (template) => (
-                                                <SelectItem
-                                                    key={template.name}
-                                                    value={template.name}
-                                                >
-                                                    {template.name}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                        <SelectSeparator />
-                                    </>
+                                <SelectLabel>
+                                    {t(
+                                        "fieldProperties.fieldTemplate.football",
+                                    )}
+                                </SelectLabel>
+                                {Object.values(FootballTemplates).map(
+                                    (template) => (
+                                        <SelectItem
+                                            key={template.name}
+                                            value={template.name}
+                                        >
+                                            {template.name}
+                                        </SelectItem>
+                                    ),
                                 )}
-                                {(environment === undefined ||
-                                    environment === "indoor") && (
-                                    <>
-                                        <SelectLabel>Indoor</SelectLabel>
-                                        {Object.values(IndoorTemplates).map(
-                                            (template) => (
-                                                <SelectItem
-                                                    key={template.name}
-                                                    value={template.name}
-                                                >
-                                                    {template.name}
-                                                </SelectItem>
-                                            ),
-                                        )}
-                                        <SelectSeparator />
-                                    </>
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.grid")}
+                                </SelectLabel>
+                                {Object.values(GridFieldTemplates).map(
+                                    (template) => (
+                                        <SelectItem
+                                            key={template.name}
+                                            value={template.name}
+                                        >
+                                            {template.name}
+                                        </SelectItem>
+                                    ),
                                 )}
-                                <SelectLabel>Custom</SelectLabel>
+                            </SelectGroup>
+                            <SelectSeparator />
+                            <SelectGroup>
+                                <SelectLabel>
+                                    {t("fieldProperties.fieldTemplate.custom")}
+                                </SelectLabel>
                                 {(currentTemplate?.isCustom ||
                                     fieldProperties?.isCustom) && (
                                     <SelectItem key="custom" value="Custom">

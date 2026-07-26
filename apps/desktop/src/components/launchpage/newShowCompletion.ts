@@ -156,8 +156,7 @@ async function applyProjectSettings(form: NewShowFormState): Promise<void> {
         defaultTempo: tempo,
         defaultBeatsPerMeasure,
         defaultNewPageCounts: getDefaultNewPageCounts(form),
-        ensembleEnvironment: form.ensemble?.environment,
-        ensembleType: form.ensemble?.ensemble_type,
+        activity: form.ensemble?.activity,
     });
     await updateWorkspaceSettingsParsed({ db, settings: updatedSettings });
 }

@@ -40,7 +40,7 @@ export async function completeNewShowWizard(
     await dialog.getByRole("button", { name: "Next" }).click();
     await expect(
         dialog.getByRole("heading", {
-            name: "Ensemble",
+            name: "Activity",
             exact: true,
             level: 2,
         }),
