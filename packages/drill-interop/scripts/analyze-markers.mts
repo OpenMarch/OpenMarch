@@ -41,8 +41,8 @@ while (reader.remaining >= 4) {
         reader.u16();
         const count = reader.u16();
         reader.skip(count * 69);
-        const blen = reader.u16();
-        const block = reader.ascii(blen);
+        const blockLen = reader.u16();
+        const block = reader.ascii(blockLen);
         const plain = await decodeCoordinateBlock(block);
         const bySym: Record<string, number> = {};
         const nonCast: { id: string; sym: string; x: number; y: number }[] = [];
@@ -64,7 +64,13 @@ while (reader.remaining >= 4) {
         console.log("non-cast count", nonCast.length);
         for (const m of nonCast) {
             const imported = propIds.has(m.id) ? "prop" : "DROPPED";
-            console.log(imported, m.sym, m.x.toFixed(1), m.y.toFixed(1), m.id.slice(-6));
+            console.log(
+                imported,
+                m.sym,
+                m.x.toFixed(1),
+                m.y.toFixed(1),
+                m.id.slice(-6),
+            );
         }
         break;
     }
