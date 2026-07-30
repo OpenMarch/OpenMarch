@@ -551,9 +551,10 @@ currently map it into OpenMarch. Listed roughly by value.
    is the single biggest fidelity improvement and is pure importer work.
 
 2. **Per-marker linkage ids → nothing (unparsed, but narrower than hoped).**
-   Every `PG15` frame carries a 69-byte record per marker (layout in §2.6) that
-   the reader skips wholesale (`reader.skip(count * PAGE_RECORD_BYTES)` in
-   `readPageFrame`). A column-variance scan across all 500 frames shows the
+   Every `PG15` frame carries a 69-byte record per marker (layout in §2.6).
+   `readPageFrame` reads the **creation-group id** out of each entry (§2.6) and
+   ignores the rest; the linkage fields below are what remains unparsed. A
+   column-variance scan across all 500 frames shows the
    export **strips most of that record** — facing angle, rotation, symbol, marker
    type, inline X/Y, selected, and visibility are all constant defaults, so
    **body facing/rotation are not recoverable** (an earlier version of this doc

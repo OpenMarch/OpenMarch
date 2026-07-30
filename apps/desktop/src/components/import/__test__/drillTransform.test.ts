@@ -109,24 +109,16 @@ describe("sourcePointToPixels", () => {
 
 describe("lastPageCountsForImport", () => {
     it("gives the last page only its own set's counts", () => {
-        // Yorktown part 1: set 20 arrives on 232, set 21 on 248.
+        // Yorktown part 1: set 20 arrives on 232, set 21 on 248, and the show
+        // carries 300 counts of frames and audio beyond that. The closing move
+        // is 16 counts; the regression folded the 51-count tail in and produced
+        // 299 - 232 = 67.
         expect(
             lastPageCountsForImport({
                 lastSetStartCount: 248,
                 previousPageStartCount: 232,
             }),
         ).toBe(16);
-    });
-
-    it("does not stretch the last page across timeline the drill never reaches", () => {
-        // The same show carries 300 counts of frames and audio. The 51 counts
-        // past the final set are timeline the drill never reaches, so they must
-        // not be folded into the closing move.
-        const counts = lastPageCountsForImport({
-            lastSetStartCount: 248,
-            previousPageStartCount: 232,
-        });
-        expect(counts).toBeLessThan(300 - 232);
     });
 
     it("never returns a zero-length page", () => {

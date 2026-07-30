@@ -71,6 +71,15 @@ describe("isLikelyReferenceMarker", () => {
         expect(isLikelyPropPosition(behindTheLine, SAMPLE_GRID)).toBe(true);
     });
 
+    it("admits a prop exactly at the off-field allowance, and none past it", () => {
+        // The allowance is 6 steps past the sideline (26.25 + 6/1.6 units).
+        // Inclusive, so the boundary itself is a prop.
+        expect(isLikelyPropPosition({ x: 0, y: 30 }, SAMPLE_GRID)).toBe(true);
+        expect(isLikelyPropPosition({ x: 0, y: 30.01 }, SAMPLE_GRID)).toBe(
+            false,
+        );
+    });
+
     it("still flags reference ticks that hug a sideline from outside", () => {
         // Jack Britt draws yard-number ticks exactly one step past the line
         // (26.25 + 0.625 units). Geometry, not props.

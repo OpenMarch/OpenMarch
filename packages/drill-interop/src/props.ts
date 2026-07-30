@@ -95,7 +95,7 @@ export function isLikelyPropPosition(
     if (isLikelyReferenceMarker(point, grid)) return false;
     const yFromCenter = Math.abs(yUnitsToStepsFromCenter(point.y, grid));
     return (
-        yFromCenter < fieldDepthSteps(grid) / 2 + PROP_OUTSIDE_SIDELINE_STEPS
+        yFromCenter <= fieldDepthSteps(grid) / 2 + PROP_OUTSIDE_SIDELINE_STEPS
     );
 }
 
@@ -182,7 +182,7 @@ export function discoverMarkers(
     const candidateIds = new Set<string>();
 
     for (const page of pages) {
-        for (const [id, record] of page.records) {
+        for (const id of page.records.keys()) {
             if (castIds.has(id)) continue;
             candidateIds.add(id);
         }
