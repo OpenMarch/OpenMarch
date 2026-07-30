@@ -203,6 +203,11 @@
         "sideToSide": "Side to Side",
         "sideToSideAbbreviation": "S. to S."
     },
+    "drill": {
+        "audioNotImported": "The drill imported, but its audio could not be added. You can add the audio file manually.",
+        "importFailed": "Failed to import drill file",
+        "settingsNotApplied": "The drill imported, but page numbering and audio alignment could not be applied. You can set these in workspace settings."
+    },
     "ensembles": {
         "attachDialog": {
             "attach": "Attach",

@@ -241,7 +241,11 @@ ignoreRegExpList:
   - \u[0-9A-Fa-f]{4}
   - ^import\s+.*$
   - "[a-zA-Z]+\\=\\{[a-zA-Z0-9_$]+\\}"
-  - '[`"][A-Za-z0-9+/]+={0,2}[`"]'
+  # Base64 payloads. The length floor matters: `+` matched any quoted word, so
+  # ordinary misspellings inside string literals were ignored everywhere. 20
+  # clears the longest real English words while still covering a 16-byte key or
+  # IV, which encodes to 22 characters plus padding.
+  - '[`"][A-Za-z0-9+/]{20,}={0,2}[`"]'
 overrides:
   - filename:
       - "**/i18n/**"

@@ -30,6 +30,7 @@ import { db, schema } from "@/global/database/db";
 import { eq } from "drizzle-orm";
 import { queryClient } from "@/App";
 import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 import { useTimingObjects } from "@/hooks";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { coordinateDataKeys } from "@/hooks/queries/useCoordinateData";
@@ -47,6 +48,12 @@ export type DrillImportResult = {
     message: string;
     marchers: number;
     sets: number;
+    /**
+     * Finishing steps that failed *after* the show itself was committed. The
+     * import succeeded; these name what did not make it, so the user can redo
+     * those bits by hand. See {@link finishingStep}.
+     */
+    warnings: string[];
 };
 
 /** Ordered stages of an import, surfaced to the UI as a plain-English checklist. */
@@ -74,15 +81,22 @@ export type DrillImportProgress = (step: DrillImportStep) => void;
 /** Fallback per-count duration when the package has no SYNC timestamps. */
 const DEFAULT_BEAT_DURATION_SECONDS = 0.5;
 
+/** What the transactional part of an import produces. */
+type ImportedShowCounts = { marchers: number; sets: number };
+
 /**
  * Replaces the current show's marchers, pages, and coordinates with those from a
  * parsed drill package, all within a single undoable transaction.
+ *
+ * Deliberately not typed off {@link DrillImportResult}: `warnings` describes the
+ * finishing steps that run *after* this commits, which this function knows
+ * nothing about.
  */
 // eslint-disable-next-line max-lines-per-function
 export const _importDrillShow = async (
     show: DrillShow,
     onProgress?: DrillImportProgress,
-): Promise<Omit<DrillImportResult, "message" | "success">> => {
+): Promise<ImportedShowCounts> => {
     return await transactionWithHistory(
         db,
         "importDrillShow",
@@ -261,18 +275,60 @@ export const _importDrillShow = async (
     );
 };
 
-/** Imports embedded show audio (if any) via the main process, selecting it. */
+/**
+ * Imports embedded show audio (if any) via the main process, selecting it.
+ *
+ * IPC clones this buffer into the main process, which stores the bytes as a
+ * BLOB. There is no path-based shortcut to avoid that clone: the audio lives
+ * inside the `.3dz`, so producing a file for main to read would mean writing it
+ * to disk first, which needs the bytes in main already. The clone is a one-time
+ * cost during an explicit, progress-reported import.
+ *
+ * The copy we *can* avoid is this side's: slicing is only needed when the array
+ * is a view into a larger buffer, which it is not when the unzip hands back a
+ * standalone one.
+ */
 async function importDrillAudio(show: DrillShow): Promise<void> {
     if (!show.audio) return;
     const { data, name } = show.audio;
-    const arrayBuffer = data.buffer.slice(
-        data.byteOffset,
-        data.byteOffset + data.byteLength,
+    const spansWholeBuffer =
+        data.byteOffset === 0 && data.byteLength === data.buffer.byteLength;
+    const arrayBuffer = (
+        spansWholeBuffer
+            ? data.buffer
+            : data.buffer.slice(
+                  data.byteOffset,
+                  data.byteOffset + data.byteLength,
+              )
     ) as ArrayBuffer;
     await window.electron.insertAudioFileFromBuffer({
         data: arrayBuffer,
         nickname: name,
     });
+}
+
+/**
+ * Runs a finishing step that happens *after* the import transaction commits,
+ * turning a failure into a warning instead of an error.
+ *
+ * By the time these run, `_importDrillShow` has already replaced the previous
+ * show: it is gone, and the new one is on screen. Rejecting here would surface
+ * a "failed to import" toast over a show that did in fact import, and offer no
+ * way back — the destructive part is not undone by the throw. Audio and
+ * workspace settings are both additive and can be redone by hand, so a failure
+ * is reported alongside the successful import rather than replacing it.
+ */
+async function finishingStep(
+    warnings: string[],
+    warning: string,
+    step: () => Promise<void>,
+): Promise<void> {
+    try {
+        await step();
+    } catch (error) {
+        console.error(warning, error);
+        warnings.push(warning);
+    }
 }
 
 /**
@@ -287,8 +343,15 @@ export const importDrillPackage = async (
     const show = await parseDrillPackage(await file.arrayBuffer());
     const { marchers, sets } = await _importDrillShow(show, onProgress);
     onProgress?.("finish");
-    await importDrillAudio(show);
-    await applyDrillWorkspaceSettings(show);
+
+    const warnings: string[] = [];
+    await finishingStep(warnings, tolgee.t("drill.audioNotImported"), () =>
+        importDrillAudio(show),
+    );
+    await finishingStep(warnings, tolgee.t("drill.settingsNotApplied"), () =>
+        applyDrillWorkspaceSettings(show),
+    );
+
     return {
         success: true,
         message: show.title
@@ -296,6 +359,7 @@ export const importDrillPackage = async (
             : "Imported drill file",
         marchers,
         sets,
+        warnings,
     };
 };
 
@@ -360,7 +424,7 @@ export const useImportDrillPackage = () => {
             setPageToSelect?.({ id: FIRST_PAGE_ID });
         },
         onError: (error) => {
-            conToastError("Failed to import drill file", error);
+            conToastError(tolgee.t("drill.importFailed"), error);
         },
     });
 };

@@ -5,6 +5,7 @@ import {
     CircleIcon,
     DownloadSimpleIcon,
     SpinnerIcon,
+    WarningIcon,
     XIcon,
 } from "@phosphor-icons/react";
 import { SidebarModalLauncher } from "../sidebar/SidebarModal";
@@ -162,6 +163,21 @@ function ImportProgress({
                         {result.message} — {result.marchers} marchers,{" "}
                         {result.sets} sets.
                     </p>
+                    {/* The show imported; these are finishing steps that did
+                        not, and each one can be redone by hand. */}
+                    {result.warnings.map((warning) => (
+                        <div
+                            key={warning}
+                            className="text-sub text-text/80 flex items-start gap-8"
+                        >
+                            <WarningIcon
+                                weight="fill"
+                                className="text-yellow shrink-0"
+                                size={20}
+                            />
+                            <span>{warning}</span>
+                        </div>
+                    ))}
                     <Button onClick={toggleOpen} className="w-fit">
                         Done
                     </Button>
