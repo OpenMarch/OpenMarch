@@ -353,7 +353,7 @@ const CONTROL = /[\x00-\x08\x0e-\x1f]/;
  * `u64 id, u16 cumulativeCount, skip, titleLen, title, note1Len, note1,
  *  [note2Len, note2], trailer`.
  *
- * The record shape drifts between Pyware exporter builds — and occasionally
+ * The record shape drifts between exporter builds — and occasionally
  * *within* a single file (a draft that starts with one shape and switches when
  * the first measure-range title appears). `version` does not identify the
  * shape. Detection is two-stage:

@@ -13,7 +13,7 @@ case B) only.
 
 ## Goals
 
-1. Import every real Pyware export we care about with the correct page list
+1. Import every real drill export we care about with the correct page list
    (including subsets / trailing holds).
 2. Prefer matching the source’s own pages over heuristics (“same formation”).
 3. Keep the parser adaptive — exporter builds drift; hard-coding one layout

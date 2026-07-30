@@ -125,7 +125,7 @@ annotations and are usually empty — but there are **up to five notes per set**
 and a color-group legend). The first slot's length prefix is commonly `u32`
 while the later ones are `u16`, so the two widths are detected separately.
 
-**Layout detection.** The record _shape_ drifts between Pyware exporter builds —
+**Layout detection.** The record _shape_ drifts between exporter builds —
 and occasionally between records _within one file_: the pre-title `skip`, the
 width of the title/note length prefixes, how many note slots are present, and
 the trailer size all vary, and the `version` byte does **not** identify which.
