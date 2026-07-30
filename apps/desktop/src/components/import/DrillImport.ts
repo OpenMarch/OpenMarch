@@ -38,7 +38,7 @@ import { marcherKeys } from "@/hooks/queries/useMarchers";
 import { marcherWithVisualsKeys } from "@/hooks/queries/useMarchersWithVisuals";
 import { fieldPropertiesKeys } from "@/hooks/queries/useFieldProperties";
 import { workspaceSettingsKeys } from "@/hooks/queries/useWorkspaceSettings";
-import { sourcePointToPixels } from "./drillTransform";
+import { lastPageCountsForImport, sourcePointToPixels } from "./drillTransform";
 import { resolveDrillField } from "./resolveField";
 import { resolveSectionForDrillPrefix } from "@/global/drillLabel";
 
@@ -235,27 +235,19 @@ export const _importDrillShow = async (
             await updateMarcherPagesInTransaction({ tx, modifiedMarcherPages });
 
             // The final page has no page after it to bound its end, so its length
-            // is set explicitly. It runs to the end of the show so the closing
-            // set/hold (e.g. an ending subset marking the end of a hold) is fully
-            // included. "End of show" is the last count the audio covers when SYNC
-            // is present (so we hold exactly to the music, never into silence),
-            // clamped to at least the last set's arrival and at most the frame
-            // count. When the last set is a hold (subset = same dots), extending it
-            // holds the formation with no stretched movement.
+            // is set explicitly — see `lastPageCountsForImport`. It gets its own
+            // set's counts, the same as every other page; frames and audio past
+            // the last set's arrival are timeline the drill has not reached and
+            // stay as bare beats rather than stretching the closing move.
             const lastSet = show.sets.at(-1);
             if (lastSet) {
-                const lastPageStart = pageStartCounts.at(-1) ?? 0;
-                const syncCounts = show.audioSync?.timestamps.length ?? 0;
-                const audioEndCount =
-                    syncCounts > 1 ? syncCounts - 1 : show.totalCounts;
-                const endCount = Math.min(
-                    show.totalCounts,
-                    Math.max(lastSet.startCount, audioEndCount),
-                );
                 await updateUtilityInTransaction({
                     tx,
                     args: {
-                        last_page_counts: Math.max(1, endCount - lastPageStart),
+                        last_page_counts: lastPageCountsForImport({
+                            lastSetStartCount: lastSet.startCount,
+                            previousPageStartCount: pageStartCounts.at(-1) ?? 0,
+                        }),
                         notes: show.productionNotes ?? null,
                     },
                 });

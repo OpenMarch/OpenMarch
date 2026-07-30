@@ -1,5 +1,9 @@
 import { describe, it, expect } from "vitest";
-import { deriveMarcherFromLabel, sourcePointToPixels } from "../drillTransform";
+import {
+    deriveMarcherFromLabel,
+    lastPageCountsForImport,
+    sourcePointToPixels,
+} from "../drillTransform";
 import type { DrillGrid } from "@openmarch/drill-interop";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 
@@ -100,5 +104,37 @@ describe("sourcePointToPixels", () => {
         // The 50 (x = 25 units from center) is 40 steps toward side 2.
         const p = sourcePointToPixels({ x: 25, y: 26.25 }, grid, field);
         expect(p.x).toBeCloseTo(cfp.xPixels + 40 * pps, 5);
+    });
+});
+
+describe("lastPageCountsForImport", () => {
+    it("gives the last page only its own set's counts", () => {
+        // Yorktown part 1: set 20 arrives on 232, set 21 on 248.
+        expect(
+            lastPageCountsForImport({
+                lastSetStartCount: 248,
+                previousPageStartCount: 232,
+            }),
+        ).toBe(16);
+    });
+
+    it("does not stretch the last page across timeline the drill never reaches", () => {
+        // The same show carries 300 counts of frames and audio. The 51 counts
+        // past the final set are timeline the drill never reaches, so they must
+        // not be folded into the closing move.
+        const counts = lastPageCountsForImport({
+            lastSetStartCount: 248,
+            previousPageStartCount: 232,
+        });
+        expect(counts).toBeLessThan(300 - 232);
+    });
+
+    it("never returns a zero-length page", () => {
+        expect(
+            lastPageCountsForImport({
+                lastSetStartCount: 64,
+                previousPageStartCount: 64,
+            }),
+        ).toBe(1);
     });
 });

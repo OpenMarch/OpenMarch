@@ -41,3 +41,28 @@ export function sourcePointToPixels(
             stepsFromCenterFront * field.pixelsPerStep,
     };
 }
+
+/**
+ * Counts to give the imported show's final page.
+ *
+ * OpenMarch's last page has no successor to bound it, so its length is stored
+ * explicitly. The source drill ends when its last set is reached — the frames
+ * and audio that follow are timeline the designer has not drilled into yet, and
+ * folding them into the last page would stretch that set's arrival move across
+ * the leftover music instead of arriving on time.
+ *
+ * So the final page runs from the previous page's start to the last set's own
+ * arrival, exactly like every other page. Any counts past that arrival stay as
+ * bare beats on the timeline for the designer to extend into.
+ */
+export function lastPageCountsForImport({
+    lastSetStartCount,
+    previousPageStartCount,
+}: {
+    /** The final set's arrival count. */
+    lastSetStartCount: number;
+    /** The start count of the page before it. */
+    previousPageStartCount: number;
+}): number {
+    return Math.max(1, lastSetStartCount - previousPageStartCount);
+}
