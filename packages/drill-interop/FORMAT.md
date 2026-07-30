@@ -626,8 +626,9 @@ currently map it into OpenMarch. Listed roughly by value.
      the 35 sits at 24. It also applies only on the field (plus the line itself),
      since the band is painted on the surface.
    - **Props are not confined to the field interior.** Backdrops, scrims, and pit
-     equipment stand behind a sideline, so a marker up to 6 steps past the line
-     still qualifies. The old rule required props to sit 10 steps _inside_ the
+     equipment stand off the field — in practice past the _front_ sideline, where
+     the front ensemble sets up — so a marker up to 6 steps past a line still
+     qualifies. The old rule required props to sit 10 steps _inside_ the
      sidelines, which silently dropped every staged prop.
 
    Measured together: one export went from 7 of 11 props to 11 of 11, with no
@@ -636,8 +637,8 @@ currently map it into OpenMarch. Listed roughly by value.
    **Tightest margin in the classifier:** a reference tick drawn outside a
    sideline hugs it (measured: exactly 1 step past), while a staged prop sits
    further out (measured: 3 steps). Only those ~2 steps separate them. A show
-   that parks a prop 2 steps off the back sideline will be misread. This is
-   covered by a named test in `props.test.ts` so the boundary is visible.
+   that parks a prop 2 steps off a sideline will be misread. This is covered by a
+   named test in `props.test.ts` so the boundary is visible.
 
    `PRP8` also carries explicit prop/marker
    objects alongside the text boxes we now read (§2.9); those are still skipped.

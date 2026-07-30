@@ -73,7 +73,11 @@ export function halfWidthSteps(grid: DrillGrid): number {
     );
 }
 
-/** Steps a point sits behind the nearest sideline (0 on a sideline). */
+/**
+ * Steps between a point and whichever sideline is nearer, front or back (0 on a
+ * sideline). Unsigned: it does not say which sideline, or which side of it the
+ * point is on.
+ */
 export function stepsFromNearestSideline(
     point: DrillPoint,
     grid: DrillGrid,

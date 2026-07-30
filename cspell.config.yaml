@@ -22,6 +22,7 @@ words:
   - bostick
   - BRHS
   - BORD
+  - COLR
   - CTITL
   - endline
   - endlines
@@ -79,8 +80,10 @@ words:
   - Hipp
   - idioma
   - importmap
+  - interconvertible
   - Invalidators
   - launchpage
+  - lerp
   - lightridge
   - localappdata
   - Loudoun
@@ -118,10 +121,15 @@ words:
   - Português
   - posthog
   - Pressable
+  - PRPM
+  - PRPT
+  - PTBT
   - PWDEBUG
   - pwsh
+  - PYJAVA
   - Pyware
   - Rcoords
+  - RMAP
   - rels
   - rgba
   - ritardandos

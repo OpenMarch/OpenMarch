@@ -167,8 +167,8 @@ export interface DiscoveredMarkers {
  * ({@link CoordinateRecord.groupId}). A group is one object the author placed in
  * one action, so if any of its markers reads as a prop, all of them are props.
  * That recovers the members a group leaves in reference-like spots — the middle
- * of a platform line crossing field center, the end of one running off the back
- * hash — without loosening any threshold. Groups where nothing reads as a prop
+ * of a platform line crossing field center, the end of one running out toward a
+ * sideline — without loosening any threshold. Groups where nothing reads as a prop
  * (sideline ticks, yard-number arcs, center dots) are still dropped whole.
  */
 export function discoverMarkers(

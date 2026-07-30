@@ -55,7 +55,7 @@ describe("isLikelyReferenceMarker", () => {
     });
 
     it("does not flag a prop parked out on a yard line near a sideline", () => {
-        // Yorktown: a prop on the 35, 8 steps in from the back sideline. The
+        // Yorktown: a prop on the 35, 8 steps inside the front sideline. The
         // yard-number band it used to fall in only ever holds reference ticks
         // within ~14 steps of center; this sits at 24.
         const onThe35 = { x: 15, y: 21.25 };
@@ -65,7 +65,8 @@ describe("isLikelyReferenceMarker", () => {
 
     it("treats a prop staged behind a sideline as a prop", () => {
         // Backdrops and pit equipment legitimately stand off the field. This one
-        // is on the 50, three steps behind the back sideline.
+        // is on the 50, three steps in front of the front sideline — where the
+        // front ensemble sets up.
         const behindTheLine = { x: 0, y: 28.125 };
         expect(isLikelyReferenceMarker(behindTheLine, SAMPLE_GRID)).toBe(false);
         expect(isLikelyPropPosition(behindTheLine, SAMPLE_GRID)).toBe(true);
@@ -91,8 +92,8 @@ describe("isLikelyReferenceMarker", () => {
     it("separates an outside tick from an off-field prop by ~2 steps", () => {
         // The whole window: a tick sits 1 step past the line, a staged prop 3.
         // Documented as a test because it is the tightest margin in the
-        // classifier — if a show puts a prop 2 steps off the back sideline,
-        // this is where it will be misread.
+        // classifier — if a show puts a prop 2 steps off a sideline, this is
+        // where it will be misread.
         const oneStepOut = { x: 10, y: 26.875 };
         const threeStepsOut = { x: 0, y: 28.125 };
         expect(isLikelyReferenceMarker(oneStepOut, SAMPLE_GRID)).toBe(true);

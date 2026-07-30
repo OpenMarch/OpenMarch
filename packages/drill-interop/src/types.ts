@@ -127,7 +127,10 @@ export interface DrillGrid {
     stepsPerUnitY: number;
     /**
      * Y positions of the horizontal major lines (the sidelines), in source
-     * units. The smallest is the front sideline, the largest the back sideline.
+     * units. The source measures Y positive toward the audience, so the
+     * **largest** is the front sideline and the smallest is the back — the
+     * opposite of OpenMarch. Never read these by index; use
+     * `frontSidelineUnits` / `backSidelineUnits`, which encode the rule.
      */
     sidelinesY: number[];
     /** Y positions of the hash lines, in source units. */
