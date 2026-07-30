@@ -323,8 +323,28 @@ X/Y values live only in the encrypted ASCII block.
 | 63–66  | 4    | bool visibility flags                                      |
 | 67     | 1    | u8 rotation (`byte / 128 * π` radians; no Z component)     |
 
-There is no elevation / Z in this record. The parser currently skips the binary
-table and reads positions only from the encrypted block.
+There is no elevation / Z in this record. Positions come only from the encrypted
+block; from the table the parser reads just the **creation-group id** (below).
+
+**Creation-group id (read by the parser).** In exported files the first three
+10-byte slots are `(u64 id, u16 index)` tuples at offsets **0, 10, and 20** — not
+the `8 / 18 / 28` of the in-memory layout above. The leading tuple is the
+marker's own identity: the u64's top two bytes are always zero, so the id is
+effectively **6 bytes at offset 2**, followed by the marker's **1-based index
+within its group** at offset 8.
+
+Every marker the author placed in one action shares that 6-byte id and gets its
+own index — a line of nine platforms placed together reads as one id with indices
+1–9. The two slots that follow point at the marker each one is measured from
+(usually itself; for the cast, a reference marker that is not in the table).
+
+The table is **positionally aligned** with the encrypted coordinate block: entry
+`i` and coordinate record `i` are the same marker, so no join key is needed.
+Verified on two unrelated exports (72/72 and 49/49 cast members joined by index).
+
+This is what makes marker classification reliable — see §4 and `src/props.ts`.
+Position alone cannot work: a real prop in one show and a reference dot in
+another are found at byte-identical coordinates.
 
 > **Reality check (measured against the sample export).** The layout above is the
 > source tool's in-memory marker class. In the actual interchange export, most of
@@ -546,11 +566,16 @@ currently map it into OpenMarch. Listed roughly by value.
    - A small enum at offset 41 (values 0–6) and a flag byte at offset 50 — not
      stably per-marker, meaning unconfirmed from a single file.
 
-   Authoritative marker classification (prop vs. reference vs. performer), which
-   we currently re-derive heuristically from the coordinate block (`src/props.ts`),
-   is therefore **not** available from this record in the export — the type byte
-   is zeroed. The `COM2` continuity text (item #7) is a better source of movement
-   intent than this table.
+   A single authoritative marker _type_ (prop vs. reference vs. performer) is
+   therefore **not** available from this record in the export — the type byte is
+   zeroed. What the record does give is the **creation-group id** (§2.6), which
+   the classifier now uses to decide a placed object as a whole rather than
+   marker by marker (item #6). That resolves grouped markers. A lone marker
+   placed by itself is decided on position alone, which works on the exports
+   measured so far but has a narrow margin (item #6) — this is the case a real
+   type byte would settle for good. `COM2` was checked as a tiebreaker and is not
+   one — its group masks cover reference geometry too. The `COM2` continuity text
+   (item #7) is still a better source of movement intent than this table.
 
 3. **Stable source ids → re-import / merge (needs a schema change).** The source
    gives each performer a stable `u64` id and each set an id (`CST7`/`PTB7`),
@@ -583,7 +608,37 @@ currently map it into OpenMarch. Listed roughly by value.
    shared with the importer) rather than hardcoded source-unit constants, so they
    hold for any field size, unit, or grid. Reference ticks can share coordinates
    with real markers on a single frame; they are dropped by stable id + static
-   position even when overlapping. `PRP8` also carries explicit prop/marker
+   position even when overlapping.
+
+   Those position tests are only the first pass. **The verdict is then taken for
+   the whole creation group** (the 6-byte marker-table id, §2.6): if any marker
+   in a group reads as a prop, all of them are. This is what makes the classifier
+   sound, because position alone provably cannot decide — a prop in one show and
+   a reference dot in another sit at byte-identical coordinates, and a placed
+   platform line can run its middle unit across field center and its far end past
+   the sideline band. Groups where nothing reads as a prop (sideline ticks,
+   yard-number arcs, center dots) are still dropped whole.
+
+   Two position tests were then measured against real props rather than assumed:
+   - The **yard-number band** reaches 16 steps from center, not 24. Measured: the
+     widest reference tick in that band sits at 14 steps, while a prop parked on
+     the 35 sits at 24. It also applies only on the field (plus the line itself),
+     since the band is painted on the surface.
+   - **Props are not confined to the field interior.** Backdrops, scrims, and pit
+     equipment stand behind a sideline, so a marker up to 6 steps past the line
+     still qualifies. The old rule required props to sit 10 steps _inside_ the
+     sidelines, which silently dropped every staged prop.
+
+   Measured together: one export went from 7 of 11 props to 11 of 11, with no
+   change to the other export.
+
+   **Tightest margin in the classifier:** a reference tick drawn outside a
+   sideline hugs it (measured: exactly 1 step past), while a staged prop sits
+   further out (measured: 3 steps). Only those ~2 steps separate them. A show
+   that parks a prop 2 steps off the back sideline will be misread. This is
+   covered by a named test in `props.test.ts` so the boundary is visible.
+
+   `PRP8` also carries explicit prop/marker
    objects alongside the text boxes we now read (§2.9); those are still skipped.
    Front ensemble / pit performers that the author listed in `CST7` import with
    their drill labels; performers only present in page frames (`s`, not cast) import

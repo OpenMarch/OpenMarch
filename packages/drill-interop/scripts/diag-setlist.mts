@@ -102,7 +102,7 @@ for (const file of files) {
         const note = (s.notes ?? "").replace(/\s+/g, " ").slice(0, 48);
         console.log(
             `    ${String(i).padStart(3)} cum=${String(s.cumulativeCount).padStart(4)} ` +
-                `${s.subsetFollows ? "S" : " "} ${JSON.stringify(s.name).padEnd(12)} ${note}`,
+                `${s.isSubset ? "S" : " "} ${JSON.stringify(s.name).padEnd(12)} ${note}`,
         );
     }
     if (dump && sets.length < declared) console.log(hex(table.payload, 0, 512));

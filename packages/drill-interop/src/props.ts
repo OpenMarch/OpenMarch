@@ -12,6 +12,16 @@ export interface CoordinateRecord {
     id: string;
     symbol: string;
     point: DrillPoint;
+    /**
+     * The marker's creation group, from the page frame's binary marker table
+     * (§2.6): every marker the author placed in one action shares this id and
+     * carries its own index within it. Undefined when the table is unreadable.
+     *
+     * Markers created together are one object — a line of platforms, a ring of
+     * reference ticks — so classification is decided for the whole group. See
+     * {@link discoverMarkers}.
+     */
+    groupId?: string;
 }
 
 /** Minimum spread between sampled positions to treat a marker as moving, in steps. */
@@ -23,13 +33,22 @@ const MOVEMENT_THRESHOLD_STEPS = 0.8;
 const LINE_TOLERANCE_STEPS = 1;
 /** Yard-number / hash reference ticks hug the sidelines a few steps in. */
 const SIDELINE_BAND_STEPS = 8;
-/** …and stay within the center third of the field horizontally. */
-const SIDELINE_BAND_HALF_WIDTH_STEPS = 24;
+/**
+ * …and stay near the middle of the field horizontally. Measured: the widest
+ * reference tick in this band sits 14 steps from center, while a prop parked on
+ * the 35 sits at 24. Anything wider than this is a placed object, not geometry.
+ */
+const SIDELINE_BAND_HALF_WIDTH_STEPS = 16;
 /** The center-of-field reference dot cluster. */
 const CENTER_RADIUS_Y_STEPS = 4;
 const CENTER_RADIUS_X_STEPS = 8;
-/** Props stay at least this far inside the sidelines. */
-const PROP_EDGE_MARGIN_STEPS = 10;
+/**
+ * How far past a sideline a prop may stand. Backdrops, scrims, and pit equipment
+ * are staged off the field, so depth alone cannot disqualify a marker. Reference
+ * ticks that sit outside a line hug it (measured: never more than one step), and
+ * are caught by {@link LINE_TOLERANCE_STEPS} before this is consulted.
+ */
+const PROP_OUTSIDE_SIDELINE_STEPS = 6;
 
 /**
  * Heuristic filter for design/reference markers — the grid ticks, yard-number
@@ -45,11 +64,17 @@ export function isLikelyReferenceMarker(
     const fromSideline = stepsFromNearestSideline(point, grid);
     const xSteps = Math.abs(xUnitsToSteps(point.x, grid));
     const yFromCenter = Math.abs(yUnitsToStepsFromCenter(point.y, grid));
+    const halfDepth = fieldDepthSteps(grid) / 2;
 
     const onSideline = fromSideline <= LINE_TOLERANCE_STEPS;
     const onEndline =
         Math.abs(xSteps - halfWidthSteps(grid)) <= LINE_TOLERANCE_STEPS;
+    // The yard-number band is painted *on* the field, so it only reaches
+    // markers inside the sidelines — plus the line itself, since ticks drawn on
+    // a sideline can land a hair outside it. A marker further out than that is
+    // staged equipment, not geometry.
     const inSidelineBand =
+        yFromCenter <= halfDepth + LINE_TOLERANCE_STEPS &&
         fromSideline <= SIDELINE_BAND_STEPS &&
         xSteps <= SIDELINE_BAND_HALF_WIDTH_STEPS;
     const nearCenter =
@@ -58,14 +83,20 @@ export function isLikelyReferenceMarker(
     return onSideline || onEndline || inSidelineBand || nearCenter;
 }
 
-/** Interior field position that could be a static prop (platform, flag pole). */
+/**
+ * A position a static prop could occupy — anywhere on the field, or staged just
+ * off it, that is not reference geometry. Props are not confined to the
+ * interior: backdrops and pit equipment stand behind a sideline.
+ */
 export function isLikelyPropPosition(
     point: DrillPoint,
     grid: DrillGrid,
 ): boolean {
     if (isLikelyReferenceMarker(point, grid)) return false;
     const yFromCenter = Math.abs(yUnitsToStepsFromCenter(point.y, grid));
-    return yFromCenter < fieldDepthSteps(grid) / 2 - PROP_EDGE_MARGIN_STEPS;
+    return (
+        yFromCenter < fieldDepthSteps(grid) / 2 + PROP_OUTSIDE_SIDELINE_STEPS
+    );
 }
 
 /** The largest distance between any two sampled positions, in steps. */
@@ -129,6 +160,16 @@ export interface DiscoveredMarkers {
  * Classifies non-cast markers for import. Uses identity + movement first, then
  * interior position for static props. Reference geometry is dropped even when it
  * shares coordinates with a prop on a single frame.
+ *
+ * Position alone cannot decide: a real prop and a reference dot are found at
+ * byte-identical coordinates in different shows. So the per-marker test is only
+ * the first pass — the verdict is then taken for the whole **creation group**
+ * ({@link CoordinateRecord.groupId}). A group is one object the author placed in
+ * one action, so if any of its markers reads as a prop, all of them are props.
+ * That recovers the members a group leaves in reference-like spots — the middle
+ * of a platform line crossing field center, the end of one running off the back
+ * hash — without loosening any threshold. Groups where nothing reads as a prop
+ * (sideline ticks, yard-number arcs, center dots) are still dropped whole.
  */
 export function discoverMarkers(
     pages: ReadonlyArray<{ records: ReadonlyMap<string, CoordinateRecord> }>,
@@ -147,15 +188,12 @@ export function discoverMarkers(
         }
     }
 
+    /** Marker ids sharing one creation group; ungrouped markers are omitted. */
+    const groupMembers = new Map<string, string[]>();
+
     for (const id of candidateIds) {
-        let symbol = "X";
-        for (const page of pages) {
-            const record = page.records.get(id);
-            if (record) {
-                symbol = record.symbol;
-                break;
-            }
-        }
+        const record = firstRecord(pages, id);
+        const symbol = record?.symbol ?? "X";
 
         if (symbol === "s") {
             supplementalIds.add(id);
@@ -163,6 +201,13 @@ export function discoverMarkers(
         }
 
         if (symbol !== "X") continue;
+
+        const groupId = record?.groupId;
+        if (groupId !== undefined) {
+            const members = groupMembers.get(groupId);
+            if (members) members.push(id);
+            else groupMembers.set(groupId, [id]);
+        }
 
         const samples = collectBoundaryPositions(pages, setBoundaryIndices, id);
         if (samples.length === 0) continue;
@@ -175,10 +220,29 @@ export function discoverMarkers(
         if (moves || staticProp) propIds.add(id);
     }
 
+    // One marker reading as a prop carries its whole creation group.
+    for (const members of groupMembers.values()) {
+        if (members.some((id) => propIds.has(id))) {
+            for (const id of members) propIds.add(id);
+        }
+    }
+
     return {
         props: labelPerformers(sortedIds(propIds), "PR"),
         supplemental: labelPerformers(sortedIds(supplementalIds), "OT"),
     };
+}
+
+/** The marker's record on the earliest frame that carries it. */
+function firstRecord(
+    pages: ReadonlyArray<{ records: ReadonlyMap<string, CoordinateRecord> }>,
+    id: string,
+): CoordinateRecord | undefined {
+    for (const page of pages) {
+        const record = page.records.get(id);
+        if (record) return record;
+    }
+    return undefined;
 }
 
 /** @deprecated Use {@link discoverMarkers}. */

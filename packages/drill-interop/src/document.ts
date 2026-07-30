@@ -202,6 +202,40 @@ interface PageFrame {
 interface RawPageFrame {
     count: number;
     block: string;
+    /**
+     * Creation-group id per marker, positionally aligned with the coordinate
+     * block: entry `i` describes the same marker as coordinate record `i`.
+     */
+    groupIds: string[];
+}
+
+/** Offset of the 6-byte creation-group id inside a 69-byte marker record. */
+const MARKER_GROUP_ID_OFFSET = 2;
+/** Width of that id. The two bytes before it are zero; the two after are the
+ * marker's index within its group. */
+const MARKER_GROUP_ID_BYTES = 6;
+
+/**
+ * Reads the creation-group id out of each entry of a page frame's binary marker
+ * table (§2.6). Markers the author placed in one action share this id, which is
+ * what lets {@link discoverMarkers} classify a placed object as a whole instead
+ * of marker by marker.
+ *
+ * The table is positionally aligned with the coordinate block — entry `i` and
+ * coordinate record `i` are the same marker — so the ids need no join key.
+ */
+function readMarkerGroupIds(table: Uint8Array, count: number): string[] {
+    const ids: string[] = [];
+    for (let i = 0; i < count; i++) {
+        const start = i * PAGE_RECORD_BYTES + MARKER_GROUP_ID_OFFSET;
+        if (start + MARKER_GROUP_ID_BYTES > table.length) break;
+        let id = "";
+        for (let b = 0; b < MARKER_GROUP_ID_BYTES; b++) {
+            id += table[start + b]!.toString(16).padStart(2, "0");
+        }
+        ids.push(id);
+    }
+    return ids;
 }
 
 function skipChunk(reader: BinaryReader): void {
@@ -219,16 +253,17 @@ function readPageFrame(reader: BinaryReader): RawPageFrame {
     reader.i32(); // declared length (unreliable, ignored)
     reader.u16(); // record stride
     const count = reader.u16();
-    reader.skip(count * PAGE_RECORD_BYTES);
+    const table = reader.slice(count * PAGE_RECORD_BYTES);
     const blockLength = reader.u16();
     const block = reader.ascii(blockLength);
-    return { count, block };
+    return { count, block, groupIds: readMarkerGroupIds(table, count) };
 }
 
 /** Decrypts a page frame's coordinate block into per-marker records. */
 async function decodePageFrame({
     count,
     block,
+    groupIds,
 }: RawPageFrame): Promise<PageFrame> {
     const decoded = await decodeCoordinateBlock(block);
     const records = new Map<string, CoordinateRecord>();
@@ -241,7 +276,9 @@ async function decodePageFrame({
         const x = parseFloat(record.slice(19, 29));
         const y = parseFloat(record.slice(29, 39));
         if (!Number.isFinite(x) || !Number.isFinite(y)) continue;
-        records.set(id, { id, symbol, point: { x, y } });
+        // The marker table is positionally aligned with this block, so entry i
+        // describes this same marker.
+        records.set(id, { id, symbol, point: { x, y }, groupId: groupIds[i] });
     }
     return { records };
 }
