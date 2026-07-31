@@ -73,7 +73,7 @@ export default function DownloadCards() {
                     <h1 className="text-h1 max-[520px]:text-h2">Linux</h1>
                     <div className="flex flex-col items-center justify-center gap-12">
                         <a
-                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-linux-x64.AppImage`}
+                            href={`${LATEST_RELEASE_DOWNLOAD_URL}/OpenMarch-linux-x86_64.AppImage`}
                             onClick={handleDownloadClick}
                             download
                         >
