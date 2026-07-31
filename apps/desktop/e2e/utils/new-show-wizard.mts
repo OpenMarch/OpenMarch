@@ -23,13 +23,15 @@ export async function openNewShowWizard(page: Page) {
 export async function selectBlankStart(page: Page) {
     const dialog = wizardDialog(page);
     await dialog.getByRole("button", { name: /Start blank show/ }).click();
-    await expect(dialog.getByRole("button", { name: "Next" })).toBeEnabled();
+    await expect(
+        dialog.getByRole("button", { name: "Next", exact: true }),
+    ).toBeEnabled();
 }
 
 export async function goToProjectStep(page: Page) {
     await selectBlankStart(page);
     const dialog = wizardDialog(page);
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
     await expect(
         dialog.getByRole("heading", {
             name: "Project details",
@@ -42,7 +44,9 @@ export async function goToProjectStep(page: Page) {
 export async function fillProjectStep(page: Page, projectName: string) {
     const dialog = wizardDialog(page);
     await dialog.getByRole("textbox", { name: "Show name" }).fill(projectName);
-    await expect(dialog.getByRole("button", { name: "Next" })).toBeEnabled({
+    await expect(
+        dialog.getByRole("button", { name: "Next", exact: true }),
+    ).toBeEnabled({
         timeout: 5000,
     });
 }
@@ -57,7 +61,7 @@ export async function completeNewShowWizard(
 
     const dialog = wizardDialog(page);
 
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
     await expect(
         dialog.getByRole("heading", {
             name: "Activity",
@@ -65,7 +69,7 @@ export async function completeNewShowWizard(
             level: 2,
         }),
     ).toBeVisible();
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {
@@ -74,7 +78,7 @@ export async function completeNewShowWizard(
             level: 2,
         }),
     ).toBeVisible();
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {

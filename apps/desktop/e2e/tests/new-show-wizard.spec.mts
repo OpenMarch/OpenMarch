@@ -21,7 +21,9 @@ test("Project validation requires show name", async ({ electronAppEmpty }) => {
 
     await openNewShowWizard(page);
     await goToProjectStep(page);
-    await expect(dialog.getByRole("button", { name: "Next" })).toBeDisabled();
+    await expect(
+        dialog.getByRole("button", { name: "Next", exact: true }),
+    ).toBeDisabled();
 
     await fillProjectStep(page, "Test Show");
 });
@@ -64,7 +66,7 @@ test("Back navigation returns to project step", async ({
     await openNewShowWizard(page);
     await goToProjectStep(page);
     await fillProjectStep(page, "Back Nav Test");
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {
@@ -109,7 +111,7 @@ test("Refresh during wizard discards draft and returns to launch page", async ({
     await openNewShowWizard(page);
     await goToProjectStep(page);
     await fillProjectStep(page, "Refresh Test");
-    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next", exact: true }).click();
 
     await expect(
         dialog.getByRole("heading", {
