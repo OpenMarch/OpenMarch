@@ -11,8 +11,12 @@ function createVisualizerFilename(): string {
     return `openmarch-preview-${timestamp}.mp4`;
 }
 
-export default function IlluminantExportButton() {
+export default function IlluminantVideoExportButton() {
     const [isExporting, setIsExporting] = useState(false);
+
+    if (!import.meta.env.DEV) {
+        return null;
+    }
 
     const handleExport = async () => {
         console.info("[Illuminant export] Export button clicked");
@@ -60,7 +64,7 @@ export default function IlluminantExportButton() {
             className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
         >
             <ArrowSquareOutIcon size={24} />
-            {isExporting ? "EXPORTING" : "EXPORT"}
+            {isExporting ? "EXPORTING…" : "ILLUMINANT VIDEO"}
         </button>
     );
 }

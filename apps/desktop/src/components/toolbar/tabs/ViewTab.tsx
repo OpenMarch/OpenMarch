@@ -2,7 +2,7 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { EyeIcon, EyeSlashIcon } from "@phosphor-icons/react";
 import { T, useTolgee } from "@tolgee/react";
-import IlluminantExportButton from "@/components/exporting/illuminant/IlluminantExportButton";
+import IlluminantVideoExportButton from "@/components/exporting/illuminant/IlluminantExportButton";
 
 export default function ViewTab() {
     return (
@@ -86,9 +86,11 @@ function UiSettingsToolbar() {
                     )}
                 </button>
             </ToolbarSection>
-            <ToolbarSection>
-                <IlluminantExportButton />
-            </ToolbarSection>
+            {import.meta.env.DEV && (
+                <ToolbarSection>
+                    <IlluminantVideoExportButton />
+                </ToolbarSection>
+            )}
             {/* <ToolbarSection>
                 <button
                     onClick={() => {
