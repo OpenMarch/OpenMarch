@@ -5,24 +5,48 @@ import {
     WarningCircleIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
-import { Button } from "@openmarch/ui";
+import {
+    Button,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTriggerButton,
+} from "@openmarch/ui";
 import {
     buildIlluminantExportSource,
     checkIlluminantHealth,
+    DEFAULT_SHOW_COLOR,
     exportIlluminantShow,
+    getShowColorLabel,
+    SHOW_COLOR_HEX,
+    SHOW_COLORS,
+    type ShowColor,
 } from "./illuminantApiExport";
 
 type HealthState = "checking" | "ok" | "error";
 
 const EXPORT_INSTRUCTIONS = [
-    "Finish laying out your lighting scenes and effects in the Light Designer.",
-    "Double-check that every marcher is assigned to the correct lighting group.",
-    'Click "Export lighting data" below to generate your Illuminant file.',
+    "Choose a Show Color. This will be the color that shows up on your Illuminant light when this show is selected.",
+    "Export this lighting file with the button below.",
+    "Import the resulting file into the illuminant app.",
 ];
+
+function ShowColorOption({ color }: { color: ShowColor }) {
+    return (
+        <span className="flex items-center gap-8">
+            <span
+                className="border-stroke size-12 shrink-0 rounded-full border"
+                style={{ backgroundColor: SHOW_COLOR_HEX[color] }}
+            />
+            {getShowColorLabel(color)}
+        </span>
+    );
+}
 
 export default function IlluminantExportTab() {
     const [healthState, setHealthState] = useState<HealthState>("checking");
     const [isExporting, setIsExporting] = useState(false);
+    const [showColor, setShowColor] = useState<ShowColor>(DEFAULT_SHOW_COLOR);
 
     useEffect(() => {
         let cancelled = false;
@@ -39,7 +63,7 @@ export default function IlluminantExportTab() {
     const handleExport = useCallback(async () => {
         setIsExporting(true);
         try {
-            const request = await buildIlluminantExportSource();
+            const request = await buildIlluminantExportSource({ showColor });
             const result = await exportIlluminantShow(request);
 
             if (!result.success) {
@@ -77,7 +101,7 @@ export default function IlluminantExportTab() {
         } finally {
             setIsExporting(false);
         }
-    }, []);
+    }, [showColor]);
 
     if (healthState === "checking") {
         return (
@@ -112,6 +136,28 @@ export default function IlluminantExportTab() {
                     <li key={instruction}>{instruction}</li>
                 ))}
             </ol>
+
+            <div className="flex w-full items-center gap-12">
+                <span className="text-body">Show color</span>
+                <Select
+                    value={showColor}
+                    onValueChange={(value: string) =>
+                        setShowColor(value as ShowColor)
+                    }
+                >
+                    <SelectTriggerButton
+                        label={getShowColorLabel(showColor)}
+                        className="w-[16rem] whitespace-nowrap"
+                    />
+                    <SelectContent>
+                        {SHOW_COLORS.map((color) => (
+                            <SelectItem key={color} value={color}>
+                                <ShowColorOption color={color} />
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
 
             <div className="flex w-full justify-end">
                 <Button

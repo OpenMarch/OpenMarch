@@ -17,8 +17,22 @@ export const SHOW_COLORS = [
 ] as const;
 export type ShowColor = (typeof SHOW_COLORS)[number];
 
-/** OpenMarch has no show/uniform color concept yet; placeholder until product defines one. */
+export const SHOW_COLOR_HEX: Record<ShowColor, string> = {
+    RED: "#FF0000",
+    ORANGE: "#FF8000",
+    YELLOW: "#FFFF00",
+    GREEN: "#00FF00",
+    CYAN: "#00FFFF",
+    BLUE: "#0000FF",
+    PURPLE: "#8000FF",
+    PINK: "#FF0080",
+};
+
 export const DEFAULT_SHOW_COLOR: ShowColor = "CYAN";
+
+export function getShowColorLabel(color: ShowColor): string {
+    return color.charAt(0) + color.slice(1).toLowerCase();
+}
 
 export type IlluminantExportSource = IlluminantVisualizerSource & {
     showColor: ShowColor;
@@ -33,12 +47,16 @@ export type IlluminantExportResult =
 
 export async function buildIlluminantExportSource({
     database = db,
-}: { database?: DB } = {}): Promise<IlluminantExportSource> {
+    showColor = DEFAULT_SHOW_COLOR,
+}: {
+    database?: DB;
+    showColor?: ShowColor;
+} = {}): Promise<IlluminantExportSource> {
     const source = buildIlluminantVisualizerSource(
         await fetchIlluminantVisualizerSourceData(database),
     );
 
-    return { ...source, showColor: DEFAULT_SHOW_COLOR };
+    return { ...source, showColor };
 }
 
 export async function checkIlluminantHealth(): Promise<IlluminantHealthCheckResult> {
