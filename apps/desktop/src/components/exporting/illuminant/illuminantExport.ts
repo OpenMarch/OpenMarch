@@ -213,7 +213,7 @@ export async function postIlluminantVisualizerRequest(
     )) as IlluminantVisualizerResponse;
 }
 
-async function fetchIlluminantVisualizerSourceData(
+export async function fetchIlluminantVisualizerSourceData(
     database: DB,
 ): Promise<Omit<BuildIlluminantVisualizerSourceArgs, "fps">> {
     const [

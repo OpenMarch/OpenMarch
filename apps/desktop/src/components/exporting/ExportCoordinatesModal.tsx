@@ -92,6 +92,8 @@ import {
 import { useTheme } from "@/context/ThemeContext";
 import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { MobileExportModalContents } from "@/components/mobile/MobileExportModal";
+import { useWorkspaceViewStore } from "@/stores/WorkspaceViewStore";
+import IlluminantExportTab from "./illuminant/IlluminantExportTab";
 
 const mobileExportScreenshotUrls = [2, 3, 4, 5].map(
     (index) => `https://assets.openmarch.com/desktop/mobile-wipe/${index}.webp`,
@@ -2001,12 +2003,20 @@ function ExportModalContents({
 }: {
     onMobileExportClick: () => void;
 }) {
+    const isLightDesigner =
+        useWorkspaceViewStore.use.mode() === "lightDesigner";
+
     return (
         <Tabs defaultValue="mobile" className="gap-12">
             <TabsList>
                 <TabItem value="mobile">
                     <T keyName="exportCoordinates.mobile" />
                 </TabItem>
+                {isLightDesigner && (
+                    <TabItem value="lighting">
+                        <T keyName="exportCoordinates.lighting" />
+                    </TabItem>
+                )}
                 <TabItem value="coordinate-sheets">
                     <T keyName="exportCoordinates.coordinateSheets" />
                 </TabItem>
@@ -2021,6 +2031,12 @@ function ExportModalContents({
             <TabContent value="mobile">
                 <MobileExportOption onClick={onMobileExportClick} />
             </TabContent>
+
+            {isLightDesigner && (
+                <TabContent value="lighting">
+                    <IlluminantExportTab />
+                </TabContent>
+            )}
 
             <TabContent value="coordinate-sheets">
                 <CoordinateSheetExport />

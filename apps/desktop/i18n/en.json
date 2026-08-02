@@ -234,6 +234,7 @@
         "coordinatesError": "Error: Could not calculate coordinates for marcher page {id}",
         "coordinateSheets": "Coordinate Sheets",
         "drillCharts": "Drill Charts",
+        "lighting": "Lighting",
         "mobile": "Mobile",
         "mobilePreviewAlt": "OpenMarch mobile export preview",
         "errorRendering": "Error rendering {drillNumber}",

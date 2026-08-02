@@ -45,6 +45,10 @@ import {
     enrichIlluminantVisualizerRequestWithAudio,
     shouldIncludeAudioInVisualizerRequest,
 } from "./services/illuminant-visualize-audio";
+import {
+    checkIlluminantHealth,
+    exportIlluminantShow,
+} from "./services/illuminant-export-service";
 
 // The built directory structure
 //
@@ -164,6 +168,14 @@ ipcMain.handle("lighting:visualize", async (_, requestBody: unknown) => {
             await fsPromises.unlink(tempAudioPath).catch(() => undefined);
         }
     }
+});
+
+ipcMain.handle("illuminant:healthCheck", async () => {
+    return await checkIlluminantHealth();
+});
+
+ipcMain.handle("illuminant:export", async (_, requestBody: unknown) => {
+    return await exportIlluminantShow(requestBody);
 });
 
 ipcMain.handle("shell:openExternal", async (_, url: string) => {
