@@ -7,6 +7,7 @@ import {
 import { toast } from "sonner";
 import {
     Button,
+    Input,
     Select,
     SelectContent,
     SelectItem,
@@ -47,6 +48,7 @@ export default function IlluminantExportTab() {
     const [healthState, setHealthState] = useState<HealthState>("checking");
     const [isExporting, setIsExporting] = useState(false);
     const [showColor, setShowColor] = useState<ShowColor>(DEFAULT_SHOW_COLOR);
+    const [title, setTitle] = useState("");
 
     useEffect(() => {
         let cancelled = false;
@@ -60,10 +62,26 @@ export default function IlluminantExportTab() {
         };
     }, []);
 
+    useEffect(() => {
+        let cancelled = false;
+        void window.electron.databaseGetPath().then((path) => {
+            if (cancelled || !path) return;
+            const filename = path.split(/[/\\]/).filter(Boolean).pop() ?? "";
+            const derived = filename.replace(/\.dots$/i, "");
+            setTitle((prev) => (prev ? prev : derived));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     const handleExport = useCallback(async () => {
         setIsExporting(true);
         try {
-            const request = await buildIlluminantExportSource({ showColor });
+            const request = await buildIlluminantExportSource({
+                showColor,
+                title: title.trim() || "Untitled",
+            });
             const result = await exportIlluminantShow(request);
 
             if (!result.success) {
@@ -101,7 +119,7 @@ export default function IlluminantExportTab() {
         } finally {
             setIsExporting(false);
         }
-    }, [showColor]);
+    }, [showColor, title]);
 
     if (healthState === "checking") {
         return (
@@ -136,6 +154,16 @@ export default function IlluminantExportTab() {
                     <li key={instruction}>{instruction}</li>
                 ))}
             </ol>
+
+            <div className="flex w-full items-center gap-12">
+                <span className="text-body">Title</span>
+                <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="w-[16rem]"
+                    placeholder="Show title"
+                />
+            </div>
 
             <div className="flex w-full items-center gap-12">
                 <span className="text-body">Show color</span>

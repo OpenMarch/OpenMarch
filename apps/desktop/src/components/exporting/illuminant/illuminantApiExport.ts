@@ -36,6 +36,7 @@ export function getShowColorLabel(color: ShowColor): string {
 
 export type IlluminantExportSource = IlluminantVisualizerSource & {
     showColor: ShowColor;
+    title: string;
 };
 
 export type IlluminantHealthCheckResult = { ok: boolean };
@@ -48,15 +49,17 @@ export type IlluminantExportResult =
 export async function buildIlluminantExportSource({
     database = db,
     showColor = DEFAULT_SHOW_COLOR,
+    title,
 }: {
     database?: DB;
     showColor?: ShowColor;
-} = {}): Promise<IlluminantExportSource> {
+    title: string;
+}): Promise<IlluminantExportSource> {
     const source = buildIlluminantVisualizerSource(
         await fetchIlluminantVisualizerSourceData(database),
     );
 
-    return { ...source, showColor };
+    return { ...source, showColor, title };
 }
 
 export async function checkIlluminantHealth(): Promise<IlluminantHealthCheckResult> {
