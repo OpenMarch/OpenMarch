@@ -7,6 +7,13 @@ import {
 } from "./effect.fade";
 import type { FadeEffectArgs } from "./effect.fade";
 import {
+    defaultFlickerEffectArgs,
+    flickerEffectArgsSchema,
+    parseFlickerEffectArgs,
+    sampleFlickerEffectFill,
+} from "./effect.flicker";
+import type { FlickerEffectArgs } from "./effect.flicker";
+import {
     defaultSolidEffectArgs,
     parseSolidEffectArgs,
     sampleSolidEffectFill,
@@ -28,6 +35,7 @@ export type LightingEffectArgsByType = {
     fade: FadeEffectArgs;
     strobe: SolidEffectArgs;
     wipe: WipeEffectArgs;
+    flicker: FlickerEffectArgs;
 };
 
 export type LightingEffectDefinition<T extends LightingEffectType> = {
@@ -72,6 +80,12 @@ export const effectRegistry: {
         schema: wipeEffectArgsSchema,
         parseArgs: parseWipeEffectArgs,
         sampleFill: sampleWipeEffectFill,
+    },
+    flicker: {
+        defaultArgs: defaultFlickerEffectArgs,
+        schema: flickerEffectArgsSchema,
+        parseArgs: parseFlickerEffectArgs,
+        sampleFill: sampleFlickerEffectFill,
     },
 };
 

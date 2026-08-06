@@ -79,6 +79,48 @@ describe("EffectItem type selector", () => {
         fireEvent.click(screen.getByText("Wipe"));
         expect(typeChangeFn).toHaveBeenCalledWith("wipe");
     });
+
+    it("enables flicker in the type selector", () => {
+        const typeChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="solid"
+                args={JSON.stringify({ color: "#112233" })}
+                typeChangeFn={typeChangeFn}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
+        const flickerOption = screen
+            .getByText("Flicker")
+            .closest("[role='option']");
+        expect(flickerOption?.getAttribute("data-disabled")).toBeNull();
+
+        fireEvent.click(screen.getByText("Flicker"));
+        expect(typeChangeFn).toHaveBeenCalledWith("flicker");
+    });
+});
+
+describe("EffectItem flicker args editor", () => {
+    it("renders color, interval, and probability fields for flicker effects", () => {
+        render(
+            <EffectItem
+                {...baseProps}
+                type="flicker"
+                args={JSON.stringify({
+                    color: "#ffffff",
+                    intervalMs: 100,
+                    onProbability: 0.5,
+                })}
+            />,
+        );
+
+        expect(screen.getByLabelText("Flicker interval")).toBeTruthy();
+        expect(screen.getByLabelText("On probability")).toBeTruthy();
+        expect(screen.getByText("Color")).toBeTruthy();
+    });
 });
 
 describe("EffectItem fade args editor", () => {
