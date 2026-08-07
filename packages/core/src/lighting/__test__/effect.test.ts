@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { createNewLightingEffect } from "../effect";
+import { createNewLightingEffect, updateLightingEffectType } from "../effect";
 import { parseFadeEffectArgs } from "../effect.fade";
 import { parseSolidEffectArgs } from "../effect.solid";
 
@@ -19,6 +19,108 @@ describe("createNewLightingEffect", () => {
         expect(type).toBe("solid");
         expect(JSON.parse(argsJson)).toMatchObject({
             color: "#000000",
+        });
+    });
+});
+
+describe("updateLightingEffectType", () => {
+    it("carries the color over from solid to wipe, defaulting other fields", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "wipe",
+            currentType: "solid",
+            currentArgsJson: JSON.stringify({ color: "#ff00ff" }),
+        });
+
+        expect(updateFunction).toHaveBeenCalledTimes(1);
+        const [type, argsJson] = updateFunction.mock.calls[0] as [
+            "wipe",
+            string,
+        ];
+        expect(type).toBe("wipe");
+        expect(JSON.parse(argsJson)).toEqual({
+            color: "#ff00ff",
+            directionDegrees: 0,
+        });
+    });
+
+    it("puts the previous color into colors[0] when switching to fade, keeping colors[1] default", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "fade",
+            currentType: "solid",
+            currentArgsJson: JSON.stringify({ color: "#ff00ff" }),
+        });
+
+        const [, argsJson] = updateFunction.mock.calls[0] as ["fade", string];
+        expect(JSON.parse(argsJson)).toEqual({
+            changeDurationMs: 2000,
+            colors: ["#ff00ff", "#ff0000"],
+        });
+    });
+
+    it("uses colors[0] as the new color when switching away from fade", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "solid",
+            currentType: "fade",
+            currentArgsJson: JSON.stringify({
+                changeDurationMs: 2000,
+                colors: ["#123456", "#abcdef"],
+            }),
+        });
+
+        const [, argsJson] = updateFunction.mock.calls[0] as ["solid", string];
+        expect(JSON.parse(argsJson)).toEqual({ color: "#123456" });
+    });
+
+    it("carries the color over to flicker, defaulting timing fields", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "flicker",
+            currentType: "wipe",
+            currentArgsJson: JSON.stringify({
+                color: "#00ff00",
+                directionDegrees: 90,
+            }),
+        });
+
+        const [, argsJson] = updateFunction.mock.calls[0] as [
+            "flicker",
+            string,
+        ];
+        expect(JSON.parse(argsJson)).toEqual({
+            color: "#00ff00",
+            onMinMs: 50,
+            onMaxMs: 200,
+            offMinMs: 50,
+            offMaxMs: 200,
+        });
+    });
+
+    // cspell:disable-next-line
+    it("falls back to plain defaults when the previous args are unparseable", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "wipe",
+            currentType: "solid",
+            currentArgsJson: "not-json",
+        });
+
+        const [, argsJson] = updateFunction.mock.calls[0] as ["wipe", string];
+        expect(JSON.parse(argsJson)).toEqual({
+            color: "#000000",
+            directionDegrees: 0,
         });
     });
 });

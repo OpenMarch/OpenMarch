@@ -27,7 +27,7 @@ import {
     useRef,
     useState,
 } from "react";
-import { TrashIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, TrashIcon } from "@phosphor-icons/react";
 import { FadeEffectArgsInput } from "./EffectItem.fade";
 import { FlickerEffectArgsInput } from "./EffectItem.flicker";
 import { SolidEffectArgsInput } from "./EffectItem.solid";
@@ -286,7 +286,7 @@ const EffectItem = ({
                     ) : (
                         <button
                             type="button"
-                            className="text-sub text-text/60 hover:text-accent w-fit max-w-full cursor-pointer text-left transition-colors"
+                            className="text-sub text-text/60 hover:text-accent flex w-fit max-w-full cursor-pointer items-center gap-2 text-left transition-colors"
                             onClick={openTypePicker}
                             aria-label={
                                 t(
@@ -295,6 +295,7 @@ const EffectItem = ({
                             }
                         >
                             {effectTypeLabel(type, t)}
+                            <CaretDownIcon size={12} aria-hidden />
                         </button>
                     )}
                 </div>

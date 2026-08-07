@@ -96,6 +96,32 @@ export const getEffectDefinition = <T extends LightingEffectType>(
 export const getDefaultArgsJson = (type: LightingEffectType): string =>
     JSON.stringify(getEffectDefinition(type).defaultArgs);
 
+/** Extracts a representative color from an effect's parsed args, if any. */
+export function getEffectColor(
+    type: LightingEffectType,
+    argsJson: string,
+): string | undefined {
+    const parsed = parseEffectArgs(type, argsJson);
+    if (type === "fade") return (parsed as FadeEffectArgs).colors[0];
+    return (parsed as { color?: string }).color;
+}
+
+/** Returns a copy of `args` with `color` applied (fade: sets colors[0], keeps the rest). */
+export function withEffectColor<T extends LightingEffectType>(
+    type: T,
+    args: LightingEffectArgsByType[T],
+    color: string,
+): LightingEffectArgsByType[T] {
+    if (type === "fade") {
+        const fadeArgs = args as FadeEffectArgs;
+        return {
+            ...fadeArgs,
+            colors: [color, ...fadeArgs.colors.slice(1)],
+        } as LightingEffectArgsByType[T];
+    }
+    return { ...args, color } as LightingEffectArgsByType[T];
+}
+
 export const parseEffectArgs = <T extends LightingEffectType>(
     type: T,
     argsJson: string,
