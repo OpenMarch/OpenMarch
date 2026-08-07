@@ -3,7 +3,15 @@ import {
     MIN_FLICKER_ON_OFF_MS,
     type FlickerEffectArgs,
 } from "@openmarch/core";
-import { UnitInput } from "@openmarch/ui";
+import { TooltipClassName, UnitInput } from "@openmarch/ui";
+import { InfoIcon } from "@phosphor-icons/react";
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipPortal,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@radix-ui/react-tooltip";
 import ColorPicker from "@/components/ui/ColorPicker";
 import { useTolgee } from "@tolgee/react";
 import { type ChangeEvent, useEffect, useId, useState } from "react";
@@ -106,11 +114,34 @@ export const FlickerEffectArgsInput = ({
         inputId: string,
         labelKey: string,
         fallbackLabel: string,
+        tooltipKey: string,
+        fallbackTooltip: string,
     ) => (
         <div className="flex items-center justify-between gap-6">
-            <label htmlFor={inputId} className="text-body text-text/80">
-                {t(labelKey) || fallbackLabel}
-            </label>
+            <div className="flex items-center gap-4">
+                <label htmlFor={inputId} className="text-body text-text/80">
+                    {t(labelKey) || fallbackLabel}
+                </label>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger type="button">
+                            <InfoIcon
+                                size={16}
+                                className="text-text/60"
+                                aria-hidden
+                            />
+                        </TooltipTrigger>
+                        <TooltipPortal>
+                            <TooltipContent
+                                side="right"
+                                className={TooltipClassName}
+                            >
+                                {t(tooltipKey) || fallbackTooltip}
+                            </TooltipContent>
+                        </TooltipPortal>
+                    </Tooltip>
+                </TooltipProvider>
+            </div>
             <UnitInput
                 id={inputId}
                 unit="seconds"
@@ -145,24 +176,32 @@ export const FlickerEffectArgsInput = ({
                 onMinInputId,
                 "workspace.lightDesigner.effects.effectItem.flickerOnMin",
                 "Min on time (s)",
+                "workspace.lightDesigner.effects.effectItem.flickerOnMinTooltip",
+                "Shortest time a marcher stays lit before turning off.",
             )}
             {dwellField(
                 "onMaxMs",
                 onMaxInputId,
                 "workspace.lightDesigner.effects.effectItem.flickerOnMax",
                 "Max on time (s)",
+                "workspace.lightDesigner.effects.effectItem.flickerOnMaxTooltip",
+                "Longest time a marcher stays lit before turning off.",
             )}
             {dwellField(
                 "offMinMs",
                 offMinInputId,
                 "workspace.lightDesigner.effects.effectItem.flickerOffMin",
                 "Min off time (s)",
+                "workspace.lightDesigner.effects.effectItem.flickerOffMinTooltip",
+                "Shortest time a marcher stays dark before turning back on.",
             )}
             {dwellField(
                 "offMaxMs",
                 offMaxInputId,
                 "workspace.lightDesigner.effects.effectItem.flickerOffMax",
                 "Max off time (s)",
+                "workspace.lightDesigner.effects.effectItem.flickerOffMaxTooltip",
+                "Longest time a marcher stays dark before turning back on.",
             )}
         </div>
     );
