@@ -1,6 +1,6 @@
 import {
     defaultFlickerEffectArgs,
-    MIN_FLICKER_INTERVAL_MS,
+    MIN_FLICKER_ON_OFF_MS,
     type FlickerEffectArgs,
 } from "@openmarch/core";
 import { UnitInput } from "@openmarch/ui";
@@ -15,35 +15,49 @@ export type FlickerEffectArgsInputProps = {
     argsChangeFn: (argsJson: string) => void;
 };
 
+const MIN_S = MIN_FLICKER_ON_OFF_MS / 1000;
+
+type DwellField = "onMinMs" | "onMaxMs" | "offMinMs" | "offMaxMs";
+
 export const FlickerEffectArgsInput = ({
     currentArgs,
     currentArgsJson,
     argsChangeFn,
 }: FlickerEffectArgsInputProps) => {
     const { t } = useTolgee();
-    const intervalInputId = useId();
-    const probabilityInputId = useId();
+    const onMinInputId = useId();
+    const onMaxInputId = useId();
+    const offMinInputId = useId();
+    const offMaxInputId = useId();
 
     const [colorHex, setColorHex] = useState(currentArgs.color);
-    const [intervalMs, setIntervalMs] = useState(currentArgs.intervalMs);
-    const [intervalInput, setIntervalInput] = useState(() =>
-        String(currentArgs.intervalMs / 1000),
-    );
-    const [onProbability, setOnProbability] = useState(
-        currentArgs.onProbability,
-    );
-    const [probabilityInput, setProbabilityInput] = useState(() =>
-        String(Math.round(currentArgs.onProbability * 100)),
-    );
+    const [dwellMs, setDwellMs] = useState<Record<DwellField, number>>({
+        onMinMs: currentArgs.onMinMs,
+        onMaxMs: currentArgs.onMaxMs,
+        offMinMs: currentArgs.offMinMs,
+        offMaxMs: currentArgs.offMaxMs,
+    });
+    const [dwellInput, setDwellInput] = useState<Record<DwellField, string>>({
+        onMinMs: String(currentArgs.onMinMs / 1000),
+        onMaxMs: String(currentArgs.onMaxMs / 1000),
+        offMinMs: String(currentArgs.offMinMs / 1000),
+        offMaxMs: String(currentArgs.offMaxMs / 1000),
+    });
 
     useEffect(() => {
         setColorHex(currentArgs.color);
-        setIntervalMs(currentArgs.intervalMs);
-        setIntervalInput(String(currentArgs.intervalMs / 1000));
-        setOnProbability(currentArgs.onProbability);
-        setProbabilityInput(
-            String(Math.round(currentArgs.onProbability * 100)),
-        );
+        setDwellMs({
+            onMinMs: currentArgs.onMinMs,
+            onMaxMs: currentArgs.onMaxMs,
+            offMinMs: currentArgs.offMinMs,
+            offMaxMs: currentArgs.offMaxMs,
+        });
+        setDwellInput({
+            onMinMs: String(currentArgs.onMinMs / 1000),
+            onMaxMs: String(currentArgs.onMaxMs / 1000),
+            offMinMs: String(currentArgs.offMinMs / 1000),
+            offMaxMs: String(currentArgs.offMaxMs / 1000),
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps -- avoid array ref churn
     }, [currentArgsJson]);
 
@@ -56,54 +70,61 @@ export const FlickerEffectArgsInput = ({
         if (!isRgbaColor(color)) return;
         const nextHex = rgbaToHex6(color);
         setColorHex(nextHex);
-        commitArgs({ color: nextHex, intervalMs, onProbability });
+        commitArgs({ color: nextHex, ...dwellMs });
     };
 
-    const handleIntervalChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setIntervalInput(e.currentTarget.value);
-    };
+    const handleDwellChange =
+        (field: DwellField) => (e: ChangeEvent<HTMLInputElement>) => {
+            // Read the value synchronously — React nulls out e.currentTarget once the
+            // event handler returns, and the setState updater below can run after that.
+            const value = e.currentTarget.value;
+            setDwellInput((prev) => ({ ...prev, [field]: value }));
+        };
 
-    const handleIntervalBlur = () => {
-        if (intervalInput.trim() === "") {
-            setIntervalInput(String(intervalMs / 1000));
+    const handleDwellBlur = (field: DwellField) => () => {
+        const input = dwellInput[field];
+        if (input.trim() === "") {
+            setDwellInput((prev) => ({
+                ...prev,
+                [field]: String(dwellMs[field] / 1000),
+            }));
             return;
         }
 
-        const parsed = Number.parseFloat(intervalInput);
-        const nextIntervalMs = Number.isFinite(parsed)
-            ? Math.max(MIN_FLICKER_INTERVAL_MS, Math.round(parsed * 1000))
-            : intervalMs;
-        setIntervalMs(nextIntervalMs);
-        setIntervalInput(String(nextIntervalMs / 1000));
-        commitArgs({
-            color: colorHex,
-            intervalMs: nextIntervalMs,
-            onProbability,
-        });
+        const parsed = Number.parseFloat(input);
+        const nextMs = Number.isFinite(parsed)
+            ? Math.max(MIN_FLICKER_ON_OFF_MS, Math.round(parsed * 1000))
+            : dwellMs[field];
+        const nextDwellMs = { ...dwellMs, [field]: nextMs };
+        setDwellMs(nextDwellMs);
+        setDwellInput((prev) => ({ ...prev, [field]: String(nextMs / 1000) }));
+        commitArgs({ color: colorHex, ...nextDwellMs });
     };
 
-    const handleProbabilityChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setProbabilityInput(e.currentTarget.value);
-    };
-
-    const handleProbabilityBlur = () => {
-        if (probabilityInput.trim() === "") {
-            setProbabilityInput(String(Math.round(onProbability * 100)));
-            return;
-        }
-
-        const parsed = Number.parseFloat(probabilityInput);
-        const nextOnProbability = Number.isFinite(parsed)
-            ? Math.min(1, Math.max(0, parsed / 100))
-            : onProbability;
-        setOnProbability(nextOnProbability);
-        setProbabilityInput(String(Math.round(nextOnProbability * 100)));
-        commitArgs({
-            color: colorHex,
-            intervalMs,
-            onProbability: nextOnProbability,
-        });
-    };
+    const dwellField = (
+        field: DwellField,
+        inputId: string,
+        labelKey: string,
+        fallbackLabel: string,
+    ) => (
+        <div className="flex items-center justify-between gap-6">
+            <label htmlFor={inputId} className="text-body text-text/80">
+                {t(labelKey) || fallbackLabel}
+            </label>
+            <UnitInput
+                id={inputId}
+                unit="seconds"
+                compact
+                type="number"
+                min={MIN_S}
+                step={MIN_S}
+                className="w-[8rem]"
+                value={dwellInput[field]}
+                onChange={handleDwellChange(field)}
+                onBlur={handleDwellBlur(field)}
+            />
+        </div>
+    );
 
     return (
         <div className="flex flex-col gap-12">
@@ -119,51 +140,30 @@ export const FlickerEffectArgsInput = ({
                 defaultColor={hex6ToRgba(defaultFlickerEffectArgs.color)}
                 onBlur={applyColor}
             />
-            <div className="flex items-center justify-between gap-6">
-                <label
-                    htmlFor={intervalInputId}
-                    className="text-body text-text/80"
-                >
-                    {t(
-                        "workspace.lightDesigner.effects.effectItem.flickerInterval",
-                    ) || "Flicker interval"}
-                </label>
-                <UnitInput
-                    id={intervalInputId}
-                    unit="seconds"
-                    compact
-                    type="number"
-                    min={MIN_FLICKER_INTERVAL_MS / 1000}
-                    step={MIN_FLICKER_INTERVAL_MS / 1000}
-                    className="w-[8rem]"
-                    value={intervalInput}
-                    onChange={handleIntervalChange}
-                    onBlur={handleIntervalBlur}
-                />
-            </div>
-            <div className="flex items-center justify-between gap-6">
-                <label
-                    htmlFor={probabilityInputId}
-                    className="text-body text-text/80"
-                >
-                    {t(
-                        "workspace.lightDesigner.effects.effectItem.flickerProbability",
-                    ) || "On probability"}
-                </label>
-                <UnitInput
-                    id={probabilityInputId}
-                    unit="%"
-                    compact
-                    type="number"
-                    min={0}
-                    max={100}
-                    step={1}
-                    className="w-[8rem]"
-                    value={probabilityInput}
-                    onChange={handleProbabilityChange}
-                    onBlur={handleProbabilityBlur}
-                />
-            </div>
+            {dwellField(
+                "onMinMs",
+                onMinInputId,
+                "workspace.lightDesigner.effects.effectItem.flickerOnMin",
+                "Min on time (s)",
+            )}
+            {dwellField(
+                "onMaxMs",
+                onMaxInputId,
+                "workspace.lightDesigner.effects.effectItem.flickerOnMax",
+                "Max on time (s)",
+            )}
+            {dwellField(
+                "offMinMs",
+                offMinInputId,
+                "workspace.lightDesigner.effects.effectItem.flickerOffMin",
+                "Min off time (s)",
+            )}
+            {dwellField(
+                "offMaxMs",
+                offMaxInputId,
+                "workspace.lightDesigner.effects.effectItem.flickerOffMax",
+                "Max off time (s)",
+            )}
         </div>
     );
 };

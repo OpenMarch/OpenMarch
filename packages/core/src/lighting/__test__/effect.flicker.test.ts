@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
     defaultFlickerEffectArgs,
     isMarcherFlickerOn,
-    MIN_FLICKER_INTERVAL_MS,
+    MIN_FLICKER_ON_OFF_MS,
     parseFlickerEffectArgs,
     sampleFlickerEffectFill,
 } from "../effect.flicker";
@@ -23,89 +23,147 @@ describe("parseFlickerEffectArgs", () => {
             parseFlickerEffectArgs(
                 JSON.stringify({
                     color: "#00ff00",
-                    intervalMs: 200,
-                    onProbability: 0.25,
+                    onMinMs: 100,
+                    onMaxMs: 300,
+                    offMinMs: 150,
+                    offMaxMs: 400,
                 }),
             ),
         ).toEqual({
             color: "#00ff00",
-            intervalMs: 200,
-            onProbability: 0.25,
+            onMinMs: 100,
+            onMaxMs: 300,
+            offMinMs: 150,
+            offMaxMs: 400,
         });
     });
 
-    it("clamps intervalMs to the minimum", () => {
-        expect(
-            parseFlickerEffectArgs(
-                JSON.stringify({ intervalMs: 1, onProbability: 0.5 }),
-            ).intervalMs,
-        ).toBe(MIN_FLICKER_INTERVAL_MS);
+    it("clamps each dwell field to the minimum", () => {
+        const result = parseFlickerEffectArgs(
+            JSON.stringify({
+                onMinMs: 1,
+                onMaxMs: 1,
+                offMinMs: 1,
+                offMaxMs: 1,
+            }),
+        );
+        expect(result.onMinMs).toBe(MIN_FLICKER_ON_OFF_MS);
+        expect(result.onMaxMs).toBe(MIN_FLICKER_ON_OFF_MS);
+        expect(result.offMinMs).toBe(MIN_FLICKER_ON_OFF_MS);
+        expect(result.offMaxMs).toBe(MIN_FLICKER_ON_OFF_MS);
     });
 
-    it("clamps onProbability to [0, 1]", () => {
-        expect(
-            parseFlickerEffectArgs(JSON.stringify({ onProbability: 5 }))
-                .onProbability,
-        ).toBe(1);
-        expect(
-            parseFlickerEffectArgs(JSON.stringify({ onProbability: -5 }))
-                .onProbability,
-        ).toBe(0);
+    it("swaps an inverted min/max pair", () => {
+        const result = parseFlickerEffectArgs(
+            JSON.stringify({
+                onMinMs: 500,
+                onMaxMs: 100,
+                offMinMs: 600,
+                offMaxMs: 200,
+            }),
+        );
+        expect(result.onMinMs).toBe(100);
+        expect(result.onMaxMs).toBe(500);
+        expect(result.offMinMs).toBe(200);
+        expect(result.offMaxMs).toBe(600);
     });
 });
 
 describe("isMarcherFlickerOn", () => {
-    it("is deterministic for the same marcher and tick", () => {
-        const first = isMarcherFlickerOn(7, 42, 0.5);
-        const second = isMarcherFlickerOn(7, 42, 0.5);
+    const window = { startMs: 1000, durationMs: 5000 };
+    const args = {
+        color: "#ffffff",
+        onMinMs: 50,
+        onMaxMs: 150,
+        offMinMs: 50,
+        offMaxMs: 150,
+    };
+
+    it("is off before the window starts", () => {
+        expect(isMarcherFlickerOn(1, window, window.startMs - 1, args)).toBe(
+            false,
+        );
+    });
+
+    it("starts off at window.startMs", () => {
+        expect(isMarcherFlickerOn(1, window, window.startMs, args)).toBe(false);
+    });
+
+    it("is stable across repeated calls at the same timestamp", () => {
+        const first = isMarcherFlickerOn(
+            5,
+            window,
+            window.startMs + 3000,
+            args,
+        );
+        const second = isMarcherFlickerOn(
+            5,
+            window,
+            window.startMs + 3000,
+            args,
+        );
         expect(second).toBe(first);
     });
 
-    it("is not synchronized across marchers at the same tick", () => {
+    it("is not synchronized across marchers", () => {
+        const timestampMs = window.startMs + 4000;
         const results = Array.from({ length: 50 }, (_, marcherId) =>
-            isMarcherFlickerOn(marcherId, 0, 0.5),
+            isMarcherFlickerOn(marcherId, window, timestampMs, args),
         );
         expect(results.some((r) => r)).toBe(true);
         expect(results.some((r) => !r)).toBe(true);
     });
 
-    it("always returns false when onProbability is 0", () => {
-        for (let tick = 0; tick < 20; tick++) {
-            expect(isMarcherFlickerOn(1, tick, 0)).toBe(false);
+    it("only toggles at intervals within the configured on/off ranges", () => {
+        const marcherId = 42;
+        let state = false; // starts off
+        let lastToggleMs = window.startMs;
+        const stepMs = 5;
+        for (
+            let t = window.startMs;
+            t <= window.startMs + window.durationMs;
+            t += stepMs
+        ) {
+            const on = isMarcherFlickerOn(marcherId, window, t, args);
+            if (on !== state) {
+                const dwellMs = t - lastToggleMs;
+                const [minMs, maxMs] = state
+                    ? [args.onMinMs, args.onMaxMs]
+                    : [args.offMinMs, args.offMaxMs];
+                // Allow slack for the step size used while scanning for the toggle.
+                expect(dwellMs).toBeGreaterThanOrEqual(minMs - stepMs);
+                expect(dwellMs).toBeLessThanOrEqual(maxMs + stepMs);
+                state = on;
+                lastToggleMs = t;
+            }
         }
-    });
-
-    it("always returns true when onProbability is 1", () => {
-        for (let tick = 0; tick < 20; tick++) {
-            expect(isMarcherFlickerOn(1, tick, 1)).toBe(true);
-        }
-    });
-
-    it("roughly matches the requested on-probability over many ticks", () => {
-        const ticks = 2000;
-        let onCount = 0;
-        for (let tick = 0; tick < ticks; tick++) {
-            if (isMarcherFlickerOn(3, tick, 0.5)) onCount++;
-        }
-        const fraction = onCount / ticks;
-        expect(fraction).toBeGreaterThan(0.4);
-        expect(fraction).toBeLessThan(0.6);
     });
 });
 
 describe("sampleFlickerEffectFill", () => {
-    const args = { color: "#ff0000", intervalMs: 100, onProbability: 0.5 };
+    const args = {
+        color: "#ff0000",
+        onMinMs: 50,
+        onMaxMs: 150,
+        offMinMs: 50,
+        offMaxMs: 150,
+    };
     const window = { startMs: 1000, durationMs: 5000 };
 
-    it("returns undefined or the color depending on the marcher's flicker state", () => {
-        const timestampMs = 1000;
-        const tickIndex = 0;
-        const expectedOn = isMarcherFlickerOn(9, tickIndex, args.onProbability);
+    it("returns undefined when off and the color when on", () => {
+        const timestampMs = window.startMs + 2500;
+        const marcherId = 9;
+        const expectedOn = isMarcherFlickerOn(
+            marcherId,
+            window,
+            timestampMs,
+            args,
+        );
         const result = sampleFlickerEffectFill({
             args,
             timestampMs,
             window,
-            marcherId: 9,
+            marcherId,
             baseFill: { r: 0, g: 0, b: 0, a: 1 },
             layers: [],
         });
@@ -117,23 +175,15 @@ describe("sampleFlickerEffectFill", () => {
         }
     });
 
-    it("buckets ticks relative to window.startMs", () => {
-        const withinFirstTick = sampleFlickerEffectFill({
+    it("is off (undefined) at window.startMs", () => {
+        const result = sampleFlickerEffectFill({
             args,
-            timestampMs: window.startMs + 50,
+            timestampMs: window.startMs,
             window,
             marcherId: 4,
             baseFill: { r: 0, g: 0, b: 0, a: 1 },
             layers: [],
         });
-        const stillFirstTick = sampleFlickerEffectFill({
-            args,
-            timestampMs: window.startMs + 99,
-            window,
-            marcherId: 4,
-            baseFill: { r: 0, g: 0, b: 0, a: 1 },
-            layers: [],
-        });
-        expect(withinFirstTick).toEqual(stillFirstTick);
+        expect(result).toBeUndefined();
     });
 });

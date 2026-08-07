@@ -122,8 +122,10 @@ describe("LightingEffectSchema", () => {
                 type: "flicker",
                 args: JSON.stringify({
                     color: "#ffffff",
-                    intervalMs: 100,
-                    onProbability: 0.5,
+                    onMinMs: 50,
+                    onMaxMs: 200,
+                    offMinMs: 50,
+                    offMaxMs: 200,
                 }),
             }).type,
         ).toBe("flicker");
