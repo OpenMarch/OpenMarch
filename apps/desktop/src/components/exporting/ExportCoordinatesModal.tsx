@@ -2059,6 +2059,7 @@ export default function ExportCoordinatesModal() {
 
     const handleMobileExportClick = useCallback(() => {
         setOpen(false);
+        useWorkspaceViewStore.getState().setMode("editor");
         setContent(<MobileExportModalContents />, "mobile-export");
         setSidebarOpen(true);
     }, [setContent, setSidebarOpen]);
