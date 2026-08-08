@@ -4,6 +4,8 @@ import { create } from "zustand";
 
 interface ClockState {
     currentTime: number;
+    /** Incrementing version number. Only used to force a re-render */
+    _version: number;
     playing: boolean;
     audioContext: AudioContext | null;
     audioTimeToShowTime: (elapsedAudioSeconds: number) => number;
@@ -27,6 +29,7 @@ interface ClockState {
 
 const frameClockStoreBase = create<ClockState>()((set, get) => ({
     currentTime: 0,
+    _version: 0,
     playing: false,
     audioContext: null,
     audioTimeToShowTime: (s) => s * 1000, // overwritten by init()
