@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { fadeEffectArgsSchema } from "./effect.fade";
 import { flickerEffectArgsSchema } from "./effect.flicker";
 import { solidEffectArgsSchema } from "./effect.solid";
 import { wipeEffectArgsSchema } from "./effect.wipe";
@@ -25,13 +24,11 @@ function validateLightingEffectArgs(
     }
 
     const schema =
-        type === "fade"
-            ? fadeEffectArgsSchema
-            : type === "wipe"
-              ? wipeEffectArgsSchema
-              : type === "flicker"
-                ? flickerEffectArgsSchema
-                : solidEffectArgsSchema;
+        type === "wipe"
+            ? wipeEffectArgsSchema
+            : type === "flicker"
+              ? flickerEffectArgsSchema
+              : solidEffectArgsSchema;
 
     const result = schema.safeParse(parsed);
     if (!result.success) {

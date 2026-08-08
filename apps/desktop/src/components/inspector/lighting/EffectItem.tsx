@@ -28,7 +28,6 @@ import {
     useState,
 } from "react";
 import { CaretDownIcon, TrashIcon } from "@phosphor-icons/react";
-import { FadeEffectArgsInput } from "./EffectItem.fade";
 import { FlickerEffectArgsInput } from "./EffectItem.flicker";
 import { SolidEffectArgsInput } from "./EffectItem.solid";
 import { WipeEffectArgsInput } from "./EffectItem.wipe";
@@ -39,15 +38,11 @@ function effectTypeLabel(
 ): string {
     const keyByType = {
         solid: "workspace.lightDesigner.effects.effectItem.typeSolid",
-        strobe: "workspace.lightDesigner.effects.effectItem.typeStrobe",
-        fade: "workspace.lightDesigner.effects.effectItem.typeFade",
         wipe: "workspace.lightDesigner.effects.effectItem.typeWipe",
         flicker: "workspace.lightDesigner.effects.effectItem.typeFlicker",
     } as const;
     const fallbackByType = {
         solid: "Solid",
-        strobe: "Strobe",
-        fade: "Fade",
         wipe: "Wipe",
         flicker: "Flicker",
     } as const;
@@ -138,7 +133,6 @@ const EffectItem = ({
 
     const handleTypeChange = (newType: string) => {
         const next = newType as LightingEffectType;
-        if (next === "strobe") return;
         if (next === type) return;
         setEditingName(false);
         setTypePickerOpen(false);
@@ -151,17 +145,6 @@ const EffectItem = ({
     };
 
     const renderArgsInput = () => {
-        if (type === "fade") {
-            const parsedArgs = parseEffectArgs("fade", args);
-            return (
-                <FadeEffectArgsInput
-                    currentArgs={parsedArgs}
-                    currentArgsJson={args}
-                    argsChangeFn={argsChangeFn}
-                />
-            );
-        }
-
         if (type === "wipe") {
             const parsedArgs = parseEffectArgs("wipe", args);
             return (
@@ -255,18 +238,6 @@ const EffectItem = ({
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeSolid"
                                         defaultValue="Solid"
-                                    />
-                                </SelectItem>
-                                <SelectItem value="strobe" disabled>
-                                    <T
-                                        keyName="workspace.lightDesigner.effects.effectItem.typeStrobe"
-                                        defaultValue="Strobe"
-                                    />
-                                </SelectItem>
-                                <SelectItem value="fade">
-                                    <T
-                                        keyName="workspace.lightDesigner.effects.effectItem.typeFade"
-                                        defaultValue="Fade"
                                     />
                                 </SelectItem>
                                 <SelectItem value="wipe">

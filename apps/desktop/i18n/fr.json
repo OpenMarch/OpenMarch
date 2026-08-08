@@ -964,18 +964,9 @@
                     "name": "Nom",
                     "effectType": "Type d'effet",
                     "typeSolid": "Uni",
-                    "typeStrobe": "Stroboscope",
-                    "typeFade": "Fondu",
                     "durationSeconds": "Durée (s)",
                     "color": "Couleur",
-                    "direction": "Direction",
-                    "fadeDurationSeconds": "Durée du fondu (s)",
-                    "fadeTargetColor": "Couleur cible du fondu",
-                    "fadeColors": "Couleurs",
-                    "colorNumber": "Couleur {number}",
-                    "addColor": "Ajouter une couleur",
-                    "removeColorAria": "Supprimer la couleur",
-                    "strobePlaceholder": "L'éditeur stroboscope n'est pas encore disponible."
+                    "direction": "Direction"
                 }
             }
         }

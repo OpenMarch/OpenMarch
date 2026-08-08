@@ -79,29 +79,6 @@ describe("LightingEffectSchema", () => {
         ).toBe("solid");
     });
 
-    it("accepts valid strobe args via solid schema", () => {
-        expect(
-            LightingEffectSchema.parse({
-                ...baseEffect,
-                type: "strobe",
-                args: JSON.stringify({ color: "#00ff00" }),
-            }).type,
-        ).toBe("strobe");
-    });
-
-    it("accepts valid fade args", () => {
-        expect(
-            LightingEffectSchema.parse({
-                ...baseEffect,
-                type: "fade",
-                args: JSON.stringify({
-                    changeDurationMs: 1000,
-                    colors: ["#000000", "#ffffff"],
-                }),
-            }).type,
-        ).toBe("fade");
-    });
-
     it("accepts valid wipe args", () => {
         expect(
             LightingEffectSchema.parse({

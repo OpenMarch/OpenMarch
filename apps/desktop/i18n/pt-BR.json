@@ -948,18 +948,9 @@
                     "name": "Nome",
                     "effectType": "Tipo de efeito",
                     "typeSolid": "Sólido",
-                    "typeStrobe": "Estrobo",
-                    "typeFade": "Fade",
                     "durationSeconds": "Duração (s)",
                     "color": "Cor",
-                    "direction": "Direção",
-                    "fadeDurationSeconds": "Duração do fade (s)",
-                    "fadeTargetColor": "Cor de destino do fade",
-                    "fadeColors": "Cores",
-                    "colorNumber": "Cor {number}",
-                    "addColor": "Adicionar cor",
-                    "removeColorAria": "Remover cor",
-                    "strobePlaceholder": "O editor de estrobo ainda não foi implementado."
+                    "direction": "Direção"
                 }
             }
         }
