@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
 import { useTimingObjects } from "@/hooks";
@@ -8,7 +7,11 @@ import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
 import Page from "@/global/classes/Page";
 import { useRenderingCallback } from "./rendering/useRenderingData";
-import { subscribeToFrameClock } from "@/services/clock/frame-clock";
+import {
+    subscribeToFrameClock,
+    useFrameClockStore,
+    useIsPlaying,
+} from "@/services/clock/frame-clock";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -37,6 +40,7 @@ export const useAnimationNew = ({ canvas }: UseAnimationProps) => {
             }
 
             canvas.updateMarcherCoordinates(coordinates, marcherIds);
+            canvas.requestRenderAll();
         },
         [canvas, marcherIds, renderingCallback],
     );
@@ -63,7 +67,8 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         );
     }, [pages]);
     const { setSelectedPage, selectedPage } = useSelectedPage()!;
-    const { isPlaying, setIsPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
+    const pause = useFrameClockStore.use.pause;
     const {
         collisions: pageCollisions,
         // setCollisions,
@@ -158,7 +163,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             if (!currentPage) {
                 // We're past the end, set the selected page to the last one and stop playing
                 setSelectedPage(pages[pages.length - 1]);
-                setIsPlaying(false);
+                pause();
                 const lastPage = pages[pages.length - 1];
                 if (lastPage !== selectedPage) {
                     setSelectedPage(lastPage);
@@ -168,7 +173,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 setSelectedPage(currentPage);
             }
         },
-        [pages, canvas, selectedPage, pagesById, setSelectedPage, setIsPlaying],
+        [pages, canvas, selectedPage, pagesById, setSelectedPage, pause],
     );
 
     // Animate the canvas based on playback timestamp
@@ -184,10 +189,10 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                     setMarcherPositionsAtTime(currentTime);
                 void updateSelectedPage(currentTime);
                 animationFrameRef.current = requestAnimationFrame(animate);
-                if (!continueAnimation) setIsPlaying(false);
+                if (!continueAnimation) pause();
             } catch (e) {
                 console.error(e);
-                setIsPlaying(false);
+                pause();
             }
         };
 
@@ -212,13 +217,12 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setMarcherPositionsAtTime,
         updateSelectedPage,
         marcherTimelines,
-        setIsPlaying,
+        pause,
     ]);
 
     return {
         setMarcherPositionsAtTime,
         _selectedPage: selectedPage,
         _isPlaying: isPlaying,
-        _setIsPlaying: setIsPlaying,
     };
 };

@@ -1,5 +1,5 @@
 import WaveSurfer from "wavesurfer.js";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { SyntheticEvent, useEffect, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
@@ -20,7 +20,7 @@ import { normalizeVolume } from "./volume";
 export default function EditableBeatAudioPlayer() {
     const { uiSettings } = useUiSettingsStore();
     const { selectedPage } = useSelectedPage()!;
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { beats, measures, utility, fetchTimingObjects } = useTimingObjects();
     const { selectedAudioFile } = useSelectedAudioFile()!;
     const [audioFileUrl, setAudioFileUrl] = useState<string | null>(null);
