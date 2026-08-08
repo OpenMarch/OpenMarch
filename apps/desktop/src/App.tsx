@@ -4,7 +4,6 @@ import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
 import { SelectedPageProvider } from "@/context/SelectedPageContext";
 import { SelectedMarchersProvider } from "@/context/SelectedMarchersContext";
-import { IsPlayingProvider } from "@/context/IsPlayingContext";
 import StateInitializer from "@/components/singletons/StateInitializer";
 import LaunchPage from "@/components/launchpage/LaunchPage";
 import { useEffect, useRef, useState } from "react";
@@ -239,68 +238,66 @@ function App() {
                             delayDuration={500}
                             skipDelayDuration={500}
                         >
-                            <IsPlayingProvider>
-                                <SelectedPageProvider>
-                                    <SelectedMarchersProvider>
-                                        <SelectedAudioFileProvider>
-                                            <StateInitializer />
-                                            <RegisteredActionsHandler />
-                                            <SvgPreviewHandler />
-                                            <TitleBar showControls />
-                                            <FocusNotice />
+                            <SelectedPageProvider>
+                                <SelectedMarchersProvider>
+                                    <SelectedAudioFileProvider>
+                                        <StateInitializer />
+                                        <RegisteredActionsHandler />
+                                        <SvgPreviewHandler />
+                                        <TitleBar showControls />
+                                        <FocusNotice />
+                                        <div
+                                            id="app"
+                                            className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                        >
                                             <div
-                                                id="app"
-                                                className="flex h-full min-h-0 w-full gap-8 px-8 pb-8"
+                                                id="workspace"
+                                                className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
                                             >
                                                 <div
-                                                    id="workspace"
-                                                    className="relative flex h-full min-h-0 w-full min-w-0 flex-col gap-8"
+                                                    className={
+                                                        timelineFocussedClass
+                                                    }
                                                 >
-                                                    <div
-                                                        className={
-                                                            timelineFocussedClass
-                                                        }
-                                                    >
-                                                        <Toolbar />
-                                                    </div>
-                                                    <div
-                                                        className={clsx(
-                                                            "relative flex h-full min-h-0 min-w-0 gap-8",
-                                                            timelineFocussedClass,
-                                                        )}
-                                                    >
-                                                        {!isFullscreen && (
-                                                            <>
-                                                                <Sidebar />
-                                                                <SidebarModal />
-                                                            </>
-                                                        )}
-                                                        <Canvas
-                                                            onCanvasReady={
-                                                                setAppCanvas
-                                                            }
-                                                        />
-                                                        <CanvasZoomControls
-                                                            canvas={appCanvas}
-                                                        />
-                                                    </div>
-                                                    <TimelineContainer />
+                                                    <Toolbar />
                                                 </div>
-                                                {!isFullscreen && (
-                                                    <div
-                                                        className={
-                                                            timelineFocussedClass
+                                                <div
+                                                    className={clsx(
+                                                        "relative flex h-full min-h-0 min-w-0 gap-8",
+                                                        timelineFocussedClass,
+                                                    )}
+                                                >
+                                                    {!isFullscreen && (
+                                                        <>
+                                                            <Sidebar />
+                                                            <SidebarModal />
+                                                        </>
+                                                    )}
+                                                    <Canvas
+                                                        onCanvasReady={
+                                                            setAppCanvas
                                                         }
-                                                    >
-                                                        <Inspector />
-                                                    </div>
-                                                )}
+                                                    />
+                                                    <CanvasZoomControls
+                                                        canvas={appCanvas}
+                                                    />
+                                                </div>
+                                                <TimelineContainer />
                                             </div>
-                                            <Toaster />
-                                        </SelectedAudioFileProvider>
-                                    </SelectedMarchersProvider>
-                                </SelectedPageProvider>
-                            </IsPlayingProvider>
+                                            {!isFullscreen && (
+                                                <div
+                                                    className={
+                                                        timelineFocussedClass
+                                                    }
+                                                >
+                                                    <Inspector />
+                                                </div>
+                                            )}
+                                        </div>
+                                        <Toaster />
+                                    </SelectedAudioFileProvider>
+                                </SelectedMarchersProvider>
+                            </SelectedPageProvider>
                         </TooltipProvider>
                     )}
                 </main>

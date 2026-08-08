@@ -1,4 +1,4 @@
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useRef } from "react";
 import {
@@ -21,7 +21,7 @@ import { T } from "@tolgee/react";
 import clsx from "clsx";
 
 export default function TimelineContainer() {
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { measures } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;
     const { uiSettings } = useUiSettingsStore();

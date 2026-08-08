@@ -1,4 +1,4 @@
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { PlusIcon, TrashIcon } from "@phosphor-icons/react";
@@ -30,7 +30,7 @@ import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSetti
 export default function PageTimeline() {
     const queryClient = useQueryClient();
     const { uiSettings } = useUiSettingsStore();
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { selectedPage, setSelectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore()!;
     const { isFullscreen } = useFullscreenStore();

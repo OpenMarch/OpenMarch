@@ -1,5 +1,4 @@
 import WaveSurfer from "wavesurfer.js";
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
@@ -20,7 +19,7 @@ import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSetti
 import AudioOffsetWorker from "@/workers/audioOffset.worker.ts?worker";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import type Page from "@/global/classes/Page";
-import { useFrameClockStore } from "@/services/clock/frame-clock";
+import { useFrameClockStore, useIsPlaying } from "@/services/clock/frame-clock";
 
 export const waveColor = "rgb(180, 180, 180)";
 export const lightProgressColor = "rgb(100, 66, 255)";
@@ -62,19 +61,15 @@ export default function AudioPlayer() {
     const audioMuted = uiSettings.audioMuted;
     const audioVolume = uiSettings.audioVolume;
     const selectedPageContext = useSelectedPage();
-    const isPlayingContext = useIsPlaying();
+    const isPlaying = useIsPlaying();
     const selectedAudioFileContext = useSelectedAudioFile();
     const { beats, measures, pages } = useTimingObjects();
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
     const audioOffsetSeconds = workspaceSettings?.audioOffsetSeconds ?? 0;
-    const contextsReady =
-        !!selectedPageContext &&
-        !!isPlayingContext &&
-        !!selectedAudioFileContext;
+    const contextsReady = !!selectedPageContext && !!selectedAudioFileContext;
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const isPlaying = isPlayingContext?.isPlaying ?? false;
     const selectedAudioFile =
         selectedAudioFileContext?.selectedAudioFile ?? null;
     // Metronome state management

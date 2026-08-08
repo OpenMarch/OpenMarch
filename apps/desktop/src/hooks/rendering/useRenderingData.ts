@@ -29,17 +29,16 @@ const useMarcherTimelines = ():
                     marcherId,
                     pages.map((page) => ({
                         page_id: page.id,
-                        timestamp: page.timestamp,
+                        timestamp: page.timestamp + page.duration,
                     })),
                 ),
             ) ?? [],
         combine: (marcherTimelines) => {
-            if (marcherIds == null) return;
-            // Throw if any marcherTimelines are null
-            if (marcherTimelines.some((mt) => mt == null || mt.data == null))
-                throw new Error(
-                    "Some marcher timelines were null. This should not happen.",
-                );
+            if (
+                marcherIds == null ||
+                marcherTimelines.some((mt) => mt == null || mt.data == null)
+            )
+                return;
 
             return {
                 marcherIds,

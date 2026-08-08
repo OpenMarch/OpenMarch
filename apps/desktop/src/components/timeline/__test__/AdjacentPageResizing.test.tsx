@@ -10,7 +10,7 @@ import {
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
 import { useTimingObjects } from "@/hooks";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import { ElectronApi } from "electron/preload";
@@ -26,7 +26,7 @@ import { faker } from "@faker-js/faker";
 // Mock the hooks
 vi.mock("@/hooks");
 vi.mock("@/stores/UiSettingsStore");
-vi.mock("@/context/IsPlayingContext");
+vi.mock("@/services/clock/frame-clock");
 vi.mock("@/context/SelectedPageContext");
 vi.mock("@/context/SelectedAudioFileContext");
 
@@ -162,10 +162,7 @@ describe.todo("Adjacent Page Resizing", () => {
         });
 
         // Mock the useIsPlaying hook
-        vi.mocked(useIsPlaying).mockReturnValue({
-            isPlaying: false,
-            setIsPlaying: vi.fn(),
-        });
+        vi.mocked(useIsPlaying).mockReturnValue(false);
 
         // Mock the useSelectedPage hook
         vi.mocked(useSelectedPage).mockReturnValue({

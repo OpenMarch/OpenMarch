@@ -10,7 +10,7 @@ import {
     marcherWithVisualsQueryOptions,
     marcherAppearancesQueryOptions,
 } from "@/hooks/queries";
-import { useIsPlaying } from "@/context/IsPlayingContext";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
 import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
@@ -52,7 +52,7 @@ export default function Canvas({
 }) {
     const queryClient = useQueryClient();
     useEditablePath();
-    const { isPlaying } = useIsPlaying()!;
+    const isPlaying = useIsPlaying();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const { pages } = useTimingObjects()!;
     const { selectedPage } = useSelectedPage()!;

@@ -534,8 +534,8 @@ function RegisteredActionsHandler() {
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjects()!;
     const isPlaying = useIsPlaying();
-    const triggerPlay = useFrameClockStore.use.play;
-    const triggerPause = useFrameClockStore.use.pause;
+    const triggerPlay = useFrameClockStore.use.play();
+    const triggerPause = useFrameClockStore.use.pause();
     const metronomeStore = useMetronomeStore();
     const toggleMetronome = metronomeStore?.toggleMetronome ?? (() => {});
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
