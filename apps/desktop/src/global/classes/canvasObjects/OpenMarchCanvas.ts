@@ -1075,6 +1075,27 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     };
 
     /**
+     * Update the coordinates of all marchers on the canvas
+     */
+    updateMarcherCoordinates = (
+        coordinatesFlat: Float32Array,
+        marcherIds: number[],
+    ) => {
+        const marchersById = this._getCanvasMarchersByIdsMap();
+
+        for (const [index, marcherId] of marcherIds.entries()) {
+            const marcher = marchersById.get(marcherId);
+            if (!marcher) continue;
+
+            const coordinateIndex = index * 2;
+            const x = coordinatesFlat[coordinateIndex];
+            const y = coordinatesFlat[coordinateIndex + 1];
+
+            marcher.setLiveCoordinates(x, y);
+        }
+    };
+
+    /**
      * Render the given marcherPages on the canvas
      *
      * @param marcherVisuals The map of marcher visuals
@@ -2063,6 +2084,14 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         return this.getCanvasMarchers().filter((marcher) =>
             marcherIdsSet.has(marcher.marcherObj.id),
         );
+    }
+
+    _getCanvasMarchersByIdsMap(): Map<number, CanvasMarcher> {
+        const output = new Map<number, CanvasMarcher>();
+        for (const marcher of this.getCanvasMarchers()) {
+            output.set(marcher.marcherObj.id, marcher);
+        }
+        return output;
     }
 
     /**
