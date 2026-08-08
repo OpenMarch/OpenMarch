@@ -1,13 +1,13 @@
-import { FieldProperties } from "@openmarch/core";
+import {
+    FieldProperties,
+    getCoordinateAtTime,
+    type MarcherTimeline,
+} from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
 import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
-import {
-    getCoordinatesAtTime,
-    type MarcherTimeline,
-} from "@/utilities/Keyframes";
 import { initializeCanvasForRendering } from "../utils/svg-generator";
 import {
     applyMarcherAppearancesForPage,
@@ -124,6 +124,7 @@ export async function createVideoRenderContext(
         halfLines: args.halfLines,
         svgMargin: FIELD_MARGIN_PX,
     });
+    let disposed = false;
     return {
         canvas: initialized.canvas,
         canvasMarchersById: initialized.canvasMarchersById,
@@ -133,7 +134,15 @@ export async function createVideoRenderContext(
         marcherAppearancesByPageId: args.marcherAppearancesByPageId,
         lastAppliedPageId: null,
         staticFieldCache: null,
-        dispose: () => initialized.canvas.dispose(),
+        // Idempotent: React (StrictMode's mount/cleanup replay, overlapping
+        // effect re-runs, etc.) can end up calling this more than once for
+        // the same context. Fabric's own Canvas.dispose() is not safe to
+        // call twice (it throws on the second call), so guard here.
+        dispose: () => {
+            if (disposed) return;
+            disposed = true;
+            initialized.canvas.dispose();
+        },
     };
 }
 
@@ -267,8 +276,16 @@ function setMarcherPositionsAtTime(
     )) {
         const timeline = context.marcherTimelines.get(Number(marcherId));
         if (!timeline) continue;
-        const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
-        if (coords) canvasMarcher.setLiveCoordinates(coords.x, coords.y);
+        const [x, y] = getCoordinateAtTime(timeline, timeMilliseconds);
+        canvasMarcher.setLiveCoordinates(x, y);
+        // setLiveCoordinates intentionally skips setCoords() for perf during
+        // live animation, but that leaves the marcher's cached bounding box
+        // (aCoords) stale. Unlike the main editor canvas, this render
+        // context's viewportTransform changes on every field-framing
+        // pan/zoom, and fabric's skipOffscreen culling (canvas.isOnScreen)
+        // reads that stale cache — so without this, a pan/zoom makes every
+        // marcher appear "offscreen" and they stop rendering entirely.
+        canvasMarcher.setCoords();
     }
 }
 

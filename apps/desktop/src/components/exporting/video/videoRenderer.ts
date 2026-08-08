@@ -12,11 +12,10 @@ import {
     type AudioCodec,
     type VideoCodec,
 } from "mediabunny";
-import { FieldProperties } from "@openmarch/core";
+import { FieldProperties, type MarcherTimeline } from "@openmarch/core";
 import Marcher from "@/global/classes/Marcher";
 import Page from "@/global/classes/Page";
 import { SectionAppearance } from "@/db-functions";
-import { type MarcherTimeline } from "@/utilities/Keyframes";
 import { prepareAudioChannels, sliceAudioChannels } from "./videoExportAudio";
 import Measure from "@/global/classes/Measure";
 import {

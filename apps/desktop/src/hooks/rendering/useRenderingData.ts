@@ -6,7 +6,15 @@ import { marcherTimelineQueryOptions } from "../queries/useMarcherTimelines";
 import { useCallback, useMemo } from "react";
 import { getAllCoordinatesAtTime } from "@/services/rendering/get-coordinates-at-time";
 
-const useMarcherTimelines = ():
+/**
+ * A stable (module-level) select function so `useQuery` can reuse its cached
+ * result across re-renders instead of recomputing `.map().sort()` every time.
+ * See the memoization note on `useTimingObjects` for why this matters.
+ */
+const selectMarcherIds = (result: { id: number }[]) =>
+    result.map((marcher) => marcher.id).sort();
+
+export const useMarcherTimelines = ():
     | {
           /** List of marcher ids whose timelines are being returned */
           marcherIds: number[];
@@ -16,29 +24,42 @@ const useMarcherTimelines = ():
     | undefined => {
     const { data: marcherIds } = useQuery({
         ...allMarchersQueryOptions(),
-        select: (result) => {
-            return result.map((marcher) => marcher.id).sort();
-        },
+        select: selectMarcherIds,
     });
     const { pages } = useTimingObjects();
 
-    return useQueries({
-        queries:
+    const pagesForTimeline = useMemo(
+        () =>
+            pages.map((page) => ({
+                page_id: page.id,
+                // Page timestamps/durations are in seconds; `MarcherTimeline`
+                // (and everything that queries it, e.g. the frame clock) is
+                // in milliseconds.
+                timestamp: (page.timestamp + page.duration) * 1000,
+            })),
+        [pages],
+    );
+
+    // Must be stable across re-renders (not rebuilt inline) so each query's
+    // `select` closure stays referentially stable too, otherwise TanStack
+    // Query treats it as a new select every render and never caches it.
+    // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization
+    const queries = useMemo(
+        () =>
             marcherIds?.map((marcherId) =>
-                marcherTimelineQueryOptions(
-                    marcherId,
-                    pages.map((page) => ({
-                        page_id: page.id,
-                        timestamp: page.timestamp + page.duration,
-                    })),
-                ),
+                marcherTimelineQueryOptions(marcherId, pagesForTimeline),
             ) ?? [],
-        combine: (marcherTimelines) => {
+        [marcherIds, pagesForTimeline],
+    );
+
+    // Also must be stable — see comment above.
+    const combine = useCallback(
+        (marcherTimelines: { data: MarcherTimeline | undefined }[]) => {
             if (
                 marcherIds == null ||
                 marcherTimelines.some((mt) => mt == null || mt.data == null)
             )
-                return;
+                return undefined;
 
             return {
                 marcherIds,
@@ -47,7 +68,10 @@ const useMarcherTimelines = ():
                 ),
             };
         },
-    });
+        [marcherIds],
+    );
+
+    return useQueries({ queries, combine });
 };
 
 /**
