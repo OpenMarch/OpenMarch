@@ -53,6 +53,8 @@ import "../../styles/shimmer.css";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { useQuery } from "@tanstack/react-query";
+import type { MarcherTimeline } from "@openmarch/core";
+import { useMarcherTimelines } from "@/hooks/rendering/useRenderingData";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { assert } from "@/utilities/utils";
 import {
@@ -63,11 +65,6 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { notesHtmlToPlainText, truncateHtmlNotes } from "@/utilities/notesText";
 import Constants from "@/global/Constants";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-    combineMarcherTimelines,
-    coordinateDataQueryOptions,
-    useManyCoordinateData,
-} from "@/hooks/queries/useCoordinateData";
 import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 import AudioFile from "@/global/classes/AudioFile";
 import { exportVideo } from "./video/videoRenderer";
@@ -1286,7 +1283,6 @@ function VideoExport() {
     });
     const { uiSettings } = useUiSettingsStore();
     const { theme } = useTheme();
-    const queryClient = useQueryClient();
 
     const marcherAppearancesByPageId = useMemo(() => {
         if (
@@ -1347,8 +1343,19 @@ function VideoExport() {
     const isCancelled = useRef(false);
     const t = tolgee.t;
 
-    const { data: marcherTimelines, isPending: timelinesPending } =
-        useManyCoordinateData(pages);
+    const timelineResult = useMarcherTimelines();
+    const marcherTimelines = useMemo<
+        Map<number, MarcherTimeline> | undefined
+    >(() => {
+        if (!timelineResult) return undefined;
+        return new Map(
+            timelineResult.marcherIds.map((marcherId, index) => [
+                marcherId,
+                timelineResult.marcherTimelines[index],
+            ]),
+        );
+    }, [timelineResult]);
+    const timelinesPending = marcherTimelines == null;
 
     const durationSeconds = useMemo(() => {
         if (pages.length === 0) return 0;
@@ -1389,7 +1396,7 @@ function VideoExport() {
                 !fieldProperties ||
                 !marchers?.length ||
                 pages.length < 1 ||
-                timelinesPending
+                !marcherTimelines
             ) {
                 return;
             }
@@ -1513,26 +1520,19 @@ function VideoExport() {
                 (r) => r.label === resolution,
             )!;
 
-            // Full-show timelines (not the playback window) and audio
-            const [timelineMaps, audioFile, backgroundImage] =
-                await Promise.all([
-                    Promise.all(
-                        pages.map((page) =>
-                            queryClient.fetchQuery(
-                                coordinateDataQueryOptions(page, queryClient),
-                            ),
-                        ),
-                    ),
-                    AudioFile.getSelectedAudioFile(),
-                    getFieldPropertiesImageElement(),
-                ]);
+            assert(marcherTimelines, "Marcher timelines not loaded");
+
+            const [audioFile, backgroundImage] = await Promise.all([
+                AudioFile.getSelectedAudioFile(),
+                getFieldPropertiesImageElement(),
+            ]);
             assert(audioFile.data, "Audio file has no data");
 
             const result = await exportVideo({
                 fieldProperties,
                 marchers,
                 sortedPages: pages,
-                marcherTimelines: combineMarcherTimelines(timelineMaps),
+                marcherTimelines,
                 sectionAppearances,
                 marcherAppearancesByPageId,
                 backgroundImage,
@@ -1598,7 +1598,7 @@ function VideoExport() {
         fieldProperties,
         resolution,
         pages,
-        queryClient,
+        marcherTimelines,
         marchers,
         sectionAppearances,
         marcherAppearancesByPageId,
