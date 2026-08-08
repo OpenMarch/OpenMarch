@@ -11,6 +11,7 @@ import {
     allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
+    marcherPageKeys,
     tagAppearanceByPageIdMapQueryOptions,
 } from "@/hooks/queries";
 import { buildMarcherAppearancesByPageId } from "./utils/exportAppearances";
@@ -2039,7 +2040,21 @@ function ExportModalContents({
 
 export default function ExportCoordinatesModal() {
     const [open, setOpen] = useState(false);
+    const queryClient = useQueryClient();
     const { setContent, setOpen: setSidebarOpen } = useSidebarModalStore();
+
+    const handleOpenChange = useCallback(
+        (nextOpen: boolean) => {
+            setOpen(nextOpen);
+            if (nextOpen) {
+                // Revalidate so exports always use the latest coordinates
+                void queryClient.invalidateQueries({
+                    queryKey: marcherPageKeys.all(),
+                });
+            }
+        },
+        [queryClient],
+    );
 
     const handleMobileExportClick = useCallback(() => {
         setOpen(false);
@@ -2051,7 +2066,7 @@ export default function ExportCoordinatesModal() {
         <>
             <style>{`.export-coordinates-dialog + [data-radix-popper-content-wrapper],
                 .export-coordinates-dialog ~ [data-radix-popper-content-wrapper]{z-index:10000 !important;}`}</style>
-            <Dialog open={open} onOpenChange={setOpen}>
+            <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogTrigger
                     asChild
                     className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
