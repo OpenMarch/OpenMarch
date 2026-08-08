@@ -32,10 +32,9 @@ import type { LightingRgba, LightingSampleContext } from "./utils";
 
 export type LightingEffectArgsByType = {
     solid: SolidEffectArgs;
-    fade: FadeEffectArgs;
-    strobe: SolidEffectArgs;
     wipe: WipeEffectArgs;
     flicker: FlickerEffectArgs;
+    fade: FadeEffectArgs;
 };
 
 export type LightingEffectDefinition<T extends LightingEffectType> = {
@@ -62,19 +61,6 @@ export const effectRegistry: {
         parseArgs: parseSolidEffectArgs,
         sampleFill: sampleSolidEffectFill,
     },
-    fade: {
-        defaultArgs: defaultFadeEffectArgs,
-        schema: fadeEffectArgsSchema,
-        parseArgs: parseFadeEffectArgs,
-        sampleFill: sampleFadeEffectFill,
-    },
-    // Until strobe has a dedicated args model, it shares solid args.
-    strobe: {
-        defaultArgs: defaultSolidEffectArgs,
-        schema: solidEffectArgsSchema,
-        parseArgs: parseSolidEffectArgs,
-        sampleFill: sampleSolidEffectFill,
-    },
     wipe: {
         defaultArgs: defaultWipeEffectArgs,
         schema: wipeEffectArgsSchema,
@@ -86,6 +72,12 @@ export const effectRegistry: {
         schema: flickerEffectArgsSchema,
         parseArgs: parseFlickerEffectArgs,
         sampleFill: sampleFlickerEffectFill,
+    },
+    fade: {
+        defaultArgs: defaultFadeEffectArgs,
+        schema: fadeEffectArgsSchema,
+        parseArgs: parseFadeEffectArgs,
+        sampleFill: sampleFadeEffectFill,
     },
 };
 
@@ -102,21 +94,20 @@ export function getEffectColor(
     argsJson: string,
 ): string | undefined {
     const parsed = parseEffectArgs(type, argsJson);
-    if (type === "fade") return (parsed as FadeEffectArgs).colors[0];
+    if (type === "fade") return (parsed as FadeEffectArgs).startColor;
     return (parsed as { color?: string }).color;
 }
 
-/** Returns a copy of `args` with `color` applied (fade: sets colors[0], keeps the rest). */
+/** Returns a copy of `args` with `color` applied. */
 export function withEffectColor<T extends LightingEffectType>(
     type: T,
     args: LightingEffectArgsByType[T],
     color: string,
 ): LightingEffectArgsByType[T] {
     if (type === "fade") {
-        const fadeArgs = args as FadeEffectArgs;
         return {
-            ...fadeArgs,
-            colors: [color, ...fadeArgs.colors.slice(1)],
+            ...(args as FadeEffectArgs),
+            startColor: color,
         } as LightingEffectArgsByType[T];
     }
     return { ...args, color } as LightingEffectArgsByType[T];

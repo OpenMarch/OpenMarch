@@ -108,57 +108,6 @@ describe("sampleMarcherLightingFill", () => {
         expect(c).toEqual(hex6ToLightingRgba("#112233"));
     });
 
-    it("treats strobe like solid (placeholder)", () => {
-        const plan = buildLightingScenePlan([
-            {
-                type: "strobe",
-                argsJson: JSON.stringify({ color: "#abcdef" }),
-                durationMs: 1000,
-                marcherIds: [1],
-            },
-        ]);
-        const c = sampleMarcherLightingFill(plan, 0, 1, baseFill);
-        expect(c).toEqual(hex6ToLightingRgba("#abcdef"));
-    });
-
-    it("treats fade like solid for legacy rows", () => {
-        const plan = buildLightingScenePlan([
-            {
-                type: "fade",
-                argsJson: JSON.stringify({
-                    changeDurationMs: 1000,
-                    color: "#ffffff",
-                }),
-                durationMs: 1000,
-                marcherIds: [1],
-            },
-        ]);
-        const mid = sampleMarcherLightingFill(plan, 500, 1, baseFill);
-        expect(mid).toEqual(hex6ToLightingRgba("#ffffff"));
-    });
-
-    it("returns fade target color immediately at fade start", () => {
-        const plan = buildLightingScenePlan([
-            {
-                type: "solid",
-                argsJson: JSON.stringify({ color: "#0000ff" }),
-                durationMs: 1000,
-                marcherIds: [1],
-            },
-            {
-                type: "fade",
-                argsJson: JSON.stringify({
-                    changeDurationMs: 1000,
-                    color: "#ff0000",
-                }),
-                durationMs: 1000,
-                marcherIds: [1],
-            },
-        ]);
-        const atFadeStart = sampleMarcherLightingFill(plan, 1000, 1, baseFill);
-        expect(atFadeStart).toEqual(hex6ToLightingRgba("#ff0000"));
-    });
-
     it("returns undefined when time is outside all steps", () => {
         const plan = buildLightingScenePlan([
             {
@@ -229,6 +178,34 @@ describe("sampleMarcherLightingFill", () => {
                 marcherPosition: { x: 75, y: 50 },
             }),
         ).toBeUndefined();
+    });
+
+    it("interpolates a fade fill across the step's full duration", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "fade",
+                argsJson: JSON.stringify({
+                    startColor: "#000000",
+                    endColor: "#ffffff",
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1],
+            },
+        ]);
+
+        expect(sampleMarcherLightingFill(plan, 0, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#000000"),
+        );
+        expect(sampleMarcherLightingFill(plan, 500, 1, baseFill)).toEqual({
+            r: 128,
+            g: 128,
+            b: 128,
+            a: 1,
+        });
+        expect(sampleMarcherLightingFill(plan, 999, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#ffffff"),
+        );
     });
 
     it("returns wipe fill for all group marchers when no layers are defined", () => {

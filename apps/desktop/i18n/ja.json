@@ -948,18 +948,9 @@
                     "name": "名前",
                     "effectType": "エフェクトの種類",
                     "typeSolid": "ソリッド",
-                    "typeStrobe": "ストロボ",
-                    "typeFade": "フェード",
                     "durationSeconds": "時間（秒）",
                     "color": "色",
-                    "direction": "方向",
-                    "fadeDurationSeconds": "フェード時間（秒）",
-                    "fadeTargetColor": "フェードの終了色",
-                    "fadeColors": "色",
-                    "colorNumber": "色 {number}",
-                    "addColor": "色を追加",
-                    "removeColorAria": "色を削除",
-                    "strobePlaceholder": "ストロボエディターはまだ実装されていません。"
+                    "direction": "方向"
                 }
             }
         }

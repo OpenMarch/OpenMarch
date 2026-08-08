@@ -24,7 +24,7 @@ describe("resolveEffectLayerRectColor", () => {
     });
 
     it("falls back to field theme shape color", () => {
-        expect(resolveEffectLayerRectColor(fallback, "fade", "{}")).toBe(
+        expect(resolveEffectLayerRectColor(fallback, "flicker", "{}")).toBe(
             fallback,
         );
     });

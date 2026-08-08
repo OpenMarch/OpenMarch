@@ -25,12 +25,12 @@ function validateLightingEffectArgs(
     }
 
     const schema =
-        type === "fade"
-            ? fadeEffectArgsSchema
-            : type === "wipe"
-              ? wipeEffectArgsSchema
-              : type === "flicker"
-                ? flickerEffectArgsSchema
+        type === "wipe"
+            ? wipeEffectArgsSchema
+            : type === "flicker"
+              ? flickerEffectArgsSchema
+              : type === "fade"
+                ? fadeEffectArgsSchema
                 : solidEffectArgsSchema;
 
     const result = schema.safeParse(parsed);

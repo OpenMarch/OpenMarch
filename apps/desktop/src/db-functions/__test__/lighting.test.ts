@@ -169,6 +169,37 @@ describeDbTests("lighting", (it) => {
             );
         });
 
+        it("creates and reads back a fade effect", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+
+            const [effect] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: '{"startColor":"#000000","endColor":"#ffffff"}',
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            expect(effect).toMatchObject({
+                scene_id: scene.id,
+                type: "fade",
+                args: '{"startColor":"#000000","endColor":"#ffffff"}',
+                start_offset_beats: 0,
+                duration_beats: 4,
+            });
+        });
+
         it("moves a marcher when a second group is created with that marcher in the same scene", async ({
             db,
             marchersAndPages,
@@ -340,7 +371,7 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "fade",
+                            type: "solid",
                             args: '{"color":"#000000"}',
                             name: "F",
                             start_offset_beats: 0,
@@ -359,7 +390,7 @@ describeDbTests("lighting", (it) => {
                     modifiedEffects: [
                         {
                             id: effect.id,
-                            type: "strobe",
+                            type: "wipe",
                             name: "S",
                             start_offset_beats: 3,
                         },
@@ -376,7 +407,7 @@ describeDbTests("lighting", (it) => {
                 });
 
                 expect(updatedScene?.name).toBe("B");
-                expect(updatedEffect?.type).toBe("strobe");
+                expect(updatedEffect?.type).toBe("wipe");
                 expect(updatedEffect?.start_offset_beats).toBe(3);
 
                 await updateLightingEffects({
@@ -458,7 +489,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         name: "Earlier",
                         start_offset_beats: 0,
@@ -553,7 +584,7 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "fade",
+                            type: "solid",
                             args: "{}",
                             start_offset_beats: 2,
                             duration_beats: 2,
@@ -585,7 +616,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 5,
                         duration_beats: 3,
@@ -623,7 +654,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 5,
                         duration_beats: 3,
@@ -661,7 +692,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 5,
                         duration_beats: 3,
@@ -699,7 +730,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 5,
                         duration_beats: 3,
@@ -747,7 +778,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 2,
                         duration_beats: 4,
@@ -787,7 +818,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 4,
                         duration_beats: 4,
@@ -830,7 +861,7 @@ describeDbTests("lighting", (it) => {
                     },
                     {
                         scene_id: scene.id,
-                        type: "fade",
+                        type: "solid",
                         args: "{}",
                         start_offset_beats: 2,
                         duration_beats: 4,
@@ -1482,35 +1513,7 @@ describeDbTests("lighting", (it) => {
                 ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
             });
 
-            it("rejects creating a fade effect with layers", async ({
-                db,
-                marchersAndPages,
-            }) => {
-                const { scene } = await createSceneAndGroup({
-                    db,
-                    startPageId: marchersAndPages.expectedPages[0].id,
-                });
-
-                await expect(
-                    createLightingEffects({
-                        db,
-                        newEffects: [
-                            {
-                                scene_id: scene.id,
-                                type: "fade",
-                                args: '{"color":"#000000"}',
-                                start_offset_beats: 0,
-                                duration_beats: 2,
-                                effect_layers: [
-                                    { top: 0, left: 0, height: 10, width: 10 },
-                                ],
-                            },
-                        ],
-                    }),
-                ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
-            });
-
-            it("rejects replacing layers on a fade effect", async ({
+            it("rejects replacing layers on a solid effect", async ({
                 db,
                 marchersAndPages,
             }) => {
@@ -1524,7 +1527,7 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "fade",
+                            type: "solid",
                             args: '{"color":"#000000"}',
                             start_offset_beats: 0,
                             duration_beats: 2,
@@ -1541,7 +1544,7 @@ describeDbTests("lighting", (it) => {
                 ).rejects.toThrow(LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR);
             });
 
-            it("allows clearing layers on a non-solid effect", async ({
+            it("allows clearing layers on a flicker effect", async ({
                 db,
                 marchersAndPages,
             }) => {
@@ -1555,7 +1558,7 @@ describeDbTests("lighting", (it) => {
                     newEffects: [
                         {
                             scene_id: scene.id,
-                            type: "fade",
+                            type: "flicker",
                             args: '{"color":"#000000"}',
                             start_offset_beats: 0,
                             duration_beats: 2,

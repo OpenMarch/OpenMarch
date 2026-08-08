@@ -1,68 +1,36 @@
 import { z } from "zod";
+import { getLightingEffectProgress } from "./timing";
 import { ColorSchema, hex6ToLightingRgba } from "./utils";
 import type { LightingRgba, LightingSampleContext } from "./utils";
 
 export type FadeEffectArgs = {
-    /** MIlliseconds it takes to change from one color to another */
-    changeDurationMs: number;
-    colors: string[];
+    /** Color shown at the start of the effect. */
+    startColor: string;
+    /** Color shown at the end of the effect. */
+    endColor: string;
 };
 
-export const MIN_FADE_COLORS = 2;
-
-/** Minimum fade change duration in milliseconds. */
-export const MIN_FADE_CHANGE_DURATION_MS = 1;
-
-/** Minimum fade change duration in seconds. */
-export const MIN_FADE_CHANGE_DURATION_S = MIN_FADE_CHANGE_DURATION_MS / 1000;
-
 export const defaultFadeEffectArgs: FadeEffectArgs = {
-    changeDurationMs: 2000,
-    colors: ["#000000", "#ff0000"],
+    startColor: "#000000",
+    endColor: "#ffffff",
 };
 
 const fadeEffectArgsInputSchema = z
     .object({
-        changeDurationMs: z.number().nonnegative().optional(),
-        durationMs: z.number().nonnegative().optional(),
-        color: ColorSchema.optional(),
-        colors: z.array(ColorSchema).min(1).optional(),
+        startColor: ColorSchema.optional(),
+        endColor: ColorSchema.optional(),
     })
     .strip();
 
 type FadeEffectArgsInput = z.infer<typeof fadeEffectArgsInputSchema>;
 
-const ensureMinFadeColors = (colors: string[]): string[] => {
-    if (colors.length >= MIN_FADE_COLORS) return colors;
-    const padded = [...colors];
-    while (padded.length < MIN_FADE_COLORS) {
-        padded.push(
-            padded.at(-1) ?? defaultFadeEffectArgs.colors[0] ?? "#000000",
-        );
-    }
-    return padded;
-};
-
 export const normalizeFadeEffectArgs = (
     input: FadeEffectArgsInput,
 ): FadeEffectArgs => {
-    const changeDurationMs = Math.max(
-        MIN_FADE_CHANGE_DURATION_MS,
-        input.changeDurationMs ??
-            input.durationMs ??
-            defaultFadeEffectArgs.changeDurationMs,
-    );
-
-    let colors: string[];
-    if (input.colors && input.colors.length > 0) {
-        colors = ensureMinFadeColors(input.colors);
-    } else if (input.color) {
-        colors = ensureMinFadeColors([input.color]);
-    } else {
-        colors = defaultFadeEffectArgs.colors;
-    }
-
-    return { changeDurationMs, colors };
+    return {
+        startColor: input.startColor ?? defaultFadeEffectArgs.startColor,
+        endColor: input.endColor ?? defaultFadeEffectArgs.endColor,
+    };
 };
 
 export const fadeEffectArgsSchema: z.ZodType<FadeEffectArgs> =
@@ -77,8 +45,44 @@ export const parseFadeEffectArgs = (argsJson: string): FadeEffectArgs => {
     }
 };
 
+function clamp01(value: number): number {
+    return Math.min(1, Math.max(0, value));
+}
+
+function lerpChannel(start: number, end: number, progress: number): number {
+    return Math.round(start + (end - start) * progress);
+}
+
+/** Linearly interpolates between two RGBA colors; alpha is always 1. */
+export function lerpLightingRgba(
+    start: LightingRgba,
+    end: LightingRgba,
+    progress: number,
+): LightingRgba {
+    const clampedProgress = clamp01(progress);
+    return {
+        r: lerpChannel(start.r, end.r, clampedProgress),
+        g: lerpChannel(start.g, end.g, clampedProgress),
+        b: lerpChannel(start.b, end.b, clampedProgress),
+        a: 1,
+    };
+}
+
+/**
+ * Fades linearly from `startColor` to `endColor` across the effect's entire
+ * window (window.startMs -> window.startMs + window.durationMs). Fade has no
+ * manual duration of its own — it always spans the full lifetime of the
+ * effect instance on the timeline.
+ */
 export function sampleFadeEffectFill({
     args,
+    timestampMs,
+    window,
 }: LightingSampleContext<FadeEffectArgs>): LightingRgba {
-    return hex6ToLightingRgba(args.colors.at(-1)!);
+    const progress = getLightingEffectProgress(timestampMs, window);
+    return lerpLightingRgba(
+        hex6ToLightingRgba(args.startColor),
+        hex6ToLightingRgba(args.endColor),
+        progress,
+    );
 }

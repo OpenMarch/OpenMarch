@@ -22,18 +22,13 @@ const baseProps = {
     deleteEffectFn: vi.fn(),
 };
 
-const fadeArgsWithTwoColors = JSON.stringify({
-    changeDurationMs: 2000,
-    colors: ["#ff0000", "#00ff00"],
-});
-
 const wipeArgs = JSON.stringify({
     color: "#112233",
     directionDegrees: 90,
 });
 
 describe("EffectItem type selector", () => {
-    it("enables fade but keeps strobe disabled", () => {
+    it("offers solid, wipe, flicker, and fade only", () => {
         const typeChangeFn = vi.fn();
 
         render(
@@ -47,20 +42,11 @@ describe("EffectItem type selector", () => {
 
         fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
 
-        const fadeOption = screen.getByText("Fade").closest("[role='option']");
-        const strobeOption = screen
-            .getByText("Strobe")
-            .closest("[role='option']");
-
-        expect(fadeOption?.getAttribute("data-disabled")).toBeNull();
-        expect(strobeOption?.getAttribute("data-disabled")).not.toBeNull();
-
-        fireEvent.click(screen.getByText("Fade"));
-        expect(typeChangeFn).toHaveBeenCalledWith("fade");
-
-        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
-        fireEvent.click(screen.getByText("Strobe"));
-        expect(typeChangeFn).toHaveBeenCalledTimes(1);
+        const options = screen
+            .getAllByRole("option")
+            .map((el) => el.textContent);
+        expect(options).toEqual(["Solid", "Wipe", "Flicker", "Fade"]);
+        expect(screen.queryByText("Strobe")).toBeNull();
     });
 
     it("enables wipe in the type selector", () => {
@@ -100,6 +86,44 @@ describe("EffectItem type selector", () => {
 
         fireEvent.click(screen.getByText("Flicker"));
         expect(typeChangeFn).toHaveBeenCalledWith("flicker");
+    });
+
+    it("enables fade in the type selector", () => {
+        const typeChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="solid"
+                args={JSON.stringify({ color: "#112233" })}
+                typeChangeFn={typeChangeFn}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
+        const fadeOption = screen.getByText("Fade").closest("[role='option']");
+        expect(fadeOption?.getAttribute("data-disabled")).toBeNull();
+
+        fireEvent.click(screen.getByText("Fade"));
+        expect(typeChangeFn).toHaveBeenCalledWith("fade");
+    });
+});
+
+describe("EffectItem fade args editor", () => {
+    it("renders start and end color fields for fade effects", () => {
+        render(
+            <EffectItem
+                {...baseProps}
+                type="fade"
+                args={JSON.stringify({
+                    startColor: "#000000",
+                    endColor: "#ffffff",
+                })}
+            />,
+        );
+
+        expect(screen.getByText("Start color")).toBeTruthy();
+        expect(screen.getByText("End color")).toBeTruthy();
     });
 });
 
@@ -156,98 +180,6 @@ describe("EffectItem flicker args editor", () => {
             offMinMs: 50,
             offMaxMs: 200,
         });
-    });
-});
-
-describe("EffectItem fade args editor", () => {
-    it("renders duration field and color labels for fade effects", () => {
-        render(
-            <EffectItem
-                {...baseProps}
-                type="fade"
-                args={fadeArgsWithTwoColors}
-            />,
-        );
-
-        expect(screen.getByLabelText("Change duration")).toBeTruthy();
-        expect(screen.getByText("Color 1")).toBeTruthy();
-        expect(screen.getByText("Color 2")).toBeTruthy();
-        expect(
-            screen.queryByRole("button", { name: "Remove color" }),
-        ).toBeNull();
-    });
-
-    it("adds a color when Add color is clicked", () => {
-        const argsChangeFn = vi.fn();
-
-        render(
-            <EffectItem
-                {...baseProps}
-                type="fade"
-                args={fadeArgsWithTwoColors}
-                argsChangeFn={argsChangeFn}
-            />,
-        );
-
-        fireEvent.click(screen.getByRole("button", { name: "Add color" }));
-
-        expect(argsChangeFn).toHaveBeenCalledTimes(1);
-        const nextArgs = JSON.parse(argsChangeFn.mock.calls[0]![0] as string);
-        expect(nextArgs.colors).toHaveLength(3);
-        expect(nextArgs.colors).toEqual(["#ff0000", "#00ff00", "#00ff00"]);
-    });
-
-    it("keeps local edits when parent re-renders with the same args", () => {
-        const argsChangeFn = vi.fn();
-        const { rerender } = render(
-            <EffectItem
-                {...baseProps}
-                type="fade"
-                args={fadeArgsWithTwoColors}
-                argsChangeFn={argsChangeFn}
-            />,
-        );
-
-        fireEvent.click(screen.getByRole("button", { name: "Add color" }));
-        expect(screen.getByText("Color 3")).toBeTruthy();
-
-        rerender(
-            <EffectItem
-                {...baseProps}
-                type="fade"
-                args={fadeArgsWithTwoColors}
-                argsChangeFn={argsChangeFn}
-            />,
-        );
-
-        expect(screen.getByText("Color 3")).toBeTruthy();
-    });
-
-    it("shows remove only on the third color and removes it", () => {
-        const argsChangeFn = vi.fn();
-
-        render(
-            <EffectItem
-                {...baseProps}
-                type="fade"
-                args={JSON.stringify({
-                    changeDurationMs: 2000,
-                    colors: ["#ff0000", "#00ff00", "#0000ff"],
-                })}
-                argsChangeFn={argsChangeFn}
-            />,
-        );
-
-        const removeButtons = screen.getAllByRole("button", {
-            name: "Remove color",
-        });
-        expect(removeButtons).toHaveLength(1);
-
-        fireEvent.click(removeButtons[0]!);
-
-        expect(argsChangeFn).toHaveBeenCalledTimes(1);
-        const nextArgs = JSON.parse(argsChangeFn.mock.calls[0]![0] as string);
-        expect(nextArgs.colors).toEqual(["#ff0000", "#00ff00"]);
     });
 });
 

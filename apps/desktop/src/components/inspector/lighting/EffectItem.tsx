@@ -39,17 +39,15 @@ function effectTypeLabel(
 ): string {
     const keyByType = {
         solid: "workspace.lightDesigner.effects.effectItem.typeSolid",
-        strobe: "workspace.lightDesigner.effects.effectItem.typeStrobe",
-        fade: "workspace.lightDesigner.effects.effectItem.typeFade",
         wipe: "workspace.lightDesigner.effects.effectItem.typeWipe",
         flicker: "workspace.lightDesigner.effects.effectItem.typeFlicker",
+        fade: "workspace.lightDesigner.effects.effectItem.typeFade",
     } as const;
     const fallbackByType = {
         solid: "Solid",
-        strobe: "Strobe",
-        fade: "Fade",
         wipe: "Wipe",
         flicker: "Flicker",
+        fade: "Fade",
     } as const;
     return t(keyByType[effectType]) || fallbackByType[effectType];
 }
@@ -138,7 +136,6 @@ const EffectItem = ({
 
     const handleTypeChange = (newType: string) => {
         const next = newType as LightingEffectType;
-        if (next === "strobe") return;
         if (next === type) return;
         setEditingName(false);
         setTypePickerOpen(false);
@@ -151,17 +148,6 @@ const EffectItem = ({
     };
 
     const renderArgsInput = () => {
-        if (type === "fade") {
-            const parsedArgs = parseEffectArgs("fade", args);
-            return (
-                <FadeEffectArgsInput
-                    currentArgs={parsedArgs}
-                    currentArgsJson={args}
-                    argsChangeFn={argsChangeFn}
-                />
-            );
-        }
-
         if (type === "wipe") {
             const parsedArgs = parseEffectArgs("wipe", args);
             return (
@@ -177,6 +163,17 @@ const EffectItem = ({
             const parsedArgs = parseEffectArgs("flicker", args);
             return (
                 <FlickerEffectArgsInput
+                    currentArgs={parsedArgs}
+                    currentArgsJson={args}
+                    argsChangeFn={argsChangeFn}
+                />
+            );
+        }
+
+        if (type === "fade") {
+            const parsedArgs = parseEffectArgs("fade", args);
+            return (
+                <FadeEffectArgsInput
                     currentArgs={parsedArgs}
                     currentArgsJson={args}
                     argsChangeFn={argsChangeFn}
@@ -257,18 +254,6 @@ const EffectItem = ({
                                         defaultValue="Solid"
                                     />
                                 </SelectItem>
-                                <SelectItem value="strobe" disabled>
-                                    <T
-                                        keyName="workspace.lightDesigner.effects.effectItem.typeStrobe"
-                                        defaultValue="Strobe"
-                                    />
-                                </SelectItem>
-                                <SelectItem value="fade">
-                                    <T
-                                        keyName="workspace.lightDesigner.effects.effectItem.typeFade"
-                                        defaultValue="Fade"
-                                    />
-                                </SelectItem>
                                 <SelectItem value="wipe">
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeWipe"
@@ -279,6 +264,12 @@ const EffectItem = ({
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeFlicker"
                                         defaultValue="Flicker"
+                                    />
+                                </SelectItem>
+                                <SelectItem value="fade">
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.typeFade"
+                                        defaultValue="Fade"
                                     />
                                 </SelectItem>
                             </SelectContent>
