@@ -6,10 +6,23 @@ import {
 } from "@/hooks/queries/lighting/queries";
 import { updateLightingEffectsMutationOptions } from "@/hooks/queries/lighting/mutations";
 import { useMutation, useQueries, useQuery } from "@tanstack/react-query";
-import { parseEffectArgs } from "@openmarch/core";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+    normalizeWipeDirectionDegrees,
+    parseEffectArgs,
+} from "@openmarch/core";
+import {
+    useCallback,
+    useEffect,
+    useMemo,
+    useRef,
+    type CSSProperties,
+} from "react";
 import clsx from "clsx";
-import { DotsSixIcon, DotsSixVerticalIcon } from "@phosphor-icons/react";
+import {
+    ArrowRightIcon,
+    DotsSixIcon,
+    DotsSixVerticalIcon,
+} from "@phosphor-icons/react";
 import {
     barPxFromBoundary,
     computeBeatBoundaryPx,
@@ -32,6 +45,10 @@ const VERTICAL_PADDING_PX = 4;
 const HANDLE_WIDTH_PX = 12;
 const MIN_BAR_PX = 12;
 const CENTER_DOT_MIN_BAR_WIDTH_PX = 28;
+const WIPE_START_COLOR = "#000000";
+const WIPE_ARROW_SIZE_PX = 9;
+const WIPE_ARROW_SPACING_PX = 20;
+const WIPE_ARROW_EDGE_PAD_PX = 16;
 
 type DragMode = "move" | "resize-left" | "resize-right";
 
@@ -348,7 +365,12 @@ export default function LightingEffectBars({
                 const renderWidth = Math.max(MIN_BAR_PX, barWidth);
                 const color = getEffectColor(effect);
                 const isDarkEffectColor = isEffectColorDark(color);
-                const borderColor = getEffectBorderColor(color);
+                // Wipe always starts on black, so prefer a light edge; otherwise a
+                // dark border-stroke reads as a black cap on light end colors.
+                const borderColor =
+                    effect.type === "wipe"
+                        ? LIGHT_EDGE_COLOR
+                        : getEffectBorderColor(color);
                 const markerColorClass = isDarkEffectColor
                     ? "text-white/70"
                     : "text-black/45";
@@ -358,6 +380,15 @@ export default function LightingEffectBars({
                 const isSelected =
                     selectedEffect?.effectId === effect.id &&
                     selectedEffect?.sceneId === sceneId;
+                const barBackground = getEffectBarBackground(effect, color);
+                const wipeDirectionDegrees =
+                    effect.type === "wipe"
+                        ? getWipeDirectionDegrees(effect)
+                        : 0;
+                const wipeArrowPositions =
+                    effect.type === "wipe"
+                        ? getWipeArrowPositions(renderWidth)
+                        : [];
                 return (
                     <div
                         key={p.effectId}
@@ -373,7 +404,7 @@ export default function LightingEffectBars({
                             left: `${leftPx}px`,
                             width: `${renderWidth}px`,
                             height: `${LANE_HEIGHT_PX}px`,
-                            backgroundColor: color,
+                            ...barBackground,
                             borderColor,
                         }}
                         role="button"
@@ -389,6 +420,39 @@ export default function LightingEffectBars({
                             )
                         }
                     >
+                        {effect.type === "wipe" &&
+                            wipeArrowPositions.map((xPx) => {
+                                const t =
+                                    renderWidth <= 0 ? 0 : xPx / renderWidth;
+                                const onDark = isEffectColorDark(
+                                    lerpHexTowardColor(
+                                        WIPE_START_COLOR,
+                                        color,
+                                        t,
+                                    ),
+                                );
+                                return (
+                                    <ArrowRightIcon
+                                        key={xPx}
+                                        size={WIPE_ARROW_SIZE_PX}
+                                        weight="bold"
+                                        className="pointer-events-none absolute top-1/2"
+                                        style={{
+                                            left: `${xPx}px`,
+                                            color: onDark
+                                                ? "rgba(255, 255, 255, 0.9)"
+                                                : "rgba(0, 0, 0, 0.75)",
+                                            // Outline in the opposite tone so end
+                                            // arrows don't read as solid white/black caps.
+                                            filter: onDark
+                                                ? "drop-shadow(0 0 0.65px #000) drop-shadow(0 0 0.65px #000)"
+                                                : "drop-shadow(0 0 0.65px #fff) drop-shadow(0 0 0.65px #fff)",
+                                            transform: `translate(-50%, -50%) rotate(${-wipeDirectionDegrees}deg)`,
+                                        }}
+                                        aria-hidden
+                                    />
+                                );
+                            })}
                         {!isPlaying && (
                             <div
                                 className="pointer-events-none absolute inset-0"
@@ -475,6 +539,7 @@ export default function LightingEffectBars({
 }
 
 const FALLBACK_COLOR = "#3b82f6";
+const FALLBACK_END_COLOR = "#ffffff";
 const DARK_LUMINANCE_THRESHOLD = 0.35;
 const LIGHT_EDGE_COLOR = "rgba(255, 255, 255, 0.6)";
 
@@ -492,6 +557,87 @@ function getEffectColor(effect: LightingEffectWithMarchers): string {
         // fall through
     }
     return FALLBACK_COLOR;
+}
+
+function getEffectEndColor(effect: LightingEffectWithMarchers): string {
+    try {
+        const parsed = parseEffectArgs(effect.type, effect.args) as {
+            endColor?: string;
+        };
+        if (typeof parsed.endColor === "string") return parsed.endColor;
+    } catch {
+        // fall through
+    }
+    return FALLBACK_END_COLOR;
+}
+
+/** CSS fill styles for the timeline bar based on effect type. */
+function getEffectBarBackground(
+    effect: LightingEffectWithMarchers,
+    representativeColor: string,
+): CSSProperties {
+    switch (effect.type) {
+        case "flicker": {
+            // Four rows of square cells across the bar height.
+            const cellPx = LANE_HEIGHT_PX / 4;
+            return {
+                backgroundImage: `repeating-conic-gradient(${representativeColor} 0% 25%, #000000 0% 50%)`,
+                backgroundSize: `${cellPx * 2}px ${cellPx * 2}px`,
+            };
+        }
+        case "fade": {
+            const endColor = getEffectEndColor(effect);
+            return {
+                backgroundImage: `linear-gradient(to right, ${representativeColor}, ${endColor})`,
+            };
+        }
+        case "wipe":
+            return {
+                backgroundColor: WIPE_START_COLOR,
+                backgroundImage: `linear-gradient(to right, ${WIPE_START_COLOR} 0%, ${representativeColor} 100%)`,
+            };
+        case "solid":
+        default:
+            return { backgroundColor: representativeColor };
+    }
+}
+
+function getWipeDirectionDegrees(effect: LightingEffectWithMarchers): number {
+    try {
+        const parsed = parseEffectArgs(effect.type, effect.args) as {
+            directionDegrees?: number;
+        };
+        if (typeof parsed.directionDegrees === "number") {
+            return normalizeWipeDirectionDegrees(parsed.directionDegrees);
+        }
+    } catch {
+        // fall through
+    }
+    return 0;
+}
+
+/** Evenly spaced x positions for wipe direction arrows along the bar. */
+function getWipeArrowPositions(widthPx: number): number[] {
+    const start = WIPE_ARROW_EDGE_PAD_PX;
+    const end = widthPx - WIPE_ARROW_EDGE_PAD_PX;
+    if (end < start) {
+        if (widthPx >= WIPE_ARROW_SIZE_PX) return [widthPx / 2];
+        return [];
+    }
+    const positions: number[] = [];
+    for (let x = start; x <= end + 0.5; x += WIPE_ARROW_SPACING_PX) {
+        positions.push(Math.round(x));
+    }
+    return positions;
+}
+
+/** Linearly interpolate from `fromHex` toward `toHex` by t in [0, 1]. */
+function lerpHexTowardColor(fromHex: string, toHex: string, t: number): string {
+    const from = parseColorToRgb(fromHex);
+    const to = parseColorToRgb(toHex);
+    if (!from || !to) return toHex;
+    const clamped = Math.min(1, Math.max(0, t));
+    return `rgb(${Math.round(from.r + (to.r - from.r) * clamped)}, ${Math.round(from.g + (to.g - from.g) * clamped)}, ${Math.round(from.b + (to.b - from.b) * clamped)})`;
 }
 
 function getEffectBorderColor(effectColor: string): string | undefined {
