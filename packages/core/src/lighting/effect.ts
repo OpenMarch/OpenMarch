@@ -1,4 +1,9 @@
-import { getDefaultArgsJson } from "./effect.registry";
+import {
+    getDefaultArgsJson,
+    getEffectColor,
+    getEffectDefinition,
+    withEffectColor,
+} from "./effect.registry";
 import type { LightingEffectType } from "./types";
 
 /**
@@ -16,17 +21,28 @@ export const createNewLightingEffect = (
 };
 
 /**
- * Updates the type of a lighting effect and sets the arguments to the default values.
+ * Updates the type of a lighting effect, resetting its arguments to the new
+ * type's defaults except for color, which is carried over from the effect's
+ * current args (mapped into whatever color field the new type uses).
  *
  * This should not be called if the type is already the new type, as it will overwrite the existing arguments.
  */
 export const updateLightingEffectType = ({
     updateFunction,
     newType,
+    currentType,
+    currentArgsJson,
 }: {
     updateFunction: (type: LightingEffectType, argsJson: string) => unknown;
     newType: LightingEffectType;
+    currentType: LightingEffectType;
+    currentArgsJson: string;
 }) => {
-    const newArgsJson = getDefaultArgsJson(newType);
-    updateFunction(newType, newArgsJson);
+    const defaultArgs = getEffectDefinition(newType).defaultArgs;
+    const previousColor = getEffectColor(currentType, currentArgsJson);
+    const newArgs =
+        previousColor != null
+            ? withEffectColor(newType, defaultArgs, previousColor)
+            : defaultArgs;
+    updateFunction(newType, JSON.stringify(newArgs));
 };

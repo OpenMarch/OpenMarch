@@ -79,6 +79,84 @@ describe("EffectItem type selector", () => {
         fireEvent.click(screen.getByText("Wipe"));
         expect(typeChangeFn).toHaveBeenCalledWith("wipe");
     });
+
+    it("enables flicker in the type selector", () => {
+        const typeChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="solid"
+                args={JSON.stringify({ color: "#112233" })}
+                typeChangeFn={typeChangeFn}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
+        const flickerOption = screen
+            .getByText("Flicker")
+            .closest("[role='option']");
+        expect(flickerOption?.getAttribute("data-disabled")).toBeNull();
+
+        fireEvent.click(screen.getByText("Flicker"));
+        expect(typeChangeFn).toHaveBeenCalledWith("flicker");
+    });
+});
+
+describe("EffectItem flicker args editor", () => {
+    it("renders color and on/off dwell time fields for flicker effects", () => {
+        render(
+            <EffectItem
+                {...baseProps}
+                type="flicker"
+                args={JSON.stringify({
+                    color: "#ffffff",
+                    onMinMs: 50,
+                    onMaxMs: 200,
+                    offMinMs: 50,
+                    offMaxMs: 200,
+                })}
+            />,
+        );
+
+        expect(screen.getByLabelText("Min on time (s)")).toBeTruthy();
+        expect(screen.getByLabelText("Max on time (s)")).toBeTruthy();
+        expect(screen.getByLabelText("Min off time (s)")).toBeTruthy();
+        expect(screen.getByLabelText("Max off time (s)")).toBeTruthy();
+        expect(screen.getByText("Color")).toBeTruthy();
+    });
+
+    it("commits a dwell time field when typed into and blurred", () => {
+        const argsChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="flicker"
+                args={JSON.stringify({
+                    color: "#ffffff",
+                    onMinMs: 50,
+                    onMaxMs: 200,
+                    offMinMs: 50,
+                    offMaxMs: 200,
+                })}
+                argsChangeFn={argsChangeFn}
+            />,
+        );
+
+        const onMinInput = screen.getByLabelText("Min on time (s)");
+        fireEvent.change(onMinInput, { target: { value: "0.1" } });
+        fireEvent.blur(onMinInput);
+
+        expect(argsChangeFn).toHaveBeenCalledTimes(1);
+        expect(JSON.parse(argsChangeFn.mock.calls[0]![0] as string)).toEqual({
+            color: "#ffffff",
+            onMinMs: 100,
+            onMaxMs: 200,
+            offMinMs: 50,
+            offMaxMs: 200,
+        });
+    });
 });
 
 describe("EffectItem fade args editor", () => {

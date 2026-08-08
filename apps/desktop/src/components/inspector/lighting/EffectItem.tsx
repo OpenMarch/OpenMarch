@@ -27,8 +27,9 @@ import {
     useRef,
     useState,
 } from "react";
-import { TrashIcon } from "@phosphor-icons/react";
+import { CaretDownIcon, TrashIcon } from "@phosphor-icons/react";
 import { FadeEffectArgsInput } from "./EffectItem.fade";
+import { FlickerEffectArgsInput } from "./EffectItem.flicker";
 import { SolidEffectArgsInput } from "./EffectItem.solid";
 import { WipeEffectArgsInput } from "./EffectItem.wipe";
 
@@ -41,12 +42,14 @@ function effectTypeLabel(
         strobe: "workspace.lightDesigner.effects.effectItem.typeStrobe",
         fade: "workspace.lightDesigner.effects.effectItem.typeFade",
         wipe: "workspace.lightDesigner.effects.effectItem.typeWipe",
+        flicker: "workspace.lightDesigner.effects.effectItem.typeFlicker",
     } as const;
     const fallbackByType = {
         solid: "Solid",
         strobe: "Strobe",
         fade: "Fade",
         wipe: "Wipe",
+        flicker: "Flicker",
     } as const;
     return t(keyByType[effectType]) || fallbackByType[effectType];
 }
@@ -170,6 +173,17 @@ const EffectItem = ({
             );
         }
 
+        if (type === "flicker") {
+            const parsedArgs = parseEffectArgs("flicker", args);
+            return (
+                <FlickerEffectArgsInput
+                    currentArgs={parsedArgs}
+                    currentArgsJson={args}
+                    argsChangeFn={argsChangeFn}
+                />
+            );
+        }
+
         const parsedArgs = parseEffectArgs(type, args) as SolidEffectArgs;
         return (
             <SolidEffectArgsInput
@@ -261,12 +275,18 @@ const EffectItem = ({
                                         defaultValue="Wipe"
                                     />
                                 </SelectItem>
+                                <SelectItem value="flicker">
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.typeFlicker"
+                                        defaultValue="Flicker"
+                                    />
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     ) : (
                         <button
                             type="button"
-                            className="text-sub text-text/60 hover:text-accent w-fit max-w-full cursor-pointer text-left transition-colors"
+                            className="text-sub text-text/60 hover:text-accent flex w-fit max-w-full cursor-pointer items-center gap-2 text-left transition-colors"
                             onClick={openTypePicker}
                             aria-label={
                                 t(
@@ -275,6 +295,7 @@ const EffectItem = ({
                             }
                         >
                             {effectTypeLabel(type, t)}
+                            <CaretDownIcon size={12} aria-hidden />
                         </button>
                     )}
                 </div>

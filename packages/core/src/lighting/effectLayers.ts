@@ -20,6 +20,7 @@ export const LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE = {
     strobe: false,
     fade: false,
     wipe: true,
+    flicker: false,
 } as const satisfies Record<LightingEffectType, boolean>;
 
 export const LIGHTING_EFFECT_LAYER_UNSUPPORTED_TYPE_ERROR =

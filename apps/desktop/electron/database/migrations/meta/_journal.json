@@ -155,6 +155,13 @@
             "when": 1782871701154,
             "tag": "0021_overconfident_guardian",
             "breakpoints": true
+        },
+        {
+            "idx": 22,
+            "version": "6",
+            "when": 1786053514542,
+            "tag": "0022_wealthy_paibok",
+            "breakpoints": true
         }
     ]
 }

@@ -115,6 +115,22 @@ describe("LightingEffectSchema", () => {
         ).toBe("wipe");
     });
 
+    it("accepts valid flicker args", () => {
+        expect(
+            LightingEffectSchema.parse({
+                ...baseEffect,
+                type: "flicker",
+                args: JSON.stringify({
+                    color: "#ffffff",
+                    onMinMs: 50,
+                    onMaxMs: 200,
+                    offMinMs: 50,
+                    offMaxMs: 200,
+                }),
+            }).type,
+        ).toBe("flicker");
+    });
+
     it("rejects invalid JSON args", () => {
         const result = LightingEffectSchema.safeParse({
             ...baseEffect,

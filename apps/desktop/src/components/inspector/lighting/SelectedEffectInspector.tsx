@@ -190,6 +190,8 @@ function SelectedEffectEditor({
                     typeChangeFn={(newType) =>
                         updateLightingEffectType({
                             newType,
+                            currentType: effect.type,
+                            currentArgsJson: effect.args,
                             updateFunction: (type, argsJson) =>
                                 updateEffect({
                                     id: effect.id,
