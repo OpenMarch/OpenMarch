@@ -260,7 +260,10 @@ export default class CanvasMarcher
         this.marcherObj = marcher;
 
         // Set the initial coordinates to the appropriate offset
-        const newCoords = this.databaseCoordsToCanvasCoords(coordinate);
+        const newCoords = this.databaseCoordsToCanvasCoords(
+            coordinate.x,
+            coordinate.y,
+        );
         this.left = newCoords.x;
         this.top = newCoords.y;
 
@@ -444,7 +447,8 @@ export default class CanvasMarcher
 
         // Convert back to canvas coordinates
         const roundedCanvasCoords = this.databaseCoordsToCanvasCoords(
-            roundedDatabaseCoords,
+            roundedDatabaseCoords.x,
+            roundedDatabaseCoords.y,
         );
 
         // Update position with proper typing
@@ -515,19 +519,17 @@ export default class CanvasMarcher
     /**
      * Converts the coordinates from the database to the canvas coordinates of the dot/label fabric group.
      *
-     * @param databaseCoords The coordinates from the database where the actual dot should be. I.e. a marcherPage object
+     * @param x The x coordinate from the database where the actual dot should be
+     * @param y The y coordinate from the database where the actual dot should be
      * @returns {x: number, y: number}, The coordinates of the center of the dot/label fabric group on the canvas.
      */
-    private databaseCoordsToCanvasCoords(databaseCoords: {
-        x: number;
-        y: number;
-    }) {
+    private databaseCoordsToCanvasCoords(x: number, y: number) {
         const dotOffset = this.getDotOffset();
 
         // The absolute position of the dot on the canvas
         const absoluteDotPosition = {
-            x: databaseCoords.x + CanvasMarcher.gridOffset,
-            y: databaseCoords.y + CanvasMarcher.gridOffset,
+            x: x + CanvasMarcher.gridOffset,
+            y: y + CanvasMarcher.gridOffset,
         };
 
         // If the object is in a group, we need to calculate the position relative to the group
@@ -626,7 +628,10 @@ export default class CanvasMarcher
             : coordinate;
 
         // Offset the new canvas coordinates (center of the dot/label group) by the dot's position
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coordsToUse);
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(
+            coordsToUse.x,
+            coordsToUse.y,
+        );
 
         if (this.left === undefined || this.top === undefined)
             throw new Error(
@@ -666,7 +671,7 @@ export default class CanvasMarcher
             left: absoluteCoords.x,
             top: absoluteCoords.y - CanvasMarcher.dotRadius * 2.2,
         });
-        this.textLabel.setCoords();
+        // this.textLabel.setCoords();
     }
 
     /**
@@ -724,7 +729,10 @@ export default class CanvasMarcher
         marcherPage: MarcherPage;
         durationMilliseconds: number;
     }) {
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(marcherPage);
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(
+            marcherPage.x,
+            marcherPage.y,
+        );
         const callback = this.animate(
             {
                 left: newCanvasCoords.x,
@@ -749,16 +757,16 @@ export default class CanvasMarcher
      * A lightweight method to update the marcher's position on the canvas during live animation.
      * This method avoids the overhead of `setMarcherCoords` and is intended for use within an animation loop.
      *
-     * @param coords The new coordinates (in database terms) to set the marcher to.
+     * @param x The new x coordinate (in database terms) to set the marcher to.
+     * @param y The new y coordinate (in database terms) to set the marcher to.
      */
-    setLiveCoordinates(coords: { x: number; y: number }) {
-        const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
+    setLiveCoordinates(x: number, y: number) {
+        const newCanvasCoords = this.databaseCoordsToCanvasCoords(x, y);
 
         this.left = newCanvasCoords.x;
         this.top = newCanvasCoords.y;
 
         this.updateTextLabelPosition();
-        this.setCoords();
     }
 
     /**

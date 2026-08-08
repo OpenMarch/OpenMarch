@@ -2,16 +2,53 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { getCoordinatesAtTime } from "@/utilities/Keyframes";
-import { getLivePlaybackPosition } from "@/components/timeline/audio/AudioPlayer";
 import { useTimingObjects } from "@/hooks";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { useManyCoordinateData } from "./queries/useCoordinateData";
 import Page from "@/global/classes/Page";
+import { useRenderingCallback } from "./rendering/useRenderingData";
+import { subscribeToFrameClock } from "@/services/clock/frame-clock";
 
 interface UseAnimationProps {
     canvas: OpenMarchCanvas | null;
 }
+
+export const useAnimationNew = ({ canvas }: UseAnimationProps) => {
+    const { renderingCallback, marcherIds } = useRenderingCallback();
+
+    const updateCoordinates = useCallback(
+        (timeMs: number) => {
+            if (canvas == null) {
+                console.warn("Canvas is null! This should not happen");
+                return;
+            }
+
+            if (marcherIds == null) {
+                console.warn("marcherIds is null! This should not happen");
+                return;
+            }
+
+            const coordinates = renderingCallback(timeMs);
+
+            if (coordinates == null) {
+                console.warn("coordinates are null! This should not happen!");
+                return;
+            }
+
+            canvas.updateMarcherCoordinates(coordinates, marcherIds);
+        },
+        [canvas, marcherIds, renderingCallback],
+    );
+
+    useEffect(() => {
+        const unsubscribe = subscribeToFrameClock((timeMs) =>
+            updateCoordinates(timeMs),
+        );
+
+        return () => unsubscribe();
+    }, [updateCoordinates]);
+};
 
 // eslint-disable-next-line max-lines-per-function
 export const useAnimation = ({ canvas }: UseAnimationProps) => {
@@ -44,93 +81,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
     );
 
     const animationFrameRef = useRef<number | null>(null);
-
-    // const marcherTimelines = useMemo(() => {
-    //     if (
-    //         // !midsetsLoaded ||
-    //         !marcherPagesLoaded ||
-    //         // midsets == null ||
-    //         marcherPages == null
-    //     ) {
-    //         // console.debug("not loading timeline");
-    //         // console.debug("midsetsLoaded", midsetsLoaded);
-    //         // console.debug("midsets", midsets);
-    //         // console.debug("marcherPagesLoaded", marcherPagesLoaded);
-    //         // console.debug("marcherPages", marcherPages);
-    //         return new Map<number, MarcherTimeline>();
-    //     }
-
-    //     const pagesMap = pages.reduce(
-    //         (acc, page) => {
-    //             acc[page.id] = page;
-    //             return acc;
-    //         },
-    //         {} as Record<number, Page>,
-    //     );
-
-    //     // Organize midsets by marcher page ID for efficient lookup
-    //     // const midsetsByMarcherPage = midsets.reduce(
-    //     //     (acc: Record<number, Midset[]>, midset: Midset) => {
-    //     //         if (!acc[midset.mp_id]) {
-    //     //             acc[midset.mp_id] = [];
-    //     //         }
-    //     //         acc[midset.mp_id].push(midset);
-    //     //         return acc;
-    //     //     },
-    //     //     {} as Record<number, Midset[]>,
-    //     // );
-
-    //     const timelines = new Map<number, MarcherTimeline>();
-    //     if (!marchers.length || !pages.length) return timelines;
-
-    //     for (const marcher of marchers) {
-    //         const coordinateMap = new Map<number, CoordinateDefinition>();
-    //         const marcherPagesForMarcher = getByMarcherId(
-    //             marcherPages,
-    //             marcher.id,
-    //         );
-
-    //         for (const marcherPage of marcherPagesForMarcher) {
-    //             const page = pagesMap[marcherPage.page_id];
-    //             if (page) {
-    //                 // // Get midsets for this marcher page
-    //                 // const midsetsForMarcherPage =
-    //                 //     midsetsByMarcherPage[marcherPage.id] || [];
-
-    //                 // Add the marcher page position as the base coordinate
-    //                 coordinateMap.set((page.timestamp + page.duration) * 1000, {
-    //                     x: marcherPage.x,
-    //                     y: marcherPage.y,
-    //                     path: marcherPage.path_data || undefined,
-    //                     previousPathPosition:
-    //                         marcherPage.path_start_position || 0,
-    //                     nextPathPosition: marcherPage.path_end_position || 1,
-    //                 });
-
-    //                 // // Add midset positions at their progress placements
-    //                 // for (const midset of midsetsForMarcherPage) {
-    //                 //     const progressTime =
-    //                 //         page.timestamp +
-    //                 //         page.duration * midset.progress_placement;
-    //                 //     coordinateMap.set(progressTime, {
-    //                 //         x: midset.x,
-    //                 //         y: midset.y,
-    //                 //         path: midset.path_data || undefined,
-    //                 //     });
-    //                 // }
-    //             }
-    //         }
-
-    //         const sortedTimestamps = Array.from(coordinateMap.keys()).sort(
-    //             (a, b) => a - b,
-    //         );
-    //         timelines.set(marcher.id, {
-    //             pathMap: coordinateMap,
-    //             sortedTimestamps,
-    //         });
-    //     }
-    //     return timelines;
-    // }, [marcherPagesLoaded, marcherPages, pages, marchers]);
 
     // Incremental collision calculation with caching
     // TODO - make collisions a query and put this back
@@ -170,13 +120,13 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 );
 
                 if (timeline) {
-                    // try {
+                    // try <></>{
                     const coords = getCoordinatesAtTime(
                         timeMilliseconds,
                         timeline,
                     );
                     if (!coords) output = false;
-                    else canvasMarcher.setLiveCoordinates(coords);
+                    else canvasMarcher.setLiveCoordinates(coords.x, coords.y);
                 } else {
                     console.debug(
                         `Marcher ${canvasMarcher.marcherObj.id} has no timeline at time ${timeMilliseconds}`,
@@ -228,7 +178,8 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             if (!canvas) return;
 
             try {
-                const currentTime = getLivePlaybackPosition() * 1000; // s to ms
+                const clockTime = useFrameClockStore.getState().currentTime;
+                const currentTime = clockTime * 1000; // s to ms
                 const continueAnimation =
                     setMarcherPositionsAtTime(currentTime);
                 void updateSelectedPage(currentTime);

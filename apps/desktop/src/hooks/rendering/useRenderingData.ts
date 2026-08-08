@@ -3,7 +3,7 @@ import { allMarchersQueryOptions } from "../queries";
 import { useTimingObjects } from "../useTimingObjects";
 import { MarcherTimeline } from "@openmarch/core";
 import { marcherTimelineQueryOptions } from "../queries/useMarcherTimelines";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { getAllCoordinatesAtTime } from "@/services/rendering/get-coordinates-at-time";
 
 const useMarcherTimelines = ():
@@ -52,8 +52,13 @@ const useMarcherTimelines = ():
 };
 
 /**
+ * Coordinates are returned as a flat `Float32Array` of `[x,y]` values. E.g. `[x1, y1, x2, y2, ...]`
+ * The marcher IDs these coordinates map to are returned in the marcherIDs array in the same order as the coordinates.
  *
- * @returns A callback that, given a timestamp in milliseconds, will return all of the coordinates of the marchers
+ * `coordinates.length === marcherIds.length * 2`
+ *
+ * @returns `renderingCallback` — a callback that, given a timestamp in milliseconds, will return all of the coordinates of the marchers in a flat `Float32Array`
+ * @returns `marcherIds` — the list of marcher IDs that are being rendered.
  */
 export const useRenderingCallback = () => {
     const timelineResult = useMarcherTimelines();
@@ -69,5 +74,8 @@ export const useRenderingCallback = () => {
         [timelineResult],
     );
 
-    return renderingCallback;
+    return useMemo(
+        () => ({ renderingCallback, marcherIds: timelineResult?.marcherIds }),
+        [renderingCallback, timelineResult?.marcherIds],
+    );
 };

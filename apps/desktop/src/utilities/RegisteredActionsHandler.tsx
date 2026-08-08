@@ -12,7 +12,6 @@ import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
 import { getNextPage, getPreviousPage } from "@/global/classes/Page";
-import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useRegisteredActionsStore } from "@/stores/RegisteredActionsStore";
 import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
@@ -36,6 +35,7 @@ import { requestOpenNewShowDialog } from "@/utilities/openNewShowDialog";
 import { useAlertModalStore } from "@/stores/AlertModalStore";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
+import { useFrameClockStore, useIsPlaying } from "@/services/clock/frame-clock";
 
 /**
  * The interface for the registered actions. This exists so it is easy to see what actions are available.
@@ -533,9 +533,9 @@ function RegisteredActionsHandler() {
         selectedPageContext?.setSelectedPage ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjects()!;
-    const isPlayingContext = useIsPlaying();
-    const isPlaying = isPlayingContext?.isPlaying ?? false;
-    const setIsPlaying = isPlayingContext?.setIsPlaying ?? (() => {});
+    const isPlaying = useIsPlaying();
+    const triggerPlay = useFrameClockStore.use.play;
+    const triggerPause = useFrameClockStore.use.pause;
     const metronomeStore = useMetronomeStore();
     const toggleMetronome = metronomeStore?.toggleMetronome ?? (() => {});
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
@@ -845,7 +845,7 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.playPause: {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (nextPage) setIsPlaying(!isPlaying);
+                    if (nextPage) isPlaying ? triggerPause() : triggerPlay();
                     break;
                 }
                 case RegisteredActionsEnum.toggleMetronome: {
@@ -1302,17 +1302,23 @@ function RegisteredActionsHandler() {
             selectedPage,
             fieldProperties,
             marcherPagesLoaded,
+            setAlertModalTitle,
+            setAlertModalContent,
+            setAlertModalActions,
+            setAlertModalOpen,
+            t,
             setSelectedAudioFile,
             canUndo,
-            t,
             canRedo,
             setUiSettings,
             uiSettings,
             performHistoryAction,
+            databaseReady,
             pages,
             isPlaying,
             setSelectedPage,
-            setIsPlaying,
+            triggerPause,
+            triggerPlay,
             toggleMetronome,
             previousMarcherPages,
             updateMarcherPages,

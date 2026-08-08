@@ -268,7 +268,7 @@ function setMarcherPositionsAtTime(
         const timeline = context.marcherTimelines.get(Number(marcherId));
         if (!timeline) continue;
         const coords = getCoordinatesAtTime(timeMilliseconds, timeline);
-        if (coords) canvasMarcher.setLiveCoordinates(coords);
+        if (coords) canvasMarcher.setLiveCoordinates(coords.x, coords.y);
     }
 }
 
