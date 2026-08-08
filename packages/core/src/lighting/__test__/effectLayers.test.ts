@@ -16,6 +16,7 @@ describe("LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE", () => {
         expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.wipe).toBe(true);
         expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.solid).toBe(false);
         expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.flicker).toBe(false);
+        expect(LIGHTING_EFFECT_LAYER_SUPPORT_BY_TYPE.fade).toBe(false);
     });
 });
 
@@ -24,8 +25,9 @@ describe("canLightingEffectTypeHaveLayers", () => {
         expect(canLightingEffectTypeHaveLayers("wipe")).toBe(true);
     });
 
-    it("returns false for solid and flicker effects", () => {
+    it("returns false for solid, flicker, and fade effects", () => {
         expect(canLightingEffectTypeHaveLayers("solid")).toBe(false);
         expect(canLightingEffectTypeHaveLayers("flicker")).toBe(false);
+        expect(canLightingEffectTypeHaveLayers("fade")).toBe(false);
     });
 });

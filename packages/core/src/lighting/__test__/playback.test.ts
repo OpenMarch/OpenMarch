@@ -180,6 +180,34 @@ describe("sampleMarcherLightingFill", () => {
         ).toBeUndefined();
     });
 
+    it("interpolates a fade fill across the step's full duration", () => {
+        const plan = buildLightingScenePlan([
+            {
+                type: "fade",
+                argsJson: JSON.stringify({
+                    startColor: "#000000",
+                    endColor: "#ffffff",
+                }),
+                durationMs: 1000,
+                startMs: 0,
+                marcherIds: [1],
+            },
+        ]);
+
+        expect(sampleMarcherLightingFill(plan, 0, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#000000"),
+        );
+        expect(sampleMarcherLightingFill(plan, 500, 1, baseFill)).toEqual({
+            r: 128,
+            g: 128,
+            b: 128,
+            a: 1,
+        });
+        expect(sampleMarcherLightingFill(plan, 999, 1, baseFill)).toEqual(
+            hex6ToLightingRgba("#ffffff"),
+        );
+    });
+
     it("returns wipe fill for all group marchers when no layers are defined", () => {
         const plan = buildLightingScenePlan([
             {

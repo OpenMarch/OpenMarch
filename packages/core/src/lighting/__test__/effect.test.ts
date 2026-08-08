@@ -71,6 +71,44 @@ describe("updateLightingEffectType", () => {
         });
     });
 
+    it("carries the color over from solid to fade as the start color", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "fade",
+            currentType: "solid",
+            currentArgsJson: JSON.stringify({ color: "#ff00ff" }),
+        });
+
+        const [type, argsJson] = updateFunction.mock.calls[0] as [
+            "fade",
+            string,
+        ];
+        expect(type).toBe("fade");
+        expect(JSON.parse(argsJson)).toEqual({
+            startColor: "#ff00ff",
+            endColor: "#ffffff",
+        });
+    });
+
+    it("carries the fade start color over when switching away from fade", () => {
+        const updateFunction = vi.fn();
+
+        updateLightingEffectType({
+            updateFunction,
+            newType: "solid",
+            currentType: "fade",
+            currentArgsJson: JSON.stringify({
+                startColor: "#00ff00",
+                endColor: "#ff0000",
+            }),
+        });
+
+        const [, argsJson] = updateFunction.mock.calls[0] as ["solid", string];
+        expect(JSON.parse(argsJson)).toEqual({ color: "#00ff00" });
+    });
+
     // cspell:disable-next-line
     it("falls back to plain defaults when the previous args are unparseable", () => {
         const updateFunction = vi.fn();

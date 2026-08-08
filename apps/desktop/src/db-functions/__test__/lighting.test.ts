@@ -169,6 +169,37 @@ describeDbTests("lighting", (it) => {
             );
         });
 
+        it("creates and reads back a fade effect", async ({
+            db,
+            marchersAndPages,
+        }) => {
+            const { scene } = await createSceneAndGroup({
+                db,
+                startPageId: marchersAndPages.expectedPages[0].id,
+            });
+
+            const [effect] = await createLightingEffects({
+                db,
+                newEffects: [
+                    {
+                        scene_id: scene.id,
+                        type: "fade",
+                        args: '{"startColor":"#000000","endColor":"#ffffff"}',
+                        start_offset_beats: 0,
+                        duration_beats: 4,
+                    },
+                ],
+            });
+
+            expect(effect).toMatchObject({
+                scene_id: scene.id,
+                type: "fade",
+                args: '{"startColor":"#000000","endColor":"#ffffff"}',
+                start_offset_beats: 0,
+                duration_beats: 4,
+            });
+        });
+
         it("moves a marcher when a second group is created with that marcher in the same scene", async ({
             db,
             marchersAndPages,

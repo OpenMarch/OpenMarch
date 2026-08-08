@@ -1,5 +1,12 @@
 import { z } from "zod";
 import {
+    defaultFadeEffectArgs,
+    fadeEffectArgsSchema,
+    parseFadeEffectArgs,
+    sampleFadeEffectFill,
+} from "./effect.fade";
+import type { FadeEffectArgs } from "./effect.fade";
+import {
     defaultFlickerEffectArgs,
     flickerEffectArgsSchema,
     parseFlickerEffectArgs,
@@ -27,6 +34,7 @@ export type LightingEffectArgsByType = {
     solid: SolidEffectArgs;
     wipe: WipeEffectArgs;
     flicker: FlickerEffectArgs;
+    fade: FadeEffectArgs;
 };
 
 export type LightingEffectDefinition<T extends LightingEffectType> = {
@@ -65,6 +73,12 @@ export const effectRegistry: {
         parseArgs: parseFlickerEffectArgs,
         sampleFill: sampleFlickerEffectFill,
     },
+    fade: {
+        defaultArgs: defaultFadeEffectArgs,
+        schema: fadeEffectArgsSchema,
+        parseArgs: parseFadeEffectArgs,
+        sampleFill: sampleFadeEffectFill,
+    },
 };
 
 export const getEffectDefinition = <T extends LightingEffectType>(
@@ -80,6 +94,7 @@ export function getEffectColor(
     argsJson: string,
 ): string | undefined {
     const parsed = parseEffectArgs(type, argsJson);
+    if (type === "fade") return (parsed as FadeEffectArgs).startColor;
     return (parsed as { color?: string }).color;
 }
 
@@ -89,6 +104,12 @@ export function withEffectColor<T extends LightingEffectType>(
     args: LightingEffectArgsByType[T],
     color: string,
 ): LightingEffectArgsByType[T] {
+    if (type === "fade") {
+        return {
+            ...(args as FadeEffectArgs),
+            startColor: color,
+        } as LightingEffectArgsByType[T];
+    }
     return { ...args, color } as LightingEffectArgsByType[T];
 }
 

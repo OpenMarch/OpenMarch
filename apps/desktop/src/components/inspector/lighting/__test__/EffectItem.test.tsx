@@ -28,7 +28,7 @@ const wipeArgs = JSON.stringify({
 });
 
 describe("EffectItem type selector", () => {
-    it("offers solid, wipe, and flicker only", () => {
+    it("offers solid, wipe, flicker, and fade only", () => {
         const typeChangeFn = vi.fn();
 
         render(
@@ -45,8 +45,7 @@ describe("EffectItem type selector", () => {
         const options = screen
             .getAllByRole("option")
             .map((el) => el.textContent);
-        expect(options).toEqual(["Solid", "Wipe", "Flicker"]);
-        expect(screen.queryByText("Fade")).toBeNull();
+        expect(options).toEqual(["Solid", "Wipe", "Flicker", "Fade"]);
         expect(screen.queryByText("Strobe")).toBeNull();
     });
 
@@ -87,6 +86,44 @@ describe("EffectItem type selector", () => {
 
         fireEvent.click(screen.getByText("Flicker"));
         expect(typeChangeFn).toHaveBeenCalledWith("flicker");
+    });
+
+    it("enables fade in the type selector", () => {
+        const typeChangeFn = vi.fn();
+
+        render(
+            <EffectItem
+                {...baseProps}
+                type="solid"
+                args={JSON.stringify({ color: "#112233" })}
+                typeChangeFn={typeChangeFn}
+            />,
+        );
+
+        fireEvent.click(screen.getByRole("button", { name: "Effect type" }));
+        const fadeOption = screen.getByText("Fade").closest("[role='option']");
+        expect(fadeOption?.getAttribute("data-disabled")).toBeNull();
+
+        fireEvent.click(screen.getByText("Fade"));
+        expect(typeChangeFn).toHaveBeenCalledWith("fade");
+    });
+});
+
+describe("EffectItem fade args editor", () => {
+    it("renders start and end color fields for fade effects", () => {
+        render(
+            <EffectItem
+                {...baseProps}
+                type="fade"
+                args={JSON.stringify({
+                    startColor: "#000000",
+                    endColor: "#ffffff",
+                })}
+            />,
+        );
+
+        expect(screen.getByText("Start color")).toBeTruthy();
+        expect(screen.getByText("End color")).toBeTruthy();
     });
 });
 

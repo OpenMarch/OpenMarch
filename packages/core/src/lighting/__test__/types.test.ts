@@ -108,6 +108,19 @@ describe("LightingEffectSchema", () => {
         ).toBe("flicker");
     });
 
+    it("accepts valid fade args", () => {
+        expect(
+            LightingEffectSchema.parse({
+                ...baseEffect,
+                type: "fade",
+                args: JSON.stringify({
+                    startColor: "#000000",
+                    endColor: "#ffffff",
+                }),
+            }).type,
+        ).toBe("fade");
+    });
+
     it("rejects invalid JSON args", () => {
         const result = LightingEffectSchema.safeParse({
             ...baseEffect,

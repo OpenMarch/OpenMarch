@@ -28,6 +28,7 @@ import {
     useState,
 } from "react";
 import { CaretDownIcon, TrashIcon } from "@phosphor-icons/react";
+import { FadeEffectArgsInput } from "./EffectItem.fade";
 import { FlickerEffectArgsInput } from "./EffectItem.flicker";
 import { SolidEffectArgsInput } from "./EffectItem.solid";
 import { WipeEffectArgsInput } from "./EffectItem.wipe";
@@ -40,11 +41,13 @@ function effectTypeLabel(
         solid: "workspace.lightDesigner.effects.effectItem.typeSolid",
         wipe: "workspace.lightDesigner.effects.effectItem.typeWipe",
         flicker: "workspace.lightDesigner.effects.effectItem.typeFlicker",
+        fade: "workspace.lightDesigner.effects.effectItem.typeFade",
     } as const;
     const fallbackByType = {
         solid: "Solid",
         wipe: "Wipe",
         flicker: "Flicker",
+        fade: "Fade",
     } as const;
     return t(keyByType[effectType]) || fallbackByType[effectType];
 }
@@ -167,6 +170,17 @@ const EffectItem = ({
             );
         }
 
+        if (type === "fade") {
+            const parsedArgs = parseEffectArgs("fade", args);
+            return (
+                <FadeEffectArgsInput
+                    currentArgs={parsedArgs}
+                    currentArgsJson={args}
+                    argsChangeFn={argsChangeFn}
+                />
+            );
+        }
+
         const parsedArgs = parseEffectArgs(type, args) as SolidEffectArgs;
         return (
             <SolidEffectArgsInput
@@ -250,6 +264,12 @@ const EffectItem = ({
                                     <T
                                         keyName="workspace.lightDesigner.effects.effectItem.typeFlicker"
                                         defaultValue="Flicker"
+                                    />
+                                </SelectItem>
+                                <SelectItem value="fade">
+                                    <T
+                                        keyName="workspace.lightDesigner.effects.effectItem.typeFade"
+                                        defaultValue="Fade"
                                     />
                                 </SelectItem>
                             </SelectContent>
