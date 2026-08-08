@@ -10,9 +10,4 @@ export type MarcherTimeline = {
      * `coordinates.length === timestamps.length * 2`
      */
     coordinates: Float32Array;
-    // /**
-    //  * Ordered list of pathways
-    //  */
-    // pathways: Float32Array;
-    // pathwayIndexes: Float32Array;
 };

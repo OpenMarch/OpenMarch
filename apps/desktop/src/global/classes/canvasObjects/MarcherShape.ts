@@ -12,7 +12,7 @@ import { shapePageKeys } from "@/hooks/queries";
 import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { db } from "@/global/database/db";
-import { invalidateByPage } from "@/hooks/queries/sharedInvalidators";
+import { invalidateByMarchers } from "@/hooks/queries/sharedInvalidators";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -261,11 +261,11 @@ export class MarcherShape extends StaticMarcherShape {
 export const useCreateMarcherShape = () => {
     return useMutation({
         mutationFn: _createMarcherShape,
-        onSuccess: (_, { pageId }) => {
+        onSuccess: (_, { marcherIds }) => {
             void queryClient.invalidateQueries({
                 queryKey: shapePageKeys.all(),
             });
-            invalidateByPage(queryClient, new Set([pageId]));
+            invalidateByMarchers(queryClient, new Set(marcherIds));
         },
     });
 };

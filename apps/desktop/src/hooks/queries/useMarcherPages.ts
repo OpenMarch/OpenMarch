@@ -25,7 +25,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { db, schema } from "@/global/database/db";
-import { invalidateByMarchers, invalidateByPage } from "./sharedInvalidators";
+import { invalidateByMarchers } from "./sharedInvalidators";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -155,7 +155,10 @@ export const swapMarchersMutationOptions = (queryClient: QueryClient) => {
             marcher2Id: number;
         }) => swapMarchers({ db, pageId, marcher1Id, marcher2Id }),
         onSuccess: (_, variables) => {
-            void invalidateByPage(queryClient, new Set([variables.pageId]));
+            void invalidateByMarchers(
+                queryClient,
+                new Set([variables.marcher1Id, variables.marcher2Id]),
+            );
 
             // Get the marchers so we can get the drill numbers for the success message
             const marcher1Promise = db.query.marchers.findFirst({
@@ -283,12 +286,8 @@ export const useUpdateSelectedMarchers = (
             return { newCoordinates };
         },
         onSuccess: () => {
-            if (pageId != null)
-                void invalidateByPage(queryClient, new Set([pageId]));
-            else
-                console.error(
-                    "No page ID provided on update success. This should never happen.",
-                );
+            const marcherIds = new Set(selectedMarchers.map((m) => m.id));
+            void invalidateByMarchers(queryClient, marcherIds);
         },
         onError: (e, variables) => {
             conToastError(`Error updating selected marchers`, e, variables);

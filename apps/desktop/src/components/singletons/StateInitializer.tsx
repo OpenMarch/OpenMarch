@@ -4,7 +4,6 @@ import { useSelectedAudioFile } from "@/context/SelectedAudioFileContext";
 import AudioFile from "@/global/classes/AudioFile";
 import { useTimingObjects } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { coordinateDataQueryOptions } from "@/hooks/queries/useCoordinateData";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import {
     marcherAppearancesQueryOptions,
@@ -39,9 +38,6 @@ function StateInitializer() {
 
     if (selectedPage) {
         void queryClient.prefetchQuery(
-            coordinateDataQueryOptions(selectedPage, queryClient),
-        );
-        void queryClient.prefetchQuery(
             marcherAppearancesQueryOptions(selectedPage.id, queryClient),
         );
         if (selectedPage.nextPageId != null) {
@@ -49,9 +45,6 @@ function StateInitializer() {
                 (page) => page.id === selectedPage.nextPageId,
             );
             if (nextPage) {
-                void queryClient.prefetchQuery(
-                    coordinateDataQueryOptions(nextPage, queryClient),
-                );
                 void queryClient.prefetchQuery(
                     marcherAppearancesQueryOptions(nextPage.id, queryClient),
                 );
@@ -62,9 +55,6 @@ function StateInitializer() {
                 (page) => page.id === selectedPage.previousPageId,
             );
             if (previousPage) {
-                void queryClient.prefetchQuery(
-                    coordinateDataQueryOptions(previousPage, queryClient),
-                );
                 void queryClient.prefetchQuery(
                     marcherAppearancesQueryOptions(
                         previousPage.id,
