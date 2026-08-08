@@ -25,7 +25,7 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import tolgee from "@/global/singletons/Tolgee";
 import { toast } from "sonner";
 import { db, schema } from "@/global/database/db";
-import { invalidateByPage } from "./sharedInvalidators";
+import { invalidateByMarchers, invalidateByPage } from "./sharedInvalidators";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -125,19 +125,17 @@ export const marcherPagesByMarcherQueryOptions = (
     });
 };
 
-export const fetchMarcherPages = () => {
-    void queryClient.invalidateQueries({ queryKey: [KEY_BASE] });
-};
-
 // Mutation hooks
 export const updateMarcherPagesMutationOptions = (queryClient: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarcherPages: ModifiedMarcherPageArgs[]) =>
             updateMarcherPages({ db, modifiedMarcherPages }),
         onSuccess: (_, variables) => {
-            // Invalidate all marcher pages queries
-            const pageIds = new Set<number>(variables.map((m) => m.page_id));
-            invalidateByPage(queryClient, pageIds);
+            // Invalidate all needed marcher pages queries
+            const marcherIds = new Set<number>(
+                variables.map((m) => m.marcher_id),
+            );
+            invalidateByMarchers(queryClient, marcherIds);
         },
         onError: (e, variables) => {
             conToastError(`Error updating pages`, e, variables);
