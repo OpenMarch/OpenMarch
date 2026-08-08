@@ -217,7 +217,7 @@ export const useTimingObjects = () => {
             getUtilityQueryOptions(databaseReady),
             workspaceSettingsQueryOptions(databaseReady),
         ],
-        // This must not be a stable function, not an inline function, otherwise it will be called every time the component re-renders
+        // This must be a stable function, not an inline function, otherwise it will be called every time the component re-renders
         // https://tanstack.com/query/latest/docs/framework/react/reference/useQueries#memoization
         combine: _combineTimingObjects,
     });
