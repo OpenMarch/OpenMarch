@@ -1,203 +1,146 @@
-import React, { useCallback, useEffect, useMemo, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import {
     generateDrillChartExportSVGs,
     getFieldPropertiesImageElement,
 } from "@/components/exporting/utils/svg-generator";
 import { buildMarcherAppearancesByPageId } from "@/components/exporting/utils/exportAppearances";
 import {
-    allMarcherPagesQueryOptions,
-    allMarchersQueryOptions,
-    allSectionAppearancesQueryOptions,
-    allTagAppearancesQueryOptions,
-    fieldPropertiesQueryOptions,
-    marcherIdsForAllTagIdsQueryOptions,
-    tagAppearanceByPageIdMapQueryOptions,
-} from "@/hooks/queries";
-import type MarcherPageMap from "@/global/classes/MarcherPageIndex";
+    _calculateMapAllTagAppearanceIdsByPageId,
+    getMarcherIdsByTagIdMap,
+    getMarchers,
+    getPagesInOrder,
+    getSectionAppearances,
+    getTagAppearances,
+    marcherPagesByPageId,
+} from "@/db-functions";
+import { getFieldProperties } from "@/global/classes/FieldProperties";
+import { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import type Page from "@/global/classes/Page";
-import type Marcher from "@/global/classes/Marcher";
-import type { FieldProperties } from "@openmarch/core";
-import { useTimingObjects } from "@/hooks";
-import { useQuery } from "@tanstack/react-query";
+import { marcherPageMapFromArray } from "@/global/classes/MarcherPageIndex";
+import { db } from "@/global/database/db";
 
 const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
 
 /**
- * Handler for generating canvas preview SVGs on app close for launch page
+ * SVG generation only needs page.id for the overview chart preview.
+ */
+const pageStubFromId = (id: number): Page => ({
+    id,
+    name: "",
+    order: 0,
+    counts: 0,
+    nextPageId: null,
+    previousPageId: null,
+    measures: null,
+    duration: 0,
+    notes: null,
+    isSubset: false,
+    beats: [],
+    measureBeatToStartOn: null,
+    measureBeatToEndOn: null,
+    timestamp: 0,
+});
+
+/**
+ * Fetch fresh data from the DB and generate a first-page SVG for the launch page preview.
+ * Intentionally bypasses React Query — this is a one-shot close-time operation.
+ */
+const generateSvgPreviewForClose = async (): Promise<string> => {
+    try {
+        const pagesInOrder = await getPagesInOrder({ tx: db });
+        const firstPageRow = pagesInOrder[0];
+        if (!firstPageRow) {
+            throw new Error("No pages available for SVG generation");
+        }
+
+        const page = pageStubFromId(firstPageRow.id);
+
+        const [
+            fieldProperties,
+            marchers,
+            marcherPagesForPage,
+            sectionAppearances,
+            marcherIdsByTagId,
+            tagAppearances,
+        ] = await Promise.all([
+            getFieldProperties(),
+            getMarchers({ db }).then((rows) => rows.map(dbMarcherToMarcher)),
+            marcherPagesByPageId({ db, pageId: page.id }),
+            getSectionAppearances({ db }),
+            getMarcherIdsByTagIdMap({ db }),
+            getTagAppearances({ db }),
+        ]);
+
+        if (marchers.length === 0) {
+            throw new Error("Missing marcher data for SVG generation");
+        }
+
+        const marcherPagesMap = marcherPageMapFromArray(marcherPagesForPage);
+        if (!marcherPagesMap.marcherPagesByPage[page.id]) {
+            throw new Error(
+                "No marcher page mapping available for the first page",
+            );
+        }
+
+        const tagAppearanceIdsByPageId =
+            _calculateMapAllTagAppearanceIdsByPageId({
+                tagAppearances,
+                pagesInOrder,
+            });
+
+        const marcherAppearancesByPageId = buildMarcherAppearancesByPageId({
+            sortedPages: [page],
+            marchers,
+            marcherPagesMap,
+            sectionAppearances,
+            marcherIdsByTagId,
+            allTagAppearances: tagAppearances,
+            tagAppearanceIdsByPageId,
+            fieldProperties,
+        });
+
+        const backgroundImage = await getFieldPropertiesImageElement();
+        const { SVGs } = await generateDrillChartExportSVGs({
+            fieldProperties,
+            sortedPages: [page],
+            marchers,
+            marcherPagesMap,
+            sectionAppearances,
+            marcherAppearancesByPageId,
+            backgroundImage,
+            gridLines: true,
+            halfLines: true,
+            individualCharts: false,
+            useImagePlaceholder: false,
+        });
+
+        const svg = SVGs?.[0]?.[0];
+        if (!svg) {
+            throw new Error("SVG output was empty");
+        }
+
+        console.debug("SVG generated successfully for first page on app close");
+        return svg;
+    } catch (err) {
+        console.error("Error generating SVG preview:", err);
+        return SVG_GENERATION_ERROR;
+    }
+};
+
+/**
+ * Registers the Electron close handler that generates a canvas preview SVG
+ * for the launch page. Fetches data from the DB only when asked.
  */
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
 
-    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const { pages = [] } = useTimingObjects() ?? {};
-    const { data: marcherPages } = useQuery(
-        allMarcherPagesQueryOptions({
-            pinkyPromiseThatYouKnowWhatYouAreDoing: true,
-        }),
-    );
-    const { data: marchers } = useQuery(allMarchersQueryOptions());
-    const { data: sectionAppearances } = useQuery(
-        allSectionAppearancesQueryOptions(),
-    );
-    const { data: marcherIdsByTagId } = useQuery(
-        marcherIdsForAllTagIdsQueryOptions(),
-    );
-    const { data: allTagAppearances } = useQuery(
-        allTagAppearancesQueryOptions(),
-    );
-    const { data: tagAppearanceIdsByPageId } = useQuery(
-        tagAppearanceByPageIdMapQueryOptions(),
-    );
-
-    const marcherAppearancesByPageId = useMemo(() => {
-        if (
-            !fieldProperties ||
-            !marchers?.length ||
-            !sectionAppearances ||
-            !marcherPages ||
-            !marcherIdsByTagId ||
-            !allTagAppearances ||
-            !tagAppearanceIdsByPageId ||
-            pages.length === 0
-        ) {
-            return undefined;
-        }
-
-        return buildMarcherAppearancesByPageId({
-            sortedPages: pages,
-            marchers,
-            marcherPagesMap: marcherPages,
-            sectionAppearances,
-            marcherIdsByTagId,
-            allTagAppearances,
-            tagAppearanceIdsByPageId,
-            fieldProperties,
-        });
-    }, [
-        fieldProperties,
-        marchers,
-        sectionAppearances,
-        marcherPages,
-        marcherIdsByTagId,
-        allTagAppearances,
-        tagAppearanceIdsByPageId,
-        pages,
-    ]);
-
-    const fieldPropertiesRef = useRef(fieldProperties);
-    const marcherPagesRef = useRef<MarcherPageMap | undefined>(marcherPages);
-    const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
-    const pagesRef = useRef(pages);
-    const marcherAppearancesByPageIdRef = useRef(marcherAppearancesByPageId);
-
-    useEffect(() => {
-        fieldPropertiesRef.current = fieldProperties;
-    }, [fieldProperties]);
-
-    useEffect(() => {
-        marcherPagesRef.current = marcherPages;
-    }, [marcherPages]);
-
-    useEffect(() => {
-        marchersRef.current = Array.isArray(marchers) ? marchers : [];
-    }, [marchers]);
-
-    useEffect(() => {
-        pagesRef.current = Array.isArray(pages) ? pages : [];
-    }, [pages]);
-
-    useEffect(() => {
-        marcherAppearancesByPageIdRef.current = marcherAppearancesByPageId;
-    }, [marcherAppearancesByPageId]);
-
-    const generateSvgPreview = useCallback(
-        async (
-            fieldProps: FieldProperties,
-            page: Page,
-            marcherPagesMap: MarcherPageMap | undefined,
-            allMarchers: Marcher[],
-        ): Promise<string> => {
-            try {
-                if (!fieldProps || !page) {
-                    throw new Error("Missing field properties or page");
-                }
-
-                if (!marcherPagesMap || allMarchers.length === 0) {
-                    throw new Error("Missing marcher data for SVG generation");
-                }
-
-                if (!marcherPagesMap.marcherPagesByPage?.[page.id]) {
-                    throw new Error(
-                        "No marcher page mapping available for the selected page",
-                    );
-                }
-
-                const backgroundImage = await getFieldPropertiesImageElement();
-                const { SVGs } = await generateDrillChartExportSVGs({
-                    fieldProperties: fieldProps,
-                    sortedPages: [page],
-                    marchers: allMarchers,
-                    marcherPagesMap,
-                    sectionAppearances,
-                    marcherAppearancesByPageId:
-                        marcherAppearancesByPageIdRef.current,
-                    backgroundImage,
-                    gridLines: true,
-                    halfLines: true,
-                    individualCharts: false,
-                    useImagePlaceholder: false,
-                });
-
-                const svg = SVGs?.[0]?.[0];
-                if (!svg) {
-                    throw new Error("SVG output was empty");
-                }
-                return svg;
-            } catch (err) {
-                console.error("Error generating SVG preview:", err);
-                return SVG_GENERATION_ERROR;
-            }
-        },
-        [sectionAppearances],
-    );
-
     useEffect(() => {
         if (!window.electron || handlerRegisteredRef.current) return;
 
-        window.electron.onGetSvgForClose(async () => {
-            const currentFieldProps = fieldPropertiesRef.current;
-            const currentPages = pagesRef.current;
-            const currentMarcherPages = marcherPagesRef.current;
-            const currentMarchers = marchersRef.current;
-
-            const firstPage =
-                currentPages && currentPages.length > 0
-                    ? currentPages[0]
-                    : null;
-
-            if (!currentFieldProps || !firstPage) {
-                console.error(
-                    "Missing required data for SVG generation. Field properties or first page not available.",
-                );
-                return SVG_GENERATION_ERROR;
-            }
-
-            const svg = await generateSvgPreview(
-                currentFieldProps,
-                firstPage,
-                currentMarcherPages,
-                currentMarchers,
-            );
-
-            console.debug(
-                "SVG generated successfully for first page on app close",
-            );
-            return svg;
-        });
-
+        window.electron.onGetSvgForClose(generateSvgPreviewForClose);
         handlerRegisteredRef.current = true;
         console.debug("SVG preview handler registered");
-    }, [generateSvgPreview, pages]);
+    }, []);
 
     return null;
 };
