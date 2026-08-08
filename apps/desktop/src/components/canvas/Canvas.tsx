@@ -18,7 +18,7 @@ import LineListeners from "./listeners/LineListeners";
 import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
-import { useAnimation, useAnimationNew } from "@/hooks/useAnimation";
+import { useAnimation } from "@/hooks/useAnimation";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
@@ -103,7 +103,7 @@ export default function Canvas({
     // Custom hooks for the canvas
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
-    useAnimationNew({ canvas });
+    useAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
     // Function to center and fit the canvas to the container

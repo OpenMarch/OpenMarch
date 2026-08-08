@@ -27,9 +27,8 @@ import { DEFAULT_STALE_TIME } from "./constants";
 import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
-import { marcherPageKeys } from "./useMarcherPages";
-import { coordinateDataKeys } from "./useCoordinateData";
 import { beatKeys } from "./useBeats";
+import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const { pages } = schema;
 
@@ -53,16 +52,11 @@ export const invalidatePageQueries = async (qc: QueryClient) => {
     await qc.invalidateQueries({
         queryKey: pageKeys.all(),
     });
-    const marcherPagePromise = qc.invalidateQueries({
-        queryKey: marcherPageKeys.all(),
-    });
     const utilityPromise = qc.invalidateQueries({
         queryKey: utilityKeys.all(),
     });
-    await Promise.all([marcherPagePromise, utilityPromise]);
-    void qc.invalidateQueries({
-        queryKey: coordinateDataKeys.all,
-    });
+    await Promise.all([utilityPromise]);
+    void invalidateAllMarchers(qc);
 };
 
 const pageQueries = {

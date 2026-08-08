@@ -18,9 +18,8 @@ import {
 } from "@/db-functions";
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
-import { marcherPageKeys } from "./useMarcherPages";
-import { coordinateDataKeys } from "./useCoordinateData";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
+import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const { marchers } = schema;
 
@@ -91,15 +90,10 @@ export const createMarchersMutationOptions = (qc: QueryClient) => {
                 queryKey: [KEY_BASE],
             });
             void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
-            void qc.invalidateQueries({
                 queryKey: marcherWithVisualsKeys.all(),
             });
             // Invalidate coordinate data so animation picks up the new marcher
-            void qc.invalidateQueries({
-                queryKey: coordinateDataKeys.all,
-            });
+            void invalidateAllMarchers(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error creating marchers`, e, variables);
@@ -120,10 +114,6 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
         },
         onError: (e, variables) => {
             conToastError(`Error updating marchers`, e, variables);
@@ -140,13 +130,8 @@ export const deleteMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            void qc.invalidateQueries({
-                queryKey: marcherPageKeys.all(),
-            });
             // Invalidate coordinate data so animation removes the deleted marcher
-            void qc.invalidateQueries({
-                queryKey: coordinateDataKeys.all,
-            });
+            void invalidateAllMarchers(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error deleting marchers`, e, variables);
