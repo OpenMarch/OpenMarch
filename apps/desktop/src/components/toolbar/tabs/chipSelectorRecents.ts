@@ -3,18 +3,21 @@ export const DEFAULT_MAX_VISIBLE_CHIPS = 6;
 
 export type RecentsByCategory = Record<string, string[]>;
 
-/** Prepend `id` (LIFO), drop duplicates, and cap at `max`. */
+/** If `id` is already present, leave order unchanged. Otherwise prepend and cap at `max`. */
 export function pushRecentId(
     ids: string[],
     id: string,
     max = DEFAULT_MAX_VISIBLE_CHIPS,
 ): string[] {
-    return [id, ...ids.filter((existing) => existing !== id)].slice(0, max);
+    if (ids.includes(id)) return ids;
+    return [id, ...ids].slice(0, max);
 }
 
 /**
  * Resolve stored recent ids against the current item list.
- * Stale ids are skipped. If nothing valid remains, fall back to the first `maxVisible` items.
+ * Valid recents come first; leftover slots are filled with the remaining items
+ * in their original order, capped at `maxVisible`. Stale ids are skipped.
+ * If nothing valid remains, fall back to the first `maxVisible` items.
  */
 export function resolveRecentItems<T>(
     items: T[],
@@ -32,7 +35,14 @@ export function resolveRecentItems<T>(
         }
     }
     if (recents.length === 0) return items.slice(0, maxVisible);
-    return recents;
+
+    const recentIdSet = new Set(recents.map((item) => String(getId(item))));
+    const filled = [...recents];
+    for (const item of items) {
+        if (filled.length >= maxVisible) break;
+        if (!recentIdSet.has(String(getId(item)))) filled.push(item);
+    }
+    return filled;
 }
 
 export function readRecentIds(category: string): string[] {

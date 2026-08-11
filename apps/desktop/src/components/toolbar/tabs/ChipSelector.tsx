@@ -29,8 +29,8 @@ export type ChipSelectorProps<T> = {
     getLabel: (item: T) => React.ReactNode;
     /** Plain-string label used for case-insensitive substring filtering */
     getSearchText: (item: T) => string;
-    /** Fired from a chip click, a dropdown Enter, or a dropdown option click */
-    onSelect: (item: T, options: { shiftKey: boolean }) => void;
+    /** Fired from a chip click, a dropdown Enter, or a dropdown option click. Return false to skip persisting recents. */
+    onSelect: (item: T, options: { shiftKey: boolean }) => boolean | void;
     /** Rendered instead of the chip row when items.length === 0 */
     emptyMessage?: React.ReactNode;
     /** Accessible name applied to the search input and its listbox */
@@ -74,7 +74,7 @@ export default function ChipSelector<T>({
                 : items.slice(0, maxVisible),
         [items, recentIds, getId, maxVisible, recentCategory],
     );
-    const showSearch = items.length > maxVisible;
+    const showSearch = items.length > visibleItems.length;
 
     const filteredItems = useMemo(() => {
         const q = query.trim().toLowerCase();
@@ -139,16 +139,18 @@ export default function ChipSelector<T>({
     }, [open, activeIndex]);
 
     const selectItem = (item: T, shiftKey: boolean) => {
-        if (recentCategory) {
-            const next = pushRecentId(
-                recentIds,
-                String(getId(item)),
-                maxVisible,
+        const result = onSelect(item, { shiftKey });
+        if (recentCategory && result !== false) {
+            const id = String(getId(item));
+            const alreadyVisible = visibleItems.some(
+                (visible) => String(getId(visible)) === id,
             );
-            setRecentIds(next);
-            writeRecentIds(recentCategory, next);
+            if (!alreadyVisible) {
+                const next = pushRecentId(recentIds, id, maxVisible);
+                setRecentIds(next);
+                writeRecentIds(recentCategory, next);
+            }
         }
-        onSelect(item, { shiftKey });
         setQuery("");
         setHighlightedIndex(0);
         setOpen(false);

@@ -174,12 +174,12 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
         (tag: DatabaseTag, options?: { shiftKey?: boolean }) => {
             if (!marcherIdsForTagsLoaded) {
                 console.error("Marcher IDs for tags not loaded");
-                return;
+                return false;
             }
             const marcherIds = marcherIdsForTags.get(tag.id);
             if (marcherIds == null) {
                 console.error(`Marcher IDs for tag ${tag.id} not found`);
-                return;
+                return false;
             }
             selectMarcherIds(marcherIds, options);
         },
@@ -189,7 +189,9 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
     return (
         <ToolbarSection aria-label="Select tags">
             <ChipSelector
-                items={tagsLoaded ? (tags ?? []) : []}
+                items={
+                    tagsLoaded && marcherIdsForTagsLoaded ? (tags ?? []) : []
+                }
                 getId={(tag) => tag.id}
                 getLabel={(tag) =>
                     getTagName({ tag_id: tag.id, name: tag.name })

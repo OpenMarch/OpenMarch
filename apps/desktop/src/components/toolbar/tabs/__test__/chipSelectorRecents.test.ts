@@ -23,8 +23,8 @@ describe("pushRecentId", () => {
         expect(pushRecentId(["b", "c"], "a")).toEqual(["a", "b", "c"]);
     });
 
-    it("moves a duplicate to the front", () => {
-        expect(pushRecentId(["a", "b", "c"], "b")).toEqual(["b", "a", "c"]);
+    it("leaves an existing id in place", () => {
+        expect(pushRecentId(["a", "b", "c"], "b")).toEqual(["a", "b", "c"]);
     });
 
     it("caps the list at 6", () => {
@@ -44,18 +44,28 @@ describe("resolveRecentItems", () => {
         expect(resolveRecentItems(items, [], getId)).toEqual(items.slice(0, 6));
     });
 
-    it("returns recents in LIFO order", () => {
+    it("returns recents in LIFO order, then fills remaining slots", () => {
         expect(resolveRecentItems(items, ["g", "c", "a"], getId)).toEqual([
             { id: "g" },
             { id: "c" },
             { id: "a" },
+            { id: "b" },
+            { id: "d" },
+            { id: "e" },
         ]);
     });
 
-    it("skips stale ids", () => {
+    it("skips stale ids and fills remaining slots", () => {
         expect(
             resolveRecentItems(items, ["missing", "c", "gone", "a"], getId),
-        ).toEqual([{ id: "c" }, { id: "a" }]);
+        ).toEqual([
+            { id: "c" },
+            { id: "a" },
+            { id: "b" },
+            { id: "d" },
+            { id: "e" },
+            { id: "f" },
+        ]);
     });
 
     it("falls back to the first 6 items when every recent id is stale", () => {
