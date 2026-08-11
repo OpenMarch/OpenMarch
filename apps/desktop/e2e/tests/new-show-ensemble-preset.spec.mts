@@ -2,6 +2,7 @@ import { test } from "../fixtures.mjs";
 import { expect } from "@playwright/test";
 import {
     fillProjectStep,
+    goToProjectStep,
     openNewShowWizard,
 } from "../utils/new-show-wizard.mjs";
 
@@ -15,6 +16,7 @@ async function advanceToPerformersStep(
     projectName: string,
 ) {
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, projectName);
     const dialog = dialogOf(page);
 
@@ -53,6 +55,7 @@ test("Activity step shows the ensemble size selector", async ({
     const dialog = dialogOf(page);
 
     await openNewShowWizard(page);
+    await goToProjectStep(page);
     await fillProjectStep(page, "Size Selector Test");
     await dialog.getByRole("button", { name: "Next" }).click();
 

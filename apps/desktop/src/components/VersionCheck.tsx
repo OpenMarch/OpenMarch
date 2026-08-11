@@ -70,6 +70,8 @@ export default function VersionChecker() {
     }, [t]);
 
     useEffect(() => {
+        // Skip the update check in Playwright so the modal never overlays the app
+        if (window.electron?.isPlaywrightSession) return;
         void fetchLatestVersion(); // Fetch the latest
     }, [fetchLatestVersion]);
 
