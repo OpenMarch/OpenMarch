@@ -1160,8 +1160,11 @@
         },
         "select": {
             "noDrillPrefixesToSelect": "No drill prefixes to select found",
+            "noResultsFound": "No results found",
             "noSectionsToSelect": "No sections to select found",
             "noTagsToSelect": "No tags to select found",
+            "recent": "Recent",
+            "searchPlaceholder": "Search...",
             "selectBy": {
                 "drillPrefix": "Drill Prefix",
                 "family": "Family",
