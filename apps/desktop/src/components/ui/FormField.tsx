@@ -110,8 +110,48 @@ const StaticFormField = forwardRef<HTMLDivElement, FormFieldProps>(
     },
 );
 
+interface WizardFormFieldProps {
+    label: string;
+    children: React.ReactNode;
+    required?: boolean;
+    helperText?: string | React.ReactNode;
+    className?: string;
+    id?: string;
+}
+
+const WizardFormField = forwardRef<HTMLFieldSetElement, WizardFormFieldProps>(
+    ({ label, children, required, helperText, className, id }, ref) => {
+        return (
+            <fieldset
+                id={id}
+                className={twMerge(
+                    clsx(
+                        "m-0 flex w-full min-w-0 flex-col gap-4 border-0 p-0",
+                        className,
+                    ),
+                )}
+                ref={ref}
+            >
+                <legend className="text-body text-text w-full p-0 font-medium">
+                    {label}
+                    {required && (
+                        <span className="text-accent ml-4 leading-none">*</span>
+                    )}
+                </legend>
+                {helperText && (
+                    <p className="text-sub text-text/60 mt-6 leading-relaxed">
+                        {helperText}
+                    </p>
+                )}
+                {children}
+            </fieldset>
+        );
+    },
+);
+
 FormField.displayName = "FormField";
 StaticFormField.displayName = "StaticFormField";
+WizardFormField.displayName = "WizardFormField";
 
-export { StaticFormField };
+export { StaticFormField, WizardFormField };
 export default FormField;

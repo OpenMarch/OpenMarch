@@ -1,5 +1,26 @@
 import { test } from "../fixtures.mjs";
 import { expect, type Page } from "playwright/test";
+import fs from "fs-extra";
+import initSqlJs from "sql.js";
+
+const getPageStartPositions = async (databasePath: string) => {
+    const SQL = await initSqlJs({
+        locateFile: (file: string) => `./node_modules/sql.js/dist/${file}`,
+    });
+    const db = new SQL.Database(fs.readFileSync(databasePath));
+    const result = db.exec(`
+        SELECT pages.id, beats.position
+        FROM pages
+        INNER JOIN beats ON pages.start_beat = beats.id
+        ORDER BY beats.position ASC
+    `);
+    db.close();
+
+    return (result[0]?.values ?? []).map(([id, position]) => ({
+        id: Number(id),
+        position: Number(position),
+    }));
+};
 
 export const createNewPage = async (page: Page) => {
     const pagesTextBefore = (await page.locator("#pages").textContent()) ?? "";
@@ -34,12 +55,19 @@ export const createNewPage = async (page: Page) => {
         lastPageNameBefore.match(/^\d+/)?.[0] ?? "",
     );
 
-    // create new page
-    await page.locator("#pages").getByRole("button").click();
-
     const expectedNewPageName = lastPageNumber + 1;
-    await expect(page.locator("#pages")).toContainText(
-        expectedNewPageName.toString(),
+    const pagesLocator = page.locator("#pages");
+    const addPageButton = pagesLocator.getByRole("button");
+
+    await expect(addPageButton).toBeVisible();
+    await addPageButton.click();
+
+    await expect(pagesLocator).toContainText(expectedNewPageName.toString(), {
+        timeout: 15_000,
+    });
+    await expect(page.locator("#app")).toContainText(
+        `Page ${expectedNewPageName}`,
+        { timeout: 10_000 },
     );
 };
 
@@ -177,7 +205,7 @@ test("Delete page", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^3$/ }).first().click({
         button: "right",
     });
-    await page.getByRole("button").click();
+    await page.getByRole("button", { name: "In Place" }).click();
     for (const pageName of ["0", "1", "2"])
         await expect(page.locator("#pages")).toContainText(pageName);
     await expect(page.locator("#pages")).not.toContainText("3");
@@ -187,8 +215,47 @@ test("Delete page", async ({ electronApp }) => {
     await page.locator("div").filter({ hasText: /^1$/ }).first().click({
         button: "right",
     });
-    await page.getByRole("button").click();
+    await page.getByRole("button", { name: "In Place" }).click();
     for (const pageName of ["0", "1"]) // page is renamed to 1
         await expect(page.locator("#pages")).toContainText(pageName);
     await expect(page.locator("#pages")).not.toContainText("2");
+});
+
+test("Delete page with yank", async ({ electronApp }) => {
+    const { databasePath, page } = electronApp;
+
+    await createNewPage(page);
+    await createNewPage(page);
+    await createNewPage(page);
+    await createNewPage(page);
+
+    for (const pageName of ["0", "1", "2", "3", "4"])
+        await expect(page.locator("#pages")).toContainText(pageName);
+
+    const positionsBeforeDelete = await getPageStartPositions(databasePath);
+    expect(positionsBeforeDelete.length).toBe(5);
+
+    const pageToDelete = positionsBeforeDelete[2];
+    const nextPage = positionsBeforeDelete[3];
+    const yankLength = nextPage.position - pageToDelete.position;
+
+    await page.locator("div").filter({ hasText: /^2$/ }).first().click();
+    await page.locator("div").filter({ hasText: /^2$/ }).first().click({
+        button: "right",
+    });
+    await page.getByRole("button", { name: "Yank" }).click();
+
+    await expect(page.locator("#pages")).not.toContainText("4");
+    for (const pageName of ["0", "1", "2", "3"])
+        await expect(page.locator("#pages")).toContainText(pageName);
+
+    await expect
+        .poll(() => getPageStartPositions(databasePath))
+        .toEqual([
+            ...positionsBeforeDelete.slice(0, 2),
+            ...positionsBeforeDelete.slice(3).map((pagePosition) => ({
+                ...pagePosition,
+                position: pagePosition.position - yankLength,
+            })),
+        ]);
 });

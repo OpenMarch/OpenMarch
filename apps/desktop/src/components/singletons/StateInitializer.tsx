@@ -22,9 +22,17 @@ import {
 function StateInitializer() {
     const queryClient = useQueryClient();
     const { pages } = useTimingObjects();
-    const { selectedPage, setSelectedPage } = useSelectedPage()!;
-    const { selectedAudioFile, setSelectedAudioFile } = useSelectedAudioFile()!;
-    const { setSelectedShapePageIds } = useSelectionStore()!;
+    const selectedPageContext = useSelectedPage();
+    const selectedPage = selectedPageContext?.selectedPage ?? null;
+    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const selectedAudioFileContext = useSelectedAudioFile();
+    const selectedAudioFile =
+        selectedAudioFileContext?.selectedAudioFile ?? null;
+    const setSelectedAudioFile =
+        selectedAudioFileContext?.setSelectedAudioFile ?? (() => {});
+    const selectionStore = useSelectionStore();
+    const setSelectedShapePageIds =
+        selectionStore?.setSelectedShapePageIds ?? (() => {});
     const { mutate: updateMarcherShape } = useMutation(
         updateShapePagesMutationOptions(queryClient),
     );
@@ -69,9 +77,11 @@ function StateInitializer() {
 
     /*******************************************************************/
 
-    // Select the first page if none are selected. Intended to activate at the initial loading of a webpage
+    // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh)
     useEffect(() => {
-        if (selectedPage == null && pages.length > 0) setSelectedPage(pages[0]);
+        if (selectedPage == null && pages.length > 0) {
+            setSelectedPage(pages[0]);
+        }
     }, [pages, selectedPage, setSelectedPage]);
 
     // Select the currently selected audio file

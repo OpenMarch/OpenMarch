@@ -66,7 +66,7 @@ const { Content } = isContent
 
 <Layout title={title}>
     <article
-        class="flex relative max-w-[50rem] w-full flex-col items-center gap-16"
+        class="relative flex w-full max-w-[50rem] min-w-0 flex-col items-center gap-16"
     >
         {
             isContent ? (
@@ -95,8 +95,10 @@ const { Content } = isContent
             style="background: radial-gradient(ellipse, oklch(from var(--color-accent) l c h / 0.3) 0%, transparent 70%);"
         >
         </div>
-        <h1 class="text-h3 text-center">{title}</h1>
-        <div class="flex gap-16 items-center">
+        <h1 class="text-h3 text-center max-[520px]:text-h4">{title}</h1>
+        <div
+            class="flex flex-wrap items-center justify-center gap-x-16 gap-y-8 text-center"
+        >
             {
                 authorProfileImageUrl ? (
                     <Image

@@ -20,6 +20,32 @@
     }
 }
 
+@keyframes mobile-export-screenshot-marquee {
+    from {
+        transform: translateX(0);
+    }
+    to {
+        transform: translateX(-152%);
+    }
+}
+
+.mobile-export-screenshot-marquee {
+    animation: mobile-export-screenshot-marquee 40s linear infinite;
+}
+
+@keyframes mobile-export-screenshot-carousel {
+    from {
+        transform: translateY(0);
+    }
+    to {
+        transform: translateY(-50%);
+    }
+}
+
+.mobile-export-screenshot-carousel {
+    animation: mobile-export-screenshot-carousel 36s linear infinite;
+}
+
 /* Hide scrollbar for Chrome, Safari and Opera */
 .example::-webkit-scrollbar {
     display: none;

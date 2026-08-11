@@ -1,5 +1,6 @@
 /* eslint-disable no-console */
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
+import { randomUUID } from "crypto";
 import * as fs from "fs";
 import * as path from "path";
 import { app } from "electron";
@@ -202,62 +203,67 @@ export const removeOrphanMarcherPages = (db: DatabaseSync): void => {
 export const repairDatabase = async (originalDbPath: string) => {
     // 1. Create paths for temp and final database files
     const originalPathObj = path.parse(originalDbPath);
-    const tempDbPath = path.join(
-        originalPathObj.dir,
-        `${originalPathObj.name}${originalPathObj.ext}.temp`,
+    const repairTempDir = path.join(
+        app.getPath("userData"),
+        "repair-temp",
+        randomUUID(),
     );
+    fs.mkdirSync(repairTempDir, { recursive: true });
+
+    const sourceDbPath = path.join(
+        repairTempDir,
+        path.basename(originalDbPath),
+    );
+    const tempDbPath = path.join(repairTempDir, "repaired.dots.temp");
     const finalDbPath = path.join(
         originalPathObj.dir,
         `${originalPathObj.name} - FIXED${originalPathObj.ext}`,
     );
 
-    // Delete the temp database if it already exists
-    if (fs.existsSync(tempDbPath)) {
-        fs.unlinkSync(tempDbPath);
-    }
-
-    // Open the original database
-    const originalDb = new DatabaseSync(originalDbPath, { readOnly: true });
-
-    // Create the new database at the temp path
-    const newDb = new DatabaseSync(tempDbPath);
+    let originalDb: DatabaseSync | undefined;
+    let newDb: DatabaseSync | undefined;
 
     try {
-        // Initialize and run migrations on the new database
-        await initializeAndMigrateDatabase(newDb);
+        fs.copyFileSync(originalDbPath, sourceDbPath);
 
-        // Turn off foreign keys for data copying
-        newDb.prepare("PRAGMA foreign_keys = OFF").run();
+        // Open the copied source database so repair does not hold the active file.
+        originalDb = new DatabaseSync(sourceDbPath, { readOnly: true });
 
-        // Copy data from original database
-        copyDataFromOriginalDatabase(originalDb, newDb, originalDbPath);
+        // Create the new database at the temp path in the app data directory.
+        newDb = new DatabaseSync(tempDbPath);
 
-        // Turn foreign keys back on
-        newDb.prepare("PRAGMA foreign_keys = ON").run();
+        try {
+            // Initialize and run migrations on the new database
+            await initializeAndMigrateDatabase(newDb);
 
-        // Remove orphaned marcher_pages entries
-        removeOrphanMarcherPages(newDb);
-    } catch (error) {
-        // If anything fails, delete the temp file
-        if (fs.existsSync(tempDbPath)) {
-            fs.unlinkSync(tempDbPath);
+            // Turn off foreign keys for data copying
+            newDb.prepare("PRAGMA foreign_keys = OFF").run();
+
+            // Copy data from original database
+            copyDataFromOriginalDatabase(originalDb, newDb, sourceDbPath);
+
+            // Turn foreign keys back on
+            newDb.prepare("PRAGMA foreign_keys = ON").run();
+
+            // Remove orphaned marcher_pages entries
+            removeOrphanMarcherPages(newDb);
+        } finally {
+            // Close both databases before moving or deleting temp files.
+            originalDb?.close();
+            newDb?.close();
         }
-        throw error;
+
+        // If we got here, the repair was successful
+        // Delete the existing FIXED file if it exists
+        if (fs.existsSync(finalDbPath)) {
+            fs.unlinkSync(finalDbPath);
+        }
+
+        // Rename the temp file to the final name
+        fs.renameSync(tempDbPath, finalDbPath);
+
+        return finalDbPath;
     } finally {
-        // Close both databases
-        // Errors will propagate naturally, and finally ensures cleanup
-        originalDb.close();
-        newDb.close();
+        fs.rmSync(repairTempDir, { recursive: true, force: true });
     }
-
-    // If we got here, the repair was successful
-    // Delete the existing FIXED file if it exists
-    if (fs.existsSync(finalDbPath)) {
-        fs.unlinkSync(finalDbPath);
-    }
-
-    // Rename the temp file to the final name
-    fs.renameSync(tempDbPath, finalDbPath);
-
-    return finalDbPath;
 };

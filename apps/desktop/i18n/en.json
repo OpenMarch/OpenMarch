@@ -14,7 +14,8 @@
             "lockY": "Lock Y axis",
             "lockYOff": "Enable Y movement",
             "lockYOn": "Lock Y movement",
-            "snapToCustomFraction": "Apply snap"
+            "snapToCustomFraction": "Apply snap",
+            "snapToWhole": "Snap to nearest whole"
         },
         "batchEdit": {
             "noNextPage": "Cannot set marcher coordinates to next page. There is no next page",
@@ -87,31 +88,6 @@
             "showPreviousPaths": "Show previous page dots/paths",
             "toggleNextPaths": "Toggle viewing next page paths",
             "togglePreviousPaths": "Toggle viewing previous page paths"
-        }
-    },
-    "fileAccessDialogError": {
-        "closeButton": "Close",
-        "guideLinkText": "OpenMarch File Error Guide",
-        "referToGuide": "Refer to the <link></link> for more information.",
-        "default": {
-            "title": "Error",
-            "description": "Unable to open file."
-        },
-        "renderFail": {
-            "title": "Modal render failure",
-            "description": "The alert modal failed to render."
-        },
-        "forbidden": {
-            "title": "Invalid file permissions",
-            "description": "You do not have permission to open this file."
-        },
-        "notFound": {
-            "title": "File not found",
-            "description": "This file does not exist at this location. Was it moved or renamed?"
-        },
-        "server": {
-            "title": "Internal server error",
-            "description": "The server experienced an error while trying to open this file."
         }
     },
     "analyticsOptIn": {
@@ -192,6 +168,12 @@
             "label": "Tap Tempo"
         }
     },
+    "auth": {
+        "signIn": "Sign In",
+        "signInAriaLabel": "Sign in",
+        "signOut": "Sign Out",
+        "userFallback": "User"
+    },
     "colorPicker": {
         "discard": "Discard",
         "removeSetting": "Remove setting",
@@ -220,6 +202,36 @@
         "pageAbbreviation": "Pg.",
         "sideToSide": "Side to Side",
         "sideToSideAbbreviation": "S. to S."
+    },
+    "ensembles": {
+        "attachDialog": {
+            "attach": "Attach",
+            "cancel": "Cancel",
+            "description": "Attach this .dots file to this production? This will allow you to upload from this file into the OpenMarch - On the Move mobile app.",
+            "title": "Attach to Production"
+        },
+        "attached": "(Attached)",
+        "attachToProduction": "Attach to production",
+        "createdAtHeader": "Created At",
+        "createDialog": {
+            "cancel": "Cancel",
+            "create": "Create",
+            "creating": "Creating...",
+            "description": "Add a production to {ensembleName}.",
+            "failed": "Failed to create production",
+            "nameLabel": "Production name",
+            "namePlaceholder": "Production name",
+            "nameRequired": "Enter a production name.",
+            "title": "Create Production"
+        },
+        "createProduction": "Create production",
+        "empty": "No ensembles found. Create one above!",
+        "error": "Error loading ensembles",
+        "loading": "Loading ensembles...",
+        "nameHeader": "Name",
+        "performersHeader": "Performers",
+        "productionsHeader": "Productions",
+        "viewDetails": "View ensemble details"
     },
     "exportCoordinates": {
         "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
@@ -272,6 +284,8 @@
         "marcherPagesNotLoaded": "Marcher pages not loaded",
         "marchersNotLoaded": "Marchers not loaded",
         "measuresHeader": "Measure",
+        "mobile": "Mobile",
+        "mobilePreviewAlt": "OpenMarch mobile export preview",
         "noFieldProperties": "No field properties provided",
         "noMarcher": "No marcher provided",
         "noMarcherPages": "No marcher pages provided",
@@ -295,7 +309,31 @@
         "title": "Export",
         "unknownError": "Unknown error",
         "unsortedSection": "Unsorted",
-        "useXYHeaders": "Use X/Y headers"
+        "useXYHeaders": "Use X/Y headers",
+        "video": "Video",
+        "videoAudioTrack": "Audio track: {name}",
+        "videoBackground": "Video background",
+        "videoExportFailed": "Video export failed: {error}",
+        "videoExportSuccess": "Successfully exported video!",
+        "videoFieldFraming": "Field framing",
+        "videoFieldOffsetX": "Horizontal offset",
+        "videoFieldOffsetY": "Vertical offset",
+        "videoFieldResetFraming": "Reset field framing",
+        "videoFieldScale": "Scale",
+        "videoFrameRate": "Frame rate",
+        "videoNoAudio": "No audio file selected. The video will use a silent audio track.",
+        "videoOpenFile": "Click to open video",
+        "videoOverlay": "On-screen info",
+        "videoOverlayClock": "Elapsed time",
+        "videoOverlayCountLabel": "Count",
+        "videoOverlayMeasures": "Measure numbers & rehearsal marks",
+        "videoOverlayPreviewHint": "Drag the overlay to move it (side handle = width, corner = size). Drag empty space to pan the field and scroll to zoom. Use the sliders below for fine adjustments.",
+        "videoOverlaySetCounts": "Sets & counts",
+        "videoOverlaySetLabel": "Set",
+        "videoOverlayTempo": "Tempo",
+        "videoPreviewLoading": "Loading preview…",
+        "videoRendering": "Rendering video... This may take several minutes.",
+        "videoResolution": "Resolution"
     },
     "field": {
         "general": {
@@ -320,9 +358,9 @@
             "delete": "Delete",
             "deleted": "{axis}-checkpoint at {steps} steps deleted - \"{name}\"",
             "deleteTooltip": "Delete this checkpoint from the field",
-            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "fieldLabel": "Field label",
             "fieldLabelTooltip": "The label to appear on the field (i.e., the yard markers)",
+            "minimumRequired": "At least 2 {axis}-checkpoints are required",
             "name": "Name",
             "nameTooltip": "Name your checkpoint whatever you want. This is just for you to know what checkpoint you're selecting.",
             "newXCheckpointName": "New X Checkpoint",
@@ -349,6 +387,9 @@
             "notDefined": "FieldProperties is not defined. This should never happen, please reach out to support."
         },
         "fieldTemplate": {
+            "custom": "Custom",
+            "football": "Football",
+            "grid": "Grid",
             "label": "Field Template"
         },
         "fieldType": {
@@ -462,26 +503,51 @@
             "yCheckpointsNegative": "WARNING - It is highly recommended that all Y-checkpoints' steps be less than zero (i.e. negative numbers). All of the Y-coordinates should be behind the front of the field. Failing to do so may cause graphical errors and unexpected coordinates."
         }
     },
+    "fileAccessDialogError": {
+        "closeButton": "Close",
+        "default": {
+            "description": "Unable to open file.",
+            "title": "Error"
+        },
+        "forbidden": {
+            "description": "You do not have permission to open this file.",
+            "title": "Invalid file permissions"
+        },
+        "guideLinkText": "OpenMarch File Error Guide",
+        "notFound": {
+            "description": "This file does not exist at this location. Was it moved or renamed?",
+            "title": "File not found"
+        },
+        "referToGuide": "Refer to the <link></link> for more information.",
+        "renderFail": {
+            "description": "The alert modal failed to render.",
+            "title": "Modal render failure"
+        },
+        "server": {
+            "description": "The server experienced an error while trying to open this file.",
+            "title": "Internal server error"
+        }
+    },
     "fileTab": {
         "exitFile": "Exit File",
         "newFile": "New File",
         "openFile": "Open File",
         "redo": "Redo",
+        "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
         "saveFile": "Save Copy",
-        "toasts": {
-            "success": "Copy saved",
-            "error": "Unable to save copy"
-        },
         "saveFileCancel": "Cancel",
         "saveSpinnerText": "Saving copy...",
-        "saveCopyDialogDescription": "OpenMarch automatically saves your changes to the current file. Use this function if you would like to create a full copy of your current file.",
+        "toasts": {
+            "error": "Unable to save copy",
+            "success": "Copy saved"
+        },
         "undo": "Undo"
     },
     "formButtons": {
         "cancel": "Cancel",
+        "discardChanges": "Discard Changes",
         "editButton": "Edit",
-        "saveChanges": "Save Changes",
-        "discardChanges": "Discard Changes"
+        "saveChanges": "Save Changes"
     },
     "formField": {
         "valueMissing": "Please enter a value."
@@ -557,7 +623,13 @@
     },
     "launchpage": {
         "files": {
+            "clearAllRecentFiles": "Clear all",
+            "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
+            "clearMissingRecentFiles": "Clear missing",
+            "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
             "createNew": "New File",
+            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
+            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "failedToLoadRecent": "Failed to load recent files",
             "failedToOpen": "Failed to open file",
             "failedToRemoveRecent": "Failed to remove file from recent list",
@@ -565,12 +637,6 @@
             "movedOrMissing": "File moved or missing",
             "openFile": "Open File",
             "removeFile": "Remove from recent files",
-            "clearAllRecentFiles": "Clear all",
-            "clearMissingRecentFiles": "Clear missing",
-            "clearAllRecentFilesTooltip": "Remove all recent files (does not remove from disk)",
-            "clearMissingRecentFilesTooltip": "Remove missing / moved recent files (does not remove from disk)",
-            "failedToClearAllRecentFiles": "Failed to remove all files from recent list",
-            "failedToClearMissingRecentFiles": "Failed to remove missing / moved files from recent list",
             "title": "Recent Files"
         },
         "learn": {
@@ -592,6 +658,78 @@
             }
         },
         "merch": "Get OpenMarch Merch!",
+        "newShow": {
+            "back": "Back",
+            "browse": "Browse",
+            "cancel": "Cancel",
+            "client": "Client",
+            "create": "Create show",
+            "designer": "Designer",
+            "errors": {
+                "audioNotSaved": "Audio may not have been saved. You can add audio later in the editor.",
+                "createFailed": "Failed to create show",
+                "nameRequired": "Show name is required",
+                "xmlNotImported": "MusicXML may not have been imported. You can import it later in the editor."
+            },
+            "exitConfirm": {
+                "cancel": "Keep editing",
+                "confirm": "Discard",
+                "description": "You have unsaved changes in this setup flow. If you leave now, your draft will be deleted and nothing will be saved.",
+                "title": "Discard new show?"
+            },
+            "fileExistsWarning": "A file with this name already exists at this location. It will be replaced when you finish creating the show.",
+            "location": "Save location",
+            "moreOptions": "More options",
+            "next": "Next",
+            "showName": "Show name",
+            "skip": "Skip",
+            "steps": {
+                "audio": {
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again.",
+                    "description": "Import an audio file now, or skip and add one later.",
+                    "optionalDescription": "Audio is optional. You can skip this step and add audio later from the editor.",
+                    "title": "Audio",
+                    "waitingDb": "Preparing your show file…"
+                },
+                "ensemble": {
+                    "description": "Choose your activity.",
+                    "title": "Activity",
+                    "typeLabel": "Activity"
+                },
+                "field": {
+                    "description": "Pick a field template for your show.",
+                    "title": "Field setup"
+                },
+                "performers": {
+                    "added": "Added performers",
+                    "addNew": "Add performers",
+                    "description": "Add marchers now or skip and add them later in the editor.",
+                    "noneAdded": "No performers added yet.",
+                    "title": "Performers"
+                },
+                "project": {
+                    "description": "Name your show and choose where to save it.",
+                    "title": "Project details"
+                },
+                "tempo": {
+                    "dbNotReady": "The show file is not ready. Go back to the project step and try again.",
+                    "description": "Set timing with a BPM or import MusicXML. You can skip this and edit tempo later.",
+                    "method": "Tempo source",
+                    "methodHelper": "Choose how you want to set up timing for this show.",
+                    "musicXml": "MusicXML file",
+                    "skip": "Skip for now",
+                    "skipDescription": "Tempo data is optional. You can edit tempo later from the editor.",
+                    "tempoOnly": "Tempo only",
+                    "timeSignature": "Time signature",
+                    "timeSignatureHelper": "Choose the meter for the starter measures in this show. You can change this later.",
+                    "title": "Tempo data",
+                    "waitingDb": "Preparing your show file…"
+                }
+            },
+            "success": "Show created successfully",
+            "tempo": "Default tempo (BPM)",
+            "title": "New show"
+        },
         "settings": {
             "title": "Settings"
         },
@@ -662,6 +800,102 @@
         "createFailed": "Failed to create measures - {error}",
         "deleteFailed": "Failed to delete measures - {error}",
         "updateFailed": "Failed to update measures - {error}"
+    },
+    "mobileExport": {
+        "accessError": {
+            "description": "We could not validate that you have access to the OTM Production this show is attached to. The signed-in account may not have access, or the production may no longer exist.",
+            "hint": "Detach this file from the production to choose a different one, or close the sidebar and sign in with an account that has access.",
+            "title": "Could not validate On the Move access"
+        },
+        "audio": {
+            "active": "Active",
+            "add": "Add",
+            "addAlternate": "Add Alternate Audio File",
+            "addHelp": "Performers and instructors will be able to select this audio file in the mobile app.",
+            "cancel": "Cancel",
+            "delete": "Delete",
+            "editNickname": "Edit Nickname",
+            "loadFailed": "Failed to load audio files",
+            "nicknameLabel": "Nickname (optional)",
+            "nicknamePlaceholder": "Nickname (optional)",
+            "nicknamePlaceholderShort": "Nickname",
+            "optionsAriaLabel": "Audio file options",
+            "retry": "Retry",
+            "save": "Save",
+            "saving": "Saving…",
+            "setActive": "Set as active",
+            "title": "Audio Files",
+            "uploading": "Uploading…"
+        },
+        "close": "Close",
+        "confirmPublish": {
+            "cancel": "Cancel",
+            "description": "This will immediately make this show visible to all users registered to this ensemble.",
+            "publish": "Publish",
+            "title": "Publish to mobile app"
+        },
+        "date": {
+            "daysAgo": "{count, plural, one {# day ago} other {# days ago}}",
+            "full": "{month} {day}, {year} - {time}",
+            "hoursAgo": "{count, plural, one {# hour ago} other {# hours ago}}",
+            "justNow": "Just now",
+            "minutesAgo": "{count, plural, one {# minute ago} other {# minutes ago}}"
+        },
+        "detach": {
+            "button": "Detach File from Production",
+            "cancel": "Cancel",
+            "confirm": "Are you sure you want to detach this file from the OTM Production? This means you will not be able to upload revisions to the mobile app. You can always re-attach it later",
+            "confirmButton": "Yes, Detach",
+            "failed": "Failed to detach file from production"
+        },
+        "loading": {
+            "checkingSignIn": "Checking sign-in...",
+            "validatingAccess": "Validating On the Move access..."
+        },
+        "logoAlt": "OTM Logo",
+        "revision": {
+            "audioSyncFailed": "Revision uploaded, but audio sync failed: {msg}",
+            "backgroundSyncFailed": "Revision uploaded, but background image sync failed: {msg}",
+            "initialTitle": "Initial revision",
+            "newTitleLabel": "New revision title",
+            "preparing": "Preparing...",
+            "publishButton": "Publish to mobile app",
+            "publishing": "Publishing to mobile app...",
+            "pushButton": "Push to Mobile App",
+            "pushing": "Pushing to Mobile App...",
+            "titlePlaceholder": "Describe what changed...",
+            "titleRequired": "Please provide a revision title",
+            "uploadFailedGeneric": "Upload failed. Check console for details.",
+            "uploadingAudio": "Uploading audio...",
+            "uploadingImage": "Uploading image...",
+            "uploadSuccess": "Upload successful",
+            "validatingAudio": "Validating audio..."
+        },
+        "revisions": {
+            "active": "Active",
+            "emptyMessage": "After you publish to the mobile app, you may push additional revisions to keep your show up-to-date.",
+            "listHeading": "All revisions"
+        },
+        "settings": {
+            "backgroundImage": {
+                "alt": "Production background",
+                "empty": "No background image",
+                "help": "The background image is automatically synced when you upload a new revision. To change it, change the background image in field editor and upload a new revision.",
+                "title": "Background image"
+            },
+            "button": "Settings",
+            "detach": {
+                "title": "Detach production"
+            },
+            "noProduction": "No production found",
+            "title": "Mobile app settings"
+        },
+        "signedOut": {
+            "createAccountPrompt": "Don't have an account yet? Create one now!",
+            "setupAccount": "Set up your account",
+            "signInPrompt": "Already have an account? Connect it to the desktop app to start taking it On The Move!"
+        },
+        "title": "Export to Mobile"
     },
     "music": {
         "accent": "Accent first beat",
@@ -868,7 +1102,12 @@
         },
         "page": {
             "contextMenu": {
+                "delete": "Delete",
+                "deleteInPlace": "In Place",
+                "deleteInPlaceTooltip": "Delete this page and keep later pages where they are.",
                 "deletePage": "Delete",
+                "deleteYank": "Yank",
+                "deleteYankTooltip": "Delete this page and pull later pages back by its length.",
                 "subsetToggle": "Subset",
                 "title": "Page {pageName}"
             },

@@ -1,7 +1,21 @@
 import { sqliteTable } from "drizzle-orm/sqlite-core";
 import { appearance_columns } from "../../electron/database/migrations/schema";
 import { InferSelectModel } from "drizzle-orm";
-import { RgbaColor, rgbaToString } from "@openmarch/core";
+import { FieldTheme, RgbaColor, rgbaToString } from "@openmarch/core";
+
+/** OpenMarch schema rgba format (no spaces after commas). */
+export const rgbaToSchemaString = (color: RgbaColor): string =>
+    `rgba(${color.r},${color.g},${color.b},${color.a})`;
+
+/** Fully resolved performer appearance for OpenMarch schema export. */
+export type ResolvedPerformerAppearance = {
+    fillRgba: string;
+    strokeRgba: string;
+    strokeWidth: number;
+    visible: boolean;
+    textVisible: boolean;
+    shape: "circle" | "square" | "triangle" | "cross";
+};
 
 /** a table that is used to infer the type of the appearance columns. Do not export this table. */
 const fakeAppearanceTable = sqliteTable("fake_appearance_table", {
@@ -149,4 +163,86 @@ export function appearanceIsHidden(
     else visible = true;
 
     return !visible;
+}
+
+const getFirstAppearanceValue = <K extends keyof AppearanceComponentOptional>(
+    appearances: AppearanceComponentOptional[],
+    key: K,
+): AppearanceComponentOptional[K] | null => {
+    for (const appearance of appearances) {
+        if (appearance[key] != null) {
+            return appearance[key];
+        }
+    }
+    return null;
+};
+
+const resolveLabelVisibleFromStack = (
+    appearances: AppearanceComponentOptional[],
+    visible: boolean,
+): boolean => {
+    if (!visible) {
+        return false;
+    }
+    if (appearances.length === 0) {
+        return true;
+    }
+    if (appearances.length > 1 && appearances[0].label_visible) {
+        return appearances[1].label_visible;
+    }
+    return appearances[0].label_visible;
+};
+
+const shapeTypeToSchemaShape = (
+    shapeType: string | null | undefined,
+): ResolvedPerformerAppearance["shape"] => {
+    if (shapeType === "x") {
+        return "cross";
+    }
+    if (
+        shapeType === "circle" ||
+        shapeType === "square" ||
+        shapeType === "triangle"
+    ) {
+        return shapeType;
+    }
+    return "circle";
+};
+
+/**
+ * Resolves a cascade of appearances into a fully defined OpenMarch performer appearance.
+ * Mirrors {@link CanvasMarcher.setAppearance} merge rules.
+ */
+export function resolveAppearanceFromStack(
+    appearancesInput:
+        | AppearanceComponentOptional
+        | AppearanceComponentOptional[],
+    fieldTheme: FieldTheme,
+): ResolvedPerformerAppearance {
+    const appearances = Array.isArray(appearancesInput)
+        ? appearancesInput
+        : [appearancesInput];
+
+    const visible = !appearanceIsHidden(appearances);
+    const textVisible = resolveLabelVisibleFromStack(appearances, visible);
+
+    const fillColorValue = getFirstAppearanceValue(appearances, "fill_color");
+    const outlineColorValue = getFirstAppearanceValue(
+        appearances,
+        "outline_color",
+    );
+    const shapeType = getFirstAppearanceValue(appearances, "shape_type");
+
+    return {
+        fillRgba: rgbaToSchemaString(
+            fillColorValue || fieldTheme.defaultMarcher.fill,
+        ),
+        strokeRgba: rgbaToSchemaString(
+            outlineColorValue || fieldTheme.defaultMarcher.outline,
+        ),
+        strokeWidth: 1,
+        visible,
+        textVisible,
+        shape: shapeTypeToSchemaShape(shapeType ?? "circle"),
+    };
 }

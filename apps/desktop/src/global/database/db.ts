@@ -15,7 +15,10 @@ export const db = drizzle(
             const result = await queuedSqlProxy(sql, params, method);
             return result;
         } catch (error: any) {
-            console.error("Error from SQLite proxy:", error);
+            // Don't log errors when database path is empty - this is expected on launch page
+            if (!error?.message?.includes("Database path is empty")) {
+                console.error("Error from SQLite proxy:", error);
+            }
             throw error;
         }
     },

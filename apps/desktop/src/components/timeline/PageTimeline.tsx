@@ -8,21 +8,23 @@ import Page, { updatePageCountRequest } from "@/global/classes/Page";
 import clsx from "clsx";
 import { durationToBeats } from "@/global/classes/Beat";
 import * as ContextMenu from "@radix-ui/react-context-menu";
-import { Button, Switch, TooltipClassName } from "@openmarch/ui";
+import { Switch, TooltipClassName } from "@openmarch/ui";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import { T, useTolgee } from "@tolgee/react";
 import * as ToolTip from "@radix-ui/react-tooltip";
 import {
+    deletePageYankMutationOptions,
     deletePagesMutationOptions,
     ModifyPagesRequest,
     updatePagesMutationOptions,
 } from "@/hooks/queries";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import {
     getAvailableOffsets,
     useCreateLastPageOnTimeline,
 } from "./PageTimeline.utils";
+import { workspaceSettingsQueryOptions } from "@/hooks/queries/useWorkspaceSettings";
 
 // eslint-disable-next-line max-lines-per-function
 export default function PageTimeline() {
@@ -39,6 +41,9 @@ export default function PageTimeline() {
     const { mutate: deletePages } = useMutation(
         deletePagesMutationOptions(queryClient),
     );
+    const { mutate: deletePageYank } = useMutation(
+        deletePageYankMutationOptions(queryClient),
+    );
 
     // Page clicking and dragging
     const resizingPage = useRef<Page | null>(null);
@@ -52,6 +57,10 @@ export default function PageTimeline() {
 
     const { mutate: createDefaultTempoGroupAndPage } =
         useCreateLastPageOnTimeline();
+    // Creating a page needs the workspace settings, which load asynchronously
+    const { data: workspaceSettings } = useQuery(
+        workspaceSettingsQueryOptions(),
+    );
     const { t } = useTolgee();
 
     // Calculate the width of a page based on its duration
@@ -253,6 +262,17 @@ export default function PageTimeline() {
         },
         [deletePages, setSelectedPage],
     );
+    const handleDeletePageYank = useCallback(
+        (page: Page) => {
+            deletePageYank(page.id, {
+                onSuccess: () => {
+                    if (page.previousPageId != null)
+                        setSelectedPage({ id: page.previousPageId });
+                },
+            });
+        },
+        [deletePageYank, setSelectedPage],
+    );
     return (
         <div className="flex h-fit gap-0" id="pages">
             {/* ------------------------------------ FIRST PAGE ------------------------------------ */}
@@ -435,20 +455,57 @@ export default function PageTimeline() {
                                             checked={page?.isSubset || false}
                                         />
                                     </div>
-                                    <div className="flex w-full items-center justify-between gap-8">
-                                        <label className="text-body text-text-subtitle">
-                                            <T keyName="timeline.page.contextMenu.deletePage" />
-                                        </label>
-                                        <Button
-                                            onClick={() =>
-                                                handleDeletePage(page)
-                                            }
-                                            size="compact"
-                                            variant="red"
-                                            content="icon"
-                                        >
-                                            <TrashIcon size={20} />
-                                        </Button>
+                                    <div className="border-stroke flex w-full flex-col items-start gap-8 border-t pt-8">
+                                        <div className="text-text flex items-center gap-6 text-xs">
+                                            <TrashIcon size={16} />
+                                            <T keyName="timeline.page.contextMenu.delete" />
+                                        </div>
+                                        <ToolTip.Root delayDuration={500}>
+                                            <ToolTip.Trigger asChild>
+                                                <button
+                                                    className="text-body text-text-subtitle hover:text-red cursor-pointer text-left transition-colors"
+                                                    onClick={() =>
+                                                        handleDeletePageYank(
+                                                            page,
+                                                        )
+                                                    }
+                                                >
+                                                    <T keyName="timeline.page.contextMenu.deleteYank" />
+                                                </button>
+                                            </ToolTip.Trigger>
+                                            <ToolTip.Portal>
+                                                <ToolTip.Content
+                                                    className={TooltipClassName}
+                                                    side="right"
+                                                >
+                                                    {t(
+                                                        "timeline.page.contextMenu.deleteYankTooltip",
+                                                    )}
+                                                </ToolTip.Content>
+                                            </ToolTip.Portal>
+                                        </ToolTip.Root>
+                                        <ToolTip.Root delayDuration={500}>
+                                            <ToolTip.Trigger asChild>
+                                                <button
+                                                    className="text-body text-text-subtitle hover:text-red cursor-pointer text-left transition-colors"
+                                                    onClick={() =>
+                                                        handleDeletePage(page)
+                                                    }
+                                                >
+                                                    <T keyName="timeline.page.contextMenu.deleteInPlace" />
+                                                </button>
+                                            </ToolTip.Trigger>
+                                            <ToolTip.Portal>
+                                                <ToolTip.Content
+                                                    className={TooltipClassName}
+                                                    side="right"
+                                                >
+                                                    {t(
+                                                        "timeline.page.contextMenu.deleteInPlaceTooltip",
+                                                    )}
+                                                </ToolTip.Content>
+                                            </ToolTip.Portal>
+                                        </ToolTip.Root>
                                     </div>
                                 </ContextMenu.Content>
                             </ContextMenu.Portal>
@@ -458,8 +515,9 @@ export default function PageTimeline() {
             </ul>
             {!isFullscreen && (
                 <button
-                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out hover:-translate-y-2"
+                    className="bg-accent text-sub text-text-invert ml-8 flex size-[28px] cursor-pointer items-center justify-center self-center rounded-full duration-150 ease-out enabled:hover:-translate-y-2 disabled:cursor-not-allowed disabled:opacity-50"
                     onClick={() => createDefaultTempoGroupAndPage()}
+                    disabled={!workspaceSettings}
                 >
                     <PlusIcon size={20} />
                 </button>

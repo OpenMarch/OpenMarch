@@ -31,6 +31,11 @@ import { ModifiedMarcherArgs, NewMarcherArgs } from "@/db-functions";
 
 export interface MarcherFormProps {
     disabledProp?: boolean;
+    hideInfoNote?: boolean;
+    skipSidebarContent?: boolean;
+    onMarchersCreate?: (newMarchers: NewMarcherArgs[]) => void;
+    existingMarchers?: Marcher[];
+    wizardMode?: boolean;
     marcherIdToEdit?: number;
 }
 
@@ -43,8 +48,13 @@ const defaultDrillOrder = 1;
 // eslint-disable-next-line react/prop-types, max-lines-per-function
 const MarcherForm: React.FC<MarcherFormProps> = ({
     disabledProp = false,
+    hideInfoNote = false,
+    skipSidebarContent = false,
+    onMarchersCreate,
+    existingMarchers,
+    wizardMode = false,
     marcherIdToEdit,
-}: MarcherFormProps) => {
+}) => {
     const [quantity, setQuantity] = useState<number>(1);
     const [section, setSection] = useState<string>();
     const [name, setName] = useState<string>("");
@@ -58,10 +68,14 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         useState<boolean>(false);
     const [drillOrderError, setDrillOrderError] = useState<string>("");
     const queryClient = useQueryClient();
-    const { data: marchers } = useQuery(allMarchersQueryOptions());
-    const createMarchers = useMutation(
+    const { data: dbMarchers } = useQuery({
+        ...allMarchersQueryOptions(),
+        enabled: !existingMarchers && !wizardMode,
+    });
+    const marchers = existingMarchers ?? dbMarchers;
+    const createMarchersMutation = useMutation(
         createMarchersMutationOptions(queryClient),
-    ).mutate;
+    );
     const updateMarchers = useMutation(
         updateMarchersMutationOptions(queryClient),
     ).mutate;
@@ -83,9 +97,11 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
         setSection(defaultSection(t));
     }, [t]);
 
-    const resetForm = () => {
+    const resetForm = (preserveSection = false) => {
         setQuantity(1);
-        setSection(defaultSection(t));
+        if (!preserveSection) {
+            setSection(defaultSection(t));
+        }
         setName("");
         setYear("");
         setDrillPrefix(defaultDrillPrefix);
@@ -100,7 +116,9 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
     };
 
     const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        setContent(<MarcherListContents />, "marchers");
+        if (!skipSidebarContent) {
+            setContent(<MarcherListContents />, "marchers");
+        }
         event.preventDefault();
         let newDrillOrderOffset = 0;
         const existingDrillOrders = new Set<number>(
@@ -142,10 +160,14 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                         drill_order: newDrillOrder,
                     });
                 }
-                createMarchers(newMarchers);
+                if (onMarchersCreate) {
+                    onMarchersCreate(newMarchers);
+                } else if (!wizardMode) {
+                    createMarchersMutation.mutate(newMarchers);
+                }
             }
         }
-        resetForm();
+        resetForm(wizardMode);
     };
 
     const handleSectionChange = (value: string) => {
@@ -400,9 +422,11 @@ const MarcherForm: React.FC<MarcherFormProps> = ({
                         getTranslatedSectionName(section || "Other", t),
                     )}
                 </Button>
-                <InfoNote>
-                    <T keyName="marchers.createInfo" />
-                </InfoNote>
+                {!hideInfoNote && (
+                    <InfoNote>
+                        <T keyName="marchers.createInfo" />
+                    </InfoNote>
+                )}
             </div>
         </Form.Root>
     );

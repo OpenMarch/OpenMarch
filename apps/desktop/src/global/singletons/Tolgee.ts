@@ -33,20 +33,29 @@ const isPlaywrightSession = (): boolean => {
     }
 };
 
-const tolgee = Tolgee()
-    .use(FormatSimple())
-    .use(FormatIcu())
-    .init({
-        language: "en",
-        // Disable API URL during Playwright tests to prevent external network calls
-        apiUrl: isPlaywrightSession() ? undefined : TOLGEE_API_URL,
-        staticData: {
-            en: () => import("../../../i18n/en.json"),
-            es: () => import("../../../i18n/es.json"),
-            fr: () => import("../../../i18n/fr.json"),
-            "pt-BR": () => import("../../../i18n/pt-BR.json"),
-            ja: () => import("../../../i18n/ja.json"),
-        },
-    });
+/** Vitest and other non-browser test runners: avoid Tolgee dev backend window listeners. */
+const isUnitTestEnvironment = (): boolean => import.meta.env.VITEST === true;
+
+const isOfflineTolgeeEnvironment = (): boolean =>
+    isPlaywrightSession() || isUnitTestEnvironment();
+
+const tolgeeBuilder = Tolgee().use(FormatSimple()).use(FormatIcu());
+
+if (isOfflineTolgeeEnvironment()) {
+    tolgeeBuilder.use(RemoveInContextTools());
+}
+
+const tolgee = tolgeeBuilder.init({
+    language: "en",
+    // Disable API URL in tests to prevent external network calls and dev-backend timers
+    apiUrl: isOfflineTolgeeEnvironment() ? undefined : TOLGEE_API_URL,
+    staticData: {
+        en: () => import("../../../i18n/en.json"),
+        es: () => import("../../../i18n/es.json"),
+        fr: () => import("../../../i18n/fr.json"),
+        "pt-BR": () => import("../../../i18n/pt-BR.json"),
+        ja: () => import("../../../i18n/ja.json"),
+    },
+});
 
 export default tolgee;

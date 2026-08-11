@@ -1,12 +1,12 @@
 ---
 import Layout from "@/layouts/Layout.astro";
 import Landing from "@/components/home/Landing.astro";
-import Features from "@/components/home/Features.astro";
 import Merch from "@/components/home/Merch.astro";
 import Blogs from "@/components/home/Blogs.astro";
 import Testimonials from "@/components/home/Testimonials.astro";
-import Community from "@/components/home/Community";
 import Partners from "@/components/home/Partners.astro";
+import Desktop from "@/components/home/Desktop.astro";
+import Mobile from "@/components/home/Mobile.astro";
 ---
 
 <Layout title="Home">
@@ -18,9 +18,9 @@ import Partners from "@/components/home/Partners.astro";
 
     <Landing />
     <Partners />
-    <Features />
     <Testimonials />
-    <Community client:visible />
+    <Desktop />
+    <Mobile />
     <Merch />
     <Blogs />
 </Layout>

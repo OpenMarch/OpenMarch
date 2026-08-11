@@ -8,31 +8,43 @@ import { T } from "@tolgee/react";
 
 export default function SettingsContent() {
     return (
-        <div className="flex h-fit w-full max-w-[512px] flex-col gap-16">
-            <h5 className="text-h5 leading-none">
-                <T keyName="settings.general" />
-            </h5>
-            <GeneralSettings />
-            <h4 className="text-h5 leading-none">
-                <T keyName="settings.mouse" />
-            </h4>
-            <MouseSettings />
-            <h3 className="text-h3">
-                <T keyName="settings.plugins" />
-            </h3>
-            <PluginsContents />
-            <h3 className="text-h3">
-                <T keyName="settings.privacy" />
-            </h3>
-            <PrivacySettings />
-            <h3 className="text-h3">
-                <T keyName="settings.developer" />
-            </h3>
-            <DeveloperSettings />
-            <h3 className="text-h3">
-                <T keyName="settings.database" />
-            </h3>
-            <DatabaseRepairSettings />
-        </div>
+        <section className="flex h-fit w-full max-w-[512px] flex-col gap-24">
+            <div className="space-y-16">
+                <h5 className="text-h5 leading-none">
+                    <T keyName="settings.general" />
+                </h5>
+                <GeneralSettings />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5 leading-none">
+                    <T keyName="settings.mouse" />
+                </h5>
+                <MouseSettings />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5">
+                    <T keyName="settings.plugins" />
+                </h5>
+                <PluginsContents />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5">
+                    <T keyName="settings.privacy" />
+                </h5>
+                <PrivacySettings />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5">
+                    <T keyName="settings.developer" />
+                </h5>
+                <DeveloperSettings />
+            </div>
+            <div className="space-y-16">
+                <h5 className="text-h5">
+                    <T keyName="settings.database" />
+                </h5>
+                <DatabaseRepairSettings />
+            </div>
+        </section>
     );
 }

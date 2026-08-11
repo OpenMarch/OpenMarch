@@ -11,6 +11,10 @@ import { fabric } from "fabric";
 import { NoControls } from "@/components/canvas/CanvasConstants";
 import { db } from "@/global/database/db";
 import { SectionAppearance } from "@/db-functions";
+import {
+    applyMarcherAppearancesForPage,
+    type MarcherAppearancesByPageId,
+} from "./exportAppearances";
 
 const SectionAppearanceBySection = (
     sectionAppearances: SectionAppearance[] | undefined,
@@ -150,7 +154,7 @@ const addIndividualMarcherLines = ({
     return { objectsToRemove, readableCoords };
 };
 
-const initializeCanvasForRendering = async (args: {
+export const initializeCanvasForRendering = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
@@ -194,6 +198,8 @@ const initializeCanvasForRendering = async (args: {
 
     // Add the background image
     await canvas.refreshBackgroundImage(true, backgroundImage);
+
+    CanvasMarcher.theme = fieldProperties.theme;
 
     const sectionAppearanceBySection =
         SectionAppearanceBySection(sectionAppearances);
@@ -290,12 +296,91 @@ const renderIndividualMarcherChartsForPage = (args: {
     return { marcherSvgs, marcherReadableCoordStrings };
 };
 
+const processDrillChartExportPage = (args: {
+    page: Page;
+    pageIndex: number;
+    fieldProperties: FieldProperties;
+    canvas: OpenMarchCanvas;
+    canvasMarchersById: Record<number, CanvasMarcher>;
+    marchers: Marcher[];
+    marcherPagesByMarcherForCurrentPage: Record<number, MarcherPage>;
+    marcherPagesMap: MarcherPageMap;
+    sortedPages: Page[];
+    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
+    individualCharts: boolean;
+    useImagePlaceholder: boolean;
+}): {
+    marcherSvgs?: string[];
+    marcherReadableCoordStrings?: string[];
+    mainSvg?: string;
+} => {
+    const {
+        page,
+        pageIndex,
+        fieldProperties,
+        canvas,
+        canvasMarchersById,
+        marchers,
+        marcherPagesByMarcherForCurrentPage,
+        marcherPagesMap,
+        sortedPages,
+        marcherAppearancesByPageId,
+        individualCharts,
+        useImagePlaceholder,
+    } = args;
+
+    if (marcherAppearancesByPageId) {
+        applyMarcherAppearancesForPage({
+            pageId: page.id,
+            marcherAppearancesByPageId,
+            canvasMarchersById,
+            fieldProperties,
+        });
+    }
+
+    for (const marcherPage of Object.values(
+        marcherPagesByMarcherForCurrentPage,
+    )) {
+        const canvasMarcher = canvasMarchersById[marcherPage.marcher_id];
+        if (!canvasMarcher) continue;
+        canvasMarcher.setMarcherCoords(marcherPage);
+    }
+
+    if (individualCharts) {
+        const { marcherSvgs, marcherReadableCoordStrings } =
+            renderIndividualMarcherChartsForPage({
+                fieldProperties,
+                canvas,
+                marchers,
+                marcherPagesByMarcherForCurrentPage,
+                page,
+                pageIndex,
+                marcherPagesMap,
+                sortedPages,
+            });
+        const formatSvg = (svg: string) =>
+            useImagePlaceholder ? replaceImageDataWithPlaceholder(svg) : svg;
+        return {
+            marcherSvgs: marcherSvgs.map(formatSvg),
+            marcherReadableCoordStrings,
+        };
+    }
+
+    const rawSvg = canvas.toSVG();
+    return {
+        mainSvg: useImagePlaceholder
+            ? replaceImageDataWithPlaceholder(rawSvg)
+            : rawSvg,
+    };
+};
+
 export const generateDrillChartExportSVGs = async (args: {
     fieldProperties: FieldProperties;
     sortedPages: Page[];
     marchers: Marcher[];
     marcherPagesMap: MarcherPageMap;
     sectionAppearances?: SectionAppearance[];
+    marcherAppearancesByPageId?: MarcherAppearancesByPageId;
     backgroundImage?: HTMLImageElement;
     gridLines?: boolean;
     halfLines?: boolean;
@@ -329,51 +414,33 @@ export const generateDrillChartExportSVGs = async (args: {
     // Loop through each page and generate an SVG for it
     for (const [pageIndex, page] of sortedPages.entries()) {
         const marcherPagesByMarcherForCurrentPage =
-            marcherPagesMap.marcherPagesByPage[page.id];
+            marcherPagesMap.marcherPagesByPage[page.id] ?? {};
 
-        for (const marcherPage of Object.values(
+        const pageResult = processDrillChartExportPage({
+            page,
+            pageIndex,
+            fieldProperties,
+            canvas,
+            canvasMarchersById,
+            marchers,
             marcherPagesByMarcherForCurrentPage,
-        )) {
-            const canvasMarcher = canvasMarchersById[marcherPage.marcher_id];
-            if (!canvasMarcher) continue;
-            canvasMarcher.setMarcherCoords(marcherPage);
-        }
+            marcherPagesMap,
+            sortedPages,
+            marcherAppearancesByPageId: args.marcherAppearancesByPageId,
+            individualCharts,
+            useImagePlaceholder,
+        });
 
-        if (individualCharts) {
-            const { marcherSvgs, marcherReadableCoordStrings } =
-                renderIndividualMarcherChartsForPage({
-                    fieldProperties,
-                    canvas,
-                    marchers,
-                    marcherPagesByMarcherForCurrentPage,
-                    page,
-                    pageIndex,
-                    marcherPagesMap,
-                    sortedPages,
-                });
-            if (useImagePlaceholder)
-                marcherSvgs.forEach((svg, index) =>
-                    outputSVGs[index].push(
-                        replaceImageDataWithPlaceholder(svg),
-                    ),
-                );
-            else
-                marcherSvgs.forEach((svg, index) =>
-                    outputSVGs[index].push(svg),
-                );
-
-            marcherReadableCoordStrings.forEach((coord, index) =>
+        if (pageResult.marcherSvgs) {
+            pageResult.marcherSvgs.forEach((svg, index) =>
+                outputSVGs[index].push(svg),
+            );
+            pageResult.marcherReadableCoordStrings!.forEach((coord, index) =>
                 readableCoordsStrings![index].push(coord),
             );
-        } else {
+        } else if (pageResult.mainSvg) {
             if (outputSVGs.length === 0) outputSVGs.push([]);
-
-            // Render the canvas and add the SVG to the output
-            if (useImagePlaceholder)
-                outputSVGs[0].push(
-                    replaceImageDataWithPlaceholder(canvas.toSVG()),
-                );
-            else outputSVGs[0].push(canvas.toSVG());
+            outputSVGs[0].push(pageResult.mainSvg);
         }
     }
 

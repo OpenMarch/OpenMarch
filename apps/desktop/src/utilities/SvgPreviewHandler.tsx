@@ -1,14 +1,22 @@
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useRef } from "react";
 import {
     generateDrillChartExportSVGs,
     getFieldPropertiesImageElement,
 } from "@/components/exporting/utils/svg-generator";
+import { buildMarcherAppearancesByPageId } from "@/components/exporting/utils/exportAppearances";
 import {
     allMarcherPagesQueryOptions,
     allMarchersQueryOptions,
+    allSectionAppearancesQueryOptions,
+    allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
+    marcherIdsForAllTagIdsQueryOptions,
+    tagAppearanceByPageIdMapQueryOptions,
 } from "@/hooks/queries";
 import type MarcherPageMap from "@/global/classes/MarcherPageIndex";
+import type Page from "@/global/classes/Page";
+import type Marcher from "@/global/classes/Marcher";
+import type { FieldProperties } from "@openmarch/core";
 import { useTimingObjects } from "@/hooks";
 import { useQuery } from "@tanstack/react-query";
 
@@ -20,24 +28,68 @@ const SVG_GENERATION_ERROR = "ERROR: Failed to generate SVG";
 const SvgPreviewHandler: React.FC = () => {
     const handlerRegisteredRef = useRef(false);
 
-    // Get current values
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const { pages = [] } = useTimingObjects() ?? {};
     const { data: marcherPages } = useQuery(
-        // This might be overkill
         allMarcherPagesQueryOptions({
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
     const { data: marchers } = useQuery(allMarchersQueryOptions());
+    const { data: sectionAppearances } = useQuery(
+        allSectionAppearancesQueryOptions(),
+    );
+    const { data: marcherIdsByTagId } = useQuery(
+        marcherIdsForAllTagIdsQueryOptions(),
+    );
+    const { data: allTagAppearances } = useQuery(
+        allTagAppearancesQueryOptions(),
+    );
+    const { data: tagAppearanceIdsByPageId } = useQuery(
+        tagAppearanceByPageIdMapQueryOptions(),
+    );
 
-    // Refs to store current values for use in the IPC handler
+    const marcherAppearancesByPageId = useMemo(() => {
+        if (
+            !fieldProperties ||
+            !marchers?.length ||
+            !sectionAppearances ||
+            !marcherPages ||
+            !marcherIdsByTagId ||
+            !allTagAppearances ||
+            !tagAppearanceIdsByPageId ||
+            pages.length === 0
+        ) {
+            return undefined;
+        }
+
+        return buildMarcherAppearancesByPageId({
+            sortedPages: pages,
+            marchers,
+            marcherPagesMap: marcherPages,
+            sectionAppearances,
+            marcherIdsByTagId,
+            allTagAppearances,
+            tagAppearanceIdsByPageId,
+            fieldProperties,
+        });
+    }, [
+        fieldProperties,
+        marchers,
+        sectionAppearances,
+        marcherPages,
+        marcherIdsByTagId,
+        allTagAppearances,
+        tagAppearanceIdsByPageId,
+        pages,
+    ]);
+
     const fieldPropertiesRef = useRef(fieldProperties);
     const marcherPagesRef = useRef<MarcherPageMap | undefined>(marcherPages);
     const marchersRef = useRef(Array.isArray(marchers) ? marchers : []);
     const pagesRef = useRef(pages);
+    const marcherAppearancesByPageIdRef = useRef(marcherAppearancesByPageId);
 
-    // Keep refs updated
     useEffect(() => {
         fieldPropertiesRef.current = fieldProperties;
     }, [fieldProperties]);
@@ -54,15 +106,16 @@ const SvgPreviewHandler: React.FC = () => {
         pagesRef.current = Array.isArray(pages) ? pages : [];
     }, [pages]);
 
-    /**
-     * Generate SVG preview for a page
-     */
+    useEffect(() => {
+        marcherAppearancesByPageIdRef.current = marcherAppearancesByPageId;
+    }, [marcherAppearancesByPageId]);
+
     const generateSvgPreview = useCallback(
         async (
-            fieldProps: any,
-            page: any,
+            fieldProps: FieldProperties,
+            page: Page,
             marcherPagesMap: MarcherPageMap | undefined,
-            allMarchers: any[],
+            allMarchers: Marcher[],
         ): Promise<string> => {
             try {
                 if (!fieldProps || !page) {
@@ -85,6 +138,9 @@ const SvgPreviewHandler: React.FC = () => {
                     sortedPages: [page],
                     marchers: allMarchers,
                     marcherPagesMap,
+                    sectionAppearances,
+                    marcherAppearancesByPageId:
+                        marcherAppearancesByPageIdRef.current,
                     backgroundImage,
                     gridLines: true,
                     halfLines: true,
@@ -102,12 +158,9 @@ const SvgPreviewHandler: React.FC = () => {
                 return SVG_GENERATION_ERROR;
             }
         },
-        [],
+        [sectionAppearances],
     );
 
-    /**
-     * Register IPC handler on mount
-     */
     useEffect(() => {
         if (!window.electron || handlerRegisteredRef.current) return;
 
@@ -117,7 +170,6 @@ const SvgPreviewHandler: React.FC = () => {
             const currentMarcherPages = marcherPagesRef.current;
             const currentMarchers = marchersRef.current;
 
-            // Explicitly get the first page only
             const firstPage =
                 currentPages && currentPages.length > 0
                     ? currentPages[0]

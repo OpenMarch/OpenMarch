@@ -43,7 +43,7 @@ template.push(
                     label: "Create New",
                     accelerator: "CommandOrControl+N",
                     click() {
-                        void mainProcess.newFile();
+                        void mainProcess.requestNewShowFromMenu();
                     },
                 },
                 {

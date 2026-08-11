@@ -28,7 +28,12 @@
         "**/*.test.tsx",
         "**/*.spec.mts",
         "e2e",
-        "vitest.setup.ts"
+        "vitest.setup.ts",
+        "**/*.msw.ts"
     ],
-    "references": [{ "path": "./tsconfig.node.json" }]
+    "references": [
+        {
+            "path": "./tsconfig.node.json"
+        }
+    ]
 }

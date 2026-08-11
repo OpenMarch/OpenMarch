@@ -1,0 +1,38 @@
+---
+import { Image } from "astro:assets";
+import { APP_STORE_URL, PLAY_STORE_URL } from "@/constants";
+
+import appStoreBadge from "@/assets/store/app-store-badge.svg";
+import googlePlayBadge from "@/assets/store/google-play-badge.svg";
+---
+
+<div class="flex flex-wrap items-center justify-center gap-12">
+    <a
+        href={APP_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Download on the App Store"
+    >
+        <Image
+            src={appStoreBadge}
+            alt="Download on the App Store"
+            width={120}
+            height={40}
+            class="h-40 w-auto"
+        />
+    </a>
+    <a
+        href={PLAY_STORE_URL}
+        target="_blank"
+        rel="noopener noreferrer"
+        aria-label="Get it on Google Play"
+    >
+        <Image
+            src={googlePlayBadge}
+            alt="Get it on Google Play"
+            width={135}
+            height={40}
+            class="h-40 w-auto"
+        />
+    </a>
+</div>
