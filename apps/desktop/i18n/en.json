@@ -333,7 +333,10 @@
         "videoOverlayTempo": "Tempo",
         "videoPreviewLoading": "Loading preview…",
         "videoRendering": "Rendering video... This may take several minutes.",
-        "videoResolution": "Resolution"
+        "videoResolution": "Resolution",
+        "videoRetryingSoftware": "Hardware encoding failed, retrying with software encoding... This may take a while longer.",
+        "videoSoftwareEncoding": "Software encoding (compatibility mode)",
+        "videoSoftwareEncodingHint": "Slower, but avoids export failures caused by some graphics card drivers. Try this if video export fails."
     },
     "field": {
         "general": {

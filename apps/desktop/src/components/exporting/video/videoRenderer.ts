@@ -37,6 +37,14 @@ import type { MarcherAppearancesByPageId } from "../utils/exportAppearances";
 const KEYFRAME_INTERVAL_SECONDS = 2;
 const AUDIO_SLICE_SECONDS = 1;
 
+/**
+ * `no-preference` lets the browser pick, which usually means hardware
+ * (GPU) encoding when available. `prefer-software` forces the CPU codec
+ * implementation instead - slower, but sidesteps broken GPU driver encoders
+ * (see the automatic fallback in {@link exportVideo}).
+ */
+export type VideoHardwareAcceleration = "no-preference" | "prefer-software";
+
 export interface VideoExportArgs {
     fieldProperties: FieldProperties;
     marchers: Marcher[];
@@ -66,7 +74,15 @@ export interface VideoExportArgs {
         measures: Measure[];
         placement: OverlayPlacement;
     };
+    /**
+     * Skip the hardware-accelerated attempt and encode with software from
+     * the start. Useful as a manual escape hatch for GPUs whose hardware
+     * encoder is broken, once a user knows they need it.
+     */
+    forceSoftwareEncoding?: boolean;
     onProgress?: (fraction: number) => void;
+    /** Called once, right before retrying with software encoding after the hardware attempt failed */
+    onRetryWithSoftwareEncoding?: () => void;
     isCancelled?: () => boolean;
 }
 
@@ -172,6 +188,14 @@ function channelsToAudioBuffer(
  * CanvasSource, and streamed to disk through the main process. Audio is
  * appended in one-second slices interleaved with the video frames so both
  * tracks start at timestamp 0 and stay memory-bounded.
+ *
+ * The encoder defaults to `hardwareAcceleration: 'no-preference'`, which
+ * lets the browser use a GPU encoder when available. Some GPU drivers
+ * (observed on AMD/Windows) advertise hardware H.264 encoding as supported
+ * but then fail partway through actual encoding. If that happens, this
+ * function automatically retries the whole encode once with software
+ * encoding forced, reusing the same output file so the user isn't prompted
+ * to pick a save location twice.
  */
 // eslint-disable-next-line max-lines-per-function
 export async function exportVideo(
@@ -186,7 +210,9 @@ export async function exportVideo(
         fps,
         fieldFraming = DEFAULT_FIELD_FRAMING,
         onProgress,
+        onRetryWithSoftwareEncoding,
         isCancelled = () => false,
+        forceSoftwareEncoding = false,
     } = args;
 
     if (sortedPages.length === 0)
@@ -204,7 +230,7 @@ export async function exportVideo(
         encodingTarget.fileExtension,
     );
     if (!started) return { state: "cancelled" };
-    const { sessionId, filePath } = started;
+    const { sessionId: firstSessionId, filePath } = started;
 
     const totalFrames = Math.ceil(durationSeconds * fps);
     let renderContext: Awaited<
@@ -229,6 +255,7 @@ export async function exportVideo(
             gridLines: args.gridLines,
             halfLines: args.halfLines,
         });
+        const context = renderContext;
 
         const frameCanvas = document.createElement("canvas");
         frameCanvas.width = width;
@@ -236,109 +263,181 @@ export async function exportVideo(
         const frameContext = frameCanvas.getContext("2d");
         if (!frameContext) throw new Error("Could not create export canvas");
 
-        const videoSource = new CanvasSource(frameCanvas, {
-            codec: encodingTarget.videoCodec,
-            bitrate: QUALITY_HIGH,
-        });
-        const audioSource = new AudioBufferSource({
-            codec: encodingTarget.audioCodec,
-            bitrate: QUALITY_HIGH,
-        });
-
-        const output = new Output({
-            format: encodingTarget.format,
-            target: new StreamTarget(
-                new WritableStream({
-                    async write(chunk) {
-                        await window.electron.export.videoChunk(
-                            sessionId,
-                            chunk.data,
-                            chunk.position,
-                        );
-                    },
-                }),
-                { chunked: true },
-            ),
-        });
-        output.addVideoTrack(videoSource, {
-            frameRate: fps,
-            // Required by fastStart "reserve"; video packets are 1:1 to frames
-            maximumPacketCount: totalFrames + 1,
-        });
-        output.addAudioTrack(audioSource, {
-            // AAC packets hold 1024 samples, Opus 960; 1 packet per 512
-            // samples is a safe upper bound for the reserved space
-            maximumPacketCount:
-                Math.ceil((durationSeconds * sampleRate) / 512) + 16,
-        });
-        await output.start();
-
         const overlayTimeline = args.overlay
             ? new OverlayTimeline(sortedPages, args.overlay.measures)
             : null;
         const brandingLogo = await loadBrandingLogo(args.videoTheme);
 
-        let nextAudioSlice = 0;
-        const flushAudioUntil = async (seconds: number) => {
-            while (
-                nextAudioSlice < audioSlices.length &&
-                nextAudioSlice * AUDIO_SLICE_SECONDS <= seconds
-            ) {
-                await audioSource.add(
-                    channelsToAudioBuffer(
-                        audioSlices[nextAudioSlice],
-                        sampleRate,
-                    ),
-                );
-                nextAudioSlice++;
+        // One retryable attempt: builds fresh encoder sources/output for the
+        // given hardwareAcceleration hint and runs the full frame + audio
+        // loop. The setup above (audio decode, render context, overlay,
+        // branding) is expensive and independent of hardware vs. software
+        // encoding, so it's done once and reused across attempts.
+        // eslint-disable-next-line max-lines-per-function
+        const runEncodeAttempt = async (
+            sessionId: string,
+            hardwareAcceleration: VideoHardwareAcceleration,
+        ): Promise<VideoExportResult> => {
+            const videoSource = new CanvasSource(frameCanvas, {
+                codec: encodingTarget.videoCodec,
+                bitrate: QUALITY_HIGH,
+                hardwareAcceleration,
+            });
+            const audioSource = new AudioBufferSource({
+                codec: encodingTarget.audioCodec,
+                bitrate: QUALITY_HIGH,
+            });
+
+            const output = new Output({
+                format: encodingTarget.format,
+                target: new StreamTarget(
+                    new WritableStream({
+                        async write(chunk) {
+                            await window.electron.export.videoChunk(
+                                sessionId,
+                                chunk.data,
+                                chunk.position,
+                            );
+                        },
+                    }),
+                    { chunked: true },
+                ),
+            });
+            output.addVideoTrack(videoSource, {
+                frameRate: fps,
+                // Required by fastStart "reserve"; video packets are 1:1 to frames
+                maximumPacketCount: totalFrames + 1,
+            });
+            output.addAudioTrack(audioSource, {
+                // AAC packets hold 1024 samples, Opus 960; 1 packet per 512
+                // samples is a safe upper bound for the reserved space
+                maximumPacketCount:
+                    Math.ceil((durationSeconds * sampleRate) / 512) + 16,
+            });
+            await output.start();
+
+            let nextAudioSlice = 0;
+            const flushAudioUntil = async (seconds: number) => {
+                while (
+                    nextAudioSlice < audioSlices.length &&
+                    nextAudioSlice * AUDIO_SLICE_SECONDS <= seconds
+                ) {
+                    await audioSource.add(
+                        channelsToAudioBuffer(
+                            audioSlices[nextAudioSlice],
+                            sampleRate,
+                        ),
+                    );
+                    nextAudioSlice++;
+                }
+            };
+
+            for (let frame = 0; frame < totalFrames; frame++) {
+                if (isCancelled()) {
+                    await output.cancel();
+                    await window.electron.export.videoEnd(sessionId, false);
+                    return { state: "cancelled" };
+                }
+
+                const timestampSeconds = frame / fps;
+                await flushAudioUntil(timestampSeconds);
+
+                renderVideoFrame({
+                    ctx: frameContext,
+                    context,
+                    timeSeconds: timestampSeconds,
+                    durationSeconds,
+                    width,
+                    height,
+                    videoTheme: args.videoTheme,
+                    fieldFraming,
+                    overlayState:
+                        overlayTimeline && args.overlay
+                            ? overlayTimeline.getState(timestampSeconds)
+                            : undefined,
+                    overlayOptions: args.overlay?.options,
+                    overlayPlacement: args.overlay?.placement,
+                    brandingLogo,
+                });
+
+                await videoSource.add(timestampSeconds, 1 / fps, {
+                    keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,
+                });
+                onProgress?.((frame + 1) / totalFrames);
             }
+
+            await flushAudioUntil(Infinity);
+            await output.finalize();
+
+            const finalPath = await window.electron.export.videoEnd(
+                sessionId,
+                true,
+            );
+            return { state: "completed", path: finalPath ?? filePath };
         };
 
-        for (let frame = 0; frame < totalFrames; frame++) {
-            if (isCancelled()) {
-                await output.cancel();
-                await window.electron.export.videoEnd(sessionId, false);
-                return { state: "cancelled" };
+        const initialHardwareAcceleration: VideoHardwareAcceleration =
+            forceSoftwareEncoding ? "prefer-software" : "no-preference";
+
+        try {
+            return await runEncodeAttempt(
+                firstSessionId,
+                initialHardwareAcceleration,
+            );
+        } catch (firstError) {
+            // Cancellation resolves rather than throws, so anything caught
+            // here is a genuine encoding failure. If we weren't already
+            // forcing software encoding, retry once with it forced: some GPU
+            // drivers (observed on AMD/Windows) pass mediabunny's codec
+            // support check but then fail during actual hardware encoding.
+            if (initialHardwareAcceleration === "prefer-software") {
+                throw firstError;
             }
 
-            const timestampSeconds = frame / fps;
-            await flushAudioUntil(timestampSeconds);
+            console.warn(
+                "Hardware-accelerated video encoding failed, retrying with software encoding:",
+                firstError,
+            );
+            onRetryWithSoftwareEncoding?.();
 
-            renderVideoFrame({
-                ctx: frameContext,
-                context: renderContext,
-                timeSeconds: timestampSeconds,
-                durationSeconds,
-                width,
-                height,
-                videoTheme: args.videoTheme,
-                fieldFraming,
-                overlayState:
-                    overlayTimeline && args.overlay
-                        ? overlayTimeline.getState(timestampSeconds)
-                        : undefined,
-                overlayOptions: args.overlay?.options,
-                overlayPlacement: args.overlay?.placement,
-                brandingLogo,
-            });
+            await window.electron.export
+                .videoEnd(firstSessionId, false)
+                .catch(() => undefined);
 
-            await videoSource.add(timestampSeconds, 1 / fps, {
-                keyFrame: frame % (fps * KEYFRAME_INTERVAL_SECONDS) === 0,
-            });
-            onProgress?.((frame + 1) / totalFrames);
+            // Reuse the same save location; the main process reopens (and
+            // truncates) the file rather than prompting the user again.
+            const retried = await window.electron.export.videoStart(
+                encodingTarget.fileExtension,
+                filePath,
+            );
+            if (!retried) return { state: "cancelled" };
+
+            try {
+                return await runEncodeAttempt(
+                    retried.sessionId,
+                    "prefer-software",
+                );
+            } catch (secondError) {
+                await window.electron.export
+                    .videoEnd(retried.sessionId, false)
+                    .catch(() => undefined);
+
+                const firstMessage =
+                    firstError instanceof Error
+                        ? firstError.message
+                        : String(firstError);
+                const secondMessage =
+                    secondError instanceof Error
+                        ? secondError.message
+                        : String(secondError);
+                throw new Error(
+                    `Hardware-accelerated encoding failed (${firstMessage}), and the software encoding fallback also failed (${secondMessage}).`,
+                );
+            }
         }
-
-        await flushAudioUntil(Infinity);
-        await output.finalize();
-
-        const finalPath = await window.electron.export.videoEnd(
-            sessionId,
-            true,
-        );
-        return { state: "completed", path: finalPath ?? filePath };
     } catch (error) {
         await window.electron.export
-            .videoEnd(sessionId, false)
+            .videoEnd(firstSessionId, false)
             .catch(() => undefined);
         throw error;
     } finally {

@@ -256,8 +256,13 @@ const APP_API = {
 
         videoStart: (
             fileExtension: string,
+            existingFilePath?: string,
         ): Promise<{ sessionId: string; filePath: string } | null> =>
-            ipcRenderer.invoke("export:videoStart", fileExtension),
+            ipcRenderer.invoke(
+                "export:videoStart",
+                fileExtension,
+                existingFilePath,
+            ),
         videoChunk: (
             sessionId: string,
             data: Uint8Array,

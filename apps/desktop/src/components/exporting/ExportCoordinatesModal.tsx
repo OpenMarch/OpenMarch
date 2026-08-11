@@ -1323,6 +1323,7 @@ function VideoExport() {
 
     const [resolution, setResolution] = useState("1080p");
     const [frameRate, setFrameRate] = useState(60);
+    const [softwareEncoding, setSoftwareEncoding] = useState(false);
     const [videoTheme, setVideoTheme] = useState<VideoTheme>(() =>
         theme === "light" ? "light" : "dark",
     );
@@ -1547,7 +1548,12 @@ function VideoExport() {
                 overlay: overlayEnabled
                     ? { measures, options: overlayOptions, placement }
                     : undefined,
+                forceSoftwareEncoding: softwareEncoding,
                 onProgress: (fraction) => setProgress(fraction * 100),
+                onRetryWithSoftwareEncoding: () =>
+                    setCurrentStep(
+                        t("exportCoordinates.videoRetryingSoftware"),
+                    ),
                 isCancelled: () => isCancelled.current,
             });
 
@@ -1611,6 +1617,7 @@ function VideoExport() {
         overlayOptions,
         placement,
         fieldFraming,
+        softwareEncoding,
     ]);
 
     return (
@@ -1698,6 +1705,28 @@ function VideoExport() {
                             <T keyName="settings.general.appearance.dark" />
                         </ToggleGroup.Item>
                     </ToggleGroup.Root>
+                </Form.Field>
+
+                <Form.Field
+                    name="softwareEncoding"
+                    className="col-span-2 flex w-full items-start gap-12"
+                >
+                    <Form.Control asChild>
+                        <Checkbox
+                            checked={softwareEncoding}
+                            onCheckedChange={(checked: boolean) =>
+                                setSoftwareEncoding(checked)
+                            }
+                        />
+                    </Form.Control>
+                    <span className="flex flex-col gap-2">
+                        <Form.Label className="text-body">
+                            <T keyName="exportCoordinates.videoSoftwareEncoding" />
+                        </Form.Label>
+                        <span className="text-sub text-text/60">
+                            <T keyName="exportCoordinates.videoSoftwareEncodingHint" />
+                        </span>
+                    </span>
                 </Form.Field>
             </Form.Root>
 

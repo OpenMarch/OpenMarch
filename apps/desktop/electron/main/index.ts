@@ -442,9 +442,15 @@ function initGetters() {
     });
 
     // Video export (streamed file writing)
-    ipcMain.handle("export:videoStart", async (_, fileExtension: string) => {
-        return await VideoExportService.start(fileExtension);
-    });
+    ipcMain.handle(
+        "export:videoStart",
+        async (_, fileExtension: string, existingFilePath?: string) => {
+            return await VideoExportService.start(
+                fileExtension,
+                existingFilePath,
+            );
+        },
+    );
     ipcMain.handle(
         "export:videoChunk",
         async (_, sessionId: string, data: Uint8Array, position: number) => {

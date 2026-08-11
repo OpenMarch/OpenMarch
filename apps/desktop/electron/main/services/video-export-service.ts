@@ -25,10 +25,14 @@ export class VideoExportService {
      * Prompt the user for a save location and open a file handle for writing.
      *
      * @param fileExtension - The extension of the output file (e.g. "mp4")
+     * @param existingFilePath - When set, reuses this path and skips the save
+     * dialog (e.g. retrying an export with a different encoder configuration
+     * after the first attempt failed).
      * @returns Session id and chosen file path, or null if the user cancelled
      */
     public static async start(
         fileExtension: string,
+        existingFilePath?: string,
     ): Promise<{ sessionId: string; filePath: string } | null> {
         // Close any orphaned handles from previous failed exports
         await this.cleanupAll(false);
@@ -36,7 +40,9 @@ export class VideoExportService {
         const sessionId = randomUUID();
         let filePath: string;
 
-        if (
+        if (existingFilePath) {
+            filePath = existingFilePath;
+        } else if (
             process.env.PLAYWRIGHT_SESSION === "true" &&
             process.env.PLAYWRIGHT_VIDEO_EXPORT_PATH
         ) {
@@ -69,6 +75,8 @@ export class VideoExportService {
             filePath = result.filePath;
         }
 
+        // Opening with "w" truncates any bytes written by a prior failed
+        // attempt at this same path (e.g. a hardware-encoding retry).
         const fileHandle = await fs.promises.open(filePath, "w");
         this.sessions.set(sessionId, { fileHandle, filePath });
         return { sessionId, filePath };
