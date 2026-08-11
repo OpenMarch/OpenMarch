@@ -395,6 +395,11 @@ export const workspace_settings = sqliteTable(
 );
 
 /* =========================== VIEWS =========================== */
+/**
+ * An ordered list of the beats, pages, and measures in the app.
+ *
+ * This view should be used when needing to sort by page order.
+ */
 export const timing_objects = sqliteView("timing_objects", {
     position: integer("position").notNull(),
     duration: real("duration").notNull(),

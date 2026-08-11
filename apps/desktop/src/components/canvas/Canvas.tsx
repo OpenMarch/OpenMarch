@@ -394,18 +394,21 @@ export default function Canvas({
             return;
 
         if (marchers) {
-            // Always call renderPathVisuals, but it will show/hide based on settings
+            // Always call renderPathVisuals, it decides visibility per pathway
+            const nextPage = pages.find(
+                (p) => p.id === selectedPage.nextPageId,
+            );
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
                 currentMarcherPages: marcherPages,
-                previousMarcherPages: uiSettings.previousPaths
-                    ? previousMarcherPages || {}
-                    : {},
-                nextMarcherPages: uiSettings.nextPaths
-                    ? nextMarcherPages || {}
-                    : {},
-
+                previousMarcherPages: previousMarcherPages || {},
+                nextMarcherPages: nextMarcherPages || {},
                 marcherIds: marchers.map((m) => m.id),
+                currentPageCounts: selectedPage.counts,
+                nextPageCounts: nextPage?.counts,
+                previousPathsEnabled: uiSettings.previousPaths,
+                nextPathsEnabled: uiSettings.nextPaths,
+                fieldProperties: fieldProperties,
             });
             canvas.sendCanvasMarchersToFront();
         }
