@@ -73,6 +73,17 @@ describe("resolveRecentItems", () => {
             items.slice(0, 6),
         );
     });
+
+    it("includes each matching id at most once", () => {
+        expect(resolveRecentItems(items, ["c", "c", "a"], getId)).toEqual([
+            { id: "c" },
+            { id: "a" },
+            { id: "b" },
+            { id: "d" },
+            { id: "e" },
+            { id: "f" },
+        ]);
+    });
 });
 
 describe("readRecentIds / writeRecentIds", () => {
@@ -96,5 +107,11 @@ describe("readRecentIds / writeRecentIds", () => {
     it("returns an empty list for corrupt storage", () => {
         localStorage.setItem(SELECT_TAB_RECENTS_STORAGE_KEY, "not-json");
         expect(readRecentIds("section")).toEqual([]);
+    });
+
+    it("recovers when existing storage is a JSON array", () => {
+        localStorage.setItem(SELECT_TAB_RECENTS_STORAGE_KEY, "[]");
+        writeRecentIds("section", ["Trumpet"]);
+        expect(readRecentIds("section")).toEqual(["Trumpet"]);
     });
 });

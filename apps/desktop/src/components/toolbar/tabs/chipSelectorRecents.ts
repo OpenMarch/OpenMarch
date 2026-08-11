@@ -27,9 +27,12 @@ export function resolveRecentItems<T>(
 ): T[] {
     const byId = new Map(items.map((item) => [String(getId(item)), item]));
     const recents: T[] = [];
+    const seen = new Set<string>();
     for (const id of recentIds) {
+        if (seen.has(id)) continue;
         const item = byId.get(id);
         if (item !== undefined) {
+            seen.add(id);
             recents.push(item);
             if (recents.length >= maxVisible) break;
         }
@@ -69,7 +72,11 @@ export function writeRecentIds(category: string, ids: string[]): void {
         if (stored) {
             try {
                 const existing = JSON.parse(stored) as RecentsByCategory;
-                if (existing && typeof existing === "object") {
+                if (
+                    existing &&
+                    typeof existing === "object" &&
+                    !Array.isArray(existing)
+                ) {
                     parsed = existing;
                 }
             } catch {

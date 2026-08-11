@@ -282,7 +282,6 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
                 getSearchText={(family) => t(family.tName)}
                 onSelect={handleSelectByFamily}
                 ariaLabel="Select families"
-                recentCategory="family"
             />
         </ToolbarSection>
     );

@@ -74,6 +74,11 @@ export default function ChipSelector<T>({
                 : items.slice(0, maxVisible),
         [items, recentIds, getId, maxVisible, recentCategory],
     );
+    const hasResolvedRecents = useMemo(() => {
+        if (!recentCategory || recentIds.length === 0) return false;
+        const ids = new Set(items.map((item) => String(getId(item))));
+        return recentIds.some((id) => ids.has(id));
+    }, [recentCategory, recentIds, items, getId]);
     const showSearch = items.length > visibleItems.length;
 
     const filteredItems = useMemo(() => {
@@ -292,7 +297,7 @@ export default function ChipSelector<T>({
                 </>
             )}
             {visibleItems.length === 0 && emptyMessage}
-            {visibleItems.length > 0 && (
+            {visibleItems.length > 0 && hasResolvedRecents && (
                 <span className="text-text-subtitle">
                     <T keyName="toolbar.select.recent" />
                     {" -"}
