@@ -32,7 +32,10 @@ import { DrizzleMigrationService } from "../database/services/DrizzleMigrationSe
 import { getOrm } from "../database/db";
 import { getAutoUpdater } from "./update";
 import { repairDatabase } from "../database/repair";
-import { computeDefaultDirectoryToPersist } from "./services/default-files-directory";
+import {
+    computeDefaultDirectoryToPersist,
+    resolveDefaultFilesDirectory,
+} from "./services/default-files-directory";
 import {
     initAuthBeforeReady,
     initAuthAfterReady,
@@ -305,6 +308,23 @@ function getPlaywrightDefaultDocumentsPath(): string | undefined {
     return undefined;
 }
 
+/**
+ * Persist the parent directory of a newly created file as the default files
+ * directory, honoring write-once semantics. No-op during Playwright sessions so
+ * e2e runs never write into the shared app store (which would leak the first
+ * test's output directory into every later test).
+ */
+function persistDefaultFilesDirectory(filePath: string) {
+    if (process.env.PLAYWRIGHT_SESSION) return;
+    const dirToPersist = computeDefaultDirectoryToPersist(
+        store.get("defaultFilesDirectory") as string | undefined,
+        filePath,
+    );
+    if (dirToPersist) {
+        store.set("defaultFilesDirectory", dirToPersist);
+    }
+}
+
 async function showSaveDialogHandler(options: Electron.SaveDialogOptions) {
     if (!win) return { canceled: true, filePath: "" };
     const playwrightPath = getPlaywrightDefaultDocumentsPath();
@@ -567,7 +587,10 @@ ipcMain.handle("set-language", (event, language) => {
 // Default files directory
 
 ipcMain.handle("settings:getDefaultFilesDirectory", () => {
-    return (store.get("defaultFilesDirectory", "") as string) || "";
+    return resolveDefaultFilesDirectory(
+        store.get("defaultFilesDirectory", "") as string,
+        getPlaywrightDefaultDocumentsPath(),
+    );
 });
 
 ipcMain.handle("settings:setDefaultFilesDirectory", (_event, dir: string) => {
@@ -733,13 +756,7 @@ async function createFileAtPath(filePath: string) {
 
     addRecentFile(filePath);
 
-    const dirToPersist = computeDefaultDirectoryToPersist(
-        store.get("defaultFilesDirectory") as string | undefined,
-        filePath,
-    );
-    if (dirToPersist) {
-        store.set("defaultFilesDirectory", dirToPersist);
-    }
+    persistDefaultFilesDirectory(filePath);
 
     return 200;
 }
@@ -981,13 +998,7 @@ export async function finalizeNewShowDraft(
     await setActiveDb(finalPath, false);
     addRecentFile(finalPath);
 
-    const dirToPersist = computeDefaultDirectoryToPersist(
-        store.get("defaultFilesDirectory") as string | undefined,
-        finalPath,
-    );
-    if (dirToPersist) {
-        store.set("defaultFilesDirectory", dirToPersist);
-    }
+    persistDefaultFilesDirectory(finalPath);
 
     return 200;
 }

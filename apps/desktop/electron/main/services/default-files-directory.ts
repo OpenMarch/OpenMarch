@@ -20,3 +20,20 @@ export function computeDefaultDirectoryToPersist(
     }
     return dirname(newFilePath);
 }
+
+/**
+ * Resolve the directory the new-show wizard should default to.
+ *
+ * A Playwright-provided directory always wins over the persisted value, so each
+ * e2e test saves into its own output directory rather than into a directory a
+ * previously-run test happened to persist first.
+ */
+export function resolveDefaultFilesDirectory(
+    storedValue: string | undefined | null,
+    playwrightOverride?: string,
+): string {
+    if (playwrightOverride) {
+        return playwrightOverride;
+    }
+    return storedValue?.trim() ? storedValue : "";
+}
