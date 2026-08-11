@@ -116,8 +116,12 @@ test("Refresh during wizard discards draft and returns to launch page", async ({
 
     await page.reload();
 
+    // Anchor on the launch page's New File button rather than the "Recent
+    // Files" heading: that heading only renders when recent files exist, so
+    // asserting on it only passed because earlier tests had populated the
+    // shared recent-files list.
     await expect(
-        page.getByRole("heading", { name: "Recent Files", level: 2 }),
+        page.getByRole("button", { name: "New File" }),
     ).toBeVisible();
     await expect(page.getByText("Timeline")).not.toBeVisible();
     await expect(dialog).not.toBeVisible();

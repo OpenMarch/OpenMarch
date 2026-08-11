@@ -50,14 +50,31 @@ const PLAYWRIGHT_ENV = {
     DEBUG: "pw:browser",
 };
 
+/**
+ * Per-test Electron userData directory.
+ *
+ * Without this every test shares the installed app's real userData directory,
+ * so persisted settings (databasePath, theme, language, defaultFilesDirectory)
+ * leak between tests and onto the machine running the suite. Tests then pass or
+ * fail based on what an earlier test happened to write.
+ */
+const getUserDataDir = (testInfo: { outputDir: string }) =>
+    path.resolve(testInfo.outputDir, "user-data");
+
 const launchElectron = (options: {
     args: string[];
     env?: typeof PLAYWRIGHT_ENV;
-}) =>
-    electron.launch({
+    testInfo: { outputDir: string };
+}) => {
+    const { testInfo, args, ...rest } = options;
+    const userDataDir = getUserDataDir(testInfo);
+    fs.ensureDirSync(userDataDir);
+    return electron.launch({
         executablePath: electronExecutable,
-        ...options,
+        args: [...args, `--user-data-dir=${userDataDir}`],
+        ...rest,
     });
+};
 
 const getTempDotsPath = (testInfo: { outputDir: string }) => {
     return path.resolve(testInfo.outputDir, "temp.dots");
@@ -165,6 +182,7 @@ export const test = base.extend<MyFixtures>({
                     "--disable-audio-input",
                 ],
                 env: PLAYWRIGHT_ENV,
+                testInfo,
             });
 
             // Capture main process logs (optional, but good for debugging)
@@ -185,7 +203,7 @@ export const test = base.extend<MyFixtures>({
             }
         }
     },
-    electronAppEmpty: async ({}, use) => {
+    electronAppEmpty: async ({}, use, testInfo) => {
         let browser: ElectronApplication | undefined;
         try {
             browser = await launchElectron({
@@ -197,6 +215,7 @@ export const test = base.extend<MyFixtures>({
                     "--disable-audio-input",
                 ],
                 env: PLAYWRIGHT_ENV,
+                testInfo,
             });
 
             // Capture main process logs (optional, but good for debugging)
@@ -251,6 +270,7 @@ export const test = base.extend<MyFixtures>({
                     ...PLAYWRIGHT_ENV,
                     PLAYWRIGHT_NEW_FILE_PATH: newFilePath,
                 },
+                testInfo,
             });
 
             // Capture main process logs
