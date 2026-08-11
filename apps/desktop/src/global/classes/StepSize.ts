@@ -112,6 +112,19 @@ export class StepSize {
         return `${roundedSteps.toLocaleString()} to 5`;
     }
 
+    // Real distance covered per step in inches, 0 for a hold and NaN for an undefined step
+    get inchesPerStep(): number {
+        return (INCHES_PER_YARD * 5) / this.stepsPerFiveYards;
+    }
+
+    // True when this move's per-step distance exceeds the threshold in inches
+    // A threshold of 0 or less turns step size warnings off entirely
+    // 0.5 inch tolerance absorbs floating-point noise near the threshold
+    exceedsThreshold(thresholdInches: number): boolean {
+        if (thresholdInches <= 0) return false;
+        return this.inchesPerStep > thresholdInches + 0.5;
+    }
+
     /**
      * Creates a step size object from a starting and ending marcher page, and the drill page.
      *
