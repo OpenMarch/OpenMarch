@@ -2,6 +2,7 @@ import Marcher from "@/global/classes/Marcher";
 import {
     FAMILIES,
     getSectionObjectByName,
+    getTranslatedSectionName,
     SectionFamily,
 } from "@/global/classes/Sections";
 import {
@@ -14,9 +15,10 @@ import ToolbarSection from "../ToolbarSection";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useCallback, useEffect, useState } from "react";
 import { CaretDownIcon } from "@phosphor-icons/react";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import * as Popover from "@radix-ui/react-popover";
-import { getTagName } from "@/db-functions/tag";
+import { getTagName, type DatabaseTag } from "@/db-functions/tag";
+import ChipSelector from "./ChipSelector";
 
 export default function ViewTab() {
     return (
@@ -25,10 +27,6 @@ export default function ViewTab() {
         </div>
     );
 }
-
-const Separator = () => {
-    return <span className="text-text-subtitle opacity-50">|</span>;
-};
 
 const sectionsFromMarchers = (marchers: Pick<Marcher, "section">[]) => {
     const sectionStrings = new Set([
@@ -45,14 +43,13 @@ const useHandleSelect = ({ allMarchers }: { allMarchers: Marcher[] }) => {
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
 
     const selectMarcherIds = useCallback(
-        (e: React.MouseEvent<HTMLButtonElement>, ids: number[]) => {
-            e.preventDefault();
+        (ids: number[], options?: { shiftKey?: boolean }) => {
             const newSelectedMarchers = allMarchers.filter((marcher) =>
                 ids.includes(marcher.id),
             );
 
             // if holding shift, add to selection
-            if (e.shiftKey) {
+            if (options?.shiftKey) {
                 const currentlySelectedIds = new Set(
                     selectedMarchers.map((marcher) => marcher.id),
                 );
@@ -122,48 +119,43 @@ function SelectByPopover({
 }
 
 function SectionSelector({ marchers }: { marchers: Marcher[] }) {
+    const { t } = useTranslate();
     const sections = sectionsFromMarchers(marchers ?? []);
     const { selectMarcherIds } = useHandleSelect({
         allMarchers: marchers ?? [],
     });
 
     const handleSelectBySection = useCallback(
-        (e: React.MouseEvent<HTMLButtonElement>, section: string) => {
-            e.preventDefault();
+        (
+            section: (typeof sections)[number],
+            options?: { shiftKey?: boolean },
+        ) => {
             const marcherIds = marchers
-                .filter((marcher) => marcher.section === section)
+                .filter((marcher) => marcher.section === section.name)
                 .map((marcher) => marcher.id);
-            selectMarcherIds(e, marcherIds);
+            selectMarcherIds(marcherIds, options);
         },
         [marchers, selectMarcherIds],
     );
 
     return (
         <ToolbarSection aria-label="Select sections">
-            <div className="flex gap-8">
-                {sections.length > 0 ? (
-                    sections.map((section, index) => (
-                        <div
-                            key={section.name}
-                            className="flex items-center gap-8"
-                        >
-                            <button
-                                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                                onClick={(e) =>
-                                    handleSelectBySection(e, section.name)
-                                }
-                            >
-                                <T keyName={section.tName} />
-                            </button>
-                            {index < sections.length - 1 && <Separator />}
-                        </div>
-                    ))
-                ) : (
+            <ChipSelector
+                items={sections}
+                getId={(section) => section.name}
+                getLabel={(section) => <T keyName={section.tName} />}
+                getSearchText={(section) =>
+                    getTranslatedSectionName(section.name, t)
+                }
+                onSelect={handleSelectBySection}
+                emptyMessage={
                     <div>
                         <T keyName="toolbar.select.noSectionsToSelect" />
                     </div>
-                )}
-            </div>
+                }
+                ariaLabel="Select sections"
+                recentCategory="section"
+            />
         </ToolbarSection>
     );
 }
@@ -179,43 +171,41 @@ function TagSelector({ marchers }: { marchers: Marcher[] }) {
     });
 
     const handleSelectByTag = useCallback(
-        (e: React.MouseEvent<HTMLButtonElement>, tagId: number) => {
-            e.preventDefault();
+        (tag: DatabaseTag, options?: { shiftKey?: boolean }) => {
             if (!marcherIdsForTagsLoaded) {
                 console.error("Marcher IDs for tags not loaded");
                 return;
             }
-            const marcherIds = marcherIdsForTags.get(tagId);
+            const marcherIds = marcherIdsForTags.get(tag.id);
             if (marcherIds == null) {
-                console.error(`Marcher IDs for tag ${tagId} not found`);
+                console.error(`Marcher IDs for tag ${tag.id} not found`);
                 return;
             }
-            selectMarcherIds(e, marcherIds);
+            selectMarcherIds(marcherIds, options);
         },
         [marcherIdsForTags, marcherIdsForTagsLoaded, selectMarcherIds],
     );
 
     return (
-        <ToolbarSection aria-label="Select sections">
-            <div className="flex gap-8">
-                {tagsLoaded && tags?.length > 0 ? (
-                    tags.map((tag, index) => (
-                        <div key={tag.id} className="flex items-center gap-8">
-                            <button
-                                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                                onClick={(e) => handleSelectByTag(e, tag.id)}
-                            >
-                                {getTagName({ tag_id: tag.id, name: tag.name })}
-                            </button>
-                            {index < tags.length - 1 && <Separator />}
-                        </div>
-                    ))
-                ) : (
+        <ToolbarSection aria-label="Select tags">
+            <ChipSelector
+                items={tagsLoaded ? (tags ?? []) : []}
+                getId={(tag) => tag.id}
+                getLabel={(tag) =>
+                    getTagName({ tag_id: tag.id, name: tag.name })
+                }
+                getSearchText={(tag) =>
+                    getTagName({ tag_id: tag.id, name: tag.name })
+                }
+                onSelect={handleSelectByTag}
+                emptyMessage={
                     <div>
                         <T keyName="toolbar.select.noTagsToSelect" />
                     </div>
-                )}
-            </div>
+                }
+                ariaLabel="Select tags"
+                recentCategory="tag"
+            />
         </ToolbarSection>
     );
 }
@@ -229,55 +219,44 @@ function DrillPrefixSelector({ marchers }: { marchers: Marcher[] }) {
     });
 
     const handleSelectByDrillPrefix = useCallback(
-        (e: React.MouseEvent<HTMLButtonElement>, drillPrefix: string) => {
-            e.preventDefault();
+        (drillPrefix: string, options?: { shiftKey?: boolean }) => {
             const marcherIds = marchers
                 .filter((marcher) => marcher.drill_prefix === drillPrefix)
                 .map((marcher) => marcher.id);
-            selectMarcherIds(e, marcherIds);
+            selectMarcherIds(marcherIds, options);
         },
         [marchers, selectMarcherIds],
     );
 
     return (
         <ToolbarSection aria-label="Select drill prefixes">
-            <div className="flex gap-8">
-                {drillPrefixes.length > 0 ? (
-                    drillPrefixes.map((drillPrefix, index) => (
-                        <div
-                            key={drillPrefix}
-                            className="flex items-center gap-8"
-                        >
-                            <button
-                                className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                                onClick={(e) =>
-                                    handleSelectByDrillPrefix(e, drillPrefix)
-                                }
-                            >
-                                {drillPrefix}
-                            </button>
-                            {index < drillPrefixes.length - 1 && <Separator />}
-                        </div>
-                    ))
-                ) : (
+            <ChipSelector
+                items={drillPrefixes}
+                getId={(drillPrefix) => drillPrefix}
+                getLabel={(drillPrefix) => drillPrefix}
+                getSearchText={(drillPrefix) => drillPrefix}
+                onSelect={handleSelectByDrillPrefix}
+                emptyMessage={
                     <div>
                         <T keyName="toolbar.select.noDrillPrefixesToSelect" />
                     </div>
-                )}
-            </div>
+                }
+                ariaLabel="Select drill prefixes"
+                recentCategory="drillPrefix"
+            />
         </ToolbarSection>
     );
 }
 
 function FamilySelector({ marchers }: { marchers: Marcher[] }) {
+    const { t } = useTranslate();
     const sections = sectionsFromMarchers(marchers ?? []);
     const { selectMarcherIds } = useHandleSelect({
         allMarchers: marchers ?? [],
     });
     const families = Object.values(FAMILIES);
     const handleSelectByFamily = useCallback(
-        (e: React.MouseEvent<HTMLButtonElement>, family: SectionFamily) => {
-            e.preventDefault();
+        (family: SectionFamily, options?: { shiftKey?: boolean }) => {
             const sectionsToSelect = sections.filter(
                 (section) => section.family.name === family.name,
             );
@@ -287,26 +266,22 @@ function FamilySelector({ marchers }: { marchers: Marcher[] }) {
             const marcherIdsToSelect = marchers
                 .filter((marcher) => sectionNames.has(marcher.section))
                 .map((marcher) => marcher.id);
-            selectMarcherIds(e, marcherIdsToSelect);
+            selectMarcherIds(marcherIdsToSelect, options);
         },
         [marchers, sections, selectMarcherIds],
     );
 
     return (
         <ToolbarSection aria-label="Select families">
-            <div className="flex gap-8">
-                {families.map((family, index) => (
-                    <div key={family.name} className="flex items-center gap-8">
-                        <button
-                            className="hover:text-accent flex items-center gap-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50"
-                            onClick={(e) => handleSelectByFamily(e, family)}
-                        >
-                            <T keyName={family.tName} />
-                        </button>
-                        {index < families.length - 1 && <Separator />}
-                    </div>
-                ))}
-            </div>
+            <ChipSelector
+                items={families}
+                getId={(family) => family.name}
+                getLabel={(family) => <T keyName={family.tName} />}
+                getSearchText={(family) => t(family.tName)}
+                onSelect={handleSelectByFamily}
+                ariaLabel="Select families"
+                recentCategory="family"
+            />
         </ToolbarSection>
     );
 }
