@@ -1,8 +1,9 @@
 import type { FieldProperties } from "@openmarch/core";
-import type { NewMarcherArgs } from "@/db-functions";
+import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
 import type { EnsembleSize } from "@/global/classes/EnsembleTemplates";
 
 export type NewShowStepId =
+    | "start"
     | "project"
     | "ensemble"
     | "field"
@@ -11,6 +12,7 @@ export type NewShowStepId =
     | "tempo";
 
 export const NEW_SHOW_STEPS: NewShowStepId[] = [
+    "start",
     "project",
     "ensemble",
     "field",
@@ -26,6 +28,12 @@ export interface NewShowProjectData {
     client?: string;
 }
 
+export type NewShowSetupMode = "blank" | "importPrevious";
+
+export interface NewShowStartData {
+    mode: NewShowSetupMode;
+}
+
 export interface NewShowEnsembleData {
     activity: string;
     size: EnsembleSize;
@@ -34,6 +42,40 @@ export interface NewShowEnsembleData {
 export interface NewShowFieldData {
     template: FieldProperties;
     isCustom: boolean;
+}
+
+export interface PreviousDotsCoordinateData {
+    drill_prefix: string;
+    drill_order: number;
+    x: number;
+    y: number;
+}
+
+export interface PreviousDotsTagData {
+    key: number;
+    name?: string | null;
+    description?: string | null;
+    icon?: string | null;
+    color_hex?: string | null;
+}
+
+export interface PreviousDotsMarcherTagData {
+    drill_prefix: string;
+    drill_order: number;
+    tagKey: number;
+}
+
+export interface PreviousDotsImportData {
+    sourcePath: string;
+    field: NewShowFieldData;
+    fieldImage?: Uint8Array | null;
+    performers: NewShowPerformersData;
+    coordinates: PreviousDotsCoordinateData[];
+    sectionAppearances: NewSectionAppearanceArgs[];
+    tags: PreviousDotsTagData[];
+    marcherTags: PreviousDotsMarcherTagData[];
+    /** Last named page number from the source file; applied as pageNumberOffset. */
+    pageNumberOffset: number;
 }
 
 export type NewShowMarcherDraft = NewMarcherArgs & { tempId?: string };
@@ -82,6 +124,7 @@ export interface NewShowTempoData {
 }
 
 export interface NewShowWizardState {
+    start: NewShowStartData | null;
     project: NewShowProjectData | null;
     ensemble: NewShowEnsembleData | null;
     field: NewShowFieldData | null;
@@ -89,9 +132,11 @@ export interface NewShowWizardState {
     audio: NewShowAudioData | null;
     tempo: NewShowTempoData | null;
     draftFilePath?: string;
+    previousDotsImport?: PreviousDotsImportData;
 }
 
 export const DEFAULT_NEW_SHOW_WIZARD_STATE: NewShowWizardState = {
+    start: null,
     project: null,
     ensemble: null,
     field: null,
@@ -113,6 +158,7 @@ export type NewShowFormState = {
     audio?: NewShowAudioData | null;
     tempo?: NewShowTempoData | null;
     draftFilePath?: string;
+    previousDotsImport?: PreviousDotsImportData;
 };
 
 export function wizardStateToFormState(
@@ -138,11 +184,13 @@ export function wizardStateToFormState(
         audio: state.audio,
         tempo: state.tempo,
         draftFilePath: state.draftFilePath,
+        previousDotsImport: state.previousDotsImport,
     };
 }
 
 export function hasNewShowProgress(state: NewShowWizardState): boolean {
     return (
+        state.start !== null ||
         state.project !== null ||
         state.ensemble !== null ||
         state.field !== null ||

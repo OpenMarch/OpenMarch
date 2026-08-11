@@ -1,7 +1,7 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import Endpoint from "./Endpoint";
-import Pathway from "./Pathway";
+import Pathway, { DEFAULT_PATHWAY_STROKE_WIDTH } from "./Pathway";
 import Midpoint from "./Midpoint";
 import { FieldProperties } from "@openmarch/core";
 import CanvasListeners from "../../../components/canvas/listeners/CanvasListeners";
@@ -25,6 +25,48 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { RgbaColor } from "@uiw/react-color";
+import {
+    evaluatePathWarning,
+    STEP_SIZE_WARNING_COLOR,
+    STEP_SIZE_WARNING_STROKE_WIDTH,
+    WARNING_PATHWAY_DASH,
+} from "./stepSizeWarning";
+
+const NORMAL_PATHWAY_DASH: number[] = [];
+// Precomputed so the per-frame comparison below does not rebuild the warning stroke string
+const STEP_SIZE_WARNING_STROKE = rgbaToString(STEP_SIZE_WARNING_COLOR);
+
+// Apply or clear the step-size warning style, skipping fabric mutations when the pathway already matches
+// Compares against the live fabric state so it stays correct even after the theme effect recolors paths
+function applyPathwayWarningStyle(
+    pathway: Pathway,
+    midpoint: Midpoint,
+    isWarning: boolean,
+    normalColor: RgbaColor,
+): void {
+    const targetStroke = isWarning
+        ? STEP_SIZE_WARNING_STROKE
+        : rgbaToString(normalColor);
+    const targetWidth = isWarning
+        ? STEP_SIZE_WARNING_STROKE_WIDTH
+        : DEFAULT_PATHWAY_STROKE_WIDTH;
+
+    if (
+        pathway.stroke !== targetStroke ||
+        pathway.strokeWidth !== targetWidth
+    ) {
+        pathway.set("stroke", targetStroke);
+        pathway.set("strokeWidth", targetWidth);
+        pathway.set(
+            "strokeDashArray",
+            isWarning ? WARNING_PATHWAY_DASH : NORMAL_PATHWAY_DASH,
+        );
+    }
+    if (midpoint.stroke !== targetStroke) {
+        midpoint.setColor(isWarning ? STEP_SIZE_WARNING_COLOR : normalColor);
+    }
+}
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -1253,86 +1295,128 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         currentMarcherPages,
         nextMarcherPages,
         marcherIds,
+        currentPageCounts,
+        nextPageCounts,
+        previousPathsEnabled,
+        nextPathsEnabled,
+        fieldProperties,
     }: {
         marcherVisuals: MarcherVisualMap;
         previousMarcherPages: MarcherPagesByMarcher;
         currentMarcherPages: MarcherPagesByMarcher;
         nextMarcherPages: MarcherPagesByMarcher;
         marcherIds: number[];
+        currentPageCounts: number | undefined;
+        nextPageCounts: number | undefined;
+        previousPathsEnabled: boolean;
+        nextPathsEnabled: boolean;
+        fieldProperties: FieldProperties;
     }) => {
-        const prevPageIsEmpty = Object.keys(previousMarcherPages).length === 0;
-        const nextPageIsEmpty = Object.keys(nextMarcherPages).length === 0;
+        if (!fieldProperties) return;
 
         // iterate through each marcher visual and update the pathways, midpoints, and endpoints
         marcherIds.forEach((marcherId: number) => {
             const visual = marcherVisuals[marcherId];
             if (!visual) return;
 
-            const prev = !prevPageIsEmpty
-                ? previousMarcherPages[marcherId]
-                : undefined;
+            const prev = previousMarcherPages[marcherId];
             const curr = currentMarcherPages[marcherId];
-            const next = !nextPageIsEmpty
-                ? nextMarcherPages[marcherId]
-                : undefined;
+            const next = nextMarcherPages[marcherId];
 
             // previous pathway, midpoint, endpoint
-            if (!prevPageIsEmpty && prev && curr) {
-                visual.getPreviousPathway().show();
-                visual.getPreviousPathway().updateStartCoords(curr);
-                visual.getPreviousPathway().updateEndCoords(prev);
-
-                visual.getPreviousMidpoint().show();
-                visual.getPreviousMidpoint().updateCoords({
-                    x: (curr.x + prev.x) / 2,
-                    y: (curr.y + prev.y) / 2,
+            const prevPathway = visual.getPreviousPathway();
+            const prevMidpoint = visual.getPreviousMidpoint();
+            if (prev && curr) {
+                const { show, isWarning } = evaluatePathWarning({
+                    start: curr,
+                    end: prev,
+                    counts: currentPageCounts,
+                    fieldProperties,
+                    pathEnabled: previousPathsEnabled,
+                    // previous paths stay hidden when toggled off, even over threshold
+                    allowForceShow: false,
                 });
-
-                visual.getPreviousEndpoint().show();
-                visual.getPreviousEndpoint().updateCoords(prev);
+                if (show) {
+                    prevPathway.show();
+                    prevPathway.updateStartCoords(curr);
+                    prevPathway.updateEndCoords(prev);
+                    prevMidpoint.show();
+                    prevMidpoint.updateCoords({
+                        x: (curr.x + prev.x) / 2,
+                        y: (curr.y + prev.y) / 2,
+                    });
+                    visual.getPreviousEndpoint().show();
+                    visual.getPreviousEndpoint().updateCoords(prev);
+                    applyPathwayWarningStyle(
+                        prevPathway,
+                        prevMidpoint,
+                        isWarning,
+                        fieldProperties.theme.previousPath,
+                    );
+                } else {
+                    prevPathway.hide();
+                    prevMidpoint.hide();
+                    visual.getPreviousEndpoint().hide();
+                }
             } else {
-                visual.getPreviousPathway().hide();
-                visual.getPreviousMidpoint().hide();
+                prevPathway.hide();
+                prevMidpoint.hide();
                 visual.getPreviousEndpoint().hide();
             }
 
             // next pathway, midpoint, endpoint
-            if (!nextPageIsEmpty && next && curr) {
-                // TODO: Uncomment when EditablePath is fully implemented
-                // // delete all of the existing fabric objects
-                // for (const fabricObject of visual
-                //     .getNextPathway()
-                //     .getFabricObjects()) {
-                //     this.remove(fabricObject);
-                // }
-
-                // const nextPathway = visual.getNextPathway();
-                // nextPathway.updatePathwayWithMarcherPages(curr, next);
-                // for (const fabricObject of nextPathway.getFabricObjects()) {
-                //     this.add(fabricObject);
-                // }
-
-                // Using simple pathway method (like previous paths) for now
-                visual.getNextPathway().show();
-                visual.getNextPathway().updateStartCoords(curr);
-                visual.getNextPathway().updateEndCoords(next);
-
-                visual.getNextMidpoint().show();
-                visual.getNextMidpoint().updateCoords({
-                    x: (curr.x + next.x) / 2,
-                    y: (curr.y + next.y) / 2,
+            const nextPathway = visual.getNextPathway();
+            const nextMidpoint = visual.getNextMidpoint();
+            if (next && curr) {
+                const { show, isWarning } = evaluatePathWarning({
+                    start: curr,
+                    end: next,
+                    counts: nextPageCounts,
+                    fieldProperties,
+                    pathEnabled: nextPathsEnabled,
+                    // next path is the current move, force-show it over threshold
+                    allowForceShow: true,
                 });
+                if (show) {
+                    // TODO: Uncomment when EditablePath is fully implemented
+                    // // delete all of the existing fabric objects
+                    // for (const fabricObject of nextPathway.getFabricObjects()) {
+                    //     this.remove(fabricObject);
+                    // }
+                    // nextPathway.updatePathwayWithMarcherPages(curr, next);
+                    // for (const fabricObject of nextPathway.getFabricObjects()) {
+                    //     this.add(fabricObject);
+                    // }
 
-                visual.getNextEndpoint().show();
-                visual.getNextEndpoint().updateCoords(next);
+                    // Using simple pathway method (like previous paths) for now
+                    nextPathway.show();
+                    nextPathway.updateStartCoords(curr);
+                    nextPathway.updateEndCoords(next);
+                    nextMidpoint.show();
+                    nextMidpoint.updateCoords({
+                        x: (curr.x + next.x) / 2,
+                        y: (curr.y + next.y) / 2,
+                    });
+                    visual.getNextEndpoint().show();
+                    visual.getNextEndpoint().updateCoords(next);
+                    applyPathwayWarningStyle(
+                        nextPathway,
+                        nextMidpoint,
+                        isWarning,
+                        fieldProperties.theme.nextPath,
+                    );
+                } else {
+                    nextPathway.hide();
+                    nextMidpoint.hide();
+                    visual.getNextEndpoint().hide();
+                }
             } else {
                 // TODO: Uncomment when EditablePath is fully implemented
-                // const nextPathway = visual.getNextPathway();
                 // for (const fabricObject of nextPathway.getFabricObjects()) {
                 //     this.remove(fabricObject);
                 // }
-                visual.getNextPathway().hide();
-                visual.getNextMidpoint().hide();
+                nextPathway.hide();
+                nextMidpoint.hide();
                 visual.getNextEndpoint().hide();
             }
         });

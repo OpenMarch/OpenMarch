@@ -5,6 +5,7 @@
 export * from "./field";
 export * from "./shapes";
 export * from "./path-utility";
+export * from "./page";
 
 // Future core features can be added here:
 // export * from "./marching";
