@@ -1156,8 +1156,6 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         Object.values(marcherPages).forEach((marcherPage) => {
             const visual = marcherVisuals[marcherPage.marcher_id];
             if (!visual) return;
-
-            visual.getCanvasMarcher().setMarcherCoords(marcherPage);
         });
 
         if (this._listeners && this._listeners.refreshMarchers)

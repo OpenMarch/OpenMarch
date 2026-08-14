@@ -1,11 +1,11 @@
 import { QueryClient } from "@tanstack/react-query";
-import { marcherTimelineKeys } from "./useMarcherTimelines";
 import { useFrameClockStore } from "@/services/clock/frame-clock";
+import { marcherPageKeys } from "./useMarcherPages";
 
 export const invalidateAllMarchers = (qc: QueryClient) => {
     const promises = [
         qc.invalidateQueries({
-            queryKey: marcherTimelineKeys.all(),
+            queryKey: marcherPageKeys.all(),
         }),
     ];
 
@@ -24,7 +24,7 @@ export const invalidateByMarchers = (
 ) => {
     for (const marcherId of marcherIds) {
         void qc.invalidateQueries({
-            queryKey: marcherTimelineKeys.byMarcherId(marcherId),
+            queryKey: marcherPageKeys.byMarcher(marcherId),
         });
     }
 };

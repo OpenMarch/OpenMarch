@@ -23,7 +23,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
             }
 
             const coordinates = renderingCallback(timeMs);
-
             if (coordinates == null) {
                 console.warn("coordinates are null! This should not happen!");
                 return;

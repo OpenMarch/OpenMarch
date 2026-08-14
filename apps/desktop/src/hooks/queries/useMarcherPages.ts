@@ -107,7 +107,7 @@ export const marcherPagesByPageQueryOptions = (
 export const marcherPagesByMarcherQueryOptions = (
     marcherId: number | null | undefined,
 ) => {
-    return queryOptions({
+    return queryOptions<MarcherPage[]>({
         queryKey: marcherPageKeys.byMarcher(marcherId!),
         queryFn: async () => {
             const mpResponse = await marcherPagesByMarcherId({
@@ -118,7 +118,7 @@ export const marcherPagesByMarcherQueryOptions = (
                 ...mp,
                 ...appearanceModelRawToParsed(mp),
             }));
-            return toMarcherPagesByPage(parsed);
+            return parsed;
         },
         enabled: marcherId != null,
         staleTime: DEFAULT_STALE_TIME,
