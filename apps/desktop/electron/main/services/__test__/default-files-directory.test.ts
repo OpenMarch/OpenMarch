@@ -63,4 +63,34 @@ describe("resolveDefaultFilesDirectory", () => {
             "/tmp/test-output-2",
         );
     });
+
+    it("treats a stored directory that no longer exists as unset", () => {
+        expect(
+            resolveDefaultFilesDirectory(
+                "/Volumes/UnmountedDrive/Shows",
+                undefined,
+                () => false,
+            ),
+        ).toBe("");
+    });
+
+    it("keeps a stored directory that still exists", () => {
+        expect(
+            resolveDefaultFilesDirectory(
+                "/Users/jo/Shows",
+                undefined,
+                () => true,
+            ),
+        ).toBe("/Users/jo/Shows");
+    });
+
+    it("does not existence-check the Playwright override", () => {
+        expect(
+            resolveDefaultFilesDirectory(
+                "/Users/jo/Shows",
+                "/tmp/test-output-2",
+                () => false,
+            ),
+        ).toBe("/tmp/test-output-2");
+    });
 });

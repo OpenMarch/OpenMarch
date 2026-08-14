@@ -31,9 +31,16 @@ export function computeDefaultDirectoryToPersist(
 export function resolveDefaultFilesDirectory(
     storedValue: string | undefined | null,
     playwrightOverride?: string,
+    directoryExists: (dir: string) => boolean = () => true,
 ): string {
     if (playwrightOverride) {
         return playwrightOverride;
     }
-    return storedValue?.trim() ? storedValue : "";
+    if (!storedValue?.trim()) {
+        return "";
+    }
+    // The directory is only validated when it is chosen, so it can be deleted,
+    // renamed, or unmounted afterwards. Treat a missing directory as unset so
+    // callers fall back instead of resurrecting it with mkdir.
+    return directoryExists(storedValue) ? storedValue : "";
 }

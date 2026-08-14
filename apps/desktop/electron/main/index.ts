@@ -308,6 +308,15 @@ function getPlaywrightDefaultDocumentsPath(): string | undefined {
     return undefined;
 }
 
+/** True when the path exists and is a directory. */
+function directoryExists(dir: string): boolean {
+    try {
+        return !!dir && fs.existsSync(dir) && fs.statSync(dir).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
 /**
  * Persist the parent directory of a newly created file as the default files
  * directory, honoring write-once semantics. No-op during Playwright sessions so
@@ -590,19 +599,16 @@ ipcMain.handle("settings:getDefaultFilesDirectory", () => {
     return resolveDefaultFilesDirectory(
         store.get("defaultFilesDirectory", "") as string,
         getPlaywrightDefaultDocumentsPath(),
+        directoryExists,
     );
 });
 
 ipcMain.handle("settings:setDefaultFilesDirectory", (_event, dir: string) => {
-    try {
-        if (!dir || !fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
-            return false;
-        }
-        store.set("defaultFilesDirectory", dir);
-        return true;
-    } catch {
+    if (!directoryExists(dir)) {
         return false;
     }
+    store.set("defaultFilesDirectory", dir);
+    return true;
 });
 
 ipcMain.handle("dialog:selectDirectory", async () => {
