@@ -3,7 +3,10 @@ import { useShallow } from "zustand/react/shallow";
 import { create } from "zustand";
 
 interface ClockState {
+    /** The currentTime in milliseconds */
     currentTime: number;
+    /** The currentTime in seconds */
+    getAudioTime: () => number;
     /** Incrementing version number. Only used to force a re-render */
     _version: number;
     playing: boolean;
@@ -29,6 +32,7 @@ interface ClockState {
 
 const frameClockStoreBase = create<ClockState>()((set, get) => ({
     currentTime: 0,
+    getAudioTime: () => get().currentTime / 1000,
     _version: 0,
     playing: false,
     audioContext: null,
@@ -110,14 +114,6 @@ function tick(
 /* ---------------------------------------------------------------------- */
 /* Access patterns                                                        */
 /* ---------------------------------------------------------------------- */
-
-// 1. One-time init, called from a user-gesture handler (e.g. first Play click,
-//    or an app-startup "click to enable audio" prompt).
-export function initClock() {
-    const audioContext = new AudioContext();
-    useFrameClockStore.getState().init(audioContext, (s) => s * 1000);
-}
-
 /**
  * @param onTick callback function to call on a `tick` event. Accepts a time in milliseconds
  * @returns function to unsubscribe

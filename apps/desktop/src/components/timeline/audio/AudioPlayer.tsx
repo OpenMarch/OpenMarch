@@ -125,7 +125,7 @@ export default function AudioPlayer() {
                 sampleRate: SAMPLE_RATE,
             });
             setAudioContext(ctx);
-            useFrameClockStore.getState().init(ctx, (s) => s);
+            useFrameClockStore.getState().init(ctx, (s) => s * 1000);
         } catch (e) {
             // No need to translate this. Don't want the extra `t` dependency
             toast.error("Error loading audio context");
@@ -302,7 +302,8 @@ export default function AudioPlayer() {
         if (!selectedPage || isPlaying) return;
 
         const playbackSeconds = getPausedPlaybackSeconds(selectedPage);
-        useFrameClockStore.getState().seek(playbackSeconds);
+        const toShowTime = useFrameClockStore.getState().audioTimeToShowTime;
+        useFrameClockStore.getState().seek(toShowTime(playbackSeconds));
     }, [selectedPage, isPlaying]);
 
     // Play/pause audio when isPlaying changes
@@ -370,7 +371,9 @@ export default function AudioPlayer() {
                 .connect(metroGainNode.current)
                 .connect(audioContext.destination);
 
-            const playbackTimestamp = useFrameClockStore.getState().currentTime;
+            const playbackTimestamp = useFrameClockStore
+                .getState()
+                .getAudioTime();
             audioSource.start(startAt, playbackTimestamp);
             metroSource.start(startAt, playbackTimestamp);
 
@@ -489,7 +492,7 @@ export default function AudioPlayer() {
 
         const update = () => {
             if (!isActive) return;
-            const clockTime = useFrameClockStore.getState().currentTime;
+            const clockTime = useFrameClockStore.getState().getAudioTime();
             const progress = Math.max(
                 0,
                 Math.min(1, clockTime / audioDuration),

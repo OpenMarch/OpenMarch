@@ -1,10 +1,13 @@
 import { useQueries, useQuery } from "@tanstack/react-query";
-import { allMarchersQueryOptions } from "../queries";
+import {
+    allMarchersQueryOptions,
+    marcherPagesByMarcherQueryOptions,
+} from "../queries";
 import { useTimingObjects } from "../useTimingObjects";
 import { MarcherTimeline } from "@openmarch/core";
-import { marcherTimelineQueryOptions } from "../queries/useMarcherTimelines";
 import { useCallback, useMemo } from "react";
 import { getAllCoordinatesAtTime } from "@/services/rendering/get-coordinates-at-time";
+import { dbToMarcherTimeline } from "@/services/rendering/db-to-timeline";
 
 /**
  * A stable (module-level) select function so `useQuery` can reuse its cached
@@ -47,28 +50,34 @@ export const useMarcherTimelines = ():
     const queries = useMemo(
         () =>
             marcherIds?.map((marcherId) =>
-                marcherTimelineQueryOptions(marcherId, pagesForTimeline),
+                marcherPagesByMarcherQueryOptions(marcherId),
             ) ?? [],
-        [marcherIds, pagesForTimeline],
+        [marcherIds],
     );
 
     // Also must be stable — see comment above.
     const combine = useCallback(
-        (marcherTimelines: { data: MarcherTimeline | undefined }[]) => {
+        (
+            marcherPages: {
+                data: { page_id: number; x: number; y: number }[] | undefined;
+            }[],
+        ) => {
             if (
                 marcherIds == null ||
-                marcherTimelines.some((mt) => mt == null || mt.data == null)
+                marcherPages.some((mp) => mp == null || mp.data == null)
             )
                 return undefined;
 
+            const marcherTimelines = marcherPages.map((result) =>
+                dbToMarcherTimeline(result.data!, pagesForTimeline),
+            );
+
             return {
                 marcherIds,
-                marcherTimelines: marcherTimelines.map(
-                    (result) => result.data!, // assert that this is non-null
-                ),
+                marcherTimelines,
             };
         },
-        [marcherIds],
+        [marcherIds, pagesForTimeline],
     );
 
     return useQueries({ queries, combine });
@@ -85,6 +94,7 @@ export const useMarcherTimelines = ():
  */
 export const useRenderingCallback = () => {
     const timelineResult = useMarcherTimelines();
+
     const renderingCallback = useCallback(
         (timeMs: number) => {
             if (timelineResult == null) return;
