@@ -19,10 +19,7 @@ import {
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
-import {
-    invalidateAllMarchers,
-    invalidateAppearanceForMarchers,
-} from "./sharedInvalidators";
+import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const { marchers } = schema;
 
@@ -108,17 +105,11 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
     return mutationOptions({
         mutationFn: (modifiedMarchers: ModifiedMarcherArgs[]) =>
             updateMarchers({ db, modifiedMarchers }),
-        onSuccess: (_, variables) => {
+        onSuccess: () => {
             // Invalidate all marcher queries
-            const marcherIds = new Set<number>();
-            for (const modifiedArgs of variables)
-                marcherIds.add(modifiedArgs.id);
-
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
-            // A marcher's section may have changed, which affects its appearance
-            invalidateAppearanceForMarchers(qc, marcherIds);
         },
         onError: (e, variables) => {
             conToastError(`Error updating marchers`, e, variables);

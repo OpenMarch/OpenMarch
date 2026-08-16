@@ -10,9 +10,9 @@ import {
 } from "@/db-functions";
 import { FieldProperties } from "@openmarch/core";
 import {
-    _combineMarcherAppearances,
+    combineMarcherAppearances,
     MarcherAppearanceByIdMap,
-} from "@/hooks/queries/useMarcherAppearances";
+} from "@/services/appearance/combine-appearances";
 
 export type MarcherAppearancesByPageId = Map<number, MarcherAppearanceByIdMap>;
 
@@ -59,7 +59,7 @@ export function buildMarcherAppearancesByPageId({
 
         appearancesByPageId.set(
             page.id,
-            _combineMarcherAppearances({
+            combineMarcherAppearances({
                 marchers,
                 sectionAppearances,
                 marcherIdsByTagId,

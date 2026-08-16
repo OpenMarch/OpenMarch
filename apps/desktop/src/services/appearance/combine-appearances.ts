@@ -97,7 +97,7 @@ const separateTagAppearanceByMarcherId = (
  *
  * @returns
  */
-export const _combineMarcherAppearances = ({
+export const combineMarcherAppearances = ({
     marchers,
     sectionAppearances,
     marcherIdsByTagId,

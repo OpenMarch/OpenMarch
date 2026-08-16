@@ -8,7 +8,7 @@ import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import { SectionAppearance, TagAppearance } from "@/db-functions";
-import { _combineMarcherAppearances } from "../useMarcherAppearances";
+import { combineMarcherAppearances } from "../combine-appearances";
 
 const fieldTheme = createFieldTheme({
     defaultMarcher: {
@@ -92,17 +92,17 @@ const createMarcherPage = (
     ...overrides,
 });
 
-/** Resolves a marcher's appearance stack from `_combineMarcherAppearances`'s output. */
+/** Resolves a marcher's appearance stack from `combineMarcherAppearances`'s output. */
 const resolveFor = (
     marcherId: number,
-    appearancesByMarcherId: ReturnType<typeof _combineMarcherAppearances>,
+    appearancesByMarcherId: ReturnType<typeof combineMarcherAppearances>,
 ) => resolveAppearanceFromStack(appearancesByMarcherId[marcherId]!, fieldTheme);
 
-describe("_combineMarcherAppearances", () => {
+describe("combineMarcherAppearances", () => {
     it("uses theme defaults when nothing overrides", () => {
         const marchers = [createMarcher(1, "Trumpet", "T")];
 
-        const result = _combineMarcherAppearances({
+        const result = combineMarcherAppearances({
             marchers,
             sectionAppearances: [],
             marcherIdsByTagId: new Map(),
@@ -153,7 +153,7 @@ describe("_combineMarcherAppearances", () => {
             }),
         };
 
-        const result = _combineMarcherAppearances({
+        const result = combineMarcherAppearances({
             marchers,
             sectionAppearances,
             marcherIdsByTagId: new Map([[1, [1, 2]]]),
@@ -189,7 +189,7 @@ describe("_combineMarcherAppearances", () => {
             }),
         ];
 
-        const result = _combineMarcherAppearances({
+        const result = combineMarcherAppearances({
             marchers,
             sectionAppearances: [],
             marcherIdsByTagId: new Map([
@@ -205,7 +205,7 @@ describe("_combineMarcherAppearances", () => {
     });
 
     it("returns an empty map when there are no marchers", () => {
-        const result = _combineMarcherAppearances({
+        const result = combineMarcherAppearances({
             marchers: [],
             sectionAppearances: [],
             marcherIdsByTagId: new Map(),

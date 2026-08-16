@@ -437,7 +437,7 @@ export default class CanvasMarcher
      * This is the live-animation counterpart to `setAppearance`, called from the frame
      * clock loop (`useAppearanceAnimation`) instead of a page-scoped effect. The
      * appearance-priority cascade already happened once, when the marcher's timeline
-     * was built (`_toMarcherAppearanceTimeline`), so this just re-applies that single,
+     * was built (`dbToMarcherAppearanceTimeline`), so this just re-applies that single,
      * already-resolved value through `setAppearance` as a one-item stack — reusing its
      * shape-creation/color-update logic rather than duplicating it.
      *

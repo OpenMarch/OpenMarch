@@ -10,7 +10,7 @@ import {
 import { useTimingObjects } from "../useTimingObjects";
 import { useCallback, useMemo } from "react";
 import { toMarcherPagesByPage } from "@/global/classes/MarcherPageIndex";
-import { _toMarcherAppearanceTimeline } from "../queries/useMarcherAppearance";
+import { dbToMarcherAppearanceTimeline } from "@/services/appearance/db-to-timeline";
 import { MarcherAppearanceTimeline } from "@/services/appearance/type";
 import { getAllAppearancesAtTime } from "@/services/appearance/get-appearance-at-time";
 import type MarcherPage from "@/global/classes/MarcherPage";
@@ -120,7 +120,7 @@ export const useMarcherAppearanceTimelines = ():
                 invertMarcherIdsByTagId(marcherIdsByTagId);
 
             const appearanceTimelines = marcherIds.map((marcherId, index) =>
-                _toMarcherAppearanceTimeline(
+                dbToMarcherAppearanceTimeline(
                     pagesForTimeline,
                     sectionByMarcherId.get(marcherId) ?? "",
                     allSectionAppearances,
@@ -152,7 +152,7 @@ export const useMarcherAppearanceTimelines = ():
 
 /**
  * Appearance keyframes are much sparser than coordinate keyframes — appearance only
- * changes when it actually changes (see `_toMarcherAppearanceTimeline`), while
+ * changes when it actually changes (see `dbToMarcherAppearanceTimeline`), while
  * coordinates get a keyframe every page. Mirrors `useRenderingCallback`
  * (`./useRenderingData`), but kept as its own, separately composable hook: sampling
  * is a binary search rather than a tween (`getAllAppearancesAtTime`), and the
