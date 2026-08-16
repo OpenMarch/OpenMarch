@@ -65,15 +65,15 @@ export default function Canvas({
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
     // MarcherPage queries
-    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
-    );
-    const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
-    );
-    const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
-    );
+    // const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+    //     marcherPagesByPageQueryOptions(selectedPage?.id),
+    // );
+    // const { data: previousMarcherPages } = useQuery(
+    //     marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    // );
+    // const { data: nextMarcherPages } = useQuery(
+    //     marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    // );
 
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
@@ -352,77 +352,77 @@ export default function Canvas({
         if (canvas) canvas.setUiSettings(uiSettings);
     }, [canvas, uiSettings]);
 
-    // Render the marchers when the selected page or the marcher pages change
-    useEffect(() => {
-        if (
-            !canvas ||
-            !selectedPage ||
-            !marchers ||
-            !marcherPagesLoaded ||
-            marcherVisuals == null
-        )
-            return;
+    // // Render the marchers when the selected page or the marcher pages change
+    // useEffect(() => {
+    //     if (
+    //         !canvas ||
+    //         !selectedPage ||
+    //         !marchers ||
+    //         !marcherPagesLoaded ||
+    //         marcherVisuals == null
+    //     )
+    //         return;
 
-        canvas.currentPage = selectedPage;
+    //     canvas.currentPage = selectedPage;
 
-        canvas
-            .renderMarchers({
-                marcherVisuals,
-                marcherPages,
-            })
-            .catch((error) => {
-                console.error("Error rendering marchers", error);
-            });
-    }, [
-        canvas,
-        marcherPages,
-        marcherPagesLoaded,
-        marcherVisuals,
-        marchers,
-        selectedPage,
-    ]);
+    //     canvas
+    //         .renderMarchers({
+    //             marcherVisuals,
+    //             marcherPages,
+    //         })
+    //         .catch((error) => {
+    //             console.error("Error rendering marchers", error);
+    //         });
+    // }, [
+    //     canvas,
+    //     marcherPages,
+    //     marcherPagesLoaded,
+    //     marcherVisuals,
+    //     marchers,
+    //     selectedPage,
+    // ]);
 
-    // Renders pathways when selected page or settings change
-    useEffect(() => {
-        if (
-            !canvas ||
-            !selectedPage ||
-            !fieldProperties ||
-            !marcherPagesLoaded ||
-            marcherVisuals == null
-        )
-            return;
+    // // Renders pathways when selected page or settings change
+    // useEffect(() => {
+    //     if (
+    //         !canvas ||
+    //         !selectedPage ||
+    //         !fieldProperties ||
+    //         !marcherPagesLoaded ||
+    //         marcherVisuals == null
+    //     )
+    //         return;
 
-        if (marchers) {
-            // Always call renderPathVisuals, but it will show/hide based on settings
-            canvas.renderPathVisuals({
-                marcherVisuals: marcherVisuals,
-                currentMarcherPages: marcherPages,
-                previousMarcherPages: uiSettings.previousPaths
-                    ? previousMarcherPages || {}
-                    : {},
-                nextMarcherPages: uiSettings.nextPaths
-                    ? nextMarcherPages || {}
-                    : {},
+    //     if (marchers) {
+    //         // Always call renderPathVisuals, but it will show/hide based on settings
+    //         canvas.renderPathVisuals({
+    //             marcherVisuals: marcherVisuals,
+    //             currentMarcherPages: marcherPages,
+    //             previousMarcherPages: uiSettings.previousPaths
+    //                 ? previousMarcherPages || {}
+    //                 : {},
+    //             nextMarcherPages: uiSettings.nextPaths
+    //                 ? nextMarcherPages || {}
+    //                 : {},
 
-                marcherIds: marchers.map((m) => m.id),
-            });
-            canvas.sendCanvasMarchersToFront();
-        }
-    }, [
-        canvas,
-        fieldProperties,
-        marcherPages,
-        previousMarcherPages,
-        nextMarcherPages,
-        marchers,
-        pages,
-        selectedPage,
-        uiSettings.nextPaths,
-        uiSettings.previousPaths,
-        marcherVisuals,
-        marcherPagesLoaded,
-    ]);
+    //             marcherIds: marchers.map((m) => m.id),
+    //         });
+    //         canvas.sendCanvasMarchersToFront();
+    //     }
+    // }, [
+    //     canvas,
+    //     fieldProperties,
+    //     marcherPages,
+    //     previousMarcherPages,
+    //     nextMarcherPages,
+    //     marchers,
+    //     pages,
+    //     selectedPage,
+    //     uiSettings.nextPaths,
+    //     uiSettings.previousPaths,
+    //     marcherVisuals,
+    //     marcherPagesLoaded,
+    // ]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
@@ -541,34 +541,34 @@ export default function Canvas({
         }
     }, [canvas, isPlaying, selectedPage]);
 
-    // This effect ensures that when the animation is paused, the marchers are
-    // rendered at their final positions for the selected page.
-    useEffect(() => {
-        if (
-            canvas &&
-            !isPlaying &&
-            selectedPage &&
-            marcherPagesLoaded &&
-            marcherVisuals != null
-        ) {
-            canvas
-                .renderMarchers({
-                    marcherPages: marcherPages,
-                    marcherVisuals: marcherVisuals,
-                })
-                .catch((error) => {
-                    console.error("Error rendering marchers", error);
-                });
-        }
-    }, [
-        canvas,
-        isPlaying,
-        selectedPage,
-        marcherPages,
-        marchers,
-        marcherVisuals,
-        marcherPagesLoaded,
-    ]);
+    // // This effect ensures that when the animation is paused, the marchers are
+    // // rendered at their final positions for the selected page.
+    // useEffect(() => {
+    //     if (
+    //         canvas &&
+    //         !isPlaying &&
+    //         selectedPage &&
+    //         marcherPagesLoaded &&
+    //         marcherVisuals != null
+    //     ) {
+    //         canvas
+    //             .renderMarchers({
+    //                 marcherPages: marcherPages,
+    //                 marcherVisuals: marcherVisuals,
+    //             })
+    //             .catch((error) => {
+    //                 console.error("Error rendering marchers", error);
+    //             });
+    //     }
+    // }, [
+    //     canvas,
+    //     isPlaying,
+    //     selectedPage,
+    //     marcherPages,
+    //     marchers,
+    //     marcherVisuals,
+    //     marcherPagesLoaded,
+    // ]);
 
     // Render collision markers when paused
     useEffect(() => {

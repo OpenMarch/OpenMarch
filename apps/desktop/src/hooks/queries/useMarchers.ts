@@ -19,7 +19,10 @@ import {
 import Marcher, { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
-import { invalidateAllMarchers } from "./sharedInvalidators";
+import {
+    invalidateAllMarchers,
+    invalidateAppearanceForMarchers,
+} from "./sharedInvalidators";
 
 const { marchers } = schema;
 
@@ -114,6 +117,8 @@ export const updateMarchersMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // A marcher's section may have changed, which affects its appearance
+            invalidateAppearanceForMarchers(qc, marcherIds);
         },
         onError: (e, variables) => {
             conToastError(`Error updating marchers`, e, variables);

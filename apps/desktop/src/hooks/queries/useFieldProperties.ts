@@ -6,6 +6,7 @@ import {
 } from "@/global/classes/FieldProperties";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherAppearancesKeys } from ".";
+import { invalidateAllAppearances } from "./sharedInvalidators";
 
 // Query key factory
 export const fieldPropertiesKeys = {
@@ -58,5 +59,7 @@ export const updateFieldPropertiesMutationOptions = (queryClient: any) => ({
         await queryClient.invalidateQueries({
             queryKey: marcherAppearancesKeys.all(),
         });
+        // The theme is the fallback for every marcher's appearance
+        invalidateAllAppearances(queryClient);
     },
 });
