@@ -167,7 +167,7 @@ describe.todo("Adjacent Page Resizing", () => {
         // Mock the useSelectedPage hook
         vi.mocked(useSelectedPage).mockReturnValue({
             selectedPage: mockPages[1],
-            setSelectedPage: vi.fn(),
+            seekTo: vi.fn(),
             setPageToSelect: vi.fn(),
         });
 

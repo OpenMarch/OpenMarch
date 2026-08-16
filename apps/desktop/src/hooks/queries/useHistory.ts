@@ -14,7 +14,6 @@ import { safelyInvalidateQueries } from "./utils";
 import { allMarchersQueryOptions } from "./useMarchers";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
-import { useTimingObjects } from "../useTimingObjects";
 import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const KEY_BASE = "history";
@@ -47,13 +46,12 @@ export const canRedoQueryOptions = (enabled = true) =>
 
 export const usePerformHistoryAction = () => {
     const qc = useQueryClient();
-    const { pages } = useTimingObjects();
     const { data: marchers } = useQuery(allMarchersQueryOptions());
     const selectedMarchersContext = useSelectedMarchers();
     const setSelectedMarchers =
         selectedMarchersContext?.setSelectedMarchers ?? (() => {});
     const selectedPageContext = useSelectedPage();
-    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const seekTo = selectedPageContext?.seekTo ?? (() => {});
 
     return useMutation({
         mutationFn: (type: "undo" | "redo") => performHistoryAction(type, db),
@@ -71,10 +69,8 @@ export const usePerformHistoryAction = () => {
             // The better thing to do would be to check the marchers that were modified
             void invalidateAllMarchers(qc);
 
-            if (response.pageIdToGoTo && pages) {
-                setSelectedPage(
-                    pages.find((page) => page.id === response.pageIdToGoTo)!,
-                );
+            if (response.pageIdToGoTo) {
+                seekTo({ id: response.pageIdToGoTo });
             }
             if (response.marcherIdsToSelect != null && marchers) {
                 setSelectedMarchers(

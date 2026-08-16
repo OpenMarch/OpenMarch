@@ -8,6 +8,8 @@ import { useQuery } from "@tanstack/react-query";
 import { marcherPagesByPageQueryOptions } from "@/hooks/queries";
 import { useSelectionStore } from "@/stores/SelectionStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useStablePageId } from "@/hooks/useStablePageId";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 
 // eslint-disable-next-line max-lines-per-function
 export const useSelectionListeners = ({
@@ -19,6 +21,7 @@ export const useSelectionListeners = ({
     const { selectedPage } = useSelectedPage()!;
     const { setSelectedShapePageIds } = useSelectionStore();
     const { selectedMarchers, setSelectedMarchers } = useSelectedMarchers()!;
+    const isPlaying = useIsPlaying();
     const unimplementedError = (
         selectableClass: Selectable.SelectableClasses,
     ) => {
@@ -26,8 +29,11 @@ export const useSelectionListeners = ({
             `Invalid selectable class "${selectableClass}". Have you implemented all of the cases in Canvas.tsx for each selectable item on the canvas?`,
         );
     };
+    // Selection isn't possible during playback, so freeze the queried page instead of
+    // fetching fresh for every not-yet-cached page. See `useStablePageId`.
+    const stablePageId = useStablePageId(selectedPage?.id, isPlaying);
     const { data: marcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
+        marcherPagesByPageQueryOptions(stablePageId),
     );
 
     /**

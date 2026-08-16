@@ -20,7 +20,7 @@ function StateInitializer() {
     const { pages } = useTimingObjects();
     const selectedPageContext = useSelectedPage();
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const setSelectedPage = selectedPageContext?.setSelectedPage ?? (() => {});
+    const seekTo = selectedPageContext?.seekTo ?? (() => {});
     const selectedAudioFileContext = useSelectedAudioFile();
     const selectedAudioFile =
         selectedAudioFileContext?.selectedAudioFile ?? null;
@@ -38,9 +38,9 @@ function StateInitializer() {
     // Select page 0 (first page in show order) when none are selected (e.g. app load / refresh)
     useEffect(() => {
         if (selectedPage == null && pages.length > 0) {
-            setSelectedPage(pages[0]);
+            seekTo(pages[0]);
         }
-    }, [pages, selectedPage, setSelectedPage]);
+    }, [pages, selectedPage, seekTo]);
 
     // Select the currently selected audio file
     useEffect(() => {
