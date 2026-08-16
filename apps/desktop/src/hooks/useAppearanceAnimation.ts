@@ -1,7 +1,10 @@
 import { useCallback, useEffect } from "react";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import { useAppearanceCallback } from "./rendering/useAppearanceData";
-import { subscribeToFrameClock } from "@/services/clock/frame-clock";
+import {
+    subscribeToFrameClock,
+    useFrameClockStore,
+} from "@/services/clock/frame-clock";
 
 interface UseAppearanceAnimationProps {
     canvas: OpenMarchCanvas | null;
@@ -47,6 +50,13 @@ export const useAppearanceAnimation = ({
     );
 
     useEffect(() => {
+        // `subscribeToFrameClock` only fires on the *next* clock change — it never
+        // replays the current time on subscribe. Paint once with whatever the clock
+        // already says so the very first render (and any re-render once the
+        // appearance queries finish loading, since that recreates `updateAppearances`)
+        // isn't left showing stale/default appearances until the next play or seek.
+        updateAppearances(useFrameClockStore.getState().currentTime);
+
         const unsubscribe = subscribeToFrameClock((timeMs) =>
             updateAppearances(timeMs),
         );
