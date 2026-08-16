@@ -496,13 +496,17 @@ export default function Canvas({
 
     /* --------------------------Animation Functions-------------------------- */
 
-    // This effect ensures that when the animation is playing, the shape paths
-    // are removed from the canvas.
+    // This effect ensures that when the animation starts playing, the shape paths
+    // are removed from the canvas. Deliberately excludes `selectedPage` from the deps —
+    // shape paths are edit-mode-only, so once they're gone at playback start there's
+    // nothing left to remove on subsequent page changes, and re-scanning the canvas on
+    // every page turn during playback is a needless hitch.
     useEffect(() => {
-        if (canvas && isPlaying && selectedPage) {
+        if (canvas && isPlaying) {
             canvas.removeAllObjectsByType(ShapePath);
         }
-    }, [canvas, isPlaying, selectedPage]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [canvas, isPlaying]);
 
     // // This effect ensures that when the animation is paused, the marchers are
     // // rendered at their final positions for the selected page.
@@ -533,14 +537,25 @@ export default function Canvas({
     //     marcherPagesLoaded,
     // ]);
 
-    // Render collision markers when paused
+    // Render collision markers when paused. Markers are only ever (re)added in the
+    // paused branch below, so once they've been cleared for a playback session there's
+    // nothing left to remove on subsequent page changes — skip the scan/remove/render
+    // pass in that case rather than paying for it on every page turn during playback.
+    const hasClearedCollisionMarkersForPlaybackRef = useRef(false);
     useEffect(() => {
         if (!canvas) return;
 
-        // Always remove existing collision markers when page changes or animation starts
+        if (isPlaying) {
+            if (hasClearedCollisionMarkersForPlaybackRef.current) return;
+            hasClearedCollisionMarkersForPlaybackRef.current = true;
+        } else {
+            hasClearedCollisionMarkersForPlaybackRef.current = false;
+        }
+
         const existingMarkers = canvas
             .getObjects()
             .filter((obj: any) => obj.isCollisionMarker);
+        if (existingMarkers.length === 0 && isPlaying) return;
         existingMarkers.forEach((marker) => canvas.remove(marker));
 
         // Add new collision markers only when paused, collisions exist, and showCollisions is enabled
@@ -562,13 +577,7 @@ export default function Canvas({
         }
 
         canvas.requestRenderAll();
-    }, [
-        canvas,
-        isPlaying,
-        currentCollisions,
-        selectedPage,
-        uiSettings.showCollisions,
-    ]);
+    }, [canvas, isPlaying, currentCollisions, uiSettings.showCollisions]);
 
     return (
         <div

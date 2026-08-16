@@ -8,6 +8,7 @@ import {
 import { createCircle } from "@openmarch/core";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useStablePageId } from "@/hooks/useStablePageId";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useCallback, useEffect, useRef } from "react";
 import * as CoordinateActions from "./CoordinateActions";
@@ -529,8 +530,7 @@ function RegisteredActionsHandler() {
     const queryClient = useQueryClient();
     const selectedPageContext = useSelectedPage();
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const setSelectedPage =
-        selectedPageContext?.setSelectedPage ?? (() => undefined);
+    const seekTo = selectedPageContext?.seekTo ?? (() => undefined);
     const { registeredButtonActions } = useRegisteredActionsStore()!;
     const { pages } = useTimingObjects()!;
     const isPlaying = useIsPlaying();
@@ -538,14 +538,27 @@ function RegisteredActionsHandler() {
     const triggerPause = useFrameClockStore.use.pause();
     const metronomeStore = useMetronomeStore();
     const toggleMetronome = metronomeStore?.toggleMetronome ?? (() => {});
+    // Freeze the pages queried while playing — none of this data feeds anything that's
+    // interactive during playback (editing/keyboard actions are effectively no-ops
+    // while playing), so there's no need to fetch it fresh for every not-yet-cached
+    // page playback passes through. See `useStablePageId`.
+    const stablePageId = useStablePageId(selectedPage?.id, isPlaying);
+    const stablePreviousPageId = useStablePageId(
+        selectedPage?.previousPageId,
+        isPlaying,
+    );
+    const stableNextPageId = useStablePageId(
+        selectedPage?.nextPageId,
+        isPlaying,
+    );
     const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
+        marcherPagesByPageQueryOptions(stablePageId),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(stablePreviousPageId!),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(stableNextPageId!),
     );
     const { mutate: swapMarchers } = useMutation(
         swapMarchersMutationOptions(queryClient),
@@ -820,26 +833,25 @@ function RegisteredActionsHandler() {
                 case RegisteredActionsEnum.nextPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const nextPage = getNextPage(selectedPage, pages);
-                    if (nextPage && !isPlaying) setSelectedPage(nextPage);
+                    if (nextPage && !isPlaying) seekTo(nextPage);
                     break;
                 }
                 case RegisteredActionsEnum.lastPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const lastPage = pages[pages.length - 1];
-                    if (lastPage && !isPlaying) setSelectedPage(lastPage);
+                    if (lastPage && !isPlaying) seekTo(lastPage);
                     break;
                 }
                 case RegisteredActionsEnum.previousPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const previousPage = getPreviousPage(selectedPage, pages);
-                    if (previousPage && !isPlaying)
-                        setSelectedPage(previousPage);
+                    if (previousPage && !isPlaying) seekTo(previousPage);
                     break;
                 }
                 case RegisteredActionsEnum.firstPage: {
                     if (!databaseReady || !pages || pages.length === 0) break;
                     const firstPage = pages[0];
-                    if (firstPage && !isPlaying) setSelectedPage(firstPage);
+                    if (firstPage && !isPlaying) seekTo(firstPage);
                     break;
                 }
                 case RegisteredActionsEnum.playPause: {
@@ -1316,7 +1328,7 @@ function RegisteredActionsHandler() {
             databaseReady,
             pages,
             isPlaying,
-            setSelectedPage,
+            seekTo,
             triggerPause,
             triggerPlay,
             toggleMetronome,

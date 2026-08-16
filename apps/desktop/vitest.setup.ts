@@ -7,6 +7,15 @@ import { createRendererSqlProxyQueue } from "./src/global/database/sqlProxyQueue
 // @ts-ignore
 global.jest = vi;
 
+// jsdom doesn't implement ResizeObserver. Canvas.tsx uses one to detect container size
+// changes, so components that mount a canvas need this polyfilled globally.
+class MockResizeObserver {
+    observe = vi.fn();
+    unobserve = vi.fn();
+    disconnect = vi.fn();
+}
+global.ResizeObserver = MockResizeObserver;
+
 // Mock Electron modules globally
 vi.mock("electron", () => import("./src/__mocks__/electron"));
 

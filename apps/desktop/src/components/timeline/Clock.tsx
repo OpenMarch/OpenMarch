@@ -20,7 +20,7 @@ export function AudioClock() {
     useEffect(() => {
         const unsubscribe = subscribeToFrameClock((timeMs) => {
             if (clockDisplayRef.current)
-                clockDisplayRef.current.textContent = formatTime(timeMs);
+                clockDisplayRef.current.textContent = formatTime(timeMs / 1000);
         });
 
         return () => {

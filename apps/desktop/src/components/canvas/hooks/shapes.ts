@@ -4,6 +4,7 @@ import {
     shapePagesQueryByPageIdOptions,
     shapePageMarchersQueryByPageIdOptions,
 } from "@/hooks/queries";
+import { useStablePageId } from "@/hooks/useStablePageId";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
@@ -16,11 +17,15 @@ export const useRenderMarcherShapes = ({
     selectedPage: Page | null;
     isPlaying: boolean;
 }) => {
+    // Freeze the queried page while playing — this data only feeds `renderMarcherShapes`
+    // below, which is already skipped during playback, so there's no need to fetch it
+    // fresh (over IPC) for every not-yet-cached page playback passes through.
+    const stablePageId = useStablePageId(selectedPage?.id ?? null, isPlaying);
     const { data: shapePagesOnSelectedPage } = useQuery(
-        shapePagesQueryByPageIdOptions(selectedPage?.id ?? null),
+        shapePagesQueryByPageIdOptions(stablePageId),
     );
     const { data: shapePageMarchersOnSelectedPage } = useQuery(
-        shapePageMarchersQueryByPageIdOptions(selectedPage?.id ?? null),
+        shapePageMarchersQueryByPageIdOptions(stablePageId),
     );
 
     // Update/render the MarcherShapes when the selected page or the ShapePages change

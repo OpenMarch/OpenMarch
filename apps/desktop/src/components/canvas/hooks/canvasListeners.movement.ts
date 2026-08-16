@@ -9,6 +9,8 @@ import {
     marcherWithVisualsQueryOptions,
 } from "@/hooks/queries";
 import { useSelectedPage } from "@/context/SelectedPageContext";
+import { useStablePageId } from "@/hooks/useStablePageId";
+import { useIsPlaying } from "@/services/clock/frame-clock";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 
 // eslint-disable-next-line max-lines-per-function
@@ -21,19 +23,32 @@ export const useMovementListeners = ({
     const { selectedPage } = useSelectedPage()!;
     const { selectedMarchers } = useSelectedMarchers()!;
     const queryClient = useQueryClient();
+    const isPlaying = useIsPlaying();
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
     );
 
-    // MarcherPage queries
+    // MarcherPage queries — this data only feeds path visuals while dragging a
+    // marcher, which can't happen during playback, so freeze the pages queried while
+    // playing instead of fetching fresh for every not-yet-cached page. See
+    // `useStablePageId`.
+    const stablePageId = useStablePageId(selectedPage?.id, isPlaying);
+    const stablePreviousPageId = useStablePageId(
+        selectedPage?.previousPageId,
+        isPlaying,
+    );
+    const stableNextPageId = useStablePageId(
+        selectedPage?.nextPageId,
+        isPlaying,
+    );
     const { data: marcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.id),
+        marcherPagesByPageQueryOptions(stablePageId),
     );
     const { data: previousMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+        marcherPagesByPageQueryOptions(stablePreviousPageId!),
     );
     const { data: nextMarcherPages } = useQuery(
-        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+        marcherPagesByPageQueryOptions(stableNextPageId!),
     );
 
     const frameRef = useRef<number | null>(null);
