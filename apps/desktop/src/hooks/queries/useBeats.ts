@@ -19,6 +19,7 @@ import {
     NewBeatArgs,
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
+import { invalidateAllAppearances } from "./sharedInvalidators";
 
 /**
  * Arguments for shifting beats
@@ -77,6 +78,8 @@ export const createBeatsMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // New beats shift later page timestamps
+            invalidateAllAppearances(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error creating beats`, e, variables);
@@ -96,6 +99,8 @@ export const updateBeatsMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // A beat's duration/tempo shifts later page timestamps
+            invalidateAllAppearances(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error updating beats`, e, variables);
@@ -111,6 +116,8 @@ export const deleteBeatsMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // Removing beats shifts later page timestamps
+            invalidateAllAppearances(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error deleting beats`, e, variables);
@@ -126,6 +133,8 @@ export const shiftBeatsMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // Shifted beats shift page timestamps
+            invalidateAllAppearances(qc);
         },
         onError: (e, variables) => {
             conToastError(`Error shifting beats`, e, variables);
@@ -141,6 +150,8 @@ export const flattenOrderMutationOptions = (qc: QueryClient) => {
             void qc.invalidateQueries({
                 queryKey: [KEY_BASE],
             });
+            // Reordered beats shift page timestamps
+            invalidateAllAppearances(qc);
         },
         onError: (e) => {
             conToastError(`Error flattening beat order`, e);

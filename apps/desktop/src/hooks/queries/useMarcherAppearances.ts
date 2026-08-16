@@ -13,10 +13,20 @@ import {
     TagAppearance,
     SectionAppearance,
     MarcherIdsByTagId,
+    _calculateMapAllTagAppearanceIdsByPageId,
 } from "@/db-functions";
-import { AppearanceComponentOptional } from "@/entity-components/appearance";
-import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
-import { FieldProperties } from "@openmarch/core";
+import {
+    AppearanceComponentOptional,
+    resolveAppearanceFromStack,
+    ResolvedPerformerAppearance,
+} from "@/entity-components/appearance";
+import {
+    MarcherPagesByMarcher,
+    marcherPageMapFromArray,
+} from "@/global/classes/MarcherPageIndex";
+import { FieldTheme } from "@openmarch/core";
+import { MarcherAppearanceTimeline } from "@/services/appearance/type";
+import MarcherPage from "@/global/classes/MarcherPage";
 
 const KEY_BASE = "marcher-appearances";
 
@@ -30,7 +40,7 @@ export type MarcherAppearanceByIdMap = Record<
     AppearanceComponentOptional[]
 >;
 
-const getSectionAppearance = (
+export const getSectionAppearance = (
     section: string,
     sectionAppearances: SectionAppearance[],
 ) => {
@@ -38,6 +48,27 @@ const getSectionAppearance = (
         (appearance) => appearance.section === section,
     );
 };
+
+export const buildDefaultMarcherAppearance = (
+    fieldTheme: FieldTheme,
+): AppearanceComponentOptional => ({
+    fill_color: fieldTheme.defaultMarcher.fill,
+    outline_color: fieldTheme.defaultMarcher.outline,
+    visible: true,
+    shape_type: fieldTheme.shapeType,
+    label_visible: true,
+});
+
+export const sortTagAppearancesByPriority = (
+    tagAppearances: TagAppearance[],
+): TagAppearance[] =>
+    tagAppearances.sort((a, b) => {
+        if (b.priority !== a.priority) {
+            return b.priority - a.priority;
+        }
+        // This shouldn't happen, but sort by id in reverse in case the priorities are the same
+        return b.id - a.id;
+    });
 
 /**
  * Creates a map of tag appearances by marcher id sorted by the priority of the tag appearance.
@@ -66,13 +97,7 @@ const separateTagAppearanceByMarcherId = (
 
     // Sort the tag appearances by priority
     for (const tagAppearances of tagAppearanceByMarcherId.values()) {
-        tagAppearances.sort((a, b) => {
-            if (b.priority !== a.priority) {
-                return b.priority - a.priority;
-            }
-            // This shouldn't happen, but sort by id in reverse in case the priorities are the same
-            return b.id - a.id;
-        });
+        sortTagAppearancesByPriority(tagAppearances);
     }
 
     return tagAppearanceByMarcherId;
@@ -103,7 +128,7 @@ export const _combineMarcherAppearances = ({
     marcherIdsByTagId: MarcherIdsByTagId;
     tagAppearances: TagAppearance[];
     marcherPages: MarcherPagesByMarcher;
-    fieldProperties: FieldProperties;
+    fieldProperties: { theme: FieldTheme };
 }): MarcherAppearanceByIdMap => {
     if (!marchers) {
         return {};
@@ -117,14 +142,9 @@ export const _combineMarcherAppearances = ({
             : new Map();
 
     const appearancesByMarcherId: MarcherAppearanceByIdMap = {};
-    const defaultTheme = fieldProperties.theme;
-    const defaultMarcherAppearance = {
-        fill_color: defaultTheme.defaultMarcher.fill,
-        outline_color: defaultTheme.defaultMarcher.outline,
-        visible: true,
-        shape_type: defaultTheme.shapeType,
-        label_visible: true,
-    } as AppearanceComponentOptional;
+    const defaultMarcherAppearance = buildDefaultMarcherAppearance(
+        fieldProperties.theme,
+    );
     for (const marcher of marchers) {
         const appearances: AppearanceComponentOptional[] = [];
 
@@ -150,6 +170,92 @@ export const _combineMarcherAppearances = ({
         appearancesByMarcherId[marcher.id] = appearances;
     }
     return appearancesByMarcherId;
+};
+
+export const appearancesEqual = (
+    a: ResolvedPerformerAppearance,
+    b: ResolvedPerformerAppearance,
+): boolean =>
+    a.fillRgba === b.fillRgba &&
+    a.strokeRgba === b.strokeRgba &&
+    a.strokeWidth === b.strokeWidth &&
+    a.visible === b.visible &&
+    a.textVisible === b.textVisible &&
+    a.shape === b.shape;
+
+export const tagAppearancesForPage = (
+    pageId: number,
+    allTagAppearances: TagAppearance[],
+    tagAppearanceIdsByPageId: Map<number, Set<number>>,
+): TagAppearance[] => {
+    const tagAppearanceIds = tagAppearanceIdsByPageId.get(pageId);
+    if (!tagAppearanceIds || tagAppearanceIds.size === 0) {
+        return [];
+    }
+    return allTagAppearances.filter((tagAppearance) =>
+        tagAppearanceIds.has(tagAppearance.id),
+    );
+};
+
+export const _toAppearanceTimeline = (
+    allPages: { page_id: number; timestamp: number }[],
+    allMarchers: Marcher[],
+    allSectionAppearances: SectionAppearance[],
+    marcherIdsByTagId: MarcherIdsByTagId,
+    allTagAppearances: TagAppearance[],
+    allMarcherPages: MarcherPage[],
+    fieldTheme: FieldTheme,
+): MarcherAppearanceTimeline[] => {
+    const timelines: MarcherAppearanceTimeline[] = allMarchers.map(() => ({
+        timestamps: [],
+        appearances: [],
+    }));
+
+    if (allMarchers.length === 0 || allPages.length === 0) {
+        return timelines;
+    }
+
+    const marcherPageMap = marcherPageMapFromArray(allMarcherPages);
+    const tagAppearanceIdsByPageId = _calculateMapAllTagAppearanceIdsByPageId({
+        tagAppearances: allTagAppearances,
+        pagesInOrder: allPages.map((page) => ({ id: page.page_id })),
+    });
+    const lastAppearance: (ResolvedPerformerAppearance | undefined)[] =
+        allMarchers.map(() => undefined);
+
+    for (const page of allPages) {
+        const appearancesByMarcherId = _combineMarcherAppearances({
+            marchers: allMarchers,
+            sectionAppearances: allSectionAppearances,
+            marcherIdsByTagId,
+            tagAppearances: tagAppearancesForPage(
+                page.page_id,
+                allTagAppearances,
+                tagAppearanceIdsByPageId,
+            ),
+            marcherPages: marcherPageMap.marcherPagesByPage[page.page_id] ?? {},
+            fieldProperties: { theme: fieldTheme },
+        });
+
+        for (const [index, marcher] of allMarchers.entries()) {
+            const stack = appearancesByMarcherId[marcher.id];
+            if (!stack) {
+                continue;
+            }
+
+            const resolved = resolveAppearanceFromStack(stack, fieldTheme);
+            const previous = lastAppearance[index];
+            if (previous != null && appearancesEqual(previous, resolved)) {
+                continue;
+            }
+
+            timelines[index].timestamps.push(page.timestamp);
+            timelines[index].appearances.push(resolved);
+            lastAppearance[index] = resolved;
+        }
+    }
+
+    return timelines;
 };
 
 export const marcherAppearancesQueryOptions = (
