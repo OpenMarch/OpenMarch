@@ -14,6 +14,8 @@ import {
 import {
     AppearanceComponentOptional,
     appearanceIsHidden,
+    parseRgbaColor,
+    ResolvedPerformerAppearance,
 } from "@/entity-components/appearance";
 
 export const DEFAULT_DOT_RADIUS = 5;
@@ -60,6 +62,13 @@ export default class CanvasMarcher
         visible: true,
         label_visible: true,
     };
+
+    /**
+     * The last fully-resolved appearance applied via `applyResolvedAppearance`,
+     * tracked by reference so the live frame-clock render loop can skip
+     * re-applying an appearance that hasn't changed since the previous frame.
+     */
+    private lastResolvedAppearance: ResolvedPerformerAppearance | null = null;
 
     /**
      * Creates a marker shape based on the given parameters.
@@ -419,6 +428,37 @@ export default class CanvasMarcher
         // Request canvas re-render if canvas exists
         if (this.canvas && options.requestRenderAll)
             this.canvas.requestRenderAll();
+    }
+
+    /**
+     * Applies a fully-resolved appearance (as sampled from a
+     * `MarcherAppearanceTimeline`, see `getAppearanceAtTime`) directly to the canvas.
+     *
+     * This is the live-animation counterpart to `setAppearance`, called from the frame
+     * clock loop (`useAppearanceAnimation`) instead of a page-scoped effect. The
+     * appearance-priority cascade already happened once, when the marcher's timeline
+     * was built (`_toMarcherAppearanceTimeline`), so this just re-applies that single,
+     * already-resolved value through `setAppearance` as a one-item stack — reusing its
+     * shape-creation/color-update logic rather than duplicating it.
+     *
+     * No-ops when `appearance` is reference-equal to the last one applied.
+     * `MarcherAppearanceTimeline` keyframes are guaranteed to differ from their
+     * predecessor, so a stable reference reliably means nothing changed — this keeps
+     * the steady-state, per-frame cost of the appearance sync to a single reference
+     * check per marcher.
+     */
+    applyResolvedAppearance(
+        appearance: ResolvedPerformerAppearance,
+        labelColor?: RgbaColor,
+    ) {
+        if (this.lastResolvedAppearance === appearance) return;
+        this.lastResolvedAppearance = appearance;
+
+        this.setAppearance(
+            resolvedAppearanceToAppearanceComponent(appearance),
+            { requestRenderAll: false },
+            labelColor,
+        );
     }
 
     refreshLockedStatus() {
@@ -807,6 +847,34 @@ export default class CanvasMarcher
     get lockedReason() {
         return this._lockedReason;
     }
+}
+
+/** Inverse of the `shapeTypeToSchemaShape` mapping in `entity-components/appearance.ts`. */
+const RESOLVED_SHAPE_TO_SHAPE_TYPE: Record<
+    ResolvedPerformerAppearance["shape"],
+    string
+> = {
+    circle: "circle",
+    square: "square",
+    triangle: "triangle",
+    cross: "x",
+};
+
+/**
+ * Adapts a fully-resolved appearance back into the single-item
+ * `AppearanceComponentOptional` "stack" that `CanvasMarcher.setAppearance` expects,
+ * so `applyResolvedAppearance` can reuse it instead of duplicating its logic.
+ */
+function resolvedAppearanceToAppearanceComponent(
+    appearance: ResolvedPerformerAppearance,
+): AppearanceComponentOptional {
+    return {
+        fill_color: parseRgbaColor(appearance.fillRgba),
+        outline_color: parseRgbaColor(appearance.strokeRgba),
+        shape_type: RESOLVED_SHAPE_TO_SHAPE_TYPE[appearance.shape],
+        visible: appearance.visible,
+        label_visible: appearance.textVisible,
+    };
 }
 
 /**

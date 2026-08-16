@@ -12,6 +12,7 @@ import { useCallback, useMemo } from "react";
 import { toMarcherPagesByPage } from "@/global/classes/MarcherPageIndex";
 import { _toMarcherAppearanceTimeline } from "../queries/useMarcherAppearance";
 import { MarcherAppearanceTimeline } from "@/services/appearance/type";
+import { getAllAppearancesAtTime } from "@/services/appearance/get-appearance-at-time";
 import type MarcherPage from "@/global/classes/MarcherPage";
 
 /**
@@ -147,4 +148,38 @@ export const useMarcherAppearanceTimelines = ():
     );
 
     return useQueries({ queries, combine });
+};
+
+/**
+ * Appearance keyframes are much sparser than coordinate keyframes — appearance only
+ * changes when it actually changes (see `_toMarcherAppearanceTimeline`), while
+ * coordinates get a keyframe every page. Mirrors `useRenderingCallback`
+ * (`./useRenderingData`), but kept as its own, separately composable hook: sampling
+ * is a binary search rather than a tween (`getAllAppearancesAtTime`), and the
+ * per-frame cost on the canvas side is a single reference check per marcher (see
+ * `CanvasMarcher.applyResolvedAppearance`).
+ *
+ * @returns `appearanceCallback` — a callback that, given a timestamp in milliseconds, returns
+ * every marcher's resolved appearance in the same order as `marcherIds`.
+ * @returns `marcherIds` — the list of marcher IDs that are being rendered.
+ */
+export const useAppearanceCallback = () => {
+    const timelineResult = useMarcherAppearanceTimelines();
+
+    const appearanceCallback = useCallback(
+        (timeMs: number) => {
+            if (timelineResult == null) return;
+
+            return getAllAppearancesAtTime(
+                timelineResult.appearanceTimelines,
+                timeMs,
+            );
+        },
+        [timelineResult],
+    );
+
+    return useMemo(
+        () => ({ appearanceCallback, marcherIds: timelineResult?.marcherIds }),
+        [appearanceCallback, timelineResult?.marcherIds],
+    );
 };

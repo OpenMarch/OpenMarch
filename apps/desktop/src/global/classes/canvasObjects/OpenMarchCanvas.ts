@@ -25,6 +25,7 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { ResolvedPerformerAppearance } from "@/entity-components/appearance";
 
 /**
  * A custom class to extend the fabric.js canvas for OpenMarch.
@@ -1092,6 +1093,29 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             const y = coordinatesFlat[coordinateIndex + 1];
 
             marcher.setLiveCoordinates(x, y);
+        }
+    };
+
+    /**
+     * Update the appearance (fill/outline color, shape, visibility) of every marcher
+     * on the canvas from resolved appearances sampled at a point in time. Mirrors
+     * `updateMarcherCoordinates`, but each marcher skips its own canvas update when
+     * its appearance hasn't changed since the last call — see
+     * `CanvasMarcher.applyResolvedAppearance`.
+     */
+    updateMarcherAppearances = (
+        appearances: ResolvedPerformerAppearance[],
+        marcherIds: number[],
+    ) => {
+        const marchersById = this._getCanvasMarchersByIdsMap();
+        const labelColor = this.fieldProperties?.theme.defaultMarcher.label;
+
+        for (const [index, marcherId] of marcherIds.entries()) {
+            const marcher = marchersById.get(marcherId);
+            const appearance = appearances[index];
+            if (!marcher || !appearance) continue;
+
+            marcher.applyResolvedAppearance(appearance, labelColor);
         }
     };
 
