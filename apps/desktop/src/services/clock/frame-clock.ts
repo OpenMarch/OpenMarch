@@ -18,6 +18,12 @@ interface ClockState {
     _rafId: number | null;
     _playbackStartAudioTime: number;
     _playbackStartShowTime: number;
+    /**
+     * Optional pause snap. Receives currentTime in ms and returns the time (ms) to
+     * land on after pause. Set via `setOnPause` so page-aware policies can update
+     * without re-initiating the AudioContext.
+     */
+    _onPause: ((currentTimeMs: number) => number) | null;
 
     /** Must be called once, from a user-gesture handler (AudioContext requires this). */
     init: (
@@ -25,6 +31,7 @@ interface ClockState {
         audioTimeToShowTime: ClockState["audioTimeToShowTime"],
     ) => void;
 
+    setOnPause: (onPause: ((currentTimeMs: number) => number) | null) => void;
     play: () => void;
     pause: () => void;
     seek: (timestamp: number) => void;
@@ -41,9 +48,14 @@ const frameClockStoreBase = create<ClockState>()((set, get) => ({
     _rafId: null,
     _playbackStartAudioTime: 0,
     _playbackStartShowTime: 0,
+    _onPause: null,
 
     init: (audioContext, audioTimeToShowTime) => {
         set({ audioContext, audioTimeToShowTime });
+    },
+
+    setOnPause: (onPause) => {
+        set({ _onPause: onPause });
     },
 
     play: () => {
@@ -64,9 +76,13 @@ const frameClockStoreBase = create<ClockState>()((set, get) => ({
     },
 
     pause: () => {
-        const { _rafId } = get();
+        const { _rafId, currentTime, _onPause } = get();
         if (_rafId !== null) cancelAnimationFrame(_rafId);
-        set({ playing: false, _rafId: null });
+        set({
+            playing: false,
+            _rafId: null,
+            currentTime: _onPause ? _onPause(currentTime) : currentTime,
+        });
     },
 
     seek: (timestamp) => {
