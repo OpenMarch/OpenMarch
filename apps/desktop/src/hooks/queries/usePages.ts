@@ -28,10 +28,7 @@ import { toast } from "sonner";
 import tolgee from "@/global/singletons/Tolgee";
 import { utilityKeys } from "./useUtility";
 import { beatKeys } from "./useBeats";
-import {
-    invalidateAllAppearances,
-    invalidateAllMarchers,
-} from "./sharedInvalidators";
+import { invalidateAllMarchers } from "./sharedInvalidators";
 
 const { pages } = schema;
 
@@ -60,9 +57,6 @@ export const invalidatePageQueries = async (qc: QueryClient) => {
     });
     await Promise.all([utilityPromise]);
     void invalidateAllMarchers(qc);
-    // Page CRUD shifts every later page's timestamp, which the per-marcher
-    // appearance cache doesn't key on — invalidate it so it recomputes.
-    invalidateAllAppearances(qc);
 };
 
 const pageQueries = {

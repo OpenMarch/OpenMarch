@@ -4,7 +4,7 @@ import { rgbaToSchemaString } from "@/entity-components/appearance";
 import MarcherPage from "@/global/classes/MarcherPage";
 import { MarcherPagesByPage } from "@/global/classes/MarcherPageIndex";
 import { SectionAppearance, TagAppearance } from "@/db-functions";
-import { _toMarcherAppearanceTimeline } from "../useMarcherAppearance";
+import { dbToMarcherAppearanceTimeline } from "../db-to-timeline";
 
 const emptyMarcherPagesByPage: MarcherPagesByPage = {};
 
@@ -80,9 +80,9 @@ const createMarcherPage = (
     ...overrides,
 });
 
-describe("_toMarcherAppearanceTimeline", () => {
+describe("dbToMarcherAppearanceTimeline", () => {
     it("starts at timestamp 0 with theme defaults and collapses identical pages", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             pages,
             "Trumpet",
             [],
@@ -106,7 +106,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("lets marcher-page override tag, section, and theme", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             [{ page_id: 1, timestamp: 0 }],
             "Trumpet",
             [
@@ -139,7 +139,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("uses higher-priority tags before lower-priority tags", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             [{ page_id: 1, timestamp: 0 }],
             "Trumpet",
             [
@@ -173,7 +173,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("falls back to section appearance when no marcher-page or tag applies", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             [{ page_id: 1, timestamp: 0 }],
             "Trumpet",
             [
@@ -192,7 +192,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("falls back to the field theme when nothing else applies", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             [{ page_id: 1, timestamp: 0 }],
             "Trombone",
             [
@@ -213,7 +213,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("keeps a tag appearance until a later start_page_id for the same tag", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             pages,
             "Trumpet",
             [],
@@ -243,7 +243,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("collapses consecutive identical appearances into a single keyframe", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             pages,
             "Trumpet",
             [],
@@ -266,7 +266,7 @@ describe("_toMarcherAppearanceTimeline", () => {
     });
 
     it("returns an empty timeline when there are no pages", () => {
-        const timeline = _toMarcherAppearanceTimeline(
+        const timeline = dbToMarcherAppearanceTimeline(
             [],
             "Trumpet",
             [],

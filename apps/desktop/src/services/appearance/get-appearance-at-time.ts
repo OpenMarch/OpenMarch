@@ -28,7 +28,7 @@ export const getAppearanceAtTime = (
  * @returns The appearance in effect for each marcher at `timeMs`, in the same order as
  * `appearanceTimelines`. Each entry is the same object reference stored in the
  * timeline (appearance keyframes are guaranteed to differ from their predecessor —
- * see `_toMarcherAppearanceTimeline`), so callers can skip re-applying an appearance
+ * see `dbToMarcherAppearanceTimeline`), so callers can skip re-applying an appearance
  * by comparing references instead of doing a deep-equality check every frame.
  */
 export const getAllAppearancesAtTime = (

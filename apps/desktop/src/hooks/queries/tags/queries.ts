@@ -38,9 +38,6 @@ export const tagKeys = {
     allMarcherTags: () => [MARCHER_TAGS_KEY] as const,
 };
 
-// Appearance invalidation for tag/marcher-tag/tag-appearance mutations is handled
-// precisely by each mutation in `tags/mutations.ts` (see `invalidateAppearanceForMarchers`
-// / `invalidateAllAppearances`), not here.
 export const invalidateTagQueries = (qc: QueryClient) => {
     void Promise.all([
         qc.invalidateQueries({ queryKey: [KEY_BASE] }),
