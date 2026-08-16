@@ -65,6 +65,20 @@ describe("getAppearanceAtTime", () => {
         expect(first).toBe(second);
     });
 
+    it("matches a keyframe even when float64→float32 rounding nudges it above the query time", () => {
+        // Regression test: page timestamps are computed at full float64 precision (e.g.
+        // by the frame clock, when paused exactly on a page boundary), but keyframe
+        // timestamps are stored in a Float32Array and silently rounded. Pick a
+        // realistic show timestamp whose Float32 rounding lands *above* the exact
+        // float64 value, and confirm querying at that exact float64 value still finds
+        // the keyframe it's bit-identical to, instead of falling back one keyframe early.
+        const exactMs = 47.891234 * 1000;
+        expect(Math.fround(exactMs)).toBeGreaterThan(exactMs);
+
+        const rounded = timeline([0, exactMs], [circle, square]);
+        expect(getAppearanceAtTime(rounded, exactMs)).toBe(square);
+    });
+
     it("throws when timeMs is negative", () => {
         expect(() => getAppearanceAtTime(marcherTimeline, -1)).toThrow(
             "timeMs must be non-negative",

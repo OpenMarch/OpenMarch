@@ -17,7 +17,17 @@ export const getAppearanceAtTime = (
     timeMs: number,
 ): ResolvedPerformerAppearance => {
     const { timestamps, appearances } = timeline;
-    const index = _getTimestampIndex(timestamps, timeMs);
+    // `timestamps` is a `Float32Array` (see `MarcherAppearanceTimeline`), so every
+    // keyframe was silently rounded to Float32 precision when the timeline was built.
+    // `timeMs` comes straight from the frame clock as a full float64. When paused
+    // exactly on a page boundary, the two are derived from the same page fields via
+    // the same arithmetic, so at float64 precision they're bit-identical — but the
+    // keyframe's lossy rounding can nudge it a sub-millisecond above or below that
+    // shared value. Round the query through the same conversion so both sides compare
+    // at identical precision; unlike coordinates (which tween, so landing a hair short
+    // of a keyframe is visually invisible), appearance is a step function, so missing
+    // the exact keyframe returns a completely different (stale, previous) result.
+    const index = _getTimestampIndex(timestamps, Math.fround(timeMs));
 
     return appearances[index]!;
 };
