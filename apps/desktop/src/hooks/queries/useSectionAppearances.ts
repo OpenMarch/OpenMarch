@@ -19,7 +19,6 @@ import {
 } from "@/db-functions";
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherWithVisualsKeys } from "./useMarchersWithVisuals";
-import { marcherAppearancesKeys } from ".";
 import { invalidateAllAppearances } from "./sharedInvalidators";
 
 const KEY_BASE = "section_appearances";
@@ -117,9 +116,6 @@ export const updateSectionAppearancesMutationOptions = (qc: QueryClient) => {
         onSuccess: async () => {
             await qc.invalidateQueries({
                 queryKey: sectionAppearanceKeys.all(),
-            });
-            await qc.invalidateQueries({
-                queryKey: marcherAppearancesKeys.all(),
             });
             // A section's colors can affect any marcher in that section; the
             // modified args don't reliably include which section, so invalidate broadly.

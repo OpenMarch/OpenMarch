@@ -5,10 +5,7 @@ import AudioFile from "@/global/classes/AudioFile";
 import { useTimingObjects } from "@/hooks";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useSelectionStore } from "@/stores/SelectionStore";
-import {
-    marcherAppearancesQueryOptions,
-    updateShapePagesMutationOptions,
-} from "@/hooks/queries";
+import { updateShapePagesMutationOptions } from "@/hooks/queries";
 import {
     MarcherShape,
     marcherShapeToShapePageArgs,
@@ -35,35 +32,6 @@ function StateInitializer() {
     const { mutate: updateMarcherShape } = useMutation(
         updateShapePagesMutationOptions(queryClient),
     );
-
-    if (selectedPage) {
-        void queryClient.prefetchQuery(
-            marcherAppearancesQueryOptions(selectedPage.id, queryClient),
-        );
-        if (selectedPage.nextPageId != null) {
-            const nextPage = pages.find(
-                (page) => page.id === selectedPage.nextPageId,
-            );
-            if (nextPage) {
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(nextPage.id, queryClient),
-                );
-            }
-        }
-        if (selectedPage.previousPageId != null) {
-            const previousPage = pages.find(
-                (page) => page.id === selectedPage.previousPageId,
-            );
-            if (previousPage) {
-                void queryClient.prefetchQuery(
-                    marcherAppearancesQueryOptions(
-                        previousPage.id,
-                        queryClient,
-                    ),
-                );
-            }
-        }
-    }
 
     /*******************************************************************/
 

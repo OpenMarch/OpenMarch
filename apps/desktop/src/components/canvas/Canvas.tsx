@@ -8,7 +8,6 @@ import {
     fieldPropertiesQueryOptions,
     allMarchersQueryOptions,
     marcherWithVisualsQueryOptions,
-    marcherAppearancesQueryOptions,
 } from "@/hooks/queries";
 import { useIsPlaying } from "@/services/clock/frame-clock";
 import OpenMarchCanvas from "../../global/classes/canvasObjects/OpenMarchCanvas";
@@ -19,6 +18,7 @@ import { CircleNotchIcon } from "@phosphor-icons/react";
 import { useFullscreenStore } from "@/stores/FullscreenStore";
 import clsx from "clsx";
 import { useAnimation } from "@/hooks/useAnimation";
+import { useAppearanceAnimation } from "@/hooks/useAppearanceAnimation";
 import CollisionMarker from "@/global/classes/canvasObjects/CollisionMarker";
 import { useCollisionStore } from "@/stores/CollisionStore";
 import { setCanvasStore } from "@/stores/CanvasStore";
@@ -58,9 +58,6 @@ export default function Canvas({
     const { selectedPage } = useSelectedPage()!;
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
-    );
-    const { data: marcherAppearances } = useQuery(
-        marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
     );
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
@@ -104,6 +101,7 @@ export default function Canvas({
     useSelectionListeners({ canvas });
     useMovementListeners({ canvas });
     useAnimation({ canvas });
+    useAppearanceAnimation({ canvas });
     useRenderMarcherShapes({ canvas, selectedPage, isPlaying });
 
     // Function to center and fit the canvas to the container
@@ -303,41 +301,6 @@ export default function Canvas({
             canvas.renderOnAddRemove = true;
         }
     }, [canvas, marchers, marcherVisuals, fieldProperties]);
-
-    // Sync canvas with marcher appearances
-    useEffect(() => {
-        if (
-            !canvas ||
-            !marchers ||
-            marcherAppearances == null ||
-            marcherVisuals == null
-        )
-            return;
-
-        // Add all marcher appearances to the canvas
-        marchers.forEach((marcher) => {
-            const visualGroup = marcherVisuals[marcher.id];
-            const appearancesForMarcher = marcherAppearances[marcher.id];
-            if (!visualGroup || !appearancesForMarcher) return;
-
-            const canvasMarcher = visualGroup.getCanvasMarcher();
-            canvasMarcher.setAppearance(
-                appearancesForMarcher,
-                {
-                    requestRenderAll: false,
-                },
-                fieldProperties?.theme.defaultMarcher.label,
-            );
-        });
-
-        canvas.requestRenderAll();
-    }, [
-        canvas,
-        marchers,
-        marcherAppearances,
-        marcherVisuals,
-        fieldProperties?.theme.defaultMarcher.label,
-    ]);
 
     // Setters for alignmentEvent state
     useEffect(() => {

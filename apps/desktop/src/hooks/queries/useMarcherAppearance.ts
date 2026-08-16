@@ -53,8 +53,7 @@ type PageForTimeline = { page_id: number; timestamp: number };
  * Query options for a single marcher's appearance timeline across the whole show.
  *
  * This is a convenience for one-off/non-rendering consumers (inspectors, tests, etc.). It
- * composes several already-cached, already-invalidated queries via `queryClient.fetchQuery`,
- * the same way the old page-based `marcherAppearancesQueryOptions` does.
+ * composes several already-cached, already-invalidated queries via `queryClient.fetchQuery`.
  *
  * Because `pagesSorted` isn't part of the query key, this cache can go stale if page/beat
  * timestamps shift without any tag/section/marcher change — mitigated by `invalidateAllAppearances`
@@ -148,14 +147,12 @@ export const _toMarcherAppearanceTimeline = (
     tagAppearances: TagAppearance[],
     fieldTheme: FieldTheme,
 ): MarcherAppearanceTimeline => {
-    const output: MarcherAppearanceTimeline = {
-        timestamps: [],
-        appearances: [],
-    };
-
     if (allPages.length === 0) {
-        return output;
+        return { timestamps: new Float32Array(0), appearances: [] };
     }
+
+    const timestamps: number[] = [];
+    const appearances: ResolvedPerformerAppearance[] = [];
 
     const tagIdsForMarcherSet = new Set(tagIdsForMarcher);
     const marcherTagAppearances = tagAppearances.filter((tagAppearance) =>
@@ -192,11 +189,11 @@ export const _toMarcherAppearanceTimeline = (
             lastAppearance === undefined ||
             !appearancesEqual(lastAppearance, resolved)
         ) {
-            output.timestamps.push(page.timestamp);
-            output.appearances.push(resolved);
+            timestamps.push(page.timestamp);
+            appearances.push(resolved);
             lastAppearance = resolved;
         }
     }
 
-    return output;
+    return { timestamps: new Float32Array(timestamps), appearances };
 };

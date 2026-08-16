@@ -1,10 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { createFieldTheme } from "@openmarch/core";
-import { rgbaToSchemaString } from "@/entity-components/appearance";
+import {
+    rgbaToSchemaString,
+    resolveAppearanceFromStack,
+} from "@/entity-components/appearance";
 import Marcher from "@/global/classes/Marcher";
 import MarcherPage from "@/global/classes/MarcherPage";
+import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 import { SectionAppearance, TagAppearance } from "@/db-functions";
-import { _toAppearanceTimeline } from "../useMarcherAppearances";
+import { _combineMarcherAppearances } from "../useMarcherAppearances";
 
 const fieldTheme = createFieldTheme({
     defaultMarcher: {
@@ -14,13 +18,6 @@ const fieldTheme = createFieldTheme({
     },
     shapeType: "circle",
 });
-
-const pages = [
-    { page_id: 1, timestamp: 0 },
-    { page_id: 2, timestamp: 1000 },
-    { page_id: 3, timestamp: 2000 },
-    { page_id: 4, timestamp: 3000 },
-];
 
 const createMarcher = (
     id: number,
@@ -95,31 +92,35 @@ const createMarcherPage = (
     ...overrides,
 });
 
-describe("_toAppearanceTimeline", () => {
-    it("uses theme defaults when nothing overrides and collapses identical pages", () => {
+/** Resolves a marcher's appearance stack from `_combineMarcherAppearances`'s output. */
+const resolveFor = (
+    marcherId: number,
+    appearancesByMarcherId: ReturnType<typeof _combineMarcherAppearances>,
+) => resolveAppearanceFromStack(appearancesByMarcherId[marcherId]!, fieldTheme);
+
+describe("_combineMarcherAppearances", () => {
+    it("uses theme defaults when nothing overrides", () => {
         const marchers = [createMarcher(1, "Trumpet", "T")];
 
-        const [timeline] = _toAppearanceTimeline(
-            pages,
+        const result = _combineMarcherAppearances({
             marchers,
-            [],
-            new Map(),
-            [],
-            [],
-            fieldTheme,
-        );
+            sectionAppearances: [],
+            marcherIdsByTagId: new Map(),
+            tagAppearances: [],
+            marcherPages: {},
+            fieldProperties: { theme: fieldTheme },
+        });
 
-        expect(timeline.timestamps).toEqual([0]);
-        expect(timeline.appearances).toHaveLength(1);
-        expect(timeline.appearances[0].fillRgba).toBe(
+        const resolved = resolveFor(1, result);
+        expect(resolved.fillRgba).toBe(
             rgbaToSchemaString(fieldTheme.defaultMarcher.fill),
         );
-        expect(timeline.appearances[0].strokeRgba).toBe(
+        expect(resolved.strokeRgba).toBe(
             rgbaToSchemaString(fieldTheme.defaultMarcher.outline),
         );
-        expect(timeline.appearances[0].shape).toBe("circle");
-        expect(timeline.appearances[0].visible).toBe(true);
-        expect(timeline.appearances[0].textVisible).toBe(true);
+        expect(resolved.shape).toBe("circle");
+        expect(resolved.visible).toBe(true);
+        expect(resolved.textVisible).toBe(true);
     });
 
     it("applies marcher-page, then tag, then section, then theme", () => {
@@ -143,108 +144,76 @@ describe("_toAppearanceTimeline", () => {
                 fill_color: { r: 10, g: 20, b: 30, a: 1 },
             }),
         ];
-        const marcherPages = [
-            createMarcherPage({
+        const marcherPages: MarcherPagesByMarcher = {
+            1: createMarcherPage({
                 id: 100,
                 marcher_id: 1,
                 page_id: 1,
                 fill_color: { r: 40, g: 50, b: 60, a: 1 },
             }),
-        ];
+        };
 
-        const timelines = _toAppearanceTimeline(
-            [{ page_id: 1, timestamp: 0 }],
+        const result = _combineMarcherAppearances({
             marchers,
             sectionAppearances,
-            new Map([[1, [1, 2]]]),
+            marcherIdsByTagId: new Map([[1, [1, 2]]]),
             tagAppearances,
             marcherPages,
-            fieldTheme,
-        );
+            fieldProperties: { theme: fieldTheme },
+        });
 
-        expect(timelines).toHaveLength(4);
-        expect(timelines[0].appearances[0].fillRgba).toBe("rgba(40,50,60,1)");
-        expect(timelines[1].appearances[0].fillRgba).toBe("rgba(10,20,30,1)");
-        expect(timelines[2].appearances[0].fillRgba).toBe("rgba(1,2,3,1)");
-        expect(timelines[3].appearances[0].fillRgba).toBe(
+        expect(resolveFor(1, result).fillRgba).toBe("rgba(40,50,60,1)");
+        expect(resolveFor(2, result).fillRgba).toBe("rgba(10,20,30,1)");
+        expect(resolveFor(3, result).fillRgba).toBe("rgba(1,2,3,1)");
+        expect(resolveFor(4, result).fillRgba).toBe(
             rgbaToSchemaString(fieldTheme.defaultMarcher.fill),
         );
     });
 
-    it("keeps a tag appearance until a later start_page_id for the same tag", () => {
+    it("uses higher-priority tags before lower-priority tags", () => {
         const marchers = [createMarcher(1, "Trumpet", "T")];
         const tagAppearances = [
             createTagAppearance({
                 id: 10,
                 tag_id: 1,
                 start_page_id: 1,
-                shape_type: "triangle",
+                priority: 1,
+                fill_color: { r: 10, g: 20, b: 30, a: 1 },
             }),
             createTagAppearance({
                 id: 11,
-                tag_id: 1,
-                start_page_id: 3,
-                shape_type: "square",
+                tag_id: 2,
+                start_page_id: 1,
+                priority: 5,
+                fill_color: { r: 70, g: 80, b: 90, a: 1 },
             }),
         ];
 
-        const [timeline] = _toAppearanceTimeline(
-            pages,
+        const result = _combineMarcherAppearances({
             marchers,
-            [],
-            new Map([[1, [1]]]),
+            sectionAppearances: [],
+            marcherIdsByTagId: new Map([
+                [1, [1]],
+                [2, [1]],
+            ]),
             tagAppearances,
-            [],
-            fieldTheme,
-        );
+            marcherPages: {},
+            fieldProperties: { theme: fieldTheme },
+        });
 
-        expect(timeline.timestamps).toEqual([0, 2000]);
-        expect(
-            timeline.appearances.map((appearance) => appearance.shape),
-        ).toEqual(["triangle", "square"]);
+        expect(resolveFor(1, result).fillRgba).toBe("rgba(70,80,90,1)");
     });
 
-    it("collapses consecutive identical appearances into a single keyframe", () => {
-        const marchers = [createMarcher(1, "Trumpet", "T")];
-        const tagAppearances = [
-            createTagAppearance({
-                id: 10,
-                tag_id: 1,
-                start_page_id: 3,
-                shape_type: "x",
-            }),
-        ];
+    it("returns an empty map when there are no marchers", () => {
+        const result = _combineMarcherAppearances({
+            marchers: [],
+            sectionAppearances: [],
+            marcherIdsByTagId: new Map(),
+            tagAppearances: [],
+            marcherPages: {},
+            fieldProperties: { theme: fieldTheme },
+        });
 
-        const [timeline] = _toAppearanceTimeline(
-            pages,
-            marchers,
-            [],
-            new Map([[1, [1]]]),
-            tagAppearances,
-            [],
-            fieldTheme,
-        );
-
-        expect(timeline.timestamps).toEqual([0, 2000]);
-        expect(timeline.appearances[0].shape).toBe("circle");
-        expect(timeline.appearances[1].shape).toBe("cross");
-    });
-
-    it("returns empty timelines when there are no pages", () => {
-        const marchers = [createMarcher(1, "Trumpet", "T")];
-
-        const timelines = _toAppearanceTimeline(
-            [],
-            marchers,
-            [],
-            new Map(),
-            [],
-            [],
-            fieldTheme,
-        );
-
-        expect(timelines).toHaveLength(1);
-        expect(timelines[0].timestamps).toEqual([]);
-        expect(timelines[0].appearances).toEqual([]);
+        expect(result).toEqual({});
     });
 });

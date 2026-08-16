@@ -7,11 +7,11 @@ import {
     useState,
 } from "react";
 import Marcher from "@/global/classes/Marcher";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { allMarchersQueryOptions } from "@/hooks/queries/useMarchers";
 import { useSelectedPage } from "./SelectedPageContext";
-import { marcherAppearancesQueryOptions } from "@/hooks/queries/useMarcherAppearances";
-import { appearanceIsHidden } from "@/entity-components/appearance";
+import { useMarcherAppearanceTimelines } from "@/hooks/rendering/useAppearanceData";
+import { getAllAppearancesAtTime } from "@/services/appearance/get-appearance-at-time";
 
 // Define the type for the context value
 type SelectedMarcherContextProps = {
@@ -39,22 +39,23 @@ export function SelectedMarchersProvider({
     const [selectedMarchers, setSelectedMarchers] = useState<Marcher[]>([]);
     const selectedPageContext = useSelectedPage();
     const selectedPage = selectedPageContext?.selectedPage ?? null;
-    const queryClient = useQueryClient();
-    const { data: marcherAppearances } = useQuery({
-        ...marcherAppearancesQueryOptions(selectedPage?.id, queryClient),
-        enabled: selectedPage !== null,
-    });
+    const appearanceTimelineResult = useMarcherAppearanceTimelines();
     const hiddenMarcherIds: Set<number> = useMemo(() => {
-        if (marcherAppearances == null) return new Set();
-        const hiddenMarcherIds = new Set(
-            Object.entries(marcherAppearances)
-                .filter((marcherAppearance) =>
-                    appearanceIsHidden(marcherAppearance[1]),
-                )
-                .map((marcherAppearance) => parseInt(marcherAppearance[0])),
+        if (appearanceTimelineResult == null || selectedPage == null)
+            return new Set();
+
+        const timeMs = (selectedPage.timestamp + selectedPage.duration) * 1000;
+        const appearances = getAllAppearancesAtTime(
+            appearanceTimelineResult.appearanceTimelines,
+            timeMs,
         );
+
+        const hiddenMarcherIds = new Set<number>();
+        appearanceTimelineResult.marcherIds.forEach((marcherId, index) => {
+            if (!appearances[index].visible) hiddenMarcherIds.add(marcherId);
+        });
         return hiddenMarcherIds;
-    }, [marcherAppearances]);
+    }, [appearanceTimelineResult, selectedPage]);
 
     // Update the selected marcher if the marchers list changes. This refreshes the information of the selected marcher
     useEffect(() => {

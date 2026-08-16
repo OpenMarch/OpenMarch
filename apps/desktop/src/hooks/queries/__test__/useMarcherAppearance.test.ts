@@ -92,7 +92,7 @@ describe("_toMarcherAppearanceTimeline", () => {
             fieldTheme,
         );
 
-        expect(timeline.timestamps).toEqual([0]);
+        expect(timeline.timestamps).toEqual(new Float32Array([0]));
         expect(timeline.appearances).toHaveLength(1);
         expect(timeline.appearances[0].fillRgba).toBe(
             rgbaToSchemaString(fieldTheme.defaultMarcher.fill),
@@ -236,7 +236,7 @@ describe("_toMarcherAppearanceTimeline", () => {
             fieldTheme,
         );
 
-        expect(timeline.timestamps).toEqual([0, 2000]);
+        expect(timeline.timestamps).toEqual(new Float32Array([0, 2000]));
         expect(
             timeline.appearances.map((appearance) => appearance.shape),
         ).toEqual(["triangle", "square"]);
@@ -260,7 +260,7 @@ describe("_toMarcherAppearanceTimeline", () => {
             fieldTheme,
         );
 
-        expect(timeline.timestamps).toEqual([0, 2000]);
+        expect(timeline.timestamps).toEqual(new Float32Array([0, 2000]));
         expect(timeline.appearances[0].shape).toBe("circle");
         expect(timeline.appearances[1].shape).toBe("cross");
     });
@@ -276,7 +276,7 @@ describe("_toMarcherAppearanceTimeline", () => {
             fieldTheme,
         );
 
-        expect(timeline.timestamps).toEqual([]);
+        expect(timeline.timestamps).toEqual(new Float32Array([]));
         expect(timeline.appearances).toEqual([]);
     });
 });

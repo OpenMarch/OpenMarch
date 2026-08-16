@@ -17,7 +17,6 @@ import {
 import { QueryClient, queryOptions } from "@tanstack/react-query";
 import { DEFAULT_STALE_TIME } from "../constants";
 import { db } from "@/global/database/db";
-import { marcherAppearancesKeys } from "..";
 
 const KEY_BASE = "tags";
 const TAG_APPEARANCES_KEY = "tag_appearances";
@@ -39,6 +38,9 @@ export const tagKeys = {
     allMarcherTags: () => [MARCHER_TAGS_KEY] as const,
 };
 
+// Appearance invalidation for tag/marcher-tag/tag-appearance mutations is handled
+// precisely by each mutation in `tags/mutations.ts` (see `invalidateAppearanceForMarchers`
+// / `invalidateAllAppearances`), not here.
 export const invalidateTagQueries = (qc: QueryClient) => {
     void Promise.all([
         qc.invalidateQueries({ queryKey: [KEY_BASE] }),
@@ -48,11 +50,7 @@ export const invalidateTagQueries = (qc: QueryClient) => {
         qc.invalidateQueries({
             queryKey: [TAG_APPEARANCES_KEY],
         }),
-    ]).then(() => {
-        void qc.invalidateQueries({
-            queryKey: marcherAppearancesKeys.all(),
-        });
-    });
+    ]);
 };
 
 export const invalidateTagQueriesByPage = (qc: QueryClient, pageId: number) => {
