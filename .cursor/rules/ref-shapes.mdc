@@ -1,0 +1,131 @@
+---
+description: When working with shapes, formations, shape pages, SVG paths, editable paths, or the shape editor
+alwaysApply: false
+---
+
+# Shapes & Formations Reference
+
+## Overview
+
+Shapes represent formation outlines that marchers can be assigned to. A shape exists across pages via `shape_pages` (each with its own SVG path), and marchers are placed along shapes via `shape_page_marchers`. Shapes are rendered on the canvas as `MarcherShape` objects and can be edited with control points.
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| **Domain Classes** | |
+| `src/global/classes/canvasObjects/MarcherShape.ts` | Shape rendering on canvas |
+| `src/global/classes/canvasObjects/ShapePath.ts` | SVG path for shape outline |
+| `src/global/classes/canvasObjects/ShapePoint.ts` | Point along a shape |
+| `src/global/classes/canvasObjects/ShapePointController.ts` | Control point handles |
+| `src/global/classes/canvasObjects/StaticMarcherShape.ts` | Non-editable shape rendering |
+| `src/global/classes/canvasObjects/SvgCommand.ts` | SVG command parsing |
+| `src/global/classes/canvasObjects/EditablePath.ts` | Editable path with control points |
+| **Database** | |
+| `src/db-functions/shapes.ts` | Shape CRUD |
+| `src/db-functions/shapePages.ts` | ShapePage CRUD |
+| `src/db-functions/shapePageMarchers.ts` | ShapePageMarcher CRUD |
+| `src/hooks/queries/useShapePages.ts` | React Query hooks |
+| **UI** | |
+| `src/components/inspector/ShapeEditor.tsx` | Shape editing panel |
+| `src/components/inspector/ShapeSelector.tsx` | Shape selection dropdown |
+| `src/components/canvas/hooks/editablePath.tsx` | Editable path React hook |
+| `src/components/canvas/hooks/shapes.ts` | Shape rendering hook |
+| **Store** | |
+| `src/stores/SelectionStore.ts` | Selected shape page IDs |
+
+## Data Model
+
+### Shapes Table
+```typescript
+{
+    id: number;
+    name: string;           // Display name
+    created_at: string;
+    updated_at: string;
+}
+```
+
+### Shape Pages Table
+```typescript
+{
+    id: number;
+    shape_id: number;       // FK to shapes
+    page_id: number;        // FK to pages
+    svg_path: string;       // SVG path data (e.g., "M 0 0 L 100 0 L 100 100")
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
+}
+```
+
+### Shape Page Marchers Table
+```typescript
+{
+    id: number;
+    shape_page_id: number;  // FK to shape_pages
+    marcher_id: number;     // FK to marchers
+    position_order: number; // Order along the shape path
+    created_at: string;
+    updated_at: string;
+}
+```
+
+## SVG Path System
+
+Shapes use SVG path commands to define their outline:
+
+```typescript
+// src/global/classes/canvasObjects/SvgCommand.ts
+// Supported SVG commands:
+// M x y        - Move to
+// L x y        - Line to
+// C x1 y1 x2 y2 x y  - Cubic bezier
+// Q x1 y1 x y - Quadratic bezier
+// Z            - Close path
+```
+
+`ShapePath` parses the SVG string into `SvgCommand` objects for rendering and manipulation.
+
+## Canvas Objects
+
+### MarcherShape
+The main canvas representation of a shape:
+- Renders the SVG path outline
+- Places `ShapePoint` markers where marchers are positioned along the path
+- `ShapePointController` handles provide drag controls for editing
+- Connected to `EditablePath` for interactive editing
+
+### EditablePath
+Interactive path editing system:
+- `ControlPoint` - Bezier curve control handles
+- Users can add/remove/move control points
+- Changes update the `svg_path` in the database
+
+### StaticMarcherShape
+Read-only rendering of shapes (used during animation/playback).
+
+## Shape Editing Flow
+
+1. User selects a shape via `ShapeSelector` in Inspector
+2. `ShapeEditor` shows shape properties and marcher assignments
+3. On canvas, shape becomes editable with `EditablePath`
+4. User drags control points → updates SVG path
+5. On save, `svg_path` is updated in `shape_pages` table
+6. Marchers snap to positions along the updated path
+
+## Integration Points
+
+- **Marchers**: Marchers are assigned to shapes via `shape_page_marchers`. Their positions are calculated along the SVG path based on `position_order`.
+- **Pages**: Each shape can have different paths on different pages (via `shape_pages`).
+- **Canvas**: Shapes are rendered after marchers in the pipeline. Selected shapes tracked in `SelectionStore`.
+- **Inspector**: `ShapeEditor` and `ShapeSelector` provide the editing UI.
+- **Undo/redo**: `shapes`, `shape_pages`, and `shape_page_marchers` are all tracked by history triggers.
+
+## Gotchas
+
+- A shape must have a `shape_pages` entry for a page to be visible on that page.
+- Marcher positions on shapes are relative to the SVG path, not absolute coordinates.
+- The `position_order` in `shape_page_marchers` determines spacing along the path.
+- Editing a shape path recalculates all marcher positions along it.
+- SVG path parsing is custom (not a browser SVG renderer) - see `SvgCommand.ts`.
