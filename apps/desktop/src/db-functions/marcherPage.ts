@@ -3,6 +3,7 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
+import { withTransactionLock } from "./transactionLock";
 import { assert } from "@/utilities/utils";
 import {
     DatabaseShapePageMarcher,
@@ -467,3 +468,58 @@ export const marcherPagesByMarcherId = async ({
         .where(eq(schema.marcher_pages.marcher_id, marcherId));
     return marcherPagesResponse;
 };
+
+/**
+ * Atomically update marcher pages and prop geometry in a single transaction.
+ * This prevents partial state if one operation fails.
+ */
+export async function updateMarcherPagesAndGeometry({
+    db,
+    modifiedMarcherPages,
+    modifiedGeometries,
+}: {
+    db: DbConnection;
+    modifiedMarcherPages: ModifiedMarcherPageArgs[];
+    modifiedGeometries: {
+        id: number;
+        width?: number;
+        height?: number;
+        rotation?: number;
+    }[];
+}): Promise<void> {
+    if (modifiedMarcherPages.length === 0 && modifiedGeometries.length === 0)
+        return;
+
+    if (modifiedMarcherPages.length === 0) {
+        await withTransactionLock(async () => {
+            await db.transaction(async (tx) => {
+                for (const mod of modifiedGeometries) {
+                    const { id, ...data } = mod;
+                    await tx
+                        .update(schema.prop_page_geometry)
+                        .set(data)
+                        .where(eq(schema.prop_page_geometry.id, id));
+                }
+            });
+        });
+        return;
+    }
+
+    await transactionWithHistory(
+        db,
+        "updateMarcherPagesAndGeometry",
+        async (tx) => {
+            await updateMarcherPagesInTransaction({
+                tx,
+                modifiedMarcherPages,
+            });
+            for (const mod of modifiedGeometries) {
+                const { id, ...data } = mod;
+                await tx
+                    .update(schema.prop_page_geometry)
+                    .set(data)
+                    .where(eq(schema.prop_page_geometry.id, id));
+            }
+        },
+    );
+}
