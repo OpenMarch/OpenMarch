@@ -286,8 +286,10 @@ export default class LineListeners
         }
     }
 
-    handleObjectModified(fabricEvent: fabric.IEvent<MouseEvent>): void {
-        super.handleObjectModified(fabricEvent);
+    async handleObjectModified(
+        fabricEvent: fabric.IEvent<MouseEvent>,
+    ): Promise<void> {
+        await super.handleObjectModified(fabricEvent);
         this.drawNewMarcherPaths();
     }
 
