@@ -2,7 +2,7 @@ import { useRef, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
-import type { SurfaceType, ShapeType } from "@/global/classes/Prop";
+import type { SurfaceType, OutlineType } from "@/global/classes/Prop";
 import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import {
     allPropsQueryOptions,
@@ -15,8 +15,8 @@ const PASTE_OFFSET = 30;
 const clipboardEntryShape = {
     name: "",
     surface_type: "",
-    shape_type: "",
-    custom_geometry: null as string | null,
+    outline_type: "",
+    custom_outline: null as string | null,
     width: 0,
     height: 0,
     x: 0,
@@ -41,8 +41,8 @@ export function usePropClipboard({
             surface_type: SurfaceType;
             width: number;
             height: number;
-            shape_type: ShapeType;
-            custom_geometry?: string;
+            outline_type: OutlineType;
+            custom_outline?: string;
             initial_x: number;
             initial_y: number;
         }[],
@@ -100,8 +100,8 @@ export function usePropClipboard({
                             name:
                                 prop.marcher.name ?? prop.marcher.drill_prefix,
                             surface_type: prop.surface_type,
-                            shape_type: geom.shape_type,
-                            custom_geometry: geom.custom_geometry,
+                            outline_type: geom.outline_type,
+                            custom_outline: geom.custom_outline,
                             width: geom.width,
                             height: geom.height,
                             x: mp.x,
@@ -127,8 +127,8 @@ export function usePropClipboard({
                         surface_type: data.surface_type as SurfaceType,
                         width: data.width,
                         height: data.height,
-                        shape_type: data.shape_type as ShapeType,
-                        custom_geometry: data.custom_geometry ?? undefined,
+                        outline_type: data.outline_type as OutlineType,
+                        custom_outline: data.custom_outline ?? undefined,
                         initial_x: data.x + PASTE_OFFSET,
                         initial_y: data.y + PASTE_OFFSET,
                     })),

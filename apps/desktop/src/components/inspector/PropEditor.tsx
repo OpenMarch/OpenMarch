@@ -116,9 +116,9 @@ export default function PropEditor() {
                     <Row
                         label={t("inspector.prop.shape")}
                         value={
-                            SHAPE_KEYS[geometry.shape_type]
-                                ? t(SHAPE_KEYS[geometry.shape_type])
-                                : geometry.shape_type
+                            SHAPE_KEYS[geometry.outline_type]
+                                ? t(SHAPE_KEYS[geometry.outline_type])
+                                : geometry.outline_type
                         }
                     />
                     <Row

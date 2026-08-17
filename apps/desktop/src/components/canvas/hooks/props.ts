@@ -63,7 +63,7 @@ function buildPropStructureKey({
             .filter((g) => currentPageMpIds.has(g.marcher_page_id))
             .map(
                 (g) =>
-                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}`,
+                    `${g.id}:${g.width}:${g.height}:${g.outline_type}:${g.rotation}`,
             ),
         opacities: props.map((p) => p.image_opacity),
         imgVer: imageCacheVersion,

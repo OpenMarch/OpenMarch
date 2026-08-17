@@ -137,11 +137,11 @@ const makeGeometry = (
     ({
         id: marcher_page_id * 100,
         marcher_page_id,
-        shape_type: "rectangle",
+        outline_type: "rectangle",
         width,
         height,
         rotation: 0,
-        custom_geometry: null,
+        custom_outline: null,
     }) as unknown as DatabasePropPageGeometry;
 
 /** Two pages: page 1 (from, mp id 100) -> page 2 (to, mp id 200). */

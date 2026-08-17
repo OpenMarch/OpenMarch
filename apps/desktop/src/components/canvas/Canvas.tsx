@@ -22,7 +22,7 @@ import DefaultListeners from "./listeners/DefaultListeners";
 import { useAlignmentEventStore } from "@/stores/AlignmentEventStore";
 import LineListeners from "./listeners/LineListeners";
 import PropDrawingListeners, {
-    PropGeometry,
+    DrawnShape,
 } from "./listeners/PropDrawingListeners";
 import { usePropDrawingStore } from "@/stores/PropDrawingStore";
 
@@ -304,7 +304,7 @@ export default function Canvas({
 
     // Handle prop drawing completion
     const handlePropDrawingComplete = useCallback(
-        (geometry: PropGeometry) => {
+        (geometry: DrawnShape) => {
             const widthFeet = pixelsToFeetLocal(geometry.widthPixels);
             const heightFeet = pixelsToFeetLocal(geometry.heightPixels);
 
@@ -320,12 +320,12 @@ export default function Canvas({
 
             createPropsMutate([
                 {
-                    name: `New ${geometry.shapeType}`,
+                    name: `New ${geometry.outlineType}`,
                     surface_type: "obstacle",
                     width: Math.max(widthFeet, 1),
                     height: Math.max(heightFeet, 1),
-                    shape_type: geometry.shapeType,
-                    custom_geometry: customGeometry,
+                    outline_type: geometry.outlineType,
+                    custom_outline: customGeometry,
                     initial_x: geometry.centerX,
                     initial_y: geometry.centerY,
                 },

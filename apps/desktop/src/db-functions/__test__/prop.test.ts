@@ -23,19 +23,19 @@ describe("buildPropPageGeometriesFromPrevious", () => {
         expect(result).toHaveLength(2);
         expect(result[0]).toEqual({
             marcher_page_id: 10,
-            shape_type: "rectangle",
+            outline_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
             rotation: 0,
-            custom_geometry: null,
+            custom_outline: null,
         });
         expect(result[1]).toEqual({
             marcher_page_id: 11,
-            shape_type: "rectangle",
+            outline_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
             rotation: 0,
-            custom_geometry: null,
+            custom_outline: null,
         });
     });
 
@@ -43,19 +43,19 @@ describe("buildPropPageGeometriesFromPrevious", () => {
         const prev = new Map<
             number,
             {
-                shape_type: string;
+                outline_type: string;
                 width: number;
                 height: number;
                 rotation: number;
-                custom_geometry: string | null;
+                custom_outline: string | null;
             }
         >();
         prev.set(1, {
-            shape_type: "circle",
+            outline_type: "circle",
             width: 20,
             height: 20,
             rotation: 45,
-            custom_geometry: null,
+            custom_outline: null,
         });
         const result = buildPropPageGeometriesFromPrevious({
             previousGeometryByMarcherId: prev,
@@ -66,23 +66,23 @@ describe("buildPropPageGeometriesFromPrevious", () => {
         });
         expect(result[0]).toEqual({
             marcher_page_id: 10,
-            shape_type: "circle",
+            outline_type: "circle",
             width: 20,
             height: 20,
             rotation: 45,
-            custom_geometry: null,
+            custom_outline: null,
         });
         expect(result[1]).toEqual({
             marcher_page_id: 11,
-            shape_type: "rectangle",
+            outline_type: "rectangle",
             width: DEFAULT_PROP_WIDTH,
             height: DEFAULT_PROP_HEIGHT,
             rotation: 0,
-            custom_geometry: null,
+            custom_outline: null,
         });
     });
 
-    it("preserves custom_geometry and shape_type for custom-shaped props", () => {
+    it("preserves custom_outline and outline_type for custom-shaped props", () => {
         const customGeometry = JSON.stringify([
             { x: 0, y: 0 },
             { x: 10, y: 0 },
@@ -91,19 +91,19 @@ describe("buildPropPageGeometriesFromPrevious", () => {
         const prev = new Map<
             number,
             {
-                shape_type: string;
+                outline_type: string;
                 width: number;
                 height: number;
                 rotation: number;
-                custom_geometry: string | null;
+                custom_outline: string | null;
             }
         >();
         prev.set(1, {
-            shape_type: "polygon",
+            outline_type: "polygon",
             width: 30,
             height: 25,
             rotation: 0,
-            custom_geometry: customGeometry,
+            custom_outline: customGeometry,
         });
         const result = buildPropPageGeometriesFromPrevious({
             previousGeometryByMarcherId: prev,
@@ -111,11 +111,11 @@ describe("buildPropPageGeometriesFromPrevious", () => {
         });
         expect(result[0]).toEqual({
             marcher_page_id: 10,
-            shape_type: "polygon",
+            outline_type: "polygon",
             width: 30,
             height: 25,
             rotation: 0,
-            custom_geometry: customGeometry,
+            custom_outline: customGeometry,
         });
     });
 

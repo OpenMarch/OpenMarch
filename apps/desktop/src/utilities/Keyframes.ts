@@ -2,7 +2,7 @@ import { IPath } from "@openmarch/core";
 
 type Coordinate = { x: number; y: number };
 
-export type InterpolatedGeometry = {
+export type PropTransform = {
     /** Feet */
     width: number;
     /** Feet */
@@ -17,7 +17,7 @@ export type CoordinateDefinition = {
     path?: IPath;
     previousPathPosition?: number;
     nextPathPosition?: number;
-    geometry?: InterpolatedGeometry;
+    geometry?: PropTransform;
 };
 
 /**
@@ -42,10 +42,10 @@ const normalizeAngle = (angle: number): number => ((angle % 360) + 360) % 360;
  * and is normalized to [0, 360).
  */
 export function lerpGeometry(
-    from: InterpolatedGeometry,
-    to: InterpolatedGeometry,
+    from: PropTransform,
+    to: PropTransform,
     t: number,
-): InterpolatedGeometry {
+): PropTransform {
     const rotationDelta = ((to.rotation - from.rotation + 540) % 360) - 180;
     return {
         width: from.width + (to.width - from.width) * t,
@@ -64,7 +64,7 @@ export function lerpGeometry(
 export const getCoordinatesAtTime = (
     timestampMilliseconds: number,
     marcherTimeline: MarcherTimeline,
-): (Coordinate & { geometry?: InterpolatedGeometry }) | null => {
+): (Coordinate & { geometry?: PropTransform }) | null => {
     if (timestampMilliseconds < 0)
         throw new Error(
             `Cannot use negative timestamp: ${timestampMilliseconds}`,
@@ -135,7 +135,7 @@ export const getCoordinatesAtTime = (
         };
     }
 
-    const result: Coordinate & { geometry?: InterpolatedGeometry } =
+    const result: Coordinate & { geometry?: PropTransform } =
         interpolatedCoordinate;
     if (previousCoordinate.geometry && nextCoordinate.geometry) {
         result.geometry = lerpGeometry(

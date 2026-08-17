@@ -141,6 +141,13 @@
             "when": 1786933454443,
             "tag": "0019_petite_madame_web",
             "breakpoints": true
+        },
+        {
+            "idx": 20,
+            "version": "6",
+            "when": 1786933455443,
+            "tag": "0020_prop_outline_rename",
+            "breakpoints": true
         }
     ]
 }

@@ -5,8 +5,11 @@ import { DatabaseProp, DatabasePropPageGeometry } from "../Prop";
 import { dbMarcherToMarcher } from "../Marcher";
 import { schema } from "@/global/database/db";
 import CanvasMarcher from "./CanvasMarcher";
-import { createPropFabricShape, type CustomGeometryData } from "./propShapes";
-import type { InterpolatedGeometry } from "@/utilities/Keyframes";
+import {
+    createPropOutlineObject,
+    type CustomOutlineData,
+} from "./propOutlines";
+import type { PropTransform } from "@/utilities/Keyframes";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 type Point = { x: number; y: number };
@@ -90,8 +93,8 @@ export default class CanvasProp extends CanvasMarcher {
 
         // Create the prop shape
         const shapeObject = CanvasProp.createPropShape({
-            shapeType: geometry.shape_type,
-            customGeometry: geometry.custom_geometry,
+            outlineType: geometry.outline_type,
+            customGeometry: geometry.custom_outline,
             widthPixels,
             heightPixels,
             fillColor,
@@ -125,8 +128,8 @@ export default class CanvasProp extends CanvasMarcher {
         // group to (0,0), then recalculate bounds — producing a bounding box
         // that spans from (0,0) to the coordinate position.
         const isSimpleShape =
-            geometry.shape_type === "rectangle" ||
-            geometry.shape_type === "circle";
+            geometry.outline_type === "rectangle" ||
+            geometry.outline_type === "circle";
         if (isSimpleShape) {
             const line1 = new fabric.Line(
                 [-CENTER_X_SIZE, -CENTER_X_SIZE, CENTER_X_SIZE, CENTER_X_SIZE],
@@ -187,16 +190,16 @@ export default class CanvasProp extends CanvasMarcher {
         }
     }
 
-    /** Creates the appropriate fabric shape based on shape_type */
+    /** Creates the appropriate fabric shape based on outline_type */
     private static createPropShape({
-        shapeType,
+        outlineType,
         customGeometry,
         widthPixels,
         heightPixels,
         fillColor,
         outlineColor,
     }: {
-        shapeType: string;
+        outlineType: string;
         customGeometry: string | null;
         widthPixels: number;
         heightPixels: number;
@@ -215,16 +218,16 @@ export default class CanvasProp extends CanvasMarcher {
         };
 
         // Parse custom geometry if available
-        let customData: CustomGeometryData | null = null;
+        let customData: CustomOutlineData | null = null;
         if (customGeometry) {
             try {
-                customData = JSON.parse(customGeometry) as CustomGeometryData;
+                customData = JSON.parse(customGeometry) as CustomOutlineData;
             } catch {
                 // Invalid JSON, fall back to rectangle
             }
         }
 
-        return createPropFabricShape(shapeType, {
+        return createPropOutlineObject(outlineType, {
             customData,
             widthPixels,
             heightPixels,
@@ -328,7 +331,7 @@ export default class CanvasProp extends CanvasMarcher {
     setLiveCoordinates(coords: {
         x: number;
         y: number;
-        geometry?: InterpolatedGeometry;
+        geometry?: PropTransform;
     }) {
         super.setLiveCoordinates(coords);
         if (coords.geometry) {
@@ -351,7 +354,7 @@ export default class CanvasProp extends CanvasMarcher {
  */
 export function computePropLiveTransform(
     base: { width: number; height: number },
-    target: InterpolatedGeometry,
+    target: PropTransform,
 ): { scaleX: number; scaleY: number; angle: number } {
     return {
         scaleX: base.width > 0 ? target.width / base.width : 1,

@@ -17,12 +17,12 @@ const makeGeometry = (marcher_page_id: number): DatabasePropPageGeometry =>
     ({
         id: marcher_page_id * 100,
         marcher_page_id,
-        shape_type: "rectangle",
+        outline_type: "rectangle",
         width: 15,
         height: 15,
         rotation: 0,
         visible: true,
-        custom_geometry: null,
+        custom_outline: null,
     }) as unknown as DatabasePropPageGeometry;
 
 describe("resolvePropsForPage", () => {

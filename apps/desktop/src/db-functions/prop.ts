@@ -11,7 +11,7 @@ import {
     DEFAULT_PROP_HEIGHT,
     PROP_MARCHER_TYPE,
     SurfaceType,
-    ShapeType,
+    OutlineType,
 } from "@/global/classes/Prop";
 
 export interface NewPropArgs {
@@ -20,8 +20,8 @@ export interface NewPropArgs {
     width?: number;
     height?: number;
     notes?: string | null;
-    shape_type?: ShapeType;
-    custom_geometry?: string;
+    outline_type?: OutlineType;
+    custom_outline?: string;
     initial_x?: number;
     initial_y?: number;
 }
@@ -40,8 +40,8 @@ export interface ModifiedPropPageGeometryArgs {
     width?: number;
     height?: number;
     rotation?: number;
-    shape_type?: ShapeType;
-    custom_geometry?: string | null;
+    outline_type?: OutlineType;
+    custom_outline?: string | null;
 }
 
 /** Propagation mode for geometry updates */
@@ -50,17 +50,17 @@ export type GeometryPropagation = "current" | "forward" | "all";
 /** Geometry fields copied from a previous page when creating a new page */
 export type PropPageGeometrySource = Pick<
     DatabasePropPageGeometry,
-    "shape_type" | "width" | "height" | "rotation" | "custom_geometry"
+    "outline_type" | "width" | "height" | "rotation" | "custom_outline"
 >;
 
 /** Row shape for inserting prop_page_geometry (no id, no timestamps) */
 export type NewPropPageGeometryRow = {
     marcher_page_id: number;
-    shape_type: string;
+    outline_type: string;
     width: number;
     height: number;
     rotation: number;
-    custom_geometry: string | null;
+    custom_outline: string | null;
 };
 
 /**
@@ -83,19 +83,19 @@ export function buildPropPageGeometriesFromPrevious({
         return prev
             ? {
                   marcher_page_id: mp.id,
-                  shape_type: prev.shape_type,
+                  outline_type: prev.outline_type,
                   width: prev.width,
                   height: prev.height,
                   rotation: prev.rotation,
-                  custom_geometry: prev.custom_geometry,
+                  custom_outline: prev.custom_outline,
               }
             : {
                   marcher_page_id: mp.id,
-                  shape_type: "rectangle",
+                  outline_type: "rectangle",
                   width: defaultWidth,
                   height: defaultHeight,
                   rotation: 0,
-                  custom_geometry: null,
+                  custom_outline: null,
               };
     });
 }
@@ -211,11 +211,11 @@ async function createPropsInTransaction({
         const propArgs = newProps[propIndex];
         return {
             marcher_page_id: mp.id,
-            shape_type: propArgs?.shape_type ?? "rectangle",
+            outline_type: propArgs?.outline_type ?? "rectangle",
             width: propArgs?.width ?? DEFAULT_PROP_WIDTH,
             height: propArgs?.height ?? DEFAULT_PROP_HEIGHT,
             rotation: 0,
-            custom_geometry: propArgs?.custom_geometry ?? null,
+            custom_outline: propArgs?.custom_outline ?? null,
         };
     });
 

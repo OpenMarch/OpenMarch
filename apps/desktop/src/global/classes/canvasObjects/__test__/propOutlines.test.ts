@@ -1,33 +1,33 @@
 import { describe, expect, it } from "vitest";
 import { fabric } from "fabric";
 import {
-    PROP_SHAPES,
-    createPropFabricShape,
+    PROP_OUTLINES,
+    createPropOutlineObject,
     type CreateShapeParams,
-} from "../propShapes";
+} from "../propOutlines";
 
 const baseProps: CreateShapeParams["baseProps"] = {
     fill: "#fff",
     stroke: "#000",
 };
 
-describe("PROP_SHAPES interaction metadata", () => {
+describe("PROP_OUTLINES interaction metadata", () => {
     it("classifies each shape by interaction style", () => {
-        expect(PROP_SHAPES.rectangle.interaction).toBe("drag");
-        expect(PROP_SHAPES.circle.interaction).toBe("drag");
-        expect(PROP_SHAPES.polygon.interaction).toBe("click");
-        expect(PROP_SHAPES.arc.interaction).toBe("click");
-        expect(PROP_SHAPES.freehand.interaction).toBe("freehand");
+        expect(PROP_OUTLINES.rectangle.interaction).toBe("drag");
+        expect(PROP_OUTLINES.circle.interaction).toBe("drag");
+        expect(PROP_OUTLINES.polygon.interaction).toBe("click");
+        expect(PROP_OUTLINES.arc.interaction).toBe("click");
+        expect(PROP_OUTLINES.freehand.interaction).toBe("freehand");
         // polygon finishes on double-click; arc auto-completes at 3 points
-        expect(PROP_SHAPES.polygon.completeOnDoubleClick).toBe(true);
-        expect(PROP_SHAPES.polygon.minPoints).toBe(3);
-        expect(PROP_SHAPES.arc.maxPoints).toBe(3);
+        expect(PROP_OUTLINES.polygon.completeOnDoubleClick).toBe(true);
+        expect(PROP_OUTLINES.polygon.minPoints).toBe(3);
+        expect(PROP_OUTLINES.arc.maxPoints).toBe(3);
     });
 });
 
 describe("createFabricShape", () => {
     it("rectangle → fabric.Rect sized from width/height", () => {
-        const shape = PROP_SHAPES.rectangle.createFabricShape({
+        const shape = PROP_OUTLINES.rectangle.createFabricShape({
             customData: null,
             widthPixels: 40,
             heightPixels: 20,
@@ -38,7 +38,7 @@ describe("createFabricShape", () => {
     });
 
     it("circle → fabric.Ellipse with rx/ry = half width/height", () => {
-        const shape = PROP_SHAPES.circle.createFabricShape({
+        const shape = PROP_OUTLINES.circle.createFabricShape({
             customData: null,
             widthPixels: 40,
             heightPixels: 30,
@@ -49,7 +49,7 @@ describe("createFabricShape", () => {
     });
 
     it("polygon with valid custom points → fabric.Polygon", () => {
-        const shape = PROP_SHAPES.polygon.createFabricShape({
+        const shape = PROP_OUTLINES.polygon.createFabricShape({
             customData: {
                 points: [
                     { x: 0, y: 0 },
@@ -68,7 +68,7 @@ describe("createFabricShape", () => {
     });
 
     it("polygon with too few points → null (caller falls back to rect)", () => {
-        const shape = PROP_SHAPES.polygon.createFabricShape({
+        const shape = PROP_OUTLINES.polygon.createFabricShape({
             customData: { points: [{ x: 0, y: 0 }] },
             widthPixels: 10,
             heightPixels: 10,
@@ -78,7 +78,7 @@ describe("createFabricShape", () => {
     });
 
     it("arc with 3 custom points → fabric.Path", () => {
-        const shape = PROP_SHAPES.arc.createFabricShape({
+        const shape = PROP_OUTLINES.arc.createFabricShape({
             customData: {
                 points: [
                     { x: 0, y: 0 },
@@ -101,13 +101,13 @@ describe("createFabricShape", () => {
             { x: 10, y: 0 },
             { x: 10, y: 10 },
         ];
-        const closed = PROP_SHAPES.freehand.createFabricShape({
+        const closed = PROP_OUTLINES.freehand.createFabricShape({
             customData: { points, originalWidth: 10, originalHeight: 10 },
             widthPixels: 10,
             heightPixels: 10,
             baseProps,
         }) as fabric.Path;
-        const open = PROP_SHAPES.freehand.createFabricShape({
+        const open = PROP_OUTLINES.freehand.createFabricShape({
             customData: {
                 points,
                 originalWidth: 10,
@@ -125,8 +125,8 @@ describe("createFabricShape", () => {
         expect(String(lastOpen[0]).toLowerCase()).not.toBe("z");
     });
 
-    it("createPropFabricShape falls back to rectangle for unknown shape", () => {
-        const shape = createPropFabricShape("nonsense", {
+    it("createPropOutlineObject falls back to rectangle for unknown shape", () => {
+        const shape = createPropOutlineObject("nonsense", {
             customData: null,
             widthPixels: 12,
             heightPixels: 8,
@@ -136,8 +136,8 @@ describe("createFabricShape", () => {
         expect(shape).toMatchObject({ width: 12, height: 8 });
     });
 
-    it("createPropFabricShape falls back to rectangle when custom geometry invalid", () => {
-        const shape = createPropFabricShape("polygon", {
+    it("createPropOutlineObject falls back to rectangle when custom geometry invalid", () => {
+        const shape = createPropOutlineObject("polygon", {
             customData: null,
             widthPixels: 12,
             heightPixels: 8,
@@ -149,7 +149,7 @@ describe("createFabricShape", () => {
 
 describe("finalize", () => {
     it("rectangle: rejects sub-10px drags", () => {
-        const geom = PROP_SHAPES.rectangle.finalize({
+        const geom = PROP_OUTLINES.rectangle.finalize({
             startPoint: { x: 0, y: 0 },
             points: [],
             endPoint: { x: 5, y: 100 },
@@ -158,13 +158,13 @@ describe("finalize", () => {
     });
 
     it("rectangle: builds centered bounding box", () => {
-        const geom = PROP_SHAPES.rectangle.finalize({
+        const geom = PROP_OUTLINES.rectangle.finalize({
             startPoint: { x: 100, y: 100 },
             points: [],
             endPoint: { x: 40, y: 60 },
         });
         expect(geom).toEqual({
-            shapeType: "rectangle",
+            outlineType: "rectangle",
             centerX: 70,
             centerY: 80,
             widthPixels: 60,
@@ -173,7 +173,7 @@ describe("finalize", () => {
     });
 
     it("circle: rejects sub-10px radius", () => {
-        const geom = PROP_SHAPES.circle.finalize({
+        const geom = PROP_OUTLINES.circle.finalize({
             startPoint: { x: 0, y: 0 },
             points: [],
             endPoint: { x: 3, y: 4 }, // radius 5
@@ -182,13 +182,13 @@ describe("finalize", () => {
     });
 
     it("circle: radius from center to endpoint, diameter = width/height", () => {
-        const geom = PROP_SHAPES.circle.finalize({
+        const geom = PROP_OUTLINES.circle.finalize({
             startPoint: { x: 0, y: 0 },
             points: [],
             endPoint: { x: 30, y: 40 }, // radius 50
         });
         expect(geom).toMatchObject({
-            shapeType: "circle",
+            outlineType: "circle",
             centerX: 0,
             centerY: 0,
             widthPixels: 100,
@@ -200,7 +200,7 @@ describe("finalize", () => {
 
     it("polygon: needs at least 3 points", () => {
         expect(
-            PROP_SHAPES.polygon.finalize({
+            PROP_OUTLINES.polygon.finalize({
                 startPoint: null,
                 points: [
                     { x: 0, y: 0 },
@@ -211,7 +211,7 @@ describe("finalize", () => {
     });
 
     it("polygon: preserves points and computes bounding box", () => {
-        const geom = PROP_SHAPES.polygon.finalize({
+        const geom = PROP_OUTLINES.polygon.finalize({
             startPoint: null,
             points: [
                 { x: 0, y: 0 },
@@ -220,7 +220,7 @@ describe("finalize", () => {
             ],
         });
         expect(geom).toMatchObject({
-            shapeType: "polygon",
+            outlineType: "polygon",
             centerX: 5,
             centerY: 4,
             widthPixels: 10,
@@ -231,10 +231,10 @@ describe("finalize", () => {
 
     it("arc: requires exactly 3 points and reorders control point last", () => {
         expect(
-            PROP_SHAPES.arc.finalize({ startPoint: null, points: [] }),
+            PROP_OUTLINES.arc.finalize({ startPoint: null, points: [] }),
         ).toBeNull();
         // click order: endpoint1, endpoint2, control
-        const geom = PROP_SHAPES.arc.finalize({
+        const geom = PROP_OUTLINES.arc.finalize({
             startPoint: null,
             points: [
                 { x: 0, y: 0 }, // endpoint1
@@ -252,7 +252,7 @@ describe("finalize", () => {
 
     it("freehand: needs 3+ points and simplifies", () => {
         expect(
-            PROP_SHAPES.freehand.finalize({
+            PROP_OUTLINES.freehand.finalize({
                 startPoint: null,
                 points: [
                     { x: 0, y: 0 },
@@ -261,7 +261,7 @@ describe("finalize", () => {
             }),
         ).toBeNull();
         // Collinear points collapse to endpoints after simplification.
-        const geom = PROP_SHAPES.freehand.finalize({
+        const geom = PROP_OUTLINES.freehand.finalize({
             startPoint: null,
             points: [
                 { x: 0, y: 0 },
@@ -269,7 +269,7 @@ describe("finalize", () => {
                 { x: 10, y: 0 },
             ],
         });
-        expect(geom!.shapeType).toBe("freehand");
+        expect(geom!.outlineType).toBe("freehand");
         expect(geom!.points).toEqual([
             { x: 0, y: 0 },
             { x: 10, y: 0 },
@@ -279,7 +279,7 @@ describe("finalize", () => {
 
 describe("createPreview", () => {
     it("rectangle preview anchors at the min corner", () => {
-        const preview = PROP_SHAPES.rectangle.createPreview({
+        const preview = PROP_OUTLINES.rectangle.createPreview({
             startPoint: { x: 100, y: 100 },
             points: [],
             currentPoint: { x: 40, y: 60 },
@@ -295,7 +295,7 @@ describe("createPreview", () => {
 
     it("rectangle preview null without a start point", () => {
         expect(
-            PROP_SHAPES.rectangle.createPreview({
+            PROP_OUTLINES.rectangle.createPreview({
                 startPoint: null,
                 points: [],
                 currentPoint: { x: 0, y: 0 },
@@ -304,7 +304,7 @@ describe("createPreview", () => {
     });
 
     it("circle preview radius = distance to cursor", () => {
-        const preview = PROP_SHAPES.circle.createPreview({
+        const preview = PROP_OUTLINES.circle.createPreview({
             startPoint: { x: 0, y: 0 },
             points: [],
             currentPoint: { x: 3, y: 4 },
@@ -314,7 +314,7 @@ describe("createPreview", () => {
     });
 
     it("polygon preview includes the cursor point", () => {
-        const preview = PROP_SHAPES.polygon.createPreview({
+        const preview = PROP_OUTLINES.polygon.createPreview({
             startPoint: null,
             points: [
                 { x: 0, y: 0 },
@@ -327,12 +327,12 @@ describe("createPreview", () => {
     });
 
     it("arc preview: a line for the first segment, a curve after", () => {
-        const line = PROP_SHAPES.arc.createPreview({
+        const line = PROP_OUTLINES.arc.createPreview({
             startPoint: null,
             points: [{ x: 0, y: 0 }],
             currentPoint: { x: 10, y: 0 },
         });
-        const curve = PROP_SHAPES.arc.createPreview({
+        const curve = PROP_OUTLINES.arc.createPreview({
             startPoint: null,
             points: [
                 { x: 0, y: 0 },
@@ -351,7 +351,7 @@ describe("createPreview", () => {
 
     it("freehand preview null below 2 points", () => {
         expect(
-            PROP_SHAPES.freehand.createPreview({
+            PROP_OUTLINES.freehand.createPreview({
                 startPoint: null,
                 points: [{ x: 0, y: 0 }],
                 currentPoint: { x: 0, y: 0 },

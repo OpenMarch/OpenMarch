@@ -6,12 +6,12 @@ import CanvasProp from "../../../global/classes/canvasObjects/CanvasProp";
 import { PropDrawingMode } from "@/stores/PropDrawingStore";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import {
-    PROP_SHAPES,
-    type ShapeHandler,
-    type PropGeometry,
-} from "@/global/classes/canvasObjects/propShapes";
+    PROP_OUTLINES,
+    type OutlineHandler,
+    type DrawnShape,
+} from "@/global/classes/canvasObjects/propOutlines";
 
-export type { PropGeometry };
+export type { DrawnShape };
 
 const CURSOR_DOT_RADIUS = 4;
 const CURSOR_DOT_FILL = "rgba(128, 0, 255, 0.9)";
@@ -29,7 +29,7 @@ export default class PropDrawingListeners implements CanvasListeners {
     private points: { x: number; y: number }[] = [];
 
     // Callbacks
-    onComplete?: (geometry: PropGeometry) => void;
+    onComplete?: (geometry: DrawnShape) => void;
     onCancel?: () => void;
 
     constructor({
@@ -49,8 +49,8 @@ export default class PropDrawingListeners implements CanvasListeners {
     }
 
     /** The shape handler for the current drawing mode, or null when inactive. */
-    private get handler(): ShapeHandler | null {
-        return this.drawingMode ? PROP_SHAPES[this.drawingMode] : null;
+    private get handler(): OutlineHandler | null {
+        return this.drawingMode ? PROP_OUTLINES[this.drawingMode] : null;
     }
 
     /**

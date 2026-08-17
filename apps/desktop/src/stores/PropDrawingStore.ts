@@ -1,8 +1,8 @@
 import { create } from "zustand";
-import type { ShapeType } from "@/global/classes/Prop";
+import type { OutlineType } from "@/global/classes/Prop";
 
 /** The active prop-drawing shape, or null when not drawing. */
-export type PropDrawingMode = ShapeType | null;
+export type PropDrawingMode = OutlineType | null;
 
 type PropDrawingStore = {
     drawingMode: PropDrawingMode;

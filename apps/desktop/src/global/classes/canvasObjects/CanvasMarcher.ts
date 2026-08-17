@@ -15,7 +15,7 @@ import {
     AppearanceComponentOptional,
     appearanceIsHidden,
 } from "@/entity-components/appearance";
-import type { InterpolatedGeometry } from "@/utilities/Keyframes";
+import type { PropTransform } from "@/utilities/Keyframes";
 
 export const DEFAULT_DOT_RADIUS = 5;
 
@@ -790,7 +790,7 @@ export default class CanvasMarcher
     setLiveCoordinates(coords: {
         x: number;
         y: number;
-        geometry?: InterpolatedGeometry;
+        geometry?: PropTransform;
     }) {
         const newCanvasCoords = this.databaseCoordsToCanvasCoords(coords);
 

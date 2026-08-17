@@ -1,5 +1,5 @@
 import { fabric } from "fabric";
-import type { ShapeType } from "../Prop";
+import type { OutlineType } from "../Prop";
 
 /** A 2D point in canvas pixels. */
 export interface Pt {
@@ -7,8 +7,8 @@ export interface Pt {
     y: number;
 }
 
-/** Persisted custom-shape geometry (parsed from prop_page_geometry.custom_geometry). */
-export interface CustomGeometryData {
+/** Persisted custom-shape geometry (parsed from prop_page_geometry.custom_outline). */
+export interface CustomOutlineData {
     points?: Pt[];
     originalWidth?: number;
     originalHeight?: number;
@@ -17,8 +17,8 @@ export interface CustomGeometryData {
 }
 
 /** A finished prop shape produced by drawing, ready to persist. */
-export interface PropGeometry {
-    shapeType: ShapeType;
+export interface DrawnShape {
+    outlineType: OutlineType;
     centerX: number;
     centerY: number;
     widthPixels: number;
@@ -51,14 +51,14 @@ export interface FinalizeContext {
 
 /** Parameters for building the persisted fabric object from saved geometry. */
 export interface CreateShapeParams {
-    customData: CustomGeometryData | null;
+    customData: CustomOutlineData | null;
     widthPixels: number;
     heightPixels: number;
     baseProps: fabric.IObjectOptions;
 }
 
 /** Everything shape-specific about a prop shape, in one place. */
-export interface ShapeHandler {
+export interface OutlineHandler {
     interaction: ShapeInteraction;
     /** For click shapes: auto-complete once this many points are placed. */
     maxPoints?: number;
@@ -69,7 +69,7 @@ export interface ShapeHandler {
     /** Build the in-progress preview object, or null if not enough input yet. */
     createPreview(ctx: PreviewContext): fabric.Object | null;
     /** Turn accumulated input into a finished geometry, or null to cancel. */
-    finalize(ctx: FinalizeContext): PropGeometry | null;
+    finalize(ctx: FinalizeContext): DrawnShape | null;
     /** Build the persisted fabric object from saved geometry, or null to fall
      * back to a rectangle. */
     createFabricShape(params: CreateShapeParams): fabric.Object | null;
@@ -159,10 +159,13 @@ function simplifyPath(points: Pt[], epsilon: number): Pt[] {
 }
 
 /** Bounding-box geometry for a set of already-final points. */
-function geometryFromPoints(shapeType: ShapeType, points: Pt[]): PropGeometry {
+function geometryFromPoints(
+    outlineType: OutlineType,
+    points: Pt[],
+): DrawnShape {
     const { minX, maxX, minY, maxY } = bounds(points);
     return {
-        shapeType,
+        outlineType,
         centerX: (minX + maxX) / 2,
         centerY: (minY + maxY) / 2,
         widthPixels: maxX - minX,
@@ -171,7 +174,7 @@ function geometryFromPoints(shapeType: ShapeType, points: Pt[]): PropGeometry {
     };
 }
 
-const rectangle: ShapeHandler = {
+const rectangle: OutlineHandler = {
     interaction: "drag",
     createPreview({ startPoint, currentPoint }) {
         if (!startPoint) return null;
@@ -195,7 +198,7 @@ const rectangle: ShapeHandler = {
             return null;
         }
         return {
-            shapeType: "rectangle",
+            outlineType: "rectangle",
             centerX: left + width / 2,
             centerY: top + height / 2,
             widthPixels: width,
@@ -211,7 +214,7 @@ const rectangle: ShapeHandler = {
     },
 };
 
-const circle: ShapeHandler = {
+const circle: OutlineHandler = {
     interaction: "drag",
     createPreview({ startPoint, currentPoint }) {
         if (!startPoint) return null;
@@ -237,7 +240,7 @@ const circle: ShapeHandler = {
         if (radius < MIN_DIMENSION_PIXELS) return null;
         const diameter = radius * 2;
         return {
-            shapeType: "circle",
+            outlineType: "circle",
             centerX: startPoint.x,
             centerY: startPoint.y,
             widthPixels: diameter,
@@ -255,7 +258,7 @@ const circle: ShapeHandler = {
     },
 };
 
-const polygon: ShapeHandler = {
+const polygon: OutlineHandler = {
     interaction: "click",
     minPoints: 3,
     completeOnDoubleClick: true,
@@ -289,7 +292,7 @@ const polygon: ShapeHandler = {
     },
 };
 
-const arc: ShapeHandler = {
+const arc: OutlineHandler = {
     interaction: "click",
     maxPoints: 3,
     createPreview({ points, currentPoint }) {
@@ -331,7 +334,7 @@ const arc: ShapeHandler = {
     },
 };
 
-const freehand: ShapeHandler = {
+const freehand: OutlineHandler = {
     interaction: "freehand",
     createPreview({ points }) {
         if (points.length < 2) return null;
@@ -375,7 +378,7 @@ const freehand: ShapeHandler = {
 };
 
 /** Single source of truth for per-shape drawing, preview, and rendering behavior. */
-export const PROP_SHAPES: Record<ShapeType, ShapeHandler> = {
+export const PROP_OUTLINES: Record<OutlineType, OutlineHandler> = {
     rectangle,
     circle,
     polygon,
@@ -387,11 +390,11 @@ export const PROP_SHAPES: Record<ShapeType, ShapeHandler> = {
  * Builds the persisted fabric object for a saved shape, falling back to a
  * rectangle when the shape is unknown or its custom geometry is missing/invalid.
  */
-export function createPropFabricShape(
-    shapeType: string,
+export function createPropOutlineObject(
+    outlineType: string,
     params: CreateShapeParams,
 ): fabric.Object {
-    const handler = PROP_SHAPES[shapeType as ShapeType];
+    const handler = PROP_OUTLINES[outlineType as OutlineType];
     return (
         handler?.createFabricShape(params) ??
         rectangle.createFabricShape(params)!

@@ -10,7 +10,12 @@ export type PropWithMarcher = DatabaseProp & {
 };
 
 export type SurfaceType = "floor" | "platform" | "obstacle";
-export type ShapeType = "rectangle" | "circle" | "arc" | "polygon" | "freehand";
+export type OutlineType =
+    | "rectangle"
+    | "circle"
+    | "arc"
+    | "polygon"
+    | "freehand";
 
 /**
  * Surface type is recorded and displayed, but carries no runtime behavior — nothing

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { getMarcherTimelines } from "../useCoordinateData";
-import type { InterpolatedGeometry } from "@/utilities/Keyframes";
+import type { PropTransform } from "@/utilities/Keyframes";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import type { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
 
@@ -23,12 +23,12 @@ describe("getMarcherTimelines geometry attachment", () => {
             2: makeMarcherPage(6, 2), // non-prop: no geometry row
         } as unknown as MarcherPagesByMarcher;
 
-        const geometry: InterpolatedGeometry = {
+        const geometry: PropTransform = {
             width: 10,
             height: 10,
             rotation: 0,
         };
-        const geometryByMarcherPageId = new Map<number, InterpolatedGeometry>([
+        const geometryByMarcherPageId = new Map<number, PropTransform>([
             [5, geometry],
         ]);
 

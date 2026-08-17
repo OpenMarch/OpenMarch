@@ -9,7 +9,7 @@ import { Pathway, pathwaysByPageQueryOptions } from "./usePathways";
 import {
     CoordinateDefinition,
     MarcherTimeline,
-    InterpolatedGeometry,
+    PropTransform,
 } from "@/utilities/Keyframes";
 import { assert } from "@/utilities/utils";
 import { MarcherPagesByMarcher } from "@/global/classes/MarcherPageIndex";
@@ -47,7 +47,7 @@ export const getMarcherTimelines = (
     destinationTimestamp: number,
     marcherPages: MarcherPagesByMarcher,
     pathwaysById: Record<number, Pathway>,
-    geometryByMarcherPageId: Map<number, InterpolatedGeometry>,
+    geometryByMarcherPageId: Map<number, PropTransform>,
 ): MarcherTimelinesByMarcherId => {
     if (marcherPages == null) {
         console.debug("not loading timeline");
@@ -155,10 +155,7 @@ export const coordinateDataQueryOptions = (
                 geometryPromise,
             ]);
 
-            const geometryByMarcherPageId = new Map<
-                number,
-                InterpolatedGeometry
-            >(
+            const geometryByMarcherPageId = new Map<number, PropTransform>(
                 (geometries ?? []).map((g) => [
                     g.marcher_page_id,
                     {

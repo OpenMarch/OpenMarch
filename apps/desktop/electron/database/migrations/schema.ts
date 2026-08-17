@@ -196,14 +196,18 @@ export const prop_page_geometry = sqliteTable(
             .notNull()
             .unique()
             .references(() => marcher_pages.id, { onDelete: "cascade" }),
-        /** "rectangle", "circle", "arc", "polygon", "freehand" — see ShapeType in Prop.ts */
-        shape_type: text().notNull().default("rectangle"),
+        /**
+         * The prop's silhouette: "rectangle", "circle", "arc", "polygon",
+         * "freehand" — see OutlineType in Prop.ts. Named outline, not shape,
+         * because "shape" means a drill formation everywhere else in this app.
+         */
+        outline_type: text().notNull().default("rectangle"),
         /** Width in feet/meters */
         width: real().notNull(),
         /** Height in feet/meters */
         height: real().notNull(),
-        /** JSON for custom shapes (Phase 2) */
-        custom_geometry: text(),
+        /** JSON point list backing a non-primitive outline */
+        custom_outline: text(),
         /** 2D rotation in degrees (yaw - rotation on canvas plane) */
         rotation: real().notNull().default(0),
         ...timestamps,
