@@ -47,13 +47,24 @@ function buildPropStructureKey({
     hiddenPropIds: Record<string, boolean>;
     propRecreateKey: number;
 }): string {
+    // Only this page's geometry can change what is on the canvas. Fingerprinting
+    // every row in the show made an edit on any other page tear down and rebuild
+    // every prop here, and made the string O(props × pages) on every render.
+    const currentPageMpIds = new Set(
+        props
+            .map((p) => marcherPages[p.marcher_id]?.id)
+            .filter((id): id is number => id != null),
+    );
+
     return JSON.stringify({
         propIds: props.map((p) => p.id),
         propMpIds: props.map((p) => marcherPages[p.marcher_id]?.id ?? null),
-        geoKeys: propGeometries.map(
-            (g) =>
-                `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}:${g.visible}`,
-        ),
+        geoKeys: propGeometries
+            .filter((g) => currentPageMpIds.has(g.marcher_page_id))
+            .map(
+                (g) =>
+                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}:${g.visible}`,
+            ),
         opacities: props.map((p) => p.image_opacity),
         imgVer: imageCacheVersion,
         pageId,
