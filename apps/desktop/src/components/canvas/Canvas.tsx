@@ -62,15 +62,15 @@ export default function Canvas({
     const { setSelectedMarchers } = useSelectedMarchers()!;
 
     // MarcherPage queries
-    // const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
-    //     marcherPagesByPageQueryOptions(selectedPage?.id),
-    // );
-    // const { data: previousMarcherPages } = useQuery(
-    //     marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
-    // );
-    // const { data: nextMarcherPages } = useQuery(
-    //     marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
-    // );
+    const { data: marcherPages, isSuccess: marcherPagesLoaded } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.id),
+    );
+    const { data: previousMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.previousPageId!),
+    );
+    const { data: nextMarcherPages } = useQuery(
+        marcherPagesByPageQueryOptions(selectedPage?.nextPageId!),
+    );
 
     const updateMarcherPages = useMutation(
         updateMarcherPagesMutationOptions(queryClient),
@@ -345,47 +345,47 @@ export default function Canvas({
     //     selectedPage,
     // ]);
 
-    // // Renders pathways when selected page or settings change
-    // useEffect(() => {
-    //     if (
-    //         !canvas ||
-    //         !selectedPage ||
-    //         !fieldProperties ||
-    //         !marcherPagesLoaded ||
-    //         marcherVisuals == null
-    //     )
-    //         return;
+    // Renders pathways when selected page or settings change
+    useEffect(() => {
+        if (
+            !canvas ||
+            !selectedPage ||
+            !fieldProperties ||
+            !marcherPagesLoaded ||
+            marcherVisuals == null
+        )
+            return;
 
-    //     if (marchers) {
-    //         // Always call renderPathVisuals, but it will show/hide based on settings
-    //         canvas.renderPathVisuals({
-    //             marcherVisuals: marcherVisuals,
-    //             currentMarcherPages: marcherPages,
-    //             previousMarcherPages: uiSettings.previousPaths
-    //                 ? previousMarcherPages || {}
-    //                 : {},
-    //             nextMarcherPages: uiSettings.nextPaths
-    //                 ? nextMarcherPages || {}
-    //                 : {},
+        if (marchers) {
+            // Always call renderPathVisuals, but it will show/hide based on settings
+            canvas.renderPathVisuals({
+                marcherVisuals: marcherVisuals,
+                currentMarcherPages: marcherPages,
+                previousMarcherPages: uiSettings.previousPaths
+                    ? previousMarcherPages || {}
+                    : {},
+                nextMarcherPages: uiSettings.nextPaths
+                    ? nextMarcherPages || {}
+                    : {},
 
-    //             marcherIds: marchers.map((m) => m.id),
-    //         });
-    //         canvas.sendCanvasMarchersToFront();
-    //     }
-    // }, [
-    //     canvas,
-    //     fieldProperties,
-    //     marcherPages,
-    //     previousMarcherPages,
-    //     nextMarcherPages,
-    //     marchers,
-    //     pages,
-    //     selectedPage,
-    //     uiSettings.nextPaths,
-    //     uiSettings.previousPaths,
-    //     marcherVisuals,
-    //     marcherPagesLoaded,
-    // ]);
+                marcherIds: marchers.map((m) => m.id),
+            });
+            canvas.sendCanvasMarchersToFront();
+        }
+    }, [
+        canvas,
+        fieldProperties,
+        marcherPages,
+        previousMarcherPages,
+        nextMarcherPages,
+        marchers,
+        pages,
+        selectedPage,
+        uiSettings.nextPaths,
+        uiSettings.previousPaths,
+        marcherVisuals,
+        marcherPagesLoaded,
+    ]);
 
     // Update the canvas when the field properties change
     useEffect(() => {
