@@ -146,8 +146,9 @@ This means props participate in undo/redo, pathways, and animation just like mar
 - A prop always has a backing marcher with `type: "prop"`. Deleting the marcher deletes the prop.
 - There is no per-page visibility column. Hiding a prop is a display preference held in
   `UiSettingsStore.hiddenPropIds`, not part of the show — a prop is on the field on every page.
-- `prop_page_geometry` is NOT tracked by undo/redo history triggers, so resize and rotate cannot
-  be undone (the backing marcher IS tracked). This is a known gap — see ADR-0001.
+- `prop_page_geometry` IS tracked by undo/redo history triggers — it is listed in
+  `tablesWithHistory`. Any write path that touches it must use `transactionWithHistory`, not a plain
+  transaction, so that all the rows one user action writes undo as a single step. See ADR-0001.
 - `custom_outline` stores a JSON point list (`{ points, originalWidth, originalHeight, closed }`),
   not SVG path data. Only arc, polygon and freehand use it.
 - Rendering a prop onto any canvas goes through `addPropsToCanvas` in

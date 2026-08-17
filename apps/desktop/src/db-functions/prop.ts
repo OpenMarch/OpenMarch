@@ -2,7 +2,6 @@ import { eq, isNotNull, sql } from "drizzle-orm";
 import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { transactionWithHistory } from "./history";
-import { withTransactionLock } from "./transactionLock";
 import { createMarchersInTransaction } from "./marcher";
 import {
     DatabaseProp,
@@ -355,10 +354,11 @@ export async function updatePropPageGeometry({
     modifiedGeometries: ModifiedPropPageGeometryArgs[];
     db: DbConnection;
 }): Promise<DatabasePropPageGeometry[]> {
-    // prop_page_geometry has no undo/redo history triggers, so use
-    // withTransactionLock (serialization only) instead of transactionWithHistory.
-    return await withTransactionLock(() =>
-        db.transaction(async (tx) =>
+    // Every row written here is one user action, so it must undo as one step.
+    return await transactionWithHistory(
+        db,
+        "updatePropPageGeometry",
+        async (tx) =>
             updateGeometryRows(
                 tx,
                 modifiedGeometries.map(({ id, ...changes }) => ({
@@ -366,7 +366,6 @@ export async function updatePropPageGeometry({
                     changes,
                 })),
             ),
-        ),
     );
 }
 
@@ -389,10 +388,12 @@ export async function updatePropGeometryWithPropagation({
     propagation: GeometryPropagation;
     db: DbConnection;
 }): Promise<DatabasePropPageGeometry[]> {
-    // prop_page_geometry has no undo/redo history triggers, so use
-    // withTransactionLock (serialization only) instead of transactionWithHistory.
-    return await withTransactionLock(() =>
-        db.transaction(async (tx) => {
+    // A propagated resize rewrites one row per page but is a single user
+    // action, so it must undo as a single step — see ADR-0001.
+    return await transactionWithHistory(
+        db,
+        "updatePropGeometryWithPropagation",
+        async (tx) => {
             const prop = await tx.query.props.findFirst({
                 where: (table, { eq: e }) => e(table.id, propId),
             });
@@ -438,7 +439,7 @@ export async function updatePropGeometryWithPropagation({
                 tx,
                 geometries.map((geom) => ({ id: geom.id, changes })),
             );
-        }),
+        },
     );
 }
 
