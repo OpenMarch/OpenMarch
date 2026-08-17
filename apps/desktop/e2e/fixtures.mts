@@ -53,10 +53,12 @@ const PLAYWRIGHT_ENV = {
 /**
  * Per-test Electron userData directory.
  *
- * Without this every test shares the installed app's real userData directory,
- * so persisted settings (databasePath, theme, language, defaultFilesDirectory)
- * leak between tests and onto the machine running the suite. Tests then pass or
- * fail based on what an earlier test happened to write.
+ * Without this every test shares one userData directory on the machine running
+ * the suite: the generic `Electron` one, since the unpackaged binary does not
+ * pick up `productName` (so the installed OpenMarch app's own settings are not
+ * involved). Persisted settings (databasePath, theme, language,
+ * defaultFilesDirectory) leak between tests and survive between runs, so tests
+ * pass or fail based on what an earlier test happened to write.
  */
 const getUserDataDir = (testInfo: { outputDir: string }) =>
     path.resolve(testInfo.outputDir, "user-data");
