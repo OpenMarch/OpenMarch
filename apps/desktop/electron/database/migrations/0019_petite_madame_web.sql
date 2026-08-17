@@ -1,0 +1,1 @@
+ALTER TABLE `prop_page_geometry` DROP COLUMN `visible`;

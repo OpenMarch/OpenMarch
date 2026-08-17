@@ -147,8 +147,64 @@ export const marchers = sqliteTable(
         /** The drill order of the marcher's drill number. E.g. 12 if the drill number is "T12" */
         drill_order: integer().notNull(),
         ...timestamps,
+        /** "marcher" or "prop". Added via ALTER in 0017, so it is the last column. */
+        type: text().notNull().default("marcher"),
     },
     (table) => [unique().on(table.drill_prefix, table.drill_order)],
+);
+
+export const props = sqliteTable(
+    "props",
+    {
+        id: integer().primaryKey(),
+        marcher_id: integer()
+            .notNull()
+            .unique()
+            .references(() => marchers.id, { onDelete: "cascade" }),
+        /** "floor" (marched over), "platform" (stand on), "obstacle" (blocks) */
+        surface_type: text().notNull().default("obstacle"),
+        image: browserSafeBinaryBlob(),
+        image_opacity: real().notNull().default(1),
+        ...timestamps,
+    },
+    (table) => [
+        index("idx_props_marcher_id").on(table.marcher_id),
+        check(
+            "props_image_opacity_check",
+            sql`image_opacity >= 0 AND image_opacity <= 1`,
+        ),
+    ],
+);
+
+export const prop_page_geometry = sqliteTable(
+    "prop_page_geometry",
+    {
+        id: integer().primaryKey(),
+        marcher_page_id: integer()
+            .notNull()
+            .unique()
+            .references(() => marcher_pages.id, { onDelete: "cascade" }),
+        /**
+         * The prop's silhouette: "rectangle", "circle", "arc", "polygon",
+         * "freehand" — see OutlineType in Prop.ts. Named outline, not shape,
+         * because "shape" means a drill formation everywhere else in this app.
+         */
+        outline_type: text().notNull().default("rectangle"),
+        /** Width in feet/meters */
+        width: real().notNull(),
+        /** Height in feet/meters */
+        height: real().notNull(),
+        /** JSON point list backing a non-primitive outline */
+        custom_outline: text(),
+        /** 2D rotation in degrees (yaw - rotation on canvas plane) */
+        rotation: real().notNull().default(0),
+        ...timestamps,
+    },
+    (table) => [
+        check("prop_page_geometry_width_check", sql`width > 0`),
+        check("prop_page_geometry_height_check", sql`height > 0`),
+        index("idx_prop_page_geometry_mp_id").on(table.marcher_page_id),
+    ],
 );
 
 export const pathways = sqliteTable("pathways", {
