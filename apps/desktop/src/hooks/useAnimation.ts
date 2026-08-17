@@ -157,12 +157,14 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
         setCurrentCollision(selectedPage);
     }, [selectedPage, getCollisionsForSelectedPage, setCurrentCollision]);
 
-    // Set marcher positions at a specific time
+    // Set marcher and prop positions at a specific time
+    // Note: getCanvasMarchers() returns both marchers AND props since CanvasProp extends CanvasMarcher
     const setMarcherPositionsAtTime = useCallback(
         (timeMilliseconds: number) => {
             if (!canvas) return;
             let output = true;
 
+            // Animate all canvas marchers (including props, which extend CanvasMarcher)
             const canvasMarchers = canvas.getCanvasMarchers();
             for (const canvasMarcher of canvasMarchers) {
                 const timeline = marcherTimelines.get(
@@ -170,7 +172,6 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 );
 
                 if (timeline) {
-                    // try {
                     const coords = getCoordinatesAtTime(
                         timeMilliseconds,
                         timeline,
@@ -179,7 +180,7 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                     else canvasMarcher.setLiveCoordinates(coords);
                 } else {
                     console.debug(
-                        `Marcher ${canvasMarcher.marcherObj.id} has no timeline at time ${timeMilliseconds}`,
+                        `Marcher/Prop ${canvasMarcher.marcherObj.id} has no timeline at time ${timeMilliseconds}`,
                     );
                     output = false;
                 }

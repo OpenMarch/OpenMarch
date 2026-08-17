@@ -274,6 +274,7 @@ export function marcherRowsToMarchers(
             name: null,
             year: null,
             notes: null,
+            type: "marcher",
             created_at: "",
             updated_at: "",
         }),

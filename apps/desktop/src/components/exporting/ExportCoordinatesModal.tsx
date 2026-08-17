@@ -8,6 +8,8 @@ import MarcherCoordinateSheetPreview, {
 import {
     allMarcherPagesQueryOptions,
     allSectionAppearancesQueryOptions,
+    allPropsQueryOptions,
+    propPageGeometryQueryOptions,
     allTagAppearancesQueryOptions,
     fieldPropertiesQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
@@ -43,6 +45,8 @@ import {
 import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { useTimingObjects } from "@/hooks";
+import Marcher from "@/global/classes/Marcher";
+import { isNotProp } from "@/global/classes/Prop";
 import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
 import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
@@ -187,6 +191,7 @@ function CoordinateSheetExport() {
             setProgress(15);
 
             const processedMarchers = marchers
+                .filter(isNotProp)
                 .map((marcher) => ({
                     ...marcher,
                     // Use raw DB section with the numeric part of drill_number as fallback display name
@@ -388,7 +393,7 @@ function CoordinateSheetExport() {
             toast.success(
                 <span>
                     {t("exportCoordinates.exportSuccess", {
-                        count: marchers.length,
+                        count: processedMarchers.length,
                     })}
                     <button
                         type="button"
@@ -714,6 +719,8 @@ function DrillChartExport() {
     const { data: sectionAppearances } = useQuery(
         allSectionAppearancesQueryOptions(),
     );
+    const { data: propsWithMarchers } = useQuery(allPropsQueryOptions());
+    const { data: propGeometries } = useQuery(propPageGeometryQueryOptions());
     const { data: marcherIdsByTagId } = useQuery(
         marcherIdsForAllTagIdsQueryOptions(),
     );
@@ -782,6 +789,8 @@ function DrillChartExport() {
             readableCoords: string[][],
             exportName: string,
             exportDir: string,
+            /** The marchers that correspond 1:1 with svgPages/readableCoords indices */
+            marchersList: Marcher[],
         ) => {
             if (!marchersLoaded) {
                 throw new Error(t("exportCoordinates.marchersNotLoaded"));
@@ -823,7 +832,7 @@ function DrillChartExport() {
                     await window.electron.export.generateDocForMarcher({
                         svgPages: svgPages[marcher],
                         drillNumber: individualCharts
-                            ? marchers[marcher].drill_number
+                            ? marchersList[marcher].drill_number
                             : "MAIN",
                         marcherCoordinates: readableCoords[marcher],
                         pages: exportPages,
@@ -841,7 +850,8 @@ function DrillChartExport() {
                 setProgress(50 + (50 * marcher) / svgPages.length);
                 setCurrentStep(
                     t("exportCoordinates.generatingPDF", {
-                        drillNumber: marchers[marcher]?.drill_number ?? "MAIN",
+                        drillNumber:
+                            marchersList[marcher]?.drill_number ?? "MAIN",
                     }),
                 );
 
@@ -854,7 +864,7 @@ function DrillChartExport() {
                     toast.error(
                         t("exportCoordinates.svgExportFailed", {
                             drillNumber:
-                                marchers[marcher]?.drill_number ?? "MAIN",
+                                marchersList[marcher]?.drill_number ?? "MAIN",
                             error: result.error,
                         }),
                     );
@@ -864,14 +874,7 @@ function DrillChartExport() {
                 }
             }
         },
-        [
-            includeNotesAppendix,
-            individualCharts,
-            marchers,
-            marchersLoaded,
-            pages,
-            t,
-        ],
+        [includeNotesAppendix, individualCharts, marchersLoaded, pages, t],
     );
 
     // Check if we have the minimum requirements for export
@@ -909,19 +912,23 @@ function DrillChartExport() {
         // Generate SVGs from the canvas
         let SVGs: string[][] = [];
         let coords: string[][] | null = null;
+        let exportMarchers: Marcher[] = marchers;
         try {
-            ({ SVGs, coords } = await generateDrillChartExportSVGs({
-                fieldProperties,
-                marchers,
-                sortedPages: pages,
-                marcherPagesMap: marcherPages,
-                sectionAppearances: sectionAppearances,
-                marcherAppearancesByPageId,
-                backgroundImage,
-                gridLines: uiSettings.gridLines,
-                halfLines: uiSettings.halfLines,
-                individualCharts: individualCharts,
-            }));
+            ({ SVGs, coords, exportMarchers } =
+                await generateDrillChartExportSVGs({
+                    fieldProperties,
+                    marchers,
+                    sortedPages: pages,
+                    marcherPagesMap: marcherPages,
+                    sectionAppearances: sectionAppearances,
+                    marcherAppearancesByPageId,
+                    backgroundImage,
+                    gridLines: uiSettings.gridLines,
+                    halfLines: uiSettings.halfLines,
+                    individualCharts: individualCharts,
+                    propsWithMarchers,
+                    propGeometries,
+                }));
         } catch (error) {
             toast.error(
                 t("exportCoordinates.svgGenerationFailed", {
@@ -952,6 +959,7 @@ function DrillChartExport() {
                 coords ?? [],
                 exportName,
                 exportDir,
+                exportMarchers,
             );
 
             // Simulate smooth progress during final export phase
@@ -1026,6 +1034,8 @@ function DrillChartExport() {
         uiSettings.halfLines,
         individualCharts,
         exportMarcherSVGs,
+        propsWithMarchers,
+        propGeometries,
     ]);
 
     return (
@@ -1264,6 +1274,8 @@ function VideoExport() {
             pinkyPromiseThatYouKnowWhatYouAreDoing: true,
         }),
     );
+    const { data: propsWithMarchers } = useQuery(allPropsQueryOptions());
+    const { data: propGeometries } = useQuery(propPageGeometryQueryOptions());
     const { data: marcherIdsByTagId } = useQuery(
         marcherIdsForAllTagIdsQueryOptions(),
     );
@@ -1404,6 +1416,9 @@ function VideoExport() {
                     backgroundImage,
                     gridLines: uiSettings.gridLines,
                     halfLines: uiSettings.halfLines,
+                    props: propsWithMarchers ?? [],
+                    propGeometries: propGeometries ?? [],
+                    marcherPagesByPage: marcherPages?.marcherPagesByPage ?? {},
                 });
                 if (cancelled) {
                     ctx.dispose();
@@ -1435,6 +1450,9 @@ function VideoExport() {
         backgroundImage,
         uiSettings.gridLines,
         uiSettings.halfLines,
+        propsWithMarchers,
+        propGeometries,
+        marcherPages,
     ]);
 
     const previewLoading =
@@ -1537,6 +1555,9 @@ function VideoExport() {
                 backgroundImage,
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
+                props: propsWithMarchers ?? [],
+                propGeometries: propGeometries ?? [],
+                marcherPagesByPage: marcherPages?.marcherPagesByPage ?? {},
                 audioData: audioFile.data,
                 audioOffsetSeconds: workspaceSettings?.audioOffsetSeconds ?? 0,
                 width,
@@ -1603,6 +1624,9 @@ function VideoExport() {
         marcherAppearancesByPageId,
         uiSettings.gridLines,
         uiSettings.halfLines,
+        propsWithMarchers,
+        propGeometries,
+        marcherPages,
         workspaceSettings?.audioOffsetSeconds,
         frameRate,
         videoTheme,

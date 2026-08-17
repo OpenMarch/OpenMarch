@@ -30,6 +30,7 @@ import { utilityKeys } from "./useUtility";
 import { marcherPageKeys } from "./useMarcherPages";
 import { coordinateDataKeys } from "./useCoordinateData";
 import { beatKeys } from "./useBeats";
+import { propGeometryKeys } from "./useProps";
 
 const { pages } = schema;
 
@@ -62,6 +63,9 @@ export const invalidatePageQueries = async (qc: QueryClient) => {
     await Promise.all([marcherPagePromise, utilityPromise]);
     void qc.invalidateQueries({
         queryKey: coordinateDataKeys.all,
+    });
+    void qc.invalidateQueries({
+        queryKey: propGeometryKeys.all(),
     });
 };
 

@@ -17,6 +17,7 @@ export interface NewMarcherArgs {
     drill_order: number;
     year?: string | null;
     notes?: string | null;
+    type?: "marcher" | "prop";
 }
 
 /**

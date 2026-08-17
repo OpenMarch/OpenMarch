@@ -1,5 +1,6 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
+import CanvasProp from "./CanvasProp";
 
 /**
  * Checks if a group contains any CanvasMarcher objects.
@@ -42,7 +43,10 @@ const rotationSideEffects = (group: fabric.Group) => {
     const decomposed = getCounterTransform(group);
 
     for (const object of objects) {
-        if (object instanceof CanvasMarcher) {
+        if (
+            object instanceof CanvasMarcher &&
+            !CanvasProp.isCanvasProp(object)
+        ) {
             // Apply counter-rotation to keep marchers appearing upright
             object.angle = decomposed.angle;
 
@@ -150,30 +154,29 @@ export const handleGroupScaling = (
         }
     }
 
+    // Apply counter-transforms to marchers (not props) to keep them at original size
     const decomposed = getCounterTransform(group);
 
-    for (const object of objects) {
-        if (object instanceof CanvasMarcher) {
-            // Apply the inverted properties to counteract group distortion
-            object.scaleX = decomposed.scaleX;
-            object.scaleY = decomposed.scaleY;
-            object.skewX = decomposed.skewX;
-            object.skewY = decomposed.skewY;
-            object.angle = decomposed.angle;
-
-            object.updateTextLabelPosition();
-            object.setCoords();
+    for (const obj of objects) {
+        if (obj instanceof CanvasMarcher && !CanvasProp.isCanvasProp(obj)) {
+            obj.scaleX = decomposed.scaleX;
+            obj.scaleY = decomposed.scaleY;
+            obj.skewX = decomposed.skewX;
+            obj.skewY = decomposed.skewY;
+            obj.angle = decomposed.angle;
+            obj.updateTextLabelPosition();
+            obj.setCoords();
         }
     }
 
-    // Reset the group's scale to 1 so the frame stays at the new size
     group.setCoords();
     group.canvas?.requestRenderAll();
 };
 
 export const resetMarcherRotation = (group: fabric.Group) => {
     group._objects.forEach((o) => {
-        if (o instanceof CanvasMarcher) o.angle = 0;
+        if (o instanceof CanvasMarcher && !CanvasProp.isCanvasProp(o))
+            o.angle = 0;
     });
 };
 

@@ -41,6 +41,7 @@ export default function PerformersStep({
                 name: null,
                 year: null,
                 notes: null,
+                type: "marcher",
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString(),
             };
