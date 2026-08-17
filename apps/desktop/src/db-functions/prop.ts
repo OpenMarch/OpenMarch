@@ -30,8 +30,6 @@ export interface ModifiedPropArgs {
     id: number;
     name?: string | null;
     surface_type?: SurfaceType;
-    default_width?: number;
-    default_height?: number;
     image_opacity?: number;
 }
 
@@ -46,6 +44,28 @@ export interface ModifiedPropPageGeometryArgs {
 
 /** Propagation mode for geometry updates */
 export type GeometryPropagation = "current" | "forward" | "all";
+
+/**
+ * Applies the same set of changes to each geometry row, returning the rows that
+ * were actually updated. Shared by the two geometry write paths so they cannot
+ * drift — notably in how they will group history once ADR-0001 lands.
+ */
+async function updateGeometryRows(
+    tx: DbTransaction,
+    rows: { id: number; changes: Partial<DatabasePropPageGeometry> }[],
+): Promise<DatabasePropPageGeometry[]> {
+    const updated: DatabasePropPageGeometry[] = [];
+    for (const { id, changes } of rows) {
+        const result = await tx
+            .update(schema.prop_page_geometry)
+            .set(changes)
+            .where(eq(schema.prop_page_geometry.id, id))
+            .returning()
+            .get();
+        if (result) updated.push(result);
+    }
+    return updated;
+}
 
 /** Geometry fields copied from a previous page when creating a new page */
 export type PropPageGeometrySource = Pick<
@@ -183,8 +203,6 @@ async function createPropsInTransaction({
     const propsToInsert = createdMarchers.map((marcher, i) => ({
         marcher_id: marcher.id,
         surface_type: newProps[i].surface_type ?? "obstacle",
-        default_width: newProps[i].width ?? DEFAULT_PROP_WIDTH,
-        default_height: newProps[i].height ?? DEFAULT_PROP_HEIGHT,
     }));
 
     const createdProps = await tx
@@ -340,20 +358,15 @@ export async function updatePropPageGeometry({
     // prop_page_geometry has no undo/redo history triggers, so use
     // withTransactionLock (serialization only) instead of transactionWithHistory.
     return await withTransactionLock(() =>
-        db.transaction(async (tx) => {
-            const updated: DatabasePropPageGeometry[] = [];
-            for (const mod of modifiedGeometries) {
-                const { id, ...data } = mod;
-                const result = await tx
-                    .update(schema.prop_page_geometry)
-                    .set(data)
-                    .where(eq(schema.prop_page_geometry.id, id))
-                    .returning()
-                    .get();
-                if (result) updated.push(result);
-            }
-            return updated;
-        }),
+        db.transaction(async (tx) =>
+            updateGeometryRows(
+                tx,
+                modifiedGeometries.map(({ id, ...changes }) => ({
+                    id,
+                    changes,
+                })),
+            ),
+        ),
     );
 }
 
@@ -421,18 +434,10 @@ export async function updatePropGeometryWithPropagation({
                     inArrayOp(table.marcher_page_id, marcherPageIds),
             });
 
-            const updated: DatabasePropPageGeometry[] = [];
-            for (const geom of geometries) {
-                const result = await tx
-                    .update(schema.prop_page_geometry)
-                    .set(changes)
-                    .where(eq(schema.prop_page_geometry.id, geom.id))
-                    .returning()
-                    .get();
-                if (result) updated.push(result);
-            }
-
-            return updated;
+            return await updateGeometryRows(
+                tx,
+                geometries.map((geom) => ({ id: geom.id, changes })),
+            );
         }),
     );
 }

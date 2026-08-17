@@ -148,6 +148,13 @@
             "when": 1786933455443,
             "tag": "0020_prop_outline_rename",
             "breakpoints": true
+        },
+        {
+            "idx": 21,
+            "version": "6",
+            "when": 1786937916817,
+            "tag": "0021_last_psylocke",
+            "breakpoints": true
         }
     ]
 }
