@@ -30,6 +30,7 @@ import {
 import { DEFAULT_STALE_TIME } from "./constants";
 import { marcherKeys } from "./useMarchers";
 import { marcherPageKeys } from "./useMarcherPages";
+import { coordinateDataKeys } from "./useCoordinateData";
 
 const KEY_BASE = "props";
 const GEOMETRY_KEY = "prop_page_geometry";
@@ -47,6 +48,22 @@ export const propGeometryKeys = {
 
 export const propImageKeys = {
     all: () => [IMAGE_KEY] as const,
+};
+
+/**
+ * Invalidate prop geometry and everything derived from it.
+ *
+ * Geometry feeds the marcher timelines, but `coordinateDataQueryOptions` fetches
+ * it inside its own queryFn, so React Query cannot see it as a dependency. Every
+ * mutation that touches geometry must invalidate the timelines explicitly or the
+ * animation keeps playing the old size. Geometry can be propagated across pages,
+ * so this invalidates every page's timeline rather than trying to narrow it.
+ *
+ * See ADR-0001 for the structural fix that would make this unnecessary.
+ */
+const invalidatePropGeometry = (qc: QueryClient) => {
+    void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+    void qc.invalidateQueries({ queryKey: coordinateDataKeys.all });
 };
 
 export const allPropsQueryOptions = () => {
@@ -79,7 +96,7 @@ export const propImagesQueryOptions = () => {
 
 export const fetchProps = () => {
     void queryClient.invalidateQueries({ queryKey: propKeys.all() });
-    void queryClient.invalidateQueries({ queryKey: propGeometryKeys.all() });
+    invalidatePropGeometry(queryClient);
     void queryClient.invalidateQueries({ queryKey: propImageKeys.all() });
 };
 
@@ -88,7 +105,7 @@ export const createPropsMutationOptions = (qc: QueryClient) => {
         mutationFn: (newProps: NewPropArgs[]) => createProps({ db, newProps }),
         onSuccess: async () => {
             await qc.invalidateQueries({ queryKey: propKeys.all() });
-            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+            invalidatePropGeometry(qc);
             void qc.invalidateQueries({ queryKey: marcherKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherPageKeys.all() });
         },
@@ -118,7 +135,7 @@ export const updatePropGeometryMutationOptions = (qc: QueryClient) => {
         mutationFn: (modifiedGeometries: ModifiedPropPageGeometryArgs[]) =>
             updatePropPageGeometry({ db, modifiedGeometries }),
         onSuccess: () => {
-            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+            invalidatePropGeometry(qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("props.updateGeometryError"), e, variables);
@@ -137,7 +154,7 @@ export const updatePropGeometryWithPropagationMutationOptions = (
             propagation: GeometryPropagation;
         }) => updatePropGeometryWithPropagation({ db, ...args }),
         onSuccess: () => {
-            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+            invalidatePropGeometry(qc);
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("props.updateGeometryError"), e, variables);
@@ -175,7 +192,7 @@ export const deletePropsMutationOptions = (qc: QueryClient) => {
         mutationFn: (propIds: Set<number>) => deleteProps({ db, propIds }),
         onSuccess: () => {
             void qc.invalidateQueries({ queryKey: propKeys.all() });
-            void qc.invalidateQueries({ queryKey: propGeometryKeys.all() });
+            invalidatePropGeometry(qc);
             void qc.invalidateQueries({ queryKey: propImageKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherKeys.all() });
             void qc.invalidateQueries({ queryKey: marcherPageKeys.all() });
