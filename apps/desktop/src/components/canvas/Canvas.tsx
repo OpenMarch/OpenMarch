@@ -315,35 +315,24 @@ export default function Canvas({
         if (canvas) canvas.setUiSettings(uiSettings);
     }, [canvas, uiSettings]);
 
-    // // Render the marchers when the selected page or the marcher pages change
-    // useEffect(() => {
-    //     if (
-    //         !canvas ||
-    //         !selectedPage ||
-    //         !marchers ||
-    //         !marcherPagesLoaded ||
-    //         marcherVisuals == null
-    //     )
-    //         return;
+    // Keep canvas.currentPage aligned with selection (used by drag-save / line tools).
+    // Animation still owns marcher left/top — do not restore renderMarchers here.
+    useEffect(() => {
+        if (!canvas || !selectedPage) return;
+        canvas.currentPage = selectedPage;
+    }, [canvas, selectedPage]);
 
-    //     canvas.currentPage = selectedPage;
+    // Sync CanvasMarcher.coordinate metadata (page_id, locks, DB coords) for the
+    // selected page without moving fabric objects.
+    useEffect(() => {
+        if (!canvas || !selectedPage || !marcherPagesLoaded || !marcherPages)
+            return;
 
-    //     canvas
-    //         .renderMarchers({
-    //             marcherVisuals,
-    //             marcherPages,
-    //         })
-    //         .catch((error) => {
-    //             console.error("Error rendering marchers", error);
-    //         });
-    // }, [
-    //     canvas,
-    //     marcherPages,
-    //     marcherPagesLoaded,
-    //     marcherVisuals,
-    //     marchers,
-    //     selectedPage,
-    // ]);
+        for (const canvasMarcher of canvas.getCanvasMarchers()) {
+            const marcherPage = marcherPages[canvasMarcher.marcherObj.id];
+            if (marcherPage) canvasMarcher.setCoordinateMetadata(marcherPage);
+        }
+    }, [canvas, selectedPage, marcherPages, marcherPagesLoaded]);
 
     // Renders pathways when selected page or settings change
     useEffect(() => {
