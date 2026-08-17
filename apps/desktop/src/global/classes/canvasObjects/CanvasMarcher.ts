@@ -688,6 +688,17 @@ export default class CanvasMarcher
     }
 
     /**
+     * Updates the stored MarcherPage / coordinate metadata (page_id, locks, DB x/y)
+     * without moving the fabric object. Live animation owns left/top via
+     * `setLiveCoordinates`; this keeps drag-save, lock state, and refreshMarchers
+     * aligned with the selected page.
+     */
+    setCoordinateMetadata(coordinate: CoordinateLike) {
+        this.coordinate = coordinate;
+        this.refreshLockedStatus();
+    }
+
+    /**
      * Get the absolute coordinates of the dotObject (the marcher marker)
      * Note, this does not include the grid offset or coordinate rounding. Use getMarcherCoords instead.
      *
