@@ -1,29 +1,27 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { T, useTranslate } from "@tolgee/react";
-import { useSelectedPage } from "../../context/SelectedPageContext";
 import { useQueryClient, useMutation } from "@tanstack/react-query";
 import { updatePagesMutationOptions } from "../../hooks/queries";
 import { NotesRichTextEditor } from "../notes/NotesRichTextEditor";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { useTimingObjects } from "@/hooks";
+import { useInspectedPage } from "@/hooks";
 
+/**
+ * Inspector section that shows and edits the notes for the page currently
+ * under inspection.
+ *
+ * The displayed page comes from {@link useInspectedPage}, which returns the
+ * next page during playback so notes for the upcoming target are visible
+ * while marchers are still moving.
+ */
 export function PageNotesSection() {
-    const { selectedPage } = useSelectedPage()!;
+    const displayPage = useInspectedPage();
     const { isPlaying } = useIsPlaying()!;
-    const { pages } = useTimingObjects()!;
     const { t } = useTranslate();
     const queryClient = useQueryClient();
     const updatePagesMutation = useMutation(
         updatePagesMutationOptions(queryClient),
     );
-
-    // During playback, selectedPage is the departure page — show the next page's notes instead
-    const displayPage = useMemo(() => {
-        if (!isPlaying || !selectedPage?.nextPageId) return selectedPage;
-        return (
-            pages.find((p) => p.id === selectedPage.nextPageId) ?? selectedPage
-        );
-    }, [isPlaying, selectedPage, pages]);
 
     const [notes, setNotes] = useState(displayPage?.notes || "");
     const editingPageIdRef = useRef<number | null>(null);
@@ -34,6 +32,13 @@ export function PageNotesSection() {
         }
     }, [displayPage, isPlaying]);
 
+    /**
+     * Persists the editor's contents when the user blurs the rich-text field.
+     *
+     * Skips the save when the inspected page changed mid-edit (e.g. playback
+     * advanced to the next page) to avoid writing the previous page's text
+     * onto a different page.
+     */
     const handleNotesBlur = (nextNotesHtml: string) => {
         if (!displayPage) return;
 
