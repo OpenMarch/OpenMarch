@@ -15,18 +15,15 @@ import {
     SurfaceType,
 } from "@/global/classes/Prop";
 import { StaticFormField } from "@/components/ui/FormField";
-
-const SURFACE_OPTIONS: { value: SurfaceType; label: string }[] = [
-    { value: "floor", label: "Floor (can march over)" },
-    { value: "platform", label: "Platform (can stand on)" },
-    { value: "obstacle", label: "Obstacle (blocks movement)" },
-];
+import { SURFACE_OPTIONS } from "./surfaceOptions";
+import { T, useTranslate } from "@tolgee/react";
 
 interface NewPropFormProps {
     onSuccess?: () => void;
 }
 
 export default function NewPropForm({ onSuccess }: NewPropFormProps) {
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const createPropsMutation = useMutation(
         createPropsMutationOptions(queryClient),
@@ -48,15 +45,15 @@ export default function NewPropForm({ onSuccess }: NewPropFormProps) {
 
     return (
         <form onSubmit={handleSubmit} className="flex flex-col gap-16">
-            <StaticFormField label="Name">
+            <StaticFormField label={t("inspector.prop.name")}>
                 <Input
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., Stage Platform"
+                    placeholder={t("props.form.namePlaceholder")}
                 />
             </StaticFormField>
-            <StaticFormField label="Width (ft)">
+            <StaticFormField label={t("props.form.widthFeet")}>
                 <Input
                     type="number"
                     value={width}
@@ -69,7 +66,7 @@ export default function NewPropForm({ onSuccess }: NewPropFormProps) {
                     step={0.5}
                 />
             </StaticFormField>
-            <StaticFormField label="Height (ft)">
+            <StaticFormField label={t("props.form.heightFeet")}>
                 <Input
                     type="number"
                     value={height}
@@ -82,7 +79,7 @@ export default function NewPropForm({ onSuccess }: NewPropFormProps) {
                     step={0.5}
                 />
             </StaticFormField>
-            <StaticFormField label="Surface">
+            <StaticFormField label={t("inspector.prop.surface")}>
                 <Select
                     value={surfaceType}
                     onValueChange={(v) => setSurfaceType(v as SurfaceType)}
@@ -90,13 +87,19 @@ export default function NewPropForm({ onSuccess }: NewPropFormProps) {
                     <SelectTriggerButton
                         label={
                             SURFACE_OPTIONS.find((o) => o.value === surfaceType)
-                                ?.label ?? surfaceType
+                                ?.labelKey
+                                ? t(
+                                      SURFACE_OPTIONS.find(
+                                          (o) => o.value === surfaceType,
+                                      )!.labelKey,
+                                  )
+                                : surfaceType
                         }
                     />
                     <SelectContent>
                         {SURFACE_OPTIONS.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
-                                {opt.label}
+                                {t(opt.labelKey)}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -108,7 +111,11 @@ export default function NewPropForm({ onSuccess }: NewPropFormProps) {
                 className="w-full"
                 disabled={createPropsMutation.isPending}
             >
-                {createPropsMutation.isPending ? "Creating..." : "Create Prop"}
+                {createPropsMutation.isPending ? (
+                    <T keyName="props.form.creating" />
+                ) : (
+                    <T keyName="props.form.createProp" />
+                )}
             </Button>
         </form>
     );

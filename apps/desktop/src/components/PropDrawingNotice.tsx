@@ -4,17 +4,18 @@ import {
 } from "@/stores/PropDrawingStore";
 import { Button } from "@openmarch/ui";
 import { InfoIcon } from "@phosphor-icons/react";
+import { T, useTranslate } from "@tolgee/react";
 
-const INSTRUCTIONS: Record<NonNullable<PropDrawingMode>, string> = {
-    rectangle: "Click and drag to draw. Press Esc to cancel.",
-    circle: "Click and drag to draw. Press Esc to cancel.",
-    polygon:
-        "Click to add points. Double-click to finish. Press Esc to cancel.",
-    arc: "Click 3 points: start, end, then curve. Press Esc to cancel.",
-    freehand: "Click and drag to draw. Press Esc to cancel.",
+const INSTRUCTION_KEYS: Record<NonNullable<PropDrawingMode>, string> = {
+    rectangle: "props.drawing.instructions.drag",
+    circle: "props.drawing.instructions.drag",
+    polygon: "props.drawing.instructions.polygon",
+    arc: "props.drawing.instructions.arc",
+    freehand: "props.drawing.instructions.drag",
 };
 
 export default function PropDrawingNotice() {
+    const { t } = useTranslate();
     const { drawingMode, resetDrawingState } = usePropDrawingStore();
 
     if (!drawingMode) return null;
@@ -24,7 +25,7 @@ export default function PropDrawingNotice() {
             <div className="flex items-center gap-16">
                 <InfoIcon size={24} />
                 <span className="text-body text-text flex-1">
-                    {INSTRUCTIONS[drawingMode]}
+                    {t(INSTRUCTION_KEYS[drawingMode])}
                 </span>
             </div>
             <Button
@@ -32,7 +33,7 @@ export default function PropDrawingNotice() {
                 variant="secondary"
                 onClick={resetDrawingState}
             >
-                Cancel Drawing
+                <T keyName="props.drawing.cancel" />
             </Button>
         </div>
     );

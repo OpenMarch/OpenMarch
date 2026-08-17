@@ -16,7 +16,7 @@ import {
     EyeIcon,
     EyeSlashIcon,
 } from "@phosphor-icons/react";
-import { T } from "@tolgee/react";
+import { T, useTranslate } from "@tolgee/react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { dbMarcherToMarcher } from "@/global/classes/Marcher";
 import { PropWithMarcher } from "@/global/classes/Prop";
@@ -37,6 +37,7 @@ interface PropListProps {
 }
 
 export default function PropList({ onEditProp }: PropListProps) {
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { data: props, isLoading } = useQuery(allPropsQueryOptions());
     const deletePropsMutation = useMutation(
@@ -126,13 +127,17 @@ export default function PropList({ onEditProp }: PropListProps) {
     };
 
     if (isLoading) {
-        return <div className="text-text/50">Loading props...</div>;
+        return (
+            <div className="text-text/50">
+                <T keyName="props.list.loading" />
+            </div>
+        );
     }
 
     if (!props || props.length === 0) {
         return (
             <div className="text-text/50 py-16 text-center">
-                No props yet. Add one to get started.
+                <T keyName="props.list.empty" />
             </div>
         );
     }
@@ -141,7 +146,9 @@ export default function PropList({ onEditProp }: PropListProps) {
         <div className="flex flex-col gap-8">
             {/* Global show-all names toggle */}
             <div className="text-text/70 flex items-center justify-between px-4 pb-4 text-sm">
-                <span>Show all names</span>
+                <span>
+                    <T keyName="props.list.showAllNames" />
+                </span>
                 <Switch
                     checked={allVisibleState === "all"}
                     onCheckedChange={handleGlobalToggle}
@@ -158,9 +165,15 @@ export default function PropList({ onEditProp }: PropListProps) {
                     >
                         <div className="flex items-center gap-8">
                             <button
-                                title={isHidden ? "Show prop" : "Hide prop"}
+                                title={
+                                    isHidden
+                                        ? t("props.list.showProp")
+                                        : t("props.list.hideProp")
+                                }
                                 aria-label={
-                                    isHidden ? "Show prop" : "Hide prop"
+                                    isHidden
+                                        ? t("props.list.showProp")
+                                        : t("props.list.hideProp")
                                 }
                                 className="text-text/50 hover:text-text shrink-0 transition-colors"
                                 onClick={(e) => {
@@ -189,7 +202,7 @@ export default function PropList({ onEditProp }: PropListProps) {
                                 <Button
                                     variant="secondary"
                                     size="compact"
-                                    aria-label="Edit prop"
+                                    aria-label={t("props.list.editProp")}
                                     onClick={(e) => {
                                         e.stopPropagation();
                                         onEditProp(prop);
@@ -201,7 +214,7 @@ export default function PropList({ onEditProp }: PropListProps) {
                             <Button
                                 variant="red"
                                 size="compact"
-                                aria-label="Delete prop"
+                                aria-label={t("props.list.deleteProp")}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     handleDelete(prop.id);

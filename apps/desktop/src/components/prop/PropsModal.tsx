@@ -9,6 +9,7 @@ import { Button } from "@openmarch/ui";
 import { CubeIcon } from "@phosphor-icons/react";
 import { PropWithMarcher } from "@/global/classes/Prop";
 import { usePropShapeEditStore } from "@/stores/PropShapeEditStore";
+import { T, useTranslate } from "@tolgee/react";
 
 export default function PropsModal() {
     return (
@@ -21,6 +22,7 @@ export default function PropsModal() {
 }
 
 export function PropListContents() {
+    const { t } = useTranslate();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     const handleEditProp = (prop: PropWithMarcher) => {
@@ -30,7 +32,9 @@ export function PropListContents() {
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <header className="flex items-center justify-between gap-24">
-                <h4 className="text-h4 leading-none">Props</h4>
+                <h4 className="text-h4 leading-none">
+                    <T keyName="props.modal.title" />
+                </h4>
                 <div className="flex items-center gap-8">
                     <Button
                         onClick={() => {
@@ -42,8 +46,8 @@ export function PropListContents() {
                     </Button>
                     <button
                         onClick={toggleOpen}
-                        aria-label="Close props modal"
-                        title="Close props modal"
+                        aria-label={t("props.modal.close")}
+                        title={t("props.modal.close")}
                         className="hover:text-red duration-150 ease-out"
                     >
                         <XIcon size={24} />
@@ -62,6 +66,7 @@ export function PropListContents() {
 }
 
 export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
+    const { t } = useTranslate();
     const { setContent, toggleOpen } = useSidebarModalStore();
     const clearPropShapeEdit = usePropShapeEditStore((s) => s.clearEditing);
 
@@ -80,8 +85,8 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
                 <div className="flex items-center gap-8">
                     <button
                         onClick={goBack}
-                        aria-label="Back to props list"
-                        title="Back to props list"
+                        aria-label={t("props.modal.back")}
+                        title={t("props.modal.back")}
                         className="hover:text-accent duration-150 ease-out"
                     >
                         <CaretLeftIcon size={24} />
@@ -90,8 +95,8 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
                 </div>
                 <button
                     onClick={closeModal}
-                    aria-label="Close props modal"
-                    title="Close props modal"
+                    aria-label={t("props.modal.close")}
+                    title={t("props.modal.close")}
                     className="hover:text-red duration-150 ease-out"
                 >
                     <XIcon size={24} />
@@ -106,6 +111,7 @@ export function PropEditContents({ prop }: { prop: PropWithMarcher }) {
 }
 
 export function PropNewFormContents() {
+    const { t } = useTranslate();
     const { setContent, toggleOpen } = useSidebarModalStore();
 
     return (
@@ -117,8 +123,8 @@ export function PropNewFormContents() {
                             setContent(<PropListContents />, "props");
                         }}
                         className="hover:text-accent duration-150 ease-out"
-                        aria-label="Back to list"
-                        title="Back to list"
+                        aria-label={t("props.modal.back")}
+                        title={t("props.modal.back")}
                     >
                         <CaretLeftIcon size={24} />
                     </button>
@@ -127,8 +133,8 @@ export function PropNewFormContents() {
                 <button
                     onClick={toggleOpen}
                     className="hover:text-red duration-150 ease-out"
-                    aria-label="Close"
-                    title="Close"
+                    aria-label={t("props.modal.close")}
+                    title={t("props.modal.close")}
                 >
                     <XIcon size={24} />
                 </button>

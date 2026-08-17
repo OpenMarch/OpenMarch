@@ -23,6 +23,8 @@ import { SurfaceType, PropWithMarcher } from "@/global/classes/Prop";
 import { resolvePropsForPage } from "@/global/classes/propSelectors";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { StaticFormField } from "@/components/ui/FormField";
+import { SURFACE_OPTIONS } from "./surfaceOptions";
+import { T, useTranslate } from "@tolgee/react";
 
 interface PropEditFormProps {
     prop: PropWithMarcher;
@@ -30,13 +32,8 @@ interface PropEditFormProps {
 
 const to3Decimals = (n: number) => Math.floor(n * 1000) / 1000;
 
-const SURFACE_OPTIONS: { value: SurfaceType; label: string }[] = [
-    { value: "floor", label: "Floor (can march over)" },
-    { value: "platform", label: "Platform (can stand on)" },
-    { value: "obstacle", label: "Obstacle (blocks movement)" },
-];
-
 export default function PropEditForm({ prop }: PropEditFormProps) {
+    const { t } = useTranslate();
     const queryClient = useQueryClient();
     const { selectedPage } = useSelectedPage()!;
 
@@ -144,6 +141,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
         });
     };
 
+    const surfaceLabel =
+        SURFACE_OPTIONS.find((o) => o.value === surfaceType)?.labelKey ?? null;
+
     const isPending =
         updatePropsMutation.isPending ||
         updateGeometryMutation.isPending ||
@@ -154,32 +154,30 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
         <div className="flex flex-col gap-16">
             {/* Properties */}
             <section className="flex flex-col gap-12">
-                <h5 className="text-h5 leading-none">Properties</h5>
-                <StaticFormField label="Name">
+                <h5 className="text-h5 leading-none">
+                    <T keyName="props.edit.properties" />
+                </h5>
+                <StaticFormField label={t("inspector.prop.name")}>
                     <Input
                         type="text"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Prop name"
+                        placeholder={t("props.edit.namePlaceholder")}
                         onBlur={handleSaveProperties}
                     />
                 </StaticFormField>
-                <StaticFormField label="Surface">
+                <StaticFormField label={t("inspector.prop.surface")}>
                     <Select
                         value={surfaceType}
                         onValueChange={handleSurfaceChange}
                     >
                         <SelectTriggerButton
-                            label={
-                                SURFACE_OPTIONS.find(
-                                    (o) => o.value === surfaceType,
-                                )?.label ?? surfaceType
-                            }
+                            label={surfaceLabel ? t(surfaceLabel) : surfaceType}
                         />
                         <SelectContent>
                             {SURFACE_OPTIONS.map((opt) => (
                                 <SelectItem key={opt.value} value={opt.value}>
-                                    {opt.label}
+                                    {t(opt.labelKey)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -189,7 +187,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
 
             {/* Background Image */}
             <section className="border-stroke flex flex-col gap-12 border-t pt-12">
-                <h5 className="text-h5 leading-none">Background Image</h5>
+                <h5 className="text-h5 leading-none">
+                    <T keyName="props.edit.backgroundImage" />
+                </h5>
                 <div className="flex items-center gap-8 px-12">
                     <Button
                         variant="primary"
@@ -201,7 +201,9 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                                 ?.click()
                         }
                     >
-                        {hasImage ? "Replace Image" : "Import Image"}
+                        {hasImage
+                            ? t("props.edit.replaceImage")
+                            : t("props.edit.importImage")}
                     </Button>
                     {hasImage && (
                         <Button
@@ -210,7 +212,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                             disabled={isPending}
                             onClick={() => deleteImageMutation.mutate(prop.id)}
                         >
-                            Remove
+                            <T keyName="props.edit.removeImage" />
                         </Button>
                     )}
                     <input
@@ -233,7 +235,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                     />
                 </div>
                 {hasImage && (
-                    <StaticFormField label="Opacity">
+                    <StaticFormField label={t("props.edit.opacity")}>
                         <div className="flex w-full items-center gap-8">
                             <Slider
                                 min={0}
@@ -242,7 +244,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                                 value={[opacityValue]}
                                 onValueChange={handleOpacityChange}
                                 onValueCommit={handleOpacityCommit}
-                                aria-label="Image opacity"
+                                aria-label={t("props.edit.opacity")}
                                 className="flex-1"
                             />
                             <span className="bg-fg-2 border-stroke rounded-6 min-w-48 shrink-0 border px-8 py-2 text-center font-mono text-xs">
@@ -258,7 +260,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                 <h5 className="text-h5 leading-none">
                     Geometry{selectedPage ? ` — ${selectedPage.name}` : ""}
                 </h5>
-                <StaticFormField label="Width (ft)">
+                <StaticFormField label={t("props.form.widthFeet")}>
                     <Input
                         type="number"
                         value={width}
@@ -271,7 +273,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         step={0.5}
                     />
                 </StaticFormField>
-                <StaticFormField label="Height (ft)">
+                <StaticFormField label={t("props.form.heightFeet")}>
                     <Input
                         type="number"
                         value={height}
@@ -288,14 +290,16 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
 
             {/* Apply Geometry Changes */}
             <section className="border-stroke flex flex-col gap-8 border-t pt-12">
-                <h5 className="text-h5 leading-none">Apply Changes</h5>
+                <h5 className="text-h5 leading-none">
+                    <T keyName="props.edit.applyChanges" />
+                </h5>
                 <div className="flex flex-col gap-8 px-12">
                     <Button
                         onClick={() => handleSaveGeometry("forward")}
                         size="compact"
                         disabled={isPending}
                     >
-                        This page forward (default)
+                        <T keyName="props.propagation.forward" />
                     </Button>
                     <Button
                         onClick={() => handleSaveGeometry("current")}
@@ -303,7 +307,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         size="compact"
                         disabled={isPending}
                     >
-                        This page only
+                        <T keyName="props.propagation.current" />
                     </Button>
                     <Button
                         onClick={() => handleSaveGeometry("all")}
@@ -311,7 +315,7 @@ export default function PropEditForm({ prop }: PropEditFormProps) {
                         size="compact"
                         disabled={isPending}
                     >
-                        All pages
+                        <T keyName="props.propagation.all" />
                     </Button>
                 </div>
             </section>

@@ -987,11 +987,61 @@
     },
     "props": {
         "createError": "Error creating props",
+        "deleteError": "Error deleting props",
+        "deleteImageError": "Error deleting prop image",
+        "drawing": {
+            "cancel": "Cancel Drawing",
+            "instructions": {
+                "arc": "Click 3 points: start, end, then curve. Press Esc to cancel.",
+                "drag": "Click and drag to draw. Press Esc to cancel.",
+                "polygon": "Click to add points. Double-click to finish. Press Esc to cancel."
+            },
+            "title": "Draw a Prop"
+        },
+        "edit": {
+            "applyChanges": "Apply Changes",
+            "backgroundImage": "Background Image",
+            "importImage": "Import Image",
+            "namePlaceholder": "Prop name",
+            "opacity": "Opacity",
+            "properties": "Properties",
+            "removeImage": "Remove",
+            "replaceImage": "Replace Image"
+        },
+        "form": {
+            "createProp": "Create Prop",
+            "creating": "Creating...",
+            "heightFeet": "Height (ft)",
+            "namePlaceholder": "e.g., Stage Platform",
+            "widthFeet": "Width (ft)"
+        },
+        "list": {
+            "deleteProp": "Delete prop",
+            "editProp": "Edit prop",
+            "empty": "No props yet. Add one to get started.",
+            "hideProp": "Hide prop",
+            "loading": "Loading props...",
+            "showAllNames": "Show all names",
+            "showProp": "Show prop"
+        },
+        "modal": {
+            "back": "Back to props list",
+            "close": "Close props modal",
+            "title": "Props"
+        },
+        "propagation": {
+            "all": "All pages",
+            "current": "This page only",
+            "forward": "This page forward (default)"
+        },
+        "surfaceOption": {
+            "floor": "Floor (can march over)",
+            "obstacle": "Obstacle (blocks movement)",
+            "platform": "Platform (can stand on)"
+        },
         "updateError": "Error updating props",
         "updateGeometryError": "Error updating prop geometry",
-        "updateImageError": "Error updating prop image",
-        "deleteImageError": "Error deleting prop image",
-        "deleteError": "Error deleting props"
+        "updateImageError": "Error updating prop image"
     },
     "pages": {
         "createFailed": "Failed to create page - {error}",
