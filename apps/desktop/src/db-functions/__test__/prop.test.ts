@@ -134,8 +134,8 @@ describe("buildPropPageGeometriesFromPrevious", () => {
     });
 });
 
-describeDbTests("prop visibility", (it) => {
-    it("persists visible:false via updatePropGeometryWithPropagation", async ({
+describeDbTests("prop geometry propagation", (it) => {
+    it("propagates a width change to every page of the prop", async ({
         db,
         pages,
     }) => {
@@ -144,30 +144,29 @@ describeDbTests("prop visibility", (it) => {
 
         const [prop] = await createProps({
             db,
-            newProps: [{ name: "Visibility Test", width: 10, height: 10 }],
+            newProps: [{ name: "Propagation Test", width: 10, height: 10 }],
         });
         expect(prop).toBeDefined();
 
         const before = await getPropPageGeometry({ db });
         expect(before.length).toBeGreaterThan(0);
-        expect(before.every((g) => g.visible)).toBe(true);
+        expect(before.every((g) => g.width === 10)).toBe(true);
 
         const currentPageId = pages.expectedPages[0].id;
         const updated = await updatePropGeometryWithPropagation({
             propId: prop.id,
             currentPageId,
-            changes: { visible: false },
-            propagation: "current",
+            changes: { width: 25 },
+            propagation: "all",
             db,
         });
 
-        expect(updated.length).toBeGreaterThan(0);
-        expect(updated.every((g) => g.visible === false)).toBe(true);
+        expect(updated.length).toBe(before.length);
+        expect(updated.every((g) => g.width === 25)).toBe(true);
 
         const after = await getPropPageGeometry({ db });
-        const pageGeom = after.filter((g) =>
-            updated.some((u) => u.id === g.id),
-        );
-        expect(pageGeom.every((g) => g.visible === false)).toBe(true);
+        expect(after.every((g) => g.width === 25)).toBe(true);
+        // Untouched fields survive the propagation
+        expect(after.every((g) => g.height === 10)).toBe(true);
     });
 });

@@ -324,8 +324,6 @@ const addPropsForPage = ({
         marcherPages: marcherPagesByMarcher,
     });
     for (const { prop, marcherPage, geometry } of resolved) {
-        if (!geometry.visible) continue;
-
         // Create CanvasProp without background image for export
         const canvasProp = new CanvasProp({
             marcher: prop.marcher,

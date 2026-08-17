@@ -313,7 +313,6 @@ export function rebuildPropsForTime(
         marcherPages: marcherPagesForPage,
     });
     for (const { prop, marcherPage, geometry } of resolved) {
-        if (!geometry.visible) continue;
         const canvasProp = new CanvasProp({
             marcher: prop.marcher,
             prop,

@@ -133,7 +133,6 @@ const makeGeometry = (
     marcher_page_id: number,
     width: number,
     height: number,
-    visible = true,
 ): DatabasePropPageGeometry =>
     ({
         id: marcher_page_id * 100,
@@ -142,7 +141,6 @@ const makeGeometry = (
         width,
         height,
         rotation: 0,
-        visible,
         custom_geometry: null,
     }) as unknown as DatabasePropPageGeometry;
 
@@ -181,9 +179,9 @@ const makeTimeline = (): Map<number, MarcherTimeline> => {
     ]);
 };
 
-const makeContext = (
-    geometryVisible = true,
-): VideoRenderContext & { canvas: fabric.StaticCanvas } => {
+const makeContext = (): VideoRenderContext & {
+    canvas: fabric.StaticCanvas;
+} => {
     const canvas = new fabric.StaticCanvas(null);
     return {
         canvas,
@@ -194,10 +192,7 @@ const makeContext = (
         lastAppliedPageId: null,
         props: [makeProp()],
         // Base geometry for page 1 is 10ft wide; page 2 is 20ft wide.
-        propGeometries: [
-            makeGeometry(100, 10, 10, geometryVisible),
-            makeGeometry(200, 20, 10, geometryVisible),
-        ],
+        propGeometries: [makeGeometry(100, 10, 10), makeGeometry(200, 20, 10)],
         marcherPagesByPage: {
             1: { [PROP_MARCHER_ID]: makeMarcherPage(100) },
             2: { [PROP_MARCHER_ID]: makeMarcherPage(200) },
@@ -234,13 +229,6 @@ describe("prop animation in video export", () => {
 
         expect(scaleAtStart).toBeCloseTo(1, 5);
         expect(scaleMidMove).toBeGreaterThan(scaleAtStart);
-    });
-
-    it("skips props whose geometry is not visible", () => {
-        const context = makeContext(false);
-        rebuildPropsForTime(context, 0);
-        expect(context.canvasPropsById[PROP_MARCHER_ID]).toBeUndefined();
-        expect(context.canvas.getObjects()).toHaveLength(0);
     });
 
     it("hides props for the static field cache and restores them (section E)", () => {

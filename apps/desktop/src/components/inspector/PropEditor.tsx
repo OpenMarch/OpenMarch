@@ -133,14 +133,6 @@ export default function PropEditor() {
                         label={t("inspector.prop.rotation")}
                         value={`${geometry.rotation}°`}
                     />
-                    <Row
-                        label={t("inspector.prop.visible")}
-                        value={
-                            geometry.visible
-                                ? t("inspector.prop.yes")
-                                : t("inspector.prop.no")
-                        }
-                    />
                 </>
             )}
         </InspectorCollapsible>

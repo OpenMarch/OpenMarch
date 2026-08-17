@@ -63,7 +63,7 @@ function buildPropStructureKey({
             .filter((g) => currentPageMpIds.has(g.marcher_page_id))
             .map(
                 (g) =>
-                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}:${g.visible}`,
+                    `${g.id}:${g.width}:${g.height}:${g.shape_type}:${g.rotation}`,
             ),
         opacities: props.map((p) => p.image_opacity),
         imgVer: imageCacheVersion,
@@ -170,7 +170,6 @@ export function useRenderProps({
         });
 
         for (const { prop, marcherPage, geometry } of resolvedProps) {
-            if (!geometry.visible) continue;
             if (hiddenPropIds[prop.id.toString()]) continue;
 
             const canvasProp = new CanvasProp({

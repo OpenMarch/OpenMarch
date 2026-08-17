@@ -40,7 +40,6 @@ export interface ModifiedPropPageGeometryArgs {
     width?: number;
     height?: number;
     rotation?: number;
-    visible?: boolean;
     shape_type?: ShapeType;
     custom_geometry?: string | null;
 }
