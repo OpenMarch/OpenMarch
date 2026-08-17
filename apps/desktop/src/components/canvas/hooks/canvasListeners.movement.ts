@@ -7,9 +7,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     marcherPagesByPageQueryOptions,
     marcherWithVisualsQueryOptions,
+    fieldPropertiesQueryOptions,
 } from "@/hooks/queries";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { useTimingObjects } from "@/hooks";
 
 // eslint-disable-next-line max-lines-per-function
 export const useMovementListeners = ({
@@ -19,11 +21,13 @@ export const useMovementListeners = ({
 }) => {
     const { uiSettings } = useUiSettingsStore()!;
     const { selectedPage } = useSelectedPage()!;
+    const { pages } = useTimingObjects()!;
     const { selectedMarchers } = useSelectedMarchers()!;
     const queryClient = useQueryClient();
     const { data: marcherVisuals } = useQuery(
         marcherWithVisualsQueryOptions(queryClient),
     );
+    const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
 
     // MarcherPage queries
     const { data: marcherPages } = useQuery(
@@ -67,30 +71,37 @@ export const useMovementListeners = ({
                 !canvas ||
                 !selectedPage ||
                 !marcherPages ||
+                !fieldProperties ||
                 marcherVisuals == null
             )
                 return;
 
-            // Render paths based on UI settings (pass empty objects for disabled paths)
+            // Always render, renderPathVisuals decides visibility per pathway
+            const nextPage = pages.find(
+                (p) => p.id === selectedPage.nextPageId,
+            );
             canvas.renderPathVisuals({
                 marcherVisuals: marcherVisuals,
-                previousMarcherPages: uiSettings.previousPaths
-                    ? previousMarcherPages || {}
-                    : {},
+                previousMarcherPages: previousMarcherPages || {},
                 currentMarcherPages: marcherPages,
-                nextMarcherPages: uiSettings.nextPaths
-                    ? nextMarcherPages || {}
-                    : {},
+                nextMarcherPages: nextMarcherPages || {},
                 marcherIds: selectedMarchers.map((m) => m.id),
+                currentPageCounts: selectedPage.counts,
+                nextPageCounts: nextPage?.counts,
+                previousPathsEnabled: uiSettings.previousPaths,
+                nextPathsEnabled: uiSettings.nextPaths,
+                fieldProperties: fieldProperties,
             });
 
             frameRef.current = null;
         });
     }, [
         canvas,
+        fieldProperties,
         marcherPages,
         marcherVisuals,
         nextMarcherPages,
+        pages,
         previousMarcherPages,
         selectedMarchers,
         selectedPage,

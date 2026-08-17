@@ -9,6 +9,7 @@ export interface FieldPropertyArgs {
     halfLineXInterval?: number;
     halfLineYInterval?: number;
     stepSizeInches?: number;
+    stepSizeWarningThresholdInches?: number;
     measurementSystem?: MeasurementSystem;
     topLabelsVisible?: boolean;
     bottomLabelsVisible?: boolean;
@@ -46,6 +47,8 @@ export class FieldProperties {
      * If this constant ever changes, it will mess up old files.
      */
     static readonly PIXELS_PER_INCH = 0.5;
+    // Default step-size warning threshold in inches (~a 4-to-5 step)
+    static readonly DEFAULT_STEP_SIZE_WARNING_THRESHOLD_INCHES = 45;
 
     /** The dimensions of the field's image in pixels. Undefined if there is none. */
     static imageDimensions?: { width: number; height: number };
@@ -76,6 +79,9 @@ export class FieldProperties {
      * The size of this field's step in inches.
      */
     readonly stepSizeInches: number;
+    // Step size in inches above which a marcher's move is flagged as too large
+    // always present, set very large to effectively disable warnings
+    readonly stepSizeWarningThresholdInches: number;
 
     /** The name of the FieldProperties. E.g. "High School Football Field" or "Custom Gym Floor" */
     readonly name: string;
@@ -127,6 +133,7 @@ export class FieldProperties {
         halfLineXInterval = 0,
         halfLineYInterval = 0,
         stepSizeInches = 22.5,
+        stepSizeWarningThresholdInches = FieldProperties.DEFAULT_STEP_SIZE_WARNING_THRESHOLD_INCHES,
         measurementSystem = "imperial",
         topLabelsVisible = true,
         bottomLabelsVisible = true,
@@ -169,6 +176,7 @@ export class FieldProperties {
         this.halfLineXInterval = halfLineXInterval;
         this.halfLineYInterval = halfLineYInterval;
         this.stepSizeInches = stepSizeInches;
+        this.stepSizeWarningThresholdInches = stepSizeWarningThresholdInches;
         this.measurementSystem = measurementSystem;
         this.topLabelsVisible = topLabelsVisible;
         this.bottomLabelsVisible = bottomLabelsVisible;
@@ -224,6 +232,12 @@ export class FieldProperties {
         return this.measurementSystem === "imperial"
             ? this.stepSizeInches
             : 2.54 * this.stepSizeInches;
+    }
+
+    get stepSizeWarningThresholdInUnits(): number {
+        return this.measurementSystem === "imperial"
+            ? this.stepSizeWarningThresholdInches
+            : 2.54 * this.stepSizeWarningThresholdInches;
     }
 
     /**

@@ -14,7 +14,8 @@
             "lockY": "Travar eixo Y",
             "lockYOff": "Habilitar movimento em Y",
             "lockYOn": "Bloquear movimento Y",
-            "snapToCustomFraction": "Ajustar para o inteiro mais próximo"
+            "snapToCustomFraction": "Ajustar para o inteiro mais próximo",
+            "snapToWhole": "Ajustar para o inteiro mais próximo"
         },
         "batchEdit": {
             "noNextPage": "Não é possível definir coordenadas do marcador para a próxima página. Não há próxima página",
@@ -167,6 +168,12 @@
             "label": "Toque Tempo"
         }
     },
+    "auth": {
+        "signIn": "Entrar",
+        "signInAriaLabel": "Entrar",
+        "signOut": "Sair",
+        "userFallback": "Usuário"
+    },
     "colorPicker": {
         "discard": "Descartar",
         "removeSetting": "Remover configuração",
@@ -195,6 +202,36 @@
         "pageAbbreviation": "Pág.",
         "sideToSide": "Lado a Lado",
         "sideToSideAbbreviation": "L. a L."
+    },
+    "ensembles": {
+        "attachDialog": {
+            "attach": "Anexar",
+            "cancel": "Cancelar",
+            "description": "Anexar este arquivo .dots a esta produção? Isso permitirá enviar deste arquivo para o app móvel OpenMarch - On the Move.",
+            "title": "Anexar à produção"
+        },
+        "attached": "(Anexado)",
+        "attachToProduction": "Anexar à produção",
+        "createdAtHeader": "Criado em",
+        "createDialog": {
+            "cancel": "Cancelar",
+            "create": "Criar",
+            "creating": "Criando...",
+            "description": "Adicionar uma produção a {ensembleName}.",
+            "failed": "Falha ao criar produção",
+            "nameLabel": "Nome da Produção",
+            "namePlaceholder": "Nome da Produção",
+            "nameRequired": "Insira um nome de produção",
+            "title": "Criar Produção"
+        },
+        "createProduction": "Criar produção",
+        "empty": "Nenhum conjunto encontrado. Crie um acima!",
+        "error": "Erro ao carregar conjuntos",
+        "loading": "Carregando conjuntos...",
+        "nameHeader": "Nome",
+        "performersHeader": "Intérpretes",
+        "productionsHeader": "Produções",
+        "viewDetails": "Ver detalhes do conjunto"
     },
     "exportCoordinates": {
         "abbreviateCoordinateDescriptions": "Abreviar descrições de coordenadas",
@@ -247,6 +284,8 @@
         "marcherPagesNotLoaded": "Páginas de marchador não carregadas",
         "marchersNotLoaded": "Marchadores não carregados",
         "measuresHeader": "Medida",
+        "mobile": "Celular",
+        "mobilePreviewAlt": "Abrir visualização de exportação móvel do March",
         "noFieldProperties": "Nenhuma propriedade de campo fornecida",
         "noMarcher": "Nenhum marchador fornecido",
         "noMarcherPages": "Nenhuma página de marchador fornecida",
@@ -259,14 +298,6 @@
         "pageNotFound": "Erro: Página não encontrada para a página do caminhante {id}",
         "pdfExportFailed": "Falha na exportação de PDF: {error}",
         "preview": "Pré-visualização",
-        "videoBackground": "Fundo do vídeo",
-        "videoOverlayPreviewHint": "Arraste a sobreposição para movê-la (alça lateral = largura, canto = tamanho). Arraste o espaço vazio para mover o campo e use a roda do mouse para zoom. Use os controles deslizantes abaixo para ajustes finos.",
-        "videoFieldFraming": "Enquadramento do campo",
-        "videoFieldScale": "Escala",
-        "videoFieldOffsetX": "Deslocamento horizontal",
-        "videoFieldOffsetY": "Deslocamento vertical",
-        "videoFieldResetFraming": "Redefinir enquadramento",
-        "videoPreviewLoading": "Carregando pré-visualização…",
         "processingPage": "Processando página {pageNumber} de {totalPages}: {pageName}",
         "quarterPageLayout": "Layout de quarto de página",
         "roundingDenominator": "Arredondamento de coordenadas:",
@@ -278,23 +309,31 @@
         "title": "Exportar",
         "unknownError": "Erro desconhecido",
         "unsortedSection": "Sem classificação",
-        "useXYHeaders": "Usar cabeçalhos X/Y"
-    },
-    "ensembles": {
-        "attached": "(Anexado)",
-        "attachDialog": {
-            "attach": "Anexar",
-            "cancel": "Cancelar",
-            "description": "Anexar este arquivo .dots a esta produção? Isso permitirá enviar deste arquivo para o app móvel OpenMarch - On the Move.",
-            "title": "Anexar à produção"
-        },
-        "createdAtHeader": "Criado em",
-        "empty": "Nenhum conjunto encontrado. Crie um acima!",
-        "error": "Erro ao carregar conjuntos",
-        "loading": "Carregando conjuntos...",
-        "nameHeader": "Nome",
-        "performersHeader": "Intérpretes",
-        "productionsHeader": "Produções"
+        "useXYHeaders": "Usar cabeçalhos X/Y",
+        "video": "Vídeo",
+        "videoAudioTrack": "Faixa de áudio: {name}",
+        "videoBackground": "Fundo do vídeo",
+        "videoExportFailed": "Falha na exportação de vídeo: {error}",
+        "videoExportSuccess": "Vídeo exportado com sucesso!",
+        "videoFieldFraming": "Enquadramento do campo",
+        "videoFieldOffsetX": "Deslocamento horizontal",
+        "videoFieldOffsetY": "Deslocamento vertical",
+        "videoFieldResetFraming": "Redefinir enquadramento",
+        "videoFieldScale": "Escala",
+        "videoFrameRate": "Taxa de Quadros",
+        "videoNoAudio": "Nenhum arquivo de áudio selecionado. O vídeo usará uma trilha silenciosa de áudio.",
+        "videoOpenFile": "Clique para abrir vídeo",
+        "videoOverlay": "Informações na tela",
+        "videoOverlayClock": "Tempo decorrido",
+        "videoOverlayCountLabel": "Contagem",
+        "videoOverlayMeasures": "Números de medidas e marcas de ensaio",
+        "videoOverlayPreviewHint": "Arraste a sobreposição para movê-la (alça lateral = largura, canto = tamanho). Arraste o espaço vazio para mover o campo e use a roda do mouse para zoom. Use os controles deslizantes abaixo para ajustes finos.",
+        "videoOverlaySetCounts": "Conjuntos & contagens",
+        "videoOverlaySetLabel": "Configurar",
+        "videoOverlayTempo": "Tempo",
+        "videoPreviewLoading": "Carregando pré-visualização…",
+        "videoRendering": "Renderizando vídeo... Isso pode levar vários minutos.",
+        "videoResolution": "Resolução"
     },
     "field": {
         "general": {
@@ -319,9 +358,9 @@
             "delete": "Excluir",
             "deleted": "\"{axis}-checkpoint em {steps} etapas deletado - \"{name}\"\"",
             "deleteTooltip": "Excluir este ponto de verificação do campo",
-            "minimumRequired": "S\u00e3o necess\u00e1rios pelo menos 2 pontos de verifica\u00e7\u00e3o de {axis}",
             "fieldLabel": "Rótulo de Campo",
             "fieldLabelTooltip": "O rótulo para aparecer no campo (ou seja, os marcadores do campo)",
+            "minimumRequired": "São necessários pelo menos 2 pontos de verificação de {axis}",
             "name": "Nome",
             "nameTooltip": "Nomeie seu ponto de verificação como quiser. Isso é apenas para você saber qual ponto de verificação está selecionando.",
             "newXCheckpointName": "Novo Ponto de Verificação X",
@@ -348,6 +387,9 @@
             "notDefined": "FieldProperties não está definido. Isso nunca deveria acontecer, por favor entre em contato com o suporte."
         },
         "fieldTemplate": {
+            "custom": "Personalizado",
+            "football": "Futebol",
+            "grid": "Grade",
             "label": "Modelo de Campo"
         },
         "fieldType": {
@@ -461,16 +503,49 @@
             "yCheckpointsNegative": "AVISO - É altamente recomendado que todos os passos dos Pontos de Verificação Y sejam menores que zero (ou seja, números negativos). Todas as coordenadas Y devem estar atrás da frente do campo. Não seguir essa recomendação pode causar erros gráficos e coordenadas inesperadas."
         }
     },
+    "fileAccessDialogError": {
+        "closeButton": "Fechar",
+        "default": {
+            "description": "Incapaz de abrir arquivo.",
+            "title": "Erro"
+        },
+        "forbidden": {
+            "description": "Você não tem permissão para abrir este arquivo.",
+            "title": "Permissões inválidas de arquivo"
+        },
+        "guideLinkText": "Abrir Guia de Erros do Arquivo March",
+        "notFound": {
+            "description": "Este arquivo não existe neste local. Foi movido ou renomeado?",
+            "title": "Arquivo não encontrado"
+        },
+        "referToGuide": "Consulte o <link></link> para mais informações.",
+        "renderFail": {
+            "description": "O modal de alerta falhou ao renderizar.",
+            "title": "Falha de renderização do modal"
+        },
+        "server": {
+            "description": "O servidor encontrou um erro ao tentar abrir este arquivo.",
+            "title": "Erro interno do servidor"
+        }
+    },
     "fileTab": {
         "exitFile": "Sair do Arquivo",
         "newFile": "Novo Arquivo",
         "openFile": "Abrir Arquivo",
         "redo": "Refazer",
+        "saveCopyDialogDescription": "OpenMarch salva automaticamente suas alterações no arquivo atual. Use esta função se desejar criar uma cópia completa do seu arquivo atual.",
         "saveFile": "Salvar Cópia",
+        "saveFileCancel": "Cancelar",
+        "saveSpinnerText": "Salvando cópia...",
+        "toasts": {
+            "error": "Não foi possível salvar a cópia",
+            "success": "Cópia salva"
+        },
         "undo": "Desfazer"
     },
     "formButtons": {
         "cancel": "Cancelar",
+        "discardChanges": "Descartar Alterações",
         "editButton": "Editar",
         "saveChanges": "Salvar Alterações"
     },
@@ -548,7 +623,13 @@
     },
     "launchpage": {
         "files": {
+            "clearAllRecentFiles": "Limpar tudo",
+            "clearAllRecentFilesTooltip": "Remover todos os arquivos recentes (não remove do disco)",
+            "clearMissingRecentFiles": "Limpar ausentes",
+            "clearMissingRecentFilesTooltip": "Remover arquivos recentes ausentes/movidos (não remove do disco)",
             "createNew": "Novo Arquivo",
+            "failedToClearAllRecentFiles": "Falha ao remover todos os arquivos da lista de recentes",
+            "failedToClearMissingRecentFiles": "Falha ao remover arquivos ausentes/movidos da lista de recentes",
             "failedToLoadRecent": "Falha ao carregar arquivos recentes",
             "failedToOpen": "Falha ao abrir arquivo",
             "failedToRemoveRecent": "Falha ao remover arquivo da lista de recentes",
@@ -577,6 +658,78 @@
             }
         },
         "merch": "Obtenha OpenMarch Merch!",
+        "newShow": {
+            "back": "Voltar",
+            "browse": "Navegar",
+            "cancel": "Cancelar",
+            "client": "Cliente",
+            "create": "Criar programa",
+            "designer": "Designer",
+            "errors": {
+                "audioNotSaved": "O áudio pode não ter sido salvo. Você pode adicionar áudio depois no editor.",
+                "createFailed": "Falha ao criar show",
+                "nameRequired": "Nome do show é necessário",
+                "xmlNotImported": "O MusicXML pode não ter sido importado. Você pode importá-lo depois no editor."
+            },
+            "exitConfirm": {
+                "cancel": "Continuar editando",
+                "confirm": "Descartar",
+                "description": "Você tem alterações não salvas neste fluxo de configuração. Se você sair agora, seu rascunho será excluído e nada será salvo.",
+                "title": "Descartar novo show?"
+            },
+            "fileExistsWarning": "Um arquivo com este nome já existe neste local. Ele será substituído ao concluir a criação do show.",
+            "location": "Salvar localização",
+            "moreOptions": "Mais opções",
+            "next": "Próximo",
+            "showName": "Nome do Show",
+            "skip": "Pular",
+            "steps": {
+                "audio": {
+                    "dbNotReady": "O arquivo do show não está pronto. Volte para a etapa do projeto e tente novamente.",
+                    "description": "Importe um arquivo de áudio agora ou pule e adicione um mais tarde.",
+                    "optionalDescription": "O áudio é opcional. Você pode pular esta etapa e adicionar áudio mais tarde do editor.",
+                    "title": "Áudio",
+                    "waitingDb": "Preparando seu arquivo de show…"
+                },
+                "ensemble": {
+                    "description": "Escolha sua atividade.",
+                    "title": "Atividade",
+                    "typeLabel": "Atividade"
+                },
+                "field": {
+                    "description": "Escolha um modelo de campo para seu programa.",
+                    "title": "Configuração do campo"
+                },
+                "performers": {
+                    "added": "Artistas adicionados",
+                    "addNew": "Adicionar artistas",
+                    "description": "Adicione os integrantes agora ou pule e adicione-os mais tarde no editor.",
+                    "noneAdded": "Nenhum artista adicionado ainda.",
+                    "title": "Artistas"
+                },
+                "project": {
+                    "description": "Dê um nome ao seu show e escolha onde salvá-lo.",
+                    "title": "Detalhes do projeto"
+                },
+                "tempo": {
+                    "dbNotReady": "O arquivo do show não está pronto. Volte para a etapa do projeto e tente novamente.",
+                    "description": "Defina o tempo com um BPM ou importe MusicXML. Você pode pular esta etapa e editar o andamento mais tarde.",
+                    "method": "Fonte do tempo",
+                    "methodHelper": "Escolha como você deseja configurar o tempo para este show.",
+                    "musicXml": "Arquivo MusicXML",
+                    "skip": "Pular por ora",
+                    "skipDescription": "Os dados de tempo são opcionais. Você pode editar o tempo mais tarde no editor.",
+                    "tempoOnly": "Somente Tempo",
+                    "timeSignature": "Assinatura de tempo",
+                    "timeSignatureHelper": "Escolha o compasso para os compassos iniciais deste show. Você pode mudar isso mais tarde.",
+                    "title": "Dados de tempo",
+                    "waitingDb": "Preparando seu arquivo de show…"
+                }
+            },
+            "success": "Show criado com sucesso",
+            "tempo": "Tempo padrão (BPM)",
+            "title": "Novo show"
+        },
         "settings": {
             "title": "Configurações"
         },
@@ -601,14 +754,17 @@
         },
         "drillPrefix": "Prefixo de Ordem",
         "editButton": "Editar Marchadores",
+        "editMarcher": "Editar Marchador",
         "list": {
             "addSectionStyle": "Adicionar Estilo de Seção",
             "addTagAppearance": "Adicionar Aparência de Tag",
             "allSections": "Todas as Seções",
             "createTagsFirst": "Primeiro, crie tags no inspetor de marchadores para adicionar aparências de tags.",
+            "deleteButton": "Excluir",
             "deleteSectionStyle": "Excluir este estilo de seção",
             "discardChanges": "Descartar Alterações",
             "drillNumberTitle": "#",
+            "editButton": "Editar",
             "fillColor": "Cor de Preenchimento",
             "nameTitle": "Nome",
             "noMarchers": "Nenhum marchador criado ainda. Por que você não cria um?",
@@ -625,6 +781,9 @@
         },
         "listTitle": "Lista",
         "marcherAppearance": "Aparência do Marchador",
+        "name": "Nome",
+        "notes": "Notas",
+        "notesPlaceholder": "Adicionar notas para este marchante...",
         "quantity": "Quantidade",
         "section": "Seção",
         "sectionError": {
@@ -633,12 +792,110 @@
         "sectionStyles": "Estilos da Seção",
         "sectionText": "Seção",
         "tagText": "Etiqueta",
-        "title": "Marchadores"
+        "title": "Marchadores",
+        "updateButton": "Atualizar Marchador",
+        "year": "Ano"
     },
     "measures": {
         "createFailed": "Falha ao criar compassos - {error}",
         "deleteFailed": "Falha ao excluir compassos - {error}",
         "updateFailed": "Falha ao atualizar compassos - {error}"
+    },
+    "mobileExport": {
+        "accessError": {
+            "description": "Não conseguimos validar que você tem acesso ao OTM Production ao qual este programa está vinculado. A conta que está conectada pode não ter acesso, ou a produção pode não existir mais.",
+            "hint": "Desvincule este arquivo da produção para escolher um diferente, ou feche a barra lateral e entre com uma conta que tenha acesso.",
+            "title": "Não foi possível validar o acesso do Em Movimento"
+        },
+        "audio": {
+            "active": "Ativo",
+            "add": "Adicionar",
+            "addAlternate": "Adicionar Arquivo de Áudio Alternativo",
+            "addHelp": "Os artistas e instrutores poderão selecionar este arquivo de áudio no aplicativo móvel.",
+            "cancel": "Cancelar",
+            "delete": "Excluir",
+            "editNickname": "Editar Apelido",
+            "loadFailed": "Falha ao carregar arquivos de áudio",
+            "nicknameLabel": "Apelido (opcional)",
+            "nicknamePlaceholder": "Apelido (opcional)",
+            "nicknamePlaceholderShort": "Apelido",
+            "optionsAriaLabel": "Opções de arquivo de áudio",
+            "retry": "Tentar novamente",
+            "save": "Salvar",
+            "saving": "Salvando…",
+            "setActive": "Definir como ativo",
+            "title": "Arquivos de Áudio",
+            "uploading": "Carregando..."
+        },
+        "close": "Fechar",
+        "confirmPublish": {
+            "cancel": "Cancelar",
+            "description": "Isso tornará imediatamente o show visível para todos os usuários registrados neste conjunto.",
+            "publish": "Publicar",
+            "title": "Publicar no aplicativo móvel"
+        },
+        "date": {
+            "daysAgo": "{count, plural, one {# dia atrás} many {# milhões de dias atrás} other {# dias atrás}}",
+            "full": "{day} de {month} de {year} - {time}",
+            "hoursAgo": "{count, plural, one {# hora atrás} other {# horas atrás} }",
+            "justNow": "Agora mesmo",
+            "minutesAgo": "{count, plural, one {há # minuto} other {há # minutos} }"
+        },
+        "detach": {
+            "button": "Desanexar Arquivo da Produção",
+            "cancel": "Cancelar",
+            "confirm": "Tem certeza de que deseja desvincular este arquivo do OTM Production? Isso significa que você não poderá fazer upload de revisões para o aplicativo móvel. Você sempre pode vinculá-lo novamente mais tarde.",
+            "confirmButton": "Sim, Desanexar",
+            "failed": "Falha ao desanexar arquivo da produção"
+        },
+        "loading": {
+            "checkingSignIn": "Verificando login",
+            "validatingAccess": "Validando acesso do Em Movimento..."
+        },
+        "logoAlt": "Logo OTM",
+        "revision": {
+            "audioSyncFailed": "Revisão carregada, mas a sincronização de áudio falhou: {msg}",
+            "backgroundSyncFailed": "Revisão carregada, mas a sincronização de imagem de fundo falhou: {msg}",
+            "initialTitle": "Revisão inicial",
+            "newTitleLabel": "Novo título de revisão",
+            "preparing": "Preparando...",
+            "publishButton": "Publicar no aplicativo móvel",
+            "publishing": "Publicando no aplicativo móvel...",
+            "pushButton": "Enviar ao App Móvel",
+            "pushing": "Enviando para o App Móvel...",
+            "titlePlaceholder": "Descreva o que mudou...",
+            "titleRequired": "Por favor, forneça um título de revisão",
+            "uploadFailedGeneric": "Falha no upload. Verifique o console para detalhes.",
+            "uploadingAudio": "Carregando áudio...",
+            "uploadingImage": "Carregando imagem...",
+            "uploadSuccess": "Upload bem-sucedido",
+            "validatingAudio": "Validando áudio..."
+        },
+        "revisions": {
+            "active": "Ativo",
+            "emptyMessage": "Após publicar no aplicativo móvel, você pode enviar revisões adicionais para manter seu show atualizado.",
+            "listHeading": "Todas as revisões"
+        },
+        "settings": {
+            "backgroundImage": {
+                "alt": "Fundo de Produção",
+                "empty": "Nenhuma imagem de fundo",
+                "help": "A imagem de fundo é sincronizada automaticamente quando você faz upload de uma nova revisão. Para alterá-la, altere a imagem de fundo no editor de campo e faça upload de uma nova revisão.",
+                "title": "Imagem de Fundo"
+            },
+            "button": "Configurações",
+            "detach": {
+                "title": "Desanexar produção"
+            },
+            "noProduction": "Nenhuma produção encontrada",
+            "title": "Configurações do App Móvel"
+        },
+        "signedOut": {
+            "createAccountPrompt": "Ainda não tem uma conta? Crie uma agora!",
+            "setupAccount": "Configure sua conta",
+            "signInPrompt": "Já possui uma conta? Conecte-a ao app de desktop para começar a usá-lo em movimento!"
+        },
+        "title": "Exportar para o Celular"
     },
     "music": {
         "accent": "Acentuar o primeiro compasso",
@@ -848,6 +1105,7 @@
                 "delete": "Excluir",
                 "deleteInPlace": "No lugar",
                 "deleteInPlaceTooltip": "Exclui esta página e mantém as páginas seguintes onde estão.",
+                "deletePage": "Excluir",
                 "deleteYank": "Puxar",
                 "deleteYankTooltip": "Exclui esta página e puxa as páginas seguintes para trás pelo seu comprimento.",
                 "subsetToggle": "Subconjunto",

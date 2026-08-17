@@ -111,6 +111,51 @@ export function GeneralTab({
                     />
                 </FormField>
                 <FormField
+                    label={t("fieldProperties.labels.stepSizeWarningThreshold")}
+                    tooltip={t(
+                        "fieldProperties.tooltips.stepSizeWarningThreshold",
+                    )}
+                >
+                    <UnitInput
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*\.?[0-9]*"
+                        containerClassName={inputClassname}
+                        unit={measurementSystem === "imperial" ? "in" : "cm"}
+                        onBlur={(e) => {
+                            e.preventDefault();
+                            if (e.target.value !== "") {
+                                const parsedFloat = parseFloat(e.target.value);
+                                if (!isNaN(parsedFloat)) {
+                                    updateFieldProperties(
+                                        new FieldProperties({
+                                            ...currentFieldProperties,
+                                            stepSizeWarningThresholdInches:
+                                                measurementSystem === "imperial"
+                                                    ? parsedFloat
+                                                    : FieldProperties.centimetersToInches(
+                                                          parsedFloat,
+                                                      ),
+                                        }),
+                                    );
+                                }
+                            }
+                        }}
+                        onChange={(e) => {
+                            const filtered = e.target.value.replace(
+                                /[^\d.]/g,
+                                "",
+                            );
+                            e.target.value = filtered.replace(/\.+/g, ".");
+                        }}
+                        onKeyDown={blurOnEnter}
+                        defaultValue={
+                            currentFieldProperties.stepSizeWarningThresholdInUnits
+                        }
+                        required
+                    />
+                </FormField>
+                <FormField
                     label={t("fieldProperties.labels.measurementSystem")}
                     tooltip={t("fieldProperties.tooltips.measurementSystem")}
                 >

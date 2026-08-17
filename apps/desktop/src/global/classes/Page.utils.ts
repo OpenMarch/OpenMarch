@@ -47,3 +47,5 @@ export const measureRangeString = (
         return "N/A";
     }
 };
+
+export { generatePageNames, getLastPageNumber } from "@openmarch/core";
