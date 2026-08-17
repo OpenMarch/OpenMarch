@@ -180,9 +180,7 @@ export default function PropList({ onEditProp }: PropListProps) {
                                         `${prop.marcher.drill_prefix}${prop.marcher.drill_order}`}
                                 </span>
                                 <span className="text-text/50 text-sm">
-                                    {prop.surface_type} •{" "}
-                                    {prop.default_width?.toFixed(1) || "?"} x{" "}
-                                    {prop.default_height?.toFixed(1) || "?"} ft
+                                    {prop.surface_type}
                                 </span>
                             </div>
                         </div>
