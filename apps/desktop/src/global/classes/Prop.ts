@@ -12,11 +12,17 @@ export type PropWithMarcher = DatabaseProp & {
 export type SurfaceType = "floor" | "platform" | "obstacle";
 export type ShapeType = "rectangle" | "circle" | "arc" | "polygon" | "freehand";
 
-export const SURFACE_TYPE_Z_ORDER: Record<SurfaceType, number> = {
-    floor: 0,
-    platform: 1,
-    obstacle: 3,
-};
+/**
+ * Surface type is recorded and displayed, but carries no runtime behavior — nothing
+ * renders, stacks, or collides differently because of it. This z-order becomes
+ * meaningful when 3D arrives; commented out until then so nobody wires it up
+ * assuming the numbers were chosen deliberately.
+ */
+// export const SURFACE_TYPE_Z_ORDER: Record<SurfaceType, number> = {
+//     floor: 0,
+//     platform: 1,
+//     obstacle: 3,
+// };
 
 export const DEFAULT_PROP_WIDTH = 15;
 export const DEFAULT_PROP_HEIGHT = 15;
