@@ -17,10 +17,16 @@ const SURFACE_KEYS: Record<string, string> = {
     obstacle: "inspector.prop.surfaceType.obstacle",
 };
 
-const SHAPE_KEYS: Record<string, string> = {
-    rectangle: "inspector.prop.shapeType.rectangle",
-    circle: "inspector.prop.shapeType.circle",
-    custom: "inspector.prop.shapeType.custom",
+/**
+ * Translation key per outline type. Must cover every key of PROP_OUTLINES —
+ * an outline missing here renders its raw database value in the inspector.
+ */
+export const OUTLINE_KEYS: Record<string, string> = {
+    rectangle: "inspector.prop.outlineType.rectangle",
+    circle: "inspector.prop.outlineType.circle",
+    arc: "inspector.prop.outlineType.arc",
+    polygon: "inspector.prop.outlineType.polygon",
+    freehand: "inspector.prop.outlineType.freehand",
 };
 
 const fmtFeet = (val: number | null | undefined, notSet: string) =>
@@ -114,10 +120,10 @@ export default function PropEditor() {
                     )}
 
                     <Row
-                        label={t("inspector.prop.shape")}
+                        label={t("inspector.prop.outline")}
                         value={
-                            SHAPE_KEYS[geometry.outline_type]
-                                ? t(SHAPE_KEYS[geometry.outline_type])
+                            OUTLINE_KEYS[geometry.outline_type]
+                                ? t(OUTLINE_KEYS[geometry.outline_type])
                                 : geometry.outline_type
                         }
                     />

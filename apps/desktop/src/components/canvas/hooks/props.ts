@@ -25,7 +25,7 @@ import type { FieldProperties } from "@openmarch/core";
  * unchanged between renders, existing CanvasProps are only repositioned and
  * relabeled (the cheap path) instead of being destroyed and recreated.
  */
-function buildPropStructureKey({
+export function buildPropStructureKey({
     props,
     propGeometries,
     marcherPages,
@@ -62,7 +62,10 @@ function buildPropStructureKey({
             .filter((g) => currentPageMpIds.has(g.marcher_page_id))
             .map(
                 (g) =>
-                    `${g.id}:${g.width}:${g.height}:${g.outline_type}:${g.rotation}`,
+                    // custom_outline carries the whole shape of a polygon, arc
+                    // or freehand prop — omitting it leaves a stale CanvasProp
+                    // on screen when the outline's points change.
+                    `${g.id}:${g.width}:${g.height}:${g.outline_type}:${g.rotation}:${g.custom_outline ?? ""}`,
             ),
         opacities: props.map((p) => p.image_opacity),
         imgVer: imageCacheVersion,

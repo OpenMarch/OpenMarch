@@ -51,29 +51,33 @@ type PropWithMarcher = DatabaseProp & {
 ```typescript
 type DatabasePropPageGeometry = {
     id: number;
-    marcher_page_id: number;    // FK to marcher_pages
-    shape_type: "rectangle" | "circle" | "custom";
-    width: number | null;
-    height: number | null;
-    radius: number | null;
-    custom_geometry: string | null;  // SVG/path data for custom shapes
-    rotation: number | null;
-    rotation_x: number | null;
-    rotation_y: number | null;
-    visible: number;            // 0 or 1 (SQLite boolean)
+    marcher_page_id: number;    // FK to marcher_pages, unique
+    outline_type: OutlineType;  // NOT "shape" — see naming note below
+    width: number;              // feet, CHECK width > 0
+    height: number;             // feet, CHECK height > 0
+    custom_outline: string | null;  // JSON point list for arc/polygon/freehand
+    rotation: number;           // degrees, defaults to 0
 };
+
+type OutlineType = "rectangle" | "circle" | "arc" | "polygon" | "freehand";
 ```
 
-### Surface Types & Z-Order
+**Naming**: a prop's silhouette is its **outline**, never its "shape". "Shape"
+means a drill formation (`shapes` / `shape_pages` / `shape_page_marchers`).
+See `apps/desktop/CONTEXT.md` for the full glossary.
+
+**Which fields animate**: `width`, `height` and `rotation` interpolate between
+pages (the `PropTransform` type). `outline_type` and `custom_outline` are
+discrete and snap at the page boundary.
+
+### Surface Types
 ```typescript
 type SurfaceType = "floor" | "platform" | "obstacle";
-
-const SURFACE_TYPE_Z_ORDER = {
-    floor: 0,       // Below marchers
-    platform: 1,    // At marcher level
-    obstacle: 3,    // Above marchers
-};
 ```
+
+Recorded and displayed, but carries **no runtime behavior** — nothing renders,
+stacks, or collides differently because of it. The `SURFACE_TYPE_Z_ORDER` map is
+commented out in `Prop.ts` until 3D makes it meaningful.
 
 ### Drawing Modes
 ```typescript
@@ -140,7 +144,13 @@ This means props participate in undo/redo, pathways, and animation just like mar
 ## Gotchas
 
 - A prop always has a backing marcher with `type: "prop"`. Deleting the marcher deletes the prop.
-- `prop_page_geometry.visible` is `0|1` (SQLite boolean), needs conversion.
-- Props are NOT tracked by undo/redo history triggers (the backing marcher IS tracked though).
-- `custom_geometry` stores SVG path data as a text string for non-rectangular shapes.
+- There is no per-page visibility column. Hiding a prop is a display preference held in
+  `UiSettingsStore.hiddenPropIds`, not part of the show — a prop is on the field on every page.
+- `prop_page_geometry` is NOT tracked by undo/redo history triggers, so resize and rotate cannot
+  be undone (the backing marcher IS tracked). This is a known gap — see ADR-0001.
+- `custom_outline` stores a JSON point list (`{ points, originalWidth, originalHeight, closed }`),
+  not SVG path data. Only arc, polygon and freehand use it.
+- Rendering a prop onto any canvas goes through `addPropsToCanvas` in
+  `canvasObjects/renderProps.ts` — the interactive canvas, SVG export and video export all use it.
+  Don't construct a `CanvasProp` directly.
 - The `PropDrawingListeners` are only active when `drawingMode` is non-null in the PropDrawingStore.

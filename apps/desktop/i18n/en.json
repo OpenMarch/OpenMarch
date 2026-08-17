@@ -255,18 +255,18 @@
         "fieldPropertiesRequired": "Field properties are required for export",
         "frontToBackHeader": "Front to Back",
         "funPhrase": {
-            "0": "Get ready to march a perfect 8 to 5! \uD83C\uDFBA",
-            "1": "Getting the files to cover down \uD83D\uDCCB",
-            "10": "Setting the tempo for success \uD83C\uDFBC",
-            "11": "Fine-tuning every step count \uD83D\uDD27",
-            "2": "Cleaning drill from the box \uD83E\uDDF9",
-            "3": "Making sure everyone's in step \uD83D\uDC5F",
-            "4": "Painting a perfect field \uD83D\uDD8C️",
-            "5": "Marching toward perfection! \uD83C\uDFAF",
+            "0": "Get ready to march a perfect 8 to 5! 🎺",
+            "1": "Getting the files to cover down 📋",
+            "10": "Setting the tempo for success 🎼",
+            "11": "Fine-tuning every step count 🔧",
+            "2": "Cleaning drill from the box 🧹",
+            "3": "Making sure everyone's in step 👟",
+            "4": "Painting a perfect field 🖌️",
+            "5": "Marching toward perfection! 🎯",
             "6": "Polishing those yard line markers ✨",
-            "7": "Counting off the perfect tempo \uD83E\uDD41",
-            "8": "Aligning the formation like a pro \uD83D\uDCD0",
-            "9": "Marching toward perfection! \uD83C\uDFAF"
+            "7": "Counting off the perfect tempo 🥁",
+            "8": "Aligning the formation like a pro 📐",
+            "9": "Marching toward perfection! 🎯"
         },
         "generatingPDF": " Generating PDF file for: {drillNumber}",
         "includeMeasures": "Include measures",
@@ -593,16 +593,17 @@
             "geometry": "Geometry",
             "height": "Height",
             "name": "Name",
-            "no": "No",
             "notSet": "—",
-            "pageSubtitle": "Page {pageName}",
-            "rotation": "Rotation",
-            "shape": "Shape",
-            "shapeType": {
+            "outline": "Outline",
+            "outlineType": {
+                "arc": "Arc",
                 "circle": "Circle",
-                "custom": "Custom",
+                "freehand": "Freehand",
+                "polygon": "Polygon",
                 "rectangle": "Rectangle"
             },
+            "pageSubtitle": "Page {pageName}",
+            "rotation": "Rotation",
             "surface": "Surface",
             "surfaceType": {
                 "floor": "Floor",
@@ -610,9 +611,7 @@
                 "platform": "Platform"
             },
             "title": "Prop",
-            "visible": "Visible",
-            "width": "Width",
-            "yes": "Yes"
+            "width": "Width"
         },
         "shape": {
             "addSegmentButton": "Add",
