@@ -123,6 +123,231 @@ describe("SelectedPageContext", () => {
         });
     });
 
+    describe("re-seek when selected page end changes", () => {
+        it("seeks to the new end when the selected page lengthens", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+
+            const lengthenedPages = mockPages.map((page) =>
+                page.id === 2
+                    ? { ...page, duration: 6, counts: 12 }
+                    : page.id === 3
+                      ? { ...page, timestamp: 14 }
+                      : page,
+            );
+            mockedUseTimingObjects.mockReturnValue({
+                pages: lengthenedPages,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(14_000);
+            expect(result.current?.selectedPage).toEqual(lengthenedPages[1]);
+        });
+
+        it("seeks to the new end when the selected page shortens", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+
+            const shortenedPages = mockPages.map((page) =>
+                page.id === 2
+                    ? { ...page, duration: 2, counts: 4 }
+                    : page.id === 3
+                      ? { ...page, timestamp: 10 }
+                      : page,
+            );
+            mockedUseTimingObjects.mockReturnValue({
+                pages: shortenedPages,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(10_000);
+            expect(result.current?.selectedPage).toEqual(shortenedPages[1]);
+        });
+
+        it("does not re-seek while playing", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+
+            void act(() => {
+                useFrameClockStore.setState({ playing: true });
+            });
+
+            const lengthenedPages = mockPages.map((page) =>
+                page.id === 2
+                    ? { ...page, duration: 6, counts: 12 }
+                    : page.id === 3
+                      ? { ...page, timestamp: 14 }
+                      : page,
+            );
+            mockedUseTimingObjects.mockReturnValue({
+                pages: lengthenedPages,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+            // Old end (12s) is now mid page 2 (ends at 14s), so derivePage falls back to page 1.
+            expect(result.current?.selectedPage).toEqual(lengthenedPages[0]);
+        });
+    });
+
+    describe("selection when pages are deleted", () => {
+        it("seeks to the previous page when the selected page is deleted", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(result.current?.selectedPage).toEqual({ ...mockPages[1] });
+
+            const pagesWithout2 = [
+                mockPages[0],
+                {
+                    ...mockPages[2],
+                    previousPageId: mockPages[0].id,
+                    timestamp: 8,
+                },
+            ];
+            mockedUseTimingObjects.mockReturnValue({
+                pages: pagesWithout2,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(8_000);
+            expect(result.current?.selectedPage).toEqual(pagesWithout2[0]);
+        });
+
+        it("seeks to the new first page when the first page is deleted", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[0].id }));
+            expect(result.current?.selectedPage).toEqual({ ...mockPages[0] });
+
+            const pagesWithout1 = [
+                {
+                    ...mockPages[1],
+                    previousPageId: null,
+                    timestamp: 0,
+                },
+                {
+                    ...mockPages[2],
+                    previousPageId: mockPages[1].id,
+                    timestamp: 4,
+                },
+            ];
+            mockedUseTimingObjects.mockReturnValue({
+                pages: pagesWithout1,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(4_000);
+            expect(result.current?.selectedPage).toEqual(pagesWithout1[0]);
+        });
+
+        it("re-seeks when a non-selected delete grows the selected page duration", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+
+            // Simulate deleting page 3 and merging its time into page 2.
+            const pagesAfterMerge = [
+                mockPages[0],
+                {
+                    ...mockPages[1],
+                    duration: 12,
+                    counts: 24,
+                    nextPageId: null,
+                },
+            ];
+            mockedUseTimingObjects.mockReturnValue({
+                pages: pagesAfterMerge,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(20_000);
+            expect(result.current?.selectedPage).toEqual(pagesAfterMerge[1]);
+        });
+
+        it("does not re-seek when a later page is deleted and the selected page is unchanged", async () => {
+            const { result, rerender } = renderHook(() => useSelectedPage(), {
+                wrapper: SelectedPageProvider,
+            });
+
+            void act(() => result.current?.seekTo({ id: mockPages[1].id }));
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+
+            const pagesWithout3 = [
+                mockPages[0],
+                { ...mockPages[1], nextPageId: null },
+            ];
+            mockedUseTimingObjects.mockReturnValue({
+                pages: pagesWithout3,
+                measures: [],
+                beats: [],
+                fetchTimingObjects: vi.fn(),
+                isLoading: false,
+                hasError: false,
+            } as ReturnType<typeof useTimingObjects>);
+
+            void act(() => rerender());
+
+            expect(useFrameClockStore.getState().currentTime).toBe(12_000);
+            expect(result.current?.selectedPage).toEqual(pagesWithout3[1]);
+        });
+    });
+
     describe("pause snaps to floored page end", () => {
         it("seeks mid-page time to the page end and updates selectedPage", () => {
             const { result } = renderHook(() => useSelectedPage(), {

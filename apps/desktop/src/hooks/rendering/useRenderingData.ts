@@ -17,6 +17,19 @@ import { dbToMarcherTimeline } from "@/services/rendering/db-to-timeline";
 const selectMarcherIds = (result: { id: number }[]) =>
     result.map((marcher) => marcher.id).sort();
 
+/**
+ * True when every page has a matching coordinate. Used to gate timeline
+ * construction while React Query still holds stale marcher_pages after pages
+ * refetch first (e.g. undo of a page delete).
+ */
+export const _coordinatesCoverPages = (
+    coordinates: { page_id: number }[],
+    pages: { page_id: number }[],
+): boolean => {
+    const pageIds = new Set(coordinates.map((c) => c.page_id));
+    return pages.every((p) => pageIds.has(p.page_id));
+};
+
 export const useMarcherTimelines = ():
     | {
           /** List of marcher ids whose timelines are being returned */
@@ -64,7 +77,12 @@ export const useMarcherTimelines = ():
         ) => {
             if (
                 marcherIds == null ||
-                marcherPages.some((mp) => mp == null || mp.data == null)
+                marcherPages.some(
+                    (mp) =>
+                        mp == null ||
+                        mp.data == null ||
+                        !_coordinatesCoverPages(mp.data, pagesForTimeline),
+                )
             )
                 return undefined;
 
