@@ -462,25 +462,15 @@ export default function PageTimeline() {
 
     const handleDeletePage = useCallback(
         (page: Page) => {
-            deletePages(new Set([page.id]), {
-                onSuccess: () => {
-                    if (page.previousPageId != null)
-                        seekTo({ id: page.previousPageId });
-                },
-            });
+            deletePages(new Set([page.id]));
         },
-        [deletePages, seekTo],
+        [deletePages],
     );
     const handleDeletePageYank = useCallback(
         (page: Page) => {
-            deletePageYank(page.id, {
-                onSuccess: () => {
-                    if (page.previousPageId != null)
-                        seekTo({ id: page.previousPageId });
-                },
-            });
+            deletePageYank(page.id);
         },
-        [deletePageYank, seekTo],
+        [deletePageYank],
     );
     const handleToggleSubset = useCallback(
         (page: Page) => {

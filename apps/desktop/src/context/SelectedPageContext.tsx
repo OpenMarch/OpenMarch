@@ -77,6 +77,8 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     const { pages } = useTimingObjects();
     const [selectedPage, setSelectedPage] = useState<Page | null>(null);
     const pageToSelectRef = useRef<{ id: number } | null>(null);
+    // Last known selected page, used to detect end-time changes across `pages` refreshes.
+    const prevSelectedPageRef = useRef<Page | null>(null);
     const setPageToSelect = useCallback((page: { id: number }) => {
         pageToSelectRef.current = page;
     }, []);
@@ -122,13 +124,52 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     }, [pages, seekTo]);
 
     // Re-derive the selected page whenever the pages list changes (e.g. a page's notes/duration
-    // are edited), using the clock's current time, so the selected page's object reference stays
-    // fresh even when the clock hasn't moved.
+    // are edited, or a page is deleted).
+    // - If the previously selected page was deleted, seek to its previous page (or the first
+    //   remaining page).
+    // - If it still exists but its end time changed and we are paused, re-seek to the new end.
     useEffect(() => {
-        setSelectedPage(
-            derivePage(pages, useFrameClockStore.getState().currentTime),
-        );
-    }, [pages]);
+        const prev = prevSelectedPageRef.current;
+        const { currentTime, playing } = useFrameClockStore.getState();
+
+        if (prev) {
+            const updated = pages.find((p) => p.id === prev.id);
+
+            if (!updated) {
+                const previousPage =
+                    prev.previousPageId != null
+                        ? pages.find((p) => p.id === prev.previousPageId)
+                        : undefined;
+                const fallback = previousPage ?? pages[0] ?? null;
+                if (fallback) {
+                    seekTo(fallback);
+                    setSelectedPage(fallback);
+                    prevSelectedPageRef.current = fallback;
+                } else {
+                    setSelectedPage(null);
+                    prevSelectedPageRef.current = null;
+                }
+                return;
+            }
+
+            if (!playing) {
+                const prevEnd = prev.timestamp + prev.duration;
+                const newEnd = updated.timestamp + updated.duration;
+                if (
+                    Math.abs(prevEnd - newEnd) > PAGE_BOUNDARY_EPSILON_SECONDS
+                ) {
+                    seekTo(updated);
+                    setSelectedPage(updated);
+                    prevSelectedPageRef.current = updated;
+                    return;
+                }
+            }
+        }
+
+        const derived = derivePage(pages, currentTime);
+        setSelectedPage(derived);
+        prevSelectedPageRef.current = derived;
+    }, [pages, seekTo]);
 
     // Re-derive the selected page on every clock tick. `subscribeToFrameClock` is a non-React
     // subscription (not `useCurrentTime()`), so this doesn't re-render consumers on every
@@ -136,7 +177,9 @@ export function SelectedPageProvider({ children }: { children: ReactNode }) {
     // same object reference the state already holds.
     useEffect(() => {
         return subscribeToFrameClock((timeMs) => {
-            setSelectedPage(derivePage(pages, timeMs));
+            const derived = derivePage(pages, timeMs);
+            setSelectedPage(derived);
+            prevSelectedPageRef.current = derived;
         });
     }, [pages]);
 
