@@ -1,6 +1,7 @@
 import { fabric } from "fabric";
 import CanvasMarcher from "./CanvasMarcher";
 import CanvasProp from "./CanvasProp";
+import type { PropTransform } from "@/utilities/Keyframes";
 import Endpoint from "./Endpoint";
 import Pathway from "./Pathway";
 import Midpoint from "./Midpoint";
@@ -117,7 +118,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
     onPropGeometryEditedFromCanvas?: (args: {
         propId: number;
         pageId: number;
-        changes: { width: number; height: number; rotation: number };
+        /** The animatable triple — see PropTransform in the glossary. */
+        changes: PropTransform;
     }) => void;
 
     // ---- AlignmentEvent changes ----

@@ -1,4 +1,5 @@
 import { useRef, useEffect, useState, useCallback, useMemo } from "react";
+import { T } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -48,6 +49,7 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 import { ShapePath } from "@/global/classes/canvasObjects/ShapePath";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import { getPixelsPerFoot } from "@/global/classes/Prop";
+import type { PropTransform } from "@/utilities/Keyframes";
 
 import { fabric } from "fabric";
 import PropVisualGroup, {
@@ -121,7 +123,7 @@ export default function Canvas({
     const [pendingPropGeometry, setPendingPropGeometry] = useState<{
         propId: number;
         pageId: number;
-        changes: { width: number; height: number; rotation: number };
+        changes: PropTransform;
     } | null>(null);
     const [propGeometryScope, setPropGeometryScope] =
         useState<GeometryPropagation>("forward");
@@ -294,7 +296,7 @@ export default function Canvas({
     ]);
 
     // Helper to convert pixels to feet
-    const pixelsToFeetLocal = useCallback(
+    const pixelsToFeet = useCallback(
         (pixels: number) => {
             if (!fieldProperties) return pixels;
             return pixels / getPixelsPerFoot();
@@ -305,8 +307,8 @@ export default function Canvas({
     // Handle prop drawing completion
     const handlePropDrawingComplete = useCallback(
         (geometry: DrawnShape) => {
-            const widthFeet = pixelsToFeetLocal(geometry.widthPixels);
-            const heightFeet = pixelsToFeetLocal(geometry.heightPixels);
+            const widthFeet = pixelsToFeet(geometry.widthPixels);
+            const heightFeet = pixelsToFeet(geometry.heightPixels);
 
             // Build custom geometry JSON for non-rectangle shapes
             let customGeometry: string | undefined;
@@ -333,7 +335,7 @@ export default function Canvas({
 
             resetDrawingState();
         },
-        [createPropsMutate, pixelsToFeetLocal, resetDrawingState],
+        [createPropsMutate, pixelsToFeet, resetDrawingState],
     );
 
     // Initiate listeners
@@ -955,9 +957,11 @@ export default function Canvas({
                 }}
             >
                 <DialogContent>
-                    <DialogTitle>Apply prop changes</DialogTitle>
+                    <DialogTitle>
+                        <T keyName="props.applyDialog.title" />
+                    </DialogTitle>
                     <DialogDescription>
-                        Apply this size/rotation to:
+                        <T keyName="props.applyDialog.description" />
                     </DialogDescription>
                     <div className="mt-12 flex flex-col gap-8">
                         <Button
@@ -969,7 +973,7 @@ export default function Canvas({
                             }
                             onClick={() => setPropGeometryScope("current")}
                         >
-                            This page only
+                            <T keyName="props.propagation.current" />
                         </Button>
                         <Button
                             size="compact"
@@ -980,7 +984,7 @@ export default function Canvas({
                             }
                             onClick={() => setPropGeometryScope("forward")}
                         >
-                            This page forward (default)
+                            <T keyName="props.propagation.forward" />
                         </Button>
                         <Button
                             size="compact"
@@ -991,7 +995,7 @@ export default function Canvas({
                             }
                             onClick={() => setPropGeometryScope("all")}
                         >
-                            All pages
+                            <T keyName="props.propagation.all" />
                         </Button>
                     </div>
                     <div className="mt-12 flex justify-end gap-8">

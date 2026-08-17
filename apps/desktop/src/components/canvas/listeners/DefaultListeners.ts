@@ -1,5 +1,6 @@
 // @ts-ignore
 import { fabric } from "fabric";
+import tolgee from "@/global/singletons/Tolgee";
 import CanvasListeners from "./CanvasListeners";
 import OpenMarchCanvas from "../../../global/classes/canvasObjects/OpenMarchCanvas";
 import CanvasMarcher from "../../../global/classes/canvasObjects/CanvasMarcher";
@@ -255,7 +256,7 @@ export default class DefaultListeners implements CanvasListeners {
             }
         } catch (err) {
             console.error("updateMarcherPagesAndGeometry failed", err);
-            toast.error("Failed to save position; reverting.");
+            toast.error(tolgee.t("props.errors.savePositionFailed"));
             this.canvas.refreshMarchers();
         } finally {
             this._isUpdatingDatabase = false;

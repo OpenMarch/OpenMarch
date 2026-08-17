@@ -986,6 +986,10 @@
         "volume": "Volume"
     },
     "props": {
+        "applyDialog": {
+            "description": "Apply this size/rotation to:",
+            "title": "Apply prop changes"
+        },
         "createError": "Error creating props",
         "deleteError": "Error deleting props",
         "deleteImageError": "Error deleting prop image",
@@ -1007,6 +1011,9 @@
             "properties": "Properties",
             "removeImage": "Remove",
             "replaceImage": "Replace Image"
+        },
+        "errors": {
+            "savePositionFailed": "Failed to save position; reverting."
         },
         "form": {
             "createProp": "Create Prop",
