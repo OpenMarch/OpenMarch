@@ -17,7 +17,7 @@ import {
     DatabasePropPageGeometry,
     getPixelsPerFoot,
 } from "@/global/classes/Prop";
-import { resolvePropsForPage } from "@/global/classes/propSelectors";
+import { addPropsToCanvas } from "@/global/classes/canvasObjects/renderProps";
 import {
     applyMarcherAppearancesForPage,
     type MarcherAppearancesByPageId,
@@ -317,25 +317,15 @@ const addPropsForPage = ({
     marcherPagesByMarcher: Record<number, MarcherPage>;
     pixelsPerFoot: number;
 }): fabric.Object[] => {
-    const objectsToRemove: fabric.Object[] = [];
-    const resolved = resolvePropsForPage({
+    // No display options: export gets plain props, no images or name labels.
+    const canvasPropsById = addPropsToCanvas({
+        canvas,
         props,
         geometries,
         marcherPages: marcherPagesByMarcher,
+        pixelsPerFoot,
     });
-    for (const { prop, marcherPage, geometry } of resolved) {
-        // Create CanvasProp without background image for export
-        const canvasProp = new CanvasProp({
-            marcher: prop.marcher,
-            prop,
-            geometry,
-            coordinate: { x: marcherPage.x, y: marcherPage.y },
-            pixelsPerFoot,
-        });
-        canvas.add(canvasProp);
-        objectsToRemove.push(canvasProp);
-    }
-    return objectsToRemove;
+    return Object.values(canvasPropsById);
 };
 
 const processDrillChartExportPage = (args: {

@@ -5,6 +5,11 @@ import Endpoint from "@/global/classes/canvasObjects/Endpoint";
 /**
  * PropVisualGroup contains the visual path elements for a prop.
  * Similar to MarcherVisualGroup but without the CanvasMarcher (props render separately).
+ *
+ * TODO: this divergence from the Visual Group convention is deliberate but not
+ * settled — converging props onto it (owning the CanvasProp here, the way
+ * MarcherVisualGroup owns its CanvasMarcher) would let props be updated rather
+ * than rebuilt. See ADR-0001, follow-up 3.
  */
 export default class PropVisualGroup {
     /** The ID of the prop's marcher this visual is associated with */

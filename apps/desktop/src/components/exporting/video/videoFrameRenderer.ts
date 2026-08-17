@@ -6,7 +6,10 @@ import type OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas
 import CanvasMarcher from "@/global/classes/canvasObjects/CanvasMarcher";
 import CanvasProp from "@/global/classes/canvasObjects/CanvasProp";
 import MarcherPage from "@/global/classes/MarcherPage";
-import { resolvePropsForPage } from "@/global/classes/propSelectors";
+import {
+    addPropsToCanvas,
+    removePropsFromCanvas,
+} from "@/global/classes/canvasObjects/renderProps";
 import {
     getPixelsPerFoot,
     type PropWithMarcher,
@@ -301,28 +304,15 @@ export function rebuildPropsForTime(
     const activePage = getPlaybackPageForTimeMs(context.sortedPages, timeMs);
     if (activePage.id === context.lastPropsPageId) return;
 
-    for (const cp of Object.values(context.canvasPropsById)) {
-        context.canvas.remove(cp);
-    }
-    context.canvasPropsById = {};
+    removePropsFromCanvas(context.canvas, context.canvasPropsById);
 
-    const marcherPagesForPage = context.marcherPagesByPage[activePage.id] ?? {};
-    const resolved = resolvePropsForPage({
+    context.canvasPropsById = addPropsToCanvas({
+        canvas: context.canvas,
         props: context.props,
         geometries: context.propGeometries,
-        marcherPages: marcherPagesForPage,
+        marcherPages: context.marcherPagesByPage[activePage.id] ?? {},
+        pixelsPerFoot: context.pixelsPerFoot,
     });
-    for (const { prop, marcherPage, geometry } of resolved) {
-        const canvasProp = new CanvasProp({
-            marcher: prop.marcher,
-            prop,
-            geometry,
-            coordinate: { x: marcherPage.x, y: marcherPage.y },
-            pixelsPerFoot: context.pixelsPerFoot,
-        });
-        context.canvas.add(canvasProp);
-        context.canvasPropsById[prop.marcher_id] = canvasProp;
-    }
     context.lastPropsPageId = activePage.id;
 }
 

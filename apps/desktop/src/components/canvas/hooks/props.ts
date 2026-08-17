@@ -7,7 +7,11 @@ import {
     type PropWithMarcher,
     type DatabasePropPageGeometry,
 } from "@/global/classes/Prop";
-import { resolvePropsForPage } from "@/global/classes/propSelectors";
+import {
+    addPropsToCanvas,
+    removePropsFromCanvas,
+    propDisplayName,
+} from "@/global/classes/canvasObjects/renderProps";
 import type MarcherPage from "@/global/classes/MarcherPage";
 import {
     allPropsQueryOptions,
@@ -15,11 +19,6 @@ import {
     marcherPagesByPageQueryOptions,
 } from "@/hooks/queries";
 import type { FieldProperties } from "@openmarch/core";
-
-/** A prop's on-canvas label: its name, or drill number as a fallback. */
-const propDisplayName = (prop: PropWithMarcher): string =>
-    prop.marcher.name ||
-    `${prop.marcher.drill_prefix}${prop.marcher.drill_order}`;
 
 /**
  * Fingerprint of everything that forces a full prop rebuild. When it is
@@ -154,39 +153,25 @@ export function useRenderProps({
         }
         prevPropStructureRef.current = structureKey;
 
-        canvas
-            .getObjects()
-            .filter(CanvasProp.isCanvasProp)
-            .forEach((prop) => {
-                canvas.remove(prop.propNameLabel);
-                canvas.remove(prop);
-            });
+        removePropsFromCanvas(
+            canvas,
+            canvas.getObjects().filter(CanvasProp.isCanvasProp),
+        );
 
-        const pixelsPerFoot = getPixelsPerFoot();
-        const resolvedProps = resolvePropsForPage({
+        addPropsToCanvas({
+            canvas,
             props,
             geometries: propGeometries,
             marcherPages,
-        });
-
-        for (const { prop, marcherPage, geometry } of resolvedProps) {
-            if (hiddenPropIds[prop.id.toString()]) continue;
-
-            const canvasProp = new CanvasProp({
-                marcher: prop.marcher,
-                prop,
-                geometry,
-                coordinate: { x: marcherPage.x, y: marcherPage.y },
-                pixelsPerFoot,
-                pageId: selectedPage.id,
-                showName:
+            pixelsPerFoot: getPixelsPerFoot(),
+            pageId: selectedPage.id,
+            display: {
+                hiddenPropIds,
+                showNameFor: (prop) =>
                     propNameOverrides[prop.id.toString()] ?? showPropNames,
-                imageElement: propImageCacheRef.current.get(prop.id)?.el,
-                imageOpacity: prop.image_opacity,
-            });
-            canvas.add(canvasProp);
-            canvas.add(canvasProp.propNameLabel);
-        }
+                imageFor: (prop) => propImageCacheRef.current.get(prop.id)?.el,
+            },
+        });
 
         canvas.requestRenderAll();
     }, [
