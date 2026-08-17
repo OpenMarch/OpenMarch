@@ -8,10 +8,19 @@ import { sanitizeFilename } from "../../newShowCompletion";
 
 const normalizePath = (path: string) => path.replace(/\\/g, "/");
 
+/**
+ * Build the file location for a show.
+ *
+ * The filename tracks the show name only while it is one we generated. Once the
+ * user picks their own filename through Browse, that name wins and is never
+ * rewritten — a show's file is not required to be named after the show, since a
+ * show may eventually span several movements (e.g. "My Show-part1.dots").
+ */
 const ensureFileLocationHasProjectName = (
     rawLocation: string,
     projectName: string,
     defaultDirectory?: string,
+    preserveFilename = false,
 ) => {
     const sanitizedProjectName = sanitizeFilename(projectName);
     const filename = `${sanitizedProjectName}.dots`;
@@ -26,7 +35,7 @@ const ensureFileLocationHasProjectName = (
             pathParts[pathParts.length - 1] = filename;
         } else if (!lastPart.endsWith(".dots")) {
             pathParts.push(filename);
-        } else if (!lastPart.startsWith(sanitizedProjectName)) {
+        } else if (!preserveFilename && lastPart !== filename) {
             pathParts[pathParts.length - 1] = filename;
         }
         finalFileLocation = pathParts.join("/");
@@ -53,6 +62,8 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     const [defaultDirectory, setDefaultDirectory] = useState("");
     const [fileExists, setFileExists] = useState(false);
     const fileLocationManuallyEdited = useRef(!!project?.fileLocation);
+    /** True once the user picks a filename that isn't the one we generated. */
+    const filenameCustomized = useRef(false);
 
     const syncToParent = useCallback(
         (
@@ -65,6 +76,7 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                 location,
                 name,
                 defaultDirectory,
+                filenameCustomized.current,
             );
             onChange({
                 projectName: name.trim(),
@@ -79,6 +91,12 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
     useEffect(() => {
         const fetchDefaultDirectory = async () => {
             try {
+                const storedDefault =
+                    await window.electron.getDefaultFilesDirectory();
+                if (storedDefault?.trim()) {
+                    setDefaultDirectory(normalizePath(storedDefault));
+                    return;
+                }
                 const lastFilePath = await window.electron.databaseGetPath();
                 if (lastFilePath?.trim()) {
                     const normalizedPath = normalizePath(lastFilePath);
@@ -111,11 +129,19 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
         );
         if (autoPath) {
             setFileLocation(autoPath);
+            let isCurrent = true;
             void window.electron
                 .fileExists(autoPath)
-                .then(setFileExists)
-                .catch(() => setFileExists(false));
+                .then((exists) => {
+                    if (isCurrent) setFileExists(exists);
+                })
+                .catch(() => {
+                    if (isCurrent) setFileExists(false);
+                });
             syncToParent(projectName, autoPath, designer, client);
+            return () => {
+                isCurrent = false;
+            };
         }
     }, [projectName, defaultDirectory, designer, client, syncToParent]);
 
@@ -141,9 +167,20 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
         });
         if (!result.canceled && result.filePath) {
             fileLocationManuallyEdited.current = true;
+            // Whatever filename the user picked here wins from now on, unless
+            // it is exactly the one we would have generated anyway.
+            const chosenFilename = normalizePath(result.filePath)
+                .split("/")
+                .pop();
+            filenameCustomized.current =
+                !!chosenFilename &&
+                chosenFilename.endsWith(".dots") &&
+                chosenFilename !== `${sanitizeFilename(projectName)}.dots`;
             const withName = ensureFileLocationHasProjectName(
                 result.filePath,
                 projectName,
+                undefined,
+                filenameCustomized.current,
             );
             setFileLocation(withName);
             const exists = await window.electron.fileExists(withName);
@@ -160,6 +197,46 @@ export default function ProjectStep({ project, onChange }: ProjectStepProps) {
                     onChange={(e) => {
                         const name = e.target.value;
                         setProjectName(name);
+                        // Keep the displayed path in step with the one sent to
+                        // the wizard. syncToParent already renames the file to
+                        // match, including after Browse has set the directory,
+                        // so without this the preview shows a stale filename.
+                        const nextLocation = ensureFileLocationHasProjectName(
+                            fileLocation,
+                            name,
+                            defaultDirectory,
+                            filenameCustomized.current,
+                        );
+                        if (nextLocation !== fileLocation) {
+                            setFileLocation(nextLocation);
+                            const requestedPath = nextLocation;
+                            void window.electron
+                                .fileExists(nextLocation)
+                                .then((exists) => {
+                                    if (
+                                        ensureFileLocationHasProjectName(
+                                            fileLocation,
+                                            projectName,
+                                            defaultDirectory,
+                                            filenameCustomized.current,
+                                        ) === requestedPath
+                                    ) {
+                                        setFileExists(exists);
+                                    }
+                                })
+                                .catch(() => {
+                                    if (
+                                        ensureFileLocationHasProjectName(
+                                            fileLocation,
+                                            projectName,
+                                            defaultDirectory,
+                                            filenameCustomized.current,
+                                        ) === requestedPath
+                                    ) {
+                                        setFileExists(false);
+                                    }
+                                });
+                        }
                         syncToParent(name, fileLocation, designer, client);
                     }}
                     placeholder={t("launchpage.newShow.showName")}
