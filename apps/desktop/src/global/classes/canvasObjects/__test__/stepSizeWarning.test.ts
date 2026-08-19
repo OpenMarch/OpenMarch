@@ -70,6 +70,32 @@ describe("evaluatePathWarning", () => {
         expect(result).toEqual({ show: true, isWarning: true });
     });
 
+    it("does not force-show an over-threshold path when warnings are disabled", () => {
+        const result = evaluatePathWarning({
+            start: { x: 900, y: 644.96 },
+            end: { x: 900, y: 824.96 }, // over threshold
+            counts: 2,
+            fieldProperties,
+            pathEnabled: false,
+            allowForceShow: true, // next path
+            warningsEnabled: false,
+        });
+        expect(result).toEqual({ show: false, isWarning: false });
+    });
+
+    it("shows an over-threshold path as normal when warnings are disabled and its toggle is on", () => {
+        const result = evaluatePathWarning({
+            start: { x: 900, y: 644.96 },
+            end: { x: 900, y: 824.96 }, // over threshold
+            counts: 2,
+            fieldProperties,
+            pathEnabled: true,
+            allowForceShow: false,
+            warningsEnabled: false,
+        });
+        expect(result).toEqual({ show: true, isWarning: false });
+    });
+
     describe("with a threshold of 0", () => {
         const noWarningField = new FieldProperties({
             ...legacyMockNCAAFieldProperties,
