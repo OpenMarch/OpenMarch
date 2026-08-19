@@ -11,6 +11,8 @@ export interface UiSettings {
     previousPaths: boolean;
     /** Boolean to view next page's paths/dots */
     nextPaths: boolean;
+    /** Boolean to force-show over-threshold paths and apply step-size warning styling */
+    stepSizeWarnings: boolean;
     /** Boolean to show collision markers on the canvas */
     showCollisions: boolean;
     /** Boolean to view lines for every step on the field */
@@ -58,6 +60,7 @@ export const defaultSettings: UiSettings = {
     showFullDatabasePath: false,
     previousPaths: false,
     nextPaths: false,
+    stepSizeWarnings: true,
     showCollisions: false,
     gridLines: true,
     halfLines: true,

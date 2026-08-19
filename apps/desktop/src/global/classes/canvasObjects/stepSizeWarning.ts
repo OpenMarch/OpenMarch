@@ -29,6 +29,7 @@ export function evaluatePathWarning({
     fieldProperties,
     pathEnabled,
     allowForceShow,
+    warningsEnabled = true,
 }: {
     start: { x: number; y: number };
     end: { x: number; y: number };
@@ -36,11 +37,14 @@ export function evaluatePathWarning({
     fieldProperties: FieldProperties;
     pathEnabled: boolean;
     allowForceShow: boolean;
+    warningsEnabled?: boolean;
 }): { show: boolean; isWarning: boolean } {
     // a path that cannot show skips the StepSize computation entirely
     if (!pathEnabled && !allowForceShow)
         return { show: false, isWarning: false };
     if (counts == null) return { show: pathEnabled, isWarning: false };
+    // warnings off: no force-show and no warning styling, path follows its own toggle
+    if (!warningsEnabled) return { show: pathEnabled, isWarning: false };
 
     const stepSize = new StepSize({
         marcher_id: -1,
