@@ -1,18 +1,20 @@
-import { NEW_SHOW_STEPS } from "../../newShowTypes";
+import type { NewShowStepId } from "../../newShowTypes";
 import clsx from "clsx";
 
 interface NewShowProgressIndicatorProps {
     currentStepIndex: number;
+    steps: NewShowStepId[];
     completedSteps: ReadonlySet<number>;
 }
 
 export default function NewShowProgressIndicator({
     currentStepIndex,
+    steps,
     completedSteps,
 }: NewShowProgressIndicatorProps) {
     return (
         <div className="flex w-full items-center justify-center gap-8 px-8">
-            {NEW_SHOW_STEPS.map((_, index) => (
+            {steps.map((_, index) => (
                 <div
                     key={index}
                     className={clsx(

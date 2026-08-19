@@ -15,6 +15,7 @@ import { T, useTranslate } from "@tolgee/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import NewShowModalLayout from "./newShow/NewShowModalLayout";
+import StartStep from "./newShow/steps/StartStep";
 import ProjectStep from "./newShow/steps/ProjectStep";
 import EnsembleStep from "./newShow/steps/EnsembleStep";
 import FieldStep from "./newShow/steps/FieldStep";
@@ -41,6 +42,28 @@ import { completeNewShow } from "./newShowCompletion";
 import { conToastError } from "@/utilities/utils";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { DEFAULT_ACTIVITY } from "@/global/classes/Activities";
+import { FieldProperties } from "@openmarch/core";
+import { appearanceModelRawToParsed } from "@/entity-components/appearance";
+import type { NewSectionAppearanceArgs } from "@/db-functions";
+import type { PreviousDotsSectionAppearanceImport } from "@om-electron/main/services/previous-dots-import-service";
+
+function toNewSectionAppearanceArgs(
+    appearance: PreviousDotsSectionAppearanceImport,
+): NewSectionAppearanceArgs {
+    const parsed = appearanceModelRawToParsed({
+        fill_color: appearance.fill_color,
+        outline_color: appearance.outline_color,
+        shape_type: appearance.shape_type,
+        visible: appearance.visible,
+        label_visible: appearance.label_visible,
+        equipment_name: appearance.equipment_name,
+        equipment_state: appearance.equipment_state,
+    });
+    return {
+        section: appearance.section,
+        ...parsed,
+    };
+}
 
 interface NewShowDialogProps {
     open: boolean;
@@ -52,6 +75,10 @@ const STEP_COPY: Record<
     NewShowStepId,
     { titleKey: string; descriptionKey?: string }
 > = {
+    start: {
+        titleKey: "launchpage.newShow.steps.start.title",
+        descriptionKey: "launchpage.newShow.steps.start.description",
+    },
     project: {
         titleKey: "launchpage.newShow.steps.project.title",
         descriptionKey: "launchpage.newShow.steps.project.description",
@@ -78,6 +105,13 @@ const STEP_COPY: Record<
     },
 };
 
+function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
+    if (state.start?.mode === "importPrevious") {
+        return ["start", "project", "ensemble", "audio", "tempo"];
+    }
+    return NEW_SHOW_STEPS;
+}
+
 export default function NewShowDialog({
     open,
     onOpenChange,
@@ -96,9 +130,13 @@ export default function NewShowDialog({
     const [showExitConfirm, setShowExitConfirm] = useState(false);
     const [isCreatingDraft, setIsCreatingDraft] = useState(false);
 
-    const currentStep = NEW_SHOW_STEPS[currentStepIndex];
+    const wizardSteps = useMemo(
+        () => getWizardSteps(wizardState),
+        [wizardState],
+    );
+    const currentStep = wizardSteps[currentStepIndex] ?? wizardSteps[0];
     const canGoNext = useNewShowValidation(wizardState, currentStep);
-    const isLastStep = currentStepIndex === NEW_SHOW_STEPS.length - 1;
+    const isLastStep = currentStepIndex === wizardSteps.length - 1;
     const isFirstStep = currentStepIndex === 0;
     const canSkip = currentStep === "performers" || currentStep === "audio";
 
@@ -107,6 +145,12 @@ export default function NewShowDialog({
         setCurrentStepIndex(0);
         setCompletedSteps(new Set());
     }, []);
+
+    useEffect(() => {
+        if (currentStepIndex >= wizardSteps.length) {
+            setCurrentStepIndex(wizardSteps.length - 1);
+        }
+    }, [currentStepIndex, wizardSteps.length]);
 
     useEffect(() => {
         if (open) {
@@ -181,7 +225,7 @@ export default function NewShowDialog({
         }
 
         markStepComplete();
-        if (currentStepIndex < NEW_SHOW_STEPS.length - 1) {
+        if (currentStepIndex < wizardSteps.length - 1) {
             setCurrentStepIndex((i) => i + 1);
         }
     }, [
@@ -192,6 +236,7 @@ export default function NewShowDialog({
         ensureDraftCreated,
         markStepComplete,
         currentStepIndex,
+        wizardSteps.length,
     ]);
 
     const handleBack = useCallback(() => {
@@ -217,6 +262,94 @@ export default function NewShowDialog({
             setCurrentStepIndex((i) => i + 1);
         }
     }, [currentStep, isLastStep, markStepComplete]);
+
+    const handleStartBlank = useCallback(() => {
+        setWizardState((prev) => ({
+            ...prev,
+            start: { mode: "blank" },
+            previousDotsImport: undefined,
+            project: prev.project
+                ? {
+                      projectName: prev.project.projectName,
+                      fileLocation: prev.project.fileLocation,
+                  }
+                : null,
+            ensemble: null,
+            field: null,
+            performers: null,
+        }));
+        setCompletedSteps((prev) => {
+            const next = new Set(prev);
+            next.delete(0);
+            return next;
+        });
+    }, []);
+
+    const handleImportPrevious = useCallback(async () => {
+        setIsCreatingDraft(true);
+        try {
+            const result = await window.electron.choosePreviousDotsFile();
+            if (!result) return;
+
+            const fieldTemplate = new FieldProperties(
+                JSON.parse(result.fieldPropertiesJson),
+            );
+            const performers: NewShowPerformersData = {
+                method: result.marchers.length > 0 ? "add" : "skip",
+                marchers: result.marchers,
+            };
+            const fieldImage =
+                result.fieldImage != null
+                    ? result.fieldImage instanceof Uint8Array
+                        ? result.fieldImage
+                        : new Uint8Array(result.fieldImage)
+                    : null;
+
+            setWizardState((prev) => ({
+                ...prev,
+                start: { mode: "importPrevious" },
+                project: {
+                    projectName: prev.project?.projectName ?? "",
+                    fileLocation: prev.project?.fileLocation ?? "",
+                    designer: result.designer,
+                    client: result.client,
+                },
+                ensemble: result.activity
+                    ? { activity: result.activity }
+                    : null,
+                field: {
+                    template: fieldTemplate,
+                    isCustom: fieldTemplate.isCustom ?? false,
+                },
+                performers,
+                previousDotsImport: {
+                    sourcePath: result.sourcePath,
+                    field: {
+                        template: fieldTemplate,
+                        isCustom: fieldTemplate.isCustom ?? false,
+                    },
+                    fieldImage,
+                    performers,
+                    coordinates: result.coordinates,
+                    sectionAppearances: result.sectionAppearances.map(
+                        toNewSectionAppearanceArgs,
+                    ),
+                    tags: result.tags,
+                    marcherTags: result.marcherTags,
+                    pageNumberOffset: result.pageNumberOffset,
+                },
+            }));
+            setCompletedSteps((prev) => {
+                const next = new Set(prev);
+                next.delete(0);
+                return next;
+            });
+        } catch (error) {
+            conToastError(t("launchpage.newShow.errors.importFailed"), error);
+        } finally {
+            setIsCreatingDraft(false);
+        }
+    }, [t]);
 
     const handleComplete = useCallback(async () => {
         if (isCompleting) return;
@@ -306,6 +439,24 @@ export default function NewShowDialog({
 
     const stepContent = useMemo(() => {
         switch (currentStep) {
+            case "start":
+                return (
+                    <StartStep
+                        start={wizardState.start}
+                        importedSourcePath={
+                            wizardState.previousDotsImport?.sourcePath
+                        }
+                        importedPerformerCount={
+                            wizardState.previousDotsImport?.performers.marchers
+                                .length
+                        }
+                        onStartBlank={() => {
+                            handleStartBlank();
+                        }}
+                        onImportPrevious={() => void handleImportPrevious()}
+                        isImporting={isCreatingDraft}
+                    />
+                );
             case "project":
                 return (
                     <ProjectStep
@@ -354,12 +505,17 @@ export default function NewShowDialog({
         }
     }, [
         currentStep,
+        wizardState.start,
         wizardState.project,
         wizardState.ensemble,
         wizardState.field,
         wizardState.performers,
         wizardState.audio,
         wizardState.tempo,
+        wizardState.previousDotsImport,
+        isCreatingDraft,
+        handleStartBlank,
+        handleImportPrevious,
         handleProjectChange,
         handleEnsembleChange,
         handleFieldChange,
@@ -390,6 +546,7 @@ export default function NewShowDialog({
                     </DialogTitle>
                     <NewShowModalLayout
                         currentStepIndex={currentStepIndex}
+                        steps={wizardSteps}
                         stepTitle={t(stepCopy.titleKey)}
                         stepDescription={
                             stepCopy.descriptionKey
