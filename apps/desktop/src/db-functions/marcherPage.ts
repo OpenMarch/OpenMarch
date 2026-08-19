@@ -3,6 +3,10 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
+import {
+    markPagesAsAnchorsInTransaction,
+    recomputeInheritedPagesInTransaction,
+} from "./pageInheritance";
 import { assert } from "@/utilities/utils";
 import {
     DatabaseShapePageMarcher,
@@ -217,10 +221,20 @@ export async function updateMarcherPages({
         db,
         "updateMarcherPages",
         async (tx) => {
-            return await updateMarcherPagesInTransaction({
+            const updatedIds = await updateMarcherPagesInTransaction({
                 tx,
                 modifiedMarcherPages,
             });
+            // Edited pages become anchors, so untouched pages re-flow around them
+            const editedPageIds = [
+                ...new Set(modifiedMarcherPages.map((m) => m.page_id)),
+            ];
+            await markPagesAsAnchorsInTransaction({
+                tx,
+                pageIds: editedPageIds,
+            });
+            await recomputeInheritedPagesInTransaction({ tx });
+            return updatedIds;
         },
     );
     return transactionResult;

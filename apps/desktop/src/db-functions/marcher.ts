@@ -4,6 +4,7 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import { recomputeInheritedPagesInTransaction } from "./pageInheritance";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -178,6 +179,9 @@ export async function createMarchersInTransaction({
         );
     }
     await Promise.all(marcherPagePromises);
+
+    // New marchers on non-anchor pages must hold or interpolate their anchor positions
+    await recomputeInheritedPagesInTransaction({ tx });
 
     return createdMarchers;
 }

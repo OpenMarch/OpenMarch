@@ -20,6 +20,7 @@ const numberOfPages = 7;
 const expectedPages = Array.from({ length: numberOfPages }, (_, i) => ({
     id: i,
     is_subset: 0,
+    is_coordinate_anchor: 1,
     notes: null,
     start_beat: i === 0 ? 0 : (i - 1) * 8 + 1,
 }));

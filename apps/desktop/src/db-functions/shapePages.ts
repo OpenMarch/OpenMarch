@@ -13,6 +13,10 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
+import {
+    markPagesAsAnchorsInTransaction,
+    recomputeInheritedPagesInTransaction,
+} from "./pageInheritance";
 
 type MarcherCoordinates = {
     marcher_id: number;
@@ -151,6 +155,9 @@ export async function _updateChildMarcherPages({
         tx,
         modifiedMarcherPages: marcherPageUpdates,
     });
+
+    // Placing marchers on a shape explicitly sets the page so it must anchor
+    await markPagesAsAnchorsInTransaction({ tx, pageIds: [pageId] });
 }
 
 /**
@@ -239,6 +246,9 @@ export const createShapePagesInTransaction = async ({
         });
     }
 
+    // Re-flow neighboring non-anchor pages around the newly anchored shape pages
+    await recomputeInheritedPagesInTransaction({ tx });
+
     return output;
 };
 /**
@@ -311,6 +321,9 @@ export const updateShapePagesInTransaction = async ({
             });
         }
     }
+
+    // Re-flow neighboring non-anchor pages around the newly anchored shape pages
+    await recomputeInheritedPagesInTransaction({ tx });
 
     const allModifiedShapePages = await tx.query.shape_pages.findMany({
         where: inArray(schema.shape_pages.id, Array.from(updatedShapePageIds)),

@@ -541,6 +541,8 @@ export const pageToDatabasePage = (page: Page): DatabasePage => {
     return {
         ...page,
         is_subset: page.isSubset,
+        // Matches the migration backfill: existing pages keep their own coordinates
+        is_coordinate_anchor: true,
         start_beat: page.beats[0].id,
     };
 };

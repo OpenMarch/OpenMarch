@@ -28,16 +28,18 @@ import {
     _createFromTempoGroupInTransaction,
     tempoGroupFromWorkspaceSettings,
 } from "@/components/music/TempoGroup/TempoGroup";
+import { recomputeInheritedPagesInTransaction } from "./pageInheritance";
 
 export const FIRST_PAGE_ID = 0;
 
 /** How a page is represented in the database */
-/** Represents a page in the database */
 export interface DatabasePage {
     /** Unique identifier for the page */
     id: number;
     /** Indicates if this page is a subset of another page */
     is_subset: boolean;
+    /** True when the user has explicitly set this page, untouched pages inherit from anchors */
+    is_coordinate_anchor: boolean;
     /** Optional notes or description for the page */
     notes: string | null;
     /** The beat number where this page starts */
@@ -51,6 +53,7 @@ export const realDatabasePageToDatabasePage = (
     return {
         ...page,
         is_subset: page.is_subset === 1,
+        is_coordinate_anchor: page.is_coordinate_anchor === 1,
     };
 };
 
@@ -58,17 +61,20 @@ export interface NewPageArgs {
     start_beat: number;
     notes?: string | null;
     is_subset: boolean;
+    is_coordinate_anchor?: boolean;
 }
 
 interface RealNewPageArgs {
     start_beat: number;
     notes?: string | null;
     is_subset: 0 | 1;
+    is_coordinate_anchor: 0 | 1;
 }
 const newPageArgsToRealNewPageArgs = (args: NewPageArgs): RealNewPageArgs => {
     return {
         ...args,
         is_subset: args.is_subset ? 1 : 0,
+        is_coordinate_anchor: args.is_coordinate_anchor ? 1 : 0,
     };
 };
 
@@ -304,6 +310,8 @@ export const createPagesInTransaction = async ({
         sortedNewPages,
     });
 
+    await recomputeInheritedPagesInTransaction({ tx });
+
     return createdPages.map(realDatabasePageToDatabasePage);
 };
 
@@ -385,6 +393,7 @@ export const updatePagesInTransaction = async ({
             .get();
         updatedPages.push(realDatabasePageToDatabasePage(updatedPage));
     }
+    await recomputeInheritedPagesInTransaction({ tx });
     return updatedPages;
 };
 /**
@@ -591,6 +600,7 @@ export const deletePagesInTransaction = async ({
         }
     }
 
+    await recomputeInheritedPagesInTransaction({ tx });
     return deletedPages.map(realDatabasePageToDatabasePage);
 };
 
@@ -620,6 +630,8 @@ export async function deletePages({
                 tx,
             });
             await ensureSecondBeatHasPage({ tx });
+            // ensureSecondBeatHasPage can move a start_beat after the inner recompute
+            await recomputeInheritedPagesInTransaction({ tx });
             return response;
         },
     );
@@ -677,6 +689,8 @@ export async function deletePageYank({
             }
 
             await ensureSecondBeatHasPage({ tx });
+            // yanked start_beat changes land after the inner recompute so re-flow again
+            await recomputeInheritedPagesInTransaction({ tx });
             return response;
         },
     );

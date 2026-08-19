@@ -16,22 +16,20 @@ export const invalidateByPage = (qc: QueryClient, pageIds: Set<number>) => {
     void qc.invalidateQueries({
         queryKey: pageKeys.inOrder(),
     });
-    // Invalidate marcherPage queries for each affected page
+    // A coordinate change cascades to other pages through inheritance so refresh all marcher pages and coordinate data
+    void qc.invalidateQueries({
+        queryKey: marcherPageKeys.all(),
+    });
+    void qc.invalidateQueries({
+        queryKey: coordinateDataKeys.all,
+    });
+    // Shape and appearance data are per page and do not cascade
     for (const pageId of pageIds) {
-        void qc
-            .invalidateQueries({
-                queryKey: marcherPageKeys.byPage(pageId),
-            })
-            .then(() => {
-                void qc.invalidateQueries({
-                    queryKey: coordinateDataKeys.byPageId(pageId),
-                });
-                void qc.invalidateQueries({
-                    queryKey: shapePageKeys.byPageId(pageId),
-                });
-                void qc.invalidateQueries({
-                    queryKey: marcherAppearancesKeys.byPageId(pageId),
-                });
-            });
+        void qc.invalidateQueries({
+            queryKey: shapePageKeys.byPageId(pageId),
+        });
+        void qc.invalidateQueries({
+            queryKey: marcherAppearancesKeys.byPageId(pageId),
+        });
     }
 };

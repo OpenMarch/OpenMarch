@@ -116,6 +116,8 @@ export const pages = sqliteTable(
         id: integer().primaryKey(),
         /** Indicates if this page is a subset of another page */
         is_subset: integer().default(0).notNull(),
+        /** True when the user has explicitly set this page, untouched pages inherit from anchors */
+        is_coordinate_anchor: integer().default(0).notNull(),
         /** Optional notes or description for the page */
         notes: text(),
         ...timestamps,

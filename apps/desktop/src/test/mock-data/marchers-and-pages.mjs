@@ -54,6 +54,7 @@ const expectedMarchers = Array.from({ length: numberOfMarchers }, (_, i) => {
 const expectedPages = Array.from({ length: numberOfPages }, (_, i) => ({
     id: i,
     is_subset: i % 2 === 0 ? 0 : 1,
+    is_coordinate_anchor: 1,
     start_beat: Math.floor((expectedBeats.length * i) / numberOfPages),
     notes: null,
 }));
