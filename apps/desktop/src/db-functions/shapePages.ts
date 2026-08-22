@@ -13,6 +13,10 @@ import {
 } from "@/db-functions";
 import { schema } from "@/global/database/db";
 import { assert } from "@/utilities/utils";
+import {
+    flipInterveningHoldsToMove,
+    recomputeMarcherCoordinates,
+} from "./pageInheritance";
 
 type MarcherCoordinates = {
     marcher_id: number;
@@ -151,6 +155,15 @@ export async function _updateChildMarcherPages({
         tx,
         modifiedMarcherPages: marcherPageUpdates,
     });
+
+    // Placing marchers on a shape authors those rows and flips any held run before them to MOVE
+    await flipInterveningHoldsToMove({
+        tx,
+        edits: marcherPageUpdates.map((m) => ({
+            marcherId: m.marcher_id,
+            pageId,
+        })),
+    });
 }
 
 /**
@@ -189,6 +202,7 @@ export const createShapePagesInTransaction = async ({
     tx: DbTransaction;
 }): Promise<DatabaseShapePage[]> => {
     const output: DatabaseShapePage[] = [];
+    const affectedMarcherIds = new Set<number>();
     for (const newShapePage of newItems) {
         let shapeIdToUse = newShapePage.shape_id;
 
@@ -237,7 +251,16 @@ export const createShapePagesInTransaction = async ({
             pageId: newShapePage.page_id,
             marcherCoordinates: newShapePage.marcher_coordinates,
         });
+        for (const coordinate of newShapePage.marcher_coordinates) {
+            affectedMarcherIds.add(coordinate.marcher_id);
+        }
     }
+
+    // Re-flow the placed marchers' HOLD/MOVE rows around their new MANUAL coordinate
+    await recomputeMarcherCoordinates({
+        tx,
+        marcherIds: Array.from(affectedMarcherIds),
+    });
 
     return output;
 };
@@ -275,6 +298,7 @@ export const updateShapePagesInTransaction = async ({
         modifiedShapePageArgsToRealModifiedShapePageArgs,
     );
     const updatedShapePageIds = new Set<number>();
+    const affectedMarcherIds = new Set<number>();
 
     for (const updatedShapePage of realModifiedItems) {
         const { marcher_coordinates, ...updatedShapePageToUse } =
@@ -309,8 +333,17 @@ export const updateShapePagesInTransaction = async ({
                 pageId: thisShapePage.page_id,
                 marcherCoordinates: updatedShapePage.marcher_coordinates,
             });
+            for (const coordinate of updatedShapePage.marcher_coordinates) {
+                affectedMarcherIds.add(coordinate.marcher_id);
+            }
         }
     }
+
+    // Re-flow the placed marchers' HOLD/MOVE rows around their new MANUAL coordinate
+    await recomputeMarcherCoordinates({
+        tx,
+        marcherIds: Array.from(affectedMarcherIds),
+    });
 
     const allModifiedShapePages = await tx.query.shape_pages.findMany({
         where: inArray(schema.shape_pages.id, Array.from(updatedShapePageIds)),

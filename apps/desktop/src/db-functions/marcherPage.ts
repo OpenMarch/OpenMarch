@@ -3,6 +3,10 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
+import {
+    flipInterveningHoldsToMove,
+    recomputeMarcherCoordinates,
+} from "./pageInheritance";
 import { assert } from "@/utilities/utils";
 import {
     DatabaseShapePageMarcher,
@@ -217,10 +221,20 @@ export async function updateMarcherPages({
         db,
         "updateMarcherPages",
         async (tx) => {
-            return await updateMarcherPagesInTransaction({
+            const updatedIds = await updateMarcherPagesInTransaction({
                 tx,
                 modifiedMarcherPages,
             });
+            const edits = modifiedMarcherPages.map((m) => ({
+                marcherId: m.marcher_id,
+                pageId: m.page_id,
+            }));
+            await flipInterveningHoldsToMove({ tx, edits });
+            await recomputeMarcherCoordinates({
+                tx,
+                marcherIds: [...new Set(edits.map((e) => e.marcherId))],
+            });
+            return updatedIds;
         },
     );
     return transactionResult;
@@ -360,6 +374,16 @@ export const swapMarchersInTransaction = async ({
     const updatedMarcherPages = await updateMarcherPagesInTransaction({
         tx,
         modifiedMarcherPages,
+    });
+
+    const edits = [
+        { marcherId: marcher1Id, pageId },
+        { marcherId: marcher2Id, pageId },
+    ];
+    await flipInterveningHoldsToMove({ tx, edits });
+    await recomputeMarcherCoordinates({
+        tx,
+        marcherIds: [marcher1Id, marcher2Id],
     });
 
     return updatedMarcherPages;

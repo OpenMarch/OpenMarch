@@ -4,6 +4,11 @@ import { DbConnection, DbTransaction } from "./types";
 import { schema } from "@/global/database/db";
 import { transactionWithHistory, createAllUndoTriggers } from "./history";
 import { ModifiedMarcherPageArgs } from "@/db-functions";
+import {
+    recomputeMarcherCoordinates,
+    COORDINATE_MODE,
+} from "./pageInheritance";
+import { FIRST_PAGE_ID } from "./page";
 
 type DatabaseMarcher = typeof schema.marchers.$inferSelect;
 
@@ -158,7 +163,9 @@ export async function createMarchersInTransaction({
     const allPages = await tx.query.pages.findMany();
 
     // Create a marcherPage for each marcher
-    const newMarcherPages: ModifiedMarcherPageArgs[] = [];
+    const newMarcherPages: (ModifiedMarcherPageArgs & {
+        coordinate_mode: number;
+    })[] = [];
 
     for (const page of allPages) {
         const startingData = await calculateStartingData(tx, page.id);
@@ -168,6 +175,10 @@ export async function createMarchersInTransaction({
                 page_id: page.id,
                 x: startingData.point.x + index * startingData.spacing,
                 y: startingData.point.y,
+                coordinate_mode:
+                    page.id === FIRST_PAGE_ID
+                        ? COORDINATE_MODE.MANUAL
+                        : COORDINATE_MODE.HOLD,
             });
         }
     }
@@ -178,6 +189,12 @@ export async function createMarchersInTransaction({
         );
     }
     await Promise.all(marcherPagePromises);
+
+    // New marchers hold their first-page coordinates on later pages until authored
+    await recomputeMarcherCoordinates({
+        tx,
+        marcherIds: createdMarchers.map((m) => m.id),
+    });
 
     return createdMarchers;
 }

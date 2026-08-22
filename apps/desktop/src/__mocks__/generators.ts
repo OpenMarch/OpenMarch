@@ -395,6 +395,7 @@ const createMarcherPage = (
         path_end_position: pathEndPosition,
         notes,
         rotation_degrees: rotationDegrees,
+        coordinate_mode: 0,
         created_at: faker.date.recent().toISOString(),
         updated_at: faker.date.recent().toISOString(),
     } as DatabaseMarcherPage;

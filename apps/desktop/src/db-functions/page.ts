@@ -28,11 +28,15 @@ import {
     _createFromTempoGroupInTransaction,
     tempoGroupFromWorkspaceSettings,
 } from "@/components/music/TempoGroup/TempoGroup";
+import {
+    recomputeMarcherCoordinates,
+    getAllMarcherIdsInTransaction,
+    COORDINATE_MODE,
+} from "./pageInheritance";
 
 export const FIRST_PAGE_ID = 0;
 
 /** How a page is represented in the database */
-/** Represents a page in the database */
 export interface DatabasePage {
     /** Unique identifier for the page */
     id: number;
@@ -242,10 +246,15 @@ const _createMarcherPages = async ({
             }
 
             if (newMarcherPages.length > 0) {
-                // Create the marcher pages
+                // New pages hold their coordinate until a later page is authored
                 await tx
                     .insert(schema.marcher_pages)
-                    .values(newMarcherPages)
+                    .values(
+                        newMarcherPages.map((mp) => ({
+                            ...mp,
+                            coordinate_mode: COORDINATE_MODE.HOLD,
+                        })),
+                    )
                     .returning();
             }
         }
@@ -303,6 +312,9 @@ export const createPagesInTransaction = async ({
         tx,
         sortedNewPages,
     });
+
+    const marcherIds = await getAllMarcherIdsInTransaction({ tx });
+    await recomputeMarcherCoordinates({ tx, marcherIds });
 
     return createdPages.map(realDatabasePageToDatabasePage);
 };
@@ -384,6 +396,13 @@ export const updatePagesInTransaction = async ({
             .returning()
             .get();
         updatedPages.push(realDatabasePageToDatabasePage(updatedPage));
+    }
+    const startBeatChanged = modifiedPages.some(
+        (p) => p.start_beat !== undefined,
+    );
+    if (startBeatChanged) {
+        const marcherIds = await getAllMarcherIdsInTransaction({ tx });
+        await recomputeMarcherCoordinates({ tx, marcherIds });
     }
     return updatedPages;
 };
@@ -620,6 +639,9 @@ export async function deletePages({
                 tx,
             });
             await ensureSecondBeatHasPage({ tx });
+            // recompute after ensureSecondBeatHasPage since it can move a start_beat
+            const marcherIds = await getAllMarcherIdsInTransaction({ tx });
+            await recomputeMarcherCoordinates({ tx, marcherIds });
             return response;
         },
     );
@@ -677,6 +699,9 @@ export async function deletePageYank({
             }
 
             await ensureSecondBeatHasPage({ tx });
+            // re-flow after the yank's start_beat changes and ensureSecondBeatHasPage
+            const marcherIds = await getAllMarcherIdsInTransaction({ tx });
+            await recomputeMarcherCoordinates({ tx, marcherIds });
             return response;
         },
     );

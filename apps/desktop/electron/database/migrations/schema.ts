@@ -180,6 +180,8 @@ export const marcher_pages = sqliteTable(
         x: real().notNull(),
         /** Y coordinate of the MarcherPage in pixels */
         y: real().notNull(),
+        // Coordinate intent: 0 MANUAL authored, 1 HOLD copies prev keyframe, 2 MOVE interpolates
+        coordinate_mode: integer().notNull().default(0),
         ...timestamps,
         /** The ID of the pathway data */
         path_data_id: integer().references(() => pathways.id, {
