@@ -895,7 +895,7 @@ describeDbTests("authoring coordinates undoes and redoes cleanly", (baseIt) => {
 
     testWithHistory(
         "authoring a marcher coordinate is one clean undo group",
-        async ({ db, marchersAndPages }) => {
+        async ({ db, marchersAndPages, expectNumberOfChanges }) => {
             void marchersAndPages;
             const before = await db.query.marcher_pages.findFirst({
                 where: and(
@@ -922,6 +922,9 @@ describeDbTests("authoring coordinates undoes and redoes cleanly", (baseIt) => {
                 x: 321,
                 y: 654,
             });
+
+            // authoring plus its flip and recompute collapse into exactly one undo group
+            await expectNumberOfChanges.test(db, 1);
         },
     );
 });
