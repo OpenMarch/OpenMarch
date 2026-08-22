@@ -1,11 +1,15 @@
 import { describeDbTests, schema, transaction } from "@/test/base";
 import { expect } from "vitest";
 import { and, eq } from "drizzle-orm";
-import { recomputeInheritedPagesInTransaction } from "../pageInheritance";
+import {
+    COORDINATE_MODE,
+    getAllMarcherIdsInTransaction,
+    recomputeMarcherCoordinates,
+} from "../pageInheritance";
 
 // Gated benchmark, run with: VITEST_ENABLE_BENCH=true npx vitest run pageInheritance.bench
 // Measures the worst case: editing page 0 in a large show re-flows every
-// downstream non-anchor page in one recompute
+// downstream HOLD row for the marchers being recomputed
 const BENCH = process.env.VITEST_ENABLE_BENCH === "true";
 
 const PAGES = 100;
@@ -33,20 +37,25 @@ async function seedShow(
         });
     await tx.insert(schema.marchers).values(marchers);
 
-    // every page after 0 is non-anchor so all of them hold page 0
     const pages = [];
     for (let i = 1; i < PAGES; i++)
         pages.push({
             id: i,
             start_beat: i,
             is_subset: 0,
-            is_coordinate_anchor: 0,
         });
     await tx.insert(schema.pages).values(pages);
 
+    // page 0 is the MANUAL keyframe every downstream HOLD row inherits from
     const marcherPages = [];
     for (let m = 1; m <= MARCHERS; m++)
-        marcherPages.push({ marcher_id: m, page_id: 0, x: 0, y: 0 });
+        marcherPages.push({
+            marcher_id: m,
+            page_id: 0,
+            x: 0,
+            y: 0,
+            coordinate_mode: COORDINATE_MODE.MANUAL,
+        });
     for (let i = 1; i < PAGES; i++)
         for (let m = 1; m <= MARCHERS; m++)
             marcherPages.push({
@@ -54,6 +63,7 @@ async function seedShow(
                 page_id: i,
                 x: downstreamX,
                 y: downstreamX,
+                coordinate_mode: COORDINATE_MODE.HOLD,
             });
     // chunk to stay under the SQLite bound-variable limit
     for (let i = 0; i < marcherPages.length; i += 500)
@@ -62,7 +72,10 @@ async function seedShow(
             .values(marcherPages.slice(i, i + 500));
 }
 
-async function timeRecompute(db: Parameters<typeof transaction>[0]) {
+async function timeRecompute(
+    db: Parameters<typeof transaction>[0],
+    marcherIds: number[],
+) {
     // silence the drizzle query logger so its per-statement console prints do
     // not dominate the measurement
     const originalLog = console.log;
@@ -70,7 +83,7 @@ async function timeRecompute(db: Parameters<typeof transaction>[0]) {
     const start = performance.now();
     try {
         await transaction(db, async (tx) => {
-            await recomputeInheritedPagesInTransaction({ tx });
+            await recomputeMarcherCoordinates({ tx, marcherIds });
         });
     } finally {
         console.log = originalLog;
@@ -79,14 +92,15 @@ async function timeRecompute(db: Parameters<typeof transaction>[0]) {
 }
 
 describeDbTests("pageInheritance-benchmark", (it) => {
+    // Per-drag hot path: a single marcher is edited, so only its rows recompute
     (BENCH ? it : it.skip)(
-        `worst case: ${PAGES}x${MARCHERS}, page 0 the only anchor, every row re-flows`,
+        `per-drag worst case: 1 of ${MARCHERS} marchers across ${PAGES} pages re-flows`,
         async ({ db }) => {
             await transaction(db, (tx) => seedShow(tx, 999));
-            const elapsedMs = await timeRecompute(db);
+            const elapsedMs = await timeRecompute(db, [1]);
             // eslint-disable-next-line no-console
             console.log(
-                `BENCH worst-case (writes ${(PAGES - 1) * MARCHERS} rows): ${elapsedMs.toFixed(0)}ms`,
+                `BENCH per-drag worst-case (writes ${PAGES - 1} rows): ${elapsedMs.toFixed(0)}ms`,
             );
             await transaction(db, async (tx) => {
                 const dot = await tx.query.marcher_pages.findFirst({
@@ -102,14 +116,41 @@ describeDbTests("pageInheritance-benchmark", (it) => {
     );
 
     (BENCH ? it : it.skip)(
-        `floor: ${PAGES}x${MARCHERS}, nothing changes (read + compute, no writes)`,
+        `per-drag floor: 1 of ${MARCHERS} marchers across ${PAGES} pages, nothing changes`,
         async ({ db }) => {
             await transaction(db, (tx) => seedShow(tx, 0));
-            const elapsedMs = await timeRecompute(db);
+            const elapsedMs = await timeRecompute(db, [1]);
             // eslint-disable-next-line no-console
             console.log(
-                `BENCH floor (0 rows written, paid on every edit): ${elapsedMs.toFixed(0)}ms`,
+                `BENCH per-drag floor (0 rows written): ${elapsedMs.toFixed(0)}ms`,
             );
+            expect(elapsedMs).toBeLessThan(60000);
+        },
+    );
+
+    // Structural change: a page add/remove/move affects every marcher, so every marcher recomputes
+    (BENCH ? it : it.skip)(
+        `structural change: all ${MARCHERS}x${PAGES} rows re-flow`,
+        async ({ db }) => {
+            await transaction(db, (tx) => seedShow(tx, 999));
+            let allMarcherIds: number[] = [];
+            await transaction(db, async (tx) => {
+                allMarcherIds = await getAllMarcherIdsInTransaction({ tx });
+            });
+            const elapsedMs = await timeRecompute(db, allMarcherIds);
+            // eslint-disable-next-line no-console
+            console.log(
+                `BENCH structural worst-case (writes ${(PAGES - 1) * MARCHERS} rows): ${elapsedMs.toFixed(0)}ms`,
+            );
+            await transaction(db, async (tx) => {
+                const dot = await tx.query.marcher_pages.findFirst({
+                    where: and(
+                        eq(schema.marcher_pages.page_id, PAGES - 1),
+                        eq(schema.marcher_pages.marcher_id, 1),
+                    ),
+                });
+                expect(dot).toMatchObject({ x: 0, y: 0 });
+            });
             expect(elapsedMs).toBeLessThan(60000);
         },
     );

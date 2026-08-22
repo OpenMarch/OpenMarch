@@ -1,125 +1,195 @@
 import { and, eq, inArray } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import type { DbTransaction } from "./types";
-import { FIRST_PAGE_ID } from "./page";
 
-export interface InheritancePage {
-    id: number;
+export const COORDINATE_MODE = { MANUAL: 0, HOLD: 1, MOVE: 2 } as const;
+
+export interface TimelineRow {
+    pageId: number;
     startBeatPosition: number;
-    isAnchor: boolean;
+    mode: number;
+    x: number;
+    y: number;
 }
 
-export type CoordMap = Map<number, Map<number, { x: number; y: number }>>;
-
-// Coordinates for each non-anchor page, derived from its surrounding anchors
-export function computeInheritedCoordinates(
-    pages: InheritancePage[],
-    anchorCoords: CoordMap,
-): CoordMap {
-    const sorted = [...pages].sort(
+// New coordinates for each derived row in one marcher's timeline, keyed by pageId
+export function computeMarcherTimeline(
+    rows: TimelineRow[],
+): Map<number, { x: number; y: number }> {
+    const sorted = [...rows].sort(
         (a, b) => a.startBeatPosition - b.startBeatPosition,
     );
-    const result: CoordMap = new Map();
+    const result = new Map<number, { x: number; y: number }>();
 
     for (let i = 0; i < sorted.length; i++) {
         const page = sorted[i];
-        if (page.isAnchor) continue;
+        if (page.mode === COORDINATE_MODE.MANUAL) continue;
 
-        let prev: InheritancePage | undefined;
+        let prev: TimelineRow | undefined;
         for (let j = i - 1; j >= 0; j--) {
-            if (sorted[j].isAnchor) {
+            if (sorted[j].mode === COORDINATE_MODE.MANUAL) {
                 prev = sorted[j];
                 break;
             }
         }
-        let next: InheritancePage | undefined;
+        // no preceding keyframe falls back to the first page
+        if (!prev) prev = sorted[0];
+        if (prev === page) continue;
+
+        let next: TimelineRow | undefined;
         for (let j = i + 1; j < sorted.length; j++) {
-            if (sorted[j].isAnchor) {
+            if (sorted[j].mode === COORDINATE_MODE.MANUAL) {
                 next = sorted[j];
                 break;
             }
         }
-        if (!prev) continue;
 
-        const prevCoords = anchorCoords.get(prev.id);
-        if (!prevCoords) continue;
-
-        const out = new Map<number, { x: number; y: number }>();
-        if (!next) {
-            for (const [marcherId, a] of prevCoords)
-                out.set(marcherId, { x: a.x, y: a.y });
-        } else {
-            const nextCoords = anchorCoords.get(next.id);
-            const span = next.startBeatPosition - prev.startBeatPosition;
-            const t =
-                span === 0
-                    ? 0
-                    : (page.startBeatPosition - prev.startBeatPosition) / span;
-            for (const [marcherId, a] of prevCoords) {
-                const b = nextCoords?.get(marcherId) ?? a;
-                out.set(marcherId, {
-                    x: a.x + (b.x - a.x) * t,
-                    y: a.y + (b.y - a.y) * t,
-                });
-            }
+        if (page.mode === COORDINATE_MODE.HOLD || !next) {
+            result.set(page.pageId, { x: prev.x, y: prev.y });
+            continue;
         }
-        result.set(page.id, out);
+
+        const span = next.startBeatPosition - prev.startBeatPosition;
+        const t =
+            span === 0
+                ? 0
+                : (page.startBeatPosition - prev.startBeatPosition) / span;
+        result.set(page.pageId, {
+            x: prev.x + (next.x - prev.x) * t,
+            y: prev.y + (next.y - prev.y) * t,
+        });
     }
     return result;
 }
 
-export async function markPagesAsAnchorsInTransaction({
+// Setting a page authors it and turns the held run leading up to it into a gradual move
+export async function flipInterveningHoldsToMove({
     tx,
-    pageIds,
+    edits,
 }: {
     tx: DbTransaction;
-    pageIds: number[];
+    edits: Array<{ marcherId: number; pageId: number }>;
 }): Promise<void> {
-    if (pageIds.length === 0) return;
-    await tx
-        .update(schema.pages)
-        .set({ is_coordinate_anchor: 1 })
-        .where(inArray(schema.pages.id, pageIds));
+    if (edits.length === 0) return;
+
+    const allPages = await tx.query.pages.findMany();
+    const allBeats = await tx.query.beats.findMany();
+    const beatPosition = new Map(allBeats.map((b) => [b.id, b.position]));
+    const pageBeat = new Map(
+        allPages.map((p) => [p.id, beatPosition.get(p.start_beat) ?? 0]),
+    );
+
+    for (const edit of edits) {
+        await tx
+            .update(schema.marcher_pages)
+            .set({ coordinate_mode: COORDINATE_MODE.MANUAL })
+            .where(
+                and(
+                    eq(schema.marcher_pages.marcher_id, edit.marcherId),
+                    eq(schema.marcher_pages.page_id, edit.pageId),
+                ),
+            );
+
+        const rows = await tx.query.marcher_pages.findMany({
+            where: eq(schema.marcher_pages.marcher_id, edit.marcherId),
+        });
+        const editBeat = pageBeat.get(edit.pageId) ?? 0;
+        let prevKeyframeBeat = -Infinity;
+        for (const r of rows) {
+            const b = pageBeat.get(r.page_id) ?? 0;
+            if (
+                r.coordinate_mode === COORDINATE_MODE.MANUAL &&
+                b < editBeat &&
+                b > prevKeyframeBeat
+            ) {
+                prevKeyframeBeat = b;
+            }
+        }
+
+        const heldPageIds = rows
+            .filter((r) => {
+                const b = pageBeat.get(r.page_id) ?? 0;
+                return (
+                    r.coordinate_mode === COORDINATE_MODE.HOLD &&
+                    b > prevKeyframeBeat &&
+                    b < editBeat
+                );
+            })
+            .map((r) => r.page_id);
+
+        if (heldPageIds.length > 0) {
+            await tx
+                .update(schema.marcher_pages)
+                .set({ coordinate_mode: COORDINATE_MODE.MOVE })
+                .where(
+                    and(
+                        eq(schema.marcher_pages.marcher_id, edit.marcherId),
+                        inArray(schema.marcher_pages.page_id, heldPageIds),
+                    ),
+                );
+        }
+    }
 }
 
-export async function recomputeInheritedPagesInTransaction({
+export async function getAllMarcherIdsInTransaction({
     tx,
 }: {
     tx: DbTransaction;
+}): Promise<number[]> {
+    const marchers = await tx.query.marchers.findMany();
+    return marchers.map((m) => m.id);
+}
+
+export async function recomputeMarcherCoordinates({
+    tx,
+    marcherIds,
+}: {
+    tx: DbTransaction;
+    marcherIds: number[];
 }): Promise<void> {
+    if (marcherIds.length === 0) return;
+
     const allPages = await tx.query.pages.findMany();
     if (allPages.length === 0) return;
     const allBeats = await tx.query.beats.findMany();
     const beatPosition = new Map(allBeats.map((b) => [b.id, b.position]));
-    const allMarcherPages = await tx.query.marcher_pages.findMany();
+    const pageBeat = new Map(
+        allPages.map((p) => [p.id, beatPosition.get(p.start_beat) ?? 0]),
+    );
 
-    const pages: InheritancePage[] = allPages.map((p) => ({
-        id: p.id,
-        startBeatPosition: beatPosition.get(p.start_beat) ?? 0,
-        isAnchor: p.is_coordinate_anchor === 1 || p.id === FIRST_PAGE_ID,
-    }));
-    const anchorIds = new Set(pages.filter((p) => p.isAnchor).map((p) => p.id));
+    const rows = await tx.query.marcher_pages.findMany({
+        where: inArray(schema.marcher_pages.marcher_id, marcherIds),
+    });
 
-    const current = new Map<string, { x: number; y: number }>();
-    const anchorCoords: CoordMap = new Map();
-    for (const mp of allMarcherPages) {
-        current.set(`${mp.page_id}:${mp.marcher_id}`, { x: mp.x, y: mp.y });
-        if (anchorIds.has(mp.page_id)) {
-            let m = anchorCoords.get(mp.page_id);
-            if (!m) {
-                m = new Map();
-                anchorCoords.set(mp.page_id, m);
-            }
-            m.set(mp.marcher_id, { x: mp.x, y: mp.y });
+    const byMarcher = new Map<number, TimelineRow[]>();
+    for (const mp of rows) {
+        let list = byMarcher.get(mp.marcher_id);
+        if (!list) {
+            list = [];
+            byMarcher.set(mp.marcher_id, list);
         }
+        list.push({
+            pageId: mp.page_id,
+            startBeatPosition: pageBeat.get(mp.page_id) ?? 0,
+            mode: mp.coordinate_mode,
+            x: mp.x,
+            y: mp.y,
+        });
     }
 
-    const computed = computeInheritedCoordinates(pages, anchorCoords);
-    for (const [pageId, marcherMap] of computed) {
-        for (const [marcherId, coord] of marcherMap) {
-            const cur = current.get(`${pageId}:${marcherId}`);
-            // skip missing or unchanged rows so undo history stays clean
-            if (!cur || (cur.x === coord.x && cur.y === coord.y)) continue;
+    const stored = new Map(
+        rows.map((mp) => [
+            `${mp.marcher_id}:${mp.page_id}`,
+            { x: mp.x, y: mp.y },
+        ]),
+    );
+
+    for (const [marcherId, timeline] of byMarcher) {
+        const computed = computeMarcherTimeline(timeline);
+        for (const [pageId, coord] of computed) {
+            const cur = stored.get(`${marcherId}:${pageId}`);
+            // skip unchanged rows so undo history stays clean
+            if (cur && cur.x === coord.x && cur.y === coord.y) continue;
             await tx
                 .update(schema.marcher_pages)
                 .set({ x: coord.x, y: coord.y })

@@ -202,7 +202,6 @@ const generatePages = (beats: DatabaseBeat[]): DatabasePage[] => {
     pages.push({
         id: currentPageId,
         is_subset: false,
-        is_coordinate_anchor: true,
         notes: "First Page",
         start_beat: 0,
     });
@@ -213,7 +212,6 @@ const generatePages = (beats: DatabaseBeat[]): DatabasePage[] => {
     pages.push({
         id: currentPageId,
         is_subset: faker.datatype.boolean({ probability: 0.15 }),
-        is_coordinate_anchor: true,
         notes: faker.helpers.arrayElement(pageNotes),
         start_beat: 1,
     });
@@ -244,7 +242,6 @@ const generatePages = (beats: DatabaseBeat[]): DatabasePage[] => {
         pages.push({
             id: currentPageId,
             is_subset: isSubset,
-            is_coordinate_anchor: true,
             notes: notes,
             start_beat: startBeat.id,
         });
@@ -398,6 +395,7 @@ const createMarcherPage = (
         path_end_position: pathEndPosition,
         notes,
         rotation_degrees: rotationDegrees,
+        coordinate_mode: 0,
         created_at: faker.date.recent().toISOString(),
         updated_at: faker.date.recent().toISOString(),
     } as DatabaseMarcherPage;

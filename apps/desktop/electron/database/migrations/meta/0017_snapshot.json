@@ -1,7 +1,7 @@
 {
     "version": "6",
     "dialect": "sqlite",
-    "id": "ec0318ce-9419-4d22-91a2-c7e6772d7b71",
+    "id": "5394f0e0-7fe4-4034-a47c-50ef22f5ad85",
     "prevId": "cc2c9992-3db5-4000-8861-cc9195cf2965",
     "tables": {
         "audio_files": {
@@ -319,6 +319,14 @@
                     "primaryKey": false,
                     "notNull": true,
                     "autoincrement": false
+                },
+                "coordinate_mode": {
+                    "name": "coordinate_mode",
+                    "type": "integer",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "autoincrement": false,
+                    "default": 0
                 },
                 "created_at": {
                     "name": "created_at",
@@ -831,14 +839,6 @@
                 },
                 "is_subset": {
                     "name": "is_subset",
-                    "type": "integer",
-                    "primaryKey": false,
-                    "notNull": true,
-                    "autoincrement": false,
-                    "default": 0
-                },
-                "is_coordinate_anchor": {
-                    "name": "is_coordinate_anchor",
                     "type": "integer",
                     "primaryKey": false,
                     "notNull": true,

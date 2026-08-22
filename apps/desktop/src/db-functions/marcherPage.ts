@@ -4,8 +4,8 @@ import { schema } from "@/global/database/db";
 import { updateEndPoint } from "./pathways";
 import { transactionWithHistory } from "./history";
 import {
-    markPagesAsAnchorsInTransaction,
-    recomputeInheritedPagesInTransaction,
+    flipInterveningHoldsToMove,
+    recomputeMarcherCoordinates,
 } from "./pageInheritance";
 import { assert } from "@/utilities/utils";
 import {
@@ -225,15 +225,15 @@ export async function updateMarcherPages({
                 tx,
                 modifiedMarcherPages,
             });
-            // Edited pages become anchors, so untouched pages re-flow around them
-            const editedPageIds = [
-                ...new Set(modifiedMarcherPages.map((m) => m.page_id)),
-            ];
-            await markPagesAsAnchorsInTransaction({
+            const edits = modifiedMarcherPages.map((m) => ({
+                marcherId: m.marcher_id,
+                pageId: m.page_id,
+            }));
+            await flipInterveningHoldsToMove({ tx, edits });
+            await recomputeMarcherCoordinates({
                 tx,
-                pageIds: editedPageIds,
+                marcherIds: [...new Set(edits.map((e) => e.marcherId))],
             });
-            await recomputeInheritedPagesInTransaction({ tx });
             return updatedIds;
         },
     );
@@ -374,6 +374,16 @@ export const swapMarchersInTransaction = async ({
     const updatedMarcherPages = await updateMarcherPagesInTransaction({
         tx,
         modifiedMarcherPages,
+    });
+
+    const edits = [
+        { marcherId: marcher1Id, pageId },
+        { marcherId: marcher2Id, pageId },
+    ];
+    await flipInterveningHoldsToMove({ tx, edits });
+    await recomputeMarcherCoordinates({
+        tx,
+        marcherIds: [marcher1Id, marcher2Id],
     });
 
     return updatedMarcherPages;
