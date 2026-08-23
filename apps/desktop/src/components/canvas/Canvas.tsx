@@ -408,6 +408,7 @@ export default function Canvas({
                 nextPageCounts: nextPage?.counts,
                 previousPathsEnabled: uiSettings.previousPaths,
                 nextPathsEnabled: uiSettings.nextPaths,
+                stepSizeWarningsEnabled: uiSettings.stepSizeWarnings,
                 fieldProperties: fieldProperties,
             });
             canvas.sendCanvasMarchersToFront();
@@ -423,6 +424,7 @@ export default function Canvas({
         selectedPage,
         uiSettings.nextPaths,
         uiSettings.previousPaths,
+        uiSettings.stepSizeWarnings,
         marcherVisuals,
         marcherPagesLoaded,
     ]);

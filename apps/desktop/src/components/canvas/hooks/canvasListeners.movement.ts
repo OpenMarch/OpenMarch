@@ -90,6 +90,7 @@ export const useMovementListeners = ({
                 nextPageCounts: nextPage?.counts,
                 previousPathsEnabled: uiSettings.previousPaths,
                 nextPathsEnabled: uiSettings.nextPaths,
+                stepSizeWarningsEnabled: uiSettings.stepSizeWarnings,
                 fieldProperties: fieldProperties,
             });
 
@@ -107,6 +108,7 @@ export const useMovementListeners = ({
         selectedPage,
         uiSettings.nextPaths,
         uiSettings.previousPaths,
+        uiSettings.stepSizeWarnings,
     ]);
 
     useEffect(() => {
