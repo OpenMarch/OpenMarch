@@ -31,7 +31,15 @@ export const useAnimation = ({ canvas }: UseAnimationProps) => {
                 return;
             }
 
-            canvas.updateMarcherCoordinates(coordinates, marcherIds);
+            // Skip the setCoords() refresh while actively playing (it's needless
+            // overhead on every animation frame); once the clock isn't ticking —
+            // paused, seeked while paused, or the initial paint on mount — settle
+            // each marcher's cached bounding box so hit-testing/selection/drag
+            // reflect its current position. See CanvasMarcher.setLiveCoordinates.
+            const settle = !useFrameClockStore.getState().playing;
+            canvas.updateMarcherCoordinates(coordinates, marcherIds, {
+                settle,
+            });
             canvas.requestRenderAll();
         },
         [canvas, marcherIds, renderingCallback],
