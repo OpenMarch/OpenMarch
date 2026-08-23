@@ -1,6 +1,9 @@
 import { ClockIcon } from "@phosphor-icons/react";
 import { useEffect, useRef } from "react";
-import { subscribeToFrameClock } from "@/services/clock/frame-clock";
+import {
+    subscribeToFrameClock,
+    useFrameClockStore,
+} from "@/services/clock/frame-clock";
 
 // Helper function to format time in MM:SS.mmm format
 const formatTime = (seconds: number) => {
@@ -16,23 +19,23 @@ const formatTime = (seconds: number) => {
 export function AudioClock() {
     const clockDisplayRef = useRef<HTMLElement>(null);
 
-    // Animation frame loop to update the displayed time
     useEffect(() => {
-        const unsubscribe = subscribeToFrameClock((timeMs) => {
+        const syncDisplay = (timeMs: number) => {
             if (clockDisplayRef.current)
                 clockDisplayRef.current.textContent = formatTime(timeMs / 1000);
-        });
-
-        return () => {
-            unsubscribe();
         };
+
+        syncDisplay(useFrameClockStore.getState().currentTime);
+
+        const unsubscribe = subscribeToFrameClock(syncDisplay);
+        return unsubscribe;
     }, []);
 
     return (
         <div className="text-text flex items-center gap-6">
             <ClockIcon size={14} />
             <span className="font-mono text-xs" ref={clockDisplayRef}>
-                {formatTime(0)}
+                {formatTime(useFrameClockStore.getState().currentTime / 1000)}
             </span>
         </div>
     );
