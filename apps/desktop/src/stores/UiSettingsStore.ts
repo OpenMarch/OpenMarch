@@ -60,7 +60,7 @@ export const defaultSettings: UiSettings = {
     showFullDatabasePath: false,
     previousPaths: false,
     nextPaths: false,
-    stepSizeWarnings: true,
+    stepSizeWarnings: false,
     showCollisions: false,
     gridLines: true,
     halfLines: true,
